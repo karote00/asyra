@@ -3,7 +3,7 @@
 ## Scope and evidence
 
 This closes the authorized implementation target in
-[Agent Context and Report Continuity](../plans/agent-context-and-report-continuity-plan.md).
+[Agent Context and Report Continuity](../plans/completed/agent-context-and-report-continuity-record-2026-11-16.md).
 It does not certify architectural accuracy or turn the primary AI's suggestions
 into additional implementation scope. No full-local test, release, commit or push
 was performed. The original drawing prompt was unchanged.

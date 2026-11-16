@@ -7,15 +7,27 @@ export interface ConversationResultOrigin {
   path: string
 }
 
+/** Trusted result provenance; encoded pixels remain only in the saved value. */
+export interface ConversationResultImage {
+  path: string
+  dataPath: string
+  actionName: string
+  metadata: Record<string, AiJsonValue>
+}
+
 export type ResultContextCommand =
   | {
       read: Readonly<
-        Record<string, { name: string; path: string; view?: 'shape' }>
+        Record<
+          string,
+          { name: string; path: string; view?: 'shape' | 'delivery' }
+        >
       >
     }
   | {
       save: Readonly<Record<string, AiJsonValue>>
       origins?: Readonly<Record<string, ConversationResultOrigin>>
+      images?: Readonly<Record<string, readonly ConversationResultImage[]>>
     }
 export type ExchangeConversationResults = (
   command: ResultContextCommand
@@ -127,6 +139,7 @@ export function createConversationResults(documentScope: () => unknown) {
         value: AiJsonValue
         bytes: number
         description: ReturnType<typeof describeValue>
+        images: readonly ConversationResultImage[]
       }
     >
   >()
@@ -157,6 +170,7 @@ export function createConversationResults(documentScope: () => unknown) {
             value: AiJsonValue
             bytes: number
             description: ReturnType<typeof describeValue>
+            images: readonly ConversationResultImage[]
           }
         >()
 
@@ -188,7 +202,11 @@ export function createConversationResults(documentScope: () => unknown) {
                     )
                   }
 
-                  if (view !== undefined && view !== 'shape') {
+                  if (
+                    view !== undefined &&
+                    view !== 'shape' &&
+                    view !== 'delivery'
+                  ) {
                     throw new AiToolContractError(
                       'input',
                       'Invalid result view'
@@ -206,6 +224,31 @@ export function createConversationResults(documentScope: () => unknown) {
                         ? error.message
                         : 'Invalid saved result selection'
                     )
+                  }
+
+                  if (view === 'delivery') {
+                    const images = item.images.flatMap((image) => {
+                      if (
+                        image.dataPath !== path &&
+                        !image.dataPath.startsWith(path + '/')
+                      ) {
+                        return []
+                      }
+
+                      return [
+                        {
+                          ...image,
+                          path:
+                            image.path === path ||
+                            image.path.startsWith(path + '/')
+                              ? image.path.slice(path.length)
+                              : '',
+                          dataPath: image.dataPath.slice(path.length)
+                        }
+                      ]
+                    })
+
+                    return [label, structuredClone({ value: selected, images })]
                   }
 
                   return [
@@ -230,8 +273,25 @@ export function createConversationResults(documentScope: () => unknown) {
               throw Error('Invalid conversation result name')
             }
 
+            const images = command.images?.[name] ?? []
+
+            for (const image of images) {
+              if (
+                !image.actionName ||
+                typeof resultAt(value, image.dataPath) !== 'string' ||
+                (image.dataPath !== image.path &&
+                  image.dataPath !== image.path + '/dataUrl') ||
+                Object.hasOwn(image.metadata, 'dataUrl')
+              ) {
+                throw Error('Invalid saved image provenance')
+              }
+
+              resultAt(value, image.path)
+            }
+
             const bytes =
               new TextEncoder().encode(JSON.stringify(value)).length +
+              new TextEncoder().encode(JSON.stringify(images)).length +
               name.length +
               new TextEncoder().encode(
                 JSON.stringify(command.origins?.[name] ?? {})
@@ -243,6 +303,7 @@ export function createConversationResults(documentScope: () => unknown) {
               name,
               {
                 value,
+                images,
                 bytes,
                 description: describeValue(
                   name,
@@ -262,7 +323,11 @@ export function createConversationResults(documentScope: () => unknown) {
           }
 
           for (const [name, item] of updates) {
-            entries.set(name, { ...item, value: structuredClone(item.value) })
+            entries.set(name, {
+              ...item,
+              value: structuredClone(item.value),
+              images: structuredClone(item.images)
+            })
           }
 
           totalBytes += change

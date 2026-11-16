@@ -77,6 +77,7 @@ import {
   projectToolDelivery,
   toolDeliveryFailure,
   projectToolResultFields,
+  modelToolDeliveryFailureSchema,
   modelToolResultSchemas
 } from '../src/ai/tool-contract'
 import { AiDesignToolIds } from '../src/constants/ai-design'
@@ -799,6 +800,7 @@ export const createLocalToolHost = (options: {
   }
 
   const sequenceOwner = {
+    projectedResultPaths: ['/execution/value', '/execution/recovery/*/value'],
     definitions: [
       { ...sequence, executionAccess: LocalToolAccess.COORDINATOR }
     ],
@@ -1027,37 +1029,39 @@ export const createLocalToolHost = (options: {
     },
 
     async call(_name: string, args: unknown, signal: AbortSignal) {
+      const call = context.getStore()
+
+      const deliverImages = (images: LocalToolImage[], name: string) => {
+        if (call) {
+          const prefix =
+            '/fields/' + name.replace(/~/g, '~0').replace(/\//g, '~1')
+          const selected = (selectedImages.get(call) ?? []).filter(
+            (image) =>
+              image.path !== prefix && !image.path.startsWith(prefix + '/')
+          )
+
+          selected.push(...images)
+          selectedImages.set(call, selected)
+        }
+      }
+
       if (
         !(args as Record<string, unknown>).operations &&
         !(args as Record<string, unknown>).stages
       ) {
         return JSON.stringify(
-          await readNamedFields(args, options.resultContext)
+          await readNamedFields(args, options.resultContext, deliverImages)
         )
       }
 
       const plan = preparedFor(args)
-      const call = context.getStore()
 
       const request = args as DeliveryRequest
       const delivery =
         request.delivery ||
         request.retain ||
         (args as Record<string, unknown>).stages
-          ? resultDelivery(request, options.resultContext, (images, name) => {
-              if (call) {
-                const prefix =
-                  '/fields/' + name.replace(/~/g, '~0').replace(/\//g, '~1')
-                const selected = (selectedImages.get(call) ?? []).filter(
-                  (image) =>
-                    image.path !== prefix &&
-                    !image.path.startsWith(prefix + '/')
-                )
-
-                selected.push(...images)
-                selectedImages.set(call, selected)
-              }
-            })
+          ? resultDelivery(request, options.resultContext, deliverImages)
           : undefined
 
       let finalSelectionData:
@@ -1387,6 +1391,11 @@ export const createLocalToolHost = (options: {
         ...(incomplete && incomplete.status !== 'success'
           ? {
               toolOutcome: {
+                ...('toolOutcome' in value &&
+                value.toolOutcome &&
+                typeof value.toolOutcome === 'object'
+                  ? value.toolOutcome
+                  : {}),
                 ...incomplete,
                 settlement: (value.execution as { settlement: string })
                   .settlement
@@ -1656,6 +1665,8 @@ export const createLocalToolHost = (options: {
         : undefined
     const contract =
       binding?.definition ?? library.describe(name, selectedRevision)
+    let deliveryContract: Reply['modelContract'] = selectedModelContract
+    let deliveryValue: unknown
 
     try {
       const boundaryFailure = !operationContractIssue(
@@ -1749,6 +1760,8 @@ export const createLocalToolHost = (options: {
         ? { ...contract, ...invocation }
         : contract
       const schemas = invocation ?? modelToolResultSchemas(activeContract)
+
+      deliveryContract = schemas
       let delivered: { value: unknown; outcome: AiToolOutcome }
 
       if (binding?.owner.projectModelResult) {
@@ -1769,6 +1782,8 @@ export const createLocalToolHost = (options: {
       }
 
       const { value: view, outcome: deliveredOutcome } = delivered
+
+      deliveryValue = view
 
       if (
         deliveredOutcome.settlement !== outcome.settlement ||
@@ -1819,14 +1834,20 @@ export const createLocalToolHost = (options: {
         inputSchema: activeContract.inputSchema
       }
     } catch (error) {
+      // Failure evidence uses the pinned public contract. Composite child slots
+      // are public only after their owners projected them; raw opaque values
+      // cannot substitute for a missing or invalid child projection.
+      const failureContract = deliveryContract ?? { outputSchema: false }
+
       return {
         value: toolDeliveryFailure(
-          value,
+          binding?.owner.projectedResultPaths?.length ? deliveryValue : value,
           localToolErrorMessage(error),
-          contract ?? {},
+          failureContract,
           outcome
         ),
-        outcome: { status: 'partial', settlement: outcome.settlement }
+        outcome: { status: 'partial', settlement: outcome.settlement },
+        schema: modelToolDeliveryFailureSchema(failureContract)
       }
     }
   }

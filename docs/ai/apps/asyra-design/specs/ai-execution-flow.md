@@ -136,7 +136,13 @@ metadata belongs to the invocation owner; tool projectors only handle its embedd
 result, with validated `executionOutcome` when known. Missing or invalid evidence
 cannot establish completed execution. Child views already selected by their owner
 are not selected again by the enclosing receipt projector; the complete model
-receipt still passes exact status-specific validation.
+receipt still passes exact status-specific validation. The same declared child
+projection boundary governs failure evidence: an opaque canonical child cannot
+replace a missing or invalid public child view. Leaf evidence still preserves
+acknowledged work when its pinned public declaration validates that value.
+Composed delivery preserves existing result/storage issues when adding a child
+delivery failure; it cannot replace the receipt owner's complete outcome with a
+less complete child outcome.
 Rejected input still passes canonical failure/acknowledgement validation without
 executing the owner. It opens an empty-input call scope for owner-declared repair
 resources; rejected arguments cannot borrow input resources. The scope releases
@@ -257,8 +263,10 @@ recovery; completed imports are not replayed. Acquisition reuses request-owned
 bytes without marking them as shown. Explicit result/media selection displays the
 cached original; status and metadata selection do not. The superseded `refresh`
 input rejects. Deduplication is limited to repeated pixels within one reply.
-Image attachment indexes and pixels are request-owned, not portable conversation
-capabilities. Preserve portable authored source input for later requests.
+Image attachment indexes and inspection handles are request-owned, not portable
+conversation capabilities. Immutable captured pixels and authored source input may
+be retained as named values under Conversation result delivery; saved pixels do not
+prove the current canvas state.
 
 ## Request and continuity
 
@@ -266,7 +274,9 @@ The existing request carries the brief, attachments, current bounded context,
 registered capabilities and validated conversation target references. Canonical
 state stays in the App. A new request never assumes prior inspection evidence is
 current. Deleted targets, changed document identity and replacement invalidate
-continuity references; no geometry or image cache crosses requests in this slice.
+continuity references. Immutable named geometry and image snapshots may cross
+requests within the same App document and conversation. Request-owned handles and
+current-scene verification never become valid through snapshot retention.
 Settled creation receipts update the composition identity independently of optional
 role mappings. Compact and full receipts for the same creation select the same
 next-turn target. A new composition without roles clears the preceding composition's
@@ -906,8 +916,13 @@ Canonical mutation-receipt actions use the same retained delivery owner. Their
 model result contains status, changed, settlement, accepted/unavailable counts,
 small mutation-scope counts and the retained receipt reference. Full canonical
 IDs remain available to bindings, checking, recordings and paged receipt readback.
-Partial, failed, no-change and invalid owner results preserve their original
-meaning. Failure to retain a settled receipt is explicit and never replays writes.
+Partial, failed and no-change receipts preserve their original meaning. Validate
+accepted/unavailable identity coverage before retention or compact projection.
+Invalid owner receipts do not acquire a target reference. Their declared model
+failure view includes `OWNER_RESULT_INVALID`, original `ownerResult`, actual
+settlement and observed mutation-scope counts; it must not become an unrelated
+missing-delivery failure. Failure to retain a valid settled receipt is explicit
+and never replays writes.
 Only declared element-list arguments accept these references; point/segment IDs
 remain ordinary explicit arrays. Resolve all references and validate their exact
 request, lease, workspace and revision inside synchronous mutation admission.
@@ -1432,7 +1447,17 @@ Drawing tools and request artifacts are released at settlement; follow-up questi
 remain report-only in the original thread. Local admitted status, ask and close
 requests use the retained session identity. Questions serialize, public input/output
 is retained separately from the initial execution, and disconnecting a question's
-HTTP response does not discard its answer. Explicit close cancels active reporting,
+HTTP response does not cancel the original reporting turn. Before inference, failed
+input recording rejects the question. After successful inference, answer delivery
+and output recording are independent: every successful ask reply contains the
+original native thread/turn/messages and a required `recording` receipt, either
+`{status: "saved"}` or `{status: "failed", message}`. Output recording failure still
+returns the complete answer over HTTP 200, never an unavailable-report error or
+another inference. The report client validates the receipt, saves it alongside the
+answer, and exposes recording status in its command result. A failed recording is
+not durable evidence; if that HTTP reader also disconnects, disk retention is not
+promised. A genuine provider failure remains failed with its original partial
+reply; secondary failure-recording errors cannot replace the primary error. Explicit close cancels active reporting,
 drains pending questions and releases the process once. Lost processes are reported
 as lost, never recreated. Service restarts do not promise resume. The recorder
 finalizes video and document evidence while preserving the service for questions;
@@ -1613,7 +1638,13 @@ unavailableIds and changed, derived at the original owner validation and apply
 boundary. Accepted means fulfilled, including valid unchanged work. Unavailable
 means rejected or unsupported, never unchanged. Empty valid input is a no-op.
 Mixed available and unavailable targets are partial; wholly unavailable work fails.
-Invalid receipts fail their contract while preserving known settlement and effects.
+Receipt target semantics are declared by each wrapper: scalar element identities,
+ID lists, record identity paths, map keys, or an allocated element identity. A sharing
+source is excluded from destination membership. Generated vector success matches
+its returned element ID; failed creation refers to its authored point ID. Compare
+unique requested identities with disjoint accepted/unavailable sets, rejecting
+foreign, duplicate or omitted targets before retention. Invalid receipts fail their
+contract while preserving the original value, known settlement and effects.
 
 Fill/Stroke and element wrappers propagate canonical apply evidence. Empty patches
 still validate requested targets. Vector owners validate the target before empty
@@ -1849,12 +1880,11 @@ content continuation when necessary; explicit refresh remains available. No sepa
 or model-authored substitute is used. Mixed lookups return
 known matches with explicit execution routes and separately identify missing names.
 They neither discard valid matches nor send native tool names to the canvas batch.
-For a batch action and its own registered wrapper, ordinary exact usage supplies
-the executable batch guide and the qualified wrapper reference. Explicit wrapper
-selection retrieves its executable guide. Full and machine-schema reads include
-both actual input contracts with their distinct routes. A flat action schema is
-not the native wrapper schema; no extra qualified lookup is required to discover
-that wrapper. Delivery reuse and explicit recovery remain independent per route.
+Bare action lookup returns only the primary action route in every view, including
+full and machine-schema reads. Its qualified wrapper reference identifies the
+separate route; select that qualified identity explicitly when its wrapper contract
+is needed. Flat action arguments and wrapped native arguments remain distinct.
+Delivery reuse and explicit recovery remain independent per selected identity.
 
 The AI can apply a coherent ready part and observe it before preparing other parts.
 It chooses the needed checkpoints and final verification against the request. No
@@ -4263,6 +4293,16 @@ slots. It preserves unrelated actions, ambiguity and missing-name settlement.
 
 ### Conversation result delivery
 
+Saved result images keep trusted capture provenance beside the ordinary immutable
+value in the existing App conversation store. Pixel bytes occur once in that value;
+provenance points to them and counts toward the same capacity budget. A selected
+whole image, containing subtree or pixel leaf is delivered through the same native
+image validation as an immediate capture. Shape-only reads and non-image columns
+remain text; authored image-shaped inputs do not gain capture authority. Named
+reads return selected values and provenance in one exchange without recapture.
+Replacement removes obsolete provenance. Conversation/document isolation and
+request-handle exclusions apply unchanged.
+
 Use ordinary step bindings when the successor is decided. To save public values
 in the current App conversation, add `retain: {alias: {step, path}}` to
 execute_design. Retention adds save metadata without changing delivery. Omitted
@@ -4276,8 +4316,10 @@ ready canvas route). Read a field of a saved snapshot with no operations and
 `delivery: {fields: {label: {name:"alias", path:"/field"}}}`.
 
 Names survive subsequent requests in the same open App document and
-conversation. The browser owns bounded immutable JSON snapshots; only names
-accompany the next model turn. Browser context exchanges do not execute canvas
+conversation. The browser owns bounded immutable JSON snapshots.
+Names and bounded descriptors accompany the next model turn: producing operation,
+input/result selection and shape, without stored values. Reuse the descriptor
+computed on save; do not reread values to regenerate it. Browser context exchanges do not execute canvas
 actions. Request-only handles cannot become cross-turn references. Named
 document targets remain subject to current validation before writes. A stale
 document, failed selection or storage error reports actual settlement; never

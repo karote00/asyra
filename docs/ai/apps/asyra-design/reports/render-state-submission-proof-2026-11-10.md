@@ -1,7 +1,7 @@
 # Render-state submission - attribution and supported program reuse
 
 November 10, 2026. Associated task:
-[Pixi research revision](../plans/agent-context-and-report-continuity-plan.md#pixi-research-revision).
+[Pixi research revision](../plans/completed/agent-context-and-report-continuity-record-2026-11-16.md#pixi-research-revision).
 
 ## Outcome
 

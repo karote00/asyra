@@ -8,7 +8,7 @@ across 347 files. The independent `spec-coverage-review` remains unaccepted.
 The result proves specific handoffs and detects real defects; it does not certify
 all conversation behavior from the number of passing assertions.
 
-Task authority: [active replacement plan](../plans/agent-context-and-report-continuity-plan.md#spec-derived-conversation-verification).
+Task authority: [active replacement plan](../plans/completed/agent-context-and-report-continuity-record-2026-11-16.md#spec-derived-conversation-verification).
 Current execution: `tmp/conversation-proof-dThnsW`; command:
 `node apps/asyra-design/scripts/verify-conversation.mjs`.
 This was offline verification, not a Taipei 101 drawing or repository-wide test.

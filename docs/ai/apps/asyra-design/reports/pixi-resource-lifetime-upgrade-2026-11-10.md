@@ -9,7 +9,7 @@ pass, including native browser proofs. Asyra Design's expanded validation is
 and five unchanged AI test typing errors remain. These are not dismissed as
 harmless tests and are not repaired through unrelated rendering changes.
 
-Plan: [approved SDK lifetime implementation](../plans/agent-context-and-report-continuity-plan.md).
+Plan: [approved SDK lifetime implementation](../plans/completed/agent-context-and-report-continuity-record-2026-11-16.md).
 Architecture owners: `render-material` and `project-render-hierarchy` in the
 Design Functional Inspector. This closes only the SDK lifetime slice, not the
 entire AI conversation plan. No commit, push, release or live-model 101 run was

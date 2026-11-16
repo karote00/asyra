@@ -540,7 +540,7 @@ including their input/output contracts, revisions, effects and composition polic
 That is stronger evidence than a matching count; it is still not proof that every
 possible invocation of every tool is correct.
 
-Task association: [Complete conversation contract verification](../plans/agent-context-and-report-continuity-plan.md#complete-conversation-contract-verification).
+Task association: [Complete conversation contract verification](../plans/completed/agent-context-and-report-continuity-record-2026-11-16.md#complete-conversation-contract-verification).
 Worktree: `.worktrees/ai-conversation-improvements`. Preserve the inherited dirty
 changes and idle report sessions. No 101 run, full local test, inference, commit
 or push belongs to this review. No App AI was contacted.

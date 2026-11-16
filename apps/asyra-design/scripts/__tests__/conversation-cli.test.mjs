@@ -91,6 +91,13 @@ test('actual verification interruption cannot become success or dispatch a succe
 
   mkdirSync(bin)
   const calls = join(directory, 'calls.jsonl')
+  const nativeClient = join(directory, 'native-client')
+
+  // This case stops during build; the native client is never executed beyond
+  // version admission. Native protocol evidence belongs to the native fixtures.
+  writeFileSync(nativeClient, '#!/bin/sh\nprintf "codex-cli 0.160.0\\n"\n', {
+    mode: 0o755
+  })
 
   // Only the external build command is substituted. Run the real CLI, its
   // process owner, evidence publication and exit decision.
@@ -122,6 +129,7 @@ setInterval(() => {}, 1000)
     env: {
       ...process.env,
       PATH: bin + ':' + process.env.PATH,
+      NATIVE_DELIVERY_CODEX: nativeClient,
       CONVERSATION_CLI_CALLS: calls
     },
     stdio: ['ignore', 'pipe', 'pipe']
@@ -205,3 +213,160 @@ setInterval(() => {}, 1000)
   assert.equal(processes[1].reason, 'cancelled')
   assert.ok(processes[1].finishedAt)
 })
+
+for (const [fault, diagnosis] of [
+  ['none', null],
+  ['failed-suite', /numFailedTestSuites/],
+  ['missing-case', /Missing required test case|No executed assertions/],
+  ['duplicate-case', /Duplicate assertion/],
+  ['exit-failure', /Runner exit/],
+  ['runtime-error', /runtime errors/],
+  ['failed-summary', /successful runner completion/],
+  ['missing-file', /Missing required test/],
+  ['skipped-case', /Unsuccessful assertion|pending|skipped|not passed/],
+  ['truncated-report', /JSON|Unexpected|parse/],
+  [
+    'changed-knowledge-source',
+    /Source, compiled exports or required definitions changed/
+  ],
+  ['publication-failure', /Controlled publication failure/],
+  ['dropped-observation', /Incomplete automated evidence/],
+  ['missing-semantic-review', /Missing independent spec-coverage review/],
+  ['missing-knowledge-handoff', /Missing required handoff area: knowledge/]
+]) {
+  test('actual verification CLI admits runner evidence - ' + fault, (t) => {
+    const directory = mkdtempSync(join(root, 'tmp/conversation-cli-proof-'))
+    const project = initialize(directory, 'manual', 'runner-proof')
+    const document = JSON.parse(
+      readFileSync(join(project.directory, 'checkout.flow.json'), 'utf8')
+    )
+
+    document.definition = JSON.parse(
+      readFileSync(
+        join(
+          root,
+          'apps/asyra-design/test-data/conversation-verification/flow/conversation.flow.json'
+        ),
+        'utf8'
+      )
+    ).definition
+    if (fault === 'missing-knowledge-handoff') {
+      document.definition.nodes = document.definition.nodes.filter(
+        (node) => node.id !== 'knowledge'
+      )
+    }
+
+    if (fault === 'missing-semantic-review') {
+      document.definition.criteria = []
+    }
+
+    writeFileSync(
+      join(project.directory, 'checkout.flow.json'),
+      JSON.stringify(document)
+    )
+    const configuration = join(root, `.conversation-cli-${randomUUID()}.json`)
+    const nativeClient = join(directory, 'native-client')
+    const sourceFixture =
+      fault === 'changed-knowledge-source'
+        ? join(
+            root,
+            'docs/ai/knowledge',
+            '.verification-source-' + randomUUID() + '.md'
+          )
+        : undefined
+
+    if (sourceFixture) {
+      writeFileSync(sourceFixture, '# Independent source fixture\n')
+    }
+
+    writeFileSync(
+      configuration,
+      JSON.stringify({
+        schemaVersion: 1,
+        projectId: project.projectId,
+        flows: relative(root, project.directory)
+      })
+    )
+    writeFileSync(nativeClient, '#!/bin/sh\nprintf "codex-cli 0.160.0\\n"\n', {
+      mode: 0o755
+    })
+    t.after(() => {
+      rmSync(configuration)
+      if (sourceFixture) {
+        rmSync(sourceFixture)
+      }
+
+      rmSync(directory, { recursive: true, force: true })
+    })
+    const result = spawnSync(
+      process.execPath,
+      [
+        '--import',
+        resolve(import.meta.dirname, 'fixtures/conversation-process.mjs'),
+        entry,
+        '--project',
+        configuration
+      ],
+      {
+        cwd: root,
+        encoding: 'utf8',
+        timeout: 60000,
+        maxBuffer: 1024 * 1024,
+        env: {
+          ...process.env,
+          CONVERSATION_PROOF_PROJECT: configuration,
+          CONVERSATION_PROOF_FAULT: fault,
+          ...(sourceFixture
+            ? { CONVERSATION_PROOF_SOURCE: sourceFixture }
+            : {}),
+          NATIVE_DELIVERY_CODEX: nativeClient
+        }
+      }
+    )
+    const evidence = result.stdout.match(/Evidence: (.+)/)?.[1]
+
+    assert.ok(evidence, result.stderr + result.stdout)
+    const summary = JSON.parse(
+      readFileSync(join(evidence, 'summary.json'), 'utf8')
+    )
+
+    // The untouched manual criterion must remain unaccepted even for valid
+    // synthetic execution. These stimuli cannot certify product semantics.
+    assert.equal(
+      result.status,
+      diagnosis ? 1 : 2,
+      JSON.stringify(summary.issues.slice(0, 4))
+    )
+    assert.equal(
+      summary.executionStatus,
+      diagnosis ? 'failed-or-incomplete' : 'passed'
+    )
+    assert.ok(summary.evaluation.flows.every((flow) => flow.status !== 'done'))
+    if (diagnosis) {
+      assert.match(summary.issues.join('\n'), diagnosis)
+      if (fault === 'changed-knowledge-source') {
+        assert.notDeepEqual(
+          JSON.parse(
+            readFileSync(join(evidence, 'source-before.json'), 'utf8')
+          ),
+          JSON.parse(readFileSync(join(evidence, 'source-after.json'), 'utf8'))
+        )
+      } else if (
+        ![
+          'truncated-report',
+          'publication-failure',
+          'dropped-observation',
+          'missing-semantic-review',
+          'missing-knowledge-handoff'
+        ].includes(fault)
+      ) {
+        assert.match(
+          readFileSync(join(evidence, 'server-issues.json'), 'utf8'),
+          diagnosis
+        )
+      }
+    } else {
+      assert.deepEqual(summary.issues, [])
+    }
+  })
+}

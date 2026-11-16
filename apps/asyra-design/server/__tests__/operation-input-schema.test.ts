@@ -629,3 +629,29 @@ it('preserves root property and union references through native schema relocatio
     expect(JSON.stringify(schema)).toBe(before)
   }
 })
+
+it.each([
+  { text: 'a', count: 1 },
+  { text: '\u{20BB7}', count: 1 },
+  { text: '\u{1F642}', count: 1 },
+  { text: 'e\u0301', count: 2 },
+  { text: 'a\u{20BB7}b', count: 3 }
+])(
+  'uses JSON Schema character length for input and output - $text',
+  ({ text, count }) => {
+    const exact = { type: 'string', minLength: count, maxLength: count }
+
+    expect(
+      operationInputIssue(text, nativeToolInputSchema(exact))
+    ).toBeUndefined()
+    expect(
+      operationContractIssue(text, exact, { stage: 'output' })
+    ).toBeUndefined()
+    expect(
+      operationInputIssue(text, { type: 'string', minLength: count + 1 })
+    ).toContain('short')
+    expect(
+      operationInputIssue(text, { type: 'string', maxLength: count - 1 })
+    ).toContain('long')
+  }
+)

@@ -416,7 +416,7 @@ export const createActionBatchMiddleware = (
           command.operation === 'ask' &&
           typeof command.question === 'string'
         ) {
-          // The session retains the answer even if this HTTP reader disconnects.
+          // Reader disconnect does not cancel inference; recording has its own receipt.
           sendJson(
             response,
             200,

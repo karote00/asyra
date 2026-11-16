@@ -338,7 +338,11 @@ function normalize(project, report, scope) {
   const { producer, config, cwd } = scope
   const records = []
 
-  if (producer === 'vitest' || producer === 'node') {
+  if (
+    producer === 'vitest' ||
+    producer === 'node' ||
+    (producer === 'playwright' && Array.isArray(report?.testResults))
+  ) {
     if (!report || !Array.isArray(report.testResults)) {
       throw new Error('Invalid Vitest JSON report')
     }
@@ -443,9 +447,8 @@ function reportDiagnostic(report, records) {
 
 // The reviewed required file scope is independent of execution selection. Keep
 // whole-run admission in this shared producer, including stale-success retirement.
-function publishCompleteReport(
+function admitCompleteReport(
   project,
-  receipt,
   report,
   scope,
   requiredFiles,
@@ -469,7 +472,26 @@ function publishCompleteReport(
     issues.push(error.message)
   }
 
-  return publish(project, receipt, records, [...new Set(issues)].join('\n'))
+  return { records, issues: [...new Set(issues)] }
+}
+
+function publishCompleteReport(
+  project,
+  receipt,
+  report,
+  scope,
+  requiredFiles,
+  requiredCases
+) {
+  const { records, issues } = admitCompleteReport(
+    project,
+    report,
+    scope,
+    requiredFiles,
+    requiredCases
+  )
+
+  return publish(project, receipt, records, issues.join('\n'))
 }
 
 module.exports = {
@@ -478,6 +500,7 @@ module.exports = {
   capture,
   publish,
   normalize,
+  admitCompleteReport,
   reportDiagnostic,
   publishCompleteReport
 }

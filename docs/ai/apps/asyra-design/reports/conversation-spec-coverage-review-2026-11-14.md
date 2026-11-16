@@ -1,5 +1,214 @@
 # Independent conversation specification review
 
+Current review: [Uniform verification implementation](#uniform-verification-implementation---november-16-2026).
+Earlier acceptance sections below are historical. The new mandatory verification
+standard withdraws their implication of current completeness until the current
+source, independent semantic review and verifier controls all reconcile.
+
+## Whole conversation acceptance - November 16, 2026
+
+Decision: accept the current AI conversation verification scope after independent
+specification review. This supersedes the pending acceptance and unexecuted-profile
+statements in earlier sections, without rewriting their historical evidence.
+The existing twelve-handoff review remains the semantic basis; current execution
+now covers its previously unexecuted Knowledge, canonical, browser, permission,
+iteration, media, collaboration and Undo/Redo profiles. No 101 or full repository
+local test ran. Native tests use the installed client and scripted loopback
+Responses service, not live model inference.
+
+Reviewed worktree: codex/ai-conversation-improvements, base
+5ec93d8ae9efc087cd064805965bc6ab89c67fdd, including the retained uncommitted work.
+Final evidence: tmp/conversation-proof-bRBTC2.
+Exact source/build/definition revision:
+5b43e4d552989a86483d3e0688675ca3ae1ce62396e85ab8440e07b8c3a6f881.
+The before/after snapshots are identical. Every independent file/case identity
+matches its actual execution; all 133 required semantic selectors are satisfied.
+The runner reports zero execution/evidence issues. Its original exit code is 2
+because the previous manual acceptance is stale, not because a test failed.
+Keep that immutable execution summary; the renewed review is recorded separately
+through the public Flow Inspector observation boundary.
+
+### Failures, causes and corrections
+
+| Run | Actual finding | Contract diagnosis and action | Confirmation |
+| --- | --- | --- | --- |
+| tmp/conversation-proof-s2mhoE | One server case failed; five diagnostics describe that failure. Remaining work was interrupted through the owned runner. | The non-Core outcome proof supplied a receipt without original positionsById arguments. Current spec requires exact requested-target coverage. Production already forwards resolvedArgs; the test's receipt-only success assumption was obsolete. Author independent request inputs, preserve all six expected outcomes, and reject missing request context, foreign IDs and omitted targets. No product change. | Focused case and 48 action/real-owner cases passed. The full second and third server groups each passed all 3,759 cases. |
+| tmp/conversation-proof-btN9MI | Two App structural-delivery cases failed; other groups passed on unchanged source. | Both cases requested child-0 and missing, but the no-change receipt omitted missing and the failed receipt omitted child-0. They are invalid receipts, not legitimate partial completion. Correct the legal cases' independent inputs and preserve both original request/receipt pairs as rejection tests. Keep status, settlement, counts, recovered full receipt and single-owner-call assertions. | All 72 focused structural/target/real-owner cases passed. Final App group passed 1,581 cases, including the two added rejection cases. |
+| tmp/conversation-proof-bRBTC2 | No execution or evidence issues. | Fresh complete execution after both oracle corrections and independent selector updates. No prior execution was relabeled. | All five groups, case reconciliation and current semantic criteria pass; separate review accepts the bounded feature scope. |
+
+The second run's 105 summary entries are not 105 defects: seven runner diagnostics
+describe the two App failures; 49 stale/missing criteria and 49 warnings reflect
+the publication owner's refusal to adopt a failed App group. Successful final App
+publication clears those warnings through the formal boundary. None was manually
+removed or waived.
+
+The fixes change two formal test files, the independent required-case definition
+and task documentation. Production input/output validation is unchanged. Invalid
+owner data remains visible with its original receipt and completed execution
+settlement, but receives no accepted-count claim or retained-result handle. The
+original malformed payloads are permanent negative cases rather than discarded
+evidence. Six explicit Flow selectors require the request-context proof, three
+legal delivery outcomes and both omitted-target negatives; removing those cases
+cannot silently shrink expected acceptance.
+
+### Evidence beyond passing totals
+
+| Handoffs | Current consumer evidence and independent review conclusion |
+| --- | --- |
+| Draft/history and instructions | Actual native requests preserve original history types, source attachments, clarification association and parent-local selection bounds. Invalid history rejects before provider invocation; deliberately corrupted instruction/schema and attachment delivery are detected. No extra planning or Knowledge prerequisite was added. |
+| Discovery, Knowledge and admission | Full selected contracts preserve success/partial/recovery alternatives and restrictions. Shared-source provenance, references/overrides, authorization, cache invalidation and scope isolation run through their owners. Corpus examples execute real Host/Runtime/Core operations; invalid nested operations/arguments reject before dispatch and corrected input continues. Native successor requests contain exact source advice plus separate execution status. Missing status or altered advice is detected at that consumer. |
+| Composition and canonical mutation | Real App/HTTP/Host/Runtime sequences consume retained inputs, prior outputs and current target identities. Native and browser tests cover cross-turn reuse, staged application, mechanical iteration and malformed receipts. Canonical scene state, peer document digests and intended Undo/Redo are checked; a mocked acceptance response is not the oracle. |
+| Results and retention | Complete owner values validate before projection; selected data and acknowledgement remain distinct. Legal partial results, no-change results, unavailable targets and storage failure remain meaningful. Missing/foreign receipt targets cannot become saved identities. Names, origin and shape reach the next native request without raw stored values; saved input is actually reused and deliberate alteration is detected. Request-only handles remain nonportable. |
+| Media and lifecycle | Actual successor inputs carry selected images and provenance. Browser pixel assertions distinguish target-local captures from overlapping or wrong-scope content, alongside collaboration and history assertions. Correctable input and transient Knowledge failures return to the same native work turn without interrupting it. Storage-only recovery does not replay successful preparation; recording failure does not overwrite the actual answer. Cancellation and explicit stop retain their separate ownership. |
+| Evidence and verification | Native declaration collection, actual execution and the spec-derived required list are independent inputs. Permanent controls detect removed within-file cases even with adjusted totals, malformed results and corrupted handoffs. Failed groups do not acquire passing evidence. Source/build/definition snapshots match; review is a separate manual criterion and cannot be inferred from runner totals. |
+
+The current native-provider file passed all 32 cases, the real production
+cross-turn file all nine, and the executable Knowledge corpus all three variants.
+These include negative controls, not only successful examples. The browser
+provider handoff checks actual delivered pixel regions, canonical state and peer
+synchronization; the 335 browser cases have zero skipped, unexpected, flaky or
+retried cases. No current contract conflict or unresolved concrete defect remains
+in the fixed twelve-handoff acceptance scope. This is not a claim about every
+future tool, arbitrary model choice or live drawing quality.
+
+### Final execution and quality checks
+
+| Group | Files | Independently collected, executed and passed |
+| --- | ---: | ---: |
+| Server | 103 | 3,759 |
+| App and direct consumers | 144 | 1,581 |
+| Runtime | 34 | 524 |
+| Knowledge sources, Node contracts and verification tools | 62 | 691 |
+| Browser | 24 | 335 |
+| Total | 367 | 6,890 |
+
+App TypeScript, flow fixture TypeScript, the formal verifier's fixture type gate,
+naming and scoped diff checks pass. Changed-file lint has zero errors and one
+pre-existing console warning in execution-flow-proof.test.ts; no unrelated cleanup
+was performed. The 72 focused cases and ten collection/publication checks pass.
+These are supporting reruns, not additions to the 6,890 unique final cases.
+No recorded test/build process remains active after the final run. No compatibility
+path, permissive schema, product fallback or new mandatory workflow was added.
+No commit, push or plan archive move was performed in this acceptance task.
+
+## Four-finding handoff review - November 16, 2026
+
+Current task: [history admission and independent contract verification](../plans/agent-context-and-report-continuity-plan.md#history-admission-and-independent-contract-verification).
+This review supersedes completion implications from earlier sections for the
+current source. Those sections remain historical evidence, including failures and
+withdrawn conclusions. This is a source review plus focused execution, not current
+whole-feature acceptance. No 101, live-model task or full local test ran.
+
+### Confirmed corrections and negative evidence
+
+- History admission used String(outcome), accepting arrays that resembled enum
+  values. The canonical context owner now requires an original string. HTTP and
+  actual native-provider tests reject malformed inputs before inference and
+  preserve all five legal outcomes without coercion.
+- The contract audit selected a presumed first union branch. Its 31 failures
+  therefore did not establish 31 broken tools. The audit now compares the complete
+  selected envelope, including owner success, partial and recovery alternatives.
+  Pure nested anyOf equivalence is normalized without discarding sibling
+  constraints, literal array order or oneOf multiplicity. Permanent controls
+  reject missing alternatives, permissive additions and weaker field constraints.
+  No product output schema was weakened to satisfy the audit.
+- The Knowledge corpus previously validated only outer schemas with a dummy
+  dispatcher. Unknown nested operations and invalid arguments passed that check.
+  The replacement uses actual registered Host tools, Host-owned preparation,
+  Runtime dispatch and canonical Core state. Six current examples execute; two
+  damaged delete variants reject before dispatch and their originals subsequently
+  execute in the same Host. Actual deletion and Fill state are observed. Only
+  documented placeholders are substituted. This replaces, rather than supplements,
+  the old outer-only proof. Earlier table claims of schema validation alone must
+  not be read as proof of nested executability.
+- The names-only spec and Inspector's blanket cross-request geometry-cache ban
+  conflicted with existing immutable saved snapshots. Both rules are removed.
+  The next actual native request includes names, producing operation, selected
+  input/result path and bounded shape, without raw values. Saved content does not
+  extend request-only handles, authorization or document-target validity.
+
+RED evidence remains in tmp/four-history-red.log,
+tmp/four-history-native-red.log, tmp/four-audit-nesting-red.log,
+tmp/four-knowledge-red.log and tmp/four-continuity-docs-red.log.
+The earlier complete audit failure is tmp/blind-review-api-contracts.json.
+Corpus fixture corrections supplied real resource ownership, a live cleanup
+window, valid gradient opacity and target-selector fields; they did not add
+product fallbacks or approximate execution.
+
+### Independent source review of the twelve parent handoffs
+
+The current conversation, execution, local-provider and preparation specs, Runtime
+tool specification and exact Inspector routes define these obligations. Required
+semantics were compared with the owners and consumers below; selected passing
+cases did not define the review scope. The fixed review found no additional
+confirmed defect beyond the four corrections. This does not prove every possible
+input, every tool composition or all browser effects.
+
+| Handoff | Source and actual consumer reviewed | Current evidence and limit |
+| --- | --- | --- |
+| Draft/history to request | AI panel source/generation capture; conversation submission; conversation-context admission | Async attachments remain associated with their original draft. New native history test observes exact legal values and rejects array impostors before inference. Conversation tests execute in the declared App DOM environment; this task did not replay every panel browser interaction. |
+| Context/instructions to provider | runtime-input, server-action-batch-provider and local-ai-provider request assembly | Native fixtures observe actual request bytes, tools, original images and saved descriptors. HTTP and native continuation retain distinct declared semantics. Saved receipts do not grant permissions. Offline scripted Responses input uses the installed native client; this is not evidence of live model judgment. |
+| Search to selected contract | local-operation-tools, selected usage disclosure and tool invocation | The complete audit file compares owner alternatives, applicability and selected envelopes. A found name is not an acquired contract. Registered contracts and real native delivery are checked separately; schema equivalence is not proof of arbitrary output-to-input conversion. |
+| Knowledge to advice and successor input | local-knowledge, Runtime Knowledge owner, real Host and native content conversion | Corpus examples now execute through actual owners. Native fixtures check text, paging/rehydration and correctable failures. Advice remains untrusted and optional. Shared-source dependency/override/authorization tests remain independent; their full graph suite was inspected as coverage but not rerun in this task. |
+| Invocation to admission/resource ownership | local-tool-invocation and local-tool-host | Current execution/model contracts are selected before effects; complete input and output validation precede projection. Corpus faults dispatch nothing and continue after correction. Real Host ownership is required for preparation; the verifier no longer creates unowned artifacts. This does not replace the full permission/resource-lifetime suite. |
+| Dependencies to composed/staged/iterative work | local-design-sequence, Runtime binding/invocation and retained input exchange | Binding uses admitted values and current target resolution; a failed dependency preserves its acknowledged prefix. Production cross-turn fixtures prove retained input reaches real canonical creation and detect deliberately altered geometry. All iteration/checkpoint/scheduling variants were not re-executed. |
+| Preparation to canonical mutation | design preparation, Runtime executor, Common APIs and Core | Corpus deletion/Fill and production creation inspect actual canonical state, not accepted mock receipts. Target-slot envelopes are converted to the selector's artifact/key input before resolution. Parent/local coordinates and transaction ownership remain unchanged. Browser Undo/Redo, selection, collaboration and rendering profiles remain pending current-source execution. |
+| Raw value/state to projection | local-tool-invocation validation and local-tool-host model projection | Projection cannot change acknowledged settlement or promote failure to success; the projected result is validated against the selected model contract. The audit retains legal partial/recovery alternatives. Complete receipts, partial delivery and storage failure remain distinct; no permissive extra branch was introduced. |
+| Retention to later stages/turns | local-result-delivery, conversation-results, provider metadata and real App exchange | Retain and delivery remain independent. Descriptors are computed on save and reused; immutable values and document/conversation isolation persist. Native cross-turn cases receive descriptors, then reuse saved stage input without returning raw values in initial metadata. Unused retained names are not failures. |
+| Capture/reference to provider media | result/image delivery owners and native successor conversion | Actual native fixtures check selected image content and saved-image provenance; names/shape do not substitute for pixels. Status-only delivery may omit media. No browser pixel capture was rerun, so transport evidence cannot claim current rendered-region correctness. |
+| Progress/failure/report to cleanup | Runtime observer isolation, evaluation-control and evaluation-report-sessions | Observer faults cannot cancel canonical work. Recoverable input returns to the same native session; explicit stop remains separate. Report persistence failure cannot overwrite a completed answer. Corpus resources release while their Runtime request is live. Report-session and all cancellation permutations were source-reviewed but not all re-executed here. |
+| Outcome/evidence to consumers | actual native/HTTP replies; conversation collection/publication; formal runner inventory/report adapters | Provider data and state are asserted together. Independent declaration collection is reconciled with actual file/case identities; omitted cases, skipped evidence and source changes cannot be accepted by the publication owner. The semantic case list remains separate from collection. A passed run cannot publish manual acceptance itself. |
+
+Host sequencing owns orchestration, not geometry, persistence or visual judgment.
+No new mandatory planning, Knowledge-reading or completion gate was added.
+Reasonable conversion between producer output and consumer input is exercised by
+artifact/key selection, retained draft reuse and real canonical dispatch. The
+review did not require identical schemas or add compatibility for obsolete inputs.
+
+### Verification-tool review and execution boundary
+
+The formal collector uses native Vitest collection, Node registration and
+Playwright listing. Required cases are not inferred from execution success.
+The completeness owner checks declared identities against every actual result;
+the semantic selector owner independently checks required handoffs. Publication
+also verifies source and definition identity. These are different responsibilities.
+The corpus now delegates to product execution instead of implementing its own
+admission. The contract normalizer's destructive controls prevent equivalent
+union handling from silently becoming validation relaxation.
+
+| Focused execution | Passed | Evidence |
+| --- | ---: | --- |
+| Complete contract-audit file | 1,373 | tmp/four-audit-final.json |
+| Admission, Knowledge corpus, actual native and production cross-turn files | 79 | tmp/four-handoff-final.json |
+| Conversation, retained values, App provider and evaluation control | 98 | tmp/four-continuity-consumers-jsdom.json |
+| Documentation, case selection/collection/publication and Inspector verifier | 50 | tmp/four-verifier-final.log |
+
+No cases skipped in these runs. The five documentation cases are part of the 50;
+their separate structured-event run is reconciliation evidence, not five more
+unique cases. Independent collection reconciles all 1,452 audit/handoff identities
+with actual reports (tmp/four-reconciliation.json). The seven added Flow criteria
+match formal normalized observations (tmp/four-required-handoffs.json).
+The 98 consumer cases independently reconcile as well
+(tmp/four-consumer-reconciliation.json). Flow fixture types, scoped lint, naming,
+diff whitespace and local documentation links pass.
+
+The first consumer invocation accidentally omitted jsdom: one location-dependent
+case failed and the conversation file failed collection on window. Its 51 passing
+cases do not count as that group's acceptance. Preserve
+tmp/four-continuity-consumers.json/.log. The corrected invocation uses the formal
+App group's environment and passes all 98; no product or assertion change was
+needed. The flow fixture type project now includes request admission and the
+Knowledge corpus, uses DOM.Iterable for real Headers and removes fetch casts.
+The saved-image assertion narrows actual content before reading it; it still
+requires the selected image. This does not loosen malformed-result rejection.
+
+All twelve parent handoffs have a current source-review conclusion above. The
+remaining parent work is current-source whole-feature execution, reconciliation
+of its complete inventory and separate semantic acceptance, particularly the
+explicitly unexecuted profiles above. Focused-only authorization does not justify
+publishing whole-feature completion. No current manual acceptance was published,
+and no older passing total is reused as current acceptance.
+
 ## Push validation follow-up - November 16, 2026
 
 Current execution evidence is `tmp/conversation-proof-ZB57xy`. The independent
@@ -147,7 +356,7 @@ about arbitrary future model choices or all possible inputs.
 
 Date: November 14, 2026.
 
-Task: [Independent case completeness and specification reconciliation](../plans/agent-context-and-report-continuity-plan.md#independent-case-completeness-and-specification-reconciliation).
+Task: [Independent case completeness and specification reconciliation](../plans/completed/agent-context-and-report-continuity-record-2026-11-16.md#independent-case-completeness-and-specification-reconciliation).
 
 ## Authority and conclusions
 
@@ -597,3 +806,191 @@ No 101, live provider drawing, full repository local test, commit or push ran.
 The former semantic acceptance at this checkpoint is withdrawn. Its successful
 execution does not establish the single-delivery contract; the corrected current
 source and its independent review are recorded above.
+
+## Uniform verification implementation - November 16, 2026
+
+Authority is the [verification contract](../specs/ai-conversation-verification.md),
+not this report or the selected test totals. The implementation follows the
+[bounded plan](../plans/agent-context-and-report-continuity-plan.md#uniform-verification-contract).
+The complete run is recorded below. This section records the independent source
+and oracle review separately from execution and formal manual acceptance.
+
+### Corrected proof ownership
+
+The prior API-audit claim of canonical schema equivalence was too broad. It called
+the production native converter on both sides and built expected envelopes with
+production helpers. A deliberately lossy converter made unequal constraints appear
+equal (`tmp/uniform-oracle-red.log`). Those paths are deleted. The current audit:
+
+- observes actual selected owner inputs and compact-schema producer outputs;
+- follows the published action or registered Host route, including explicit
+  final-response and observation wrappers;
+- compares schema structure independently, preserving sibling constraints,
+  intersections, literal array order and oneOf multiplicity;
+- independently exercises the fact length boundary and closed result requirements
+  through actual discovery and Host invocation, with corrupt and valid controls;
+- checks literal draft/repair/parts exposure separately from the selector, so a
+  selector that omits parts cannot define its own expected inventory.
+
+Structural comparison is not a general JSON Schema equivalence solver. Observed
+producer lineage proves delivery, not correctness of the producer. Its independent
+constraint cases and domain-owner cases remain necessary. The audit fixture's
+browser dispatcher intentionally rejects: it establishes pre-dispatch admission,
+not successful drawing. The browser per-API fixtures supply explicit successful
+inputs and canonical state/effect assertions through real Common APIs. Neither
+fixture substitutes for the other's boundary.
+
+The leaf-test ownerInvocation helper only unwraps one declared Host operation for
+leaf tests. It is not used as evidence of Host execution. readCompleteInformation
+follows the actual advertised continuation, validates byte offsets and revision,
+and reconstructs the delivered bytes; it does not compute an expected contract.
+Recorded model-result fixtures provide fixed payload/visibility stimuli only.
+Actual Core, native successor and browser fixtures establish the corresponding
+live owner and transport behavior.
+
+### Source-to-proof reconciliation
+
+The following source sections were read independently of test selection. A row
+covers the named section and its subordinate clauses, including negative and
+conditional behavior. Flow node names identify the existing review boundary;
+permanent cases remain the executable assertions. This table does not introduce
+another verdict or replace the exact case inventory. Paths below are relative to
+apps/asyra-design unless an owner package or tools path is stated.
+
+| Current authority and clauses | Actual owner/consumer and independently required observations | Existing Flow boundary and evidence owners |
+| --- | --- | --- |
+| Conversation experience: Product contract; Architecture boundaries; Cases and definition of done | Controller to Feature submission preserves intent, originating draft images, clarification links and generation. Empty/invalid history rejects before dispatch; switching/disposal cannot move late reads into another conversation. | request/lifecycle; conversation.test.ts, conversation-production-handoff.integration.test.ts, conversation-provider-handoff.spec.ts, ai-conversation-navigation.spec.ts |
+| Conversation experience: Tool activity transport; Activity provenance and delivery order; Local provider usage observability | Progress, owner work and provider usage remain different sources. Duplicate/stale updates cannot reorder settled answers; unsupported telemetry stays unavailable. | instructions/evidence; progress/presentation/controller tests, native-output-observation.integration.test.ts, actual UI cases |
+| Conversation experience: Multi-step execution; Canvas keyboard handoff; General design research/target continuity; Conversation navigation | Current target validation and explicit parent-local basis; independent user editing, focus/IME and history navigation; source research supplies advice without permission. | request/canonical/lifecycle; coordinate-handoff.integration.test.ts, ai-conversation-flow.spec.ts, conversational-ai.spec.ts, current guarded performance owner |
+| Conversation experience: Evidence-based drawing completion | AI owns final judgment. Optional structural/image evidence is usable without a completion-token gate; presentation cannot turn a partial result into successful drawing. | results/media/evidence; review-free-operations.integration.test.ts, presentation and inspection cases |
+| Execution flow: Direct native tool delivery; Product contract; Tool schema support boundary; Canonical input rejection | Published flat contracts, exact schema keyword support, rejection before effects, corrected input in the original native session. Unicode counts code points; falsy values remain data. | instructions/admission; operation-input-schema.test.ts, unified-tool-contracts.integration.test.ts, native-provider-handoff.integration.test.ts |
+| Execution flow: Executable phase continuity; External result selection; Saved target navigation; Reference result and image delivery; Request and continuity | Known inputs bind before work; retention is independent of delivery; later App turns retain portable values but not request capabilities; saved paths preserve target/document identity. | composition/retention/media; phase-continuity.integration.test.ts, result-delivery-handoff.test.ts, conversation-results.test.ts, production native cross-turn cases |
+| Execution flow: Capability discovery and composition; Tool-first delegation; selected usage/exact-name/next-part/first-query sections | Purpose, fields, namespace, revision and composition eligibility determine candidates. Search is not contract acquisition. All published scopes use their declared route, no same-name fallback. Paging preserves complete schema. | discovery/admission; capability-search.test.ts, discovery-boundaries.test.ts, purpose-discovery.integration.test.ts, api-delivery-audit.integration.test.ts, contract-review-acquisition.test.ts |
+| Execution flow: Preparation and execution through Prepared design delivery; design-preparation: Semantic preparation; Canonical execution; Structured construction; Repeated geometry; repair/coordinate/paint sections | Deterministic editable geometry, material fields, templates/overrides, signed projection and parent-local conversion; immutable artifacts, bounds, expansion limits and source-referenced recovery. IDs/maps come from acknowledged creation; only delivery projects them. | canonical/composition; design-preparation, design-patterns, shared-motifs, face-boundary, projected-ellipse, design-linear-field, prepared-publication suites; design-construction and editable-design browser cases |
+| Execution flow: Main-workflow observations; Compact workflow delivery; Document export and persistence; design-preparation: Narrow receipts and Request-owned targets | Canonical effects and durable generation remain distinct from visible delivery. Complete owner receipts precede projection. Unknown/partial persistence cannot be labeled saved or replay drawing. | canonical/results; document-persistence-queue, creation-results, prepared-delivery, structural action and native receipt tests |
+| Execution flow: Evidence and completion through Evidence tool responsibilities; local provider: Rendered drawing review through Reference reproduction fidelity | Original reference bytes, crop/basis, curve/region analysis and editable output are separate owners. Deterministic checks do not replace primary visual judgment or add a global review quota. | media/canonical; local-image-tools, vector-component/contour/layer tests, image-delivery.integration.test.ts, drawing-framing/drawing-inspection browser tests |
+| Execution flow: Ownership and diagnostics; Execution recording; Bounded evaluation; Execution evaluation; Runtime: profiler/source identity/whole-request recording | Request/call/turn provenance, bounded diagnostics, real usage and explicit unavailable data; recorder stops only for its own rules. Original report session survives drawing deadline; reporting/follow-ups are uncapped and do not replay drawing. | lifecycle/evidence; evaluation-control, evaluation-report-sessions, evaluation-budget, native-output and native follow-up tests; Runtime profiler/records |
+| Execution flow: Tool invocation contract through Browser failure handoff; Owner results and workflow outcomes; Core/non-Core result contracts | Input/output/status/settlement tuple and exact requested-target membership, not a success label. Whole-result forwarding is allowed only after canonical validation. Legal partial prefixes retain acknowledged work; malformed receipts do not acquire authority. | admission/canonical/results; local-tool-invocation, whole-result-forwarding-review, core-owner-results, selected-prefix-recovery, actual native partial receipt tests |
+| Execution flow: Progressive preparation; Responsibility-scoped execution; selected information/reference/Knowledge sections through Reference applicability | Independent ready stages may apply, all started stages settle; reference identities and Knowledge contexts keep declared lifetimes. No implicit image omission from retention or status changes. | composition/knowledge/media; staged overlap browser case, criteria-reference-handoff, information-delivery, local-reference, native Knowledge/media tests |
+| Execution flow: Whole-request observation; Durable batch preparation; Retained query/fill; Surface grids; Shared normalized motifs; Retained consumer lifetime | Retained values feed actual consumers without full readback; selected fields, painter ordering, material inheritance and escaped paths preserve meaning. Leases cannot escape request/document scope accidentally. | retention/canonical; grid-material-field, shared-motifs, local-query-artifacts, local-tool-leases, ai-retained-anchor.spec.ts |
+| Execution flow: Shared tool contract; Durable library; Purpose/diagnostic lifetime; Image products; work deadline; saved management; recording gaps | Immutable dependencies and authorized access; execution success survives save failure, retries storage only. Borrowed resources and owned exports have separate cleanup. Diagnostic failure cannot redefine tool success. | composition/lifecycle/results; local-tool-library/store/management/leases, Runtime library and native durable-save recovery |
+| Execution flow: Retained predicate selection through Mechanical inspection transport; Tool-first correction and Mechanical closure | Caller-selected mechanical criteria support conditional iteration, strict pass/fail/inconclusive semantics and finite caller-defined stopping. Capture is not mandatory; failed mutation retains unresolved scope and blocks unsafe dependents. | canonical/composition/results; mechanical-closure, mechanical-inspection, local-mechanical-checks, continuity-boundary-review, Runtime recipe/invoker cases |
+| Execution flow: Recorded handoff correction; History admission; Knowledge adoption; Whole-flow advisory handoff | Exact history types, current identities and advisory references; Knowledge cannot grant authority. Transformed outputs must contain sufficient semantic fields for the next owner, not identical schemas. | request/knowledge/admission; actual native history, knowledge-contract-corpus, coordinate-handoff, created-targets and production-handoff cases |
+| Execution flow: Material relationships/correction; Retained identity destination; Preparation source reads; Layer-preserving repetition | Stable source geometry and explicit material targets; immutable source reads, exact alias destinations and known IDs; changing paint must not rebuild unrelated shape semantics. | canonical/retention; design-fill, local-vector-artifact, shared-motifs, fill-patch browser and retained anchor tests |
+| Execution flow: Interrupted owner results; inspection/workspace sections; E2E continuity; consultation and recoverable admission | Honest unknown/partial settlement, current capture membership, workspace regions and acknowledged prefix. Correctable input is reported to the original AI; the evaluator does not terminate on a tool error. | canonical/media/lifecycle; workspace-inspection, tool-input-continuation, evaluation-control, actual native correction tests |
+| Execution flow: Unified public contract/result sections; Created roots; Conversation result delivery; Staged continuation through Recorder-owned report lifetime | Pin current contract before effects; validate raw, transformed and final data; selected child visibility survives failure. Named saved values and multi-image output cross real turns. Report persistence failure preserves successful answer separately. | results/composition/retention/media/lifecycle; local-tool-host, model-result-projection, result-delivery-handoff, native/provider production and evaluation-report-session cases |
+| Execution flow: Selected output images through final Common-API conversion/schema-scope sections | No obsolete public response selector or mixed search/contract read; canonical input failure is recoverable; local reference resolution and supported output conversion preserve values, state and selected scope. | discovery/admission/results; unified-tool-contracts, final-input-delivery, discovery-identity-recovery, actual native single-selector and Unicode controls |
+| Local provider: Direct native delivery; Supported behavior; Request continuity; Owner/data contract; Backend execution; Direct orchestration; Native alternatives | Real outbound instructions/tools/options and original current context, actual native/HTTP adapters, configured permissions and redaction. HTTP final-batch recovery uses a subsequent request; it is not falsely called same-turn native recovery. | instructions/admission; ai-model-provider, native-provider-config, conversation-production-handoff and actual native schema faults |
+| Local provider: Observable request timing; Canonical inspection validity; Local records; Discovery/profiler; Advisory Knowledge and Native examples | Existing timing bounds account for measured work without causal claims about hidden reasoning. Canonical IDs precede model selection; example/schema/runtime ownership agree. Actual Knowledge bodies/provenance reach the model. | evidence/knowledge/discovery; native-output, model-delivery-cost, knowledge-contract-corpus, native-provider-handoff |
+| Runtime tool specification: Canonical foundation; variants; saved/model contracts; authoring; external protocols; Typed recipe admission | Registry is authoritative, selected contracts/revisions immutable, references resolved without losing constraints. Durable recipes reject unsupported ownership/lifetimes; request-only composition can bind actual earlier output with runtime admission. | admission/composition/results; all selected Runtime tool-contract/recipe/admission/registry suites and App actual-route tests |
+| Runtime tool specification: Durable host store; Host lifecycle/management; outbox/provenance; iteration/selected sequence/reference conversion | Authorized lifecycle, revision conflicts, storage failure and cleanup do not corrupt successful work. Full-result and falsy bindings stay typed; transform supports references without manufacturing data. | composition/retention/lifecycle; Runtime tool-library/persistence/invoker; App host, leases, storage recovery and whole-result cases |
+| Runtime package: Activation; Invocation flow; Public surface; Terminal results; Provider/secret; Validation; activity/failure/deadline sections | Runtime owns execution and settlement, App owns provider/context/canonical policies. Cancellation and observer errors are distinct. Explicit terminal outcomes and callback receipts cross actual adapters. | instructions/admission/results/lifecycle; selected Runtime runtime/provider/multi-batch/progress suites; App batch-exchange/production handoff |
+| Runtime package: Optional Knowledge; cross-query retention/redisplay; iteration/overlap; request dependencies; authored diagnostics | Authorized graph order, contexts, overrides, source revisions and advisory content; no implicit dependency-body loss. Corrected operation inputs retain owning operation and exact issue path. | knowledge/composition; Runtime Knowledge and recipe suites, App local-knowledge/information/continuity and native compaction cases |
+| Knowledge architecture: all four ownership/read/active-contract sections | Root files stay portable advisory Markdown; App owns parsing/cache; Runtime owns optional authorization/context; shared sources are not writable through tools. Real corpus and source provenance are exercised, not mocked text. | knowledge; scripts/__tests__/domain-knowledge.test.mjs, local-knowledge, knowledge-contract-corpus, actual native Knowledge and compaction cases |
+| Verification contract and Flow document: required proof, selection/identity, report admission/publication, manual judgment and fault sensitivity | Independent case collection plus exact execution identity, formal shared admission/publication, explicit source/build/definition binding and manual semantic gate. Corrupt reports and lost observations cannot claim done. | evidence; actual CLI controls, shared runner/adapter/inventory/source/policy/store tests, independent discovery and native corruption cases |
+
+Subordinate implementation details above are not accepted merely because their
+file is selected. The review checks the assertion owner: independent canonical
+state for mutations, exact bytes/order for media, explicit provenance/lifetime for
+Knowledge, original call/settlement for recovery, and actual final Flow state for
+verification. Schema agreement alone is confined to declaration preservation.
+
+Publication/release/template-consumer rollout clauses remain outside this local
+feature task: no release, dependency publication or consumer rollout is attempted
+or certified. Live-model judgment, chosen artistic detail and future autonomous
+behavior are also outside the scripted verification claim. The fixed existing
+large-document fixture is a maintained deterministic interaction test, not a new
+101 model drawing run. Model waiting time is not used to infer correctness.
+
+### Independent counterexamples and valid controls
+
+The final review retains tests authored outside the audit helper: real native
+Unicode correction, cross-turn saved-input corruption, original attachment
+association corruption, partial canonical receipt rejection, Knowledge source
+provenance and compaction, and simultaneous selected-image/status assertions.
+These tests were not rewritten to match the new structural comparator. Their
+expectations observe actual consumers and include unchanged legal controls.
+
+Verifier controls reach the real CLI and formal verdict while substituting only
+external test/build commands or the existing publication seam. Synthetic reports
+are explicitly proof-system stimuli, never product evidence. Even the consistent
+synthetic run leaves manual semantic acceptance pending. Faults include missing
+file/case/Knowledge obligation/manual criterion, duplicate identity, failed/skipped
+summary, runtime error, contradictory process exit, truncated output, changed
+Knowledge source, failed publication, missing observation and actual cancellation.
+Separate shared-owner tests exercise configuration/source identity, stale signatures,
+count validity and formal report completeness. Actual native faults exercise
+instructions, schemas, values/state and images at the model consumer. No product
+fault switch or replacement executor was added.
+
+A scope inventory cannot discover a requirement omitted by its author. The source
+review above is therefore required independently; the twelve mandatory areas and
+registered counts remain navigation/minimum omission checks. Arbitrary malicious
+replacement of both an assertion and its independent oracle cannot be mechanically
+ruled out. This limitation is explicit in the standard and is not represented as
+a passing mutation test.
+
+### Focused review evidence and corrections
+
+- Shared complete-report admission is now authoritative. The App no longer owns
+  duplicate normalization/completion checks or relabels browser evidence as Vitest.
+- Host failed delivery uses the pinned public contract; raw opaque child values
+  cannot leak when child projection fails. Legal completed/partial evidence and
+  outcome issues remain valid. The six existing lawful controls remain intact.
+- JSON Schema string limits count code points; input limits are unchanged.
+- The preparation/provider specs no longer require source-level compact receipts
+  or the retired full response mode/correction quota. Seven document regressions
+  pass after independently failing for both obsolete statements.
+- Focused evidence: tmp/uniform-host-boundaries.log (168),
+  tmp/uniform-production-provider.log (42), tmp/uniform-audit-final.json (1,454),
+  tmp/uniform-spec-final.log (7), tmp/uniform-entry-corrected.log (29).
+  These overlap whole-feature cases and must not be added to its unique totals.
+- The cancellation fixture first failed before setup because it inherited absent
+  native configuration. It now supplies a version-only external fixture and
+  proves real child cancellation/cleanup; it does not claim native execution.
+- The interrupted tmp/conversation-proof-bvb3B6 is retained as incomplete.
+  The current full run must bind the final source and declarations independently.
+
+### Final execution reconciliation - November 17, 2026
+
+Current evidence: `tmp/conversation-proof-mDkTyf`. The before/after source,
+compiled-output and definition snapshots are identical. All five groups pass
+independent file/case reconciliation with zero admission, execution or publication
+issues. All 157 required semantic selectors are satisfied. The original CLI exit
+is 2 because the old manual review is stale; preserve that original result.
+
+| Group | Selected files | Independently collected and executed cases | Failed/skipped |
+| --- | ---: | ---: | ---: |
+| Server | 103 | 3,784 | 0 |
+| App | 144 | 1,581 | 0 |
+| Runtime | 34 | 524 | 0 |
+| Node verification and contract owners | 62 | 716 | 0 |
+| Browser | 24 | 335 | 0 |
+| Total | 367 | 6,940 | 0 |
+
+The browser report additionally records zero flaky or unexpected cases and zero
+runner errors. All 50 tracked build/collection/test processes finish successfully.
+Scoped lint, both verification fixture type configurations, naming (15 cases) and
+the bounded diff whitespace check pass. Focused reruns are not additional unique
+cases. Native tests use the actual admitted client and scripted local Responses;
+no live-model quality or future autonomous decisions are certified.
+
+The source-to-proof review above, independent corruption/valid controls and this
+complete execution support acceptance of the current defined conversation feature
+contract. This conclusion is not derived from the count alone. No known applicable
+proof gap remains in this bounded review. The next source/definition change requires
+fresh evidence and semantic review; natural-language interpretation and arbitrary
+oracle corruption are not claimed to be automatically decidable. The standard's
+manual review requirement remains permanent.
+
+Formal manual publication is performed through the existing revision-checked Flow
+store, using the current criterion binding and this review. Its resulting evaluation
+is saved separately as `tmp/conversation-proof-mDkTyf/manual-review.json`; the
+original summary and prior failed/interrupted runs remain immutable.
+
+Formal publication completed successfully: all twelve owner nodes and the
+integration review evaluate as done. The combined current source/build/definition
+revision is `c2dcefca2fbb5259152278796c022fc24c40e50d1499e5f12d53dad718538764`.
+The original CLI summary remains unchanged. No compatibility path, relaxed
+validation, new mandatory product procedure, 101 run, live model, whole-repository
+local test, commit or push was introduced.

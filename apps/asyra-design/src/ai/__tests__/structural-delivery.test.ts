@@ -991,6 +991,7 @@ it('retains large canonical fill acknowledgements and delivers counts without co
 
 it.each([
   {
+    elementIds: ['child-0', 'missing'],
     receipt: {
       value: null,
       acceptedIds: ['child-0'],
@@ -1003,6 +1004,7 @@ it.each([
     unavailableCount: 1
   },
   {
+    elementIds: ['child-0'],
     receipt: {
       value: null,
       acceptedIds: ['child-0'],
@@ -1015,6 +1017,7 @@ it.each([
     unavailableCount: 0
   },
   {
+    elementIds: ['missing'],
     receipt: {
       value: null,
       acceptedIds: [],
@@ -1028,14 +1031,14 @@ it.each([
   }
 ])(
   'preserves $status canonical acknowledgements in bounded delivery',
-  async ({ receipt, ...expected }) => {
+  async ({ elementIds, receipt, ...expected }) => {
     const app = fixture(1, undefined, receipt)
 
     try {
       const action = app.action('api_fill_updateFillsAtIndex')
       const result = (await action.execute(
         {
-          elementIds: ['child-0', 'missing'],
+          elementIds,
           index: 0,
           patch: { opacity: 0.5 }
         },
@@ -1068,6 +1071,76 @@ it.each([
 
       expect(recovered.receipt).toMatchObject(receipt)
       expect(app.fill).toHaveBeenCalledTimes(1)
+    } finally {
+      app.controller.abort()
+      app.queries.dispose()
+    }
+  }
+)
+
+it.each([
+  {
+    omitted: 'unavailable',
+    receipt: {
+      value: null,
+      acceptedIds: ['child-0'],
+      unavailableIds: [],
+      changed: false
+    }
+  },
+  {
+    omitted: 'accepted',
+    receipt: {
+      value: null,
+      acceptedIds: [],
+      unavailableIds: ['missing'],
+      changed: false
+    }
+  }
+])(
+  'rejects an omitted $omitted target before receipt retention or model projection',
+  async ({ receipt }) => {
+    const app = fixture(1, undefined, receipt)
+    const retain = vi.spyOn(app.queries, 'retainReceipt')
+
+    try {
+      const action = app.action('api_fill_updateFillsAtIndex')
+      const result = requiredRecord(
+        await action.execute(
+          {
+            elementIds: ['child-0', 'missing'],
+            index: 0,
+            patch: { opacity: 0.5 }
+          },
+          app.context
+        )
+      )
+
+      expect(result).toMatchObject({
+        status: 'failed',
+        code: 'OWNER_RESULT_INVALID',
+        settlement: 'completed',
+        value: receipt,
+        modelResult: {
+          status: 'failed',
+          code: 'OWNER_RESULT_INVALID',
+          settlement: 'completed',
+          ownerResult: receipt
+        }
+      })
+      expect(result).not.toHaveProperty('retained')
+      expect(result.modelResult).not.toHaveProperty('acceptedCount')
+      expect(retain).not.toHaveBeenCalled()
+      expect(app.fill).toHaveBeenCalledTimes(1)
+      expect(
+        operationInputIssue(result, action.partialOutputSchema ?? false)
+      ).toBeUndefined()
+      expect(
+        operationInputIssue(
+          result.modelResult,
+          action.delivery?.outputSchema ?? false
+        )
+      ).toBeUndefined()
     } finally {
       app.controller.abort()
       app.queries.dispose()

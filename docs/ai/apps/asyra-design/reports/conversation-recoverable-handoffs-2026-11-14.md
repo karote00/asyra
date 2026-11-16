@@ -7,7 +7,7 @@ verification are finished. The separate parent review of every current spec clau
 remains unaccepted. This report does not equate automated success with universal
 correctness or autonomous model performance.
 
-Plan: [Recoverable execution and meaningful tool handoffs](../plans/agent-context-and-report-continuity-plan.md#recoverable-execution-and-meaningful-tool-handoffs).
+Plan: [Recoverable execution and meaningful tool handoffs](../plans/completed/agent-context-and-report-continuity-record-2026-11-16.md#recoverable-execution-and-meaningful-tool-handoffs).
 
 ## Resulting behavior
 

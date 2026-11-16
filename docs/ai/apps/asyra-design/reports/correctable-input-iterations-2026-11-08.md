@@ -1,6 +1,6 @@
 # Correctable input - bounded live iterations
 
-Task: [Correctable sequence input and bounded live iteration](../plans/agent-context-and-report-continuity-plan.md#correctable-sequence-input-and-bounded-live-iteration).
+Task: [Correctable sequence input and bounded live iteration](../plans/completed/agent-context-and-report-continuity-record-2026-11-16.md#correctable-sequence-input-and-bounded-live-iteration).
 This task permits at most fifteen new drawing starts. The historical run ending
 in projection.kind rejection is not counted. Fixed prompt and fifteen-minute
 ceiling remain unchanged; original-thread reports are untimed. No file edits

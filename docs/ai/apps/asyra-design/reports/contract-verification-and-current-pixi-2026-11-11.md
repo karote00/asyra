@@ -9,7 +9,7 @@ expectations were removed and the affected type and browser checks passed. Forma
 This is scoped closure, not a claim that every Asyra Design or workspace test was
 rerun. No live-model drawing, dependency installation, commit or push occurred.
 
-Plan: [Current contract verification and SDK proofs](../plans/agent-context-and-report-continuity-plan.md#current-contract-verification-and-sdk-proofs).
+Plan: [Current contract verification and SDK proofs](../plans/completed/agent-context-and-report-continuity-record-2026-11-16.md#current-contract-verification-and-sdk-proofs).
 The [preceding upgrade report](pixi-resource-lifetime-upgrade-2026-11-10.md)
 records the original failures; its old-version comparison was attribution evidence,
 not an exemption from fixing them.
@@ -175,7 +175,7 @@ excluded by this task's focused-test instruction.
 ## Follow-up - complete result validation and handoff
 
 The November 11 review's three failing counterexamples now pass on the same source.
-The selected task is [Complete result validation and handoff](../plans/agent-context-and-report-continuity-plan.md#complete-result-validation-and-handoff).
+The selected task is [Complete result validation and handoff](../plans/completed/agent-context-and-report-continuity-record-2026-11-16.md#complete-result-validation-and-handoff).
 
 | Finding | Canonical correction | Preserved negative evidence |
 | --- | --- | --- |
@@ -226,7 +226,7 @@ local test, live 101/GPU run, commit or push was performed for this follow-up.
 
 ## Follow-up - failure receipt consistency and empty operation contracts
 
-Plan: [Failure receipt consistency and empty operation contracts](../plans/agent-context-and-report-continuity-plan.md#failure-receipt-consistency-and-empty-operation-contracts).
+Plan: [Failure receipt consistency and empty operation contracts](../plans/completed/agent-context-and-report-continuity-record-2026-11-16.md#failure-receipt-consistency-and-empty-operation-contracts).
 This bounded task preserves the earlier rendering changes and immutable live evidence.
 
 ### Five original failures

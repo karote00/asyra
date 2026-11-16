@@ -1734,3 +1734,72 @@ it('exposes only the admitted settled report with request and turn identity for 
     vi.unstubAllGlobals()
   }
 })
+
+it('keeps full common-prefix conversation titles in history tooltips across navigation', async () => {
+  const { AiConversationNavigation } =
+    await import('../ai-conversation-navigation')
+  let index = 0
+  const conversation = createAiConversationController({
+    createConversationId: () => `title-${++index}`,
+
+    feature: {
+      cancel: () => false,
+
+      execute: async () => ({
+        status: 'executed',
+        actionResults: [],
+        context: {}
+      })
+    },
+
+    getElementType: () => undefined
+  })
+  const prefix =
+    'A detailed architectural request with multiple selected components. '.repeat(
+      3
+    )
+  const firstTitle = prefix + 'First facade'
+  const secondTitle = prefix + 'Second facade'
+
+  await conversation.submit(firstTitle)
+  const firstId = conversation.getSnapshot().conversationId
+
+  conversation.newConversation()
+  await conversation.submit(secondTitle)
+  const secondId = conversation.getSnapshot().conversationId
+
+  render(
+    <AiConversationNavigation
+      conversation={conversation}
+      onNavigate={(id) => {
+        if (id) {
+          conversation.selectConversation(id)
+        } else {
+          conversation.newConversation()
+        }
+      }}
+    />
+  )
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Toggle conversation history' })
+  )
+  expect(screen.getByTitle(firstTitle).textContent).toBe(firstTitle)
+  expect(screen.getByTitle(secondTitle).textContent).toBe(secondTitle)
+  fireEvent.click(screen.getByTitle(firstTitle))
+  expect(conversation.getNavigationSnapshot()).toMatchObject({
+    conversationId: firstId,
+    title: firstTitle
+  })
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Toggle conversation history' })
+  )
+  expect(screen.getByTitle(secondTitle).getAttribute('class')).toContain(
+    'truncate'
+  )
+  fireEvent.click(screen.getByTitle(secondTitle))
+  expect(conversation.getNavigationSnapshot()).toMatchObject({
+    conversationId: secondId,
+    title: secondTitle
+  })
+  await conversation.dispose()
+})

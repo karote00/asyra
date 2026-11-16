@@ -1,6 +1,6 @@
 # Pixi render boundaries - external research and revised direction
 
-November 10, 2026. Associated task: [Local hierarchy work and projection](../plans/agent-context-and-report-continuity-plan.md#local-hierarchy-work-and-projection).
+November 10, 2026. Associated task: [Local hierarchy work and projection](../plans/completed/agent-context-and-report-continuity-record-2026-11-16.md#local-hierarchy-work-and-projection).
 
 ## Decision
 

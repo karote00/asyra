@@ -217,6 +217,7 @@ const setElementLockApi = defineBasicApi({
   owner: 'element',
   method: 'setElementLock',
   resultKind: 'mutation-receipt',
+  resultTargets: { parameter: 'elementId', kind: 'id' },
   effect: 'write',
   parameters: [
     { name: 'elementId', schema: apiElementId },
@@ -243,6 +244,7 @@ const toggleElementLockApi = defineBasicApi({
   owner: 'element',
   method: 'toggleElementLock',
   resultKind: 'mutation-receipt',
+  resultTargets: { parameter: 'elementId', kind: 'id' },
   effect: 'write',
   parameters: [{ name: 'elementId', schema: apiElementId }]
 })
@@ -253,6 +255,7 @@ const toggleElementVisibleApi = defineBasicApi({
   owner: 'element',
   method: 'toggleElementVisible',
   resultKind: 'mutation-receipt',
+  resultTargets: { parameter: 'elementId', kind: 'id' },
   effect: 'write',
   parameters: [{ name: 'elementId', schema: apiElementId }]
 })
@@ -263,6 +266,7 @@ const resetElementSizeApi = defineBasicApi({
   owner: 'element',
   method: 'resetElementSize',
   resultKind: 'mutation-receipt',
+  resultTargets: { parameter: 'elementId', kind: 'id' },
   effect: 'write',
   parameters: [{ name: 'elementId', schema: apiElementId }]
 })
@@ -273,6 +277,7 @@ const changeElementGeometryApi = defineBasicApi({
   owner: 'element',
   method: 'changeElementGeometry',
   resultKind: 'mutation-receipt',
+  resultTargets: { parameter: 'elementId', kind: 'id' },
   effect: 'write',
   parameters: [
     { name: 'elementId', schema: apiElementId },
@@ -295,6 +300,7 @@ const setElementPositionsApi = defineBasicApi({
   owner: 'element',
   method: 'setElementPositions',
   resultKind: 'mutation-receipt',
+  resultTargets: { parameter: 'positionsById', kind: 'keys' },
   effect: 'write',
   parameters: [
     {
@@ -785,6 +791,7 @@ const addFillsApi = defineBasicApi({
   owner: 'fill',
   method: 'addFills',
   resultKind: 'mutation-receipt',
+  resultTargets: { parameter: 'elementIds', kind: 'ids' },
   effect: 'write',
   parameters: [{ name: 'elementIds', schema: apiElementIds }],
   description:
@@ -795,6 +802,11 @@ const removeFillsApi = defineBasicApi({
   owner: 'fill',
   method: 'removeFills',
   resultKind: 'mutation-receipt',
+  resultTargets: {
+    parameter: 'targets',
+    kind: 'records',
+    identityPath: ['elementId']
+  },
   effect: 'delete',
   parameters: [{ name: 'targets', schema: apiArray(fillTargetSchema) }],
   description: 'Remove the specified Fill records in one canonical batch.'
@@ -806,6 +818,7 @@ const updateFillsAtIndexApi = defineBasicApi({
   owner: 'fill',
   method: 'updateFillsAtIndex',
   resultKind: 'mutation-receipt',
+  resultTargets: { parameter: 'elementIds', kind: 'ids' },
   effect: 'write',
   parameters: [
     { name: 'elementIds', schema: fillRowTargetsSchema },
@@ -822,6 +835,11 @@ const shareFillAtIndexApi = defineBasicApi({
   owner: 'fill',
   method: 'shareFillAtIndex',
   resultKind: 'mutation-receipt',
+  resultTargets: {
+    parameter: 'elementIds',
+    kind: 'ids',
+    excludeParameter: 'sourceElementId'
+  },
   effect: 'write',
   parameters: [
     { name: 'sourceElementId', schema: apiId },
@@ -835,6 +853,7 @@ const detachFillsAtIndexApi = defineBasicApi({
   owner: 'fill',
   method: 'detachFillsAtIndex',
   resultKind: 'mutation-receipt',
+  resultTargets: { parameter: 'elementIds', kind: 'ids' },
   effect: 'write',
   parameters: [
     { name: 'elementIds', schema: fillRowTargetsSchema },
@@ -848,6 +867,11 @@ const updateFillFieldsBatchApi = defineBasicApi({
   owner: 'fill',
   method: 'updateFillFieldsBatch',
   resultKind: 'mutation-receipt',
+  resultTargets: {
+    parameter: 'updates',
+    kind: 'records',
+    identityPath: ['elementId']
+  },
   effect: 'write',
   parameters: [
     {
@@ -976,6 +1000,7 @@ const updateGradientHandleAtClientPositionApi = defineBasicApi({
   owner: 'fill',
   method: 'updateGradientHandleAtClientPosition',
   resultKind: 'mutation-receipt',
+  resultTargets: { parameter: 'elementId', kind: 'id' },
   effect: 'write',
   parameters: [
     { name: 'elementId', schema: apiElementId },
@@ -991,6 +1016,7 @@ const addStrokeApi = defineBasicApi({
   owner: 'stroke',
   method: 'addStroke',
   resultKind: 'mutation-receipt',
+  resultTargets: { parameter: 'elementId', kind: 'id' },
   effect: 'write',
   parameters: [{ name: 'elementId', schema: apiElementId }]
 })
@@ -1001,6 +1027,7 @@ const removeStrokeApi = defineBasicApi({
   owner: 'stroke',
   method: 'removeStroke',
   resultKind: 'mutation-receipt',
+  resultTargets: { parameter: 'elementId', kind: 'id' },
   effect: 'delete',
   parameters: [
     { name: 'elementId', schema: apiElementId },
@@ -1049,6 +1076,11 @@ const updateStrokeFieldsBatchApi = defineBasicApi({
   owner: 'stroke',
   method: 'updateStrokeFieldsBatch',
   resultKind: 'mutation-receipt',
+  resultTargets: {
+    parameter: 'updates',
+    kind: 'records',
+    identityPath: ['elementId']
+  },
   effect: 'write',
   parameters: [
     {

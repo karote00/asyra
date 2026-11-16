@@ -2,7 +2,7 @@
 
 ## Outcome
 
-The bounded four-step task in the [active plan](../plans/agent-context-and-report-continuity-plan.md#tool-outcomes-evaluation-stopping-and-composable-discovery)
+The bounded four-step task in the [active plan](../plans/completed/agent-context-and-report-continuity-record-2026-11-16.md#tool-outcomes-evaluation-stopping-and-composable-discovery)
 is implemented and verified. Input rejection now returns its actual reason and
 settlement to the same AI without an extra correction-permission flag. Evaluation
 consumes the validated native result after Host settlement. Purpose search and

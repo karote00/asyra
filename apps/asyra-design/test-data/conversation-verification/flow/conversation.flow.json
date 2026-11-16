@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "projectId": "conversation-verification",
   "flowId": "conversation",
-  "revision": 511,
+  "revision": 601,
   "definition": {
     "title": "Spec-derived AI conversation verification",
     "purpose": "Reconcile independently reviewed handoffs against actual execution; passing selected cases never establish complete feature coverage.",
@@ -60,6 +60,33 @@
               "producer": "playwright",
               "identity": "{\"file\":\"apps/asyra-design/e2e/conversation-provider-handoff.spec.ts\",\"title\":\"detects corrupted attachment association at the actual native consumer\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/playwright.conversation.config.ts\",\"project\":\"chromium\"}"
             }
+          },
+          {
+            "id": "initial-parent-coordinates",
+            "title": "delivers actual nested selection coordinates and parent identity in the initial native context",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/server/__tests__/conversation-production-handoff.integration.test.ts\",\"title\":\"delivers actual nested selection coordinates and parent identity in the initial native context\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "full-title-tooltip",
+            "title": "keeps full common-prefix conversation titles in history tooltips across navigation",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/src/app/__tests__/ai-conversation-panel.test.tsx\",\"title\":\"keeps full common-prefix conversation titles in history tooltips across navigation\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "history-original-type",
+            "title": "admits exact history outcomes before the actual native provider and rejects array impostors",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/server/__tests__/native-provider-handoff.integration.test.ts\",\"title\":\"admits exact history outcomes before the actual native provider and rejects array impostors\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
           }
         ],
         "specRefs": [
@@ -68,7 +95,9 @@
         "implementationRefs": [
           "apps/asyra-design/src/ai/__tests__/conversation.test.ts",
           "apps/asyra-design/e2e/conversation-provider-handoff.spec.ts",
-          "apps/asyra-design/e2e/fixtures/conversation-app.ts"
+          "apps/asyra-design/e2e/fixtures/conversation-app.ts",
+          "apps/asyra-design/server/__tests__/conversation-production-handoff.integration.test.ts",
+          "apps/asyra-design/src/app/__tests__/ai-conversation-panel.test.tsx"
         ],
         "actions": []
       },
@@ -179,6 +208,24 @@
               "producer": "vitest",
               "identity": "{\"file\":\"apps/asyra-design/server/__tests__/conversation-production-handoff.integration.test.ts\",\"title\":\"delivers one public result selector to the actual native successor\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
             }
+          },
+          {
+            "id": "knowledge-publication-contract",
+            "title": "Knowledge distinguishes final publication confirmation from a document write",
+            "kind": "automated",
+            "selector": {
+              "producer": "node",
+              "identity": "{\"file\":\"apps/asyra-design/__tests__/conversation-contract-docs.test.mjs\",\"title\":\"Knowledge distinguishes final publication confirmation from a document write\",\"cwd\":\".\",\"config\":\"apps/asyra-design/scripts/verify-conversation.mjs\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "recorder-duration-contract",
+            "title": "documented recorder overrides match the formal duration owner",
+            "kind": "automated",
+            "selector": {
+              "producer": "node",
+              "identity": "{\"file\":\"apps/asyra-design/__tests__/conversation-contract-docs.test.mjs\",\"title\":\"documented recorder overrides match the formal duration owner\",\"cwd\":\".\",\"config\":\"apps/asyra-design/scripts/verify-conversation.mjs\",\"project\":\"\"}"
+            }
           }
         ],
         "specRefs": [
@@ -187,7 +234,8 @@
         "implementationRefs": [
           "apps/asyra-design/src/ai/__tests__/runtime-input.test.ts",
           "apps/asyra-design/server/__tests__/native-provider-handoff.integration.test.ts",
-          "apps/asyra-design/src/ai/__tests__/action-batch-production-bundle.test.mjs"
+          "apps/asyra-design/src/ai/__tests__/action-batch-production-bundle.test.mjs",
+          "apps/asyra-design/__tests__/conversation-contract-docs.test.mjs"
         ],
         "actions": []
       },
@@ -226,14 +274,88 @@
               "producer": "vitest",
               "identity": "{\"file\":\"apps/asyra-design/server/__tests__/api-delivery-audit.integration.test.ts\",\"title\":\"exposes only current result delivery controls across the registered tool inventory\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
             }
+          },
+          {
+            "id": "single-wrapper-contract",
+            "title": "current discovery specification has one explicit wrapper acquisition rule",
+            "kind": "automated",
+            "selector": {
+              "producer": "node",
+              "identity": "{\"file\":\"apps/asyra-design/__tests__/conversation-contract-docs.test.mjs\",\"title\":\"current discovery specification has one explicit wrapper acquisition rule\",\"cwd\":\".\",\"config\":\"apps/asyra-design/scripts/verify-conversation.mjs\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "complete-owner-union",
+            "title": "compares complete owner unions independent of nesting and rejects destructive contract edits",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/server/__tests__/api-delivery-audit.integration.test.ts\",\"title\":\"compares complete owner unions independent of nesting and rejects destructive contract edits\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "independent-discovery-none",
+            "title": "detects none at the actual discovery-to-owner handoff with independent semantics",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/server/__tests__/api-delivery-audit.integration.test.ts\",\"title\":\"detects none at the actual discovery-to-owner handoff with independent semantics\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "independent-discovery-weaken-input",
+            "title": "detects weaken-input at the actual discovery-to-owner handoff with independent semantics",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/server/__tests__/api-delivery-audit.integration.test.ts\",\"title\":\"detects weaken-input at the actual discovery-to-owner handoff with independent semantics\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "independent-discovery-open-result",
+            "title": "detects open-result at the actual discovery-to-owner handoff with independent semantics",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/server/__tests__/api-delivery-audit.integration.test.ts\",\"title\":\"detects open-result at the actual discovery-to-owner handoff with independent semantics\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "independent-scope-inventory",
+            "title": "requires independent operation-scope coverage for every opted-in registered owner",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/server/__tests__/api-delivery-audit.integration.test.ts\",\"title\":\"requires independent operation-scope coverage for every opted-in registered owner\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "independent-scope-none",
+            "title": "detects none in delivered operation scopes without deriving expectations from the selector",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/server/__tests__/api-delivery-audit.integration.test.ts\",\"title\":\"detects none in delivered operation scopes without deriving expectations from the selector\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "independent-scope-omit-parts",
+            "title": "detects omit-parts in delivered operation scopes without deriving expectations from the selector",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/server/__tests__/api-delivery-audit.integration.test.ts\",\"title\":\"detects omit-parts in delivered operation scopes without deriving expectations from the selector\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
           }
         ],
         "specRefs": [
-          "docs/ai/apps/asyra-design/specs/ai-execution-flow.md"
+          "docs/ai/apps/asyra-design/specs/ai-execution-flow.md",
+          "docs/ai/apps/asyra-design/specs/ai-conversation-verification.md#required-proof-for-every-verification-method"
         ],
         "implementationRefs": [
           "apps/asyra-design/server/__tests__/native-provider-handoff.integration.test.ts",
-          "apps/asyra-design/server/__tests__/unified-tool-contracts.integration.test.ts"
+          "apps/asyra-design/server/__tests__/unified-tool-contracts.integration.test.ts",
+          "apps/asyra-design/__tests__/conversation-contract-docs.test.mjs"
         ],
         "actions": []
       },
@@ -326,10 +448,39 @@
               "producer": "vitest",
               "identity": "{\"file\":\"apps/asyra-design/server/__tests__/conversation-production-handoff.integration.test.ts\",\"title\":\"retains portable Knowledge through the real App exchange and consumes it in the next native turn without rereading - alter-saved-advice\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
             }
+          },
+          {
+            "id": "corpus-execution-undefined",
+            "title": "delivers current discovery selectors and detects damaged executable Knowledge examples - undefined",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/server/__tests__/knowledge-contract-corpus.test.ts\",\"title\":\"delivers current discovery selectors and detects damaged executable Knowledge examples - undefined\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "corpus-execution-unknown-operation",
+            "title": "delivers current discovery selectors and detects damaged executable Knowledge examples - unknown-operation",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/server/__tests__/knowledge-contract-corpus.test.ts\",\"title\":\"delivers current discovery selectors and detects damaged executable Knowledge examples - unknown-operation\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "corpus-execution-invalid-arguments",
+            "title": "delivers current discovery selectors and detects damaged executable Knowledge examples - invalid-arguments",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/server/__tests__/knowledge-contract-corpus.test.ts\",\"title\":\"delivers current discovery selectors and detects damaged executable Knowledge examples - invalid-arguments\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
           }
         ],
         "specRefs": [
-          "docs/ai/apps/asyra-design/specs/local-ai-provider.md"
+          "docs/ai/apps/asyra-design/specs/local-ai-provider.md",
+          "docs/ai/knowledge/ARCHITECTURE.md",
+          "docs/ai/framework/packages/ai-agent-runtime.md#optional-knowledge-access"
         ],
         "implementationRefs": [
           "apps/asyra-design/server/__tests__/native-provider-handoff.integration.test.ts",
@@ -398,6 +549,15 @@
             "selector": {
               "producer": "vitest",
               "identity": "{\"file\":\"apps/asyra-design/server/__tests__/native-provider-handoff.integration.test.ts\",\"title\":\"ordinary native requests without a browser executor keep Knowledge available and cannot dispatch drawing - attempted call true\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "unicode-native-continuation",
+            "title": "delivers schema character limits and continues corrected fact input through the same native session",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/server/__tests__/native-provider-handoff.integration.test.ts\",\"title\":\"delivers schema character limits and continues corrected fact input through the same native session\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
             }
           }
         ],
@@ -544,14 +704,415 @@
               "producer": "playwright",
               "identity": "{\"file\":\"apps/asyra-design/e2e/conversation-provider-handoff.spec.ts\",\"title\":\"groups and edits created region targets and delivers two captures in one actual native handoff\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/playwright.conversation.config.ts\",\"project\":\"chromium\"}"
             }
+          },
+          {
+            "id": "native-receipt-rejection",
+            "title": "delivers invalid and partial canonical receipts without certifying foreign targets or replaying writes",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/server/__tests__/native-provider-handoff.integration.test.ts\",\"title\":\"delivers invalid and partial canonical receipts without certifying foreign targets or replaying writes\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "receipt-identity-owner-coverage",
+            "title": "covers every registered receipt identity owner including generated vector identities",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/src/ai/__tests__/mutation-receipt-targets.test.ts\",\"title\":\"covers every registered receipt identity owner including generated vector identities\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "receipt-target-element-setElementLock",
+            "title": "validates element.setElementLock targets before retention or projection",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/src/ai/__tests__/mutation-receipt-targets.test.ts\",\"title\":\"validates element.setElementLock targets before retention or projection\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "receipt-target-element-toggleElementLock",
+            "title": "validates element.toggleElementLock targets before retention or projection",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/src/ai/__tests__/mutation-receipt-targets.test.ts\",\"title\":\"validates element.toggleElementLock targets before retention or projection\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "receipt-target-element-toggleElementVisible",
+            "title": "validates element.toggleElementVisible targets before retention or projection",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/src/ai/__tests__/mutation-receipt-targets.test.ts\",\"title\":\"validates element.toggleElementVisible targets before retention or projection\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "receipt-target-element-resetElementSize",
+            "title": "validates element.resetElementSize targets before retention or projection",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/src/ai/__tests__/mutation-receipt-targets.test.ts\",\"title\":\"validates element.resetElementSize targets before retention or projection\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "receipt-target-element-changeElementGeometry",
+            "title": "validates element.changeElementGeometry targets before retention or projection",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/src/ai/__tests__/mutation-receipt-targets.test.ts\",\"title\":\"validates element.changeElementGeometry targets before retention or projection\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "receipt-target-fill-updateGradientHandleAtClientPosition",
+            "title": "validates fill.updateGradientHandleAtClientPosition targets before retention or projection",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/src/ai/__tests__/mutation-receipt-targets.test.ts\",\"title\":\"validates fill.updateGradientHandleAtClientPosition targets before retention or projection\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "receipt-target-stroke-addStroke",
+            "title": "validates stroke.addStroke targets before retention or projection",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/src/ai/__tests__/mutation-receipt-targets.test.ts\",\"title\":\"validates stroke.addStroke targets before retention or projection\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "receipt-target-stroke-removeStroke",
+            "title": "validates stroke.removeStroke targets before retention or projection",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/src/ai/__tests__/mutation-receipt-targets.test.ts\",\"title\":\"validates stroke.removeStroke targets before retention or projection\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "receipt-target-element-updateVectorAnchorPointPosition",
+            "title": "validates element.updateVectorAnchorPointPosition targets before retention or projection",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/src/ai/__tests__/mutation-receipt-targets.test.ts\",\"title\":\"validates element.updateVectorAnchorPointPosition targets before retention or projection\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "receipt-target-element-updateVectorAnchorPointType",
+            "title": "validates element.updateVectorAnchorPointType targets before retention or projection",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/src/ai/__tests__/mutation-receipt-targets.test.ts\",\"title\":\"validates element.updateVectorAnchorPointType targets before retention or projection\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "receipt-target-element-setVectorAnchorPointHandleMode",
+            "title": "validates element.setVectorAnchorPointHandleMode targets before retention or projection",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/src/ai/__tests__/mutation-receipt-targets.test.ts\",\"title\":\"validates element.setVectorAnchorPointHandleMode targets before retention or projection\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "receipt-target-element-updateVectorAnchorPointHandlePosition",
+            "title": "validates element.updateVectorAnchorPointHandlePosition targets before retention or projection",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/src/ai/__tests__/mutation-receipt-targets.test.ts\",\"title\":\"validates element.updateVectorAnchorPointHandlePosition targets before retention or projection\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "receipt-target-element-updateVectorAnchorPointHandles",
+            "title": "validates element.updateVectorAnchorPointHandles targets before retention or projection",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/src/ai/__tests__/mutation-receipt-targets.test.ts\",\"title\":\"validates element.updateVectorAnchorPointHandles targets before retention or projection\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "receipt-target-element-appendVectorAnchorPoint",
+            "title": "validates element.appendVectorAnchorPoint targets before retention or projection",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/src/ai/__tests__/mutation-receipt-targets.test.ts\",\"title\":\"validates element.appendVectorAnchorPoint targets before retention or projection\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "receipt-target-element-connectVectorAnchorEndpoints",
+            "title": "validates element.connectVectorAnchorEndpoints targets before retention or projection",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/src/ai/__tests__/mutation-receipt-targets.test.ts\",\"title\":\"validates element.connectVectorAnchorEndpoints targets before retention or projection\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "receipt-target-element-connectVectorAnchorPoints",
+            "title": "validates element.connectVectorAnchorPoints targets before retention or projection",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/src/ai/__tests__/mutation-receipt-targets.test.ts\",\"title\":\"validates element.connectVectorAnchorPoints targets before retention or projection\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "receipt-target-element-removeLastSinglePointSubpath",
+            "title": "validates element.removeLastSinglePointSubpath targets before retention or projection",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/src/ai/__tests__/mutation-receipt-targets.test.ts\",\"title\":\"validates element.removeLastSinglePointSubpath targets before retention or projection\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "receipt-target-element-removeVectorAnchorPoint",
+            "title": "validates element.removeVectorAnchorPoint targets before retention or projection",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/src/ai/__tests__/mutation-receipt-targets.test.ts\",\"title\":\"validates element.removeVectorAnchorPoint targets before retention or projection\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "receipt-target-element-splitVectorSegmentAtWorkspacePos",
+            "title": "validates element.splitVectorSegmentAtWorkspacePos targets before retention or projection",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/src/ai/__tests__/mutation-receipt-targets.test.ts\",\"title\":\"validates element.splitVectorSegmentAtWorkspacePos targets before retention or projection\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "receipt-target-element-setVectorClosed",
+            "title": "validates element.setVectorClosed targets before retention or projection",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/src/ai/__tests__/mutation-receipt-targets.test.ts\",\"title\":\"validates element.setVectorClosed targets before retention or projection\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "receipt-target-element-scaleVectorElementAroundCenter",
+            "title": "validates element.scaleVectorElementAroundCenter targets before retention or projection",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/src/ai/__tests__/mutation-receipt-targets.test.ts\",\"title\":\"validates element.scaleVectorElementAroundCenter targets before retention or projection\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "receipt-target-fill-addFills",
+            "title": "validates fill.addFills targets before retention or projection",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/src/ai/__tests__/mutation-receipt-targets.test.ts\",\"title\":\"validates fill.addFills targets before retention or projection\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "receipt-target-fill-updateFillsAtIndex",
+            "title": "validates fill.updateFillsAtIndex targets before retention or projection",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/src/ai/__tests__/mutation-receipt-targets.test.ts\",\"title\":\"validates fill.updateFillsAtIndex targets before retention or projection\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "receipt-target-fill-detachFillsAtIndex",
+            "title": "validates fill.detachFillsAtIndex targets before retention or projection",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/src/ai/__tests__/mutation-receipt-targets.test.ts\",\"title\":\"validates fill.detachFillsAtIndex targets before retention or projection\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "receipt-target-fill-shareFillAtIndex",
+            "title": "validates fill.shareFillAtIndex targets before retention or projection",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/src/ai/__tests__/mutation-receipt-targets.test.ts\",\"title\":\"validates fill.shareFillAtIndex targets before retention or projection\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "receipt-target-element-setElementPositions",
+            "title": "validates element.setElementPositions targets before retention or projection",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/src/ai/__tests__/mutation-receipt-targets.test.ts\",\"title\":\"validates element.setElementPositions targets before retention or projection\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "receipt-target-fill-removeFills",
+            "title": "validates fill.removeFills targets before retention or projection",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/src/ai/__tests__/mutation-receipt-targets.test.ts\",\"title\":\"validates fill.removeFills targets before retention or projection\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "receipt-target-fill-updateFillFieldsBatch",
+            "title": "validates fill.updateFillFieldsBatch targets before retention or projection",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/src/ai/__tests__/mutation-receipt-targets.test.ts\",\"title\":\"validates fill.updateFillFieldsBatch targets before retention or projection\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "receipt-target-stroke-updateStrokeFieldsBatch",
+            "title": "validates stroke.updateStrokeFieldsBatch targets before retention or projection",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/src/ai/__tests__/mutation-receipt-targets.test.ts\",\"title\":\"validates stroke.updateStrokeFieldsBatch targets before retention or projection\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "receipt-target-element-setVectorElementPositions",
+            "title": "validates element.setVectorElementPositions targets before retention or projection",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/src/ai/__tests__/mutation-receipt-targets.test.ts\",\"title\":\"validates element.setVectorElementPositions targets before retention or projection\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "receipt-created-identity",
+            "title": "validates generated vector identities without confusing the authored point with its new element",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/src/ai/__tests__/mutation-receipt-targets.test.ts\",\"title\":\"validates generated vector identities without confusing the authored point with its new element\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "receipt-target-declaration",
+            "title": "rejects receipt declarations without an owned target input",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/src/ai/__tests__/mutation-receipt-targets.test.ts\",\"title\":\"rejects receipt declarations without an owned target input\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "receipt-empty-fill-addFills",
+            "title": "preserves empty accepted membership for 'fill.addFills'",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/src/ai/__tests__/mutation-receipt-targets.test.ts\",\"title\":\"preserves empty accepted membership for 'fill.addFills'\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "receipt-empty-fill-shareFillAtIndex",
+            "title": "preserves empty accepted membership for 'fill.shareFillAtIndex'",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/src/ai/__tests__/mutation-receipt-targets.test.ts\",\"title\":\"preserves empty accepted membership for 'fill.shareFillAtIndex'\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "receipt-empty-element-setElementPositions",
+            "title": "preserves empty accepted membership for 'element.setElementPositions'",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/src/ai/__tests__/mutation-receipt-targets.test.ts\",\"title\":\"preserves empty accepted membership for 'element.setElementPositions'\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "receipt-empty-fill-updateFillFieldsBatch",
+            "title": "preserves empty accepted membership for 'fill.updateFillFieldsBatch'",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/src/ai/__tests__/mutation-receipt-targets.test.ts\",\"title\":\"preserves empty accepted membership for 'fill.updateFillFieldsBatch'\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "receipt-original-request",
+            "title": "execution proof preserves non-Core mutation outcomes without opaque application",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/server/__tests__/execution-flow-proof.test.ts\",\"title\":\"execution proof preserves non-Core mutation outcomes without opaque application\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "receipt-partial",
+            "title": "preserves 'partial' canonical acknowledgements in bounded delivery",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/src/ai/__tests__/structural-delivery.test.ts\",\"title\":\"preserves 'partial' canonical acknowledgements in bounded delivery\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "receipt-no-change",
+            "title": "preserves 'no-change' canonical acknowledgements in bounded delivery",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/src/ai/__tests__/structural-delivery.test.ts\",\"title\":\"preserves 'no-change' canonical acknowledgements in bounded delivery\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "receipt-failed",
+            "title": "preserves 'failed' canonical acknowledgements in bounded delivery",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/src/ai/__tests__/structural-delivery.test.ts\",\"title\":\"preserves 'failed' canonical acknowledgements in bounded delivery\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "receipt-omitted-unavailable",
+            "title": "rejects an omitted 'unavailable' target before receipt retention or model projection",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/src/ai/__tests__/structural-delivery.test.ts\",\"title\":\"rejects an omitted 'unavailable' target before receipt retention or model projection\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "receipt-omitted-accepted",
+            "title": "rejects an omitted 'accepted' target before receipt retention or model projection",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/src/ai/__tests__/structural-delivery.test.ts\",\"title\":\"rejects an omitted 'accepted' target before receipt retention or model projection\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
           }
         ],
         "specRefs": [
-          "docs/ai/apps/asyra-design/specs/design-preparation.md"
+          "docs/ai/apps/asyra-design/specs/design-preparation.md",
+          "docs/ai/apps/asyra-design/specs/ai-execution-flow.md"
         ],
         "implementationRefs": [
           "apps/asyra-design/e2e/conversation-provider-handoff.spec.ts",
-          "apps/asyra-design/server/__tests__/conversation-production-handoff.integration.test.ts"
+          "apps/asyra-design/server/__tests__/conversation-production-handoff.integration.test.ts",
+          "apps/asyra-design/server/__tests__/native-provider-handoff.integration.test.ts",
+          "apps/asyra-design/src/ai/__tests__/mutation-receipt-targets.test.ts",
+          "apps/asyra-design/server/__tests__/execution-flow-proof.test.ts",
+          "apps/asyra-design/src/ai/__tests__/structural-delivery.test.ts"
         ],
         "actions": []
       },
@@ -617,6 +1178,15 @@
               "producer": "vitest",
               "identity": "{\"file\":\"apps/asyra-design/server/__tests__/native-provider-handoff.integration.test.ts\",\"title\":\"preserves large selected saved data and outcome in actual native history\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
             }
+          },
+          {
+            "id": "canonical-receipt-authority",
+            "title": "preparation and provider specifications preserve complete canonical receipts before model delivery",
+            "kind": "automated",
+            "selector": {
+              "producer": "node",
+              "identity": "{\"file\":\"apps/asyra-design/__tests__/conversation-contract-docs.test.mjs\",\"title\":\"preparation and provider specifications preserve complete canonical receipts before model delivery\",\"cwd\":\".\",\"config\":\"apps/asyra-design/scripts/verify-conversation.mjs\",\"project\":\"\"}"
+            }
           }
         ],
         "specRefs": [
@@ -681,6 +1251,42 @@
               "producer": "vitest",
               "identity": "{\"file\":\"apps/asyra-design/server/__tests__/local-design-workflow.test.ts\",\"title\":\"combined design preparation and application makes acknowledged source identities available without a second result selector\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
             }
+          },
+          {
+            "id": "saved-image-provenance",
+            "title": "keeps image provenance with immutable values and projects only selected pixel paths",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/src/ai/__tests__/conversation-results.test.ts\",\"title\":\"keeps image provenance with immutable values and projects only selected pixel paths\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "saved-image-capacity",
+            "title": "counts provenance in the same capacity budget and refuses replacement atomically",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/src/ai/__tests__/conversation-results.test.ts\",\"title\":\"counts provenance in the same capacity budget and refuses replacement atomically\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "saved-descriptor-authority",
+            "title": "continuity rules distinguish saved snapshots from expiring request authority",
+            "kind": "automated",
+            "selector": {
+              "producer": "node",
+              "identity": "{\"file\":\"apps/asyra-design/__tests__/conversation-contract-docs.test.mjs\",\"title\":\"continuity rules distinguish saved snapshots from expiring request authority\",\"cwd\":\".\",\"config\":\"apps/asyra-design/scripts/verify-conversation.mjs\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "request-snapshot-authority",
+            "title": "request architecture allows saved snapshots without extending request authority",
+            "kind": "automated",
+            "selector": {
+              "producer": "node",
+              "identity": "{\"file\":\"apps/asyra-design/__tests__/conversation-contract-docs.test.mjs\",\"title\":\"request architecture allows saved snapshots without extending request authority\",\"cwd\":\".\",\"config\":\"apps/asyra-design/scripts/verify-conversation.mjs\",\"project\":\"\"}"
+            }
           }
         ],
         "specRefs": [
@@ -727,13 +1333,50 @@
               "producer": "playwright",
               "identity": "{\"file\":\"apps/asyra-design/e2e/conversation-provider-handoff.spec.ts\",\"title\":\"detects loss of two captured images after a real canonical sequence\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/playwright.conversation.config.ts\",\"project\":\"chromium\"}"
             }
+          },
+          {
+            "id": "saved-native-image",
+            "title": "delivers saved inspection pixels and status in the actual native successor",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/server/__tests__/native-provider-handoff.integration.test.ts\",\"title\":\"delivers saved inspection pixels and status in the actual native successor\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "saved-image",
+            "title": "retains image pixels through a fresh Host without recapture or Base64 prose",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/server/__tests__/image-delivery.integration.test.ts\",\"title\":\"retains image pixels through a fresh Host without recapture or Base64 prose\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "saved-bytes",
+            "title": "retains bytes pixels through a fresh Host without recapture or Base64 prose",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/server/__tests__/image-delivery.integration.test.ts\",\"title\":\"retains bytes pixels through a fresh Host without recapture or Base64 prose\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "no-correction-quota",
+            "title": "preparation specifications do not retain visual correction-attempt accounting",
+            "kind": "automated",
+            "selector": {
+              "producer": "node",
+              "identity": "{\"file\":\"apps/asyra-design/__tests__/conversation-contract-docs.test.mjs\",\"title\":\"preparation specifications do not retain visual correction-attempt accounting\",\"cwd\":\".\",\"config\":\"apps/asyra-design/scripts/verify-conversation.mjs\",\"project\":\"\"}"
+            }
           }
         ],
         "specRefs": [
           "docs/ai/apps/asyra-design/specs/ai-execution-flow.md"
         ],
         "implementationRefs": [
-          "apps/asyra-design/server/__tests__/native-provider-handoff.integration.test.ts"
+          "apps/asyra-design/server/__tests__/native-provider-handoff.integration.test.ts",
+          "apps/asyra-design/server/__tests__/image-delivery.integration.test.ts"
         ],
         "actions": []
       },
@@ -799,6 +1442,33 @@
               "producer": "vitest",
               "identity": "{\"file\":\"apps/asyra-design/server/__tests__/native-provider-handoff.integration.test.ts\",\"title\":\"keeps actual native reporting and later questions in the original session without replay\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
             }
+          },
+          {
+            "id": "report-recording-failure-native",
+            "title": "delivers the actual native answer after output recording failure without another inference",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/server/__tests__/native-provider-handoff.integration.test.ts\",\"title\":\"delivers the actual native answer after output recording failure without another inference\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "report-recording-failure-http",
+            "title": "keeps evaluation questions available after HTTP settlement and protects local admission",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/server/__tests__/action-batch.test.ts\",\"title\":\"keeps evaluation questions available after HTTP settlement and protects local admission\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "report-recording-failure-client",
+            "title": "report client saves the complete answer and exposes failed recording",
+            "kind": "automated",
+            "selector": {
+              "producer": "node",
+              "identity": "{\"file\":\"apps/asyra-design/test-data/ai-drawing/__tests__/report-session.test.mjs\",\"title\":\"report client saves the complete answer and exposes failed recording\",\"cwd\":\".\",\"config\":\"apps/asyra-design/scripts/verify-conversation.mjs\",\"project\":\"\"}"
+            }
           }
         ],
         "specRefs": [
@@ -846,10 +1516,147 @@
               "producer": "node",
               "identity": "{\"file\":\"apps/asyra-design/scripts/__tests__/conversation-cli.test.mjs\",\"title\":\"actual verification interruption cannot become success or dispatch a successor\",\"cwd\":\".\",\"config\":\"apps/asyra-design/scripts/verify-conversation.mjs\",\"project\":\"\"}"
             }
+          },
+          {
+            "id": "entry-none",
+            "title": "actual verification CLI admits runner evidence - none",
+            "kind": "automated",
+            "selector": {
+              "producer": "node",
+              "identity": "{\"file\":\"apps/asyra-design/scripts/__tests__/conversation-cli.test.mjs\",\"title\":\"actual verification CLI admits runner evidence - none\",\"cwd\":\".\",\"config\":\"apps/asyra-design/scripts/verify-conversation.mjs\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "entry-failed-suite",
+            "title": "actual verification CLI admits runner evidence - failed-suite",
+            "kind": "automated",
+            "selector": {
+              "producer": "node",
+              "identity": "{\"file\":\"apps/asyra-design/scripts/__tests__/conversation-cli.test.mjs\",\"title\":\"actual verification CLI admits runner evidence - failed-suite\",\"cwd\":\".\",\"config\":\"apps/asyra-design/scripts/verify-conversation.mjs\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "entry-missing-case",
+            "title": "actual verification CLI admits runner evidence - missing-case",
+            "kind": "automated",
+            "selector": {
+              "producer": "node",
+              "identity": "{\"file\":\"apps/asyra-design/scripts/__tests__/conversation-cli.test.mjs\",\"title\":\"actual verification CLI admits runner evidence - missing-case\",\"cwd\":\".\",\"config\":\"apps/asyra-design/scripts/verify-conversation.mjs\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "entry-duplicate-case",
+            "title": "actual verification CLI admits runner evidence - duplicate-case",
+            "kind": "automated",
+            "selector": {
+              "producer": "node",
+              "identity": "{\"file\":\"apps/asyra-design/scripts/__tests__/conversation-cli.test.mjs\",\"title\":\"actual verification CLI admits runner evidence - duplicate-case\",\"cwd\":\".\",\"config\":\"apps/asyra-design/scripts/verify-conversation.mjs\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "entry-exit-failure",
+            "title": "actual verification CLI admits runner evidence - exit-failure",
+            "kind": "automated",
+            "selector": {
+              "producer": "node",
+              "identity": "{\"file\":\"apps/asyra-design/scripts/__tests__/conversation-cli.test.mjs\",\"title\":\"actual verification CLI admits runner evidence - exit-failure\",\"cwd\":\".\",\"config\":\"apps/asyra-design/scripts/verify-conversation.mjs\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "entry-runtime-error",
+            "title": "actual verification CLI admits runner evidence - runtime-error",
+            "kind": "automated",
+            "selector": {
+              "producer": "node",
+              "identity": "{\"file\":\"apps/asyra-design/scripts/__tests__/conversation-cli.test.mjs\",\"title\":\"actual verification CLI admits runner evidence - runtime-error\",\"cwd\":\".\",\"config\":\"apps/asyra-design/scripts/verify-conversation.mjs\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "entry-failed-summary",
+            "title": "actual verification CLI admits runner evidence - failed-summary",
+            "kind": "automated",
+            "selector": {
+              "producer": "node",
+              "identity": "{\"file\":\"apps/asyra-design/scripts/__tests__/conversation-cli.test.mjs\",\"title\":\"actual verification CLI admits runner evidence - failed-summary\",\"cwd\":\".\",\"config\":\"apps/asyra-design/scripts/verify-conversation.mjs\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "entry-missing-file",
+            "title": "actual verification CLI admits runner evidence - missing-file",
+            "kind": "automated",
+            "selector": {
+              "producer": "node",
+              "identity": "{\"file\":\"apps/asyra-design/scripts/__tests__/conversation-cli.test.mjs\",\"title\":\"actual verification CLI admits runner evidence - missing-file\",\"cwd\":\".\",\"config\":\"apps/asyra-design/scripts/verify-conversation.mjs\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "entry-skipped-case",
+            "title": "actual verification CLI admits runner evidence - skipped-case",
+            "kind": "automated",
+            "selector": {
+              "producer": "node",
+              "identity": "{\"file\":\"apps/asyra-design/scripts/__tests__/conversation-cli.test.mjs\",\"title\":\"actual verification CLI admits runner evidence - skipped-case\",\"cwd\":\".\",\"config\":\"apps/asyra-design/scripts/verify-conversation.mjs\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "entry-truncated-report",
+            "title": "actual verification CLI admits runner evidence - truncated-report",
+            "kind": "automated",
+            "selector": {
+              "producer": "node",
+              "identity": "{\"file\":\"apps/asyra-design/scripts/__tests__/conversation-cli.test.mjs\",\"title\":\"actual verification CLI admits runner evidence - truncated-report\",\"cwd\":\".\",\"config\":\"apps/asyra-design/scripts/verify-conversation.mjs\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "entry-changed-knowledge-source",
+            "title": "actual verification CLI admits runner evidence - changed-knowledge-source",
+            "kind": "automated",
+            "selector": {
+              "producer": "node",
+              "identity": "{\"file\":\"apps/asyra-design/scripts/__tests__/conversation-cli.test.mjs\",\"title\":\"actual verification CLI admits runner evidence - changed-knowledge-source\",\"cwd\":\".\",\"config\":\"apps/asyra-design/scripts/verify-conversation.mjs\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "entry-publication-failure",
+            "title": "actual verification CLI admits runner evidence - publication-failure",
+            "kind": "automated",
+            "selector": {
+              "producer": "node",
+              "identity": "{\"file\":\"apps/asyra-design/scripts/__tests__/conversation-cli.test.mjs\",\"title\":\"actual verification CLI admits runner evidence - publication-failure\",\"cwd\":\".\",\"config\":\"apps/asyra-design/scripts/verify-conversation.mjs\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "entry-dropped-observation",
+            "title": "actual verification CLI admits runner evidence - dropped-observation",
+            "kind": "automated",
+            "selector": {
+              "producer": "node",
+              "identity": "{\"file\":\"apps/asyra-design/scripts/__tests__/conversation-cli.test.mjs\",\"title\":\"actual verification CLI admits runner evidence - dropped-observation\",\"cwd\":\".\",\"config\":\"apps/asyra-design/scripts/verify-conversation.mjs\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "entry-missing-semantic-review",
+            "title": "actual verification CLI admits runner evidence - missing-semantic-review",
+            "kind": "automated",
+            "selector": {
+              "producer": "node",
+              "identity": "{\"file\":\"apps/asyra-design/scripts/__tests__/conversation-cli.test.mjs\",\"title\":\"actual verification CLI admits runner evidence - missing-semantic-review\",\"cwd\":\".\",\"config\":\"apps/asyra-design/scripts/verify-conversation.mjs\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "entry-missing-knowledge-handoff",
+            "title": "actual verification CLI admits runner evidence - missing-knowledge-handoff",
+            "kind": "automated",
+            "selector": {
+              "producer": "node",
+              "identity": "{\"file\":\"apps/asyra-design/scripts/__tests__/conversation-cli.test.mjs\",\"title\":\"actual verification CLI admits runner evidence - missing-knowledge-handoff\",\"cwd\":\".\",\"config\":\"apps/asyra-design/scripts/verify-conversation.mjs\",\"project\":\"\"}"
+            }
           }
         ],
         "specRefs": [
-          "docs/ai/apps/asyra-design/specs/ai-execution-flow.md"
+          "docs/ai/apps/asyra-design/specs/ai-execution-flow.md",
+          "docs/ai/apps/asyra-design/specs/ai-conversation-verification.md",
+          "docs/ai/tools/flow-inspector/FLOW_DOCUMENT.md"
         ],
         "implementationRefs": [
           "apps/asyra-design/scripts/__tests__/conversation-scope.test.mjs",
@@ -873,907 +1680,2051 @@
         "criterionId": "case-5",
         "kind": "automated",
         "status": "passed",
-        "binding": "e54721a6924043565f73a74debd445cbfa8d66b98159fe48744f89f15a79da7d",
+        "binding": "b9ffb69f9d74c087f1dff2bba3b4bd9a11eacdc7aa1b1837024d0d9c6173c88a",
         "actor": "vitest",
-        "executionId": "78f26c41-642e-42d4-9046-6c9003a7c554",
+        "executionId": "7f284cd3-6117-4648-910b-46882766e00b",
         "caseId": "b1e5bd214d1ac33d627d4c95f1cbd1e4a5b452c16d943673b41a751d4ecaa110",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-15T16:25:39.826Z"
+        "at": "2026-11-16T15:55:43.727Z"
       },
       {
         "nodeId": "admission",
         "criterionId": "case-2",
         "kind": "automated",
         "status": "passed",
-        "binding": "067319d4f00276bae59d0f220a196a3262318c4824159c129bdb34b591f8102a",
+        "binding": "d796ace6a889c4ba62967381340ac955902bca173980de6f57268812d6245ca2",
         "actor": "vitest",
-        "executionId": "a0b3fc55-dee1-4d0f-aa05-4a009d79daa0",
+        "executionId": "e0022062-df4f-4a07-8949-844d5b792d70",
         "caseId": "fb49b708d3abfed93de391993db169f40def9655f436194fcf3825e1ccc2ec2c",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-15T16:28:55.509Z"
+        "at": "2026-11-16T15:59:01.258Z"
       },
       {
         "nodeId": "composition",
         "criterionId": "case-1",
         "kind": "automated",
         "status": "passed",
-        "binding": "d17a73bab43d300d930f4860f45cae0ed4bc004ef0d4ca69c0a61c40c7afa2a4",
+        "binding": "df67cb9adc19a32a2c4880e910c9ff400da1a4d8f1c588d68e39009a4c20d2dc",
         "actor": "vitest",
-        "executionId": "a0b3fc55-dee1-4d0f-aa05-4a009d79daa0",
+        "executionId": "e0022062-df4f-4a07-8949-844d5b792d70",
         "caseId": "42844a8129d30d9f7a3ce8e67147c86723c13f681dcbc7868f51204bd40638d3",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-15T16:28:55.509Z"
+        "at": "2026-11-16T15:59:01.258Z"
       },
       {
         "nodeId": "composition",
         "criterionId": "case-2",
         "kind": "automated",
         "status": "passed",
-        "binding": "d17a73bab43d300d930f4860f45cae0ed4bc004ef0d4ca69c0a61c40c7afa2a4",
+        "binding": "df67cb9adc19a32a2c4880e910c9ff400da1a4d8f1c588d68e39009a4c20d2dc",
         "actor": "vitest",
-        "executionId": "a0b3fc55-dee1-4d0f-aa05-4a009d79daa0",
+        "executionId": "e0022062-df4f-4a07-8949-844d5b792d70",
         "caseId": "6700bcf80526bcea0ffdbbff2ee7e90d8414696bda11e168622eb4e97b16e5c4",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-15T16:28:55.509Z"
+        "at": "2026-11-16T15:59:01.259Z"
       },
       {
         "nodeId": "composition",
         "criterionId": "case-3",
         "kind": "automated",
         "status": "passed",
-        "binding": "d17a73bab43d300d930f4860f45cae0ed4bc004ef0d4ca69c0a61c40c7afa2a4",
+        "binding": "df67cb9adc19a32a2c4880e910c9ff400da1a4d8f1c588d68e39009a4c20d2dc",
         "actor": "vitest",
-        "executionId": "a0b3fc55-dee1-4d0f-aa05-4a009d79daa0",
+        "executionId": "e0022062-df4f-4a07-8949-844d5b792d70",
         "caseId": "64d9c12e4ad029be4b9cd72cd21a1e6ec0488053d0202965c541c66f85dcb509",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-15T16:28:55.509Z"
+        "at": "2026-11-16T15:59:01.260Z"
       },
       {
         "nodeId": "request",
         "criterionId": "case-1",
         "kind": "automated",
         "status": "passed",
-        "binding": "2e86bacc760e6cc3ef28254d67149ec752d2928104c26717e74efecfcd18b46a",
+        "binding": "14864d26f2dcbe4cb5ef123ff91fc701af7032d80a4cc10d43bc8385163b00d5",
         "actor": "vitest",
-        "executionId": "f6dd256a-ac2f-4154-b0ba-2b332645f5f5",
+        "executionId": "b3b7524f-a965-41a2-898d-a33b0c28fa4d",
         "caseId": "6a1612ae653c7df5eb620a3a6daa5810495385521d91a5841a5459a4913d86df",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-15T16:28:45.481Z"
+        "at": "2026-11-16T15:58:50.980Z"
       },
       {
         "nodeId": "request",
         "criterionId": "case-2",
         "kind": "automated",
         "status": "passed",
-        "binding": "2e86bacc760e6cc3ef28254d67149ec752d2928104c26717e74efecfcd18b46a",
+        "binding": "14864d26f2dcbe4cb5ef123ff91fc701af7032d80a4cc10d43bc8385163b00d5",
         "actor": "vitest",
-        "executionId": "f6dd256a-ac2f-4154-b0ba-2b332645f5f5",
+        "executionId": "b3b7524f-a965-41a2-898d-a33b0c28fa4d",
         "caseId": "a39fe6f68d202719053fe2a55ffbedfa0cc88a89e0b11c26dc7fa260ed1869c8",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-15T16:28:45.481Z"
+        "at": "2026-11-16T15:58:50.982Z"
       },
       {
         "nodeId": "request",
         "criterionId": "case-3",
         "kind": "automated",
         "status": "passed",
-        "binding": "2e86bacc760e6cc3ef28254d67149ec752d2928104c26717e74efecfcd18b46a",
+        "binding": "14864d26f2dcbe4cb5ef123ff91fc701af7032d80a4cc10d43bc8385163b00d5",
         "actor": "vitest",
-        "executionId": "f6dd256a-ac2f-4154-b0ba-2b332645f5f5",
+        "executionId": "b3b7524f-a965-41a2-898d-a33b0c28fa4d",
         "caseId": "cd376916c05f838aa5647b9e6813fbfd4eab05d18c4ee0b854affaf4582dae7c",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-15T16:28:45.481Z"
+        "at": "2026-11-16T15:58:50.984Z"
       },
       {
         "nodeId": "instructions",
         "criterionId": "case-1",
         "kind": "automated",
         "status": "passed",
-        "binding": "e54721a6924043565f73a74debd445cbfa8d66b98159fe48744f89f15a79da7d",
+        "binding": "b9ffb69f9d74c087f1dff2bba3b4bd9a11eacdc7aa1b1837024d0d9c6173c88a",
         "actor": "vitest",
-        "executionId": "f6dd256a-ac2f-4154-b0ba-2b332645f5f5",
+        "executionId": "b3b7524f-a965-41a2-898d-a33b0c28fa4d",
         "caseId": "1c0693c109f5b60fd36d2b141fdebafc4448c6835bd16239941375cb8f13dc42",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-15T16:28:45.481Z"
+        "at": "2026-11-16T15:58:50.990Z"
       },
       {
         "nodeId": "results",
         "criterionId": "case-2",
         "kind": "automated",
         "status": "passed",
-        "binding": "c7534468d016c8849ae042a42852a44c7b838666347f7d3f9a8762b2d31996bb",
+        "binding": "f7196feb5c5283f20587b1eab3f9592615e4bc4a4decd16f4a086bbfd2ef0bd7",
         "actor": "vitest",
-        "executionId": "f6dd256a-ac2f-4154-b0ba-2b332645f5f5",
+        "executionId": "b3b7524f-a965-41a2-898d-a33b0c28fa4d",
         "caseId": "b773358a9549c8ebbc46f53906d0b5d67f540658375b4d4c6a290e554b974800",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-15T16:28:45.481Z"
+        "at": "2026-11-16T15:58:51.077Z"
       },
       {
         "nodeId": "retention",
         "criterionId": "case-2",
         "kind": "automated",
         "status": "passed",
-        "binding": "8b28079d0a3592cbc4511e53932e4a845b3c315daacde3d4e327fb0145ac4820",
+        "binding": "0fb5c1ebd2d0bf907a382fd923aaee4e9b3a6239c20153d3812ed6b2ba010e34",
         "actor": "vitest",
-        "executionId": "f6dd256a-ac2f-4154-b0ba-2b332645f5f5",
+        "executionId": "b3b7524f-a965-41a2-898d-a33b0c28fa4d",
         "caseId": "36168b2f2df63dd0d041764d11452dc967340ac46196d8e12ce689872144e710",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-15T16:28:45.481Z"
+        "at": "2026-11-16T15:58:51.079Z"
       },
       {
         "nodeId": "retention",
         "criterionId": "case-3",
         "kind": "automated",
         "status": "passed",
-        "binding": "8b28079d0a3592cbc4511e53932e4a845b3c315daacde3d4e327fb0145ac4820",
+        "binding": "0fb5c1ebd2d0bf907a382fd923aaee4e9b3a6239c20153d3812ed6b2ba010e34",
         "actor": "vitest",
-        "executionId": "f6dd256a-ac2f-4154-b0ba-2b332645f5f5",
+        "executionId": "b3b7524f-a965-41a2-898d-a33b0c28fa4d",
         "caseId": "5cb2b41695f40825dab09fa75e924743ff239b25ccbacd0d727471ecebafdde8",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-15T16:28:45.481Z"
+        "at": "2026-11-16T15:58:51.081Z"
       },
       {
         "nodeId": "lifecycle",
         "criterionId": "case-1",
         "kind": "automated",
         "status": "passed",
-        "binding": "903fcde7a130f24553c132183e31dc51c416d3557770d2f77bdf791d3b1859c4",
+        "binding": "c086fefc5af4d2cd429c979019ad62ebc6229e04bf40dd56c5193adede9ec864",
         "actor": "vitest",
-        "executionId": "f6dd256a-ac2f-4154-b0ba-2b332645f5f5",
+        "executionId": "b3b7524f-a965-41a2-898d-a33b0c28fa4d",
         "caseId": "f0424b22f136c60d5667b5bf4f25715ccaaf9f7fa5693d9f83593bf2e670f0c8",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-15T16:28:45.481Z"
+        "at": "2026-11-16T15:58:51.087Z"
       },
       {
         "nodeId": "lifecycle",
         "criterionId": "case-2",
         "kind": "automated",
         "status": "passed",
-        "binding": "903fcde7a130f24553c132183e31dc51c416d3557770d2f77bdf791d3b1859c4",
+        "binding": "c086fefc5af4d2cd429c979019ad62ebc6229e04bf40dd56c5193adede9ec864",
         "actor": "vitest",
-        "executionId": "f6dd256a-ac2f-4154-b0ba-2b332645f5f5",
+        "executionId": "b3b7524f-a965-41a2-898d-a33b0c28fa4d",
         "caseId": "cdf959cb4039ddf7f2441b15d2ec52e92e4b234f74e47c501ca50f2c42c24d58",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-15T16:28:45.481Z"
+        "at": "2026-11-16T15:58:51.089Z"
       },
       {
         "nodeId": "composition",
         "criterionId": "native-partial-repair",
         "kind": "automated",
         "status": "passed",
-        "binding": "d17a73bab43d300d930f4860f45cae0ed4bc004ef0d4ca69c0a61c40c7afa2a4",
+        "binding": "df67cb9adc19a32a2c4880e910c9ff400da1a4d8f1c588d68e39009a4c20d2dc",
         "actor": "playwright",
-        "executionId": "5f695e15-7bbd-45d5-9f24-25e0d88d73cb",
+        "executionId": "0a3dbee1-92fb-42c7-bb29-60366d3eb1f4",
         "caseId": "bc0b22b749d4624b2f05c7d5ed133bc0a3dc3a1c12f947f457b742a5f7614810",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-15T16:54:50.586Z"
+        "at": "2026-11-16T16:25:37.391Z"
       },
       {
         "nodeId": "canonical",
         "criterionId": "case-1",
         "kind": "automated",
         "status": "passed",
-        "binding": "7361ab88cb41555ccb370a05f0d38842253256ab2cae63a3d1c0ac8a1b4a8538",
+        "binding": "c39893cfa25a8ccc5d1e095f3ea2f97d57942243aba2a26a10818e180efa41cd",
         "actor": "playwright",
-        "executionId": "5f695e15-7bbd-45d5-9f24-25e0d88d73cb",
+        "executionId": "0a3dbee1-92fb-42c7-bb29-60366d3eb1f4",
         "caseId": "c81bd9b6ba8cd0f5f85d8c8bc699794b93f082f4b66001982a9ad19eaad90028",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-15T16:54:50.586Z"
+        "at": "2026-11-16T16:25:37.393Z"
       },
       {
         "nodeId": "canonical",
         "criterionId": "incremental-stream",
         "kind": "automated",
         "status": "passed",
-        "binding": "7361ab88cb41555ccb370a05f0d38842253256ab2cae63a3d1c0ac8a1b4a8538",
+        "binding": "c39893cfa25a8ccc5d1e095f3ea2f97d57942243aba2a26a10818e180efa41cd",
         "actor": "playwright",
-        "executionId": "5f695e15-7bbd-45d5-9f24-25e0d88d73cb",
+        "executionId": "0a3dbee1-92fb-42c7-bb29-60366d3eb1f4",
         "caseId": "69f72a5ae9a252e93ff1f62b06ebda5ebc76947d18281a238f58ba6f914cb0b6",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-15T16:54:50.586Z"
+        "at": "2026-11-16T16:25:37.393Z"
       },
       {
         "nodeId": "canonical",
         "criterionId": "saved-regroup",
         "kind": "automated",
         "status": "passed",
-        "binding": "7361ab88cb41555ccb370a05f0d38842253256ab2cae63a3d1c0ac8a1b4a8538",
+        "binding": "c39893cfa25a8ccc5d1e095f3ea2f97d57942243aba2a26a10818e180efa41cd",
         "actor": "playwright",
-        "executionId": "5f695e15-7bbd-45d5-9f24-25e0d88d73cb",
+        "executionId": "0a3dbee1-92fb-42c7-bb29-60366d3eb1f4",
         "caseId": "6e907b6e693421c617cdaaf025a77c00c9cc52bd213e914ab0b4075161bfd2ed",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-15T16:54:50.586Z"
+        "at": "2026-11-16T16:25:37.394Z"
       },
       {
         "nodeId": "instructions",
         "criterionId": "frontend-provider-bundle",
         "kind": "automated",
         "status": "passed",
-        "binding": "e54721a6924043565f73a74debd445cbfa8d66b98159fe48744f89f15a79da7d",
+        "binding": "b9ffb69f9d74c087f1dff2bba3b4bd9a11eacdc7aa1b1837024d0d9c6173c88a",
         "actor": "node",
-        "executionId": "24abec41-34d2-400d-8b46-1a982e01ef71",
+        "executionId": "fcb190ad-e205-4829-93e4-8ae437912840",
         "caseId": "b6b80a237e24f2751d2cbce3663f791d50fdb3a107ade1977f2472ddb2b5524f",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-15T16:35:33.350Z"
+        "at": "2026-11-16T16:06:07.890Z"
       },
       {
         "nodeId": "evidence",
         "criterionId": "case-1",
         "kind": "automated",
         "status": "passed",
-        "binding": "bcdd272a342b8e6903a86b2e2a7b9e1064bfa37b572d05d6df120ff7827e131c",
+        "binding": "257c8b4d993eef9c55aecff79c3b7cce3951ff9a82ceb25afd17f4e7c8137438",
         "actor": "node",
-        "executionId": "24abec41-34d2-400d-8b46-1a982e01ef71",
+        "executionId": "fcb190ad-e205-4829-93e4-8ae437912840",
         "caseId": "866a234c9d1693edfda90220ba74c6d05fc4cc14cbb8f916c44e45b1799355bb",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-15T16:35:33.350Z"
+        "at": "2026-11-16T16:06:07.900Z"
       },
       {
         "nodeId": "evidence",
         "criterionId": "case-2",
         "kind": "automated",
         "status": "passed",
-        "binding": "bcdd272a342b8e6903a86b2e2a7b9e1064bfa37b572d05d6df120ff7827e131c",
+        "binding": "257c8b4d993eef9c55aecff79c3b7cce3951ff9a82ceb25afd17f4e7c8137438",
         "actor": "node",
-        "executionId": "24abec41-34d2-400d-8b46-1a982e01ef71",
+        "executionId": "fcb190ad-e205-4829-93e4-8ae437912840",
         "caseId": "419a0a2e519a6675b4e76fa73f7909a0bdc83afafaf36c69e4d424bdd26af664",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-15T16:35:33.350Z"
+        "at": "2026-11-16T16:06:07.901Z"
       },
       {
         "nodeId": "evidence",
         "criterionId": "cli-interruption",
         "kind": "automated",
         "status": "passed",
-        "binding": "bcdd272a342b8e6903a86b2e2a7b9e1064bfa37b572d05d6df120ff7827e131c",
+        "binding": "257c8b4d993eef9c55aecff79c3b7cce3951ff9a82ceb25afd17f4e7c8137438",
         "actor": "node",
-        "executionId": "24abec41-34d2-400d-8b46-1a982e01ef71",
+        "executionId": "fcb190ad-e205-4829-93e4-8ae437912840",
         "caseId": "989ed903d374029f3f9a49a0df0bad54dbe801b9d627d1ff477b45a9d32ee8ea",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-15T16:35:33.350Z"
+        "at": "2026-11-16T16:06:07.902Z"
       },
       {
         "nodeId": "results",
         "criterionId": "workflow-denied-write",
         "kind": "automated",
         "status": "passed",
-        "binding": "c7534468d016c8849ae042a42852a44c7b838666347f7d3f9a8762b2d31996bb",
+        "binding": "f7196feb5c5283f20587b1eab3f9592615e4bc4a4decd16f4a086bbfd2ef0bd7",
         "actor": "playwright",
-        "executionId": "5f695e15-7bbd-45d5-9f24-25e0d88d73cb",
+        "executionId": "0a3dbee1-92fb-42c7-bb29-60366d3eb1f4",
         "caseId": "3dac2440ab2af9418b9d82d3569f396e2e0478cb8f20035c61c8f71cf9924813",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-15T16:54:50.586Z"
+        "at": "2026-11-16T16:25:37.394Z"
       },
       {
         "nodeId": "admission",
         "criterionId": "browser-denied-write",
         "kind": "automated",
         "status": "passed",
-        "binding": "067319d4f00276bae59d0f220a196a3262318c4824159c129bdb34b591f8102a",
+        "binding": "d796ace6a889c4ba62967381340ac955902bca173980de6f57268812d6245ca2",
         "actor": "playwright",
-        "executionId": "5f695e15-7bbd-45d5-9f24-25e0d88d73cb",
+        "executionId": "0a3dbee1-92fb-42c7-bb29-60366d3eb1f4",
         "caseId": "d090eef4a902cbfbb60fb537b2e2c94e3ce663a81eeef578b9a1879cc527ba11",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-15T16:54:50.586Z"
+        "at": "2026-11-16T16:25:37.391Z"
       },
       {
         "nodeId": "request",
         "criterionId": "native-draft-clarification",
         "kind": "automated",
         "status": "passed",
-        "binding": "2e86bacc760e6cc3ef28254d67149ec752d2928104c26717e74efecfcd18b46a",
+        "binding": "14864d26f2dcbe4cb5ef123ff91fc701af7032d80a4cc10d43bc8385163b00d5",
         "actor": "playwright",
-        "executionId": "5f695e15-7bbd-45d5-9f24-25e0d88d73cb",
+        "executionId": "0a3dbee1-92fb-42c7-bb29-60366d3eb1f4",
         "caseId": "5c869acd5edfe3a1cdf503c84676715f394e5fb6890cf0bd197862b4fa9fa0c6",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-15T16:54:50.586Z"
+        "at": "2026-11-16T16:25:37.390Z"
       },
       {
         "nodeId": "request",
         "criterionId": "native-draft-association-corruption",
         "kind": "automated",
         "status": "passed",
-        "binding": "2e86bacc760e6cc3ef28254d67149ec752d2928104c26717e74efecfcd18b46a",
+        "binding": "14864d26f2dcbe4cb5ef123ff91fc701af7032d80a4cc10d43bc8385163b00d5",
         "actor": "playwright",
-        "executionId": "5f695e15-7bbd-45d5-9f24-25e0d88d73cb",
+        "executionId": "0a3dbee1-92fb-42c7-bb29-60366d3eb1f4",
         "caseId": "1e8b1c8c19ff0088923178a7eebab6bb61a1aa759912c8efe6c470a130f6244f",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-15T16:54:50.586Z"
+        "at": "2026-11-16T16:25:37.391Z"
       },
       {
         "nodeId": "canonical",
         "criterionId": "native-partial-canonical-result",
         "kind": "automated",
         "status": "passed",
-        "binding": "7361ab88cb41555ccb370a05f0d38842253256ab2cae63a3d1c0ac8a1b4a8538",
+        "binding": "c39893cfa25a8ccc5d1e095f3ea2f97d57942243aba2a26a10818e180efa41cd",
         "actor": "vitest",
-        "executionId": "78f26c41-642e-42d4-9046-6c9003a7c554",
+        "executionId": "7f284cd3-6117-4648-910b-46882766e00b",
         "caseId": "cd223818709fca97524f1eab4446c506c7d674f3528efbaef092223cdf5eb63e",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-15T16:25:39.827Z"
+        "at": "2026-11-16T15:55:43.893Z"
       },
       {
         "nodeId": "composition",
         "criterionId": "native-staged-template-repair",
         "kind": "automated",
         "status": "passed",
-        "binding": "d17a73bab43d300d930f4860f45cae0ed4bc004ef0d4ca69c0a61c40c7afa2a4",
+        "binding": "df67cb9adc19a32a2c4880e910c9ff400da1a4d8f1c588d68e39009a4c20d2dc",
         "actor": "playwright",
-        "executionId": "5f695e15-7bbd-45d5-9f24-25e0d88d73cb",
+        "executionId": "0a3dbee1-92fb-42c7-bb29-60366d3eb1f4",
         "caseId": "a73df0e29459657a801d37429f1cb24bf347dab1f0fa849334f7e58484f18ff0",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-15T16:54:50.586Z"
+        "at": "2026-11-16T16:25:37.392Z"
       },
       {
         "nodeId": "instructions",
         "criterionId": "case-2",
         "kind": "automated",
         "status": "passed",
-        "binding": "e54721a6924043565f73a74debd445cbfa8d66b98159fe48744f89f15a79da7d",
+        "binding": "b9ffb69f9d74c087f1dff2bba3b4bd9a11eacdc7aa1b1837024d0d9c6173c88a",
         "actor": "vitest",
-        "executionId": "78f26c41-642e-42d4-9046-6c9003a7c554",
+        "executionId": "7f284cd3-6117-4648-910b-46882766e00b",
         "caseId": "2cc1ef9f1e30b7d4a6a0175fce4108ddadc8b660f41121cd3bc5e23f81d7a51f",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-15T16:25:39.826Z"
+        "at": "2026-11-16T15:55:43.712Z"
       },
       {
         "nodeId": "instructions",
         "criterionId": "case-3",
         "kind": "automated",
         "status": "passed",
-        "binding": "e54721a6924043565f73a74debd445cbfa8d66b98159fe48744f89f15a79da7d",
+        "binding": "b9ffb69f9d74c087f1dff2bba3b4bd9a11eacdc7aa1b1837024d0d9c6173c88a",
         "actor": "vitest",
-        "executionId": "78f26c41-642e-42d4-9046-6c9003a7c554",
+        "executionId": "7f284cd3-6117-4648-910b-46882766e00b",
         "caseId": "9f6bb77a1aad49501a7f5efec96c0f87dcaca91b905c20d48b22ac648afe70ea",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-15T16:25:39.826Z"
+        "at": "2026-11-16T15:55:43.717Z"
       },
       {
         "nodeId": "instructions",
         "criterionId": "case-4",
         "kind": "automated",
         "status": "passed",
-        "binding": "e54721a6924043565f73a74debd445cbfa8d66b98159fe48744f89f15a79da7d",
+        "binding": "b9ffb69f9d74c087f1dff2bba3b4bd9a11eacdc7aa1b1837024d0d9c6173c88a",
         "actor": "vitest",
-        "executionId": "78f26c41-642e-42d4-9046-6c9003a7c554",
+        "executionId": "7f284cd3-6117-4648-910b-46882766e00b",
         "caseId": "9058f6fa18bf911d1d768b8d912529a0fdb6b239c50ba825ab7ecff6a587e48a",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-15T16:25:39.826Z"
+        "at": "2026-11-16T15:55:43.722Z"
       },
       {
         "nodeId": "instructions",
         "criterionId": "native-assessment",
         "kind": "automated",
         "status": "passed",
-        "binding": "e54721a6924043565f73a74debd445cbfa8d66b98159fe48744f89f15a79da7d",
+        "binding": "b9ffb69f9d74c087f1dff2bba3b4bd9a11eacdc7aa1b1837024d0d9c6173c88a",
         "actor": "vitest",
-        "executionId": "78f26c41-642e-42d4-9046-6c9003a7c554",
+        "executionId": "7f284cd3-6117-4648-910b-46882766e00b",
         "caseId": "c513092f01bb90aa5089a11442ebc4e9830034c60515c375e2156cb6b6e35544",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-15T16:25:39.826Z"
+        "at": "2026-11-16T15:55:43.732Z"
       },
       {
         "nodeId": "instructions",
         "criterionId": "ordinary-no-executor",
         "kind": "automated",
         "status": "passed",
-        "binding": "e54721a6924043565f73a74debd445cbfa8d66b98159fe48744f89f15a79da7d",
+        "binding": "b9ffb69f9d74c087f1dff2bba3b4bd9a11eacdc7aa1b1837024d0d9c6173c88a",
         "actor": "vitest",
-        "executionId": "78f26c41-642e-42d4-9046-6c9003a7c554",
+        "executionId": "7f284cd3-6117-4648-910b-46882766e00b",
         "caseId": "a70556fa37472f332831f46d9cd5b5508dd125374a5cabdec7c0feddfa797fb1",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-15T16:25:39.826Z"
+        "at": "2026-11-16T15:55:43.737Z"
       },
       {
         "nodeId": "instructions",
         "criterionId": "http-real-contract-state",
         "kind": "automated",
         "status": "passed",
-        "binding": "e54721a6924043565f73a74debd445cbfa8d66b98159fe48744f89f15a79da7d",
+        "binding": "b9ffb69f9d74c087f1dff2bba3b4bd9a11eacdc7aa1b1837024d0d9c6173c88a",
         "actor": "vitest",
-        "executionId": "78f26c41-642e-42d4-9046-6c9003a7c554",
+        "executionId": "7f284cd3-6117-4648-910b-46882766e00b",
         "caseId": "217866053a50c640bcb8b808e703f275703d1b19ccacfe49182f6ed3096726bd",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-15T16:25:39.826Z"
+        "at": "2026-11-16T15:55:43.742Z"
       },
       {
         "nodeId": "instructions",
         "criterionId": "http-disabled-capability",
         "kind": "automated",
         "status": "passed",
-        "binding": "e54721a6924043565f73a74debd445cbfa8d66b98159fe48744f89f15a79da7d",
+        "binding": "b9ffb69f9d74c087f1dff2bba3b4bd9a11eacdc7aa1b1837024d0d9c6173c88a",
         "actor": "vitest",
-        "executionId": "78f26c41-642e-42d4-9046-6c9003a7c554",
+        "executionId": "7f284cd3-6117-4648-910b-46882766e00b",
         "caseId": "c4e73213488b6bf8709ebb66b07d2147ed5eb4a4d9c9c0a29fefff6e4b194223",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-15T16:25:39.826Z"
+        "at": "2026-11-16T15:55:43.747Z"
       },
       {
         "nodeId": "discovery",
         "criterionId": "case-1",
         "kind": "automated",
         "status": "passed",
-        "binding": "80e4a2434d3ad554e6b238c66180f8baee549df6c7ccb17f016631523d0b4156",
+        "binding": "cf8d7ba4ca30f69ee0b53a43be305662d39d91d2bb663aab282a72491f061de4",
         "actor": "vitest",
-        "executionId": "78f26c41-642e-42d4-9046-6c9003a7c554",
+        "executionId": "7f284cd3-6117-4648-910b-46882766e00b",
         "caseId": "8bcec80aceeb5a6c079aa613386a23a5ab5032090868e532413c144aafadb881",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-15T16:25:39.826Z"
+        "at": "2026-11-16T15:55:43.757Z"
       },
       {
         "nodeId": "discovery",
         "criterionId": "case-2",
         "kind": "automated",
         "status": "passed",
-        "binding": "80e4a2434d3ad554e6b238c66180f8baee549df6c7ccb17f016631523d0b4156",
+        "binding": "cf8d7ba4ca30f69ee0b53a43be305662d39d91d2bb663aab282a72491f061de4",
         "actor": "vitest",
-        "executionId": "78f26c41-642e-42d4-9046-6c9003a7c554",
+        "executionId": "7f284cd3-6117-4648-910b-46882766e00b",
         "caseId": "9cf35a048ed3bbfb8c37b4debf848aef838c28ba4c555e961674265783b078c0",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-15T16:25:39.826Z"
+        "at": "2026-11-16T15:55:43.761Z"
       },
       {
         "nodeId": "knowledge",
         "criterionId": "case-1",
         "kind": "automated",
         "status": "passed",
-        "binding": "4e468d0d6bb16a3219025005eeea4909a67e90035ec77e2f48e93a90d96fb4cc",
+        "binding": "5a18007be8e5dbb724bc94f395e6fb7a35380d25746506afd9c0bac35d976cd4",
         "actor": "vitest",
-        "executionId": "78f26c41-642e-42d4-9046-6c9003a7c554",
+        "executionId": "7f284cd3-6117-4648-910b-46882766e00b",
         "caseId": "5b3d774333f9f1b1a678070e9d800b794df4b3d387630c6453c6816b04c3b078",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-15T16:25:39.826Z"
+        "at": "2026-11-16T15:55:43.805Z"
       },
       {
         "nodeId": "knowledge",
         "criterionId": "case-2",
         "kind": "automated",
         "status": "passed",
-        "binding": "4e468d0d6bb16a3219025005eeea4909a67e90035ec77e2f48e93a90d96fb4cc",
+        "binding": "5a18007be8e5dbb724bc94f395e6fb7a35380d25746506afd9c0bac35d976cd4",
         "actor": "vitest",
-        "executionId": "78f26c41-642e-42d4-9046-6c9003a7c554",
+        "executionId": "7f284cd3-6117-4648-910b-46882766e00b",
         "caseId": "05ecb8576daa46781ee8094387ac34652923fbb2f6d6879dbfdff04d4342e1d9",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-15T16:25:39.827Z"
+        "at": "2026-11-16T15:55:43.810Z"
       },
       {
         "nodeId": "knowledge",
         "criterionId": "case-3",
         "kind": "automated",
         "status": "passed",
-        "binding": "4e468d0d6bb16a3219025005eeea4909a67e90035ec77e2f48e93a90d96fb4cc",
+        "binding": "5a18007be8e5dbb724bc94f395e6fb7a35380d25746506afd9c0bac35d976cd4",
         "actor": "vitest",
-        "executionId": "78f26c41-642e-42d4-9046-6c9003a7c554",
+        "executionId": "7f284cd3-6117-4648-910b-46882766e00b",
         "caseId": "8158708741a2a48cc91a972432db3ef01488ba99518a2ccbcddece1b5510f6bb",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-15T16:25:39.827Z"
+        "at": "2026-11-16T15:55:43.815Z"
       },
       {
         "nodeId": "knowledge",
         "criterionId": "case-4",
         "kind": "automated",
         "status": "passed",
-        "binding": "4e468d0d6bb16a3219025005eeea4909a67e90035ec77e2f48e93a90d96fb4cc",
+        "binding": "5a18007be8e5dbb724bc94f395e6fb7a35380d25746506afd9c0bac35d976cd4",
         "actor": "vitest",
-        "executionId": "78f26c41-642e-42d4-9046-6c9003a7c554",
+        "executionId": "7f284cd3-6117-4648-910b-46882766e00b",
         "caseId": "5d8086d9b8808aae48134349c83f3a4e0e2d80eaf20135ca7558a8dd47e9571c",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-15T16:25:39.827Z"
+        "at": "2026-11-16T15:55:43.820Z"
       },
       {
         "nodeId": "knowledge",
         "criterionId": "case-5",
         "kind": "automated",
         "status": "passed",
-        "binding": "4e468d0d6bb16a3219025005eeea4909a67e90035ec77e2f48e93a90d96fb4cc",
+        "binding": "5a18007be8e5dbb724bc94f395e6fb7a35380d25746506afd9c0bac35d976cd4",
         "actor": "vitest",
-        "executionId": "78f26c41-642e-42d4-9046-6c9003a7c554",
+        "executionId": "7f284cd3-6117-4648-910b-46882766e00b",
         "caseId": "afe52b2eef35e6007708c2d3f523bc5409472fbcd176280f61d758a04bad7137",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-15T16:25:39.827Z"
+        "at": "2026-11-16T15:55:43.825Z"
       },
       {
         "nodeId": "knowledge",
         "criterionId": "native-compaction",
         "kind": "automated",
         "status": "passed",
-        "binding": "4e468d0d6bb16a3219025005eeea4909a67e90035ec77e2f48e93a90d96fb4cc",
+        "binding": "5a18007be8e5dbb724bc94f395e6fb7a35380d25746506afd9c0bac35d976cd4",
         "actor": "vitest",
-        "executionId": "78f26c41-642e-42d4-9046-6c9003a7c554",
+        "executionId": "7f284cd3-6117-4648-910b-46882766e00b",
         "caseId": "75eb67f8ee3bb58e19f7bb40b8d14888091e78e6aa6056c92b54ce7cfe501cf1",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-15T16:25:39.827Z"
+        "at": "2026-11-16T15:55:43.830Z"
       },
       {
         "nodeId": "knowledge",
         "criterionId": "unavailable-library",
         "kind": "automated",
         "status": "passed",
-        "binding": "4e468d0d6bb16a3219025005eeea4909a67e90035ec77e2f48e93a90d96fb4cc",
+        "binding": "5a18007be8e5dbb724bc94f395e6fb7a35380d25746506afd9c0bac35d976cd4",
         "actor": "vitest",
-        "executionId": "78f26c41-642e-42d4-9046-6c9003a7c554",
+        "executionId": "7f284cd3-6117-4648-910b-46882766e00b",
         "caseId": "f3ebc318855c6a77535acc93f32f338c8dbc531d7c793da589b42ed4f27eef4e",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-15T16:25:39.827Z"
+        "at": "2026-11-16T15:55:43.834Z"
       },
       {
         "nodeId": "knowledge",
         "criterionId": "portable-advice-continuity",
         "kind": "automated",
         "status": "passed",
-        "binding": "4e468d0d6bb16a3219025005eeea4909a67e90035ec77e2f48e93a90d96fb4cc",
+        "binding": "5a18007be8e5dbb724bc94f395e6fb7a35380d25746506afd9c0bac35d976cd4",
         "actor": "vitest",
-        "executionId": "78f26c41-642e-42d4-9046-6c9003a7c554",
+        "executionId": "7f284cd3-6117-4648-910b-46882766e00b",
         "caseId": "abd3fce73d0cbe02e6d7f75280f8e8ede21d7053f6d182eaa718bf85ea6ad86d",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-15T16:25:39.827Z"
+        "at": "2026-11-16T15:55:43.839Z"
       },
       {
         "nodeId": "knowledge",
         "criterionId": "portable-advice-corruption",
         "kind": "automated",
         "status": "passed",
-        "binding": "4e468d0d6bb16a3219025005eeea4909a67e90035ec77e2f48e93a90d96fb4cc",
+        "binding": "5a18007be8e5dbb724bc94f395e6fb7a35380d25746506afd9c0bac35d976cd4",
         "actor": "vitest",
-        "executionId": "78f26c41-642e-42d4-9046-6c9003a7c554",
+        "executionId": "7f284cd3-6117-4648-910b-46882766e00b",
         "caseId": "ab36b3c3fa8fdffb181790b30536b9bd19970335803e9a5ef42b6f1ef057f6b0",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-15T16:25:39.827Z"
+        "at": "2026-11-16T15:55:43.844Z"
       },
       {
         "nodeId": "admission",
         "criterionId": "case-1",
         "kind": "automated",
         "status": "passed",
-        "binding": "067319d4f00276bae59d0f220a196a3262318c4824159c129bdb34b591f8102a",
+        "binding": "d796ace6a889c4ba62967381340ac955902bca173980de6f57268812d6245ca2",
         "actor": "vitest",
-        "executionId": "78f26c41-642e-42d4-9046-6c9003a7c554",
+        "executionId": "7f284cd3-6117-4648-910b-46882766e00b",
         "caseId": "c845e7cabf92085c5943847011115acc060c8865db4163073142a900cb8bed77",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-15T16:25:39.827Z"
+        "at": "2026-11-16T15:55:43.863Z"
       },
       {
         "nodeId": "admission",
         "criterionId": "assessment-rejects-invented-call",
         "kind": "automated",
         "status": "passed",
-        "binding": "067319d4f00276bae59d0f220a196a3262318c4824159c129bdb34b591f8102a",
+        "binding": "d796ace6a889c4ba62967381340ac955902bca173980de6f57268812d6245ca2",
         "actor": "vitest",
-        "executionId": "78f26c41-642e-42d4-9046-6c9003a7c554",
+        "executionId": "7f284cd3-6117-4648-910b-46882766e00b",
         "caseId": "f1b2141fa73f59f3b93842042d512c0491a8231ade5ff629f1cd0a91300c3486",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-15T16:25:39.827Z"
+        "at": "2026-11-16T15:55:43.873Z"
       },
       {
         "nodeId": "admission",
         "criterionId": "ordinary-unavailable-drawing",
         "kind": "automated",
         "status": "passed",
-        "binding": "067319d4f00276bae59d0f220a196a3262318c4824159c129bdb34b591f8102a",
+        "binding": "d796ace6a889c4ba62967381340ac955902bca173980de6f57268812d6245ca2",
         "actor": "vitest",
-        "executionId": "78f26c41-642e-42d4-9046-6c9003a7c554",
+        "executionId": "7f284cd3-6117-4648-910b-46882766e00b",
         "caseId": "61d66dcc3c6e82821261cc8af6ffece219f53e95c48cb0dfe6b3f2253dc03b05",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-15T16:25:39.827Z"
+        "at": "2026-11-16T15:55:43.878Z"
       },
       {
         "nodeId": "composition",
         "criterionId": "native-save-only-recovery",
         "kind": "automated",
         "status": "passed",
-        "binding": "d17a73bab43d300d930f4860f45cae0ed4bc004ef0d4ca69c0a61c40c7afa2a4",
+        "binding": "df67cb9adc19a32a2c4880e910c9ff400da1a4d8f1c588d68e39009a4c20d2dc",
         "actor": "vitest",
-        "executionId": "78f26c41-642e-42d4-9046-6c9003a7c554",
+        "executionId": "7f284cd3-6117-4648-910b-46882766e00b",
         "caseId": "41943c41cc60f6e1dedc73a3f786096d6e890f4cd37891baf5c0c2a7d3fba469",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-15T16:25:39.827Z"
+        "at": "2026-11-16T15:55:43.888Z"
       },
       {
         "nodeId": "results",
         "criterionId": "case-1",
         "kind": "automated",
         "status": "passed",
-        "binding": "c7534468d016c8849ae042a42852a44c7b838666347f7d3f9a8762b2d31996bb",
+        "binding": "f7196feb5c5283f20587b1eab3f9592615e4bc4a4decd16f4a086bbfd2ef0bd7",
         "actor": "vitest",
-        "executionId": "78f26c41-642e-42d4-9046-6c9003a7c554",
+        "executionId": "7f284cd3-6117-4648-910b-46882766e00b",
         "caseId": "4d0fce426707cce369b0a93bdd9a200600a248d1044f8e119c3b03083f34a633",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-15T16:25:39.827Z"
+        "at": "2026-11-16T15:55:43.907Z"
       },
       {
         "nodeId": "retention",
         "criterionId": "case-1",
         "kind": "automated",
         "status": "passed",
-        "binding": "8b28079d0a3592cbc4511e53932e4a845b3c315daacde3d4e327fb0145ac4820",
+        "binding": "0fb5c1ebd2d0bf907a382fd923aaee4e9b3a6239c20153d3812ed6b2ba010e34",
         "actor": "vitest",
-        "executionId": "78f26c41-642e-42d4-9046-6c9003a7c554",
+        "executionId": "7f284cd3-6117-4648-910b-46882766e00b",
         "caseId": "a6cc58d7ed54ed0c76bd28bfde29752f51ff5ca30578600ce74c4c6aa13398e2",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-15T16:25:39.827Z"
+        "at": "2026-11-16T15:55:43.922Z"
       },
       {
         "nodeId": "retention",
         "criterionId": "altered-saved-transfer",
         "kind": "automated",
         "status": "passed",
-        "binding": "8b28079d0a3592cbc4511e53932e4a845b3c315daacde3d4e327fb0145ac4820",
+        "binding": "0fb5c1ebd2d0bf907a382fd923aaee4e9b3a6239c20153d3812ed6b2ba010e34",
         "actor": "vitest",
-        "executionId": "78f26c41-642e-42d4-9046-6c9003a7c554",
+        "executionId": "7f284cd3-6117-4648-910b-46882766e00b",
         "caseId": "26add57069b2b61d5abd4b662d44b86737263122f4b4c805526d88dc245975c2",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-15T16:25:39.827Z"
+        "at": "2026-11-16T15:55:43.926Z"
       },
       {
         "nodeId": "media",
         "criterionId": "case-1",
         "kind": "automated",
         "status": "passed",
-        "binding": "e963a4649093471d78b6deaf4d4ed7e4fb590275b976b5da770629c1863bc3bf",
+        "binding": "4eb76c86b816612203e8407e4cfc96e23087441b89da0e4da832c06d5c0bbeda",
         "actor": "vitest",
-        "executionId": "78f26c41-642e-42d4-9046-6c9003a7c554",
+        "executionId": "7f284cd3-6117-4648-910b-46882766e00b",
         "caseId": "1621bffcc6bbbc168e23ee1b549cd89a48cb6a434e681b91acf474c5b57aa3cf",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-15T16:25:39.828Z"
+        "at": "2026-11-16T15:55:43.936Z"
       },
       {
         "nodeId": "media",
         "criterionId": "case-2",
         "kind": "automated",
         "status": "passed",
-        "binding": "e963a4649093471d78b6deaf4d4ed7e4fb590275b976b5da770629c1863bc3bf",
+        "binding": "4eb76c86b816612203e8407e4cfc96e23087441b89da0e4da832c06d5c0bbeda",
         "actor": "vitest",
-        "executionId": "78f26c41-642e-42d4-9046-6c9003a7c554",
+        "executionId": "7f284cd3-6117-4648-910b-46882766e00b",
         "caseId": "dcab9aa02bc3623f56638aaac44bd67c782289e8bab250599b9b601f3f9213b9",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-15T16:25:39.828Z"
+        "at": "2026-11-16T15:55:43.941Z"
       },
       {
         "nodeId": "lifecycle",
         "criterionId": "case-3",
         "kind": "automated",
         "status": "passed",
-        "binding": "903fcde7a130f24553c132183e31dc51c416d3557770d2f77bdf791d3b1859c4",
+        "binding": "c086fefc5af4d2cd429c979019ad62ebc6229e04bf40dd56c5193adede9ec864",
         "actor": "vitest",
-        "executionId": "78f26c41-642e-42d4-9046-6c9003a7c554",
+        "executionId": "7f284cd3-6117-4648-910b-46882766e00b",
         "caseId": "a35a7ed68ac7ef9c1e3348adf34ab8a0cc73b131ce60fb728edb36a422df60fa",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-15T16:25:39.828Z"
+        "at": "2026-11-16T15:55:43.960Z"
       },
       {
         "nodeId": "lifecycle",
         "criterionId": "case-4",
         "kind": "automated",
         "status": "passed",
-        "binding": "903fcde7a130f24553c132183e31dc51c416d3557770d2f77bdf791d3b1859c4",
+        "binding": "c086fefc5af4d2cd429c979019ad62ebc6229e04bf40dd56c5193adede9ec864",
         "actor": "vitest",
-        "executionId": "78f26c41-642e-42d4-9046-6c9003a7c554",
+        "executionId": "7f284cd3-6117-4648-910b-46882766e00b",
         "caseId": "9ee2e6e09b93d93792e420b54f48665124add2f255fdb3ed4640db44b1a8bb0e",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-15T16:25:39.828Z"
+        "at": "2026-11-16T15:55:43.965Z"
       },
       {
         "nodeId": "lifecycle",
         "criterionId": "case-5",
         "kind": "automated",
         "status": "passed",
-        "binding": "903fcde7a130f24553c132183e31dc51c416d3557770d2f77bdf791d3b1859c4",
+        "binding": "c086fefc5af4d2cd429c979019ad62ebc6229e04bf40dd56c5193adede9ec864",
         "actor": "vitest",
-        "executionId": "78f26c41-642e-42d4-9046-6c9003a7c554",
+        "executionId": "7f284cd3-6117-4648-910b-46882766e00b",
         "caseId": "f3fdf29a97c25504d355e1e054ebcab93d6dbb5b3661dd35b3b0b634f10338ca",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-15T16:25:39.828Z"
+        "at": "2026-11-16T15:55:43.970Z"
       },
       {
         "nodeId": "lifecycle",
         "criterionId": "native-report-continuity",
         "kind": "automated",
         "status": "passed",
-        "binding": "903fcde7a130f24553c132183e31dc51c416d3557770d2f77bdf791d3b1859c4",
+        "binding": "c086fefc5af4d2cd429c979019ad62ebc6229e04bf40dd56c5193adede9ec864",
         "actor": "vitest",
-        "executionId": "78f26c41-642e-42d4-9046-6c9003a7c554",
+        "executionId": "7f284cd3-6117-4648-910b-46882766e00b",
         "caseId": "72bbf811f4d547226a6717dbf765b24585ea87bea04d8e3181d2f89bd93313e1",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-15T16:25:39.828Z"
+        "at": "2026-11-16T15:55:43.975Z"
       },
       {
         "nodeId": "composition",
         "criterionId": "native-real-mechanical-iteration",
         "kind": "automated",
         "status": "passed",
-        "binding": "d17a73bab43d300d930f4860f45cae0ed4bc004ef0d4ca69c0a61c40c7afa2a4",
+        "binding": "df67cb9adc19a32a2c4880e910c9ff400da1a4d8f1c588d68e39009a4c20d2dc",
         "actor": "playwright",
-        "executionId": "5f695e15-7bbd-45d5-9f24-25e0d88d73cb",
+        "executionId": "0a3dbee1-92fb-42c7-bb29-60366d3eb1f4",
         "caseId": "f7e686c29091b7b8c560bcf6c89427b1023f2786c3f77ebb0ca8f4d29bf9b58a",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-15T16:54:50.586Z"
+        "at": "2026-11-16T16:25:37.392Z"
       },
       {
         "nodeId": "canonical",
         "criterionId": "native-canonical-sequence",
         "kind": "automated",
         "status": "passed",
-        "binding": "7361ab88cb41555ccb370a05f0d38842253256ab2cae63a3d1c0ac8a1b4a8538",
+        "binding": "c39893cfa25a8ccc5d1e095f3ea2f97d57942243aba2a26a10818e180efa41cd",
         "actor": "playwright",
-        "executionId": "5f695e15-7bbd-45d5-9f24-25e0d88d73cb",
+        "executionId": "0a3dbee1-92fb-42c7-bb29-60366d3eb1f4",
         "caseId": "fc92e9391965bb06ba6bc62059b5ebb0eb59ae3c1e988b05f2fdb7958b238219",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-15T16:54:50.586Z"
+        "at": "2026-11-16T16:25:37.394Z"
       },
       {
         "nodeId": "results",
         "criterionId": "native-mechanical-verdict-corruption",
         "kind": "automated",
         "status": "passed",
-        "binding": "c7534468d016c8849ae042a42852a44c7b838666347f7d3f9a8762b2d31996bb",
+        "binding": "f7196feb5c5283f20587b1eab3f9592615e4bc4a4decd16f4a086bbfd2ef0bd7",
         "actor": "playwright",
-        "executionId": "5f695e15-7bbd-45d5-9f24-25e0d88d73cb",
+        "executionId": "0a3dbee1-92fb-42c7-bb29-60366d3eb1f4",
         "caseId": "2be8ec02acc03abbac3c5ecc6bdab5e870ab0347e1fe9d706169c7087bdf17f8",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-15T16:54:50.586Z"
+        "at": "2026-11-16T16:25:37.395Z"
       },
       {
         "nodeId": "media",
         "criterionId": "native-canonical-media-corruption",
         "kind": "automated",
         "status": "passed",
-        "binding": "e963a4649093471d78b6deaf4d4ed7e4fb590275b976b5da770629c1863bc3bf",
+        "binding": "4eb76c86b816612203e8407e4cfc96e23087441b89da0e4da832c06d5c0bbeda",
         "actor": "playwright",
-        "executionId": "5f695e15-7bbd-45d5-9f24-25e0d88d73cb",
+        "executionId": "0a3dbee1-92fb-42c7-bb29-60366d3eb1f4",
         "caseId": "725180f4f30c4f27ccf9f88661c8c43cad9651952a3d232a0c9132d8b3384a2e",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-15T16:54:50.586Z"
+        "at": "2026-11-16T16:25:37.395Z"
       },
       {
         "nodeId": "admission",
         "criterionId": "knowledge-owner-recovery",
         "kind": "automated",
         "status": "passed",
-        "binding": "067319d4f00276bae59d0f220a196a3262318c4824159c129bdb34b591f8102a",
+        "binding": "d796ace6a889c4ba62967381340ac955902bca173980de6f57268812d6245ca2",
         "actor": "vitest",
-        "executionId": "78f26c41-642e-42d4-9046-6c9003a7c554",
+        "executionId": "7f284cd3-6117-4648-910b-46882766e00b",
         "caseId": "685532aee4e54ba04d9dc2a712fa2bc1a094483c5d7cd1c18a42293a31232c0a",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-15T16:25:39.827Z"
+        "at": "2026-11-16T15:55:43.869Z"
       },
       {
         "nodeId": "integration",
         "criterionId": "spec-coverage-review",
         "kind": "manual",
         "status": "accepted",
-        "binding": "5ea41525cf299aa7138bc0b22cb92fb4b4d2c8bea6d75b209950b3a7b0fc14bc",
+        "binding": "f0a91f5190ab86292e2aaa76811d8411f5045a88d1eb18419874599056d998da",
         "actor": "codex",
-        "summary": "Reviewed current handoffs against the prior independent specification review, the fourteen-finding cleanup and completed ten-finding App review, then reconciled checkpoint generation, malformed completed receipts, canonical session observation imports, final/named selection, Knowledge lifetime and actual native delivery. No product changes, compatibility exports or relaxed validation in the final test repair. Current execution: tmp/conversation-proof-ZB57xy, 6808 independently collected cases across 364 files, no issues/skips/flakes; source, compiled exports and definition snapshots unchanged. Follow-up reasoning and failed iterations: docs/ai/apps/asyra-design/reports/conversation-spec-coverage-review-2026-11-14.md. This bounded review preserves the separate historical rectangle failure as cause-unconfirmed; no 101 or full repository local test.",
-        "at": "2026-11-15T16:58:07.244Z"
+        "at": "2026-11-16T16:27:45.763Z",
+        "summary": "Completed spec-first source, owner and independent-oracle review under the uniform verification contract. Current evidence tmp/conversation-proof-mDkTyf reconciles 367 files, 6940 cases and 157 required semantic selectors with no issues/skips/flakes and identical source/build/definition snapshots. Actual CLI faults, independent discovery controls and native consumer corruption controls reject broken handoffs while legal partial completion, saved reuse, images and same-session correction remain valid. Removed duplicate admission and circular expected-output construction; actual Knowledge and Core/browser/native consumers are separately observed. Review and limits: docs/ai/apps/asyra-design/reports/conversation-spec-coverage-review-2026-11-14.md#uniform-verification-implementation---november-16-2026. No 101, live model, repository full test, compatibility or relaxed validation."
       },
       {
         "nodeId": "instructions",
         "criterionId": "single-native-result-selector",
         "kind": "automated",
         "status": "passed",
-        "binding": "e54721a6924043565f73a74debd445cbfa8d66b98159fe48744f89f15a79da7d",
+        "binding": "b9ffb69f9d74c087f1dff2bba3b4bd9a11eacdc7aa1b1837024d0d9c6173c88a",
         "actor": "vitest",
-        "executionId": "78f26c41-642e-42d4-9046-6c9003a7c554",
+        "executionId": "7f284cd3-6117-4648-910b-46882766e00b",
         "caseId": "0af9140a64afedb6fca9302a3dc5938ad47f854b6cd289a413ea1e9c650e29e0",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-15T16:25:39.826Z"
+        "at": "2026-11-16T15:55:43.752Z"
       },
       {
         "nodeId": "discovery",
         "criterionId": "current-result-controls",
         "kind": "automated",
         "status": "passed",
-        "binding": "80e4a2434d3ad554e6b238c66180f8baee549df6c7ccb17f016631523d0b4156",
+        "binding": "cf8d7ba4ca30f69ee0b53a43be305662d39d91d2bb663aab282a72491f061de4",
         "actor": "vitest",
-        "executionId": "78f26c41-642e-42d4-9046-6c9003a7c554",
+        "executionId": "7f284cd3-6117-4648-910b-46882766e00b",
         "caseId": "5a688db7683bfe31f5b90b974f72118fcc48b769718a2db72591a605783d1bde",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-15T16:25:39.826Z"
+        "at": "2026-11-16T15:55:43.766Z"
       },
       {
         "nodeId": "results",
         "criterionId": "retired-application-rejection",
         "kind": "automated",
         "status": "passed",
-        "binding": "c7534468d016c8849ae042a42852a44c7b838666347f7d3f9a8762b2d31996bb",
+        "binding": "f7196feb5c5283f20587b1eab3f9592615e4bc4a4decd16f4a086bbfd2ef0bd7",
         "actor": "vitest",
-        "executionId": "78f26c41-642e-42d4-9046-6c9003a7c554",
+        "executionId": "7f284cd3-6117-4648-910b-46882766e00b",
         "caseId": "35e15323031218fdb94b3dff0c8c8b08153fcefbc4f89455d1c5ff1316afb220",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-15T16:25:39.827Z"
+        "at": "2026-11-16T15:55:43.912Z"
       },
       {
         "nodeId": "retention",
         "criterionId": "unconditional-created-targets",
         "kind": "automated",
         "status": "passed",
-        "binding": "8b28079d0a3592cbc4511e53932e4a845b3c315daacde3d4e327fb0145ac4820",
+        "binding": "0fb5c1ebd2d0bf907a382fd923aaee4e9b3a6239c20153d3812ed6b2ba010e34",
         "actor": "vitest",
-        "executionId": "78f26c41-642e-42d4-9046-6c9003a7c554",
+        "executionId": "7f284cd3-6117-4648-910b-46882766e00b",
         "caseId": "e5010e9ba029d527b8983d158594da10c482d140ae5c31d62cbe866233e10644",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-15T16:25:39.828Z"
+        "at": "2026-11-16T15:55:43.931Z"
       },
       {
         "nodeId": "results",
         "criterionId": "large-native-output",
         "kind": "automated",
         "status": "passed",
-        "binding": "c7534468d016c8849ae042a42852a44c7b838666347f7d3f9a8762b2d31996bb",
+        "binding": "f7196feb5c5283f20587b1eab3f9592615e4bc4a4decd16f4a086bbfd2ef0bd7",
         "actor": "vitest",
-        "executionId": "78f26c41-642e-42d4-9046-6c9003a7c554",
+        "executionId": "7f284cd3-6117-4648-910b-46882766e00b",
         "caseId": "81222ec6b49c6de9b54df836675403b49665e4542d0eb15763a8f59ef69ada84",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-15T16:25:39.827Z"
+        "at": "2026-11-16T15:55:43.917Z"
+      },
+      {
+        "nodeId": "request",
+        "criterionId": "initial-parent-coordinates",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "14864d26f2dcbe4cb5ef123ff91fc701af7032d80a4cc10d43bc8385163b00d5",
+        "actor": "vitest",
+        "executionId": "7f284cd3-6117-4648-910b-46882766e00b",
+        "caseId": "186c5a3248c9017406124adf39660be9be77b021575118543f835f30120c3a79",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-16T15:55:43.702Z"
+      },
+      {
+        "nodeId": "request",
+        "criterionId": "history-original-type",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "14864d26f2dcbe4cb5ef123ff91fc701af7032d80a4cc10d43bc8385163b00d5",
+        "actor": "vitest",
+        "executionId": "7f284cd3-6117-4648-910b-46882766e00b",
+        "caseId": "d7e31e53840e8a6551cc7e1cf19b7a3effc61bc5000972e24c3b657ecf563dfa",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-16T15:55:43.707Z"
+      },
+      {
+        "nodeId": "discovery",
+        "criterionId": "complete-owner-union",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "cf8d7ba4ca30f69ee0b53a43be305662d39d91d2bb663aab282a72491f061de4",
+        "actor": "vitest",
+        "executionId": "7f284cd3-6117-4648-910b-46882766e00b",
+        "caseId": "44b57b45ede605d032f5643abd12bb90fb7cae4500c73091527fd90d600e8af8",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-16T15:55:43.771Z"
+      },
+      {
+        "nodeId": "knowledge",
+        "criterionId": "corpus-execution-undefined",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "5a18007be8e5dbb724bc94f395e6fb7a35380d25746506afd9c0bac35d976cd4",
+        "actor": "vitest",
+        "executionId": "7f284cd3-6117-4648-910b-46882766e00b",
+        "caseId": "e6bcb243023a47327fc2205dc33f8284315a2b766e5f0fd9f2e1412a8eafa846",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-16T15:55:43.849Z"
+      },
+      {
+        "nodeId": "knowledge",
+        "criterionId": "corpus-execution-unknown-operation",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "5a18007be8e5dbb724bc94f395e6fb7a35380d25746506afd9c0bac35d976cd4",
+        "actor": "vitest",
+        "executionId": "7f284cd3-6117-4648-910b-46882766e00b",
+        "caseId": "2868ec9728098607fd1c348e1d22123aac06d212ea12cc2feb88bbb9b9ab2bcd",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-16T15:55:43.854Z"
+      },
+      {
+        "nodeId": "knowledge",
+        "criterionId": "corpus-execution-invalid-arguments",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "5a18007be8e5dbb724bc94f395e6fb7a35380d25746506afd9c0bac35d976cd4",
+        "actor": "vitest",
+        "executionId": "7f284cd3-6117-4648-910b-46882766e00b",
+        "caseId": "b32c202c81e7a7adf38927ca522b5e96b2cea896f5877671341b4844dedef6ac",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-16T15:55:43.859Z"
+      },
+      {
+        "nodeId": "canonical",
+        "criterionId": "native-receipt-rejection",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "c39893cfa25a8ccc5d1e095f3ea2f97d57942243aba2a26a10818e180efa41cd",
+        "actor": "vitest",
+        "executionId": "7f284cd3-6117-4648-910b-46882766e00b",
+        "caseId": "8b57b915d6057096b84da7e0b1e4ab8d4495a34b0145ce91724fdf6aa675d8c7",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-16T15:55:43.897Z"
+      },
+      {
+        "nodeId": "media",
+        "criterionId": "saved-native-image",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "4eb76c86b816612203e8407e4cfc96e23087441b89da0e4da832c06d5c0bbeda",
+        "actor": "vitest",
+        "executionId": "7f284cd3-6117-4648-910b-46882766e00b",
+        "caseId": "599f7e2f6fe2b2971e47f9cb24469df0ff36640dd90abc8e1742296d7c4dbe58",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-16T15:55:43.946Z"
+      },
+      {
+        "nodeId": "media",
+        "criterionId": "saved-image",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "4eb76c86b816612203e8407e4cfc96e23087441b89da0e4da832c06d5c0bbeda",
+        "actor": "vitest",
+        "executionId": "7f284cd3-6117-4648-910b-46882766e00b",
+        "caseId": "9baf49279c2fde72c764699b03aee255ab0aefdfe791f4f77b5b1a2f131e275e",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-16T15:55:43.951Z"
+      },
+      {
+        "nodeId": "media",
+        "criterionId": "saved-bytes",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "4eb76c86b816612203e8407e4cfc96e23087441b89da0e4da832c06d5c0bbeda",
+        "actor": "vitest",
+        "executionId": "7f284cd3-6117-4648-910b-46882766e00b",
+        "caseId": "a067b711a102a79ddb17e1777822c47bab54889c27622136cee1fa0bb3252861",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-16T15:55:43.955Z"
+      },
+      {
+        "nodeId": "lifecycle",
+        "criterionId": "report-recording-failure-native",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "c086fefc5af4d2cd429c979019ad62ebc6229e04bf40dd56c5193adede9ec864",
+        "actor": "vitest",
+        "executionId": "7f284cd3-6117-4648-910b-46882766e00b",
+        "caseId": "bb92c65c1879ca607afeaa0af26a87779b0c3d292cff6c974e6e5648939dfb0b",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-16T15:55:43.980Z"
+      },
+      {
+        "nodeId": "lifecycle",
+        "criterionId": "report-recording-failure-http",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "c086fefc5af4d2cd429c979019ad62ebc6229e04bf40dd56c5193adede9ec864",
+        "actor": "vitest",
+        "executionId": "7f284cd3-6117-4648-910b-46882766e00b",
+        "caseId": "b222fff13db717df211c2dda69bc33fe806a2b2fd65099e934efb5a19957ad3b",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-16T15:55:43.984Z"
+      },
+      {
+        "nodeId": "instructions",
+        "criterionId": "knowledge-publication-contract",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "b9ffb69f9d74c087f1dff2bba3b4bd9a11eacdc7aa1b1837024d0d9c6173c88a",
+        "actor": "node",
+        "executionId": "fcb190ad-e205-4829-93e4-8ae437912840",
+        "caseId": "0aeda4e11d590b44b06490cf1ca4fd36ca86563eeb72878be395997c2a502f35",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-16T16:06:07.891Z"
+      },
+      {
+        "nodeId": "instructions",
+        "criterionId": "recorder-duration-contract",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "b9ffb69f9d74c087f1dff2bba3b4bd9a11eacdc7aa1b1837024d0d9c6173c88a",
+        "actor": "node",
+        "executionId": "fcb190ad-e205-4829-93e4-8ae437912840",
+        "caseId": "19a5ca5b2e262b091472148d1d1046d9a1df97964b26bc23efb528d4669865a5",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-16T16:06:07.893Z"
+      },
+      {
+        "nodeId": "discovery",
+        "criterionId": "single-wrapper-contract",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "cf8d7ba4ca30f69ee0b53a43be305662d39d91d2bb663aab282a72491f061de4",
+        "actor": "node",
+        "executionId": "fcb190ad-e205-4829-93e4-8ae437912840",
+        "caseId": "b84a067eb9f19b1cc6708d6627742d92e12ced1ccb87c29b3d066fa1cbe499d8",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-16T16:06:07.894Z"
+      },
+      {
+        "nodeId": "retention",
+        "criterionId": "saved-descriptor-authority",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "0fb5c1ebd2d0bf907a382fd923aaee4e9b3a6239c20153d3812ed6b2ba010e34",
+        "actor": "node",
+        "executionId": "fcb190ad-e205-4829-93e4-8ae437912840",
+        "caseId": "411b90dae0331f926599967494145438fe036714603e8fc760545c353f8add5a",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-16T16:06:07.896Z"
+      },
+      {
+        "nodeId": "retention",
+        "criterionId": "request-snapshot-authority",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "0fb5c1ebd2d0bf907a382fd923aaee4e9b3a6239c20153d3812ed6b2ba010e34",
+        "actor": "node",
+        "executionId": "fcb190ad-e205-4829-93e4-8ae437912840",
+        "caseId": "fe78d1a179c7bb740fa5f0482c8e58b5b123f4667525c77c32790090ffb38834",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-16T16:06:07.897Z"
+      },
+      {
+        "nodeId": "lifecycle",
+        "criterionId": "report-recording-failure-client",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "c086fefc5af4d2cd429c979019ad62ebc6229e04bf40dd56c5193adede9ec864",
+        "actor": "node",
+        "executionId": "fcb190ad-e205-4829-93e4-8ae437912840",
+        "caseId": "3c83813359488edaaa2c7c17b5cff945401df47edd36983ea271479301ee8171",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-16T16:06:07.899Z"
+      },
+      {
+        "nodeId": "canonical",
+        "criterionId": "receipt-original-request",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "c39893cfa25a8ccc5d1e095f3ea2f97d57942243aba2a26a10818e180efa41cd",
+        "actor": "vitest",
+        "executionId": "7f284cd3-6117-4648-910b-46882766e00b",
+        "caseId": "2e2c79588711bfaf53df4206f34b6d96dc6f751bc7f4948898cf9c98933bc898",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-16T15:55:43.902Z"
+      },
+      {
+        "nodeId": "request",
+        "criterionId": "full-title-tooltip",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "14864d26f2dcbe4cb5ef123ff91fc701af7032d80a4cc10d43bc8385163b00d5",
+        "actor": "vitest",
+        "executionId": "b3b7524f-a965-41a2-898d-a33b0c28fa4d",
+        "caseId": "206cbd21fcab98727e6a340be67b46cbb4c8fe02756d1920a13533f278f9c5fc",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-16T15:58:50.986Z"
+      },
+      {
+        "nodeId": "canonical",
+        "criterionId": "receipt-identity-owner-coverage",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "c39893cfa25a8ccc5d1e095f3ea2f97d57942243aba2a26a10818e180efa41cd",
+        "actor": "vitest",
+        "executionId": "b3b7524f-a965-41a2-898d-a33b0c28fa4d",
+        "caseId": "418dfcb43e00e28a155ff3590123c7a7c1ff23709cdf6bcb294fe9cec0e13d2b",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-16T15:58:50.993Z"
+      },
+      {
+        "nodeId": "canonical",
+        "criterionId": "receipt-target-element-setElementLock",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "c39893cfa25a8ccc5d1e095f3ea2f97d57942243aba2a26a10818e180efa41cd",
+        "actor": "vitest",
+        "executionId": "b3b7524f-a965-41a2-898d-a33b0c28fa4d",
+        "caseId": "a17fafcb4a45b2de62e3830826b2ee4f453c0729074fba6ebbf895d8e611ce7e",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-16T15:58:50.995Z"
+      },
+      {
+        "nodeId": "canonical",
+        "criterionId": "receipt-target-element-toggleElementLock",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "c39893cfa25a8ccc5d1e095f3ea2f97d57942243aba2a26a10818e180efa41cd",
+        "actor": "vitest",
+        "executionId": "b3b7524f-a965-41a2-898d-a33b0c28fa4d",
+        "caseId": "6b7f581303ef8367639d5efae2b23ac74f43bf27d17c05214471389c46737ce3",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-16T15:58:50.997Z"
+      },
+      {
+        "nodeId": "canonical",
+        "criterionId": "receipt-target-element-toggleElementVisible",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "c39893cfa25a8ccc5d1e095f3ea2f97d57942243aba2a26a10818e180efa41cd",
+        "actor": "vitest",
+        "executionId": "b3b7524f-a965-41a2-898d-a33b0c28fa4d",
+        "caseId": "d47b6e3ff968346ab1c0811b9995d05b62eaa8b213610cb44b49cd3b2eb0c127",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-16T15:58:50.999Z"
+      },
+      {
+        "nodeId": "canonical",
+        "criterionId": "receipt-target-element-resetElementSize",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "c39893cfa25a8ccc5d1e095f3ea2f97d57942243aba2a26a10818e180efa41cd",
+        "actor": "vitest",
+        "executionId": "b3b7524f-a965-41a2-898d-a33b0c28fa4d",
+        "caseId": "caea61eb8c4cb76975af6500b8be0fbd2b59b9ad5881d634f62239fb465c137c",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-16T15:58:51.001Z"
+      },
+      {
+        "nodeId": "canonical",
+        "criterionId": "receipt-target-element-changeElementGeometry",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "c39893cfa25a8ccc5d1e095f3ea2f97d57942243aba2a26a10818e180efa41cd",
+        "actor": "vitest",
+        "executionId": "b3b7524f-a965-41a2-898d-a33b0c28fa4d",
+        "caseId": "6821786b85c282f1228c0654ea78ae8227593554f02c5c5e536135dd5ff0e721",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-16T15:58:51.003Z"
+      },
+      {
+        "nodeId": "canonical",
+        "criterionId": "receipt-target-fill-updateGradientHandleAtClientPosition",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "c39893cfa25a8ccc5d1e095f3ea2f97d57942243aba2a26a10818e180efa41cd",
+        "actor": "vitest",
+        "executionId": "b3b7524f-a965-41a2-898d-a33b0c28fa4d",
+        "caseId": "44ce535949e9a7433563d3ba5093c6bfd42050f9ecfaccbe0aa49a760a0b169f",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-16T15:58:51.005Z"
+      },
+      {
+        "nodeId": "canonical",
+        "criterionId": "receipt-target-stroke-addStroke",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "c39893cfa25a8ccc5d1e095f3ea2f97d57942243aba2a26a10818e180efa41cd",
+        "actor": "vitest",
+        "executionId": "b3b7524f-a965-41a2-898d-a33b0c28fa4d",
+        "caseId": "a51f22edf6595bb653137c89300099185abfb434c907c20436df8d6546ee84d4",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-16T15:58:51.008Z"
+      },
+      {
+        "nodeId": "canonical",
+        "criterionId": "receipt-target-stroke-removeStroke",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "c39893cfa25a8ccc5d1e095f3ea2f97d57942243aba2a26a10818e180efa41cd",
+        "actor": "vitest",
+        "executionId": "b3b7524f-a965-41a2-898d-a33b0c28fa4d",
+        "caseId": "e86a57f380e345f68ac6424c1003982bc256cc4a2a3764f44fd7781b7c27dfb4",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-16T15:58:51.010Z"
+      },
+      {
+        "nodeId": "canonical",
+        "criterionId": "receipt-target-element-updateVectorAnchorPointPosition",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "c39893cfa25a8ccc5d1e095f3ea2f97d57942243aba2a26a10818e180efa41cd",
+        "actor": "vitest",
+        "executionId": "b3b7524f-a965-41a2-898d-a33b0c28fa4d",
+        "caseId": "07fe9053dcfcca4fc37ab3d3c900f92ca26ff54d6acb9858c49153486bf67620",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-16T15:58:51.012Z"
+      },
+      {
+        "nodeId": "canonical",
+        "criterionId": "receipt-target-element-updateVectorAnchorPointType",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "c39893cfa25a8ccc5d1e095f3ea2f97d57942243aba2a26a10818e180efa41cd",
+        "actor": "vitest",
+        "executionId": "b3b7524f-a965-41a2-898d-a33b0c28fa4d",
+        "caseId": "7a1153062186d788a7e9a9f7d14a89226b81471cbb9b2eb012d76e25e747d04c",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-16T15:58:51.014Z"
+      },
+      {
+        "nodeId": "canonical",
+        "criterionId": "receipt-target-element-setVectorAnchorPointHandleMode",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "c39893cfa25a8ccc5d1e095f3ea2f97d57942243aba2a26a10818e180efa41cd",
+        "actor": "vitest",
+        "executionId": "b3b7524f-a965-41a2-898d-a33b0c28fa4d",
+        "caseId": "2502c73a6f53f969c3d57c31e2f616fd9bb39d4050209504cb564d786f1bbec8",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-16T15:58:51.016Z"
+      },
+      {
+        "nodeId": "canonical",
+        "criterionId": "receipt-target-element-updateVectorAnchorPointHandlePosition",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "c39893cfa25a8ccc5d1e095f3ea2f97d57942243aba2a26a10818e180efa41cd",
+        "actor": "vitest",
+        "executionId": "b3b7524f-a965-41a2-898d-a33b0c28fa4d",
+        "caseId": "7633cf0daaffc360f52bbedad55705bc0df8b82994a62801bedb0b8fb89e2886",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-16T15:58:51.018Z"
+      },
+      {
+        "nodeId": "canonical",
+        "criterionId": "receipt-target-element-updateVectorAnchorPointHandles",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "c39893cfa25a8ccc5d1e095f3ea2f97d57942243aba2a26a10818e180efa41cd",
+        "actor": "vitest",
+        "executionId": "b3b7524f-a965-41a2-898d-a33b0c28fa4d",
+        "caseId": "9f87e2c03f03eb155279b5cf1c371a5f53a51c99422c04cfeabfb78d7c762cff",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-16T15:58:51.020Z"
+      },
+      {
+        "nodeId": "canonical",
+        "criterionId": "receipt-target-element-appendVectorAnchorPoint",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "c39893cfa25a8ccc5d1e095f3ea2f97d57942243aba2a26a10818e180efa41cd",
+        "actor": "vitest",
+        "executionId": "b3b7524f-a965-41a2-898d-a33b0c28fa4d",
+        "caseId": "b6da11196ec0dc17ab5ce50e185dcd540ac517c3224494e9a7baedd85bd00efd",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-16T15:58:51.022Z"
+      },
+      {
+        "nodeId": "canonical",
+        "criterionId": "receipt-target-element-connectVectorAnchorEndpoints",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "c39893cfa25a8ccc5d1e095f3ea2f97d57942243aba2a26a10818e180efa41cd",
+        "actor": "vitest",
+        "executionId": "b3b7524f-a965-41a2-898d-a33b0c28fa4d",
+        "caseId": "789848bddbc46dd71266327c9f19f6da9f971f8b1b765b48eb616be4ea9a7e50",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-16T15:58:51.024Z"
+      },
+      {
+        "nodeId": "canonical",
+        "criterionId": "receipt-target-element-connectVectorAnchorPoints",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "c39893cfa25a8ccc5d1e095f3ea2f97d57942243aba2a26a10818e180efa41cd",
+        "actor": "vitest",
+        "executionId": "b3b7524f-a965-41a2-898d-a33b0c28fa4d",
+        "caseId": "fbf9dd3e89b37053955fb904e36f5f439d4414b48f95619b1bb6aef49d6dfd90",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-16T15:58:51.026Z"
+      },
+      {
+        "nodeId": "canonical",
+        "criterionId": "receipt-target-element-removeLastSinglePointSubpath",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "c39893cfa25a8ccc5d1e095f3ea2f97d57942243aba2a26a10818e180efa41cd",
+        "actor": "vitest",
+        "executionId": "b3b7524f-a965-41a2-898d-a33b0c28fa4d",
+        "caseId": "b75e56377643f433b2c84836036fa53c72b2c7975ee7e6f80c9ecfab566d6a5e",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-16T15:58:51.028Z"
+      },
+      {
+        "nodeId": "canonical",
+        "criterionId": "receipt-target-element-removeVectorAnchorPoint",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "c39893cfa25a8ccc5d1e095f3ea2f97d57942243aba2a26a10818e180efa41cd",
+        "actor": "vitest",
+        "executionId": "b3b7524f-a965-41a2-898d-a33b0c28fa4d",
+        "caseId": "6951e420ba7b17886e37985142266159122b2e0c1d9b41f1aec9772b96b6c91a",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-16T15:58:51.030Z"
+      },
+      {
+        "nodeId": "canonical",
+        "criterionId": "receipt-target-element-splitVectorSegmentAtWorkspacePos",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "c39893cfa25a8ccc5d1e095f3ea2f97d57942243aba2a26a10818e180efa41cd",
+        "actor": "vitest",
+        "executionId": "b3b7524f-a965-41a2-898d-a33b0c28fa4d",
+        "caseId": "d38ce311011cb326e20adb1554c5b7e91fc32d333c0bbb4d43f9d94929ff7dd4",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-16T15:58:51.032Z"
+      },
+      {
+        "nodeId": "canonical",
+        "criterionId": "receipt-target-element-setVectorClosed",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "c39893cfa25a8ccc5d1e095f3ea2f97d57942243aba2a26a10818e180efa41cd",
+        "actor": "vitest",
+        "executionId": "b3b7524f-a965-41a2-898d-a33b0c28fa4d",
+        "caseId": "1be01578db5b9059ce8d4d05c16a256c28afc6c2c1acb699be22b0815f41825b",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-16T15:58:51.034Z"
+      },
+      {
+        "nodeId": "canonical",
+        "criterionId": "receipt-target-element-scaleVectorElementAroundCenter",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "c39893cfa25a8ccc5d1e095f3ea2f97d57942243aba2a26a10818e180efa41cd",
+        "actor": "vitest",
+        "executionId": "b3b7524f-a965-41a2-898d-a33b0c28fa4d",
+        "caseId": "20936f928fdd15a554d5ac9d5ed7db4526b0935f0309b4c25b76c4fc812dd0c4",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-16T15:58:51.036Z"
+      },
+      {
+        "nodeId": "canonical",
+        "criterionId": "receipt-target-fill-addFills",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "c39893cfa25a8ccc5d1e095f3ea2f97d57942243aba2a26a10818e180efa41cd",
+        "actor": "vitest",
+        "executionId": "b3b7524f-a965-41a2-898d-a33b0c28fa4d",
+        "caseId": "1ea251506382a9e0f763ae545503818aafbb5f6c719f96358d85d0df2f8bd756",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-16T15:58:51.038Z"
+      },
+      {
+        "nodeId": "canonical",
+        "criterionId": "receipt-target-fill-updateFillsAtIndex",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "c39893cfa25a8ccc5d1e095f3ea2f97d57942243aba2a26a10818e180efa41cd",
+        "actor": "vitest",
+        "executionId": "b3b7524f-a965-41a2-898d-a33b0c28fa4d",
+        "caseId": "66fd65b939a8016c059bd721e7b2dcfa266d3be83197ede9d3f4daca7abcacd5",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-16T15:58:51.040Z"
+      },
+      {
+        "nodeId": "canonical",
+        "criterionId": "receipt-target-fill-detachFillsAtIndex",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "c39893cfa25a8ccc5d1e095f3ea2f97d57942243aba2a26a10818e180efa41cd",
+        "actor": "vitest",
+        "executionId": "b3b7524f-a965-41a2-898d-a33b0c28fa4d",
+        "caseId": "cdd6d2222df3c1ea4e0902a5401416bbb4a34b9c321d0a6a8789114e5b1c6150",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-16T15:58:51.042Z"
+      },
+      {
+        "nodeId": "canonical",
+        "criterionId": "receipt-target-fill-shareFillAtIndex",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "c39893cfa25a8ccc5d1e095f3ea2f97d57942243aba2a26a10818e180efa41cd",
+        "actor": "vitest",
+        "executionId": "b3b7524f-a965-41a2-898d-a33b0c28fa4d",
+        "caseId": "f589757f74c622ebd05a044176f5f50bd60a59f1c496325a1596b23a72a780a9",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-16T15:58:51.044Z"
+      },
+      {
+        "nodeId": "canonical",
+        "criterionId": "receipt-target-element-setElementPositions",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "c39893cfa25a8ccc5d1e095f3ea2f97d57942243aba2a26a10818e180efa41cd",
+        "actor": "vitest",
+        "executionId": "b3b7524f-a965-41a2-898d-a33b0c28fa4d",
+        "caseId": "1dfb04902af877d471f0fb203906f2055f338fa44f6c4a7e1c8816eeeef1b825",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-16T15:58:51.046Z"
+      },
+      {
+        "nodeId": "canonical",
+        "criterionId": "receipt-target-fill-removeFills",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "c39893cfa25a8ccc5d1e095f3ea2f97d57942243aba2a26a10818e180efa41cd",
+        "actor": "vitest",
+        "executionId": "b3b7524f-a965-41a2-898d-a33b0c28fa4d",
+        "caseId": "24cfaa596989bddfffa9e4093e0abccd721e1f8d0b8d92f916183acc99eb4ee7",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-16T15:58:51.048Z"
+      },
+      {
+        "nodeId": "canonical",
+        "criterionId": "receipt-target-fill-updateFillFieldsBatch",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "c39893cfa25a8ccc5d1e095f3ea2f97d57942243aba2a26a10818e180efa41cd",
+        "actor": "vitest",
+        "executionId": "b3b7524f-a965-41a2-898d-a33b0c28fa4d",
+        "caseId": "df2e89e728a4ce87071e82351e4fa087f2c51fae82828286368bc5ce9279ba49",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-16T15:58:51.050Z"
+      },
+      {
+        "nodeId": "canonical",
+        "criterionId": "receipt-target-stroke-updateStrokeFieldsBatch",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "c39893cfa25a8ccc5d1e095f3ea2f97d57942243aba2a26a10818e180efa41cd",
+        "actor": "vitest",
+        "executionId": "b3b7524f-a965-41a2-898d-a33b0c28fa4d",
+        "caseId": "88fbd00dfe9a179721a3f248f1aefbe9ce2f0667e6c8a3f5f904d3c66b00c930",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-16T15:58:51.052Z"
+      },
+      {
+        "nodeId": "canonical",
+        "criterionId": "receipt-target-element-setVectorElementPositions",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "c39893cfa25a8ccc5d1e095f3ea2f97d57942243aba2a26a10818e180efa41cd",
+        "actor": "vitest",
+        "executionId": "b3b7524f-a965-41a2-898d-a33b0c28fa4d",
+        "caseId": "8a01a774f2b38479d4e6774cc8906a5a5404a9b2f46769b838196c9a563c71aa",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-16T15:58:51.054Z"
+      },
+      {
+        "nodeId": "canonical",
+        "criterionId": "receipt-created-identity",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "c39893cfa25a8ccc5d1e095f3ea2f97d57942243aba2a26a10818e180efa41cd",
+        "actor": "vitest",
+        "executionId": "b3b7524f-a965-41a2-898d-a33b0c28fa4d",
+        "caseId": "4e526021b4b3c75b291db931c33870590f0a7c9b9e3b6e363bc9bfae2992b422",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-16T15:58:51.056Z"
+      },
+      {
+        "nodeId": "canonical",
+        "criterionId": "receipt-target-declaration",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "c39893cfa25a8ccc5d1e095f3ea2f97d57942243aba2a26a10818e180efa41cd",
+        "actor": "vitest",
+        "executionId": "b3b7524f-a965-41a2-898d-a33b0c28fa4d",
+        "caseId": "fb364d76eddc48b8ddef8db6506951f5566f5e3772f9fa5ca0ae2a2680ab7ac7",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-16T15:58:51.058Z"
+      },
+      {
+        "nodeId": "canonical",
+        "criterionId": "receipt-empty-fill-addFills",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "c39893cfa25a8ccc5d1e095f3ea2f97d57942243aba2a26a10818e180efa41cd",
+        "actor": "vitest",
+        "executionId": "b3b7524f-a965-41a2-898d-a33b0c28fa4d",
+        "caseId": "7c5635b7a1354c9d76aa39a8bd269ab015fd4e34c9f71c6965baf9efe89b3e4f",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-16T15:58:51.060Z"
+      },
+      {
+        "nodeId": "canonical",
+        "criterionId": "receipt-empty-fill-shareFillAtIndex",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "c39893cfa25a8ccc5d1e095f3ea2f97d57942243aba2a26a10818e180efa41cd",
+        "actor": "vitest",
+        "executionId": "b3b7524f-a965-41a2-898d-a33b0c28fa4d",
+        "caseId": "831b928be4c8dc0575c6b666d64fcfd2e110dda5e03bf2adf4bae2d4425a94ed",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-16T15:58:51.061Z"
+      },
+      {
+        "nodeId": "canonical",
+        "criterionId": "receipt-empty-element-setElementPositions",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "c39893cfa25a8ccc5d1e095f3ea2f97d57942243aba2a26a10818e180efa41cd",
+        "actor": "vitest",
+        "executionId": "b3b7524f-a965-41a2-898d-a33b0c28fa4d",
+        "caseId": "630237a233f690e3abd4d85b2a7d73ba1a7e43d0786b2872ca268cf8be60de3a",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-16T15:58:51.063Z"
+      },
+      {
+        "nodeId": "canonical",
+        "criterionId": "receipt-empty-fill-updateFillFieldsBatch",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "c39893cfa25a8ccc5d1e095f3ea2f97d57942243aba2a26a10818e180efa41cd",
+        "actor": "vitest",
+        "executionId": "b3b7524f-a965-41a2-898d-a33b0c28fa4d",
+        "caseId": "3c74bd49458b5ecd1edd407efd834d63acfdd3183b29a02b5934d5eead5d5ed1",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-16T15:58:51.065Z"
+      },
+      {
+        "nodeId": "canonical",
+        "criterionId": "receipt-partial",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "c39893cfa25a8ccc5d1e095f3ea2f97d57942243aba2a26a10818e180efa41cd",
+        "actor": "vitest",
+        "executionId": "b3b7524f-a965-41a2-898d-a33b0c28fa4d",
+        "caseId": "aeebc52d1ec56a06d159161140d6f94f9abcfeaa06ba82e8d900487c42608a16",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-16T15:58:51.067Z"
+      },
+      {
+        "nodeId": "canonical",
+        "criterionId": "receipt-no-change",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "c39893cfa25a8ccc5d1e095f3ea2f97d57942243aba2a26a10818e180efa41cd",
+        "actor": "vitest",
+        "executionId": "b3b7524f-a965-41a2-898d-a33b0c28fa4d",
+        "caseId": "1046cd8329ebee514c603bfa90f8cff9c312d962d0887aa183f3b7183bf07df8",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-16T15:58:51.069Z"
+      },
+      {
+        "nodeId": "canonical",
+        "criterionId": "receipt-failed",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "c39893cfa25a8ccc5d1e095f3ea2f97d57942243aba2a26a10818e180efa41cd",
+        "actor": "vitest",
+        "executionId": "b3b7524f-a965-41a2-898d-a33b0c28fa4d",
+        "caseId": "104a11cb6cb576395e9900b6c8face0bb9eafe462e6f467d02aa618c7a60ca02",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-16T15:58:51.071Z"
+      },
+      {
+        "nodeId": "canonical",
+        "criterionId": "receipt-omitted-unavailable",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "c39893cfa25a8ccc5d1e095f3ea2f97d57942243aba2a26a10818e180efa41cd",
+        "actor": "vitest",
+        "executionId": "b3b7524f-a965-41a2-898d-a33b0c28fa4d",
+        "caseId": "1b494511505679d28c478d4050ba36ea7e67a2b074c7f12d980d547965b719a7",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-16T15:58:51.073Z"
+      },
+      {
+        "nodeId": "canonical",
+        "criterionId": "receipt-omitted-accepted",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "c39893cfa25a8ccc5d1e095f3ea2f97d57942243aba2a26a10818e180efa41cd",
+        "actor": "vitest",
+        "executionId": "b3b7524f-a965-41a2-898d-a33b0c28fa4d",
+        "caseId": "6645c2072e2e7d03eefa91353842f8abc13ad17a64ddc9bb157e3897030f7d3a",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-16T15:58:51.075Z"
+      },
+      {
+        "nodeId": "retention",
+        "criterionId": "saved-image-provenance",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "0fb5c1ebd2d0bf907a382fd923aaee4e9b3a6239c20153d3812ed6b2ba010e34",
+        "actor": "vitest",
+        "executionId": "b3b7524f-a965-41a2-898d-a33b0c28fa4d",
+        "caseId": "e61a24631034fd412d83d0a59fcd89922399b722cff5a3790eafc8305dbf7a37",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-16T15:58:51.083Z"
+      },
+      {
+        "nodeId": "retention",
+        "criterionId": "saved-image-capacity",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "0fb5c1ebd2d0bf907a382fd923aaee4e9b3a6239c20153d3812ed6b2ba010e34",
+        "actor": "vitest",
+        "executionId": "b3b7524f-a965-41a2-898d-a33b0c28fa4d",
+        "caseId": "4db68fdf8ba3a51a667bf528545cc743d4e44f40b35688e149df2b2e9a95f625",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-16T15:58:51.085Z"
+      },
+      {
+        "nodeId": "discovery",
+        "criterionId": "independent-discovery-none",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "cf8d7ba4ca30f69ee0b53a43be305662d39d91d2bb663aab282a72491f061de4",
+        "actor": "vitest",
+        "executionId": "7f284cd3-6117-4648-910b-46882766e00b",
+        "caseId": "0bd8001cbefa95f79b70f159d9e5cb633ee52c31bf362a22417b2259e24006c6",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-16T15:55:43.776Z"
+      },
+      {
+        "nodeId": "discovery",
+        "criterionId": "independent-discovery-weaken-input",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "cf8d7ba4ca30f69ee0b53a43be305662d39d91d2bb663aab282a72491f061de4",
+        "actor": "vitest",
+        "executionId": "7f284cd3-6117-4648-910b-46882766e00b",
+        "caseId": "bfb8d6548e431a4f5543c7fe0467f3ff2864c01d892e30f47fe64f8f38257bba",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-16T15:55:43.781Z"
+      },
+      {
+        "nodeId": "discovery",
+        "criterionId": "independent-discovery-open-result",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "cf8d7ba4ca30f69ee0b53a43be305662d39d91d2bb663aab282a72491f061de4",
+        "actor": "vitest",
+        "executionId": "7f284cd3-6117-4648-910b-46882766e00b",
+        "caseId": "5835ce7581d8e98503f31c0209b68dfdaa9c12c802973aeec2e258969e5af30a",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-16T15:55:43.786Z"
+      },
+      {
+        "nodeId": "discovery",
+        "criterionId": "independent-scope-inventory",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "cf8d7ba4ca30f69ee0b53a43be305662d39d91d2bb663aab282a72491f061de4",
+        "actor": "vitest",
+        "executionId": "7f284cd3-6117-4648-910b-46882766e00b",
+        "caseId": "cbc1cc1375cc09a1db6765f80fe5fac5e3526f50aba43b1311acf91dd8dea607",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-16T15:55:43.791Z"
+      },
+      {
+        "nodeId": "discovery",
+        "criterionId": "independent-scope-none",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "cf8d7ba4ca30f69ee0b53a43be305662d39d91d2bb663aab282a72491f061de4",
+        "actor": "vitest",
+        "executionId": "7f284cd3-6117-4648-910b-46882766e00b",
+        "caseId": "9cc877efee9f6e3e7205fe6d39cddbf387f718a3ac220e442585126629c119a3",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-16T15:55:43.795Z"
+      },
+      {
+        "nodeId": "discovery",
+        "criterionId": "independent-scope-omit-parts",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "cf8d7ba4ca30f69ee0b53a43be305662d39d91d2bb663aab282a72491f061de4",
+        "actor": "vitest",
+        "executionId": "7f284cd3-6117-4648-910b-46882766e00b",
+        "caseId": "bbae212c6302828b7bd5adfcb0809d7024edbd4bdee498efad149f319e9b005d",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-16T15:55:43.800Z"
+      },
+      {
+        "nodeId": "admission",
+        "criterionId": "unicode-native-continuation",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "d796ace6a889c4ba62967381340ac955902bca173980de6f57268812d6245ca2",
+        "actor": "vitest",
+        "executionId": "7f284cd3-6117-4648-910b-46882766e00b",
+        "caseId": "a357b1037ccb94325d54c5ebf395b82149614f56c54959b29825cb358ba654a3",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-16T15:55:43.883Z"
+      },
+      {
+        "nodeId": "results",
+        "criterionId": "canonical-receipt-authority",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "f7196feb5c5283f20587b1eab3f9592615e4bc4a4decd16f4a086bbfd2ef0bd7",
+        "actor": "node",
+        "executionId": "fcb190ad-e205-4829-93e4-8ae437912840",
+        "caseId": "efe55c7dfb17f5c1792a4988ecfacce468d8d99d1a900a6aab00b294900c4819",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-16T16:06:07.895Z"
+      },
+      {
+        "nodeId": "media",
+        "criterionId": "no-correction-quota",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "4eb76c86b816612203e8407e4cfc96e23087441b89da0e4da832c06d5c0bbeda",
+        "actor": "node",
+        "executionId": "fcb190ad-e205-4829-93e4-8ae437912840",
+        "caseId": "c278e474ce0da66f4833a3c56529527afa6eec90b26f76ffef214ff834d57f61",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-16T16:06:07.898Z"
+      },
+      {
+        "nodeId": "evidence",
+        "criterionId": "entry-none",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "257c8b4d993eef9c55aecff79c3b7cce3951ff9a82ceb25afd17f4e7c8137438",
+        "actor": "node",
+        "executionId": "fcb190ad-e205-4829-93e4-8ae437912840",
+        "caseId": "f279109dbbcf95694877516dfafdfb9e52e94391421367af8b65d6733f2975cc",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-16T16:06:07.903Z"
+      },
+      {
+        "nodeId": "evidence",
+        "criterionId": "entry-failed-suite",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "257c8b4d993eef9c55aecff79c3b7cce3951ff9a82ceb25afd17f4e7c8137438",
+        "actor": "node",
+        "executionId": "fcb190ad-e205-4829-93e4-8ae437912840",
+        "caseId": "92d952edaeac7102719c73ba7f0f9fbd126ffbe9a6e778022ff8795700015894",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-16T16:06:07.905Z"
+      },
+      {
+        "nodeId": "evidence",
+        "criterionId": "entry-missing-case",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "257c8b4d993eef9c55aecff79c3b7cce3951ff9a82ceb25afd17f4e7c8137438",
+        "actor": "node",
+        "executionId": "fcb190ad-e205-4829-93e4-8ae437912840",
+        "caseId": "20d128606bfb43a9cd37d41c8bb29faf6b4452cf7408016964384437abf4fdec",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-16T16:06:07.906Z"
+      },
+      {
+        "nodeId": "evidence",
+        "criterionId": "entry-duplicate-case",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "257c8b4d993eef9c55aecff79c3b7cce3951ff9a82ceb25afd17f4e7c8137438",
+        "actor": "node",
+        "executionId": "fcb190ad-e205-4829-93e4-8ae437912840",
+        "caseId": "b59037f1706aa571bb803885c17113c40b5ff4ce64808e1e82f515bbdabefb2e",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-16T16:06:07.907Z"
+      },
+      {
+        "nodeId": "evidence",
+        "criterionId": "entry-exit-failure",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "257c8b4d993eef9c55aecff79c3b7cce3951ff9a82ceb25afd17f4e7c8137438",
+        "actor": "node",
+        "executionId": "fcb190ad-e205-4829-93e4-8ae437912840",
+        "caseId": "a1d1555bd46ebfb941f75efc819193be41114c98a929201856c867c2c4d08bdd",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-16T16:06:07.908Z"
+      },
+      {
+        "nodeId": "evidence",
+        "criterionId": "entry-runtime-error",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "257c8b4d993eef9c55aecff79c3b7cce3951ff9a82ceb25afd17f4e7c8137438",
+        "actor": "node",
+        "executionId": "fcb190ad-e205-4829-93e4-8ae437912840",
+        "caseId": "f6d2f4bb3e4c392a9aa75481cef59723c06d31dec6c164be79de3c1af5f8f7e6",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-16T16:06:07.908Z"
+      },
+      {
+        "nodeId": "evidence",
+        "criterionId": "entry-failed-summary",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "257c8b4d993eef9c55aecff79c3b7cce3951ff9a82ceb25afd17f4e7c8137438",
+        "actor": "node",
+        "executionId": "fcb190ad-e205-4829-93e4-8ae437912840",
+        "caseId": "c51744d2077789c71d3080f88772965b66d1bc5a0b78b047f9ea09bf207b116e",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-16T16:06:07.909Z"
+      },
+      {
+        "nodeId": "evidence",
+        "criterionId": "entry-missing-file",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "257c8b4d993eef9c55aecff79c3b7cce3951ff9a82ceb25afd17f4e7c8137438",
+        "actor": "node",
+        "executionId": "fcb190ad-e205-4829-93e4-8ae437912840",
+        "caseId": "4b0a28f55a6c0f17570194ed4d5ec4f7541b749be7e6fa6e0d1413f3372a26b4",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-16T16:06:07.910Z"
+      },
+      {
+        "nodeId": "evidence",
+        "criterionId": "entry-skipped-case",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "257c8b4d993eef9c55aecff79c3b7cce3951ff9a82ceb25afd17f4e7c8137438",
+        "actor": "node",
+        "executionId": "fcb190ad-e205-4829-93e4-8ae437912840",
+        "caseId": "faf8296c9fe9f4153478f2c2fb95f103a912666d7d6789763e56a3ce74e720e3",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-16T16:06:07.911Z"
+      },
+      {
+        "nodeId": "evidence",
+        "criterionId": "entry-truncated-report",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "257c8b4d993eef9c55aecff79c3b7cce3951ff9a82ceb25afd17f4e7c8137438",
+        "actor": "node",
+        "executionId": "fcb190ad-e205-4829-93e4-8ae437912840",
+        "caseId": "176dacbcd0b7684576a377c98ba7fa1c0005d0c648bff8e2ebd45c7fa5bd6715",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-16T16:06:07.912Z"
+      },
+      {
+        "nodeId": "evidence",
+        "criterionId": "entry-changed-knowledge-source",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "257c8b4d993eef9c55aecff79c3b7cce3951ff9a82ceb25afd17f4e7c8137438",
+        "actor": "node",
+        "executionId": "fcb190ad-e205-4829-93e4-8ae437912840",
+        "caseId": "8f7bc3cef3e74c8d3dc374865a2b6b4997fb6acd17dfeff44211ad532903531a",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-16T16:06:07.913Z"
+      },
+      {
+        "nodeId": "evidence",
+        "criterionId": "entry-publication-failure",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "257c8b4d993eef9c55aecff79c3b7cce3951ff9a82ceb25afd17f4e7c8137438",
+        "actor": "node",
+        "executionId": "fcb190ad-e205-4829-93e4-8ae437912840",
+        "caseId": "60c41226dc77e004fb60abb85bcb70318a9fc6fda6858674a1a1a037dde6ee16",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-16T16:06:07.914Z"
+      },
+      {
+        "nodeId": "evidence",
+        "criterionId": "entry-dropped-observation",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "257c8b4d993eef9c55aecff79c3b7cce3951ff9a82ceb25afd17f4e7c8137438",
+        "actor": "node",
+        "executionId": "fcb190ad-e205-4829-93e4-8ae437912840",
+        "caseId": "248c3b2021fc7cb5e560c57eb8bc0589d59496849fd29331d63d1a614200cf67",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-16T16:06:07.915Z"
+      },
+      {
+        "nodeId": "evidence",
+        "criterionId": "entry-missing-semantic-review",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "257c8b4d993eef9c55aecff79c3b7cce3951ff9a82ceb25afd17f4e7c8137438",
+        "actor": "node",
+        "executionId": "fcb190ad-e205-4829-93e4-8ae437912840",
+        "caseId": "9a6d2b3a469da8bd4951d413af714c4c51d7fef9249ee984cfbfe7a4b4734cc9",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-16T16:06:07.916Z"
+      },
+      {
+        "nodeId": "evidence",
+        "criterionId": "entry-missing-knowledge-handoff",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "257c8b4d993eef9c55aecff79c3b7cce3951ff9a82ceb25afd17f4e7c8137438",
+        "actor": "node",
+        "executionId": "fcb190ad-e205-4829-93e4-8ae437912840",
+        "caseId": "7bbf55e33393858b5d8eea7dfabac9e6e1bdaa1bdb4d2c6d00b0634bce07e220",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-16T16:06:07.917Z"
       }
     ],
     "notes": [],
@@ -1781,51 +3732,51 @@
     "sources": [
       {
         "nodeId": "request",
-        "revision": "2c52e20fbd4a6df7eb9bbcd777c8b63f08d9f18b1506b34ea60d2ef53d20ff56"
+        "revision": "c2dcefca2fbb5259152278796c022fc24c40e50d1499e5f12d53dad718538764"
       },
       {
         "nodeId": "instructions",
-        "revision": "2c52e20fbd4a6df7eb9bbcd777c8b63f08d9f18b1506b34ea60d2ef53d20ff56"
+        "revision": "c2dcefca2fbb5259152278796c022fc24c40e50d1499e5f12d53dad718538764"
       },
       {
         "nodeId": "discovery",
-        "revision": "2c52e20fbd4a6df7eb9bbcd777c8b63f08d9f18b1506b34ea60d2ef53d20ff56"
+        "revision": "c2dcefca2fbb5259152278796c022fc24c40e50d1499e5f12d53dad718538764"
       },
       {
         "nodeId": "knowledge",
-        "revision": "2c52e20fbd4a6df7eb9bbcd777c8b63f08d9f18b1506b34ea60d2ef53d20ff56"
+        "revision": "c2dcefca2fbb5259152278796c022fc24c40e50d1499e5f12d53dad718538764"
       },
       {
         "nodeId": "admission",
-        "revision": "2c52e20fbd4a6df7eb9bbcd777c8b63f08d9f18b1506b34ea60d2ef53d20ff56"
+        "revision": "c2dcefca2fbb5259152278796c022fc24c40e50d1499e5f12d53dad718538764"
       },
       {
         "nodeId": "composition",
-        "revision": "2c52e20fbd4a6df7eb9bbcd777c8b63f08d9f18b1506b34ea60d2ef53d20ff56"
+        "revision": "c2dcefca2fbb5259152278796c022fc24c40e50d1499e5f12d53dad718538764"
       },
       {
         "nodeId": "canonical",
-        "revision": "2c52e20fbd4a6df7eb9bbcd777c8b63f08d9f18b1506b34ea60d2ef53d20ff56"
+        "revision": "c2dcefca2fbb5259152278796c022fc24c40e50d1499e5f12d53dad718538764"
       },
       {
         "nodeId": "results",
-        "revision": "2c52e20fbd4a6df7eb9bbcd777c8b63f08d9f18b1506b34ea60d2ef53d20ff56"
+        "revision": "c2dcefca2fbb5259152278796c022fc24c40e50d1499e5f12d53dad718538764"
       },
       {
         "nodeId": "retention",
-        "revision": "2c52e20fbd4a6df7eb9bbcd777c8b63f08d9f18b1506b34ea60d2ef53d20ff56"
+        "revision": "c2dcefca2fbb5259152278796c022fc24c40e50d1499e5f12d53dad718538764"
       },
       {
         "nodeId": "media",
-        "revision": "2c52e20fbd4a6df7eb9bbcd777c8b63f08d9f18b1506b34ea60d2ef53d20ff56"
+        "revision": "c2dcefca2fbb5259152278796c022fc24c40e50d1499e5f12d53dad718538764"
       },
       {
         "nodeId": "lifecycle",
-        "revision": "2c52e20fbd4a6df7eb9bbcd777c8b63f08d9f18b1506b34ea60d2ef53d20ff56"
+        "revision": "c2dcefca2fbb5259152278796c022fc24c40e50d1499e5f12d53dad718538764"
       },
       {
         "nodeId": "evidence",
-        "revision": "2c52e20fbd4a6df7eb9bbcd777c8b63f08d9f18b1506b34ea60d2ef53d20ff56"
+        "revision": "c2dcefca2fbb5259152278796c022fc24c40e50d1499e5f12d53dad718538764"
       }
     ],
     "warnings": []

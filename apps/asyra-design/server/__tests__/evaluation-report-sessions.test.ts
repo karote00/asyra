@@ -1,5 +1,8 @@
 import { describe, expect, it, vi } from 'vitest'
-import { createEvaluationReportSessions } from '../evaluation-report-sessions'
+import {
+  createEvaluationReportSessions,
+  EvaluationReportFailure
+} from '../evaluation-report-sessions'
 
 describe('evaluation report session ownership', () => {
   const setup = () => {
@@ -47,7 +50,12 @@ describe('evaluation report session ownership', () => {
 
     await vi.waitFor(() => expect(owner.ask).toHaveBeenCalledTimes(1))
     release()
-    await Promise.all([first, second])
+    const replies = await Promise.all([first, second])
+
+    expect(replies).toEqual([
+      expect.objectContaining({ recording: { status: 'saved' } }),
+      expect.objectContaining({ recording: { status: 'saved' } })
+    ])
     expect(owner.ask.mock.calls).toEqual([['first'], ['second']])
     expect(owner.record).toHaveBeenCalledTimes(4)
     expect(sessions.status(retained.sessionId).status).toBe('waiting')
@@ -70,6 +78,106 @@ describe('evaluation report session ownership', () => {
     expect(owner.ask).not.toHaveBeenCalled()
     await sessions.dispose()
     expect(owner.close).toHaveBeenCalledTimes(1)
+  })
+
+  it('delivers a completed answer when output recording fails and continues queued questions without replay', async () => {
+    const { sessions, owner, retained } = setup()
+
+    owner.record
+      .mockResolvedValueOnce(undefined)
+      .mockRejectedValueOnce(Error('output storage unavailable'))
+    try {
+      const first = sessions.ask(retained.sessionId, 'first')
+      const second = sessions.ask(retained.sessionId, 'second')
+      const replies = await Promise.all([first, second])
+
+      expect(replies[0]).toEqual({
+        nativeThreadId: 'original-thread',
+        nativeTurnId: 'first',
+        messages: [{ phase: 'commentary', text: 'first' }],
+        recording: { status: 'failed', message: 'output storage unavailable' }
+      })
+      expect(replies[1]).toMatchObject({
+        nativeTurnId: 'second',
+        recording: { status: 'saved' }
+      })
+      expect(owner.ask.mock.calls).toEqual([['first'], ['second']])
+      expect(owner.record).toHaveBeenCalledTimes(4)
+      expect(sessions.status(retained.sessionId).status).toBe('waiting')
+    } finally {
+      await sessions.dispose()
+    }
+  })
+
+  it('preserves the original provider failure and partial answer when failure recording also fails', async () => {
+    const { sessions, owner, retained } = setup()
+    const partial = {
+      nativeThreadId: 'original-thread',
+      nativeTurnId: 'interrupted',
+      messages: [{ phase: 'commentary', text: 'Partial answer' }]
+    }
+    const failure = new EvaluationReportFailure(
+      'provider disconnected',
+      partial
+    )
+
+    owner.ask.mockRejectedValueOnce(failure)
+    owner.record
+      .mockResolvedValueOnce(undefined)
+      .mockRejectedValueOnce(Error('failure storage unavailable'))
+    try {
+      await expect(sessions.ask(retained.sessionId, 'question')).rejects.toBe(
+        failure
+      )
+      expect(failure.partial).toEqual(partial)
+      expect(owner.ask).toHaveBeenCalledTimes(1)
+      expect(owner.record).toHaveBeenLastCalledWith(
+        'evaluation-followup-1-failure',
+        'output',
+        { ...partial, status: 'failed', error: 'provider disconnected' }
+      )
+    } finally {
+      await sessions.dispose()
+    }
+  })
+
+  it('delivers a valid failure receipt even when the recording exception has no message', async () => {
+    const { sessions, owner, retained } = setup()
+
+    owner.record
+      .mockResolvedValueOnce(undefined)
+      .mockRejectedValueOnce(Error(''))
+    try {
+      const reply = await sessions.ask(retained.sessionId, 'question')
+
+      expect(reply.messages).toEqual([
+        { phase: 'commentary', text: 'question' }
+      ])
+      expect(reply.recording).toEqual({
+        status: 'failed',
+        message: 'Report output recording failed'
+      })
+      expect(owner.ask).toHaveBeenCalledTimes(1)
+    } finally {
+      await sessions.dispose()
+    }
+  })
+
+  it('preserves input admission failure when its failure record is also unavailable', async () => {
+    const { sessions, owner, retained } = setup()
+    const failure = Error('input storage unavailable')
+
+    owner.record
+      .mockRejectedValueOnce(failure)
+      .mockRejectedValueOnce(Error('failure storage unavailable'))
+    try {
+      await expect(sessions.ask(retained.sessionId, 'question')).rejects.toBe(
+        failure
+      )
+      expect(owner.ask).not.toHaveBeenCalled()
+    } finally {
+      await sessions.dispose()
+    }
   })
 
   it('does not infer when retaining the question evidence fails', async () => {

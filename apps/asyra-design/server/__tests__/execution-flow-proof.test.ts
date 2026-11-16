@@ -5877,20 +5877,25 @@ it('execution proof preserves non-Core mutation outcomes without opaque applicat
     throw new Error('Missing position contract')
   }
 
-  for (const [receipt, status] of [
+  // Requested targets are independent evidence, never inferred from the receipt.
+  for (const [positionsById, receipt, status] of [
     [
+      { a: { x: 10, y: 20 } },
       { value: null, acceptedIds: ['a'], unavailableIds: [], changed: true },
       'complete'
     ],
     [
+      { a: { x: 10, y: 20 } },
       { value: null, acceptedIds: ['a'], unavailableIds: [], changed: false },
       'no-change'
     ],
     [
+      {},
       { value: null, acceptedIds: [], unavailableIds: [], changed: false },
       'no-change'
     ],
     [
+      { missing: { x: 10, y: 20 } },
       {
         value: null,
         acceptedIds: [],
@@ -5900,6 +5905,7 @@ it('execution proof preserves non-Core mutation outcomes without opaque applicat
       'failed'
     ],
     [
+      { a: { x: 10, y: 20 }, missing: { x: 30, y: 40 } },
       {
         value: null,
         acceptedIds: ['a'],
@@ -5909,6 +5915,7 @@ it('execution proof preserves non-Core mutation outcomes without opaque applicat
       'partial'
     ],
     [
+      { a: { x: 10, y: 20 }, missing: { x: 30, y: 40 } },
       {
         value: null,
         acceptedIds: ['a'],
@@ -5918,7 +5925,11 @@ it('execution proof preserves non-Core mutation outcomes without opaque applicat
       'partial'
     ]
   ] as const) {
-    expect(describeBasicApiResult(contract, receipt)).toMatchObject({
+    expect(
+      describeBasicApiResult(contract, receipt, positionsById, {
+        positionsById
+      })
+    ).toMatchObject({
       status,
       value: null,
       acceptedIds: receipt.acceptedIds,
@@ -5933,13 +5944,35 @@ it('execution proof preserves non-Core mutation outcomes without opaque applicat
     null,
     [],
     {},
-    { value: null, acceptedIds: [], unavailableIds: [], changed: true }
+    { value: null, acceptedIds: [], unavailableIds: [], changed: true },
+    {
+      value: null,
+      acceptedIds: ['foreign'],
+      unavailableIds: [],
+      changed: true
+    },
+    { value: null, acceptedIds: [], unavailableIds: [], changed: false }
   ]) {
-    expect(describeBasicApiResult(contract, invalid)).toMatchObject({
+    const positionsById = { a: { x: 10, y: 20 } }
+
+    expect(
+      describeBasicApiResult(contract, invalid, positionsById, {
+        positionsById
+      })
+    ).toMatchObject({
       status: 'failed',
       code: 'OWNER_RESULT_INVALID'
     })
   }
+
+  expect(
+    describeBasicApiResult(contract, {
+      value: null,
+      acceptedIds: ['a'],
+      unavailableIds: [],
+      changed: true
+    })
+  ).toMatchObject({ status: 'failed', code: 'OWNER_RESULT_INVALID' })
 })
 
 it('execution proof keeps material provenance independent of viewport transforms', async () => {

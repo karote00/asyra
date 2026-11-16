@@ -215,3 +215,47 @@ export function validateConversationEvidence(evaluation) {
 
   return issues
 }
+
+// Minimum areas mandated by ai-conversation-verification.md, independently of
+// the selected Flow. This checks omission, not exhaustive clause interpretation.
+export function validateConversationProofDefinition(definitions) {
+  const issues = []
+
+  for (const definition of definitions) {
+    for (const id of [
+      'request',
+      'instructions',
+      'discovery',
+      'knowledge',
+      'admission',
+      'composition',
+      'canonical',
+      'results',
+      'retention',
+      'media',
+      'lifecycle',
+      'evidence'
+    ]) {
+      const node = definition.nodes.find((candidate) => candidate.id === id)
+
+      if (!node || !node.required || !node.applicable) {
+        issues.push('Missing required handoff area: ' + id)
+      }
+    }
+
+    if (
+      !definition.criteria.some(
+        (criterion) =>
+          criterion.id === 'spec-coverage-review' && criterion.kind === 'manual'
+      )
+    ) {
+      issues.push('Missing independent spec-coverage review')
+    }
+  }
+
+  if (!definitions.length) {
+    issues.push('Missing conversation verification definition')
+  }
+
+  return issues
+}

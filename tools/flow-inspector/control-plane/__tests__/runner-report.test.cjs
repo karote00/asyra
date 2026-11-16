@@ -30,6 +30,29 @@ const inspect = (value) =>
 test('complete runner evidence admits all independently required files', () => {
   assert.deepEqual(inspect(report()), [])
 })
+
+for (const [field, value] of [
+  ['numFailedTestSuites', 1],
+  ['numFailedTestSuites', -1],
+  ['numFailedTestSuites', '0'],
+  ['numFailedTestSuites', 0.5],
+  ['numPendingTestSuites', 1]
+]) {
+  test(`complete evidence rejects contradictory suite summary ${field}=${value}`, () => {
+    const valueReport = report()
+
+    valueReport[field] = value
+    assert.notDeepEqual(inspect(valueReport), [])
+  })
+}
+
+test('complete evidence accepts zero failed and pending suites with passing cases', () => {
+  const value = report()
+
+  value.numFailedTestSuites = 0
+  value.numPendingTestSuites = 0
+  assert.deepEqual(inspect(value), [])
+})
 for (const [name, corrupt, reason] of [
   [
     'omitted case inside a nonempty file with self-consistent totals',

@@ -1,10 +1,12 @@
 import { createConversationResults } from '../../src/ai/conversation-results'
+import { resultDelivery } from '../local-result-delivery'
 import { expect, it as nativeTest, vi } from 'vitest'
-import { readFileSync, writeFileSync } from 'node:fs'
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { DatabaseSync } from 'node:sqlite'
 import { join } from 'node:path'
 import { isRecord } from '@asyra/utils'
 import { requestConfiguredAiActionBatch } from '../ai-model-provider'
+import { resolveActionBatchRequest } from '../action-batch'
 import { requestLocalAiAssessment } from '../local-ai-provider'
 import { operationInputIssue } from '../operation-input-schema'
 import { createEvaluationReportSessions } from '../evaluation-report-sessions'
@@ -16,6 +18,164 @@ import {
 } from './native-provider-fixture'
 
 const it = nativeTest.skipIf(!nativeProviderExecutable)
+
+it('admits exact history outcomes before the actual native provider and rejects array impostors', async () => {
+  const fixture = await createNativeProviderFixture([])
+  const turns = ['cancelled', 'failed', 'no-change', 'partial', 'success'].map(
+    (outcome, index) => ({
+      turnId: 'history-' + index,
+      intent: 'Prior drawing request ' + index,
+      message: 'Prior answer ' + index,
+      outcome,
+      attachmentIndexes: []
+    })
+  )
+  const input = {
+    actions: [],
+    context: {},
+    attempt: 1,
+    intent: 'Continue the recorded conversation.',
+    metadata: { conversationContext: { turns, attachmentIndexes: [] } }
+  }
+  const requestModelActionBatch = vi.fn(
+    (
+      request: Parameters<typeof requestConfiguredAiActionBatch>[0],
+      options: Parameters<typeof requestConfiguredAiActionBatch>[1]
+    ) =>
+      requestConfiguredAiActionBatch(request, {
+        ...options,
+        environment: fixture.environment,
+        signal: AbortSignal.timeout(45000)
+      })
+  )
+
+  try {
+    await expect(
+      resolveActionBatchRequest(
+        {
+          ...input,
+          metadata: {
+            conversationContext: {
+              turns: [{ ...turns[0], outcome: ['success'] }],
+              attachmentIndexes: []
+            }
+          }
+        },
+        { requestModelActionBatch }
+      )
+    ).rejects.toMatchObject({ code: 'ACTION_BATCH_INVALID_INPUT' })
+    expect(requestModelActionBatch).not.toHaveBeenCalled()
+    expect(fixture.requests).toHaveLength(0)
+    await resolveActionBatchRequest(input, { requestModelActionBatch })
+    expect(requestModelActionBatch).toHaveBeenCalledOnce()
+    const received = fixture.requests[0].input
+
+    if (!Array.isArray(received)) {
+      throw Error('Missing native input')
+    }
+
+    const texts = received
+      .filter(isRecord)
+      .filter((item) => item.role === 'user')
+      .flatMap((item) =>
+        Array.isArray(item.content) ? item.content.filter(isRecord) : []
+      )
+      .filter((item) => item.type === 'input_text')
+      .map((item) => item.text)
+
+    expect(texts).toContain(JSON.stringify({ input, protocolVersion: 1 }))
+  } finally {
+    await fixture.dispose()
+  }
+})
+
+it('delivers saved inspection pixels and status in the actual native successor', async () => {
+  const app = createConversationResults(() => 'document')
+
+  const exchange = async (
+    command: Parameters<ReturnType<typeof app.open>['exchange']>[0]
+  ) => app.open('saved-image').exchange(command)
+
+  const bytes = readFileSync(
+    new URL(
+      '../../test-data/knowledge-evaluation/fixtures/native-delivery/inspection.png',
+      import.meta.url
+    )
+  )
+  const dataUrl = 'data:image/png;base64,' + bytes.toString('base64')
+  const retained = resultDelivery(
+    {
+      retain: {
+        picture: { step: 'capture', path: '/actionResults/0/result/image' }
+      },
+      delivery: 'status'
+    },
+    exchange
+  )
+
+  await retained.capture(
+    'capture',
+    {
+      actionResults: [
+        {
+          actionName: 'inspect_drawing',
+          result: {
+            available: true,
+            image: { dataUrl, width: 824, height: 1024 }
+          }
+        }
+      ]
+    },
+    new Set(),
+    { status: 'success', settlement: 'completed' }
+  )
+  const fixture = await createNativeProviderFixture([
+    {
+      type: 'function_call',
+      id: 'saved-image',
+      call_id: 'saved-image',
+      namespace: 'design_operations',
+      name: 'execute_design',
+      arguments: JSON.stringify({
+        delivery: { fields: { picture: { name: 'picture', path: '' } } }
+      })
+    }
+  ])
+
+  try {
+    await requestConfiguredAiActionBatch(
+      {
+        actions: [],
+        context: {},
+        attempt: 1,
+        intent: 'Inspect the previously saved image.',
+        metadata: { conversationId: 'saved-image' }
+      },
+      {
+        environment: fixture.environment,
+        signal: AbortSignal.timeout(45000),
+        resultContext: exchange
+      }
+    )
+    const content = fixture.successorContent('saved-image')
+
+    if (!Array.isArray(content)) {
+      throw Error('Missing saved image successor content')
+    }
+
+    expect(
+      content.filter(isRecord).filter((item) => item.type === 'input_image')
+    ).toEqual([{ type: 'input_image', image_url: dataUrl, detail: 'high' }])
+    expect(
+      JSON.stringify(
+        content.filter(isRecord).filter((item) => item.type === 'input_text')
+      )
+    ).not.toContain('base64,')
+    expect(fixture.toolReply('saved-image').success).toBe(true)
+  } finally {
+    await fixture.dispose()
+  }
+})
 
 const initialNativeHandoff = (
   fixture: Awaited<ReturnType<typeof createNativeProviderFixture>>
@@ -542,110 +702,156 @@ it('retries durable storage through the actual native provider without replaying
   }
 }, 75000)
 
-it('keeps actual native reporting and later questions in the original session without replay', async () => {
-  const message = (text: string) => ({
-    type: 'message',
-    id: text.replaceAll(' ', '-'),
-    role: 'assistant',
-    status: 'completed',
-    content: [{ type: 'output_text', text, annotations: [] }]
-  })
+for (const recording of ['saved', 'failed']) {
+  const title =
+    recording === 'saved'
+      ? 'keeps actual native reporting and later questions in the original session without replay'
+      : 'delivers the actual native answer after output recording failure without another inference'
 
-  const fixture = await createNativeProviderFixture([
-    () => undefined,
-    {
-      ...message(
-        JSON.stringify({
-          batchId: 'report',
-          actions: [
-            {
-              id: 'report',
-              name: 'report_outcome',
-              arguments: {
-                outcome: 'unsupported',
-                message: 'Complete offline report'
-              },
-              summary: 'Report completed'
+  it(
+    title,
+    async () => {
+      const message = (text: string) => ({
+        type: 'message',
+        id: text.replaceAll(' ', '-'),
+        role: 'assistant',
+        status: 'completed',
+        content: [{ type: 'output_text', text, annotations: [] }]
+      })
+
+      const fixture = await createNativeProviderFixture([
+        () => undefined,
+        {
+          ...message(
+            JSON.stringify({
+              batchId: 'report',
+              actions: [
+                {
+                  id: 'report',
+                  name: 'report_outcome',
+                  arguments: {
+                    outcome: 'unsupported',
+                    message: 'Complete offline report'
+                  },
+                  summary: 'Report completed'
+                }
+              ]
+            })
+          ),
+          id: 'offline-report'
+        },
+        message('First follow up answer'),
+        message('Second follow up answer')
+      ])
+      const sessions = createEvaluationReportSessions()
+      const retain = vi.spyOn(sessions, 'retain')
+
+      try {
+        await requestConfiguredAiActionBatch(
+          {
+            actions: [],
+            context: {},
+            attempt: 1,
+            intent: 'Describe available capabilities without editing.',
+            metadata: {
+              evaluationWindow: {
+                workDeadlineAt: Date.now() + 60000,
+                reportTimeoutMs: null,
+                keepReportSession: true
+              }
             }
-          ]
-        })
-      ),
-      id: 'offline-report'
-    },
-    message('First follow up answer'),
-    message('Second follow up answer')
-  ])
-  const sessions = createEvaluationReportSessions()
-  const retain = vi.spyOn(sessions, 'retain')
-
-  try {
-    await requestConfiguredAiActionBatch(
-      {
-        actions: [],
-        context: {},
-        attempt: 1,
-        intent: 'Describe available capabilities without editing.',
-        metadata: {
-          evaluationWindow: {
-            workDeadlineAt: Date.now() + 60000,
-            reportTimeoutMs: null,
-            keepReportSession: true
+          },
+          {
+            environment: fixture.environment,
+            signal: AbortSignal.timeout(45000),
+            reportSessions: sessions
           }
+        )
+        expect(retain).toHaveBeenCalledTimes(1)
+        const retained = retain.mock.results[0].value
+
+        expect(sessions.status(retained.sessionId).status).toBe('waiting')
+        if (recording === 'failed') {
+          const directory = join(
+            fixture.directory,
+            retained.requestId + '.followups'
+          )
+
+          mkdirSync(directory, { recursive: true })
+          writeFileSync(
+            join(directory, 'evaluation-followup-1-output.json'),
+            'Existing evidence',
+            { flag: 'wx' }
+          )
         }
-      },
-      {
-        environment: fixture.environment,
-        signal: AbortSignal.timeout(45000),
-        reportSessions: sessions
+
+        const first = await sessions.ask(
+          retained.sessionId,
+          'Explain the delivered capabilities.'
+        )
+        const second = await sessions.ask(
+          retained.sessionId,
+          'Explain which inputs were reused.'
+        )
+
+        expect(first.recording).toEqual(
+          recording === 'saved'
+            ? { status: 'saved' }
+            : { status: 'failed', message: expect.stringContaining('EEXIST') }
+        )
+        expect(second.recording).toEqual({ status: 'saved' })
+        if (recording === 'failed') {
+          expect(
+            readFileSync(
+              join(
+                fixture.directory,
+                retained.requestId + '.followups',
+                'evaluation-followup-1-output.json'
+              ),
+              'utf8'
+            )
+          ).toBe('Existing evidence')
+        }
+
+        expect(first.messages.map((entry) => entry.text)).toContain(
+          'First follow up answer'
+        )
+        expect(second.messages.map((entry) => entry.text)).toContain(
+          'Second follow up answer'
+        )
+        expect(first.nativeThreadId).toBe(retained.nativeThreadId)
+        expect(second.nativeThreadId).toBe(retained.nativeThreadId)
+        expect(first.nativeTurnId).not.toBe(second.nativeTurnId)
+        expect(
+          fixture
+            .appPackets()
+            .filter((entry) => entry.method === 'thread/start')
+        ).toHaveLength(1)
+        expect(
+          fixture.appPackets().filter((entry) => entry.method === 'turn/start')
+        ).toHaveLength(4)
+        expect(fixture.requests).toHaveLength(4)
+        expect(JSON.stringify(fixture.requests[3].input)).toContain(
+          'Explain the delivered capabilities.'
+        )
+        expect(JSON.stringify(fixture.requests[3].input)).toContain(
+          'First follow up answer'
+        )
+        expect(fixture.toolCalls()).toHaveLength(0)
+        await sessions.close(retained.sessionId)
+        await expect(
+          sessions.ask(retained.sessionId, 'Late question')
+        ).rejects.toThrow('closed')
+        expect(fixture.requests).toHaveLength(4)
+      } finally {
+        await sessions.dispose()
+        retain.mockRestore()
+        await fixture.dispose()
       }
-    )
-    expect(retain).toHaveBeenCalledTimes(1)
-    const retained = retain.mock.results[0].value
-
-    expect(sessions.status(retained.sessionId).status).toBe('waiting')
-    const first = await sessions.ask(
-      retained.sessionId,
-      'Explain the delivered capabilities.'
-    )
-    const second = await sessions.ask(
-      retained.sessionId,
-      'Explain which inputs were reused.'
-    )
-
-    expect(first.messages.map((entry) => entry.text)).toContain(
-      'First follow up answer'
-    )
-    expect(second.messages.map((entry) => entry.text)).toContain(
-      'Second follow up answer'
-    )
-    expect(first.nativeThreadId).toBe(retained.nativeThreadId)
-    expect(second.nativeThreadId).toBe(retained.nativeThreadId)
-    expect(first.nativeTurnId).not.toBe(second.nativeTurnId)
-    expect(
-      fixture.appPackets().filter((entry) => entry.method === 'thread/start')
-    ).toHaveLength(1)
-    expect(
-      fixture.appPackets().filter((entry) => entry.method === 'turn/start')
-    ).toHaveLength(4)
-    expect(fixture.requests).toHaveLength(4)
-    expect(JSON.stringify(fixture.requests[3].input)).toContain(
-      'Explain the delivered capabilities.'
-    )
-    expect(JSON.stringify(fixture.requests[3].input)).toContain(
-      'First follow up answer'
-    )
-    expect(fixture.toolCalls()).toHaveLength(0)
-    await sessions.close(retained.sessionId)
-    await expect(
-      sessions.ask(retained.sessionId, 'Late question')
-    ).rejects.toThrow('closed')
-    expect(fixture.requests).toHaveLength(4)
-  } finally {
-    await sessions.dispose()
-    retain.mockRestore()
-    await fixture.dispose()
-  }
-}, 60000)
+    },
+    60000
+  )
+}
 
 it('hands real Knowledge data and execution state to the native successor request', async () => {
   const fixture = await createNativeProviderFixture([
@@ -1800,3 +2006,193 @@ it('preserves large selected saved data and outcome in actual native history', a
     await fixture.dispose()
   }
 }, 60000)
+
+it('delivers invalid and partial canonical receipts without certifying foreign targets or replaying writes', async () => {
+  const call = (id: string) => ({
+    type: 'function_call',
+    id,
+    call_id: id,
+    namespace: 'design_operations',
+    name: 'execute_design',
+    arguments: JSON.stringify({
+      operations: [
+        {
+          id: 'move',
+          name: 'api_element_setElementPositions',
+          arguments: { positionsById: { a: { x: 1, y: 2 }, b: { x: 3, y: 4 } } }
+        }
+      ]
+    })
+  })
+
+  const fixture = await createNativeProviderFixture([
+    call('wrong-target'),
+    call('partial-target')
+  ])
+
+  try {
+    vi.stubGlobal('window', {})
+    const { createBasicApiActions } =
+      await import('../../src/ai/basic-api-actions')
+    const { observeAiAction } = await import('../../src/ai/runtime-input')
+    const { createAiToolContract } = await import('@asyra/ai-agent-runtime')
+    const owner = vi
+      .fn()
+      .mockReturnValueOnce({
+        value: null,
+        acceptedIds: ['foreign'],
+        unavailableIds: [],
+        changed: true
+      })
+      .mockReturnValueOnce({
+        value: null,
+        acceptedIds: ['a'],
+        unavailableIds: ['b'],
+        changed: true
+      })
+    const definition = createBasicApiActions(
+      () => ({
+        core: {},
+        element: { setElementPositions: owner },
+        selection: {},
+        hierarchy: {},
+        viewport: {},
+        fill: {},
+        stroke: {}
+      }),
+      {
+        observe: () => () => undefined,
+
+        resolve: () => 'live'
+      }
+    ).find((a) => a.name === 'api_element_setElementPositions')
+
+    if (!definition) {
+      throw Error('Missing canonical position action')
+    }
+
+    const action = observeAiAction(definition)
+
+    await requestConfiguredAiActionBatch(
+      {
+        actions: [createAiToolContract(action)],
+        context: {},
+        attempt: 1,
+        intent: 'Inspect owner receipts without replaying writes.'
+      },
+      {
+        environment: fixture.environment,
+        signal: AbortSignal.timeout(45000),
+
+        executeBatch: async (batch) => ({
+          context: {},
+          actionResults: await Promise.all(
+            batch.actions.map(async (item) => ({
+              actionId: item.id,
+              actionName: item.name,
+              result: JSON.parse(
+                JSON.stringify(
+                  await action.execute(item.arguments, {
+                    signal: new AbortController().signal,
+
+                    runMutation: async (work, settled) => {
+                      const value = work()
+
+                      settled?.(value)
+
+                      return value
+                    }
+                  })
+                )
+              )
+            }))
+          )
+        })
+      }
+    )
+    expect(owner).toHaveBeenCalledTimes(2)
+    expect(fixture.toolReply('wrong-target').success).toBe(false)
+    expect(fixture.successorOutput('wrong-target')).toContain(
+      'OWNER_RESULT_INVALID'
+    )
+    expect(fixture.successorOutput('wrong-target')).toContain('foreign')
+    expect(fixture.successorOutput('partial-target')).toContain('partial')
+    expect(fixture.successorOutput('partial-target')).not.toContain(
+      'OWNER_RESULT_INVALID'
+    )
+    expect(
+      fixture
+        .appPackets()
+        .filter((packet) => packet.method === 'turn/interrupt')
+    ).toHaveLength(0)
+  } finally {
+    vi.unstubAllGlobals()
+    await fixture.dispose()
+  }
+}, 60000)
+
+it('delivers schema character limits and continues corrected fact input through the same native session', async () => {
+  const statement = '\u{20BB7}'.repeat(501)
+  const fixture = await createNativeProviderFixture([
+    {
+      type: 'function_call',
+      id: 'invalid-fact',
+      call_id: 'invalid-fact',
+      namespace: 'design_operations',
+      name: 'execute_design',
+      arguments: JSON.stringify({
+        operations: [
+          {
+            id: 'note',
+            name: 'record_design_facts',
+            arguments: { facts: [{ id: 'fact', statement: 'a'.repeat(1001) }] }
+          }
+        ]
+      })
+    },
+    {
+      type: 'function_call',
+      id: 'corrected-fact',
+      call_id: 'corrected-fact',
+      namespace: 'design_operations',
+      name: 'execute_design',
+      arguments: JSON.stringify({
+        operations: [
+          {
+            id: 'note',
+            name: 'record_design_facts',
+            arguments: { facts: [{ id: 'fact', statement }] }
+          }
+        ]
+      })
+    }
+  ])
+
+  try {
+    await requestConfiguredAiActionBatch(
+      { actions: [], context: {}, attempt: 1, intent: 'Record a source fact.' },
+      {
+        environment: fixture.environment,
+        signal: AbortSignal.timeout(45000),
+
+        executeBatch: async () => {
+          throw Error('Notes must not dispatch canvas work')
+        }
+      }
+    )
+    const rejected = JSON.stringify(fixture.successorContent('invalid-fact'))
+    const corrected = JSON.stringify(fixture.successorContent('corrected-fact'))
+
+    expect(rejected).toContain('TOOL_INPUT_INVALID')
+    expect(rejected).toContain('not-started')
+    expect(corrected).toContain(statement)
+    expect(corrected).not.toContain('TOOL_INPUT_INVALID')
+    expect(fixture.toolReply('corrected-fact').success).toBe(true)
+    expect(
+      fixture.appPackets().filter((packet) => packet.method === 'thread/start')
+    ).toHaveLength(1)
+    expect(fixture.requests).toHaveLength(3)
+  } finally {
+    await fixture.dispose()
+  }
+})

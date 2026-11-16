@@ -1,3 +1,4 @@
+import type { AiJsonValue } from '@asyra/ai-agent-runtime'
 import { readFile } from 'node:fs/promises'
 import { createServer } from 'node:http'
 import type { AddressInfo } from 'node:net'
@@ -455,11 +456,11 @@ it('delivers a real browser failure through HTTP before closing the execution st
     const origin = `http://127.0.0.1:${(server.address() as AddressInfo).port}`
 
     provider = createServerActionBatchProvider({
-      fetch: (async (url, init) =>
+      fetch: async (url, init) =>
         fetch(origin + String(url), {
           ...init,
           headers: { ...init.headers, origin }
-        })) as never
+        })
     })
     const error = new AiActionExecutionError('Prepared design is invalid.')
     const controller = new AbortController()
@@ -573,7 +574,7 @@ it.each(['completed', 'partial', 'unknown'] as const)(
       const origin = `http://127.0.0.1:${(server.address() as AddressInfo).port}`
 
       provider = createServerActionBatchProvider({
-        fetch: (async (url, init) => {
+        fetch: async (url, init) => {
           const identity = captureRequestIdentity(
             {
               url: () => origin + String(url),
@@ -600,7 +601,7 @@ it.each(['completed', 'partial', 'unknown'] as const)(
             ...init,
             headers: { ...init.headers, origin }
           })
-        }) as never
+        }
       })
       const controller = new AbortController()
 
@@ -690,11 +691,11 @@ it('preserves activity provenance and order through the HTTP progress handoff', 
     const origin = `http://127.0.0.1:${(server.address() as AddressInfo).port}`
 
     provider = createServerActionBatchProvider({
-      fetch: (async (url, init) =>
+      fetch: async (url, init) =>
         fetch(origin + String(url), {
           ...init,
           headers: { ...init.headers, origin }
-        })) as never
+        })
     })
     const received: unknown[] = []
 
@@ -803,6 +804,82 @@ describe('conversation continuity admission', () => {
     attachmentIndexes: [],
     question: { message: 'Group or title?', choices: [] }
   }
+
+  const invalidOutcomes: readonly (AiJsonValue | undefined)[] = [
+    ['success'],
+    [['failed']],
+    [],
+    {},
+    null,
+    true,
+    1,
+    'invalid',
+    undefined
+  ]
+
+  it.each(invalidOutcomes.map((outcome) => ({ outcome })))(
+    'rejects a noncanonical history outcome before provider work - case %#',
+    async ({ outcome }) => {
+      const requestModelActionBatch = vi.fn(async () => ({
+        batchId: 'unused',
+        actions: []
+      }))
+
+      await expect(
+        resolveActionBatchRequest(
+          {
+            intent: 'Continue the drawing.',
+            attempt: 1,
+            context: {},
+            actions: [],
+            metadata: {
+              conversationContext: {
+                turns: [
+                  {
+                    turnId: turn.turnId,
+                    intent: turn.intent,
+                    message: turn.message,
+                    attachmentIndexes: [],
+                    ...(outcome === undefined ? {} : { outcome })
+                  }
+                ],
+                attachmentIndexes: []
+              }
+            }
+          },
+          { requestModelActionBatch }
+        )
+      ).rejects.toMatchObject({ code: 'ACTION_BATCH_INVALID_INPUT' })
+      expect(requestModelActionBatch).not.toHaveBeenCalled()
+    }
+  )
+
+  it.each(['cancelled', 'failed', 'no-change', 'partial', 'success'])(
+    'preserves the exact legal history outcome %s in provider input',
+    async (outcome) => {
+      const requestModelActionBatch = vi.fn(async () => ({
+        batchId: 'next',
+        actions: []
+      }))
+      const input = {
+        intent: 'Continue the drawing.',
+        attempt: 1,
+        context: {},
+        actions: [],
+        metadata: {
+          conversationContext: {
+            turns: [{ ...turn, outcome }],
+            attachmentIndexes: []
+          }
+        }
+      }
+
+      await resolveActionBatchRequest(input, { requestModelActionBatch })
+      expect(requestModelActionBatch).toHaveBeenCalledExactlyOnceWith(input, {
+        signal: undefined
+      })
+    }
+  )
 
   it.each([
     { turns: [{ ...turn, attachmentIndexes: [0] }], attachmentIndexes: [] },
@@ -1008,6 +1085,23 @@ it('keeps evaluation questions available after HTTP settlement and protects loca
     await disconnected
     release()
     await vi.waitFor(() => expect(record).toHaveBeenCalledTimes(2))
+    record
+      .mockResolvedValueOnce(undefined)
+      .mockRejectedValueOnce(Error('output storage unavailable'))
+    const delivered = await post(endpoint, {
+      operation: 'ask',
+      sessionId,
+      question: 'Preserve this answer.'
+    })
+
+    expect(delivered.status).toBe(200)
+    expect(await delivered.json()).toEqual({
+      nativeThreadId: 'native-original',
+      nativeTurnId: 'followup',
+      messages: [{ phase: 'commentary', text: 'Preserve this answer.' }],
+      recording: { status: 'failed', message: 'output storage unavailable' }
+    })
+    expect(record).toHaveBeenCalledTimes(4)
     expect(
       await (await post(endpoint, { operation: 'status', sessionId })).json()
     ).toMatchObject({ status: 'waiting' })

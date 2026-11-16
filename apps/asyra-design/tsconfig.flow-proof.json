@@ -5,7 +5,8 @@
     "lib": [
       "ES2022",
       "ES2023.Array",
-      "DOM"
+      "DOM",
+      "DOM.Iterable"
     ],
     "types": [
       "node",
@@ -13,6 +14,8 @@
     ]
   },
   "include": [
+    "server/__tests__/knowledge-contract-corpus.test.ts",
+    "server/__tests__/action-batch.test.ts",
     "server/__tests__/execution-flow-proof.test.ts",
     "server/__tests__/contract-review-acquisition.test.ts",
     "server/__tests__/data-review.integration.test.ts",

@@ -1,4 +1,5 @@
 import { createBasicApiActions } from '../../src/ai/basic-api-actions'
+import { createConversationResults } from '../../src/ai/conversation-results'
 vi.mock('../../src/contexts', () => ({ default: {} }))
 import { resultDelivery } from '../local-result-delivery'
 import type { LocalToolImage } from '../local-tool-media'
@@ -28,6 +29,191 @@ const fixture = JSON.parse(
 )
 const pixels = readFileSync(new URL('inspection.png', fixtureRoot))
 const uri = 'data:image/png;base64,' + pixels.toString('base64')
+
+it.each(['image', 'bytes'])(
+  'retains %s pixels through a fresh Host without recapture or Base64 prose',
+  async (selection) => {
+    const app = createConversationResults(() => 'document')
+
+    const exchange = async (
+      command: Parameters<ReturnType<typeof app.open>['exchange']>[0]
+    ) => app.open('conversation').exchange(command)
+
+    const capture = vi.fn(() => ({
+      ...fixture.receipt.actionResults.find(
+        (entry: { actionName: string }) =>
+          entry.actionName === 'inspect_drawing'
+      ).result,
+      image: { dataUrl: uri, width: 824, height: 1024 }
+    }))
+    const action = createAiInspectionAction(capture)
+
+    const makeHost = () => {
+      const operations = createLocalOperationTools(
+        [createAiToolContract(action)],
+        {
+          modelActions: (value) => value,
+
+          resolveBatch: (value) => value
+        },
+        async () => {
+          throw Error('Unexpected browser dispatch')
+        }
+      )
+
+      return createLocalToolHost({
+        requestId: crypto.randomUUID(),
+        signal: new AbortController().signal,
+        capacity: 32,
+        receiptCapacity: 8,
+        artifactCapacity: 64,
+        limits: {
+          steps: 16,
+          bindings: 240,
+          bindingDepth: 32,
+          bytes: 24000,
+          issues: 8
+        },
+        resultContext: exchange,
+        store: {
+          read: async () => undefined,
+
+          list: async () => [],
+
+          write: async () => {
+            throw Error('Unexpected save')
+          }
+        },
+
+        createGroups: () => [
+          {
+            name: 'design_operations',
+            description: 'Inspection',
+            owner: {
+              ...operations,
+
+              callInternal: async () =>
+                JSON.stringify({
+                  actionResults: [
+                    {
+                      actionId: 'capture',
+                      actionName: action.name,
+                      result: await action.execute(
+                        { elementId: 'drawing' },
+                        { signal: new AbortController().signal }
+                      )
+                    }
+                  ],
+                  toolOutcome: {
+                    status: 'success',
+                    settlement: 'completed',
+                    issues: []
+                  }
+                })
+            }
+          }
+        ]
+      })
+    }
+
+    const paths: Record<string, string> = {
+      image: '/actionResults/0/result/image',
+      bytes: '/actionResults/0/result/image/dataUrl'
+    }
+    const first = makeHost()
+
+    try {
+      const saved = await first.invoke({
+        name: 'design_operations.execute_design',
+        input: {
+          operations: [
+            {
+              id: 'capture',
+              name: 'design_operations.' + action.name,
+              arguments: { arguments: { elementId: 'drawing' } }
+            }
+          ],
+          retain: { picture: { step: 'capture', path: paths[selection] } },
+          delivery: 'status'
+        }
+      })
+
+      expect(saved.outcome, saved.text).toMatchObject({ status: 'success' })
+      expect(await localToolContent(saved.text, saved.media)).toHaveLength(1)
+    } finally {
+      await first.dispose()
+    }
+
+    const second = makeHost()
+
+    try {
+      const reply = await second.invoke({
+        name: 'design_operations.execute_design',
+        input: {
+          delivery: { fields: { picture: { name: 'picture', path: '' } } }
+        }
+      })
+
+      expect(reply.outcome, reply.text.slice(0, 800)).toMatchObject({
+        status: 'success'
+      })
+      const content = await localToolContent(reply.text, reply.media)
+
+      expect(content.filter((item) => item.type === 'inputImage')).toEqual([
+        { type: 'inputImage', imageUrl: uri }
+      ])
+      expect(
+        JSON.stringify(content.filter((item) => item.type === 'inputText'))
+      ).not.toContain('base64,')
+      expect(capture).toHaveBeenCalledOnce()
+
+      const shape = await second.invoke({
+        name: 'design_operations.execute_design',
+        input: {
+          delivery: {
+            fields: { picture: { name: 'picture', path: '', view: 'shape' } }
+          }
+        }
+      })
+
+      expect(shape.outcome).toMatchObject({ status: 'success' })
+      expect(JSON.parse(shape.text).fields.picture).toMatchObject({
+        name: 'picture',
+        type: selection === 'bytes' ? 'string' : 'object'
+      })
+      expect(await localToolContent(shape.text, shape.media)).toHaveLength(1)
+      expect(shape.text).not.toContain('base64,')
+
+      if (selection === 'image') {
+        const width = await second.invoke({
+          name: 'design_operations.execute_design',
+          input: {
+            delivery: { fields: { width: { name: 'picture', path: '/width' } } }
+          }
+        })
+
+        expect(JSON.parse(width.text).fields.width).toBe(824)
+        expect(await localToolContent(width.text, width.media)).toHaveLength(1)
+      }
+
+      app.open('conversation').exchange({
+        save: { picture: { dataUrl: uri, width: 824, height: 1024 } }
+      })
+      const authored = await second.invoke({
+        name: 'design_operations.execute_design',
+        input: {
+          delivery: { fields: { picture: { name: 'picture', path: '' } } }
+        }
+      })
+
+      expect(
+        await localToolContent(authored.text, authored.media)
+      ).toHaveLength(1)
+    } finally {
+      await second.dispose()
+    }
+  }
+)
 
 it('delivers pixels selected under the recorded host receipt alias without Base64 text', async () => {
   const receipt = structuredClone(selectedInspection.response)

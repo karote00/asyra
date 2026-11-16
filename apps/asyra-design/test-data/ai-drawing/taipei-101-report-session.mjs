@@ -46,6 +46,25 @@ export const requestReportSession = (session, operation, question) =>
               throw Error('Original report thread changed')
             }
 
+            if (operation === 'ask') {
+              const recording = value.recording
+              const saved = recording?.status === 'saved'
+              const failed =
+                recording?.status === 'failed' &&
+                typeof recording.message === 'string' &&
+                recording.message.trim()
+
+              if (
+                (!saved && !failed) ||
+                Object.keys(recording).some(
+                  (key) =>
+                    !['status', ...(failed ? ['message'] : [])].includes(key)
+                )
+              ) {
+                throw Error('Invalid report recording receipt')
+              }
+            }
+
             resolve(value)
           } catch (error) {
             reject(error)
@@ -103,6 +122,7 @@ if (
       JSON.stringify({
         nativeThreadId: result.nativeThreadId,
         nativeTurnId: result.nativeTurnId,
+        recording: result.recording,
         report
       })
     )

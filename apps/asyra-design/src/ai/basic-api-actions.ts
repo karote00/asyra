@@ -95,7 +95,7 @@ const basicApiRevision = (contract: BasicApiContract): number => {
   }
 
   if (contract.result.kind === 'mutation-receipt') {
-    return 10
+    return 11
   }
 
   if (
@@ -316,7 +316,8 @@ export const createBasicApiActions = (
         const result = describeBasicApiResult(
           contract,
           value,
-          resolvedArgs[contract.parameters[0]]
+          resolvedArgs[contract.parameters[0]],
+          resolvedArgs
         )
 
         if (!documentMutation) {
@@ -350,6 +351,28 @@ export const createBasicApiActions = (
           mutationScope: { complete, elementIds, removedElementIds }
         }
         const kind = contract.result.kind
+
+        if (
+          kind === 'mutation-receipt' &&
+          'code' in result &&
+          result.code === 'OWNER_RESULT_INVALID'
+        ) {
+          return {
+            ...receipt,
+            modelResult: {
+              status: result.status,
+              code: result.code,
+              message: result.message,
+              settlement: 'completed',
+              ownerResult: result.value,
+              mutationScope: {
+                complete,
+                elementCount: elementIds.length,
+                removedElementCount: removedElementIds.length
+              }
+            }
+          }
+        }
 
         if (
           !basicApiDeliverySchema(contract) ||

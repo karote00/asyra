@@ -3751,3 +3751,196 @@ it('preserves authored named-reference rejection before Host planning and allows
     await f.host.dispose()
   }
 })
+
+it.each(
+  ['native', 'registered', 'sequence', 'retained', 'selected'].flatMap(
+    (route) => [false, true].map((invalid) => ({ route, invalid }))
+  )
+)(
+  'preserves invocation-only visibility on every delivery branch %j',
+  async ({ route, invalid }) => {
+    const inputSchema = object({})
+    // The static declaration covers all public invocation alternatives; a selected
+    // invocation may hide optional detail without violating a required field.
+    const registered = {
+      ...object({ value: { type: 'string' }, detail: { type: 'string' } }),
+      required: ['value']
+    }
+    const canonical = object({
+      value: { type: 'string' },
+      detail: {
+        type: 'string',
+        'x-model-visibility': 'internal'
+      }
+    })
+    const model = object({ value: { type: 'string' } })
+    const call = vi.fn(async () =>
+      JSON.stringify({ value: 'public', detail: 'INTERNAL_SENTINEL' })
+    )
+    const context = createConversationResults(() => 'document').open(
+      'visibility'
+    )
+    const host = createLocalToolHost({
+      requestId: 'visibility',
+      signal: new AbortController().signal,
+      store: memory(),
+      capacity: 16,
+      receiptCapacity: 8,
+      artifactCapacity: 16,
+      limits: {
+        steps: 8,
+        bindings: 32,
+        bindingDepth: 16,
+        bytes: 24000,
+        issues: 8
+      },
+
+      resultContext: async (command) => context.exchange(command),
+
+      createGroups: () => [
+        {
+          name: 'owned',
+          description: 'Owned values',
+          owner: {
+            definitions: [
+              {
+                name: 'value',
+                description: 'Read a value',
+                inputSchema,
+                ...toolSemantics(registered, 'read', []),
+                revision: 1,
+                composition: 'allowed'
+              }
+            ],
+
+            invocationSchemas: (_name, _input, stage) => ({
+              inputSchema,
+              outputSchema: stage === 'model' ? model : canonical
+            }),
+
+            call,
+
+            resultOutcome: () => ({
+              status: 'success',
+              settlement: 'completed'
+            }),
+
+            projectModelResult: () => ({ value: invalid ? 42 : 'public' })
+          }
+        }
+      ]
+    })
+
+    try {
+      let name = 'owned.value'
+      let input: Record<string, unknown> = {}
+
+      if (route === 'registered') {
+        name = 'tool_library.invoke_tool'
+        input = { name: 'owned.value', revision: 1, input: {} }
+      } else if (route !== 'native') {
+        name = 'design_operations.execute_design'
+        input = {
+          operations: [{ id: 'read', name: 'owned.value', arguments: {} }],
+          ...(route === 'retained'
+            ? { retain: { saved: { step: 'read', path: '' } } }
+            : {}),
+          ...(route === 'selected'
+            ? { delivery: { fields: { result: { step: 'read', path: '' } } } }
+            : {})
+        }
+      }
+
+      const reply = await host.invoke({ name, input })
+
+      expect(call).toHaveBeenCalledTimes(1)
+      expect(reply.outcome.settlement).toBe('completed')
+      expect(reply.text).not.toContain('INTERNAL_SENTINEL')
+      expect(reply.text).not.toContain('"detail"')
+      if (invalid) {
+        expect(reply.outcome.status).not.toBe('success')
+        expect(reply.text).not.toContain('"value":42')
+        expect(context.names()).toEqual([])
+        if (route === 'retained') {
+          expect(JSON.parse(reply.text).toolOutcome.issues).toEqual([
+            {
+              code: 'RESULT_DELIVERY',
+              message: expect.stringContaining('output.value: expected string')
+            }
+          ])
+        }
+      } else {
+        expect(reply.outcome.status).toBe('success')
+        expect(reply.text).toContain('public')
+      }
+    } finally {
+      await host.dispose()
+    }
+  }
+)
+
+it.each(['invalid', 'throws'])(
+  'does not expose unprojected child evidence when a composite projector %s',
+  async (mode) => {
+    const calls = vi.fn(async () =>
+      JSON.stringify({ child: { secret: 'PRIVATE_CHILD' } })
+    )
+    const host = createLocalToolHost({
+      requestId: 'opaque-child',
+      signal: new AbortController().signal,
+      store: memory(),
+      capacity: 16,
+      receiptCapacity: 8,
+      artifactCapacity: 16,
+      limits: {
+        steps: 8,
+        bindings: 32,
+        bindingDepth: 16,
+        bytes: 24000,
+        issues: 8
+      },
+
+      createGroups: () => [
+        {
+          name: 'composite',
+          description: 'Composite owner',
+          owner: {
+            definitions: [
+              {
+                name: 'read',
+                description: 'Read',
+                inputSchema: object({}),
+                ...toolSemantics(object({ child: {} }), 'read', []),
+                composition: 'allowed'
+              }
+            ],
+            projectedResultPaths: ['/child'],
+            call: calls,
+
+            projectModelResult: () => {
+              if (mode === 'throws') {
+                throw Error('Child delivery failed')
+              }
+
+              return {}
+            }
+          }
+        }
+      ]
+    })
+
+    try {
+      const reply = await host.invoke({ name: 'composite.read', input: {} })
+
+      expect(reply.success).toBe(false)
+      expect(reply.text).not.toContain('PRIVATE_CHILD')
+      expect(JSON.parse(reply.text)).toMatchObject({
+        code: 'TOOL_DELIVERY_INVALID',
+        settlement: 'completed'
+      })
+      expect(calls).toHaveBeenCalledTimes(1)
+    } finally {
+      await host.dispose()
+    }
+  }
+)

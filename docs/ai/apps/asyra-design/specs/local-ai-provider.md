@@ -718,8 +718,10 @@ to the existing review owner. Logs are ignored local evidence, not document data
 Prepared semantic artifacts support explicit grouped release through
 release_design_artifacts; the ordinary tool scheduler owns ordering and cancellation.
 Released IDs become unavailable without replaying or deleting canvas mutations.
-Compact combined receipts are requested at the action source; full mode remains
-available for ID selection. Fresh permission context remains a Runtime responsibility.
+Canonical application returns complete acknowledged IDs and mappings. The Host
+applies `delivery` after validation; named retention and bindings consume their
+declared values independently. No separate full-response input mode exists. Fresh
+permission context remains a Runtime responsibility.
 
 ### Canonical inspection validity
 

@@ -56,9 +56,9 @@ attachments, prior conversation or extra test instructions. A user-approved prom
 change must explicitly update the fixture and its contract; no default adaptation.
 The default drawing guard is fifteen minutes, independent of production task duration.
 An explicit user-requested duration may be supplied as `--minutes=N` (integer
-1–15), for example `yarn workspace @asyra/asyra-design test:live:taipei-101 --minutes=12`.
+1–30), for example `yarn workspace @asyra/asyra-design test:live:taipei-101 --minutes=12`.
 This changes only that run, records `deadlineMs`, preserves the fixed prompt, and
-keeps the existing 15-second soft-stop margin and 15-minute safety ceiling. It requests
+keeps the existing 15-second soft-stop margin and 30-minute safety ceiling. It requests
 Stop before the hard deadline to retain evidence, with the existing worker-owned
 hard termination as backup. A timeout, failure or clarification is an outcome to
 report, not permission to rerun or coach the model.
@@ -85,9 +85,17 @@ continues. A completed drawing is not permission to edit while reporting remains
 active. Preserve the existing static-source rule through live evidence collection.
 
 The fixed runner retains the provider after its report as specified in
-[Agent Context and Report Continuity](../plans/agent-context-and-report-continuity-plan.md#5-verify-submitted-dependencies-actual-execution-and-agent-return-reasons).
+[Agent Context and Report Continuity](../plans/completed/agent-context-and-report-continuity-record-2026-11-16.md#5-verify-submitted-dependencies-actual-execution-and-agent-return-reasons).
 Use the retained-session commands below for questions and explicit close.
 Do not describe a new-session reconstruction as a reply from the original agent.
+
+Every retained-session answer includes `recording.status`: `saved` confirms the
+server output record; `failed` includes its error message while preserving the
+complete native answer. The question command saves that receipt with the answer
+and prints it beside the report path. Do not request another inference to repair
+an output-recording failure. A genuine provider failure remains a failure; input
+recording must succeed before a question is sent. Failed server recording cannot
+promise recovery if the HTTP reader also disconnects.
 
 The fixed benchmark uses one App request and the existing native evaluation
 window. After normal completion or deadline interruption acknowledgement and tool
@@ -408,7 +416,10 @@ sample.
 
 For a full feature review, scope comes from current specifications and actual
 registration, not the last patch or the list of failures from the last run.
-The existing plan's full-flow boundary table is the review scope. Read and compare
+Every method must satisfy the
+[AI conversation verification contract](../specs/ai-conversation-verification.md).
+The plan's full-flow boundary table is navigation, not an exhaustive coverage
+authority. Derive obligations from all current normative clauses. Read and compare
 the current conversation/provider/execution specifications and Inspector before
 tracing implementations. A contradiction is an unresolved contract finding; do
 not pick whichever document makes a test pass.
@@ -437,16 +448,18 @@ total failure. A regression must fail before its product correction. A test with
 a mocked consumer establishes only the mocked boundary; pair it with actual-owner
 and provider-received evidence before claiming that handoff works.
 
-The old feature command is removed; the replacement remains in progress as
+The old feature command is removed; the current entry is implemented, while
+conformance to the verification standard and renewed acceptance remain pending as
 documented in [App Workflow](../WORKFLOW.md#ai-conversation-verification). Focused
 tests and file inventories cannot establish whole-feature acceptance. Null-input rejection, valid schema examples, structural Inspector checks
 and successful selected cases must never stand in for legal behavior across all
 tools. Preserve the exact failed and unexecuted cases. Classify old assertions
 against the current specification before changing or removing them.
 
-The review conclusion must separate: observed passing behavior, confirmed defects,
-conflicting authorities and missing evidence. Use the existing review report;
-do not add a second registry, scoring system or completion checklist. Declare the
+The review conclusion must separately support product behavior, coverage and
+verifier conformance, distinguishing observed passes, confirmed defects,
+conflicting authorities and missing evidence. Use the existing review report and
+the mandatory standard; do not add a parallel registry or verdict engine. Declare the
 whole review passed only when its defined boundaries have evidence and no unresolved
 finding. An unknown path is unverified, not a pass. Closing a bounded correction or
 repairing this test runner does not close the full conversation feature.

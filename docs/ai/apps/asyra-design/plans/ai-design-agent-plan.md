@@ -2,7 +2,7 @@
 
 ## Status and authority
 
-Current task: [Predictable tools without mandatory review ceremonies](agent-context-and-report-continuity-plan.md#predictable-tools-without-mandatory-review-ceremonies).
+Current task: [Predictable tools without mandatory review ceremonies](completed/agent-context-and-report-continuity-record-2026-11-16.md#predictable-tools-without-mandatory-review-ceremonies).
 The approved direction removes compulsory evidence/approval procedures and their
 completion gates while preserving fixed tool contracts, staged context reuse and
 AI final verification. This task updates the plan only; implementation is pending.

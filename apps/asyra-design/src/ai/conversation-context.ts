@@ -113,8 +113,9 @@ export const admitsConversationContext = (
       typeof turn.intent !== 'string' ||
       !turn.intent.trim() ||
       typeof turn.message !== 'string' ||
+      typeof turn.outcome !== 'string' ||
       !['cancelled', 'failed', 'no-change', 'partial', 'success'].includes(
-        String(turn.outcome)
+        turn.outcome
       ) ||
       !validIndexes(turn.attachmentIndexes)
     ) {

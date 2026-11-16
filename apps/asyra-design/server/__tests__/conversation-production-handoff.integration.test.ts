@@ -420,6 +420,52 @@ it.each([undefined, 'alter-saved-input'] as const)(
         3, 1
       ])
       expect(JSON.stringify(fixtures[1].requests[0])).toContain('facadeSource')
+      const nativeInput = fixtures[1].requests[0].input
+
+      if (!Array.isArray(nativeInput)) {
+        throw Error('Missing native input')
+      }
+
+      const body = nativeInput
+        .filter(isRecord)
+        .flatMap((item) =>
+          item.role === 'user' && Array.isArray(item.content)
+            ? item.content.filter(isRecord)
+            : []
+        )
+        .find(
+          (item) =>
+            item.type === 'input_text' &&
+            typeof item.text === 'string' &&
+            item.text.startsWith('{"input":')
+        )
+
+      if (!body || typeof body.text !== 'string') {
+        throw Error('Missing App request in native input')
+      }
+
+      const received = JSON.parse(body.text).input.metadata
+
+      expect(received.conversationResultNames).toEqual(['facadeSource'])
+      expect(received.conversationResults).toEqual([
+        expect.objectContaining({
+          name: 'facadeSource',
+          type: 'object',
+          origin: {
+            operation: 'design_workflow.prepare_and_apply_design',
+            step: 'create',
+            source: 'input',
+            path: '/draft'
+          },
+          paths: expect.arrayContaining([
+            { path: '/children', type: 'array', length: 1 }
+          ])
+        })
+      ])
+      expect(received.conversationResults[0]).not.toHaveProperty('value')
+      expect(JSON.stringify(received.conversationResults)).not.toContain(
+        JSON.stringify(draft)
+      )
     } finally {
       await controller.dispose()
       await runtime.dispose()
@@ -1173,5 +1219,100 @@ it('delivers one public result selector to the actual native successor', async (
     expect(fixture.toolReply('read-current-application').success).toBe(true)
   } finally {
     await fixture.dispose()
+  }
+}, 60000)
+
+it('delivers actual nested selection coordinates and parent identity in the initial native context', async () => {
+  const { createAiContextProvider } = await import('../../src/ai/context')
+
+  core.load({
+    version: '1.0.0',
+    props: {},
+    sceneTree: {
+      workspace: 'coordinate-workspace',
+      workspaceList: ['coordinate-workspace'],
+      elements: {
+        'coordinate-workspace': {
+          id: 'coordinate-workspace',
+          type: 'workspace',
+          name: 'Workspace',
+          parentId: '',
+          children: [],
+          visible: true,
+          lock: false
+        }
+      }
+    }
+  })
+  core.createElementInParent(
+    {
+      id: 'coordinate-parent',
+      type: 'group',
+      x: 100,
+      y: 200,
+      rotation: Math.PI / 2
+    },
+    'coordinate-workspace'
+  )
+  core.createElementInParent(
+    {
+      id: 'coordinate-child',
+      type: 'rect',
+      x: 11,
+      y: 13,
+      width: 30,
+      height: 40
+    },
+    'coordinate-parent'
+  )
+  core.selectElements(['coordinate-child'])
+  const context = await createAiContextProvider().getContext({
+    intent: 'Inspect selection',
+    signal: new AbortController().signal
+  })
+
+  expect(context.selectedElements).toEqual([
+    expect.objectContaining({
+      id: 'coordinate-child',
+      parentId: 'coordinate-parent',
+      coordinateSpace: 'parent-local',
+      bounds: { x: 11, y: 13, width: 30, height: 40 }
+    })
+  ])
+  const fixture = await createNativeProviderFixture([])
+
+  try {
+    await requestConfiguredAiActionBatch(
+      { actions: [], context, attempt: 1, intent: 'Inspect selection' },
+      { environment: fixture.environment, signal: AbortSignal.timeout(45000) }
+    )
+    const input = fixture.requests[0].input
+
+    if (!Array.isArray(input)) {
+      throw Error('Missing native input')
+    }
+
+    const message = input
+      .filter(isRecord)
+      .flatMap((item) => (Array.isArray(item.content) ? item.content : []))
+      .find(
+        (item) =>
+          isRecord(item) &&
+          typeof item.text === 'string' &&
+          item.text.includes('"protocolVersion":1')
+      )
+
+    if (!isRecord(message) || typeof message.text !== 'string') {
+      throw Error('Missing serialized App input')
+    }
+
+    const payload: unknown = JSON.parse(message.text)
+
+    expect(payload).toMatchObject({ input: { context }, protocolVersion: 1 })
+    expect(fixture.toolCalls()).toHaveLength(0)
+  } finally {
+    await fixture.dispose()
+    core.selectElements([])
+    factory.transact.reset()
   }
 }, 60000)

@@ -44,7 +44,10 @@ unchanged contract again merely because target values changed.
 The AI owns visual interpretation and final verification. Capture success is an
 observation, not visual approval. Preserve source identity and current target
 scope; acquire another view only when it is needed for a decision. Final
-report_outcome is a final response action, not an edit or saving acknowledgement.
+report_outcome makes no canvas edit or export. For completed work it confirms the
+existing document publication target: inspect persistence separately as durable,
+local-only or unavailable. Unavailable confirmation preserves completed drawing;
+retry storage recovery, never replay the drawing.
 
 For exact discovery/target examples or reusable recipe routing, select
 `design.architectural-illustration.contracts.operations` from the catalog only when

@@ -17,6 +17,7 @@ import {
   conversationGroups,
   captureConversationGroup,
   validateConversationEvidence,
+  validateConversationProofDefinition,
   validateRequiredHandoffs
 } from '../conversation-scope.mjs'
 
@@ -62,24 +63,9 @@ test('execution selection includes each independently required handoff file', ()
       .map((c) => JSON.parse(c.selector.identity).file)
   )
 
-  // These are the approved spec-derived obligations, not the runner's groups.
-  assert.deepEqual(
-    flow.definition.nodes.map((node) => node.id).sort(),
-    [
-      'request',
-      'instructions',
-      'discovery',
-      'knowledge',
-      'admission',
-      'composition',
-      'canonical',
-      'results',
-      'retention',
-      'media',
-      'lifecycle',
-      'evidence'
-    ].sort()
-  )
+  // Mandatory areas are a minimum. Additional reviewed areas do not invalidate
+  // existing proof; this does not establish exhaustive specification coverage.
+  assert.deepEqual(validateConversationProofDefinition([flow.definition]), [])
   assert.ok(required.length > 0)
   for (const file of required) {
     assert.ok(files.includes(file), 'Unselected required handoff: ' + file)
@@ -326,7 +312,7 @@ test('declared handoffs require complete shared producer identity and successful
     /Missing required handoff/
   )
   for (const key of ['producer', 'config', 'cwd', 'project', 'file', 'title']) {
-    const foreign = globalThis.structuredClone(correct)
+    const foreign = globalThis.globalThis.structuredClone(correct)
 
     foreign[0].selector[key] = 'different-' + key
     assert.match(
@@ -335,7 +321,7 @@ test('declared handoffs require complete shared producer identity and successful
     )
   }
 
-  const skipped = globalThis.structuredClone(correct)
+  const skipped = globalThis.globalThis.structuredClone(correct)
 
   skipped[0].status = 'skipped'
   assert.match(
@@ -343,7 +329,7 @@ test('declared handoffs require complete shared producer identity and successful
     /Unsuccessful required handoff/
   )
 
-  const failed = globalThis.structuredClone(correct)
+  const failed = globalThis.globalThis.structuredClone(correct)
 
   failed[0].status = 'failed'
   assert.match(
@@ -558,4 +544,64 @@ test('separate runner groups publish only their owned files and preserve missing
     store.snapshot().documents[0].current.warnings[0].summary,
     /Source changed/
   )
+})
+
+test('required review areas cannot disappear or be excluded while additional obligations remain allowed', () => {
+  const definition = JSON.parse(
+    readFileSync(
+      resolve(
+        root,
+        'apps/asyra-design/test-data/conversation-verification/flow/conversation.flow.json'
+      ),
+      'utf8'
+    )
+  ).definition
+
+  for (const id of [
+    'request',
+    'instructions',
+    'discovery',
+    'knowledge',
+    'admission',
+    'composition',
+    'canonical',
+    'results',
+    'retention',
+    'media',
+    'lifecycle',
+    'evidence'
+  ]) {
+    for (const mode of ['missing', 'optional', 'excluded']) {
+      const candidate = globalThis.structuredClone(definition)
+
+      if (mode === 'missing') {
+        candidate.nodes = candidate.nodes.filter((node) => node.id !== id)
+      } else {
+        const node = candidate.nodes.find((node) => node.id === id)
+
+        if (mode === 'optional') {
+          node.required = false
+        } else {
+          node.applicable = false
+        }
+      }
+
+      assert.ok(
+        validateConversationProofDefinition([candidate]).includes(
+          'Missing required handoff area: ' + id
+        )
+      )
+    }
+  }
+
+  const extended = globalThis.structuredClone(definition)
+
+  extended.nodes.push({
+    ...globalThis.structuredClone(extended.nodes[0]),
+    id: 'future-required-owner'
+  })
+  assert.deepEqual(validateConversationProofDefinition([extended]), [])
+  assert.deepEqual(validateConversationProofDefinition([]), [
+    'Missing conversation verification definition'
+  ])
 })

@@ -9,7 +9,7 @@ followed by another complete run.
 
 Final evidence: `tmp/conversation-proof-JnVY1o`.
 Command: `node apps/asyra-design/scripts/verify-conversation.mjs`.
-Task authority: [verified producer and consumer contract repairs](../plans/agent-context-and-report-continuity-plan.md#verified-producer-and-consumer-contract-repairs).
+Task authority: [verified producer and consumer contract repairs](../plans/completed/agent-context-and-report-continuity-record-2026-11-16.md#verified-producer-and-consumer-contract-repairs).
 
 **6,673 passed, 0 failed, 0 skipped across 347 files.** All twelve automated Flow
 nodes are done and all publication warnings are resolved. The independent

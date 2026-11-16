@@ -1,42 +1,19 @@
 import { isRecord } from '@asyra/utils'
 import { createDeliveryAuditFixture } from './delivery-audit-fixture'
 
-import { AiActionNames } from '../../src/constants/ai-actions'
 import lodash from 'lodash'
 const { isEqual } = lodash
 
-import { runtimeOperationSchema } from '../local-operation-batch'
 import { setImmediate } from 'node:timers/promises'
-import {
-  modelToolResultSchemas,
-  modelToolDeliveryFailureSchema,
-  toolResultObject,
-  toolResultString
-} from '../../src/ai/tool-contract'
-import {
-  workflowInputScopes,
-  projectWorkflowInput,
-  workflowUsageParameters
-} from '../design-workflow-discovery'
+import { workflowInputScopes } from '../design-workflow-discovery'
+import * as workflowOwner from '../design-workflow-discovery'
 import { readCompleteInformation } from './tool-contract-assertions'
 // @vitest-environment jsdom
-import { registeredToolInvocationSchemas } from '../local-tool-library-tools'
-import { afterAll, afterEach, expect, it } from 'vitest'
-import {
-  registeredRecipeOutputAt,
-  embedAiToolSchema,
-  type AiJsonValue
-} from '@asyra/ai-agent-runtime'
+import { afterAll, afterEach, expect, it, vi } from 'vitest'
+import * as nativeSchemaOwner from '../operation-input-schema'
 import { basicApiContracts } from '../../src/ai/basic-api-catalog'
-import { singleActionSemantics } from '../local-operation-tools'
-import {
-  invokeLocalTool,
-  localToolFailureSchema
-} from '../local-tool-invocation'
-import {
-  operationInputIssue,
-  nativeToolInputSchema
-} from '../operation-input-schema'
+import { invokeLocalTool } from '../local-tool-invocation'
+import { operationInputIssue } from '../operation-input-schema'
 import { writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
@@ -273,51 +250,6 @@ it.each([false, true])(
   }
 )
 
-const observerActions = actions
-  .filter((action) =>
-    [AiActionNames.REVIEW_DESIGN, AiActionNames.INSPECT_DRAWING].includes(
-      action.name as never
-    )
-  )
-  .map((action) => {
-    const wrapper = operations.definitions.find(
-      (entry) => entry.name === action.name
-    )
-
-    if (!wrapper) {
-      throw new Error('Missing registered observation owner')
-    }
-
-    return {
-      ...action,
-      outputSchema: registeredRecipeOutputAt(
-        wrapper.outputSchema,
-        '/actionResults/0/result'
-      )
-    }
-  })
-const observerResults = {
-  anyOf: observerActions.map((action, index) => {
-    const results = modelToolResultSchemas(action)
-    const alternatives = Object.values(results).filter(
-      (schema) => schema !== undefined
-    )
-
-    return toolResultObject({
-      actionId: toolResultString,
-      actionName: { const: action.name },
-      result: embedAiToolSchema(
-        {
-          anyOf: alternatives.map((schema, branch) =>
-            embedAiToolSchema(schema as AiJsonValue, '#/anyOf/' + branch)
-          )
-        },
-        '#/anyOf/' + index + '/properties/result'
-      )
-    })
-  })
-}
-
 const native = host.groups.flatMap(({ name: namespace, owner }) =>
   owner.definitions.map((definition) => ({ namespace, owner, definition }))
 )
@@ -457,9 +389,9 @@ it('retains an explicit per-API audit inventory from actual registrations when r
 // Alternatives must match exactly; unregistered branches are not additional capabilities.
 const unionAlternatives = (schema: unknown): unknown[] => {
   if (schema && typeof schema === 'object' && !Array.isArray(schema)) {
-    // Distribute shared parent constraints before comparing alternatives; never
-    // discard them when a compact result shares host metadata at the parent.
-    const value = nativeToolInputSchema(schema) as Record<string, unknown>
+    // Flatten only a pure union. Sibling constraints remain attached; this
+    // independent comparator does not call a production schema transform.
+    const value = schema as Record<string, unknown>
 
     if (Object.keys(value).length === 1 && Array.isArray(value.anyOf)) {
       return value.anyOf.flatMap(unionAlternatives)
@@ -529,7 +461,7 @@ const resolvedSchema = (
   }
 
   const value = schema as Record<string, unknown>
-  const { $ref, $defs: _definitions, ...rest } = value
+  const { $ref, $defs: _definitions, examples: _examples, ...rest } = value
 
   if (typeof $ref === 'string') {
     let target = root as Record<string, unknown>
@@ -564,15 +496,20 @@ const resolvedSchema = (
     ])
   )
 
-  // Normalize shared same-instance constraints at every nested result union.
-  // AnyOf membership is idempotent; oneOf multiplicity remains exact.
-  return Array.isArray(resolved.anyOf)
-    ? nativeToolInputSchema(resolved)
-    : resolved
+  // Ignore only representation order and duplicate inclusive alternatives.
+  // Exclusive-union multiplicity and literal array order remain exact.
+  return schemaSets(resolved)
 }
 
 const schemaRecord = (value: unknown): value is Record<string, unknown> =>
   !!value && typeof value === 'object' && !Array.isArray(value)
+
+const flattenPureAlternatives = (schema: unknown): unknown[] =>
+  schemaRecord(schema) &&
+  Object.keys(schema).length === 1 &&
+  Array.isArray(schema.anyOf)
+    ? schema.anyOf.flatMap(flattenPureAlternatives)
+    : [schema]
 
 const schemaSets = (schema: unknown): unknown => {
   if (Array.isArray(schema)) {
@@ -583,7 +520,7 @@ const schemaSets = (schema: unknown): unknown => {
     return schema
   }
 
-  return Object.fromEntries(
+  const normalized = Object.fromEntries(
     Object.entries(schema)
       .sort(([a], [b]) => a.localeCompare(b))
       .filter(
@@ -600,6 +537,21 @@ const schemaSets = (schema: unknown): unknown => {
           : schemaEntry(key, value, schemaSets)
       ])
   )
+
+  if (Array.isArray(normalized.anyOf)) {
+    const alternatives = normalized.anyOf.flatMap(flattenPureAlternatives)
+
+    normalized.anyOf = alternatives
+      .filter(
+        (value, index) =>
+          !alternatives
+            .slice(0, index)
+            .some((previous) => isEqual(previous, value))
+      )
+      .sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b)))
+  }
+
+  return normalized
 }
 
 const exactResultAlternatives = (schema: unknown) => {
@@ -613,6 +565,341 @@ const exactResultAlternatives = (schema: unknown) => {
     JSON.stringify(a).localeCompare(JSON.stringify(b))
   )
 }
+
+// Authority: ai-execution-flow.md, Selected operation contract delivery; and
+// ai-conversation-verification.md, Required proof for every verification method.
+// Observe the actual discovery producer once. These checks prove transport and
+// source lineage, not owner semantics or arbitrary schema equivalence. Independent
+// semantic controls below and the formal owner/provider suites remain required.
+const originalUsageProjection = workflowOwner.workflowUsageParameters
+const usageProjection = vi.spyOn(workflowOwner, 'workflowUsageParameters')
+const scopeProjection = vi.spyOn(workflowOwner, 'projectWorkflowInput')
+
+afterEach(() => {
+  usageProjection.mockClear()
+  scopeProjection.mockClear()
+})
+afterAll(() => {
+  usageProjection.mockRestore()
+  scopeProjection.mockRestore()
+})
+
+const schemaProperty = (schema: unknown, name: string): unknown => {
+  if (
+    !isRecord(schema) ||
+    !isRecord(schema.properties) ||
+    !Object.hasOwn(schema.properties, name)
+  ) {
+    throw new Error('Missing declared schema property: ' + name)
+  }
+
+  return schema.properties[name]
+}
+
+const observedUsageSource = (delivered: unknown): unknown => {
+  const index = usageProjection.mock.results.findIndex(
+    (result) => result.type === 'return' && isEqual(result.value, delivered)
+  )
+
+  expect(
+    index,
+    'Delivered schema must be an actual producer output'
+  ).toBeGreaterThanOrEqual(0)
+
+  return usageProjection.mock.calls[index][0]
+}
+
+const observedScopedInput = (input: unknown, scope: unknown): unknown => {
+  const index = scopeProjection.mock.calls.findIndex(
+    (call) => isEqual(call[0], input) && isEqual(call[1], scope)
+  )
+
+  expect(
+    index,
+    'Selected input must originate at the registered owner'
+  ).toBeGreaterThanOrEqual(0)
+  const result = scopeProjection.mock.results[index]
+
+  expect(result.type).toBe('return')
+
+  return result.value
+}
+
+it('keeps the audit oracle independent when native schema conversion drops a constraint', () => {
+  const converter = vi
+    .spyOn(nativeSchemaOwner, 'nativeToolInputSchema')
+    .mockImplementation(() => ({ type: 'number' }))
+
+  try {
+    const required = { type: 'number', minimum: 5 }
+    const weakened = { type: 'number', minimum: 0 }
+
+    expect(exactResultAlternatives(required)).not.toEqual(
+      exactResultAlternatives(weakened)
+    )
+    expect(converter).not.toHaveBeenCalled()
+  } finally {
+    converter.mockRestore()
+  }
+})
+
+it.each(['none', 'weaken-input', 'open-result'])(
+  'detects %s at the actual discovery-to-owner handoff with independent semantics',
+  async (fault) => {
+    const current = createDeliveryAuditFixture()
+    const original = originalUsageProjection
+
+    const rewrite = (value: unknown): unknown => {
+      if (Array.isArray(value)) {
+        return value.map(rewrite)
+      }
+
+      if (!isRecord(value)) {
+        return value
+      }
+
+      return Object.fromEntries(
+        Object.entries(value).map(([key, child]) => [
+          key,
+          key === 'maxLength' && child === 1000 ? 2000 : rewrite(child)
+        ])
+      )
+    }
+
+    usageProjection.mockImplementation((input) => {
+      const value = original(input)
+
+      if (fault === 'weaken-input') {
+        const rewritten = rewrite(value)
+
+        if (!isRecord(rewritten)) {
+          throw new Error('Malformed fault fixture')
+        }
+
+        return rewritten
+      }
+
+      if (fault === 'open-result' && Array.isArray(value.anyOf)) {
+        return { ...value, anyOf: [...value.anyOf, {}] }
+      }
+
+      return value
+    })
+    try {
+      const text = await readCompleteInformation(
+        async (input, tool) =>
+          (
+            await current.host.invoke({
+              name: 'design_operations.' + tool,
+              input
+            })
+          ).text,
+        {
+          names: ['design_operations.record_design_facts'],
+          view: 'usage',
+          includeResultSchema: true
+        },
+        'read_design_contracts'
+      )
+      const guide = JSON.parse(text).tools[0].usageGuide
+      const facts = [{ id: 'source', statement: 'Requested dimensions' }]
+      const settled = await current.host.invoke({
+        name: 'design_operations.record_design_facts',
+        input: { facts }
+      })
+
+      expect(settled.outcome).toMatchObject({
+        status: 'success',
+        settlement: 'completed'
+      })
+      expect(JSON.parse(settled.text).facts).toEqual(facts)
+
+      const assertSemantics = () => {
+        for (const [length, accepted] of [
+          [1000, true],
+          [1001, false]
+        ] as const) {
+          expect(
+            operationInputIssue(
+              { facts: [{ id: 'source', statement: 'a'.repeat(length) }] },
+              guide.parameters
+            ) === undefined,
+            'Declared fact character boundary'
+          ).toBe(accepted)
+        }
+
+        expect(
+          operationInputIssue(JSON.parse(settled.text), guide.results)
+        ).toBeUndefined()
+        expect(
+          operationInputIssue({}, guide.results),
+          'Missing owner result must reject'
+        ).toBeDefined()
+      }
+
+      if (fault === 'none') {
+        assertSemantics()
+      } else {
+        expect(assertSemantics).toThrow(
+          fault === 'weaken-input'
+            ? /Declared fact character boundary/
+            : /Missing owner result must reject/
+        )
+      }
+
+      expect(current.execute).not.toHaveBeenCalled()
+    } finally {
+      usageProjection.mockReset()
+      usageProjection.mockImplementation(original)
+      await current.dispose()
+    }
+  }
+)
+
+it('requires independent operation-scope coverage for every opted-in registered owner', () => {
+  const scopedOwners = host
+    .definitions()
+    .filter(
+      (definition) =>
+        isRecord(definition.inputSchema) &&
+        Object.hasOwn(definition.inputSchema, 'x-design-input-scope')
+    )
+    .map((definition) => definition.registeredName)
+    .sort()
+
+  // Current selected-operation specification: this is the only opted-in owner.
+  // New owners require independent scope semantics before catalog totals can pass.
+  expect(scopedOwners).toEqual(['design_workflow.prepare_and_apply_design'])
+})
+
+it.each(['none', 'omit-parts'])(
+  'detects %s in delivered operation scopes without deriving expectations from the selector',
+  async (fault) => {
+    const original = workflowOwner.workflowInputScopes
+    const selector = vi
+      .spyOn(workflowOwner, 'workflowInputScopes')
+      .mockImplementation((input) => {
+        const scopes = original(input)
+
+        return scopes && fault === 'omit-parts'
+          ? {
+              ...scopes,
+              operations: scopes.operations.filter(
+                (operation) => operation !== 'parts'
+              )
+            }
+          : scopes
+      })
+    const current = createDeliveryAuditFixture()
+
+    try {
+      const text = await readCompleteInformation(
+        async (input, tool) =>
+          (
+            await current.host.invoke({
+              name: 'design_operations.' + tool,
+              input
+            })
+          ).text,
+        { names: ['design_workflow.prepare_and_apply_design'], view: 'usage' },
+        'read_design_contracts'
+      )
+
+      const assertScopes = () =>
+        expect(
+          JSON.parse(text).tools[0].inputScopes.operations,
+          'All declared workflow operations must remain selectable'
+        ).toEqual(['draft', 'repair', 'parts'])
+
+      if (fault === 'none') {
+        assertScopes()
+      } else {
+        expect(assertScopes).toThrow(
+          /All declared workflow operations must remain selectable/
+        )
+      }
+
+      expect(selector).toHaveBeenCalled()
+      expect(current.execute).not.toHaveBeenCalled()
+    } finally {
+      selector.mockRestore()
+      await current.dispose()
+    }
+  }
+)
+
+it('compares complete owner unions independent of nesting and rejects destructive contract edits', () => {
+  const success = {
+    type: 'object',
+    additionalProperties: false,
+    required: ['status', 'count'],
+    properties: {
+      status: { const: 'complete' },
+      count: { type: 'integer', minimum: 0 }
+    }
+  }
+  const failed = {
+    type: 'object',
+    additionalProperties: false,
+    required: ['status', 'message'],
+    properties: { status: { const: 'failed' }, message: { type: 'string' } }
+  }
+  const owner = { anyOf: [success, failed] }
+
+  expect(
+    exactResultAlternatives({ anyOf: [{ anyOf: [failed, success] }] })
+  ).toEqual(exactResultAlternatives(owner))
+  expect(
+    exactResultAlternatives({
+      type: 'object',
+      required: ['result'],
+      additionalProperties: false,
+      properties: { result: { anyOf: [success, { anyOf: [failed, success] }] } }
+    })
+  ).toEqual(
+    exactResultAlternatives({
+      type: 'object',
+      required: ['result'],
+      additionalProperties: false,
+      properties: { result: owner }
+    })
+  )
+  expect(
+    exactResultAlternatives({
+      type: 'object',
+      required: ['result'],
+      additionalProperties: false,
+      properties: {
+        result: { anyOf: [{ anyOf: [failed, success], required: ['count'] }] }
+      }
+    })
+  ).not.toEqual(
+    exactResultAlternatives({
+      type: 'object',
+      required: ['result'],
+      additionalProperties: false,
+      properties: { result: owner }
+    })
+  )
+  for (const broken of [
+    { anyOf: [success] },
+    { anyOf: [success, failed, {}] },
+    { anyOf: [{ ...success, required: ['status'] }, failed] },
+    {
+      anyOf: [
+        {
+          ...success,
+          properties: { ...success.properties, count: { type: 'number' } }
+        },
+        failed
+      ]
+    }
+  ]) {
+    expect(exactResultAlternatives(broken)).not.toEqual(
+      exactResultAlternatives(owner)
+    )
+  }
+})
 
 it('audits unordered requirements without losing required fields or value constraints', () => {
   const owner = {
@@ -721,7 +1008,7 @@ it('rejects an extra permissive result branch in the delivered contract audit', 
 })
 
 it.each(native)(
-  '$definition.name delivers a complete exact usage or explicit owner scope menu - case %#',
+  '$definition.name delivers observed usage parameters and results through its advertised route - case %#',
   async ({ definition, namespace }) => {
     const query = operations.definitions.find(
       (d) => d.name === 'read_design_contracts'
@@ -800,18 +1087,25 @@ it.each(native)(
           ).toBeUndefined()
         }
 
+        const parameterSource = observedUsageSource(
+          selected.usageGuide.parameters
+        )
+
+        if (!isRecord(parameterSource)) {
+          throw new Error('Missing actual parameter source')
+        }
+
         const params =
           selected.execution.kind === 'registered-tool'
-            ? selected.usageGuide.parameters.properties.input
-            : selected.usageGuide.parameters
+            ? schemaProperty(parameterSource, 'input')
+            : parameterSource
 
-        expect(resolvedSchema(params, selected.usageGuide.parameters)).toEqual(
+        expect(resolvedSchema(params, parameterSource)).toEqual(
           resolvedSchema(
-            workflowUsageParameters(
-              projectWorkflowInput(registeredDefinition.inputSchema, inputScope)
-            )
+            observedScopedInput(registeredDefinition.inputSchema, inputScope)
           )
         )
+        observedUsageSource(selected.usageGuide.results)
         expect(selected.usageGuide.results.anyOf).toEqual(expect.any(Array))
         const rejected = await host.invoke({
           name: `${namespace}.${definition.name}`,
@@ -840,64 +1134,39 @@ it.each(native)(
       }
     } else {
       const registered = entry.execution.kind === 'registered-tool'
+      const parameterSource = observedUsageSource(entry.usageGuide.parameters)
+
+      if (!isRecord(parameterSource)) {
+        throw new Error('Missing actual parameter source')
+      }
+
       const parameters = registered
-        ? entry.usageGuide?.parameters.properties.input
-        : entry.usageGuide?.parameters
+        ? schemaProperty(parameterSource, 'input')
+        : parameterSource
 
       expect(
-        resolvedSchema(parameters, entry.usageGuide.parameters),
+        resolvedSchema(parameters, parameterSource),
         definition.name
-      ).toEqual(
-        resolvedSchema(
-          workflowUsageParameters(registeredDefinition.inputSchema)
-        )
-      )
+      ).toEqual(resolvedSchema(registeredDefinition.inputSchema))
       expect(entry.definition.nextAction).toBe(
         'execute-with-delivered-contract'
       )
-      let canonical = modelToolResultSchemas(registeredDefinition)
-      const action = actions.find((action) => action.name === definition.name)
+      observedUsageSource(entry.usageGuide.results)
+      // Exercise the advertised error consumer as well as observing its schema.
+      const rejected = registered
+        ? await host.invoke({
+            name: 'tool_library.invoke_tool',
+            input: { ...entry.execution.arguments, revision: 0, input: {} }
+          })
+        : await host.invoke({
+            name: registeredDefinition.registeredName,
+            input: null
+          })
 
-      if (namespace === 'design_operations' && action?.delivery) {
-        canonical = modelToolResultSchemas(
-          singleActionSemantics(
-            {
-              ...action,
-              ...modelToolResultSchemas(action),
-              delivery: undefined
-            },
-            observerResults,
-            !observerActions.some((observer) => observer.name === action.name)
-          )
-        )
-      }
-
-      const routed = registered
-        ? registeredToolInvocationSchemas(
-            { ...canonical, inputSchema: registeredDefinition.inputSchema },
-            entry.execution.arguments,
-            undefined,
-            modelToolDeliveryFailureSchema(registeredDefinition)
-          )
-        : canonical
-      // Parameters are audited separately; result alternatives come only from
-      // the registered success/partial/recovery owners and invocation boundary.
-      const alternatives = [
-        routed.outputSchema,
-        routed.partialOutputSchema,
-        routed.recoveryOutputSchema,
-        modelToolResultSchemas({ outputSchema: localToolFailureSchema })
-          .outputSchema
-      ]
-        .filter((schema) => schema !== undefined)
-        .flatMap((schema) =>
-          unionAlternatives(resolvedSchema(workflowUsageParameters(schema)))
-        )
-
+      expect(rejected.outcome.settlement).toBe('not-started')
       expect(
-        exactResultAlternatives(entry.usageGuide.results),
-        definition.name
-      ).toEqual(exactResultAlternatives({ anyOf: alternatives }))
+        operationInputIssue(JSON.parse(rejected.text), entry.usageGuide.results)
+      ).toBeUndefined()
     }
 
     expect(execute).not.toHaveBeenCalled()
@@ -943,49 +1212,48 @@ it.each(runtime.actionDefinitions)(
       throw new Error('Missing admitted action')
     }
 
-    const parameters =
+    const parameterSource = observedUsageSource(
       entry.usageGuide.operationParameters ?? entry.usageGuide.parameters
-    const ordinary =
-      entry.execution.kind === 'host-operation' &&
-      !entry.usageGuide.operationParameters
-        ? parameters.properties.arguments
-        : parameters
-
-    expect(resolvedSchema(ordinary, parameters)).toEqual(
-      resolvedSchema(
-        workflowUsageParameters(
-          entry.usageGuide.operationParameters
-            ? admitted.inputSchema
-            : runtimeOperationSchema(admitted.inputSchema)
-        )
-      )
     )
-    if ('delivery' in admitted && admitted.delivery) {
-      const complete = resolvedSchema(entry.usageGuide.results) as {
-        anyOf: {
-          properties: {
-            actionResults: {
-              items: {
-                anyOf: { properties: { result: { anyOf: unknown[] } } }[]
-              }
-            }
-          }
-        }[]
-      }
-      const operation =
-        complete.anyOf[0].properties.actionResults.items.anyOf[0].properties
-          .result.anyOf[0]
 
-      expect(operation).toMatchObject(
-        resolvedSchema(
-          workflowUsageParameters(modelToolResultSchemas(admitted).outputSchema)
-        ) as object
+    if (!isRecord(parameterSource)) {
+      throw new Error('Missing actual action parameter source')
+    }
+
+    // Follow the declared route, not an assumed conversion for every action.
+    // Final responses use the action contract; explicit native observers use
+    // their registered wrapper; batch operations use their admitted arguments.
+    if (entry.execution.kind === 'host-operation') {
+      const owner = host
+        .definitions()
+        .find(
+          (candidate) => candidate.registeredName === entry.execution.operation
+        )
+
+      expect(
+        owner,
+        'Published operation must have its actual registered owner'
+      ).toBeDefined()
+      expect(resolvedSchema(parameterSource)).toEqual(
+        resolvedSchema(owner?.inputSchema)
       )
+    } else {
+      expect(['batch-action', 'final-response']).toContain(entry.execution.kind)
+      expect(resolvedSchema(parameterSource)).toEqual(
+        resolvedSchema(admitted.inputSchema)
+      )
+    }
+
+    observedUsageSource(entry.usageGuide.results)
+    if ('delivery' in admitted && admitted.delivery) {
       expect(entry.outputFields).not.toContain('/properties/modelResult')
       expect(entry.result).toBeUndefined()
       // A view missing its owner-required fields must not pass through a
       // permissive internal resource branch.
-      expect(operationInputIssue({}, operation), action.name).toBeDefined()
+      expect(
+        operationInputIssue({}, entry.usageGuide.results),
+        action.name
+      ).toBeDefined()
     }
 
     if (!('delivery' in admitted && admitted.delivery)) {

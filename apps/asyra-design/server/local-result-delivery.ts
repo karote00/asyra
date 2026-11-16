@@ -10,6 +10,7 @@ import {
   resultAt,
   type ConversationResultOrigin,
   type ConversationResultDescription,
+  type ConversationResultImage,
   type ExchangeConversationResults
 } from '../src/ai/conversation-results'
 import { LocalToolInputError } from './local-tool-invocation'
@@ -245,6 +246,8 @@ export function resultDelivery(
       const saved: Record<string, AiJsonValue> = Object.create(null)
       const origins: Record<string, ConversationResultOrigin> =
         Object.create(null)
+      const savedImages: Record<string, ConversationResultImage[]> =
+        Object.create(null)
       let images: LocalToolImage[] | undefined
 
       for (const [retain, targets] of [
@@ -285,6 +288,39 @@ export function resultDelivery(
               }
 
               saved[name] = value
+              if (sel.source !== 'input') {
+                images ??= localToolImages(view)
+                savedImages[name] = selectLocalToolImages(
+                  images,
+                  sel.path,
+                  'value'
+                ).map((image) => {
+                  const path = image.path.slice('/fields/value'.length)
+                  const metadata = Object.fromEntries(
+                    Object.keys(image.image)
+                      .filter((key) => key !== 'dataUrl')
+                      .map((key) => [
+                        key,
+                        resultAt(
+                          image.image,
+                          '/' + key.replace(/~/g, '~0').replace(/\//g, '~1')
+                        )
+                      ])
+                  )
+
+                  return {
+                    path,
+                    dataPath:
+                      path +
+                      (typeof resultAt(value, path) === 'string'
+                        ? ''
+                        : '/dataUrl'),
+                    actionName: image.actionName,
+                    metadata
+                  }
+                })
+              }
+
               origins[name] = {
                 operation,
                 ...(step ? { step } : {}),
@@ -321,7 +357,11 @@ export function resultDelivery(
             throw Error('App conversation context unavailable')
           }
 
-          const receipts = await exchange({ save: saved, origins })
+          const receipts = await exchange({
+            save: saved,
+            origins,
+            images: savedImages
+          })
 
           for (const name of selected) {
             const receipt = receipts[name]
@@ -396,7 +436,8 @@ export function resultDelivery(
 
 export async function readNamedFields(
   request: unknown,
-  exchange?: ExchangeConversationResults
+  exchange?: ExchangeConversationResults,
+  deliverImages?: (images: LocalToolImage[], name: string) => void
 ) {
   if (
     !exchange ||
@@ -407,12 +448,64 @@ export async function readNamedFields(
     throw new Error('App result context unavailable')
   }
 
-  const fields = await exchange({
-    read: request.delivery.fields as Record<
-      string,
-      { name: string; path: string }
-    >
+  const selections = request.delivery.fields as Record<
+    string,
+    { name: string; path: string; view?: 'shape' }
+  >
+  const delivered = await exchange({
+    read: Object.fromEntries(
+      Object.entries(selections).map(([name, selection]) => [
+        name,
+        { ...selection, view: selection.view ?? 'delivery' }
+      ])
+    )
   })
+  const fields: Record<string, AiJsonValue> = Object.create(null)
+
+  for (const name of Object.keys(selections)) {
+    const receipt = delivered[name]
+
+    if (selections[name].view === 'shape') {
+      fields[name] = resultAt(receipt, '')
+
+      continue
+    }
+
+    if (
+      !record(receipt) ||
+      !Object.hasOwn(receipt, 'value') ||
+      !Array.isArray(receipt.images)
+    ) {
+      throw Error('Invalid saved result delivery')
+    }
+
+    fields[name] = resultAt(receipt, '/value')
+    const images = receipt.images.map((image): LocalToolImage => {
+      if (
+        !record(image) ||
+        typeof image.path !== 'string' ||
+        typeof image.dataPath !== 'string' ||
+        typeof image.actionName !== 'string' ||
+        !record(image.metadata)
+      ) {
+        throw Error('Invalid saved image provenance')
+      }
+
+      return {
+        path:
+          '/fields/' +
+          name.replace(/~/g, '~0').replace(/\//g, '~1') +
+          image.path,
+        actionName: image.actionName,
+        image: {
+          ...image.metadata,
+          dataUrl: resultAt(receipt.value, image.dataPath)
+        }
+      }
+    })
+
+    deliverImages?.(images, name)
+  }
 
   return {
     saved: [],

@@ -83,6 +83,14 @@ Quality gates:
 
 ### AI conversation verification
 
+Every verification method and completion claim follows the
+[AI conversation verification contract](specs/ai-conversation-verification.md).
+It owns independent spec coverage, actual producer/consumer evidence, fault
+sensitivity and verifier conformance. The existing command is implemented;
+conformance work is pending under the
+[uniform verification plan](plans/agent-context-and-report-continuity-plan.md#uniform-verification-contract).
+Its current passing results alone cannot establish compliance with that standard.
+
 Run `yarn workspace @asyra/asyra-design verify:conversation --list` to inspect the
 maintained owner test selection and separately authored required handoff selectors.
 Run the same command without `--list` at the completed feature checkpoint. It cleans
@@ -90,11 +98,12 @@ and builds the generated App dependency closure, records loaded-source/export
 identity, then runs App server/UI, Runtime, Knowledge/shared verification and real
 browser tests with structured reports. It does not run a live model or 101.
 
-The [active plan](plans/agent-context-and-report-continuity-plan.md#spec-derived-conversation-verification)
+The [active plan](plans/agent-context-and-report-continuity-plan.md#uniform-verification-contract)
 and current product specs own semantic requirements. The standard Flow-file at
 `test-data/conversation-verification/flow/conversation.flow.json` records required
-handoff criteria independently of file selection. Shared Flow Inspector producers
-admit actual observations. The command cannot accept the separate spec-coverage
+handoff criteria independently of file selection. Complete admission must use the
+shared Flow Inspector producers; the plan records a currently missing diagnostic
+in the App runner's path. The command cannot accept the separate spec-coverage
 review, infer complete semantics from test counts, or excuse missing evidence.
 
 Evidence is retained under `tmp/conversation-proof-*`. Exit 1 means execution failed

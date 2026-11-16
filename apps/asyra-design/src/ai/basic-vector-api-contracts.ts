@@ -317,6 +317,7 @@ const updateVectorAnchorPointPositionApi = defineBasicApi({
   method: 'updateVectorAnchorPointPosition',
   effect: 'write',
   resultKind: 'mutation-receipt',
+  resultTargets: { parameter: 'elementId', kind: 'id' },
   parameters: [
     { name: 'elementId', schema: apiElementId },
     { name: 'pointId', schema: apiId },
@@ -335,6 +336,7 @@ const updateVectorAnchorPointTypeApi = defineBasicApi({
   method: 'updateVectorAnchorPointType',
   effect: 'write',
   resultKind: 'mutation-receipt',
+  resultTargets: { parameter: 'elementId', kind: 'id' },
   parameters: [
     { name: 'elementId', schema: apiElementId },
     { name: 'pointId', schema: apiId },
@@ -349,6 +351,7 @@ const setVectorAnchorPointHandleModeApi = defineBasicApi({
   method: 'setVectorAnchorPointHandleMode',
   effect: 'write',
   resultKind: 'mutation-receipt',
+  resultTargets: { parameter: 'elementId', kind: 'id' },
   parameters: [
     { name: 'elementId', schema: apiElementId },
     { name: 'pointId', schema: apiId },
@@ -362,6 +365,7 @@ const updateVectorAnchorPointHandlePositionApi = defineBasicApi({
   method: 'updateVectorAnchorPointHandlePosition',
   effect: 'write',
   resultKind: 'mutation-receipt',
+  resultTargets: { parameter: 'elementId', kind: 'id' },
   parameters: [
     { name: 'elementId', schema: apiElementId },
     { name: 'pointId', schema: apiId },
@@ -388,6 +392,7 @@ const updateVectorAnchorPointHandlesApi = defineBasicApi({
   method: 'updateVectorAnchorPointHandles',
   effect: 'write',
   resultKind: 'mutation-receipt',
+  resultTargets: { parameter: 'elementId', kind: 'id' },
   parameters: [
     { name: 'elementId', schema: apiElementId },
     {
@@ -416,6 +421,7 @@ const appendVectorAnchorPointApi = defineBasicApi({
   method: 'appendVectorAnchorPoint',
   effect: 'write',
   resultKind: 'mutation-receipt',
+  resultTargets: { parameter: 'elementId', kind: 'id' },
   parameters: [
     { name: 'elementId', schema: apiElementId },
     { name: 'point', schema: vectorAnchorPointSchema },
@@ -451,6 +457,7 @@ const connectVectorAnchorEndpointsApi = defineBasicApi({
   method: 'connectVectorAnchorEndpoints',
   effect: 'write',
   resultKind: 'mutation-receipt',
+  resultTargets: { parameter: 'elementId', kind: 'id' },
   parameters: [
     { name: 'elementId', schema: apiElementId },
     { name: 'sourcePointId', schema: apiId },
@@ -466,6 +473,7 @@ const connectVectorAnchorPointsApi = defineBasicApi({
   method: 'connectVectorAnchorPoints',
   effect: 'write',
   resultKind: 'mutation-receipt',
+  resultTargets: { parameter: 'elementId', kind: 'id' },
   parameters: [
     { name: 'elementId', schema: apiElementId },
     { name: 'sourcePointId', schema: apiId },
@@ -481,6 +489,7 @@ const removeLastSinglePointSubpathApi = defineBasicApi({
   method: 'removeLastSinglePointSubpath',
   effect: 'delete',
   resultKind: 'mutation-receipt',
+  resultTargets: { parameter: 'elementId', kind: 'id' },
   parameters: [{ name: 'elementId', schema: apiElementId }]
 })
 
@@ -492,6 +501,7 @@ const removeVectorAnchorPointApi = defineBasicApi({
   method: 'removeVectorAnchorPoint',
   effect: 'delete',
   resultKind: 'mutation-receipt',
+  resultTargets: { parameter: 'elementId', kind: 'id' },
   parameters: [
     { name: 'elementId', schema: apiElementId },
     { name: 'pointId', schema: apiId }
@@ -504,6 +514,7 @@ const splitVectorSegmentAtWorkspacePosApi = defineBasicApi({
   method: 'splitVectorSegmentAtWorkspacePos',
   effect: 'write',
   resultKind: 'mutation-receipt',
+  resultTargets: { parameter: 'elementId', kind: 'id' },
   parameters: [
     { name: 'elementId', schema: apiElementId },
     { name: 'segmentId', schema: apiId },
@@ -520,6 +531,7 @@ const setVectorClosedApi = defineBasicApi({
   method: 'setVectorClosed',
   effect: 'write',
   resultKind: 'mutation-receipt',
+  resultTargets: { parameter: 'elementId', kind: 'id' },
   parameters: [
     { name: 'elementId', schema: apiElementId },
     { name: 'closed', schema: apiBoolean }
@@ -532,6 +544,7 @@ const scaleVectorElementAroundCenterApi = defineBasicApi({
   method: 'scaleVectorElementAroundCenter',
   effect: 'write',
   resultKind: 'mutation-receipt',
+  resultTargets: { parameter: 'elementId', kind: 'id' },
   parameters: [
     { name: 'elementId', schema: apiElementId },
     {
@@ -560,6 +573,11 @@ const setVectorElementPositionsApi = defineBasicApi({
   method: 'setVectorElementPositions',
   effect: 'write',
   resultKind: 'mutation-receipt',
+  resultTargets: {
+    parameter: 'updates',
+    kind: 'records',
+    identityPath: ['elementId']
+  },
   parameters: [
     {
       name: 'updates',
@@ -577,6 +595,7 @@ const createVectorElementFromSinglePointApi = defineBasicApi({
   method: 'createVectorElementFromSinglePoint',
   effect: 'write',
   resultKind: 'mutation-receipt',
+  resultTargets: { parameter: 'pointId', kind: 'created-id' },
   parameters: [
     { name: 'pointId', schema: apiId },
     { name: 'position', schema: apiPosition }

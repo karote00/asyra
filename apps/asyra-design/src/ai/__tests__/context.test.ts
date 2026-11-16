@@ -20,6 +20,7 @@ const createQueries = (
   getElementSummary: vi.fn((elementId) => ({
     id: elementId,
     type: elementId === 'selected-1' ? 'rectangle' : 'group',
+    parentId: elementId === 'selected-1' ? 'selected-2' : 'workspace-1',
     visible: true,
     locked: elementId === 'selected-2',
     bounds: { x: 10, y: 20, width: 30, height: 40 },
@@ -49,6 +50,8 @@ describe('Asyra Design AI context disclosure', () => {
         {
           id: 'selected-2',
           type: 'group',
+          parentId: 'workspace-1',
+          coordinateSpace: 'parent-local',
           visible: true,
           locked: true,
           bounds: { x: 10, y: 20, width: 30, height: 40 }
@@ -56,6 +59,8 @@ describe('Asyra Design AI context disclosure', () => {
         {
           id: 'selected-1',
           type: 'rectangle',
+          parentId: 'selected-2',
+          coordinateSpace: 'parent-local',
           visible: true,
           locked: false,
           bounds: { x: 10, y: 20, width: 30, height: 40 }
@@ -181,4 +186,30 @@ describe('Asyra Design AI context disclosure', () => {
       expect(query).not.toHaveBeenCalled()
     })
   })
+})
+
+it('reports missing geometry and parent identity without inventing world coordinates', async () => {
+  const provider = createAiContextProvider(
+    createQueries({
+      getSelectedElementIds: () => ['missing'],
+
+      getElementSummary: () => ({ bounds: { x: 1, y: 2 }, parentId: null })
+    })
+  )
+  const context = await provider.getContext({
+    intent: 'Inspect selection',
+    signal: new AbortController().signal
+  })
+
+  expect(context.selectedElements).toEqual([
+    {
+      id: 'missing',
+      type: 'unknown',
+      parentId: null,
+      coordinateSpace: 'parent-local',
+      visible: true,
+      locked: false,
+      bounds: null
+    }
+  ])
 })

@@ -1,7 +1,7 @@
 # Executable phase continuity - implementation and one live observation
 
 November 8, 2026. Associated plan:
-[Agent Context and Report Continuity](../plans/agent-context-and-report-continuity-plan.md).
+[Agent Context and Report Continuity](../plans/completed/agent-context-and-report-continuity-record-2026-11-16.md).
 Implementation and focused owner checks are complete. The one authorized live
 observation ended early on an invalid agent-authored input, so it does not prove
 completion of the full drawing or adoption of the corrected dependency chain.

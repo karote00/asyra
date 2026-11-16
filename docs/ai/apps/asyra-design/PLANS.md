@@ -31,21 +31,26 @@ Never record completed plans here.
   recording first, then evaluation, retrieval, efficiency and local validation.
 - Active: [Editable Design Agent](plans/ai-design-agent-plan.md), including the
   accepted [AI Conversation Experience](plans/ai-conversation-experience-plan.md) contracts.
-  Active replacement: [Spec-derived conversation verification](plans/agent-context-and-report-continuity-plan.md#spec-derived-conversation-verification) -
-  remove the old verifier, synthetic reply dispatcher and current callers first;
-  then derive and prove whole-conversation handoffs independently of test selection.
-  Shared evidence and production-path proofs are in progress, not full acceptance.
-  The previous 5,734-test result remains historical execution evidence.
-  Implemented correction: [Complete handoff corrections](plans/agent-context-and-report-continuity-plan.md#complete-handoff-corrections) -
-  field lifetime through projection/storage, equivalent structural numeric bindings,
-  known-target instruction consistency and canonical parent/coordinate proof.
-  Earlier adapter rotation tests did not prove canonical rotation propagation.
-  Focused handoff validation passed; live model adoption and GPU pixels remain unclaimed.
-  Implemented design follow-up: [Tool outcomes, evaluation stopping and composable discovery](plans/agent-context-and-report-continuity-plan.md#tool-outcomes-evaluation-stopping-and-composable-discovery) -
-  unified failure meaning, corrected evaluation interruption and separated
-  request-composable search from exact contract reads. Focused checks and the
-  [complete November 12 observation](reports/tool-outcomes-discovery-15m-2026-11-12.md)
-  pass; original report sessions remain open. Earlier observations remain in the plan.
+  Completed bounded task: [History admission and independent contract verification](plans/agent-context-and-report-continuity-plan.md#history-admission-and-independent-contract-verification) -
+  strict history outcomes, complete selected-result semantics, executable Knowledge
+  examples, and consistent saved-context authority. All four corrections and the
+  twelve-handoff source review are complete with focused owner/consumer evidence
+  and independent case reconciliation.
+  Completed bounded task: [Uniform verification contract](plans/agent-context-and-report-continuity-plan.md#uniform-verification-contract) -
+  shared report admission, actual-entry corruption controls, independent contract
+  oracles and current-source feature acceptance completed on November 17, 2026.
+  All verification methods must continue to follow the
+  [verification standard](specs/ai-conversation-verification.md), including the
+  independent semantic review. [Current evidence and limits](reports/conversation-spec-coverage-review-2026-11-14.md#uniform-verification-implementation---november-16-2026):
+  367 files and 6,940 cases reconcile; 157 semantic selectors, source/build/definition
+  identity and the formal manual criterion are satisfied. No 101 or full repo test.
+  The [historical acceptance](reports/conversation-spec-coverage-review-2026-11-14.md#whole-conversation-acceptance---november-16-2026)
+  recorded 6,890 passes; subsequent product and verifier findings reopened that
+  conclusion and are resolved by the separately recorded current review.
+  Completed child corrections and superseded execution records:
+  [November 16 closeout record](plans/completed/agent-context-and-report-continuity-record-2026-11-16.md).
+  The record preserves original failures, withdrawn conclusions and validation
+  limits; the current parent work is recorded separately above.
   Implemented task: [Staged Design Execution and Conversation Context](plans/staged-design-execution-plan.md) -
   preserve useful stage results in App context, apply each ready stage, continue
   through the host and overlap independent preparation; consolidate recorded

@@ -24,6 +24,15 @@ function reportCountIssues(report) {
   }
   const issues = []
 
+  for (const name of ['numFailedTestSuites', 'numPendingTestSuites']) {
+    if (
+      Object.hasOwn(report, name) &&
+      (!Number.isSafeInteger(report[name]) || report[name] < 0)
+    ) {
+      issues.push('Invalid runner count: ' + name)
+    }
+  }
+
   for (const [name, expected] of Object.entries(counts)) {
     if (!Object.hasOwn(report, name)) {
       continue
@@ -102,6 +111,12 @@ function completeReportIssues(report, { root, requiredFiles, requiredCases }) {
   }
 
   const issues = reportCountIssues(report)
+
+  for (const name of ['numFailedTestSuites', 'numPendingTestSuites']) {
+    if (report?.[name] > 0) {
+      issues.push('Incomplete runner suite summary: ' + name)
+    }
+  }
 
   if (!report || report.success !== true) {
     issues.push('Missing successful runner completion')

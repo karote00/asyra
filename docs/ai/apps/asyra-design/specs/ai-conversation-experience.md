@@ -18,6 +18,12 @@ it as a newly attached image. No Edit request action or automatic draft restorat
 is offered. Panel text supports native mouse selection and copying. Composer keyboard events stay in the text
 input, preserving native editing and IME without invoking canvas shortcuts.
 
+Initial selected-element summaries disclose the canonical `parentId` (or null
+when unavailable) and `coordinateSpace: "parent-local"` alongside bounds. These
+coordinates retain the public geometry owner's basis; no workspace transform is
+inferred. Missing geometry remains null. The same detached whitelist reaches the
+provider without raw properties or a prerequisite lookup.
+
 Each submission projects prior settled turns from the current conversation into
 bounded request data: exact user intent, public assistant explanation or question,
 offered choices, answer/retry links, outcome and source-attachment indexes. Latest

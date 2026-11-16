@@ -8,6 +8,12 @@ export interface EvaluationReportReply {
   readonly messages: readonly { phase: string; text: string }[]
 }
 
+export interface EvaluationReportDelivery extends EvaluationReportReply {
+  readonly recording:
+    | { readonly status: 'saved' }
+    | { readonly status: 'failed'; readonly message: string }
+}
+
 export class EvaluationReportFailure extends Error {
   constructor(
     message: string,
@@ -133,7 +139,7 @@ export const createEvaluationReportSessions = () => {
       const entry = get(id)
       const next = entry.tail
         .catch(() => undefined)
-        .then(async () => {
+        .then(async (): Promise<EvaluationReportDelivery> => {
           available(entry)
           if (!question.trim()) {
             throw Error('A report question is required')
@@ -150,18 +156,38 @@ export const createEvaluationReportSessions = () => {
             available(entry)
             const reply = await entry.owner.ask(question)
 
-            await entry.owner.record(callId, 'output', reply)
+            try {
+              await entry.owner.record(callId, 'output', reply)
+            } catch (error) {
+              const message =
+                error instanceof Error ? error.message : String(error)
 
-            return reply
+              return {
+                ...reply,
+                recording: {
+                  status: 'failed',
+                  message: message.trim()
+                    ? message
+                    : 'Report output recording failed'
+                }
+              }
+            }
+
+            return { ...reply, recording: { status: 'saved' } }
           } catch (error) {
-            await entry.owner.record(`${callId}-failure`, 'output', {
-              nativeThreadId: entry.owner.nativeThreadId,
-              ...(error instanceof EvaluationReportFailure
-                ? error.partial
-                : {}),
-              status: 'failed',
-              error: error instanceof Error ? error.message : String(error)
-            })
+            try {
+              await entry.owner.record(`${callId}-failure`, 'output', {
+                nativeThreadId: entry.owner.nativeThreadId,
+                ...(error instanceof EvaluationReportFailure
+                  ? error.partial
+                  : {}),
+                status: 'failed',
+                error: error instanceof Error ? error.message : String(error)
+              })
+            } catch {
+              // Recording cannot replace the original failure or its partial reply.
+            }
+
             throw error
           } finally {
             if (!entry.closing) {

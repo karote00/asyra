@@ -1,6 +1,111 @@
 import { expect, it } from 'vitest'
 import { createConversationResults } from '../conversation-results'
 
+it('keeps image provenance with immutable values and projects only selected pixel paths', () => {
+  let document = 'one'
+  const app = createConversationResults(() => document)
+  const context = app.open('one')
+  const image = { dataUrl: 'encoded-pixels', width: 10, height: 20 }
+  const provenance = {
+    path: '/image',
+    dataPath: '/image/dataUrl',
+    actionName: 'inspect_drawing',
+    metadata: { width: 10, height: 20 }
+  }
+
+  context.exchange({
+    save: { capture: { image } },
+    images: { capture: [provenance] }
+  })
+  image.dataUrl = 'changed'
+  provenance.metadata.width = 100
+  const next = app.open('one')
+
+  expect(
+    next.exchange({
+      read: {
+        image: { name: 'capture', path: '/image', view: 'delivery' },
+        bytes: { name: 'capture', path: '/image/dataUrl', view: 'delivery' },
+        width: { name: 'capture', path: '/image/width', view: 'delivery' }
+      }
+    })
+  ).toEqual({
+    image: {
+      value: { dataUrl: 'encoded-pixels', width: 10, height: 20 },
+      images: [
+        {
+          path: '',
+          dataPath: '/dataUrl',
+          actionName: 'inspect_drawing',
+          metadata: { width: 10, height: 20 }
+        }
+      ]
+    },
+    bytes: {
+      value: 'encoded-pixels',
+      images: [
+        {
+          path: '',
+          dataPath: '',
+          actionName: 'inspect_drawing',
+          metadata: { width: 10, height: 20 }
+        }
+      ]
+    },
+    width: { value: 10, images: [] }
+  })
+  expect(() =>
+    next.exchange({ save: { capture: 1 }, images: { capture: [provenance] } })
+  ).toThrow()
+  expect(
+    next.exchange({
+      read: { value: { name: 'capture', path: '/image/dataUrl' } }
+    })
+  ).toEqual({ value: 'encoded-pixels' })
+  expect(() =>
+    app.open('other').exchange({
+      read: { value: { name: 'capture', path: '', view: 'delivery' } }
+    })
+  ).toThrow()
+  next.exchange({ save: { capture: { image } } })
+  expect(
+    next.exchange({
+      read: { value: { name: 'capture', path: '', view: 'delivery' } }
+    }).value
+  ).toMatchObject({ images: [] })
+  document = 'two'
+  expect(() =>
+    next.exchange({
+      read: { value: { name: 'capture', path: '', view: 'delivery' } }
+    })
+  ).toThrow()
+  expect(app.open('one').names()).toEqual([])
+})
+
+it('counts provenance in the same capacity budget and refuses replacement atomically', () => {
+  const context = createConversationResults(() => 1).open('one')
+
+  context.exchange({ save: { image: 'pixels' } })
+  expect(() =>
+    context.exchange({
+      save: { image: 'new' },
+      images: {
+        image: [
+          {
+            path: '',
+            dataPath: '',
+            actionName: 'inspect_drawing',
+            metadata: { note: 'x'.repeat(4 * 1024 * 1024) }
+          }
+        ]
+      }
+    })
+  ).toThrow(/capacity/)
+  expect(
+    context.exchange({ read: { value: { name: 'image', path: '' } } })
+  ).toEqual({ value: 'pixels' })
+})
+
 it('retains selected snapshots across turns of the same document conversation only', () => {
   let document = {}
   const app = createConversationResults(() => document)

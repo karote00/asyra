@@ -194,14 +194,13 @@ ungroup or reorder on complete unique ID sets. Reorder stays within one parent a
 uses an index in the remaining sibling list. Group name is optional; ungroup takes
 one official Group, validates its children and preserves them. Check selected
 objects and ancestors for locks before writes. A request-local observation map
-reads each touched node once; never cache across calls. Structural receipts are
-reviewed directly without consuming screenshot correction attempts; explicit
+reads each touched node once; never cache across calls. Structural receipts describe the acknowledged organization change; explicit
 visual inspection remains available for stacking changes. This action does not
 provide arbitrary reparenting, deletion or reusable instances. Rename uses targeted
 edit; alignment/spacing belongs to a separate layout operation. Destructive changes use
 the existing confirmation policy. Unsupported reusable-instance operations are
-explained rather than treating groups as instances. Read-only operations do not
-trigger mutation review or consume visual-correction attempts.
+explained rather than treating groups as instances. Read-only operations do not trigger automatic mutation review. Inspection and
+measurement have no cumulative correction-attempt quota.
 
 ## Review and termination
 
@@ -393,11 +392,13 @@ transaction settlement are measured without counting unacknowledged elements as
 applied. Partial receipts remain valid at Runtime/Host/native delivery boundaries;
 retained prefixes are never replayed to recreate missing diagnostics.
 
-Direct and combined prepared application default to a compact receipt at the
-canonical action source. It retains status, root ID, applied count and timing without constructing
-ID arrays/role maps for transmission. Explicit full mode preserves the existing
-maps. Runtime still refreshes the context used by permission decisions; this must
-not be replaced with stale model context to save work.
+Successful direct and combined prepared application returns complete acknowledged
+IDs, counts, source-key/role mappings and timing at the canonical action boundary.
+Partial application preserves its declared acknowledged prefix without inventing
+uncompleted mappings. Host delivery projects the model-visible result after canonical validation; it
+does not change the values available to bindings or named retention. There is no
+separate full-response input mode. Runtime still refreshes the context used by
+permission decisions; stale model context cannot substitute for that observation.
 
 Layout checks remain composition-wide after edits. A same-request tool history is
 not proof that the canvas is unchanged: users and collaborators can also mutate it.

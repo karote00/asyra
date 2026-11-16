@@ -3,7 +3,7 @@
 ## Next follow-up
 
 The November 8 approved
-[Predictable tools without mandatory review ceremonies](agent-context-and-report-continuity-plan.md#predictable-tools-without-mandatory-review-ceremonies)
+[Predictable tools without mandatory review ceremonies](completed/agent-context-and-report-continuity-record-2026-11-16.md#predictable-tools-without-mandatory-review-ceremonies)
 replaces the next-task direction: remove compulsory evidence/approval procedures
 and completion gates while preserving tool validation, AI final verification and
 stage continuity. The current task is documentation and review, not implementation.

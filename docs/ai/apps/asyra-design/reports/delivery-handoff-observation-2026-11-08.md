@@ -1,7 +1,7 @@
 # Delivery handoff correction and fixed-prompt observation
 
 Date: November 8, 2026.
-Plan: [Agent Context and Report Continuity](../plans/agent-context-and-report-continuity-plan.md#third-run-delivery-review-and-four-slice-correction).
+Plan: [Agent Context and Report Continuity](../plans/completed/agent-context-and-report-continuity-record-2026-11-16.md#third-run-delivery-review-and-four-slice-correction).
 Scope: the four approved handoff corrections, focused regressions and one live
 observation. No full local suite, release gates, commit or remote operation.
 

@@ -12,6 +12,7 @@ const {
   capture,
   publish,
   normalize,
+  admitCompleteReport,
   publishCompleteReport
 } = require('./adapters.cjs')
 const { exportCurrent, importCurrent } = require('./bundles.cjs')
@@ -28,6 +29,7 @@ module.exports = {
   capture,
   publish,
   normalize,
+  admitCompleteReport,
   publishCompleteReport,
   exportCurrent,
   importCurrent

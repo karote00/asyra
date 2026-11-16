@@ -49,3 +49,25 @@ supersedes the plan's open integration checkpoint only. Other plans, including
 AI conversation work, are not closed by this decision. No full App correctness,
 101 result, release readiness, Changeset, version bump, tag, publication or merge
 is claimed or authorized by this closeout.
+
+
+## 2026-11-16 - Completed conversation corrections closeout
+
+Context: The user requested closing only completed work and removing it from the
+active continuity plan, while retaining the new four-finding task and all original
+unfinished parent acceptance obligations.
+
+Decision: Move completed child corrections and their historical execution records
+to the [closeout record](/docs/ai/apps/asyra-design/plans/completed/agent-context-and-report-continuity-record-2026-11-16.md).
+Keep the [active plan](/docs/ai/apps/asyra-design/plans/agent-context-and-report-continuity-plan.md)
+limited to the current history/audit/Knowledge/saved-context work and independent
+whole-conversation specification acceptance. Preserve the original twelve handoff
+obligations, failed evidence, withdrawn conclusions and recorded limits.
+
+Consequences: This closes completed child tasks only. Historical open/rejected
+checkpoints in the archived narrative are not newly accepted, and prior totals
+are not present-source correctness claims. The new task retains its partial
+implementation state, including two intentionally failing Knowledge controls.
+Source/test work is paused at the user's direction; this closeout changes only
+documentation and links. No full test, 101, provider session closure, commit,
+push, Changeset, version change, tag or publication is included.

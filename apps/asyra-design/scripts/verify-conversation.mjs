@@ -21,6 +21,7 @@ import {
   conversationGroups,
   captureConversationGroup,
   validateConversationEvidence,
+  validateConversationProofDefinition,
   validateRequiredHandoffs
 } from './conversation-scope.mjs'
 
@@ -31,15 +32,11 @@ const {
 } = require('../../../tools/flow-inspector/flow-files/project.cjs')
 const {
   capture,
-  normalize,
   publish
 } = require('../../../tools/flow-inspector/flow-files/adapters.cjs')
 const {
   openProject
 } = require('../../../tools/flow-inspector/flow-files/store.cjs')
-const {
-  completeReportIssues
-} = require('../../../tools/flow-inspector/control-plane/runner-report.cjs')
 const {
   normalizeNodeEvents
 } = require('../../../tools/flow-inspector/control-plane/node-results.cjs')
@@ -173,6 +170,16 @@ async function execute() {
   }
 
   try {
+    const definitionIssues = validateConversationProofDefinition(
+      openProject(project.directory)
+        .snapshot()
+        .documents.map((document) => document.definition)
+    )
+
+    if (definitionIssues.length) {
+      throw Error(definitionIssues.join('\n'))
+    }
+
     const scopeAdmission = await run(
       'scope-admission',
       process.execPath,
@@ -273,6 +280,8 @@ async function execute() {
       'domain-knowledge',
       'tools/flow-inspector',
       'docs/ai/apps/asyra-design/specs',
+      'docs/ai/knowledge',
+      'docs/ai/tools/flow-inspector',
       'docs/ai/apps/asyra-design/plans/completed/ai-conversational-drawing-performance-plan.md',
       'docs/ai/apps/asyra-design/bdd-features/ai-conversational-drawing-performance.feature',
       'docs/ai/framework/packages/ai-agent-runtime.md',
@@ -544,48 +553,25 @@ async function execute() {
         project: group.producer === 'playwright' ? 'chromium' : ''
       }
 
-      diagnostics.push(
-        ...completeReportIssues(report, {
-          root,
-          requiredFiles: group.files,
-          requiredCases
-        })
-      )
       if (result.code !== 0 || result.exitSignal) {
         diagnostics.push('Runner exit: ' + JSON.stringify(result))
       }
 
-      const required = expected.filter((item) =>
-        group.files.includes(item.file)
-      )
-
-      const records = normalize(project, report, {
-        ...scope,
-        producer: group.producer === 'playwright' ? 'vitest' : group.producer
-      }).map((record) => ({
-        ...record,
-        selector: { ...record.selector, producer: group.producer }
-      }))
-
-      diagnostics.push(...validateRequiredHandoffs(required, records))
-      const declared = records.filter((record) =>
-        required.some(
-          (item) =>
-            item.file === record.selector.file &&
-            item.title === record.selector.title
-        )
-      )
-
-      observations.push(...records)
-      save(group.id + '-normalized.json', report)
-      issues.push(...diagnostics.map((issue) => group.id + ': ' + issue))
-      publishConversationGroup({
+      const admitted = publishConversationGroup({
         project,
         receipt,
-        records: declared,
+        report,
+        scope,
+        requiredFiles: group.files,
+        requiredCases,
         issues: diagnostics,
         artifact: join(output, group.id + '-issues.json')
       })
+
+      diagnostics = admitted.issues
+      observations.push(...admitted.records)
+      save(group.id + '-normalized.json', report)
+      issues.push(...diagnostics.map((issue) => group.id + ': ' + issue))
       process.stdout.write(
         group.id +
           ': ' +

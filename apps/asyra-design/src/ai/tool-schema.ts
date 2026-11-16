@@ -714,11 +714,17 @@ export const operationInputIssues = (
     }
 
     if (typeof v === 'string') {
-      if (typeof s.minLength === 'number' && v.length < s.minLength) {
+      // JSON Schema counts Unicode code points, not UTF-16 storage units.
+      const length =
+        typeof s.minLength === 'number' || typeof s.maxLength === 'number'
+          ? Array.from(v).length
+          : 0
+
+      if (typeof s.minLength === 'number' && length < s.minLength) {
         return [issue(`${path}: string is too short`)]
       }
 
-      if (typeof s.maxLength === 'number' && v.length > s.maxLength) {
+      if (typeof s.maxLength === 'number' && length > s.maxLength) {
         return [issue(`${path}: string is too long`)]
       }
 
