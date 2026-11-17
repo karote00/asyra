@@ -4,6 +4,7 @@ import type { AiConversationOutcome, AiSettledTurn } from './conversation'
 import { AiActionNames, AiDrawingDetailOptionIds } from '../constants'
 
 export interface AiTurnSummary {
+  readonly storageNotice?: string
   readonly durationLabel: string
   readonly message: string
   readonly outcome: AiConversationOutcome
@@ -56,37 +57,9 @@ const DRAWING_DETAIL_CHOICE_PROJECTION: AiDrawingDetailChoiceProjection =
 export const projectAiDrawingDetailChoice = (
   turn: AiSettledTurn
 ): AiDrawingDetailChoiceProjection | null => {
-  if (
-    turn.outcome !== 'no-change' ||
-    !isPlainObject(turn.result) ||
-    turn.result.status !== 'executed' ||
-    !Array.isArray(turn.result.actionResults) ||
-    turn.result.actionResults.length !== 1
-  ) {
-    return null
-  }
-  const actionResult = turn.result.actionResults[0]
-  if (
-    !isPlainObject(actionResult) ||
-    actionResult.actionName !== AiActionNames.REQUEST_DRAWING_DETAIL_CHOICE ||
-    !isPlainObject(actionResult.result)
-  ) {
-    return null
-  }
-  const result = actionResult.result
-  if (
-    result.action !== AiActionNames.REQUEST_DRAWING_DETAIL_CHOICE ||
-    result.status !== 'no-change' ||
-    !isPlainObject(result.clarification) ||
-    result.clarification.kind !== 'drawing-detail' ||
-    !Array.isArray(result.clarification.optionIds) ||
-    result.clarification.optionIds.length !== 2 ||
-    result.clarification.optionIds[0] !== AiDrawingDetailOptionIds.BALANCED ||
-    result.clarification.optionIds[1] !== AiDrawingDetailOptionIds.MAXIMUM
-  ) {
-    return null
-  }
-  return DRAWING_DETAIL_CHOICE_PROJECTION
+  return turn.question?.kind === 'drawing-detail'
+    ? DRAWING_DETAIL_CHOICE_PROJECTION
+    : null
 }
 
 const partialCounts = (
@@ -149,6 +122,12 @@ export const formatElapsedTime = (durationMs: number): string => {
 }
 
 export const summarizeAiTurn = (turn: AiSettledTurn): AiTurnSummary => {
+  if (turn.protocolDiagnostic)
+    return Object.freeze({
+      message: turn.protocolDiagnostic,
+      durationLabel: formatElapsedTime(turn.durationMs),
+      outcome: turn.outcome
+    })
   const executionReason =
     isPlainObject(turn.result) &&
     turn.result.stage === 'execution' &&
@@ -249,21 +228,17 @@ export const summarizeAiTurn = (turn: AiSettledTurn): AiTurnSummary => {
     typeof reported.result.message === 'string' &&
     reported.result.message.length <= 1000
   ) {
+    let storageNotice: string | undefined
     if (
       reported.result.outcome === 'completed' &&
       isPlainObject(reported.result.persistence)
     ) {
       const status = reported.result.persistence.status
-      if (status === 'unavailable' || status === 'local-only') {
-        return Object.freeze({
-          durationLabel: formatElapsedTime(turn.durationMs),
-          message:
-            status === 'unavailable'
-              ? 'Drawing work is complete, but saving could not be confirmed. Changes have been kept. Resolve document storage before closing; do not repeat the drawing.'
-              : 'Drawing work is complete locally. Durable document storage is not connected.',
-          outcome: turn.outcome
-        })
-      }
+      if (status === 'unavailable')
+        storageNotice =
+          'Saving could not be confirmed. Resolve document storage before closing.'
+      if (status === 'local-only')
+        storageNotice = 'Durable document storage is not connected.'
     }
     let disposition = ''
     if (reported.result.outcome === 'unsupported') {
@@ -273,6 +248,7 @@ export const summarizeAiTurn = (turn: AiSettledTurn): AiTurnSummary => {
     return Object.freeze({
       durationLabel: formatElapsedTime(turn.durationMs),
       message: reported.result.message + disposition,
+      ...(storageNotice ? { storageNotice } : {}),
       outcome: turn.outcome
     })
   }
@@ -308,58 +284,18 @@ export const summarizeAiTurn = (turn: AiSettledTurn): AiTurnSummary => {
   })
 }
 
-/** Only pre-execution failures are admitted for replay. Unknown transaction state is never guessed. */
-export const canRetryAiTurn = (turn: AiSettledTurn): boolean => {
-  if (turn.outcome !== 'failed' && turn.outcome !== 'cancelled') return false
-  if (!isPlainObject(turn.result)) return false
-  if (
-    isPlainObject(turn.result.transaction) &&
-    turn.result.transaction.status === 'unknown'
-  )
-    return false
-  return [
-    'context',
-    'provider',
-    'resolution',
-    'permission',
-    'confirmation'
-  ].includes(String(turn.result.stage))
-}
-
 export const projectAiQuestion = (
   turn: AiSettledTurn
 ): {
   readonly message: string
   readonly choices: readonly AiDrawingDetailChoice[]
 } | null => {
-  const detail = projectAiDrawingDetailChoice(turn)
-  if (detail)
-    return {
-      message: 'Choose a drawing detail level.',
-      choices: detail.choices
-    }
-  if (
-    turn.outcome !== 'no-change' ||
-    !isPlainObject(turn.result) ||
-    !Array.isArray(turn.result.actionResults) ||
-    turn.result.actionResults.length !== 1
-  )
-    return null
-  const action = turn.result.actionResults[0]
-  if (
-    !isPlainObject(action) ||
-    action.actionName !== AiActionNames.REQUEST_CLARIFICATION ||
-    !isPlainObject(action.result) ||
-    !isPlainObject(action.result.clarification)
-  )
-    return null
-  const { question, kind } = action.result.clarification
-  if (
-    kind !== 'question' ||
-    typeof question !== 'string' ||
-    !question.trim() ||
-    question.length > 1000
-  )
-    return null
-  return { message: question, choices: [] }
+  if (!turn.question) return null
+  return {
+    message: turn.question.message,
+    choices:
+      turn.question.kind === 'drawing-detail'
+        ? DRAWING_DETAIL_CHOICE_PROJECTION.choices
+        : []
+  }
 }

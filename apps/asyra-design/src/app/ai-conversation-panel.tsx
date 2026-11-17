@@ -1,3 +1,5 @@
+import { canRetryAiTurn } from '../ai/conversation-recovery'
+import type { AiConversationDrafts } from '../ai/conversation-drafts'
 import { AiToolLibraryPanel } from './ai-tool-library-panel'
 import { AiConversationNavigation } from './ai-conversation-navigation'
 import { AiConnectionStatus } from './ai-connection-status'
@@ -7,6 +9,7 @@ import {
   useLayoutEffect,
   useRef,
   useState,
+  useSyncExternalStore,
   type ChangeEvent,
   type DragEvent,
   type FormEvent,
@@ -20,15 +23,10 @@ import type {
 import type {
   AiActiveTurn,
   AiConversationController,
-  AiConversationSnapshot,
-  AiImageAttachment,
-  AiImageMediaType
+  AiImageAttachment
 } from '../ai/conversation'
 import {
-  canRetryAiTurn,
   formatElapsedTime,
-  projectAiQuestion,
-  summarizeAiTurn,
   type AiDrawingDetailChoice,
   type AiDrawingDetailOptionId
 } from '../ai/presentation'
@@ -36,12 +34,6 @@ import {
   AiDocumentInteractionTargetProps,
   CONVERSATION_PANEL_WIDTH
 } from '../constants'
-
-const ACCEPTED_IMAGE_TYPES = new Set<AiImageMediaType>([
-  'image/jpeg',
-  'image/png',
-  'image/webp'
-])
 
 const ActiveDuration = ({ turn }: { readonly turn?: AiActiveTurn }) => {
   const [now, setNow] = useState(() => performance.now())
@@ -63,33 +55,6 @@ const ActiveDuration = ({ turn }: { readonly turn?: AiActiveTurn }) => {
 const stopAgentInteractionPropagation = (event: SyntheticEvent): void => {
   event.stopPropagation()
 }
-
-const readImageAttachment = (file: File): Promise<AiImageAttachment> =>
-  new Promise((resolve, reject) => {
-    const mediaType = file.type as AiImageMediaType
-    const reader = new FileReader()
-    reader.onerror = () => {
-      reject(new Error('image-read-failed'))
-    }
-    reader.onload = () => {
-      if (
-        typeof reader.result !== 'string' ||
-        !reader.result.startsWith(`data:${mediaType};base64,`)
-      ) {
-        reject(new Error('image-read-failed'))
-        return
-      }
-      resolve(
-        Object.freeze({
-          dataUrl: reader.result,
-          mediaType,
-          name: file.name,
-          size: file.size
-        })
-      )
-    }
-    reader.readAsDataURL(file)
-  })
 
 const ImageAttachmentStrip = ({
   attachments,
@@ -178,12 +143,14 @@ const DrawingDetailChoiceCard = ({
 }
 
 export interface AiConversationPanelProps {
+  readonly drafts: AiConversationDrafts
   readonly confirmation: AiConfirmationBroker
   readonly conversation: AiConversationController
   readonly onClose: () => void
 }
 
 const AiConversationPanelLayout = ({
+  drafts,
   conversation,
   onClose,
   children
@@ -192,71 +159,40 @@ const AiConversationPanelLayout = ({
 }) => {
   const imageInputRef = useRef<HTMLInputElement>(null)
   const promptRef = useRef<HTMLTextAreaElement>(null)
-  const [draft, setDraft] = useState('')
   const [aiAvailable, setAiAvailable] = useState(true)
-  const drafts = useRef(
-    new Map<
-      string,
-      { text: string; attachments: readonly AiImageAttachment[] }
-    >()
-  )
-  const [draftAttachments, setDraftAttachments] = useState<
-    readonly AiImageAttachment[]
-  >([])
-  const [attachmentError, setAttachmentError] = useState<string | null>(null)
   const [draggingImages, setDraggingImages] = useState(false)
-  const [conversationSnapshot, setConversationSnapshot] =
-    useState<AiConversationSnapshot>(() => conversation.getSnapshot())
-
-  useEffect(
-    () => conversation.subscribe(setConversationSnapshot),
-    [conversation]
+  const conversationSnapshot = useSyncExternalStore(
+    conversation.presentation.subscribeControls,
+    conversation.presentation.getControls
   )
+  const draftId = conversationSnapshot.conversationId
+  const draftSnapshot = useSyncExternalStore(
+    useCallback(
+      (notify) => drafts.subscribe(draftId, notify),
+      [drafts, draftId]
+    ),
+    useCallback(() => drafts.getSnapshot(draftId), [drafts, draftId])
+  )
+  const {
+    text: draft,
+    attachments: draftAttachments,
+    error: attachmentError
+  } = draftSnapshot
   useEffect(() => {
     promptRef.current?.focus({ preventScroll: true })
   }, [])
 
   const active = conversationSnapshot.activeTurn !== null
-  const canSend = draft.trim().length > 0 && !active && aiAvailable
+  const canSend =
+    draft.trim().length > 0 &&
+    !active &&
+    aiAvailable &&
+    draftSnapshot.pendingReads === 0
 
   const addImageFiles = useCallback(
-    async (files: FileList | readonly File[]) => {
-      if (conversation.getSnapshot().activeTurn) {
-        return
-      }
-      const selectedFiles = Array.from(files)
-      const acceptedFiles = selectedFiles.filter((file) =>
-        ACCEPTED_IMAGE_TYPES.has(file.type as AiImageMediaType)
-      )
-      setAttachmentError(
-        acceptedFiles.length === selectedFiles.length
-          ? null
-          : 'Choose PNG, JPEG, or WebP images.'
-      )
-      if (acceptedFiles.length === 0) {
-        return
-      }
-      const results = await Promise.allSettled(
-        acceptedFiles.map(readImageAttachment)
-      )
-      if (conversation.getSnapshot().activeTurn) {
-        return
-      }
-      const attachments = results.flatMap((result) =>
-        result.status === 'fulfilled' ? [result.value] : []
-      )
-      if (attachments.length > 0) {
-        setDraftAttachments((current) =>
-          Object.freeze([...current, ...attachments])
-        )
-      }
-      if (results.some((result) => result.status === 'rejected')) {
-        setAttachmentError(
-          'Could not read one or more images. Try adding them again.'
-        )
-      }
-    },
-    [conversation]
+    (files: FileList | readonly File[]) =>
+      drafts.addFiles(draftId, Array.from(files)),
+    [drafts, draftId]
   )
 
   const chooseImages = useCallback(
@@ -288,33 +224,14 @@ const AiConversationPanelLayout = ({
       if (!intent || !aiAvailable || conversation.getSnapshot().activeTurn) {
         return
       }
-      const settlement = conversation.submit({
-        attachments: draftAttachments,
-        intent
-      })
-      if (conversation.getSnapshot().activeTurn?.intent === intent) {
-        setDraft('')
-        setDraftAttachments([])
-        setAttachmentError(null)
-      }
-      void settlement.catch(() => undefined)
+      void drafts.submit(draftId, draftSnapshot).catch(() => undefined)
     },
-    [conversation, draft, draftAttachments, aiAvailable]
+    [conversation, draft, draftId, draftSnapshot, drafts, aiAvailable]
   )
 
   const navigateConversation = (id: string | null) => {
-    drafts.current.set(conversation.getSnapshot().conversationId, {
-      text: draft,
-      attachments: draftAttachments
-    })
     if (id === null) conversation.newConversation()
     else conversation.selectConversation(id)
-    const restored = drafts.current.get(
-      conversation.getSnapshot().conversationId
-    )
-    setDraft(restored?.text ?? '')
-    setDraftAttachments(restored?.attachments ?? [])
-    setAttachmentError(null)
     promptRef.current?.focus({ preventScroll: true })
   }
 
@@ -419,21 +336,21 @@ const AiConversationPanelLayout = ({
           ref={imageInputRef}
           type="file"
         />
+        {draftSnapshot.pendingReads > 0 ? (
+          <div role="status" className="mb-2 text-[12px] text-[#c7c8ce]">
+            Reading {draftSnapshot.pendingReads} image(s)…{' '}
+            <button type="button" onClick={() => drafts.cancelReads(draftId)}>
+              Cancel image loading
+            </button>
+          </div>
+        ) : null}
         {draftAttachments.length > 0 ? (
           <div className="mb-2">
             <ImageAttachmentStrip
               attachments={draftAttachments}
               onRemove={(index) => {
                 if (!active) {
-                  setDraftAttachments((current) =>
-                    Object.freeze(
-                      current.filter(
-                        (_attachment, attachmentIndex) =>
-                          attachmentIndex !== index
-                      )
-                    )
-                  )
-                  setAttachmentError(null)
+                  drafts.removeAttachment(draftId, index)
                 }
               }}
             />
@@ -456,7 +373,7 @@ const AiConversationPanelLayout = ({
             className="block min-h-[72px] w-full resize-none rounded-t-lg border-0 bg-transparent px-3 py-2 text-[12px] leading-5 text-white outline-none placeholder:text-[#777982]"
             data-ai-agent-prompt="true"
             id="ai-agent-input"
-            onChange={(event) => setDraft(event.target.value)}
+            onChange={(event) => drafts.setText(draftId, event.target.value)}
             onKeyDown={(event) => event.stopPropagation()}
             onKeyUp={(event) => event.stopPropagation()}
             placeholder="Describe a drawing or refinement…"
@@ -514,49 +431,41 @@ const AiConversationPanelLayout = ({
   )
 }
 
-const AiConversationFeed = ({
+const AiConversationTurn = ({
   conversation,
-  confirmation
-}: Pick<AiConversationPanelProps, 'conversation' | 'confirmation'>) => {
-  const [expandedHistory, setExpandedHistory] = useState<ReadonlySet<string>>(
-    new Set()
+  confirmationSnapshot,
+  turnId,
+  latest,
+  active,
+  onContentChange,
+  onMeasure
+}: {
+  conversation: AiConversationPanelProps['conversation']
+  confirmationSnapshot: AiConfirmationSnapshot
+  turnId: string
+  latest: boolean
+  active: boolean
+  onContentChange: () => void
+  onMeasure: () => void
+}) => {
+  const projection = useSyncExternalStore(
+    useCallback(
+      (notify) => conversation.presentation.subscribeTurn(turnId, notify),
+      [conversation, turnId]
+    ),
+    useCallback(
+      () => conversation.presentation.getTurn(turnId),
+      [conversation, turnId]
+    )
   )
-  const conversationBodyRef = useRef<HTMLElement>(null)
-  const followLatestRef = useRef(true)
-  const [showJump, setShowJump] = useState(false)
-  const [conversationSnapshot, setConversationSnapshot] = useState(() =>
-    conversation.getSnapshot()
-  )
-  const [confirmationSnapshot, setConfirmationSnapshot] =
-    useState<AiConfirmationSnapshot>(() => confirmation.getSnapshot())
-  useEffect(
-    () => conversation.subscribe(setConversationSnapshot),
-    [conversation]
-  )
-  useEffect(
-    () => confirmation.subscribe(setConfirmationSnapshot),
-    [confirmation]
-  )
-  const syncScrollPosition = useCallback(() => {
-    const body = conversationBodyRef.current
-    if (!body) return
-    const atBottom = body.scrollHeight - body.scrollTop - body.clientHeight <= 1
-    followLatestRef.current = atBottom
-    setShowJump(!atBottom)
-  }, [])
-  const active = conversationSnapshot.activeTurn !== null
-  // Follow before paint can emit scroll events for the newly grown content.
-  // Otherwise those events can mistake layout growth for reading older messages.
-  useLayoutEffect(() => {
-    const body = conversationBodyRef.current
-    if (body && followLatestRef.current) {
-      body.scrollTop = body.scrollHeight
-      setShowJump(false)
-    }
-  }, [confirmationSnapshot, conversationSnapshot])
-  // Initial following must run before measuring an already overflowing feed.
-  useLayoutEffect(syncScrollPosition, [expandedHistory, syncScrollPosition])
-
+  const [disclosure, setDisclosure] = useState({ open: false, revision: 0 })
+  const expanded = disclosure.open
+  useLayoutEffect(onContentChange, [
+    projection,
+    confirmationSnapshot,
+    onContentChange
+  ])
+  useLayoutEffect(onMeasure, [disclosure, onMeasure])
   const submitDrawingDetailChoice = useCallback(
     (turnId: string, optionId: AiDrawingDetailOptionId) => {
       const snapshot = conversation.getSnapshot()
@@ -583,11 +492,249 @@ const AiConversationFeed = ({
     [conversation]
   )
 
+  if (!projection) return null
+  const { turn, summary, question, answer, activity } = projection
+  const settled = 'outcome' in turn ? turn : null
+  const canAnswer = question && !answer && !active && latest
+  let questionStatus = 'Superseded'
+  if (answer) questionStatus = 'Answered'
+  if (canAnswer) questionStatus = 'Waiting for your answer'
+  return (
+    <article
+      className="flex min-w-0 flex-col gap-3"
+      data-testid="ai-agent-message"
+      data-outcome={settled?.outcome ?? 'active'}
+      data-turn-id={turn.turnId}
+      key={turn.turnId}
+    >
+      <div
+        aria-label="Your message"
+        data-message-role="user"
+        className="flex max-w-[88%] min-w-0 self-end flex-col gap-2 rounded-2xl rounded-tr-sm bg-[#34353b] px-3 py-2.5"
+      >
+        {turn.attachments.length > 0 ? (
+          <ImageAttachmentStrip attachments={turn.attachments} />
+        ) : null}
+        <p className="m-0 whitespace-pre-wrap break-words text-[12px] leading-5 text-[#f1f1f3]">
+          {turn.intent}
+        </p>
+      </div>
+      <div
+        aria-label="Agent response"
+        data-message-role="assistant"
+        className="min-w-0 self-stretch py-1 pr-3 text-[12px] leading-5 text-[#e1dff0]"
+      >
+        <details
+          onToggle={(event) => {
+            const open = event.currentTarget.open
+            setDisclosure((previous) => ({
+              open,
+              revision: previous.revision + 1
+            }))
+          }}
+          className="mt-2 text-[12px] text-[#96939f]"
+        >
+          <summary
+            aria-label="Work history"
+            className="cursor-pointer border-b border-[#393a40] pb-2"
+          >
+            {settled ? (
+              <>Worked for {summary?.durationLabel}</>
+            ) : (
+              <>
+                Working for{' '}
+                <span aria-label="Elapsed time">
+                  <ActiveDuration turn={'outcome' in turn ? undefined : turn} />
+                </span>
+              </>
+            )}
+          </summary>
+          <ol
+            aria-label="Operational progress"
+            className="my-1 list-none space-y-1 pl-3"
+          >
+            {expanded
+              ? activity.entries.flatMap((entry, index) => {
+                  const lines =
+                    entry.message && entry.message !== entry.label
+                      ? [entry.label, entry.message]
+                      : [entry.label]
+                  return lines.map((line, lineIndex) => (
+                    <li
+                      key={`${turn.turnId}:${index}:${lineIndex}`}
+                      aria-current={
+                        !settled &&
+                        entry === activity.current &&
+                        lineIndex === lines.length - 1
+                          ? 'step'
+                          : undefined
+                      }
+                      className="whitespace-pre-wrap break-words py-1"
+                    >
+                      {line}
+                    </li>
+                  ))
+                })
+              : null}
+          </ol>
+        </details>
+        {!settled ? (
+          <div
+            role="status"
+            aria-label="Current activity"
+            data-activity-mode={activity.mode}
+            className="mt-3 whitespace-pre-wrap break-words text-[#b9b2d4]"
+          >
+            {activity.current.message ? (
+              <span className="line-clamp-3" title={activity.current.message}>
+                {activity.current.message}
+              </span>
+            ) : null}
+            {activity.current.label ? (
+              <span>
+                {activity.mode === 'context' && activity.current.message
+                  ? 'Task context - no App operation executing'
+                  : activity.current.label}
+              </span>
+            ) : null}
+          </div>
+        ) : null}
+        {confirmationSnapshot.decisions
+          ?.filter((decision) => decision.turnId === turn.turnId)
+          .map((decision) => (
+            <p
+              className="my-2 text-[12px] text-[#aaa6b3]"
+              key={decision.confirmationId}
+            >
+              {decision.accepted ? 'Approved' : 'Declined'}:{' '}
+              {decision.summary.message}
+            </p>
+          ))}
+        {question ? (
+          <section
+            aria-label="Question"
+            className="mt-4 border-l-2 border-[#8d7bff] pl-3"
+          >
+            <p className="m-0 whitespace-pre-wrap break-words">
+              {question.message}
+            </p>
+            <p className="mb-0 mt-1 text-[12px] text-[#aaa6b3]">
+              {questionStatus}
+            </p>
+            {answer ? (
+              <p className="my-1 text-[12px] text-[#c7bfff]">
+                Selected: {answer.intent}
+              </p>
+            ) : null}
+            {canAnswer ? (
+              <ul
+                aria-label="Drawing detail options"
+                className="mb-0 mt-2 flex list-none flex-col gap-2 p-0"
+              >
+                {question.choices.map((choice) => (
+                  <DrawingDetailChoiceCard
+                    choice={choice}
+                    key={choice.id}
+                    onChoose={() =>
+                      submitDrawingDetailChoice(turn.turnId, choice.id)
+                    }
+                  />
+                ))}
+              </ul>
+            ) : null}
+          </section>
+        ) : null}
+        {summary?.storageNotice ? (
+          <p
+            role="status"
+            aria-label="Document storage"
+            className="mb-0 mt-2 text-[12px] text-[#b9b2d4]"
+          >
+            {summary.storageNotice}
+          </p>
+        ) : null}
+        {settled && !question ? (
+          <p className="mb-0 mt-2 whitespace-pre-wrap break-words">
+            {summary?.message}
+          </p>
+        ) : null}
+        {settled && latest && !active && canRetryAiTurn(settled) ? (
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button
+              className="rounded-md border border-[#625586] px-3 py-1.5 text-[12px] hover:bg-[#302b3e]"
+              type="button"
+              onClick={() =>
+                void conversation.retry(turn.turnId).catch(() => undefined)
+              }
+            >
+              Try again
+            </button>
+          </div>
+        ) : null}
+        {settled && !question && settled.completedAtMs !== undefined ? (
+          <div className="mt-3 flex justify-start text-[12px] text-[#96939f]">
+            <time
+              aria-label="Completed at"
+              dateTime={new Date(settled.completedAtMs).toISOString()}
+              title={new Date(settled.completedAtMs).toLocaleString()}
+            >
+              {new Date(settled.completedAtMs).toLocaleTimeString(undefined, {
+                hour: 'numeric',
+                minute: '2-digit'
+              })}
+            </time>
+          </div>
+        ) : null}
+      </div>
+    </article>
+  )
+}
+
+const AiConversationFeed = ({
+  conversation,
+  confirmation
+}: Pick<AiConversationPanelProps, 'conversation' | 'confirmation'>) => {
+  const conversationBodyRef = useRef<HTMLElement>(null)
+  const followLatestRef = useRef(true)
+  const [showJump, setShowJump] = useState(false)
+  const turnIds = useSyncExternalStore(
+    conversation.presentation.subscribeIds,
+    conversation.presentation.getIds
+  )
+  const controls = useSyncExternalStore(
+    conversation.presentation.subscribeControls,
+    conversation.presentation.getControls
+  )
+  const [confirmationSnapshot, setConfirmationSnapshot] =
+    useState<AiConfirmationSnapshot>(() => confirmation.getSnapshot())
+  useEffect(
+    () => confirmation.subscribe(setConfirmationSnapshot),
+    [confirmation]
+  )
+  const syncScrollPosition = useCallback(() => {
+    const body = conversationBodyRef.current
+    if (!body) return
+    const atBottom = body.scrollHeight - body.scrollTop - body.clientHeight <= 1
+    followLatestRef.current = atBottom
+    setShowJump(!atBottom)
+  }, [])
+  const active = controls.activeTurn !== null
+  const followContent = useCallback(() => {
+    const body = conversationBodyRef.current
+    if (body && followLatestRef.current) {
+      body.scrollTop = body.scrollHeight
+      setShowJump(false)
+    }
+  }, [])
+  useLayoutEffect(followContent, [
+    turnIds,
+    confirmationSnapshot,
+    controls,
+    followContent
+  ])
+  useLayoutEffect(syncScrollPosition, [syncScrollPosition])
+
   const pendingConfirmation = confirmationSnapshot.pending
-  const turns = [...conversationSnapshot.settledTurns]
-  const timeline = conversationSnapshot.activeTurn
-    ? [...turns, conversationSnapshot.activeTurn]
-    : turns
 
   return (
     <>
@@ -597,230 +744,25 @@ const AiConversationFeed = ({
         className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 py-4"
         ref={conversationBodyRef}
       >
-        {conversationSnapshot.settledTurns.length === 0 && !active ? (
+        {turnIds.length === 0 && !active ? (
           <div className="rounded-lg border border-[#393a40] bg-[#27282d] p-3 text-[12px] leading-5 text-[#c9cad0]">
             Describe what you would like to draw, or add a reference image. You
             can refine the result in later turns.
           </div>
         ) : null}
 
-        {timeline.map((turn) => {
-          const settled = 'outcome' in turn ? turn : null
-          const summary = settled ? summarizeAiTurn(settled) : null
-          const question = settled ? projectAiQuestion(settled) : null
-          const answer = timeline.find(
-            (entry) => entry.replyToTurnId === turn.turnId
-          )
-          const canAnswer =
-            question &&
-            !answer &&
-            !active &&
-            turns.at(-1)?.turnId === turn.turnId
-          let questionStatus = 'Superseded'
-          if (answer) questionStatus = 'Answered'
-          if (canAnswer) questionStatus = 'Waiting for your answer'
-          const latest = timeline.at(-1)?.turnId === turn.turnId
-          const stopping = !settled && conversationSnapshot.activeTurn?.stopping
-          const activity = conversation.getActivity(turn.turnId, {
-            purpose: turn.originalIntent ?? turn.intent,
-            outcome: settled?.outcome,
-            awaitingAnswer: Boolean(question),
-            stopping: Boolean(stopping),
-            awaitingApproval: !settled && Boolean(pendingConfirmation)
-          })
-          return (
-            <article
-              className="flex min-w-0 flex-col gap-3"
-              data-testid="ai-agent-message"
-              data-outcome={settled?.outcome ?? 'active'}
-              data-turn-id={turn.turnId}
-              key={turn.turnId}
-            >
-              <div
-                aria-label="Your message"
-                data-message-role="user"
-                className="flex max-w-[88%] min-w-0 self-end flex-col gap-2 rounded-2xl rounded-tr-sm bg-[#34353b] px-3 py-2.5"
-              >
-                {turn.attachments.length > 0 ? (
-                  <ImageAttachmentStrip attachments={turn.attachments} />
-                ) : null}
-                <p className="m-0 whitespace-pre-wrap break-words text-[12px] leading-5 text-[#f1f1f3]">
-                  {turn.intent}
-                </p>
-              </div>
-              <div
-                aria-label="Agent response"
-                data-message-role="assistant"
-                className="min-w-0 self-stretch py-1 pr-3 text-[12px] leading-5 text-[#e1dff0]"
-              >
-                <details
-                  onToggle={(event) => {
-                    const open = event.currentTarget.open
-                    setExpandedHistory((previous) => {
-                      const next = new Set(previous)
-                      if (open) next.add(turn.turnId)
-                      else next.delete(turn.turnId)
-                      return next
-                    })
-                  }}
-                  className="mt-2 text-[12px] text-[#96939f]"
-                >
-                  <summary
-                    aria-label="Work history"
-                    className="cursor-pointer border-b border-[#393a40] pb-2"
-                  >
-                    {settled ? (
-                      <>Worked for {summary?.durationLabel}</>
-                    ) : (
-                      <>
-                        Working for{' '}
-                        <span aria-label="Elapsed time">
-                          <ActiveDuration
-                            turn={conversationSnapshot.activeTurn ?? undefined}
-                          />
-                        </span>
-                      </>
-                    )}
-                  </summary>
-                  <ol
-                    aria-label="Operational progress"
-                    className="my-1 list-none space-y-1 pl-3"
-                  >
-                    {expandedHistory.has(turn.turnId)
-                      ? activity.entries.flatMap((entry, index) => {
-                          const lines =
-                            entry.message && entry.message !== entry.label
-                              ? [entry.label, entry.message]
-                              : [entry.label]
-                          return lines.map((line, lineIndex) => (
-                            <li
-                              key={`${turn.turnId}:${index}:${lineIndex}`}
-                              aria-current={
-                                !settled &&
-                                entry === activity.current &&
-                                lineIndex === lines.length - 1
-                                  ? 'step'
-                                  : undefined
-                              }
-                              className="whitespace-pre-wrap break-words py-1"
-                            >
-                              {line}
-                            </li>
-                          ))
-                        })
-                      : null}
-                  </ol>
-                </details>
-                {!settled ? (
-                  <div
-                    role="status"
-                    aria-label="Current activity"
-                    data-activity-mode={activity.mode}
-                    className="mt-3 whitespace-pre-wrap break-words text-[#b9b2d4]"
-                  >
-                    {activity.current.message ? (
-                      <span
-                        className="line-clamp-3"
-                        title={activity.current.message}
-                      >
-                        {activity.current.message}
-                      </span>
-                    ) : null}
-                    {activity.current.label ? (
-                      <span>
-                        {activity.mode === 'context' && activity.current.message
-                          ? 'Task context - no App operation executing'
-                          : activity.current.label}
-                      </span>
-                    ) : null}
-                  </div>
-                ) : null}
-                {confirmationSnapshot.decisions
-                  ?.filter((decision) => decision.turnId === turn.turnId)
-                  .map((decision) => (
-                    <p
-                      className="my-2 text-[12px] text-[#aaa6b3]"
-                      key={decision.confirmationId}
-                    >
-                      {decision.accepted ? 'Approved' : 'Declined'}:{' '}
-                      {decision.summary.message}
-                    </p>
-                  ))}
-                {question ? (
-                  <section
-                    aria-label="Question"
-                    className="mt-4 border-l-2 border-[#8d7bff] pl-3"
-                  >
-                    <p className="m-0 whitespace-pre-wrap break-words">
-                      {question.message}
-                    </p>
-                    <p className="mb-0 mt-1 text-[12px] text-[#aaa6b3]">
-                      {questionStatus}
-                    </p>
-                    {answer ? (
-                      <p className="my-1 text-[12px] text-[#c7bfff]">
-                        Selected: {answer.intent}
-                      </p>
-                    ) : null}
-                    {canAnswer ? (
-                      <ul
-                        aria-label="Drawing detail options"
-                        className="mb-0 mt-2 flex list-none flex-col gap-2 p-0"
-                      >
-                        {question.choices.map((choice) => (
-                          <DrawingDetailChoiceCard
-                            choice={choice}
-                            key={choice.id}
-                            onChoose={() =>
-                              submitDrawingDetailChoice(turn.turnId, choice.id)
-                            }
-                          />
-                        ))}
-                      </ul>
-                    ) : null}
-                  </section>
-                ) : null}
-                {settled && !question ? (
-                  <p className="mb-0 mt-2 whitespace-pre-wrap break-words">
-                    {summary?.message}
-                  </p>
-                ) : null}
-                {settled && latest && !active && canRetryAiTurn(settled) ? (
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    <button
-                      className="rounded-md border border-[#625586] px-3 py-1.5 text-[12px] hover:bg-[#302b3e]"
-                      type="button"
-                      onClick={() =>
-                        void conversation
-                          .retry(turn.turnId)
-                          .catch(() => undefined)
-                      }
-                    >
-                      Try again
-                    </button>
-                  </div>
-                ) : null}
-                {settled && !question && settled.completedAtMs !== undefined ? (
-                  <div className="mt-3 flex justify-start text-[12px] text-[#96939f]">
-                    <time
-                      aria-label="Completed at"
-                      dateTime={new Date(settled.completedAtMs).toISOString()}
-                      title={new Date(settled.completedAtMs).toLocaleString()}
-                    >
-                      {new Date(settled.completedAtMs).toLocaleTimeString(
-                        undefined,
-                        {
-                          hour: 'numeric',
-                          minute: '2-digit'
-                        }
-                      )}
-                    </time>
-                  </div>
-                ) : null}
-              </div>
-            </article>
-          )
-        })}
+        {turnIds.map((turnId) => (
+          <AiConversationTurn
+            key={turnId}
+            turnId={turnId}
+            conversation={conversation}
+            confirmationSnapshot={confirmationSnapshot}
+            latest={turnIds.at(-1) === turnId}
+            active={active}
+            onContentChange={followContent}
+            onMeasure={syncScrollPosition}
+          />
+        ))}
 
         {pendingConfirmation ? (
           <div

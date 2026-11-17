@@ -1,8 +1,12 @@
+import { createAiConversationProjection } from './conversation-projection'
+import type { AiConfirmationSnapshot } from './confirmation'
+import { canRetryAiTurn } from './conversation-recovery'
+import { createConversationContext } from './conversation-context'
 import {
-  canRetryAiTurn,
-  projectAiQuestion,
-  createAiActivityProjection
-} from './presentation'
+  interpretAiConversationResult,
+  type AiConversationQuestion
+} from './conversation-result'
+import { createAiActivityProjection } from './presentation'
 import type { AiActivityProjectionState } from './activity-state'
 import { AiActionNames, AiDrawingDetailSelectionIntents } from '../constants'
 import type {
@@ -63,6 +67,10 @@ export interface AiActiveTurn {
 }
 
 export interface AiSettledTurn {
+  readonly requestContext?: AiJsonValue
+  readonly authoredReply?: string | null
+  readonly question?: AiConversationQuestion | null
+  readonly protocolDiagnostic?: string | null
   readonly completedAtMs?: number
   readonly requestAttachments?: readonly AiImageAttachment[]
   readonly waitingDurationMs?: number
@@ -101,6 +109,8 @@ export interface AiConversationNavigationSnapshot {
 export interface CreateAiConversationControllerOptions {
   readonly onPublished?: (turn: AiSettledTurn) => void
   readonly confirmation?: {
+    getSnapshot?(): AiConfirmationSnapshot
+    subscribe?(observer: (snapshot: AiConfirmationSnapshot) => void): () => void
     beginTurn(turnId: string): void
     cancel(reason?: unknown): boolean
     endTurn(turnId: string): void
@@ -367,7 +377,10 @@ export const createAiConversationController = (
     throw new AiConversationError('AI_CONVERSATION_INVALID_INTENT')
   }
 
-  let settledTurns: AiSettledTurn[] = []
+  let settledTurns: readonly AiSettledTurn[] = Object.freeze([])
+  let disposeProjection = () => {
+    /* Installed after controller composition. */
+  }
   const observers = new Set<(snapshot: AiConversationSnapshot) => void>()
   let activeTurn: MutableActiveTurn | null = null
   let activeSettlement: Promise<unknown> | null = null
@@ -376,7 +389,11 @@ export const createAiConversationController = (
   let turnIndex = 0
   const storedConversations = new Map<
     string,
-    { turns: AiSettledTurn[]; targets: AiTargetHints; turnIndex: number }
+    {
+      turns: readonly AiSettledTurn[]
+      targets: AiTargetHints
+      turnIndex: number
+    }
   >()
   const navigationObservers = new Set<() => void>()
   let navigationSnapshot: AiConversationNavigationSnapshot | undefined
@@ -482,7 +499,7 @@ export const createAiConversationController = (
             }),
       conversationId,
       disposed,
-      settledTurns: Object.freeze([...settledTurns]),
+      settledTurns,
       targetHints
     })
   }
@@ -572,7 +589,7 @@ export const createAiConversationController = (
         throw new AiConversationError('AI_CONVERSATION_INVALID_INTENT')
       storeCurrent()
       conversationId = id
-      settledTurns = []
+      settledTurns = Object.freeze([])
       targetHints = EMPTY_TARGET_HINTS
       turnIndex = 0
       navigationSnapshot = undefined
@@ -595,7 +612,14 @@ export const createAiConversationController = (
     },
     submit: async (
       source: string | AiConversationSubmission
-    ): Promise<AiSettledTurn> => {
+    ): Promise<AiSettledTurn> => controller.admit(source).settlement,
+    admit: (
+      source: string | AiConversationSubmission,
+      beforePublish?: (turnId: string) => void
+    ): {
+      readonly turnId: string
+      readonly settlement: Promise<AiSettledTurn>
+    } => {
       if (disposed) {
         throw new AiConversationError('AI_CONVERSATION_DISPOSED')
       }
@@ -620,11 +644,17 @@ export const createAiConversationController = (
       ) {
         throw new AiConversationError('AI_CONVERSATION_UNSAFE_RETRY')
       }
-      const pendingQuestion =
-        latest && projectAiQuestion(latest) ? latest : undefined
-      const replyToTurnId = submission?.replyToTurnId ?? pendingQuestion?.turnId
+      const pendingQuestion = latest?.question ? latest : undefined
+      const replyToTurnId =
+        submission?.replyToTurnId ??
+        retryOf?.replyToTurnId ??
+        pendingQuestion?.turnId
       const replyTo = replyToTurnId ? pendingQuestion : undefined
-      if (replyToTurnId && (!replyTo || replyTo.turnId !== replyToTurnId)) {
+      if (
+        !retryOf &&
+        replyToTurnId &&
+        (!replyTo || replyTo.turnId !== replyToTurnId)
+      ) {
         throw new AiConversationError('AI_CONVERSATION_INVALID_REPLY')
       }
       if (submission?.detailOption && !replyTo) {
@@ -667,15 +697,30 @@ export const createAiConversationController = (
         startedAtMs,
         turnId: `${conversationId}:turn:${turnIndex}`
       }
+      const requestContext =
+        retryOf?.requestContext ??
+        createConversationContext(
+          settledTurns,
+          {
+            turnId: currentTurn.turnId,
+            intent: requestIntent,
+            replyToTurnId,
+            attachments
+          },
+          requestAttachments
+        )
       const activityProjection = createAiActivityProjection({
         purpose: originalIntent
       })
       activities.set(currentTurn.turnId, activityProjection)
+      let resolveSettlement!: (turn: AiSettledTurn) => void
+      let rejectSettlement!: (error: unknown) => void
+      const settlement = new Promise<AiSettledTurn>((resolve, reject) => {
+        resolveSettlement = resolve
+        rejectSettlement = reject
+      })
+      activeSettlement = settlement
       activeTurn = currentTurn
-      options.confirmation?.beginTurn(currentTurn.turnId)
-      options.history?.beginTurn(currentTurn.turnId)
-      const aiTargets = revalidateTargetHints()
-      notify()
 
       const progressObserver: AiRuntimeProgressObserver = (update) => {
         if (disposed || activeTurn !== currentTurn || currentTurn.cancelled) {
@@ -696,105 +741,111 @@ export const createAiConversationController = (
         return decision
       }
 
-      let result: unknown
-      try {
-        const metadata: AiJsonValue = {
-          ...(replyTo
-            ? { replyTo: { turnId: replyTo.turnId, intent: originalIntent } }
-            : {}),
-          ...(!replyTo && originalIntent !== requestIntent
-            ? {
-                replyTo: {
-                  turnId: retryOf?.turnId ?? currentTurn.turnId,
-                  intent: originalIntent
-                }
-              }
-            : {}),
-          aiTargets: {
-            compositionId: aiTargets.compositionId,
-            roleToElementIds: Object.fromEntries(
-              Object.entries(aiTargets.roleToElementIds).map(
-                ([role, elementIds]) => [role, [...elementIds]]
-              )
-            )
-          },
-          conversationId,
-          ...(requestAttachments.length > 0
-            ? {
-                imageAttachments: requestAttachments.map((attachment) => ({
-                  dataUrl: attachment.dataUrl,
-                  mediaType: attachment.mediaType,
-                  name: attachment.name,
-                  size: attachment.size
-                }))
-              }
-            : {}),
-          turnId: currentTurn.turnId
-        }
-        const featureSettlement = options.feature.execute({
-          intent: requestIntent,
-          metadata,
-          progressObserver
-        })
-        activeSettlement = featureSettlement
-        result = await featureSettlement
-      } catch (error) {
-        result = Object.freeze({
-          code:
-            isPlainObject(error) && typeof error.code === 'string'
-              ? error.code
-              : 'AI_FEATURE_FAILED',
-          stage: 'feature',
-          status: 'failed'
-        })
-      }
-
-      const finishedAtMs = now()
-      const waitingDurationMs =
-        currentTurn.waitingDurationMs +
-        (currentTurn.waitingSinceMs === undefined
-          ? 0
-          : Math.max(0, finishedAtMs - currentTurn.waitingSinceMs))
-      const elapsedMs =
-        finishedAtMs - currentTurn.startedAtMs - waitingDurationMs
-      const settled = Object.freeze({
-        completedAtMs: Date.now(),
-        attachments,
-        requestAttachments,
-        replyToTurnId,
-        retryOfTurnId: retryOf?.turnId,
-        originalIntent,
-        requestIntent,
-        conversationId,
-        waitingDurationMs,
-        durationMs: Number.isFinite(elapsedMs)
-          ? Math.max(0, Math.round(elapsedMs))
-          : 0,
-        intent,
-        outcome: outcomeForResult(result, currentTurn.cancelled || disposed),
-        progress: Object.freeze([...currentTurn.progress]),
-        result,
-        turnId: currentTurn.turnId
-      })
-      if (!currentTurn.cancelled && !disposed) {
-        updateTargetHints(result)
-      }
-      options.confirmation?.endTurn(currentTurn.turnId)
-      options.history?.endTurn(currentTurn.turnId)
-      if (activeTurn === currentTurn) {
-        activeTurn = null
-      }
-      activeSettlement = null
-      if (!disposed) {
-        settledTurns.push(settled)
-        notify()
+      void (async (): Promise<AiSettledTurn> => {
+        let result: unknown
         try {
-          options.onPublished?.(settled)
-        } catch {
-          /* Publication observers cannot change the outcome. */
+          beforePublish?.(currentTurn.turnId)
+          options.confirmation?.beginTurn(currentTurn.turnId)
+          options.history?.beginTurn(currentTurn.turnId)
+          const aiTargets = revalidateTargetHints()
+          notify()
+          const metadata: AiJsonValue = {
+            conversationContext: requestContext,
+            ...(replyToTurnId ? { replyTo: { turnId: replyToTurnId } } : {}),
+            aiTargets: {
+              compositionId: aiTargets.compositionId,
+              roleToElementIds: Object.fromEntries(
+                Object.entries(aiTargets.roleToElementIds).map(
+                  ([role, elementIds]) => [role, [...elementIds]]
+                )
+              )
+            },
+            conversationId,
+            ...(requestAttachments.length > 0
+              ? {
+                  imageAttachments: requestAttachments.map((attachment) => ({
+                    dataUrl: attachment.dataUrl,
+                    mediaType: attachment.mediaType,
+                    name: attachment.name,
+                    size: attachment.size
+                  }))
+                }
+              : {}),
+            turnId: currentTurn.turnId
+          }
+          const featureSettlement =
+            currentTurn.cancelled || disposed
+              ? Promise.resolve({ status: 'cancelled', reason: 'aborted' })
+              : options.feature.execute({
+                  intent: requestIntent,
+                  metadata,
+                  progressObserver
+                })
+          result = await featureSettlement
+        } catch (error) {
+          result = Object.freeze({
+            code:
+              isPlainObject(error) && typeof error.code === 'string'
+                ? error.code
+                : 'AI_FEATURE_FAILED',
+            stage: 'feature',
+            status: 'failed'
+          })
         }
-      }
-      return settled
+
+        const finishedAtMs = now()
+        const waitingDurationMs =
+          currentTurn.waitingDurationMs +
+          (currentTurn.waitingSinceMs === undefined
+            ? 0
+            : Math.max(0, finishedAtMs - currentTurn.waitingSinceMs))
+        const elapsedMs =
+          finishedAtMs - currentTurn.startedAtMs - waitingDurationMs
+        const settled = Object.freeze({
+          ...interpretAiConversationResult(
+            result,
+            currentTurn.cancelled || disposed
+          ),
+          completedAtMs: Date.now(),
+          attachments,
+          requestAttachments,
+          requestContext,
+          replyToTurnId,
+          retryOfTurnId: retryOf?.turnId,
+          originalIntent,
+          requestIntent,
+          conversationId,
+          waitingDurationMs,
+          durationMs: Number.isFinite(elapsedMs)
+            ? Math.max(0, Math.round(elapsedMs))
+            : 0,
+          intent,
+          outcome: outcomeForResult(result, currentTurn.cancelled || disposed),
+          progress: Object.freeze([...currentTurn.progress]),
+          result,
+          turnId: currentTurn.turnId
+        })
+        if (!currentTurn.cancelled && !disposed) {
+          updateTargetHints(result)
+        }
+        options.confirmation?.endTurn(currentTurn.turnId)
+        options.history?.endTurn(currentTurn.turnId)
+        if (activeTurn === currentTurn) {
+          activeTurn = null
+        }
+        activeSettlement = null
+        if (!disposed) {
+          settledTurns = Object.freeze([...settledTurns, settled])
+          notify()
+          try {
+            options.onPublished?.(settled)
+          } catch {
+            /* Publication observers cannot change the outcome. */
+          }
+        }
+        return settled
+      })().then(resolveSettlement, rejectSettlement)
+      return Object.freeze({ turnId: currentTurn.turnId, settlement })
     },
     retry: async (turnId: string): Promise<AiSettledTurn> => {
       const turn = settledTurns.find((entry) => entry.turnId === turnId)
@@ -802,7 +853,6 @@ export const createAiConversationController = (
         throw new AiConversationError('AI_CONVERSATION_UNSAFE_RETRY')
       return controller.submit({
         intent: turn.intent,
-        attachments: turn.attachments,
         retryOfTurnId: turnId
       })
     },
@@ -831,18 +881,20 @@ export const createAiConversationController = (
     },
     dispose: async (): Promise<void> => {
       if (disposed) {
+        await activeSettlement?.catch(() => undefined)
         return
       }
+      disposed = true
       if (activeTurn) {
         activeTurn.cancelled = true
         options.confirmation?.cancel('conversation-disposed')
         options.feature.cancel('conversation-disposed')
       }
+      disposeProjection()
       const pendingSettlement = activeSettlement
-      disposed = true
       activeTurn = null
       targetHints = EMPTY_TARGET_HINTS
-      settledTurns.length = 0
+      settledTurns = Object.freeze([])
       observers.clear()
       navigationObservers.clear()
       storedConversations.clear()
@@ -855,7 +907,12 @@ export const createAiConversationController = (
     }
   }
 
-  return Object.freeze(controller)
+  const presentation = createAiConversationProjection(
+    controller,
+    options.confirmation
+  )
+  disposeProjection = presentation.dispose
+  return Object.freeze({ ...controller, presentation })
 }
 
 export type AiConversationController = ReturnType<

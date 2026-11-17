@@ -1448,9 +1448,15 @@ describe('local subscription AI backend', () => {
         metadata: {
           conversationId: 'conversation-1',
           turnId: 'conversation-1:turn:2',
-          replyTo: {
-            turnId: 'conversation-1:turn:1',
-            intent: 'private request'
+          replyTo: { turnId: 'conversation-1:turn:1' },
+          conversationContext: {
+            messages: [
+              {
+                role: 'user',
+                turnId: 'conversation-1:turn:1',
+                text: 'private request'
+              }
+            ]
           }
         }
       },

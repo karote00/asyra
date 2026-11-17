@@ -304,3 +304,49 @@ progress, and retired attempts cannot publish into its successor. Lifecycle
 states including durable-storage waiting override drawing descriptions. Status
 language remains authored language. The same projection serves history and the
 current status. The test oracle includes actual provider-generated system text.
+
+## Conversation state and handoff repair
+
+Current contract - 2026-11-17. The bounded
+[ownership repair plan](../plans/ai-conversation-ownership-repair-plan.md) and
+[repair Flow](../plans/ai-conversation-ownership-repair/ai-conversation-ownership-repair.flow.json)
+refine conversation lifecycle ownership. Current acceptance is recorded in the repair Flow.
+Existing canonical mutation, persistence, permissions and transaction contracts
+remain authoritative.
+
+- Closing the panel preserves each conversation's unsent text, image candidates,
+  pending reads and feedback for the current document-runtime lifetime. Navigation
+  selects a draft; it does not transfer one. Preserve the empty-New no-op and
+  existing execution/navigation lock. Document disposal retires this data
+  and its callbacks. Reload persistence is outside this contract.
+- Image completion belongs to its originating conversation, draft generation and
+  operation, even while hidden. Removed or retired operations cannot publish.
+  Sending waits for that draft's pending reads. A single authoritative admission
+  consumes exactly the accepted draft before publishing its turn; rejected sends
+  preserve input and subsequent typing cannot be cleared by prior settlement.
+- Continuations retain ordered public requests, questions, answers and authored
+  replies, with source attachment identity. Retry reuses the failed request's
+  context without displaying its images as a newly attached message. Other
+  conversations, private reasoning and raw activity never enter that context.
+  New images replace inherited request images; answers and retries retain their
+  relevant request images, while an independent text-only request sends no old
+  image bytes. Historical references do not imply image availability or permission
+  to repeat an old instruction. Exceeding the final transport bound produces an
+  explicit failed turn at server ingress before model/action execution, without silently losing context.
+- A terminal clarification remains answerable after read-only action batches.
+  Semantic settlement owns that decision, independently of display formatting.
+  Failed or cancelled results cannot resurrect an earlier question. Any prior
+  committed work keeps its actual disposition and Undo boundary.
+- Authored answers and storage notices remain distinct. Storage failure cannot
+  erase advice or turn a no-change reply into a claim of completed drawing work.
+- Explicit retry after cancellation requires trustworthy evidence that execution
+  never began. Missing stage alone does not authorize replay; uncertain or
+  already-started work remains ineligible.
+- Updating an active turn or typing a draft does not recompute unchanged settled
+  turns. Keyed subscriptions and stable snapshots preserve selection, disclosures,
+  scrolling, accessibility and current progress. Work-count regressions establish
+  this property; they do not assert an unmeasured latency budget.
+
+Each repair requires a permanent regression that fails before the owner correction,
+then passes together with existing behavior on the same source. The repair Flow
+starts with empty acceptance evidence; prior passing suites do not close it.

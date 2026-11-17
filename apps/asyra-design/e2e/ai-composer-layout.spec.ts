@@ -58,7 +58,7 @@ for (const width of [360, 1280]) {
     )
     const requests: {
       intent: string
-      metadata: { replyTo?: { intent: string } }
+      metadata: { conversationContext: { messages: { text: string }[] } }
     }[] = []
     await page.route('**/api/ai/action-batch', async (route) => {
       requests.push(route.request().postDataJSON())
@@ -96,7 +96,9 @@ for (const width of [360, 1280]) {
       .screenshot({ path: testInfo.outputPath('choices.png') })
     await choice.click()
     await expect.poll(() => requests.length).toBe(2)
-    expect(requests[1].metadata.replyTo?.intent).toBe(intent)
+    expect(requests[1].metadata.conversationContext.messages[0].text).toBe(
+      intent
+    )
     expect(requests[1].intent).toContain('balanced detail')
     await expect(page.getByText('Selected: Balanced detail')).toBeVisible()
     await expect(choice).toHaveCount(0)

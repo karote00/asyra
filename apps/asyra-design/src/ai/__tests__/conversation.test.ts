@@ -1,3 +1,4 @@
+import { createAiConversationDrafts } from '../conversation-drafts'
 import { projectAiActivity } from '../presentation'
 import { describe, expect, it, vi } from 'vitest'
 import {
@@ -486,7 +487,13 @@ describe('Asyra Design AI conversation controller', () => {
             }
           },
           conversationId: 'conversation-c',
-          turnId: 'conversation-c:turn:2'
+          turnId: 'conversation-c:turn:2',
+          conversationContext: expect.objectContaining({
+            messages: expect.arrayContaining([
+              expect.objectContaining({ text: 'draw a cat face' }),
+              expect.objectContaining({ text: 'make the eyes bigger' })
+            ])
+          })
         }
       })
     )
@@ -1010,4 +1017,574 @@ it('reads current activity without replaying old progress and preserves point-in
     controller.getActivity(id, { outcome: 'success' }).current.label
   ).toBeTruthy()
   await controller.dispose()
+})
+
+describe('semantic settlement across action batches', () => {
+  const questionResult = (status = 'no-change') => ({
+    actionId: 'question',
+    actionName: 'request_clarification',
+    result: {
+      status,
+      clarification: { kind: 'question', question: 'Which color?' }
+    }
+  })
+  it.each(['no-change', 'complete'])(
+    'admits an answer after prior %s work without changing its disposition',
+    async (status) => {
+      const feature = createFeature(
+        vi
+          .fn()
+          .mockResolvedValueOnce({
+            status: 'executed',
+            actionResults: [
+              {
+                actionId: 'prior',
+                actionName: 'read_design_context',
+                result: { status }
+              },
+              questionResult()
+            ]
+          })
+          .mockResolvedValue({ status: 'executed', actionResults: [] })
+      )
+      const controller = createAiConversationController({
+        feature,
+        getElementType: vi.fn()
+      })
+      const question = await controller.submit('Draw a poster')
+      await expect(
+        controller.submit({ intent: 'Blue', replyToTurnId: question.turnId })
+      ).resolves.toMatchObject({ replyToTurnId: question.turnId })
+      expect(question.outcome).toBe(
+        status === 'complete' ? 'success' : 'no-change'
+      )
+    }
+  )
+  it('rejects contradictory terminal receipts without rewriting execution truth', async () => {
+    const feature = createFeature(async () => ({
+      status: 'executed',
+      actionResults: [questionResult(), questionResult()]
+    }))
+    const controller = createAiConversationController({
+      feature,
+      getElementType: vi.fn()
+    })
+    const settled = await controller.submit('Draw a poster')
+    expect(settled).toMatchObject({
+      outcome: 'no-change',
+      protocolDiagnostic: expect.any(String)
+    })
+    await expect(
+      controller.submit({ intent: 'Blue', replyToTurnId: settled.turnId })
+    ).rejects.toThrow('no longer active')
+  })
+})
+
+describe('authored request context', () => {
+  const image = {
+    dataUrl: 'data:image/png;base64,YQ==',
+    mediaType: 'image/png' as const,
+    name: 'reference.png',
+    size: 1
+  }
+  it('serializes every question and answer in order without raw progress', async () => {
+    const question = (text: string) =>
+      executed(
+        {
+          status: 'no-change',
+          clarification: { kind: 'question', question: text }
+        },
+        'request_clarification'
+      )
+    const feature = createFeature(
+      vi
+        .fn()
+        .mockResolvedValueOnce(question('Which size?'))
+        .mockResolvedValueOnce(question('Which color?'))
+        .mockResolvedValue({ status: 'executed', actionResults: [] })
+    )
+    const controller = createAiConversationController({
+      feature,
+      getElementType: vi.fn()
+    })
+    await controller.submit('Draw a poster')
+    await controller.submit('240 by 240')
+    await controller.submit('Blue')
+    const wire = JSON.parse(
+      JSON.stringify(vi.mocked(feature.execute).mock.calls[2][0])
+    )
+    expect(
+      wire.metadata.conversationContext.messages.map(
+        (message: { text: string }) => message.text
+      )
+    ).toEqual([
+      'Draw a poster',
+      'Which size?',
+      '240 by 240',
+      'Which color?',
+      'Blue'
+    ])
+    expect(wire.metadata.replyTo).toEqual({
+      turnId: expect.stringMatching(/:turn:2$/)
+    })
+    expect(wire.metadata.replyTo).not.toHaveProperty('intent')
+  })
+  it('retries the exact request image set without posting it as a new attachment', async () => {
+    const feature = createFeature(async () => ({
+      status: 'failed',
+      stage: 'provider'
+    }))
+    const controller = createAiConversationController({
+      feature,
+      getElementType: vi.fn()
+    })
+    const original = await controller.submit({
+      intent: 'Draw this',
+      attachments: [image]
+    })
+    const retry = await controller.retry(original.turnId)
+    expect(retry.attachments).toEqual([])
+    expect(retry.requestAttachments).toEqual([image])
+    const first = vi.mocked(feature.execute).mock.calls[0][0].metadata
+    expect(vi.mocked(feature.execute).mock.calls[1][0].metadata).toMatchObject({
+      conversationContext: (first as Record<string, unknown>)
+        .conversationContext,
+      imageAttachments: [image]
+    })
+  })
+})
+
+describe('document-owned drafts and atomic admission', () => {
+  it('consumes before notification and retains text written by an admission observer', async () => {
+    const controller = createAiConversationController({
+      feature: createFeature(async () => ({
+        status: 'executed',
+        actionResults: []
+      })),
+      getElementType: vi.fn()
+    })
+    const drafts = createAiConversationDrafts(controller)
+    const id = controller.getSnapshot().conversationId
+    drafts.setText(id, 'First')
+    const captured = drafts.getSnapshot(id)
+    let observed = false
+    const unsubscribe = controller.subscribe((snapshot) => {
+      if (snapshot.activeTurn && !observed) {
+        observed = true
+        expect(drafts.getSnapshot(id).text).toBe('')
+        drafts.setText(id, 'Next')
+      }
+    })
+    await drafts.submit(id, captured)
+    expect(drafts.getSnapshot(id).text).toBe('Next')
+    await expect(drafts.submit(id, captured)).rejects.toThrow('changed')
+    expect(drafts.getSnapshot(id).text).toBe('Next')
+    unsubscribe()
+    drafts.dispose()
+    await controller.dispose()
+  })
+  it('retains rejected input and isolates documents', async () => {
+    const pending = createDeferred<unknown>()
+    const controller = createAiConversationController({
+      feature: createFeature(() => pending.promise),
+      getElementType: vi.fn()
+    })
+    const drafts = createAiConversationDrafts(controller)
+    const id = controller.getSnapshot().conversationId
+    const running = controller.submit('Working')
+    drafts.setText(id, 'Keep me')
+    await expect(drafts.submit(id, drafts.getSnapshot(id))).rejects.toThrow(
+      'active turn'
+    )
+    expect(drafts.getSnapshot(id).text).toBe('Keep me')
+    pending.resolve({ status: 'executed', actionResults: [] })
+    await running
+    drafts.dispose()
+    expect(createAiConversationDrafts(controller).getSnapshot(id).text).toBe('')
+    await controller.dispose()
+  })
+})
+
+it('orders concurrent draft reads and retires callbacks on cancellation and disposal', async () => {
+  const readers: FileReader[] = []
+  const spy = vi
+    .spyOn(FileReader.prototype, 'readAsDataURL')
+    .mockImplementation(function (this: FileReader) {
+      readers.push(this)
+    })
+  const controller = createAiConversationController({
+    feature: createFeature(async () => ({
+      status: 'executed',
+      actionResults: []
+    })),
+    getElementType: vi.fn()
+  })
+  const drafts = createAiConversationDrafts(controller)
+  const id = controller.getSnapshot().conversationId
+  const file = (name: string) => new File(['a'], name, { type: 'image/png' })
+  const finish = (reader: FileReader) => {
+    Object.defineProperty(reader, 'result', {
+      value: 'data:image/png;base64,YQ=='
+    })
+    reader.onload?.call(
+      reader,
+      new ProgressEvent('load') as ProgressEvent<FileReader>
+    )
+  }
+  try {
+    const reading = drafts.addFiles(id, [file('first'), file('second')])
+    drafts.setText(id, 'Text while reading')
+    finish(readers[1])
+    await Promise.resolve()
+    finish(readers[0])
+    await reading
+    expect(
+      drafts.getSnapshot(id).attachments.map((image) => image.name)
+    ).toEqual(['first', 'second'])
+    expect(drafts.getSnapshot(id).text).toBe('Text while reading')
+    const cancelled = drafts.addFiles(id, [file('cancelled')])
+    drafts.cancelReads(id)
+    await cancelled
+    expect(readers[2].onload).toBeNull()
+    expect(drafts.getSnapshot(id).pendingReads).toBe(0)
+    const disposed = drafts.addFiles(id, [file('disposed')])
+    drafts.dispose()
+    drafts.dispose()
+    await disposed
+    expect(readers[3].onload).toBeNull()
+    expect(drafts.getSnapshot(id).attachments).toEqual([])
+  } finally {
+    spy.mockRestore()
+    drafts.dispose()
+    await controller.dispose()
+  }
+})
+
+it.each([
+  { status: 'cancelled' },
+  {
+    status: 'cancelled',
+    reason: 'aborted',
+    audit: { actions: [], outcome: 'cancelled' }
+  },
+  ...['committed', 'rolled-back', 'unknown'].map((status) => ({
+    status: 'cancelled',
+    reason: 'aborted',
+    audit: { actions: [], outcome: 'cancelled', retryCount: 0 },
+    transaction: { status }
+  }))
+])(
+  'never replays cancellation with incomplete or post-execution evidence %j',
+  async (result) => {
+    const feature = createFeature(async () => result)
+    const controller = createAiConversationController({
+      feature,
+      getElementType: vi.fn()
+    })
+    const turn = await controller.submit('Draw')
+    await expect(controller.retry(turn.turnId)).rejects.toThrow(
+      'Review the canvas'
+    )
+    expect(feature.execute).toHaveBeenCalledTimes(1)
+  }
+)
+
+it('does not reopen a late question after cancellation and drains every disposal waiter', async () => {
+  const pending = createDeferred<unknown>()
+  const controller = createAiConversationController({
+    feature: createFeature(() => pending.promise),
+    getElementType: vi.fn()
+  })
+  const running = controller.submit('Draw')
+  controller.cancel()
+  pending.resolve(
+    executed(
+      {
+        status: 'no-change',
+        clarification: { kind: 'question', question: 'Late question?' }
+      },
+      'request_clarification'
+    )
+  )
+  const turn = await running
+  expect(turn.outcome).toBe('cancelled')
+  expect(turn.question).toBeNull()
+  await expect(
+    controller.submit({ intent: 'Blue', replyToTurnId: turn.turnId })
+  ).rejects.toThrow('no longer active')
+  await controller.dispose()
+})
+
+it('waits for the same active task on repeated disposal', async () => {
+  const pending = createDeferred<unknown>()
+  const controller = createAiConversationController({
+    feature: createFeature(() => pending.promise),
+    getElementType: vi.fn()
+  })
+  const running = controller.submit('Draw')
+  const first = controller.dispose()
+  let finished = false
+  const second = controller.dispose().then(() => {
+    finished = true
+  })
+  await Promise.resolve()
+  await Promise.resolve()
+  expect(finished).toBe(false)
+  pending.resolve({ status: 'cancelled', reason: 'aborted' })
+  await Promise.all([first, second, running])
+  expect(finished).toBe(true)
+})
+
+it('does not choose between contradictory authored terminal replies', async () => {
+  const controller = createAiConversationController({
+    feature: createFeature(async () => ({
+      status: 'executed',
+      actionResults: ['First claim', 'Conflicting claim'].map(
+        (message, index) => ({
+          actionId: `report-${index}`,
+          actionName: 'report_outcome',
+          result: { status: 'no-change', outcome: 'completed', message }
+        })
+      )
+    })),
+    getElementType: vi.fn()
+  })
+  const turn = await controller.submit('Give advice')
+  expect(turn.outcome).toBe('no-change')
+  expect(turn.protocolDiagnostic).toEqual(expect.any(String))
+  expect(turn.authoredReply).toBeNull()
+  expect(turn.question).toBeNull()
+  await controller.dispose()
+})
+
+it('preserves request image replacement and excludes other conversation history', async () => {
+  const question = executed(
+    {
+      status: 'no-change',
+      clarification: { kind: 'question', question: 'Which image?' }
+    },
+    'request_clarification'
+  )
+  const feature = createFeature(
+    vi
+      .fn()
+      .mockResolvedValueOnce(question)
+      .mockResolvedValueOnce({ status: 'failed', stage: 'provider' })
+      .mockResolvedValue({ status: 'executed', actionResults: [] })
+  )
+  const controller = createAiConversationController({
+    feature,
+    getElementType: vi.fn()
+  })
+  const image = (name: string) => ({
+    name,
+    dataUrl: 'data:image/png;base64,YQ==',
+    mediaType: 'image/png' as const,
+    size: 1
+  })
+  const a = image('A')
+  const b = image('B')
+  await controller.submit({ intent: 'Use A', attachments: [a] })
+  const failed = await controller.submit({
+    intent: 'Replace with B',
+    attachments: [b]
+  })
+  const retried = await controller.retry(failed.turnId)
+  expect(retried.requestAttachments).toEqual([b])
+  expect(retried.attachments).toEqual([])
+  const request = vi.mocked(feature.execute).mock.calls[2][0]
+  expect(request.metadata).toMatchObject({
+    imageAttachments: [b],
+    conversationContext: {
+      messages: [
+        expect.objectContaining({
+          attachments: [{ name: 'A', mediaType: 'image/png', available: false }]
+        }),
+        expect.any(Object),
+        expect.objectContaining({
+          attachments: [
+            { name: 'B', mediaType: 'image/png', available: true, index: 0 }
+          ]
+        })
+      ]
+    }
+  })
+  controller.newConversation()
+  await controller.submit('Independent request')
+  const independent = vi.mocked(feature.execute).mock.calls[3][0].metadata
+  expect(independent).toMatchObject({
+    conversationContext: {
+      messages: [expect.objectContaining({ text: 'Independent request' })]
+    }
+  })
+  expect(independent).not.toHaveProperty('imageAttachments')
+  await controller.dispose()
+})
+
+it('publishes pending image ownership before observers can submit the draft', async () => {
+  const readers: FileReader[] = []
+  const read = vi
+    .spyOn(FileReader.prototype, 'readAsDataURL')
+    .mockImplementation(function (this: FileReader) {
+      readers.push(this)
+    })
+  const feature = createFeature(async () => ({
+    status: 'executed',
+    actionResults: []
+  }))
+  const conversation = createAiConversationController({
+    feature,
+    getElementType: vi.fn()
+  })
+  const drafts = createAiConversationDrafts(conversation)
+  const id = conversation.getSnapshot().conversationId
+  drafts.setText(id, 'Use this image')
+  let attempted = false
+  let submission: Promise<unknown> | undefined
+  const detach = drafts.subscribe(id, () => {
+    if (attempted) return
+    attempted = true
+    submission = drafts
+      .submit(id, drafts.getSnapshot(id))
+      .catch((error) => error)
+  })
+  try {
+    const reading = drafts.addFiles(id, [
+      new File(['a'], 'reference.png', { type: 'image/png' })
+    ])
+    expect(await submission).toBeInstanceOf(Error)
+    expect(feature.execute).not.toHaveBeenCalled()
+    expect(drafts.getSnapshot(id)).toMatchObject({
+      text: 'Use this image',
+      pendingReads: 1
+    })
+    drafts.cancelReads(id)
+    await reading
+    expect(readers[0].onload).toBeNull()
+  } finally {
+    detach()
+    drafts.dispose()
+    await conversation.dispose()
+    read.mockRestore()
+  }
+})
+
+it.each(['cancel', 'dispose'] as const)(
+  'retires registered image operations when an observer requests %s',
+  async (action) => {
+    const read = vi.spyOn(FileReader.prototype, 'readAsDataURL')
+    const conversation = createAiConversationController({
+      feature: createFeature(async () => ({})),
+      getElementType: vi.fn()
+    })
+    const drafts = createAiConversationDrafts(conversation)
+    const id = conversation.getSnapshot().conversationId
+    let observed = false
+    const detach = drafts.subscribe(id, () => {
+      if (observed) return
+      observed = true
+      if (action === 'cancel') drafts.cancelReads(id)
+      else drafts.dispose()
+    })
+    try {
+      await drafts.addFiles(id, [
+        new File(['a'], 'reference.png', { type: 'image/png' })
+      ])
+      expect(read).not.toHaveBeenCalled()
+      expect(drafts.getSnapshot(id)).toMatchObject({
+        pendingReads: 0,
+        attachments: []
+      })
+    } finally {
+      detach()
+      drafts.dispose()
+      await conversation.dispose()
+      read.mockRestore()
+    }
+  }
+)
+
+it.each(['admission', 'progress'] as const)(
+  'drains the whole invocation when disposed from its first %s notification',
+  async (phase) => {
+    const events: string[] = []
+    const pending = createDeferred<unknown>()
+    const feature = createFeature((input) => {
+      input.progressObserver?.({
+        phase: 'provider',
+        attempt: 1,
+        summary: 'Requesting actions'
+      })
+      return pending.promise
+    })
+    const controller = createAiConversationController({
+      feature,
+      getElementType: vi.fn(),
+      history: {
+        beginTurn: () => events.push('begin'),
+        endTurn: () => events.push('end')
+      }
+    })
+    let disposal: Promise<void> | undefined
+    controller.subscribe((snapshot) => {
+      if (
+        disposal ||
+        !snapshot.activeTurn ||
+        (phase === 'progress' && !snapshot.activeTurn.progress.length)
+      )
+        return
+      disposal = controller.dispose().then(() => {
+        events.push('disposed')
+      })
+    })
+    const running = controller.submit('Draw')
+    try {
+      if (phase === 'progress') {
+        await Promise.resolve()
+        await Promise.resolve()
+        expect(events).not.toContain('disposed')
+      }
+    } finally {
+      pending.resolve({ status: 'cancelled', reason: 'aborted' })
+      await Promise.all([running, disposal])
+    }
+    expect(events).toEqual(['begin', 'end', 'disposed'])
+    if (phase === 'admission') expect(feature.execute).not.toHaveBeenCalled()
+    expect(controller.getSnapshot()).toMatchObject({
+      disposed: true,
+      activeTurn: null,
+      settledTurns: []
+    })
+  }
+)
+
+it('releases active projection state and attachments when the document is disposed', async () => {
+  const pending = createDeferred<unknown>()
+  const controller = createAiConversationController({
+    feature: createFeature(() => pending.promise),
+    getElementType: vi.fn()
+  })
+  const running = controller.submit({
+    intent: 'Draw from this',
+    attachments: [
+      {
+        name: 'reference.png',
+        mediaType: 'image/png',
+        size: 1,
+        dataUrl: 'data:image/png;base64,YQ=='
+      }
+    ]
+  })
+  const active = controller.getSnapshot().activeTurn
+  if (!active) throw new Error('Expected an admitted turn before disposal')
+  const turnId = active.turnId
+  const disposal = controller.dispose()
+  try {
+    expect(controller.presentation.getIds()).toEqual([])
+    expect(controller.presentation.getTurn(turnId)).toBeUndefined()
+    expect(controller.presentation.getControls().activeTurn).toBeNull()
+  } finally {
+    pending.resolve({ status: 'cancelled', reason: 'aborted' })
+    await Promise.all([running, disposal])
+  }
 })

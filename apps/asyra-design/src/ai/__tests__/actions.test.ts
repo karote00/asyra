@@ -2,7 +2,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import core from '../../contexts'
 import { selectionApis } from '../../common-apis/selection'
 import { createAiConversationController } from '../conversation'
-import { summarizeAiTurn, canRetryAiTurn } from '../presentation'
+import { summarizeAiTurn } from '../presentation'
+import { canRetryAiTurn } from '../conversation-recovery'
 import { operationInputIssue } from '../tool-schema'
 import { observeAiAction } from '../runtime-input'
 import {
@@ -422,11 +423,15 @@ it.each(['unavailable', 'local-only', 'durable'] as const)(
       const summary = summarizeAiTurn(turn)
       if (storage === 'unavailable') {
         expect(turn.outcome).toBe('partial')
-        expect(summary.message).toContain('could not be confirmed')
-        expect(summary.message).not.toContain('saved successfully')
+        expect(summary.storageNotice).toContain('could not be confirmed')
+        expect(summary.message).toBe('Drawing saved successfully.')
+        expect(summary.storageNotice).not.toContain('saved successfully')
       } else if (storage === 'local-only') {
-        expect(summary.message).toContain('locally')
-        expect(summary.message).not.toContain('saved successfully')
+        expect(summary.storageNotice).toContain(
+          'Durable document storage is not connected'
+        )
+        expect(summary.message).toBe('Drawing saved successfully.')
+        expect(summary.storageNotice).not.toContain('saved successfully')
       } else expect(summary.message).toBe('Drawing saved successfully.')
       expect(canRetryAiTurn(turn)).toBe(false)
       expect(confirmPersistence).toHaveBeenCalledOnce()

@@ -1,3 +1,5 @@
+import * as activityOwner from '../../ai/activity-state'
+import { createAiConversationDrafts } from '../../ai/conversation-drafts'
 vi.mock('../../providers/element-selection', () => ({
   useElementSelection: () => new Set<string>()
 }))
@@ -23,6 +25,21 @@ import {
   AiDocumentInteractionTargets
 } from '../../constants'
 import { documentInteractionLock } from '../../ai/document-interaction-lock'
+
+const draftOwners = new WeakMap<
+  object,
+  ReturnType<typeof createAiConversationDrafts>
+>()
+const draftsFor = (
+  conversation: ReturnType<typeof createAiConversationController>
+) => {
+  let drafts = draftOwners.get(conversation)
+  if (!drafts) {
+    drafts = createAiConversationDrafts(conversation)
+    draftOwners.set(conversation, drafts)
+  }
+  return drafts
+}
 
 const openHistory = (element: HTMLElement) => {
   const details = element.closest('details')
@@ -74,12 +91,232 @@ describe('AI Agent conversation panel intent boundary', () => {
     vi.restoreAllMocks()
   })
 
+  it.each([0, 10, 100])(
+    'does not reconstruct %i settled activity projections on active progress',
+    async (count) => {
+      const original = activityOwner.createAiActivityProjection
+      const results: ReturnType<typeof vi.fn>[] = []
+      vi.spyOn(activityOwner, 'createAiActivityProjection').mockImplementation(
+        (...args) => {
+          const projection = original(...args)
+          const result = vi.fn(projection.result)
+          results.push(result)
+          return { ...projection, result }
+        }
+      )
+      const harness = createPanelHarness()
+      harness.pending.resolve({ status: 'executed', actionResults: [] })
+      for (let index = 0; index < count; index++)
+        await harness.conversation.submit(`Past ${index}`)
+      const pending = createDeferred<Record<string, unknown>>()
+      harness.feature.execute.mockImplementation(() => pending.promise)
+      render(
+        <AiConversationPanel
+          conversation={harness.conversation}
+          drafts={draftsFor(harness.conversation)}
+          confirmation={harness.confirmation}
+          onClose={vi.fn()}
+        />
+      )
+      let settlement!: Promise<unknown>
+      act(() => {
+        settlement = harness.conversation.submit('Active')
+      })
+      const baseline = results
+        .slice(0, count)
+        .map((result) => result.mock.calls.length)
+      const request = harness.feature.execute.mock.calls.at(
+        -1
+      )?.[0] as AiConversationFeatureRequest
+      act(() =>
+        request.progressObserver({
+          phase: 'provider',
+          attempt: 1,
+          summary: 'Preparing the design'
+        })
+      )
+      expect(
+        results.slice(0, count).map((result) => result.mock.calls.length)
+      ).toEqual(baseline)
+      expect(screen.getAllByTestId('ai-agent-message')).toHaveLength(count + 1)
+      await act(async () => {
+        pending.resolve({ status: 'executed', actionResults: [] })
+        await settlement
+      })
+    }
+  )
+
+  it('shares turn snapshots while keeping each consumer disclosure local', async () => {
+    const harness = createPanelHarness()
+    const props = {
+      conversation: harness.conversation,
+      drafts: draftsFor(harness.conversation),
+      confirmation: harness.confirmation,
+      onClose: vi.fn()
+    }
+    const first = render(<AiConversationPanel {...props} />)
+    const second = render(<AiConversationPanel {...props} />)
+    act(() => {
+      void harness.conversation.submit('Draw')
+    })
+    const firstView = within(first.container)
+    const secondView = within(second.container)
+    openHistory(firstView.getByLabelText('Work history'))
+    expect(
+      firstView.getByLabelText('Operational progress').children.length
+    ).toBeGreaterThan(0)
+    expect(
+      secondView.getByLabelText('Operational progress').children
+    ).toHaveLength(0)
+    const id = harness.conversation.getSnapshot().activeTurn?.turnId
+    if (!id) throw new Error('Missing active turn')
+    expect(harness.conversation.presentation.getTurn(id)).toBe(
+      harness.conversation.presentation.getTurn(id)
+    )
+    await act(async () => {
+      harness.pending.resolve({ status: 'executed', actionResults: [] })
+    })
+    expect(
+      secondView.getByLabelText('Operational progress').children
+    ).toHaveLength(0)
+  })
+
+  it('finishes a pending image while hidden and restores it on remount', async () => {
+    const harness = createPanelHarness()
+    const readers: FileReader[] = []
+    vi.spyOn(FileReader.prototype, 'readAsDataURL').mockImplementation(
+      function (this: FileReader) {
+        readers.push(this)
+      }
+    )
+    const props = {
+      conversation: harness.conversation,
+      drafts: draftsFor(harness.conversation),
+      confirmation: harness.confirmation,
+      onClose: vi.fn()
+    }
+    const first = render(<AiConversationPanel {...props} />)
+    fireEvent.change(screen.getByLabelText('Message Agent'), {
+      target: { value: 'My next image request' }
+    })
+    fireEvent.change(screen.getByLabelText('Choose images'), {
+      target: { files: [new File(['a'], 'hidden.png', { type: 'image/png' })] }
+    })
+    first.unmount()
+    await act(async () => {
+      Object.defineProperty(readers[0], 'result', {
+        value: 'data:image/png;base64,YQ=='
+      })
+      readers[0].onload?.call(
+        readers[0],
+        new ProgressEvent('load') as ProgressEvent<FileReader>
+      )
+    })
+    render(<AiConversationPanel {...props} />)
+    expect(screen.getByRole('img', { name: 'hidden.png' })).toBeTruthy()
+    expect(screen.getByLabelText('Message Agent')).toHaveProperty(
+      'value',
+      'My next image request'
+    )
+    expect(harness.feature.execute).not.toHaveBeenCalled()
+  })
+
+  it('keeps a delayed image in its originating draft after navigation', async () => {
+    const harness = createPanelHarness()
+    const first = harness.conversation.submit('Conversation A')
+    harness.pending.resolve({ status: 'executed', actionResults: [] })
+    await first
+    const origin = harness.conversation.getSnapshot().conversationId
+    const readers: FileReader[] = []
+    vi.spyOn(FileReader.prototype, 'readAsDataURL').mockImplementation(
+      function (this: FileReader) {
+        readers.push(this)
+      }
+    )
+    render(
+      <AiConversationPanel
+        conversation={harness.conversation}
+        drafts={draftsFor(harness.conversation)}
+        confirmation={harness.confirmation}
+        onClose={vi.fn()}
+      />
+    )
+    fireEvent.change(screen.getByLabelText('Choose images'), {
+      target: {
+        files: [new File(['a'], 'private-a.png', { type: 'image/png' })]
+      }
+    })
+    act(() => harness.conversation.newConversation())
+    await act(async () => {
+      const reader = readers[0]
+      Object.defineProperty(reader, 'result', {
+        value: 'data:image/png;base64,YQ=='
+      })
+      reader.onload?.call(
+        reader,
+        new ProgressEvent('load') as ProgressEvent<FileReader>
+      )
+    })
+    expect(screen.queryAllByRole('img')).toHaveLength(0)
+    act(() => harness.conversation.selectConversation(origin))
+    expect(screen.getAllByRole('img')).toHaveLength(1)
+  })
+
+  it('rejects send at the owner boundary while an image is still reading', async () => {
+    const harness = createPanelHarness()
+    vi.spyOn(FileReader.prototype, 'readAsDataURL').mockImplementation(
+      () => undefined
+    )
+    const drafts = draftsFor(harness.conversation)
+    render(
+      <AiConversationPanel
+        conversation={harness.conversation}
+        drafts={drafts}
+        confirmation={harness.confirmation}
+        onClose={vi.fn()}
+      />
+    )
+    fireEvent.change(screen.getByLabelText('Message Agent'), {
+      target: { value: 'Use this image' }
+    })
+    fireEvent.change(screen.getByLabelText('Choose images'), {
+      target: { files: [new File(['a'], 'a.png', { type: 'image/png' })] }
+    })
+    const id = harness.conversation.getSnapshot().conversationId
+    const submitted = drafts.submit(id, drafts.getSnapshot(id))
+    harness.pending.resolve({ status: 'executed', actionResults: [] })
+    await expect(submitted).rejects.toThrow('reading')
+    expect(harness.feature.execute).not.toHaveBeenCalled()
+    drafts.dispose()
+  })
+
+  it('preserves an unsent draft when the same document panel is unmounted and reopened', () => {
+    const harness = createPanelHarness()
+    const props = {
+      drafts: draftsFor(harness.conversation),
+      conversation: harness.conversation,
+      confirmation: harness.confirmation,
+      onClose: vi.fn()
+    }
+    const first = render(<AiConversationPanel {...props} />)
+    fireEvent.change(screen.getByLabelText('Message Agent'), {
+      target: { value: 'Keep my exact unsent draft' }
+    })
+    first.unmount()
+    render(<AiConversationPanel {...props} />)
+    expect(
+      (screen.getByLabelText('Message Agent') as HTMLTextAreaElement).value
+    ).toBe('Keep my exact unsent draft')
+    expect(harness.feature.execute).not.toHaveBeenCalled()
+  })
+
   it('shows each concrete work segment and retires current activity on failure', async () => {
     const harness = createPanelHarness()
     render(
       <AiConversationPanel
         confirmation={harness.confirmation}
         conversation={harness.conversation}
+        drafts={draftsFor(harness.conversation)}
         onClose={vi.fn()}
       />
     )
@@ -162,6 +399,7 @@ describe('AI Agent conversation panel intent boundary', () => {
       <AiConversationPanel
         confirmation={harness.confirmation}
         conversation={harness.conversation}
+        drafts={draftsFor(harness.conversation)}
         onClose={vi.fn()}
       />
     )
@@ -214,6 +452,7 @@ describe('AI Agent conversation panel intent boundary', () => {
       <AiConversationPanel
         confirmation={harness.confirmation}
         conversation={harness.conversation}
+        drafts={draftsFor(harness.conversation)}
         onClose={vi.fn()}
       />
     )
@@ -228,6 +467,7 @@ describe('AI Agent conversation panel intent boundary', () => {
       <AiConversationPanel
         confirmation={harness.confirmation}
         conversation={harness.conversation}
+        drafts={draftsFor(harness.conversation)}
         onClose={onClose}
       />
     )
@@ -268,6 +508,7 @@ describe('AI Agent conversation panel intent boundary', () => {
       <AiConversationPanel
         confirmation={harness.confirmation}
         conversation={harness.conversation}
+        drafts={draftsFor(harness.conversation)}
         onClose={vi.fn()}
       />
     )
@@ -329,17 +570,32 @@ describe('AI Agent conversation panel intent boundary', () => {
         message: 'Separating drawing layers'
       }
     ]
-    harness.conversation.getActivity.mockReturnValue({
-      entries,
-      current: entries[1]
-    })
     act(() => {
       void harness.conversation.submit('Draw')
     })
+    const turnId = harness.conversation.getSnapshot().activeTurn?.turnId
+    if (!turnId) throw new Error('Missing active turn')
+    const projection = harness.conversation.presentation.getTurn(turnId)
+    if (!projection) throw new Error('Missing turn projection')
+    const projected = {
+      ...projection,
+      activity: {
+        ...projection.activity,
+        mode: 'operation' as const,
+        entries,
+        current: entries[1]
+      }
+    }
+    const original = harness.conversation.presentation
+    harness.conversation.presentation = {
+      ...original,
+      getTurn: (id) => (id === turnId ? projected : original.getTurn(id))
+    }
     render(
       <AiConversationPanel
         confirmation={harness.confirmation}
         conversation={harness.conversation}
+        drafts={draftsFor(harness.conversation)}
         onClose={vi.fn()}
       />
     )
@@ -377,6 +633,7 @@ describe('AI Agent conversation panel intent boundary', () => {
       <AiConversationPanel
         confirmation={harness.confirmation}
         conversation={harness.conversation}
+        drafts={draftsFor(harness.conversation)}
         onClose={vi.fn()}
       />
     )
@@ -391,6 +648,7 @@ describe('AI Agent conversation panel intent boundary', () => {
       <AiConversationPanel
         confirmation={harness.confirmation}
         conversation={harness.conversation}
+        drafts={draftsFor(harness.conversation)}
         onClose={vi.fn()}
       />
     )
@@ -423,6 +681,7 @@ describe('AI Agent conversation panel intent boundary', () => {
       <AiConversationPanel
         confirmation={harness.confirmation}
         conversation={harness.conversation}
+        drafts={draftsFor(harness.conversation)}
         onClose={vi.fn()}
       />
     )
@@ -481,6 +740,7 @@ describe('AI Agent conversation panel intent boundary', () => {
       render(
         <AiConversationPanel
           confirmation={harness.confirmation}
+          drafts={draftsFor(harness.conversation)}
           conversation={{
             ...harness.conversation,
             subscribe: () => () => undefined,
@@ -522,6 +782,7 @@ describe('AI Agent conversation panel intent boundary', () => {
       <AiConversationPanel
         confirmation={harness.confirmation}
         conversation={harness.conversation}
+        drafts={draftsFor(harness.conversation)}
         onClose={vi.fn()}
       />
     )
@@ -542,6 +803,7 @@ describe('AI Agent conversation panel intent boundary', () => {
       <AiConversationPanel
         confirmation={harness.confirmation}
         conversation={harness.conversation}
+        drafts={draftsFor(harness.conversation)}
         onClose={vi.fn()}
       />
     )
@@ -549,17 +811,21 @@ describe('AI Agent conversation panel intent boundary', () => {
     act(() => {
       void harness.conversation.submit('Draw')
     })
-    const project = harness.conversation.getActivity.mockClear()
+    const turnId = harness.conversation.getSnapshot().activeTurn?.turnId
+    if (!turnId) throw new Error('Missing active turn')
+    const projected = harness.conversation.presentation.getTurn(turnId)
     for (const value of ['N', 'Ne', 'Next']) {
       fireEvent.change(screen.getByLabelText('Message Agent'), {
         target: { value }
       })
     }
-    expect(project).not.toHaveBeenCalled()
+    expect(harness.conversation.presentation.getTurn(turnId)).toBe(projected)
     await act(async () => {
       harness.pending.resolve({ status: 'executed', actionResults: [] })
     })
-    expect(project).toHaveBeenCalled()
+    expect(harness.conversation.presentation.getTurn(turnId)).not.toBe(
+      projected
+    )
   })
 
   it('accepts one trimmed draft, stays non-modal, and exposes active cancellation', () => {
@@ -569,6 +835,7 @@ describe('AI Agent conversation panel intent boundary', () => {
       <AiConversationPanel
         confirmation={harness.confirmation}
         conversation={harness.conversation}
+        drafts={draftsFor(harness.conversation)}
         onClose={onClose}
       />
     )
@@ -617,6 +884,7 @@ describe('AI Agent conversation panel intent boundary', () => {
       <AiConversationPanel
         confirmation={harness.confirmation}
         conversation={harness.conversation}
+        drafts={draftsFor(harness.conversation)}
         onClose={vi.fn()}
       />
     )
@@ -643,6 +911,7 @@ describe('AI Agent conversation panel intent boundary', () => {
       <AiConversationPanel
         confirmation={harness.confirmation}
         conversation={harness.conversation}
+        drafts={draftsFor(harness.conversation)}
         onClose={vi.fn()}
       />
     )
@@ -675,6 +944,7 @@ describe('AI Agent conversation panel intent boundary', () => {
       <AiConversationPanel
         confirmation={harness.confirmation}
         conversation={harness.conversation}
+        drafts={draftsFor(harness.conversation)}
         onClose={vi.fn()}
       />
     )
@@ -728,6 +998,7 @@ describe('AI Agent conversation panel intent boundary', () => {
       <AiConversationPanel
         confirmation={harness.confirmation}
         conversation={harness.conversation}
+        drafts={draftsFor(harness.conversation)}
         onClose={vi.fn()}
       />
     )
@@ -812,6 +1083,7 @@ describe('AI Agent conversation panel intent boundary', () => {
       <AiConversationPanel
         confirmation={harness.confirmation}
         conversation={harness.conversation}
+        drafts={draftsFor(harness.conversation)}
         onClose={vi.fn()}
       />
     )
@@ -835,6 +1107,7 @@ describe('AI Agent conversation panel intent boundary', () => {
       <AiConversationPanel
         confirmation={harness.confirmation}
         conversation={harness.conversation}
+        drafts={draftsFor(harness.conversation)}
         onClose={vi.fn()}
       />
     )
@@ -890,6 +1163,7 @@ describe('AI Agent conversation panel intent boundary', () => {
       <AiConversationPanel
         confirmation={harness.confirmation}
         conversation={harness.conversation}
+        drafts={draftsFor(harness.conversation)}
         onClose={vi.fn()}
       />
     )
@@ -937,6 +1211,7 @@ describe('AI Agent conversation panel intent boundary', () => {
       <AiConversationPanel
         confirmation={harness.confirmation}
         conversation={harness.conversation}
+        drafts={draftsFor(harness.conversation)}
         onClose={vi.fn()}
       />
     )
@@ -1017,6 +1292,7 @@ describe('AI Agent conversation panel intent boundary', () => {
       <AiConversationPanel
         confirmation={harness.confirmation}
         conversation={harness.conversation}
+        drafts={draftsFor(harness.conversation)}
         onClose={vi.fn()}
       />
     )
@@ -1050,6 +1326,7 @@ describe('AI Agent conversation panel intent boundary', () => {
         <AiConversationPanel
           confirmation={harness.confirmation}
           conversation={harness.conversation}
+          drafts={draftsFor(harness.conversation)}
           onClose={vi.fn()}
         />
       )
@@ -1084,6 +1361,7 @@ describe('AI Agent conversation panel intent boundary', () => {
         <AiConversationPanel
           confirmation={harness.confirmation}
           conversation={harness.conversation}
+          drafts={draftsFor(harness.conversation)}
           onClose={vi.fn()}
         />
       )
@@ -1168,6 +1446,7 @@ describe('AI Agent conversation panel intent boundary', () => {
       <AiConversationPanel
         confirmation={confirmation}
         conversation={conversation}
+        drafts={draftsFor(conversation)}
         onClose={vi.fn()}
       />
     )
@@ -1200,6 +1479,7 @@ describe('AI Agent conversation panel intent boundary', () => {
       <AiConversationPanel
         confirmation={harness.confirmation}
         conversation={harness.conversation}
+        drafts={draftsFor(harness.conversation)}
         onClose={vi.fn()}
       />
     )
@@ -1308,6 +1588,7 @@ describe('AI Agent conversation panel intent boundary', () => {
         <AiConversationPanel
           confirmation={confirmation}
           conversation={conversation}
+          drafts={draftsFor(conversation)}
           onClose={vi.fn()}
         />
       )
@@ -1330,9 +1611,17 @@ describe('AI Agent conversation panel intent boundary', () => {
       expect(feature.execute.mock.calls[1][0]).toMatchObject({
         intent: expectedIntent,
         metadata: {
-          replyTo: {
-            intent: 'draw from this image',
-            turnId: expect.any(String)
+          conversationContext: {
+            messages: [
+              expect.objectContaining({ text: 'draw from this image' }),
+              expect.objectContaining({
+                text: 'Choose a drawing detail level.'
+              }),
+              expect.objectContaining({
+                text: expectedIntent,
+                replyToTurnId: expect.any(String)
+              })
+            ]
           },
           ...(withAttachment ? { imageAttachments: [referenceAttachment] } : {})
         }
@@ -1370,6 +1659,7 @@ it('keeps the final failure explanation after expanded activity, where the reade
     <AiConversationPanel
       confirmation={harness.confirmation}
       conversation={harness.conversation}
+      drafts={draftsFor(harness.conversation)}
       onClose={vi.fn()}
     />
   )

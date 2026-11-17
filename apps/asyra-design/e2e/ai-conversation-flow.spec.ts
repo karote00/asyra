@@ -662,9 +662,14 @@ for (const scenario of [
             ]
           }
         })
-      expect(route.request().postDataJSON().metadata.replyTo.intent).toBe(
-        scenario.intent
-      )
+      expect(
+        route
+          .request()
+          .postDataJSON()
+          .metadata.conversationContext.messages.map(
+            (message: { text: string }) => message.text
+          )
+      ).toEqual([scenario.intent, scenario.question, scenario.answer])
       await gate
       await route
         .fulfill({ status: 502, json: { code: 'ACTION_BATCH_MODEL_FAILED' } })
@@ -2479,3 +2484,175 @@ for (const direction of ['undo', 'redo'] as const) {
     })
   }
 }
+
+for (const width of [360, 1280]) {
+  test(`retains the complete authored journey across panel closure and retry at ${width}px`, async ({
+    page
+  }, testInfo) => {
+    const requests: {
+      metadata: {
+        conversationContext: { messages: { text: string }[] }
+        imageAttachments?: unknown[]
+      }
+    }[] = []
+    await page.route('**/api/ai/status', (route) =>
+      route.fulfill({ json: { state: 'ready' } })
+    )
+    await page.route('**/api/ai/action-batch', (route) => {
+      requests.push(route.request().postDataJSON())
+      const index = requests.length
+      if (index === 3)
+        return route.fulfill({
+          status: 502,
+          json: { code: 'ACTION_BATCH_MODEL_FAILED' }
+        })
+      const question = index === 1 ? 'Which size?' : 'Which color?'
+      return route.fulfill({
+        json: {
+          batchId: `journey-${index}`,
+          actions:
+            index <= 2
+              ? [
+                  {
+                    id: `read-${index}`,
+                    name: 'read_design_context',
+                    arguments: { scope: 'selection' },
+                    summary: 'Inspect current selection'
+                  },
+                  {
+                    id: `ask-${index}`,
+                    name: 'request_clarification',
+                    arguments: { question },
+                    summary: 'Clarify the design'
+                  }
+                ]
+              : [
+                  {
+                    id: `reply-${index}`,
+                    name: 'report_outcome',
+                    arguments: {
+                      outcome: 'completed',
+                      message: 'Use stronger heading contrast.'
+                    },
+                    summary: 'Design advice'
+                  }
+                ]
+        }
+      })
+    })
+    await page.goto(createTestDocumentIdentity().url)
+    await waitForAppReady(page)
+    await page.setViewportSize({ width, height: 900 })
+    const before = await getCoreDocumentDigest(page)
+    await page.getByRole('button', { name: 'Open Agent' }).click()
+    for (const [text, question] of [
+      ['Draw a poster', 'Which size?'],
+      ['240 by 240', 'Which color?']
+    ]) {
+      await page.getByLabel('Message Agent').fill(text)
+      await page.getByRole('button', { name: 'Send', exact: true }).click()
+      await expect(page.getByText(question, { exact: true })).toBeVisible()
+      await expect(
+        page.getByText('Waiting for your answer', { exact: true })
+      ).toBeVisible()
+    }
+    await page.getByLabel('Message Agent').fill('Blue')
+    await page.getByRole('button', { name: 'Close Agent panel' }).click()
+    await page.getByRole('button', { name: 'Open Agent' }).click()
+    await expect(page.getByLabel('Message Agent')).toHaveValue('Blue')
+    await page.getByRole('button', { name: 'Send', exact: true }).click()
+    await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible()
+    expect(
+      requests[2].metadata.conversationContext.messages.map(
+        (message) => message.text
+      )
+    ).toEqual([
+      'Draw a poster',
+      'Which size?',
+      '240 by 240',
+      'Which color?',
+      'Blue'
+    ])
+    await page.getByLabel('Message Agent').fill('Keep my next request')
+    await page.getByRole('button', { name: 'Try again' }).click()
+    await expect(
+      page.getByText('Use stronger heading contrast.', { exact: true })
+    ).toBeVisible()
+    expect(requests[3].metadata.conversationContext).toEqual(
+      requests[2].metadata.conversationContext
+    )
+    await expect(page.getByLabel('Message Agent')).toHaveValue(
+      'Keep my next request'
+    )
+    expect(await getCoreDocumentDigest(page)).toEqual(before)
+    await page
+      .getByTestId('ai-agent-panel')
+      .screenshot({ path: testInfo.outputPath('complete-conversation.png') })
+  })
+}
+
+test('configured provider retains two clarification answers in advice without canvas writes', async ({
+  page
+}, testInfo) => {
+  test.skip(
+    process.env.RUN_AI_CONVERSATION_LIVE !== '1',
+    'Explicit configured-provider conversation smoke'
+  )
+  test.setTimeout(180_000)
+  const requests: {
+    intent: string
+    metadata?: { conversationContext?: unknown }
+  }[] = []
+  page.on('request', (request) => {
+    if (
+      request.method() === 'POST' &&
+      new URL(request.url()).pathname === '/api/ai/action-batch'
+    )
+      requests.push(request.postDataJSON())
+  })
+  await page.goto(createTestDocumentIdentity().url)
+  await waitForAppReady(page)
+  const before = await getCoreDocumentDigest(page)
+  await page.getByRole('button', { name: 'Open Agent' }).click()
+  const send = async (text: string) => {
+    await page.getByLabel('Message Agent').fill(text)
+    await page.getByRole('button', { name: 'Send', exact: true }).click()
+  }
+  await send(
+    'I want poster layout advice only, with no canvas changes. Before giving advice, ask me for the dimensions using request_clarification. After I answer, ask me separately for the main color using request_clarification. After both answers, give concise advice that explicitly includes the dimensions and color I supplied. Do not create or edit objects.'
+  )
+  await expect(
+    page.getByRole('region', { name: 'Question', exact: true })
+  ).toHaveCount(1, { timeout: 60_000 })
+  await send('240 by 240')
+  await expect(
+    page.getByRole('region', { name: 'Question', exact: true })
+  ).toHaveCount(2, { timeout: 60_000 })
+  await send('Blue')
+  await expect(page.getByLabel('Completed at')).toHaveCount(1, {
+    timeout: 60_000
+  })
+  const reply = page.getByLabel('Agent response', { exact: true }).last()
+  await expect(reply).toContainText('240')
+  // Public replies may localize the authored color while preserving its meaning.
+  await expect(reply).toContainText(/blue|藍色/i)
+  expect(await getCoreDocumentDigest(page)).toEqual(before)
+  expect(requests).toHaveLength(3)
+  await writeFile(
+    testInfo.outputPath('public-conversation.json'),
+    JSON.stringify(
+      {
+        requests: requests.map(({ intent, metadata }) => ({
+          intent,
+          conversationContext: metadata?.conversationContext
+        })),
+        reply: await reply.innerText()
+      },
+      null,
+      2
+    )
+  )
+  await page
+    .getByTestId('ai-agent-panel')
+    .screenshot({ path: testInfo.outputPath('live-conversation.png') })
+})

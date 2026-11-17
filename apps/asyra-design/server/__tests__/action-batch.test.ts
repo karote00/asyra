@@ -13,7 +13,10 @@ import {
   createActionBatchMiddleware,
   resolveActionBatchRequest
 } from '../action-batch'
-import { ACTION_BATCH_ENDPOINT } from '../../src/ai/action-batch-endpoint'
+import {
+  ACTION_BATCH_ENDPOINT,
+  AI_BATCH_MAXIMUM_REQUEST_BYTES
+} from '../../src/ai/action-batch-endpoint'
 
 const sampleRoot = new URL('../../samples/crdt-7076/', import.meta.url)
 
@@ -708,5 +711,30 @@ it('accepts independently addressed final request records and preserves idempote
   } finally {
     await middleware.dispose()
     await new Promise<void>((resolve) => server.close(() => resolve()))
+  }
+})
+
+it('rejects an oversized conversation envelope at server ingress before model execution', async () => {
+  const requestModelActionBatch = vi.fn()
+  const middleware = createActionBatchMiddleware({ requestModelActionBatch })
+  try {
+    const response = await postActionBatch(middleware, {
+      actions: [],
+      attempt: 1,
+      context: {},
+      intent: 'Continue the discussion',
+      metadata: {
+        conversationContext: {
+          messages: [
+            { role: 'user', text: 'x'.repeat(AI_BATCH_MAXIMUM_REQUEST_BYTES) }
+          ]
+        }
+      }
+    })
+    expect(response.status).toBe(400)
+    expect(response.body).toEqual({ code: 'ACTION_BATCH_INVALID_INPUT' })
+    expect(requestModelActionBatch).not.toHaveBeenCalled()
+  } finally {
+    middleware.dispose()
   }
 })

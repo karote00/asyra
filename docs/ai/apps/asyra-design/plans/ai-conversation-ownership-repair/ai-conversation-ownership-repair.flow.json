@@ -1,0 +1,1640 @@
+{
+  "schemaVersion": 1,
+  "projectId": "asyra",
+  "flowId": "ai-conversation-ownership-repair",
+  "revision": 45,
+  "definition": {
+    "title": "AI Conversation Ownership Repair",
+    "purpose": "Plan eight confirmed conversation defects with existing Asyra owners, explicit lifetimes, formal regressions and preserved canonical behavior. Implementation is not started.",
+    "nodes": [
+      {
+        "id": "design",
+        "title": "Review ownership design",
+        "objective": "Planning only; no implementation acceptance borrowed from prior suites.",
+        "owner": "coordinator",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [],
+        "criteria": [
+          {
+            "id": "acceptance",
+            "title": "Plan, product contract and Flow agree on all eight findings and preserved owners.",
+            "kind": "manual"
+          }
+        ],
+        "specRefs": [
+          "docs/ai/apps/asyra-design/specs/ai-conversation-experience.md#conversation-state-and-handoff-repair"
+        ],
+        "implementationRefs": [
+          "docs/ai/apps/asyra-design/plans/ai-conversation-ownership-repair-plan.md",
+          "docs/ai/apps/asyra-design/specs/ai-conversation-experience.md",
+          "docs/ai/apps/asyra-design/plans/ai-conversation-ownership-repair/ai-conversation-ownership-repair.flow.json",
+          "docs/ai/apps/asyra-design/PLANS.md",
+          "docs/ai/apps/asyra-design/plans/ai-conversation-experience-plan.md"
+        ],
+        "actions": []
+      },
+      {
+        "id": "settlement",
+        "title": "Normalize semantic settlement",
+        "objective": "Interpret the full invocation once; successful terminal clarification opens answer admission independently of canonical disposition.",
+        "owner": "App conversation controller",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [
+          {
+            "flowId": "ai-conversation-ownership-repair",
+            "nodeId": "design"
+          }
+        ],
+        "criteria": [
+          {
+            "id": "acceptance",
+            "title": "F2: real runtime read batches then clarification stay answerable; committed-work disposition remains true even with malformed questions; stale and failed answers rejected.",
+            "kind": "automated",
+            "selector": {
+              "producer": "custom",
+              "identity": "ai-conversation-ownership-repair/settlement/acceptance"
+            }
+          }
+        ],
+        "specRefs": [
+          "docs/ai/apps/asyra-design/specs/ai-conversation-experience.md#conversation-state-and-handoff-repair"
+        ],
+        "implementationRefs": [
+          "apps/asyra-design/src/ai/conversation.ts",
+          "apps/asyra-design/src/ai/presentation.ts",
+          "apps/asyra-design/src/ai/__tests__/**",
+          "apps/asyra-design/src/app/__tests__/ai-conversation-panel.test.tsx"
+        ],
+        "actions": []
+      },
+      {
+        "id": "continuation",
+        "title": "Materialize request context",
+        "objective": "Own one admission transition and immutable public text context; preserve existing per-request image selection, order and canonical requestIntent.",
+        "owner": "App conversation controller",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [
+          {
+            "flowId": "ai-conversation-ownership-repair",
+            "nodeId": "settlement"
+          }
+        ],
+        "criteria": [
+          {
+            "id": "acceptance",
+            "title": "F1/F6: actual serialized multi-question context and failed-answer/detail-choice retry remain correlated; image replacement, native/tool indexes and independent text-only requests preserve existing behavior; no old instruction or permission replay.",
+            "kind": "automated",
+            "selector": {
+              "producer": "custom",
+              "identity": "ai-conversation-ownership-repair/continuation/acceptance"
+            }
+          }
+        ],
+        "specRefs": [
+          "docs/ai/apps/asyra-design/specs/ai-conversation-experience.md#conversation-state-and-handoff-repair"
+        ],
+        "implementationRefs": [
+          "apps/asyra-design/src/ai/conversation.ts",
+          "apps/asyra-design/src/ai/presentation.ts",
+          "apps/asyra-design/src/ai/__tests__/**",
+          "apps/asyra-design/server/ai-domain-prompt.ts",
+          "apps/asyra-design/server/__tests__/ai-domain-prompt.test.ts",
+          "apps/asyra-design/server/__tests__/local-ai-provider.test.ts",
+          "apps/asyra-design/server/__tests__/ai-model-provider.test.ts",
+          "apps/asyra-design/server/__tests__/action-batch.test.ts",
+          "apps/asyra-design/e2e/ai-conversation-flow.spec.ts",
+          "apps/asyra-design/server/ai-model-provider.ts",
+          "apps/asyra-design/server/local-ai-provider.ts",
+          "apps/asyra-design/server/action-batch.ts",
+          "apps/asyra-design/src/ai/server-action-batch-provider.ts",
+          "apps/asyra-design/server/__tests__/local-image-tools.test.ts",
+          "apps/asyra-design/src/ai/__tests__/server-action-batch-provider.test.ts"
+        ],
+        "actions": []
+      },
+      {
+        "id": "drafts",
+        "title": "Own document-lifetime drafts",
+        "objective": "Own keyed drafts for the initApp runtime lifetime; consume a captured revision/generation atomically with authoritative admission before publishing the turn.",
+        "owner": "App draft controller and initApp",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [
+          {
+            "flowId": "ai-conversation-ownership-repair",
+            "nodeId": "continuation"
+          }
+        ],
+        "criteria": [
+          {
+            "id": "acceptance",
+            "title": "F3: real App close/reopen retains drafts; observer re-entry and same-intent submissions consume only the accepted generation; rejection, later typing, empty New, StrictMode and disposal preserve state boundaries.",
+            "kind": "automated",
+            "selector": {
+              "producer": "custom",
+              "identity": "ai-conversation-ownership-repair/drafts/acceptance"
+            }
+          }
+        ],
+        "specRefs": [
+          "docs/ai/apps/asyra-design/specs/ai-conversation-experience.md#conversation-state-and-handoff-repair"
+        ],
+        "implementationRefs": [
+          "apps/asyra-design/src/init/init-app.ts",
+          "apps/asyra-design/src/ai/conversation.ts",
+          "apps/asyra-design/src/ai/presentation.ts",
+          "apps/asyra-design/src/ai/__tests__/**",
+          "apps/asyra-design/src/app/ai-conversation-panel.tsx",
+          "apps/asyra-design/src/app/ai-conversation-navigation.tsx",
+          "apps/asyra-design/src/app/index.tsx",
+          "apps/asyra-design/src/app/__tests__/**",
+          "apps/asyra-design/src/init/__tests__/init-app.test.ts",
+          "apps/asyra-design/e2e/ai-conversation-navigation.spec.ts"
+        ],
+        "actions": []
+      },
+      {
+        "id": "attachments",
+        "title": "Complete origin-bound image reads",
+        "objective": "Complete reads only into their captured live draft and ordered slot, even while another selected conversation executes.",
+        "owner": "App attachment adapter",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [
+          {
+            "flowId": "ai-conversation-ownership-repair",
+            "nodeId": "drafts"
+          }
+        ],
+        "criteria": [
+          {
+            "id": "acceptance",
+            "title": "F4: A read finishing while B runs changes only A; reversed completions, failure, removal and repeated disposal preserve order and reject late callbacks without canvas/history writes.",
+            "kind": "automated",
+            "selector": {
+              "producer": "custom",
+              "identity": "ai-conversation-ownership-repair/attachments/acceptance"
+            }
+          }
+        ],
+        "specRefs": [
+          "docs/ai/apps/asyra-design/specs/ai-conversation-experience.md#conversation-state-and-handoff-repair"
+        ],
+        "implementationRefs": [
+          "apps/asyra-design/src/ai/conversation.ts",
+          "apps/asyra-design/src/ai/presentation.ts",
+          "apps/asyra-design/src/ai/__tests__/**",
+          "apps/asyra-design/src/app/ai-conversation-panel.tsx",
+          "apps/asyra-design/src/app/__tests__/ai-conversation-panel.test.tsx",
+          "apps/asyra-design/e2e/ai-conversation-navigation.spec.ts"
+        ],
+        "actions": []
+      },
+      {
+        "id": "presentation",
+        "title": "Preserve answer and storage notice",
+        "objective": "Keep authored answer, actual task disposition and storage notice separate; use authoritative receipts, never display text, to establish effects.",
+        "owner": "App result projection",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [
+          {
+            "flowId": "ai-conversation-ownership-repair",
+            "nodeId": "settlement"
+          }
+        ],
+        "criteria": [
+          {
+            "id": "acceptance",
+            "title": "F5: advice and drawing replies retained across storage outcomes; partial/failure truth, timestamps, accessibility and 360/1280 layout preserved.",
+            "kind": "automated",
+            "selector": {
+              "producer": "custom",
+              "identity": "ai-conversation-ownership-repair/presentation/acceptance"
+            }
+          }
+        ],
+        "specRefs": [
+          "docs/ai/apps/asyra-design/specs/ai-conversation-experience.md#conversation-state-and-handoff-repair"
+        ],
+        "implementationRefs": [
+          "apps/asyra-design/src/ai/presentation.ts",
+          "apps/asyra-design/src/app/ai-conversation-panel.tsx",
+          "apps/asyra-design/src/ai/__tests__/presentation.test.ts",
+          "apps/asyra-design/src/ai/__tests__/actions.test.ts",
+          "apps/asyra-design/src/app/__tests__/ai-conversation-panel.test.tsx",
+          "apps/asyra-design/e2e/ai-conversation-flow.spec.ts"
+        ],
+        "actions": []
+      },
+      {
+        "id": "recovery",
+        "title": "Admit safe explicit retry",
+        "objective": "Use trusted real-producer cancellation evidence and the executionStarted-to-transaction contract to admit explicit pre-execution retry.",
+        "owner": "App conversation recovery policy",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [
+          {
+            "flowId": "ai-conversation-ownership-repair",
+            "nodeId": "settlement"
+          },
+          {
+            "flowId": "ai-conversation-ownership-repair",
+            "nodeId": "continuation"
+          }
+        ],
+        "criteria": [
+          {
+            "id": "acceptance",
+            "title": "F7: real runtime cancellation before execution versus after a read or mutation, Feature abort-before-run and racing admission prove safe recovery without duplicate dispatch or replay.",
+            "kind": "automated",
+            "selector": {
+              "producer": "custom",
+              "identity": "ai-conversation-ownership-repair/recovery/acceptance"
+            }
+          }
+        ],
+        "specRefs": [
+          "docs/ai/apps/asyra-design/specs/ai-conversation-experience.md#conversation-state-and-handoff-repair"
+        ],
+        "implementationRefs": [
+          "apps/asyra-design/src/ai/conversation.ts",
+          "apps/asyra-design/src/ai/presentation.ts",
+          "apps/asyra-design/src/ai/__tests__/**",
+          "apps/asyra-design/src/features/ai-agent/__tests__/index.test.ts",
+          "packages/ai-agent-runtime/src/__tests__/runtime-lifecycle.test.ts"
+        ],
+        "actions": []
+      },
+      {
+        "id": "observation",
+        "title": "Subscribe to keyed projections",
+        "objective": "Reuse existing incremental activity append; publish keyed stable semantic snapshots without reconstructing unchanged settled history.",
+        "owner": "App projection and React consumers",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [
+          {
+            "flowId": "ai-conversation-ownership-repair",
+            "nodeId": "settlement"
+          },
+          {
+            "flowId": "ai-conversation-ownership-repair",
+            "nodeId": "continuation"
+          },
+          {
+            "flowId": "ai-conversation-ownership-repair",
+            "nodeId": "drafts"
+          },
+          {
+            "flowId": "ai-conversation-ownership-repair",
+            "nodeId": "attachments"
+          },
+          {
+            "flowId": "ai-conversation-ownership-repair",
+            "nodeId": "presentation"
+          },
+          {
+            "flowId": "ai-conversation-ownership-repair",
+            "nodeId": "recovery"
+          }
+        ],
+        "criteria": [
+          {
+            "id": "acceptance",
+            "title": "F8: actual historical reducer and entry construction stay unchanged at 0/10/100 turns during active progress; distinct consumer disclosure states stay isolated; correct active progress, selection, scroll and invalidation remain verified.",
+            "kind": "automated",
+            "selector": {
+              "producer": "custom",
+              "identity": "ai-conversation-ownership-repair/observation/acceptance"
+            }
+          }
+        ],
+        "specRefs": [
+          "docs/ai/apps/asyra-design/specs/ai-conversation-experience.md#conversation-state-and-handoff-repair"
+        ],
+        "implementationRefs": [
+          "apps/asyra-design/src/ai/conversation.ts",
+          "apps/asyra-design/src/ai/activity-state.ts",
+          "apps/asyra-design/src/app/ai-conversation-panel.tsx",
+          "apps/asyra-design/src/app/ai-conversation-navigation.tsx",
+          "apps/asyra-design/src/app/index.tsx",
+          "apps/asyra-design/src/app/__tests__/**",
+          "apps/asyra-design/src/ai/__tests__/**",
+          "apps/asyra-design/src/ai/__tests__/presentation.test.ts"
+        ],
+        "actions": []
+      },
+      {
+        "id": "verification",
+        "title": "Verify integrated preservation",
+        "objective": "Run the complete multi-question/image/draft/navigation/storage/retry/cancel/Undo journey and required gates; record exact source and unavailable inputs.",
+        "owner": "coordinator",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [
+          {
+            "flowId": "ai-conversation-ownership-repair",
+            "nodeId": "settlement"
+          },
+          {
+            "flowId": "ai-conversation-ownership-repair",
+            "nodeId": "continuation"
+          },
+          {
+            "flowId": "ai-conversation-ownership-repair",
+            "nodeId": "drafts"
+          },
+          {
+            "flowId": "ai-conversation-ownership-repair",
+            "nodeId": "attachments"
+          },
+          {
+            "flowId": "ai-conversation-ownership-repair",
+            "nodeId": "presentation"
+          },
+          {
+            "flowId": "ai-conversation-ownership-repair",
+            "nodeId": "recovery"
+          },
+          {
+            "flowId": "ai-conversation-ownership-repair",
+            "nodeId": "observation"
+          }
+        ],
+        "criteria": [
+          {
+            "id": "acceptance",
+            "title": "All F1-F8 regressions and integrated 360/1280 journeys pass on one source; retained progress, Undo/Redo, canonical targeting and persistence remain correct.",
+            "kind": "automated",
+            "selector": {
+              "producer": "custom",
+              "identity": "ai-conversation-ownership-repair/verification/acceptance"
+            }
+          }
+        ],
+        "specRefs": [
+          "docs/ai/apps/asyra-design/specs/ai-conversation-experience.md#conversation-state-and-handoff-repair"
+        ],
+        "implementationRefs": [
+          "docs/ai/apps/asyra-design/plans/ai-conversation-ownership-repair-plan.md",
+          "docs/ai/apps/asyra-design/plans/ai-conversation-ownership-repair/ai-conversation-ownership-repair.flow.json",
+          "apps/asyra-design/e2e/**"
+        ],
+        "actions": []
+      }
+    ],
+    "criteria": [
+      {
+        "id": "integrated-review",
+        "title": "Inspect complete same-source journey and source-bound regression evidence before closeout",
+        "kind": "manual"
+      }
+    ],
+    "architecture": {
+      "schema": {
+        "id": "flow-inspector",
+        "version": 2
+      },
+      "target": {
+        "id": "ai-conversation-ownership-repair",
+        "kind": "app",
+        "title": "AI Conversation Ownership Repair",
+        "subtitle": "Document-lifetime data, semantic admission and keyed presentation"
+      },
+      "authority": {
+        "specPath": "docs/ai/apps/asyra-design/specs/ai-conversation-experience.md",
+        "inspectorPath": "docs/ai/apps/asyra-design/plans/ai-conversation-ownership-repair/ai-conversation-ownership-repair.flow.json",
+        "semanticOwner": "Asyra Design conversation owners",
+        "inspectorOwner": "AI Conversation Ownership Repair coordinator"
+      },
+      "links": [
+        {
+          "id": "plan",
+          "kind": "plan",
+          "label": "Repair plan",
+          "href": "docs/ai/apps/asyra-design/plans/ai-conversation-ownership-repair-plan.md"
+        },
+        {
+          "id": "spec",
+          "kind": "spec",
+          "label": "Product contract",
+          "href": "docs/ai/apps/asyra-design/specs/ai-conversation-experience.md"
+        }
+      ],
+      "lanes": [
+        {
+          "id": "review",
+          "title": "Design and integration",
+          "order": 1
+        },
+        {
+          "id": "app",
+          "title": "App conversation owners",
+          "order": 2
+        }
+      ],
+      "steps": [
+        {
+          "id": "design",
+          "laneId": "review",
+          "title": "Review ownership design",
+          "ownerPackage": "coordinator",
+          "purpose": "Planning only; no implementation acceptance borrowed from prior suites.",
+          "failureOwnerStepId": "design",
+          "order": 1,
+          "inputs": [
+            "Reviewed product contract, current public APIs and F1-F8 evidence"
+          ],
+          "outputs": [
+            "artifact:reviewed-design"
+          ],
+          "conditions": [
+            "Planning only; no implementation acceptance borrowed from prior suites."
+          ],
+          "bypasses": [
+            "No implementation before a subsequent instruction to start."
+          ],
+          "allowedContributors": [
+            "Existing public Asyra contracts and direct App consumers within the matching plan task allowlist."
+          ],
+          "forbiddenContributors": [
+            "UI-derived semantic admission, canonical document shadow stores, unrelated framework mutations and inferred legacy compatibility."
+          ],
+          "cacheDimensions": [],
+          "implementationBoundary": [
+            "docs/ai/apps/asyra-design/plans/ai-conversation-ownership-repair-plan.md",
+            "docs/ai/apps/asyra-design/specs/ai-conversation-experience.md",
+            "docs/ai/apps/asyra-design/plans/ai-conversation-ownership-repair/ai-conversation-ownership-repair.flow.json",
+            "docs/ai/apps/asyra-design/PLANS.md",
+            "docs/ai/apps/asyra-design/plans/ai-conversation-experience-plan.md",
+            "Only the corresponding T0 plan scope is authorized for this implementation; directory references do not authorize unrelated owners. Internal helpers may be added only for that semantic responsibility."
+          ],
+          "specRefs": [
+            "docs/ai/apps/asyra-design/specs/ai-conversation-experience.md#conversation-state-and-handoff-repair",
+            "docs/ai/apps/asyra-design/plans/ai-conversation-ownership-repair-plan.md"
+          ]
+        },
+        {
+          "id": "settlement",
+          "laneId": "app",
+          "title": "Normalize semantic settlement",
+          "ownerPackage": "App conversation controller",
+          "purpose": "Interpret the full invocation once; successful terminal clarification opens answer admission independently of canonical disposition.",
+          "failureOwnerStepId": "settlement",
+          "order": 2,
+          "inputs": [
+            "Authoritative Feature/runtime result and correlated action receipts",
+            "artifact:reviewed-design",
+            "artifact:request-context"
+          ],
+          "outputs": [
+            "artifact:semantic-settlement"
+          ],
+          "conditions": [
+            "Interpret the full invocation once; successful terminal clarification opens answer admission independently of canonical disposition.",
+            "Register complete invocation settlement before observable admission or Feature dispatch. Disposal, including re-entry during initial progress, waits until endTurn and all invocation-owned cleanup finish."
+          ],
+          "bypasses": [
+            "Failed/cancelled or contradictory receipts cannot open questions. A conversation-protocol diagnostic never rewrites runtime or transaction truth."
+          ],
+          "allowedContributors": [
+            "Existing public Asyra contracts and direct App consumers within the matching plan task allowlist."
+          ],
+          "forbiddenContributors": [
+            "UI-derived semantic admission, canonical document shadow stores, unrelated framework mutations and inferred legacy compatibility."
+          ],
+          "cacheDimensions": [],
+          "implementationBoundary": [
+            "apps/asyra-design/src/ai/conversation.ts",
+            "apps/asyra-design/src/ai/presentation.ts",
+            "apps/asyra-design/src/ai/__tests__/**",
+            "apps/asyra-design/src/app/__tests__/ai-conversation-panel.test.tsx",
+            "Only the corresponding T1 plan scope is authorized for this implementation; directory references do not authorize unrelated owners. Internal helpers may be added only for that semantic responsibility."
+          ],
+          "specRefs": [
+            "docs/ai/apps/asyra-design/specs/ai-conversation-experience.md#conversation-state-and-handoff-repair",
+            "docs/ai/apps/asyra-design/plans/ai-conversation-ownership-repair-plan.md"
+          ]
+        },
+        {
+          "id": "continuation",
+          "laneId": "app",
+          "title": "Materialize request context",
+          "ownerPackage": "App conversation controller",
+          "purpose": "Own one admission transition and immutable public text context; preserve existing per-request image selection, order and canonical requestIntent.",
+          "failureOwnerStepId": "continuation",
+          "order": 3,
+          "inputs": [
+            "Admitted user request, current targets and immutable original retry context",
+            "artifact:reviewed-design",
+            "artifact:semantic-settlement",
+            "artifact:draft-snapshot",
+            "artifact:retry-decision",
+            "Captured composer conversation identity, draft generation and revision; current per-request image set"
+          ],
+          "outputs": [
+            "artifact:request-context",
+            "artifact:admission-result"
+          ],
+          "conditions": [
+            "Own one admission transition and immutable public text context; preserve existing per-request image selection, order and canonical requestIntent.",
+            "Direct wire/provider edits are limited to conversation-context consumption and existing envelope validation; transport, native tools and process lifecycle are preserved.",
+            "Historical text is quoted data; only the current request authorizes execution. Runtime credentials/progress are not imported. Reuse existing final-envelope serialization and limits.",
+            "Preserve metadata.replyTo.turnId for the existing shared profiler correlation contract; remove only replyTo.intent. conversationContext is the sole authored history, with no compatibility fallback."
+          ],
+          "bypasses": [
+            "Explicit new images replace inherited ones; independent text-only requests have none. Retry preserves failed context and question lineage. Existing server ingress validates the final envelope before model/action execution."
+          ],
+          "allowedContributors": [
+            "Existing public Asyra contracts and direct App consumers within the matching plan task allowlist."
+          ],
+          "forbiddenContributors": [
+            "UI-derived semantic admission, canonical document shadow stores, unrelated framework mutations and inferred legacy compatibility."
+          ],
+          "cacheDimensions": [],
+          "implementationBoundary": [
+            "apps/asyra-design/src/ai/conversation.ts",
+            "apps/asyra-design/src/ai/presentation.ts",
+            "apps/asyra-design/src/ai/__tests__/**",
+            "apps/asyra-design/server/ai-domain-prompt.ts",
+            "apps/asyra-design/server/__tests__/ai-domain-prompt.test.ts",
+            "apps/asyra-design/server/__tests__/local-ai-provider.test.ts",
+            "apps/asyra-design/server/__tests__/ai-model-provider.test.ts",
+            "apps/asyra-design/server/__tests__/action-batch.test.ts",
+            "apps/asyra-design/e2e/ai-conversation-flow.spec.ts",
+            "Only the corresponding T2 plan scope is authorized for this implementation; directory references do not authorize unrelated owners. Internal helpers may be added only for that semantic responsibility.",
+            "apps/asyra-design/server/ai-model-provider.ts",
+            "apps/asyra-design/server/local-ai-provider.ts",
+            "apps/asyra-design/server/action-batch.ts",
+            "apps/asyra-design/src/ai/server-action-batch-provider.ts",
+            "apps/asyra-design/server/__tests__/local-image-tools.test.ts",
+            "apps/asyra-design/src/ai/__tests__/server-action-batch-provider.test.ts"
+          ],
+          "specRefs": [
+            "docs/ai/apps/asyra-design/specs/ai-conversation-experience.md#conversation-state-and-handoff-repair",
+            "docs/ai/apps/asyra-design/plans/ai-conversation-ownership-repair-plan.md"
+          ]
+        },
+        {
+          "id": "drafts",
+          "laneId": "app",
+          "title": "Own document-lifetime drafts",
+          "ownerPackage": "App draft controller and initApp",
+          "purpose": "Own keyed drafts for the initApp runtime lifetime; consume a captured revision/generation atomically with authoritative admission before publishing the turn.",
+          "failureOwnerStepId": "drafts",
+          "order": 4,
+          "inputs": [
+            "Document composition, conversation identity, text edits and explicit atomic admission result",
+            "artifact:reviewed-design",
+            "artifact:attachment-completion",
+            "artifact:admission-result"
+          ],
+          "outputs": [
+            "artifact:draft-snapshot"
+          ],
+          "conditions": [
+            "Own keyed drafts for the initApp runtime lifetime; consume a captured revision/generation atomically with authoritative admission before publishing the turn."
+          ],
+          "bypasses": [
+            "Reject stale revision, pending reads and existing active-turn conflicts without input loss; preserve empty-New no-op, navigation lock and view-local disclosures. Dispose retires readers before awaiting runtime shutdown."
+          ],
+          "allowedContributors": [
+            "Existing public Asyra contracts and direct App consumers within the matching plan task allowlist."
+          ],
+          "forbiddenContributors": [
+            "UI-derived semantic admission, canonical document shadow stores, unrelated framework mutations and inferred legacy compatibility."
+          ],
+          "cacheDimensions": [],
+          "implementationBoundary": [
+            "apps/asyra-design/src/init/init-app.ts",
+            "apps/asyra-design/src/ai/conversation.ts",
+            "apps/asyra-design/src/ai/presentation.ts",
+            "apps/asyra-design/src/ai/__tests__/**",
+            "apps/asyra-design/src/app/ai-conversation-panel.tsx",
+            "apps/asyra-design/src/app/ai-conversation-navigation.tsx",
+            "apps/asyra-design/src/app/index.tsx",
+            "apps/asyra-design/src/app/__tests__/**",
+            "apps/asyra-design/src/init/__tests__/init-app.test.ts",
+            "apps/asyra-design/e2e/ai-conversation-navigation.spec.ts",
+            "Only the corresponding T3 plan scope is authorized for this implementation; directory references do not authorize unrelated owners. Internal helpers may be added only for that semantic responsibility."
+          ],
+          "specRefs": [
+            "docs/ai/apps/asyra-design/specs/ai-conversation-experience.md#conversation-state-and-handoff-repair",
+            "docs/ai/apps/asyra-design/plans/ai-conversation-ownership-repair-plan.md"
+          ]
+        },
+        {
+          "id": "attachments",
+          "laneId": "app",
+          "title": "Complete origin-bound image reads",
+          "ownerPackage": "App attachment adapter",
+          "purpose": "Complete reads only into their captured live draft and ordered slot, even while another selected conversation executes.",
+          "failureOwnerStepId": "attachments",
+          "order": 5,
+          "inputs": [
+            "File selection and captured conversation, draft generation, ordered slot and read identity",
+            "artifact:reviewed-design",
+            "artifact:draft-snapshot"
+          ],
+          "outputs": [
+            "artifact:attachment-completion"
+          ],
+          "conditions": [
+            "Complete reads only into their captured live draft and ordered slot, even while another selected conversation executes.",
+            "Register origin-bound pending slots before notifying draft observers; publish error, pending count and attachments as one snapshot so synchronous submission cannot bypass pending reads."
+          ],
+          "bypasses": [
+            "Removal, abort, error or disposal retires the operation. Preserve global execution/navigation lock; pending reads block only their draft admission when no execution is active."
+          ],
+          "allowedContributors": [
+            "Existing public Asyra contracts and direct App consumers within the matching plan task allowlist."
+          ],
+          "forbiddenContributors": [
+            "UI-derived semantic admission, canonical document shadow stores, unrelated framework mutations and inferred legacy compatibility."
+          ],
+          "cacheDimensions": [],
+          "implementationBoundary": [
+            "apps/asyra-design/src/ai/conversation.ts",
+            "apps/asyra-design/src/ai/presentation.ts",
+            "apps/asyra-design/src/ai/__tests__/**",
+            "apps/asyra-design/src/app/ai-conversation-panel.tsx",
+            "apps/asyra-design/src/app/__tests__/ai-conversation-panel.test.tsx",
+            "apps/asyra-design/e2e/ai-conversation-navigation.spec.ts",
+            "Only the corresponding T4 plan scope is authorized for this implementation; directory references do not authorize unrelated owners. Internal helpers may be added only for that semantic responsibility."
+          ],
+          "specRefs": [
+            "docs/ai/apps/asyra-design/specs/ai-conversation-experience.md#conversation-state-and-handoff-repair",
+            "docs/ai/apps/asyra-design/plans/ai-conversation-ownership-repair-plan.md"
+          ]
+        },
+        {
+          "id": "presentation",
+          "laneId": "app",
+          "title": "Preserve answer and storage notice",
+          "ownerPackage": "App result projection",
+          "purpose": "Keep authored answer, actual task disposition and storage notice separate; use authoritative receipts, never display text, to establish effects.",
+          "failureOwnerStepId": "presentation",
+          "order": 6,
+          "inputs": [
+            "Existing persistence observation and canonical transaction disposition",
+            "artifact:reviewed-design",
+            "artifact:semantic-settlement"
+          ],
+          "outputs": [
+            "artifact:answer-and-notice"
+          ],
+          "conditions": [
+            "Keep authored answer, actual task disposition and storage notice separate; use authoritative receipts, never display text, to establish effects."
+          ],
+          "bypasses": [
+            "Unavailable or local-only storage adds notice without replacing answer or fabricating drawing success."
+          ],
+          "allowedContributors": [
+            "Existing public Asyra contracts and direct App consumers within the matching plan task allowlist."
+          ],
+          "forbiddenContributors": [
+            "UI-derived semantic admission, canonical document shadow stores, unrelated framework mutations and inferred legacy compatibility."
+          ],
+          "cacheDimensions": [],
+          "implementationBoundary": [
+            "apps/asyra-design/src/ai/presentation.ts",
+            "apps/asyra-design/src/app/ai-conversation-panel.tsx",
+            "apps/asyra-design/src/ai/__tests__/presentation.test.ts",
+            "apps/asyra-design/src/ai/__tests__/actions.test.ts",
+            "apps/asyra-design/src/app/__tests__/ai-conversation-panel.test.tsx",
+            "apps/asyra-design/e2e/ai-conversation-flow.spec.ts",
+            "Only the corresponding T5 plan scope is authorized for this implementation; directory references do not authorize unrelated owners. Internal helpers may be added only for that semantic responsibility."
+          ],
+          "specRefs": [
+            "docs/ai/apps/asyra-design/specs/ai-conversation-experience.md#conversation-state-and-handoff-repair",
+            "docs/ai/apps/asyra-design/plans/ai-conversation-ownership-repair-plan.md"
+          ]
+        },
+        {
+          "id": "recovery",
+          "laneId": "app",
+          "title": "Admit safe explicit retry",
+          "ownerPackage": "App conversation recovery policy",
+          "purpose": "Use trusted real-producer cancellation evidence and the executionStarted-to-transaction contract to admit explicit pre-execution retry.",
+          "failureOwnerStepId": "recovery",
+          "order": 7,
+          "inputs": [
+            "Discriminated runtime result, transaction evidence, latest-turn identity and Feature admission provenance",
+            "artifact:reviewed-design",
+            "artifact:semantic-settlement",
+            "artifact:request-context"
+          ],
+          "outputs": [
+            "artifact:retry-decision"
+          ],
+          "conditions": [
+            "Use trusted real-producer cancellation evidence and the executionStarted-to-transaction contract to admit explicit pre-execution retry."
+          ],
+          "bypasses": [
+            "An empty audit or missing stage alone is insufficient. Feature abort-before-run is separate. Any started execution, uncertain provenance or non-latest request denies cancellation replay."
+          ],
+          "allowedContributors": [
+            "Existing public Asyra contracts and direct App consumers within the matching plan task allowlist."
+          ],
+          "forbiddenContributors": [
+            "UI-derived semantic admission, canonical document shadow stores, unrelated framework mutations and inferred legacy compatibility."
+          ],
+          "cacheDimensions": [],
+          "implementationBoundary": [
+            "apps/asyra-design/src/ai/conversation.ts",
+            "apps/asyra-design/src/ai/presentation.ts",
+            "apps/asyra-design/src/ai/__tests__/**",
+            "apps/asyra-design/src/features/ai-agent/__tests__/index.test.ts",
+            "packages/ai-agent-runtime/src/__tests__/runtime-lifecycle.test.ts",
+            "Only the corresponding T6 plan scope is authorized for this implementation; directory references do not authorize unrelated owners. Internal helpers may be added only for that semantic responsibility."
+          ],
+          "specRefs": [
+            "docs/ai/apps/asyra-design/specs/ai-conversation-experience.md#conversation-state-and-handoff-repair",
+            "docs/ai/apps/asyra-design/plans/ai-conversation-ownership-repair-plan.md"
+          ]
+        },
+        {
+          "id": "observation",
+          "laneId": "app",
+          "title": "Subscribe to keyed projections",
+          "ownerPackage": "App projection and React consumers",
+          "purpose": "Reuse existing incremental activity append; publish keyed stable semantic snapshots without reconstructing unchanged settled history.",
+          "failureOwnerStepId": "observation",
+          "order": 8,
+          "inputs": [
+            "Current active progress, keyed turn state and local DOM interaction",
+            "artifact:reviewed-design",
+            "artifact:semantic-settlement",
+            "artifact:draft-snapshot",
+            "artifact:answer-and-notice",
+            "artifact:retry-decision"
+          ],
+          "outputs": [
+            "artifact:keyed-projection"
+          ],
+          "conditions": [
+            "Reuse existing incremental activity append; publish keyed stable semantic snapshots without reconstructing unchanged settled history.",
+            "Retain only the active turn needed by confirmation updates, not a duplicate whole source snapshot. Disposal clears active controls and all retained turn references."
+          ],
+          "bypasses": [
+            "Disclosure remains consumer-local and cannot overwrite shared projections; no React.memo, second reducer, broad cache or dropped progress."
+          ],
+          "allowedContributors": [
+            "Existing public Asyra contracts and direct App consumers within the matching plan task allowlist."
+          ],
+          "forbiddenContributors": [
+            "UI-derived semantic admission, canonical document shadow stores, unrelated framework mutations and inferred legacy compatibility."
+          ],
+          "cacheDimensions": [],
+          "implementationBoundary": [
+            "apps/asyra-design/src/ai/conversation.ts",
+            "apps/asyra-design/src/ai/activity-state.ts",
+            "apps/asyra-design/src/app/ai-conversation-panel.tsx",
+            "apps/asyra-design/src/app/ai-conversation-navigation.tsx",
+            "apps/asyra-design/src/app/index.tsx",
+            "apps/asyra-design/src/app/__tests__/**",
+            "apps/asyra-design/src/ai/__tests__/**",
+            "Only the corresponding T7 plan scope is authorized for this implementation; directory references do not authorize unrelated owners. Internal helpers may be added only for that semantic responsibility.",
+            "apps/asyra-design/src/ai/__tests__/presentation.test.ts"
+          ],
+          "specRefs": [
+            "docs/ai/apps/asyra-design/specs/ai-conversation-experience.md#conversation-state-and-handoff-repair",
+            "docs/ai/apps/asyra-design/plans/ai-conversation-ownership-repair-plan.md"
+          ]
+        },
+        {
+          "id": "verification",
+          "laneId": "review",
+          "title": "Verify integrated preservation",
+          "ownerPackage": "coordinator",
+          "purpose": "Run the complete multi-question/image/draft/navigation/storage/retry/cancel/Undo journey and required gates; record exact source and unavailable inputs.",
+          "failureOwnerStepId": "verification",
+          "order": 9,
+          "inputs": [
+            "Same-source formal regression results, actual browser screenshots and preserved-owner gates",
+            "artifact:reviewed-design",
+            "artifact:semantic-settlement",
+            "artifact:request-context",
+            "artifact:draft-snapshot",
+            "artifact:attachment-completion",
+            "artifact:answer-and-notice",
+            "artifact:retry-decision",
+            "artifact:keyed-projection",
+            "Exact preservation scenarios and real-owner test oracles in the plan review corrections section"
+          ],
+          "outputs": [
+            "artifact:verified-outcome"
+          ],
+          "conditions": [
+            "Run the complete multi-question/image/draft/navigation/storage/retry/cancel/Undo journey and required gates; record exact source and unavailable inputs.",
+            "Development gates cover canonical App and direct framework consumers. Template generation, packaging, clean-consumer installation and release-tool changes belong to the separate release workflow and do not gate this repair."
+          ],
+          "bypasses": [
+            "No full-plan completion with deferred low-priority findings; deterministic provider evidence does not imply live model quality."
+          ],
+          "allowedContributors": [
+            "Existing public Asyra contracts and direct App consumers within the matching plan task allowlist."
+          ],
+          "forbiddenContributors": [
+            "UI-derived semantic admission, canonical document shadow stores, unrelated framework mutations and inferred legacy compatibility."
+          ],
+          "cacheDimensions": [],
+          "implementationBoundary": [
+            "docs/ai/apps/asyra-design/plans/ai-conversation-ownership-repair-plan.md",
+            "docs/ai/apps/asyra-design/plans/ai-conversation-ownership-repair/ai-conversation-ownership-repair.flow.json",
+            "apps/asyra-design/e2e/**",
+            "Only the corresponding T8 plan scope is authorized for this implementation; directory references do not authorize unrelated owners. Internal helpers may be added only for that semantic responsibility."
+          ],
+          "specRefs": [
+            "docs/ai/apps/asyra-design/specs/ai-conversation-experience.md#conversation-state-and-handoff-repair",
+            "docs/ai/apps/asyra-design/plans/ai-conversation-ownership-repair-plan.md"
+          ]
+        }
+      ],
+      "routes": [
+        {
+          "id": "design-settlement-reviewed-design",
+          "from": "design",
+          "to": "settlement",
+          "kind": "handoff",
+          "predicate": "Design review precedes implementation; current planning evidence does not authorize execution.",
+          "producedArtifacts": [
+            "artifact:reviewed-design"
+          ]
+        },
+        {
+          "id": "design-continuation-reviewed-design",
+          "from": "design",
+          "to": "continuation",
+          "kind": "handoff",
+          "predicate": "Design review precedes implementation; current planning evidence does not authorize execution.",
+          "producedArtifacts": [
+            "artifact:reviewed-design"
+          ]
+        },
+        {
+          "id": "design-drafts-reviewed-design",
+          "from": "design",
+          "to": "drafts",
+          "kind": "handoff",
+          "predicate": "Design review precedes implementation; current planning evidence does not authorize execution.",
+          "producedArtifacts": [
+            "artifact:reviewed-design"
+          ]
+        },
+        {
+          "id": "design-attachments-reviewed-design",
+          "from": "design",
+          "to": "attachments",
+          "kind": "handoff",
+          "predicate": "Design review precedes implementation; current planning evidence does not authorize execution.",
+          "producedArtifacts": [
+            "artifact:reviewed-design"
+          ]
+        },
+        {
+          "id": "design-presentation-reviewed-design",
+          "from": "design",
+          "to": "presentation",
+          "kind": "handoff",
+          "predicate": "Design review precedes implementation; current planning evidence does not authorize execution.",
+          "producedArtifacts": [
+            "artifact:reviewed-design"
+          ]
+        },
+        {
+          "id": "design-recovery-reviewed-design",
+          "from": "design",
+          "to": "recovery",
+          "kind": "handoff",
+          "predicate": "Design review precedes implementation; current planning evidence does not authorize execution.",
+          "producedArtifacts": [
+            "artifact:reviewed-design"
+          ]
+        },
+        {
+          "id": "design-observation-reviewed-design",
+          "from": "design",
+          "to": "observation",
+          "kind": "handoff",
+          "predicate": "Design review precedes implementation; current planning evidence does not authorize execution.",
+          "producedArtifacts": [
+            "artifact:reviewed-design"
+          ]
+        },
+        {
+          "id": "design-verification-reviewed-design",
+          "from": "design",
+          "to": "verification",
+          "kind": "handoff",
+          "predicate": "Design review precedes implementation; current planning evidence does not authorize execution.",
+          "producedArtifacts": [
+            "artifact:reviewed-design"
+          ]
+        },
+        {
+          "id": "settlement-continuation-semantic-settlement",
+          "from": "settlement",
+          "to": "continuation",
+          "kind": "handoff",
+          "predicate": "Correlated current document/conversation/turn inputs only; retired generations cannot publish. ",
+          "producedArtifacts": [
+            "artifact:semantic-settlement"
+          ]
+        },
+        {
+          "id": "settlement-presentation-semantic-settlement",
+          "from": "settlement",
+          "to": "presentation",
+          "kind": "handoff",
+          "predicate": "Correlated current document/conversation/turn inputs only; retired generations cannot publish. ",
+          "producedArtifacts": [
+            "artifact:semantic-settlement"
+          ]
+        },
+        {
+          "id": "settlement-recovery-semantic-settlement",
+          "from": "settlement",
+          "to": "recovery",
+          "kind": "handoff",
+          "predicate": "Correlated current document/conversation/turn inputs only; retired generations cannot publish. ",
+          "producedArtifacts": [
+            "artifact:semantic-settlement"
+          ]
+        },
+        {
+          "id": "settlement-observation-semantic-settlement",
+          "from": "settlement",
+          "to": "observation",
+          "kind": "handoff",
+          "predicate": "Correlated current document/conversation/turn inputs only; retired generations cannot publish. ",
+          "producedArtifacts": [
+            "artifact:semantic-settlement"
+          ]
+        },
+        {
+          "id": "settlement-verification-semantic-settlement",
+          "from": "settlement",
+          "to": "verification",
+          "kind": "handoff",
+          "predicate": "Correlated current document/conversation/turn inputs only; retired generations cannot publish. ",
+          "producedArtifacts": [
+            "artifact:semantic-settlement"
+          ]
+        },
+        {
+          "id": "continuation-settlement-request-context",
+          "from": "continuation",
+          "to": "settlement",
+          "kind": "handoff",
+          "predicate": "Correlated current document/conversation/turn inputs only; retired generations cannot publish. Pass through existing Feature/runtime dispatch unchanged before settlement.",
+          "producedArtifacts": [
+            "artifact:request-context"
+          ]
+        },
+        {
+          "id": "continuation-recovery-request-context",
+          "from": "continuation",
+          "to": "recovery",
+          "kind": "handoff",
+          "predicate": "Correlated current document/conversation/turn inputs only; retired generations cannot publish. ",
+          "producedArtifacts": [
+            "artifact:request-context"
+          ]
+        },
+        {
+          "id": "continuation-verification-request-context",
+          "from": "continuation",
+          "to": "verification",
+          "kind": "handoff",
+          "predicate": "Correlated current document/conversation/turn inputs only; retired generations cannot publish. ",
+          "producedArtifacts": [
+            "artifact:request-context"
+          ]
+        },
+        {
+          "id": "drafts-attachments-draft-snapshot",
+          "from": "drafts",
+          "to": "attachments",
+          "kind": "handoff",
+          "predicate": "Correlated current document/conversation/turn inputs only; retired generations cannot publish. ",
+          "producedArtifacts": [
+            "artifact:draft-snapshot"
+          ]
+        },
+        {
+          "id": "drafts-continuation-draft-snapshot",
+          "from": "drafts",
+          "to": "continuation",
+          "kind": "handoff",
+          "predicate": "Correlated current document/conversation/turn inputs only; retired generations cannot publish. ",
+          "producedArtifacts": [
+            "artifact:draft-snapshot"
+          ]
+        },
+        {
+          "id": "drafts-observation-draft-snapshot",
+          "from": "drafts",
+          "to": "observation",
+          "kind": "handoff",
+          "predicate": "Correlated current document/conversation/turn inputs only; retired generations cannot publish. ",
+          "producedArtifacts": [
+            "artifact:draft-snapshot"
+          ]
+        },
+        {
+          "id": "drafts-verification-draft-snapshot",
+          "from": "drafts",
+          "to": "verification",
+          "kind": "handoff",
+          "predicate": "Correlated current document/conversation/turn inputs only; retired generations cannot publish. ",
+          "producedArtifacts": [
+            "artifact:draft-snapshot"
+          ]
+        },
+        {
+          "id": "attachments-drafts-attachment-completion",
+          "from": "attachments",
+          "to": "drafts",
+          "kind": "handoff",
+          "predicate": "Correlated current document/conversation/turn inputs only; retired generations cannot publish. ",
+          "producedArtifacts": [
+            "artifact:attachment-completion"
+          ]
+        },
+        {
+          "id": "attachments-verification-attachment-completion",
+          "from": "attachments",
+          "to": "verification",
+          "kind": "handoff",
+          "predicate": "Correlated current document/conversation/turn inputs only; retired generations cannot publish. ",
+          "producedArtifacts": [
+            "artifact:attachment-completion"
+          ]
+        },
+        {
+          "id": "presentation-observation-answer-and-notice",
+          "from": "presentation",
+          "to": "observation",
+          "kind": "handoff",
+          "predicate": "Correlated current document/conversation/turn inputs only; retired generations cannot publish. ",
+          "producedArtifacts": [
+            "artifact:answer-and-notice"
+          ]
+        },
+        {
+          "id": "presentation-verification-answer-and-notice",
+          "from": "presentation",
+          "to": "verification",
+          "kind": "handoff",
+          "predicate": "Correlated current document/conversation/turn inputs only; retired generations cannot publish. ",
+          "producedArtifacts": [
+            "artifact:answer-and-notice"
+          ]
+        },
+        {
+          "id": "recovery-continuation-retry-decision",
+          "from": "recovery",
+          "to": "continuation",
+          "kind": "handoff",
+          "predicate": "Correlated current document/conversation/turn inputs only; retired generations cannot publish. ",
+          "producedArtifacts": [
+            "artifact:retry-decision"
+          ]
+        },
+        {
+          "id": "recovery-observation-retry-decision",
+          "from": "recovery",
+          "to": "observation",
+          "kind": "handoff",
+          "predicate": "Correlated current document/conversation/turn inputs only; retired generations cannot publish. ",
+          "producedArtifacts": [
+            "artifact:retry-decision"
+          ]
+        },
+        {
+          "id": "recovery-verification-retry-decision",
+          "from": "recovery",
+          "to": "verification",
+          "kind": "handoff",
+          "predicate": "Correlated current document/conversation/turn inputs only; retired generations cannot publish. ",
+          "producedArtifacts": [
+            "artifact:retry-decision"
+          ]
+        },
+        {
+          "id": "observation-verification-keyed-projection",
+          "from": "observation",
+          "to": "verification",
+          "kind": "handoff",
+          "predicate": "Correlated current document/conversation/turn inputs only; retired generations cannot publish. ",
+          "producedArtifacts": [
+            "artifact:keyed-projection"
+          ]
+        },
+        {
+          "id": "continuation-drafts-admission-result",
+          "from": "continuation",
+          "to": "drafts",
+          "kind": "handoff",
+          "predicate": "Within one composer admission transition, consume only the captured live draft before publishing the accepted turn; rejection consumes nothing. No second admission queue or active flag.",
+          "producedArtifacts": [
+            "artifact:admission-result"
+          ]
+        }
+      ],
+      "artifacts": [
+        {
+          "id": "artifact:reviewed-design",
+          "ownerStepId": "design",
+          "channel": "typed handoff",
+          "consumerStepIds": [
+            "settlement",
+            "continuation",
+            "drafts",
+            "attachments",
+            "presentation",
+            "recovery",
+            "observation",
+            "verification"
+          ],
+          "title": "Reviewed design",
+          "terminal": false
+        },
+        {
+          "id": "artifact:semantic-settlement",
+          "ownerStepId": "settlement",
+          "channel": "typed handoff",
+          "consumerStepIds": [
+            "continuation",
+            "presentation",
+            "recovery",
+            "observation",
+            "verification"
+          ],
+          "title": "Semantic settlement",
+          "terminal": false
+        },
+        {
+          "id": "artifact:request-context",
+          "ownerStepId": "continuation",
+          "channel": "typed handoff",
+          "consumerStepIds": [
+            "settlement",
+            "recovery",
+            "verification"
+          ],
+          "title": "Request context",
+          "terminal": false
+        },
+        {
+          "id": "artifact:draft-snapshot",
+          "ownerStepId": "drafts",
+          "channel": "typed handoff",
+          "consumerStepIds": [
+            "attachments",
+            "continuation",
+            "observation",
+            "verification"
+          ],
+          "title": "Draft snapshot",
+          "terminal": false
+        },
+        {
+          "id": "artifact:attachment-completion",
+          "ownerStepId": "attachments",
+          "channel": "typed handoff",
+          "consumerStepIds": [
+            "drafts",
+            "verification"
+          ],
+          "title": "Attachment completion",
+          "terminal": false
+        },
+        {
+          "id": "artifact:answer-and-notice",
+          "ownerStepId": "presentation",
+          "channel": "typed handoff",
+          "consumerStepIds": [
+            "observation",
+            "verification"
+          ],
+          "title": "Answer and notice",
+          "terminal": false
+        },
+        {
+          "id": "artifact:retry-decision",
+          "ownerStepId": "recovery",
+          "channel": "typed handoff",
+          "consumerStepIds": [
+            "continuation",
+            "observation",
+            "verification"
+          ],
+          "title": "Retry decision",
+          "terminal": false
+        },
+        {
+          "id": "artifact:keyed-projection",
+          "ownerStepId": "observation",
+          "channel": "typed handoff",
+          "consumerStepIds": [
+            "verification"
+          ],
+          "title": "Keyed projection",
+          "terminal": false
+        },
+        {
+          "id": "artifact:verified-outcome",
+          "ownerStepId": "verification",
+          "channel": "typed handoff",
+          "consumerStepIds": [],
+          "title": "Verified outcome",
+          "terminal": true
+        },
+        {
+          "id": "artifact:admission-result",
+          "ownerStepId": "continuation",
+          "channel": "typed handoff",
+          "consumerStepIds": [
+            "drafts"
+          ],
+          "title": "Accepted turn identity and settlement Promise, or explicit rejection",
+          "terminal": false
+        }
+      ],
+      "invariants": [
+        {
+          "id": "single-owner",
+          "statement": "Each draft, request, semantic result and projection has one writer and an explicit document/conversation/turn lifetime; React mounting never owns durable-in-session input.",
+          "stepIds": [
+            "settlement",
+            "continuation",
+            "drafts",
+            "attachments",
+            "presentation",
+            "recovery",
+            "observation"
+          ],
+          "artifactIds": [
+            "artifact:semantic-settlement",
+            "artifact:request-context",
+            "artifact:draft-snapshot",
+            "artifact:attachment-completion",
+            "artifact:answer-and-notice",
+            "artifact:retry-decision",
+            "artifact:keyed-projection"
+          ],
+          "specRefs": [
+            "docs/ai/apps/asyra-design/specs/ai-conversation-experience.md#conversation-state-and-handoff-repair"
+          ]
+        },
+        {
+          "id": "preserve-canonical-owners",
+          "statement": "Feature/runtime, Factory history and persistence remain authoritative; no result-text inference, replay after execution or shadow document store.",
+          "stepIds": [
+            "settlement",
+            "continuation",
+            "presentation",
+            "recovery",
+            "verification"
+          ],
+          "artifactIds": [
+            "artifact:semantic-settlement",
+            "artifact:request-context",
+            "artifact:retry-decision"
+          ],
+          "specRefs": [
+            "docs/ai/apps/asyra-design/specs/ai-conversation-experience.md#conversation-state-and-handoff-repair"
+          ]
+        },
+        {
+          "id": "preserve-request-and-admission-semantics",
+          "statement": "No historical image union, instruction replay or blanket reuse of old permission. One admission owns accepted/rejected evidence; draft consumption precedes observer publication. Existing global locks and empty-New behavior remain intact.",
+          "stepIds": [
+            "continuation",
+            "drafts",
+            "attachments",
+            "recovery",
+            "verification"
+          ],
+          "artifactIds": [
+            "artifact:request-context",
+            "artifact:admission-result",
+            "artifact:draft-snapshot"
+          ],
+          "specRefs": [
+            "docs/ai/apps/asyra-design/plans/ai-conversation-ownership-repair-plan.md#plan-review-corrections-and-preservation-cases---2026-11-17"
+          ]
+        }
+      ],
+      "acceptanceContracts": [
+        {
+          "id": "design-contract",
+          "title": "Review ownership design acceptance",
+          "stepIds": [
+            "design"
+          ],
+          "assertions": [
+            "Plan, product contract and Flow agree on all eight findings and preserved owners.",
+            "Structural validation is not product acceptance."
+          ],
+          "specRefs": [
+            "docs/ai/apps/asyra-design/specs/ai-conversation-experience.md#conversation-state-and-handoff-repair",
+            "docs/ai/apps/asyra-design/plans/ai-conversation-ownership-repair-plan.md"
+          ]
+        },
+        {
+          "id": "settlement-contract",
+          "title": "Normalize semantic settlement acceptance",
+          "stepIds": [
+            "settlement"
+          ],
+          "assertions": [
+            "F2: real runtime read batches then clarification stay answerable; committed-work disposition remains true even with malformed questions; stale and failed answers rejected.",
+            "Each primary finding regression fails for its observed cause before correction and passes afterward. Existing preservation cases remain green; acceptance evidence stays pending."
+          ],
+          "specRefs": [
+            "docs/ai/apps/asyra-design/specs/ai-conversation-experience.md#conversation-state-and-handoff-repair",
+            "docs/ai/apps/asyra-design/plans/ai-conversation-ownership-repair-plan.md"
+          ]
+        },
+        {
+          "id": "continuation-contract",
+          "title": "Materialize request context acceptance",
+          "stepIds": [
+            "continuation"
+          ],
+          "assertions": [
+            "F1/F6: actual serialized multi-question context and failed-answer/detail-choice retry remain correlated; image replacement, native/tool indexes and independent text-only requests preserve existing behavior; no old instruction or permission replay.",
+            "Each primary finding regression fails for its observed cause before correction and passes afterward. Existing preservation cases remain green; acceptance evidence stays pending."
+          ],
+          "specRefs": [
+            "docs/ai/apps/asyra-design/specs/ai-conversation-experience.md#conversation-state-and-handoff-repair",
+            "docs/ai/apps/asyra-design/plans/ai-conversation-ownership-repair-plan.md"
+          ]
+        },
+        {
+          "id": "drafts-contract",
+          "title": "Own document-lifetime drafts acceptance",
+          "stepIds": [
+            "drafts"
+          ],
+          "assertions": [
+            "F3: real App close/reopen retains drafts; observer re-entry and same-intent submissions consume only the accepted generation; rejection, later typing, empty New, StrictMode and disposal preserve state boundaries.",
+            "Each primary finding regression fails for its observed cause before correction and passes afterward. Existing preservation cases remain green; acceptance evidence stays pending."
+          ],
+          "specRefs": [
+            "docs/ai/apps/asyra-design/specs/ai-conversation-experience.md#conversation-state-and-handoff-repair",
+            "docs/ai/apps/asyra-design/plans/ai-conversation-ownership-repair-plan.md"
+          ]
+        },
+        {
+          "id": "attachments-contract",
+          "title": "Complete origin-bound image reads acceptance",
+          "stepIds": [
+            "attachments"
+          ],
+          "assertions": [
+            "F4: A read finishing while B runs changes only A; reversed completions, failure, removal and repeated disposal preserve order and reject late callbacks without canvas/history writes.",
+            "Each primary finding regression fails for its observed cause before correction and passes afterward. Existing preservation cases remain green; acceptance evidence stays pending."
+          ],
+          "specRefs": [
+            "docs/ai/apps/asyra-design/specs/ai-conversation-experience.md#conversation-state-and-handoff-repair",
+            "docs/ai/apps/asyra-design/plans/ai-conversation-ownership-repair-plan.md"
+          ]
+        },
+        {
+          "id": "presentation-contract",
+          "title": "Preserve answer and storage notice acceptance",
+          "stepIds": [
+            "presentation"
+          ],
+          "assertions": [
+            "F5: advice and drawing replies retained across storage outcomes; partial/failure truth, timestamps, accessibility and 360/1280 layout preserved.",
+            "Each primary finding regression fails for its observed cause before correction and passes afterward. Existing preservation cases remain green; acceptance evidence stays pending."
+          ],
+          "specRefs": [
+            "docs/ai/apps/asyra-design/specs/ai-conversation-experience.md#conversation-state-and-handoff-repair",
+            "docs/ai/apps/asyra-design/plans/ai-conversation-ownership-repair-plan.md"
+          ]
+        },
+        {
+          "id": "recovery-contract",
+          "title": "Admit safe explicit retry acceptance",
+          "stepIds": [
+            "recovery"
+          ],
+          "assertions": [
+            "F7: real runtime cancellation before execution versus after a read or mutation, Feature abort-before-run and racing admission prove safe recovery without duplicate dispatch or replay.",
+            "Each primary finding regression fails for its observed cause before correction and passes afterward. Existing preservation cases remain green; acceptance evidence stays pending."
+          ],
+          "specRefs": [
+            "docs/ai/apps/asyra-design/specs/ai-conversation-experience.md#conversation-state-and-handoff-repair",
+            "docs/ai/apps/asyra-design/plans/ai-conversation-ownership-repair-plan.md"
+          ]
+        },
+        {
+          "id": "observation-contract",
+          "title": "Subscribe to keyed projections acceptance",
+          "stepIds": [
+            "observation"
+          ],
+          "assertions": [
+            "F8: actual historical reducer and entry construction stay unchanged at 0/10/100 turns during active progress; distinct consumer disclosure states stay isolated; correct active progress, selection, scroll and invalidation remain verified.",
+            "Each primary finding regression fails for its observed cause before correction and passes afterward. Existing preservation cases remain green; acceptance evidence stays pending."
+          ],
+          "specRefs": [
+            "docs/ai/apps/asyra-design/specs/ai-conversation-experience.md#conversation-state-and-handoff-repair",
+            "docs/ai/apps/asyra-design/plans/ai-conversation-ownership-repair-plan.md"
+          ]
+        },
+        {
+          "id": "verification-contract",
+          "title": "Verify integrated preservation acceptance",
+          "stepIds": [
+            "verification"
+          ],
+          "assertions": [
+            "All F1-F8 regressions and integrated 360/1280 journeys pass on one source; retained progress, Undo/Redo, canonical targeting and persistence remain correct.",
+            "Each primary finding regression fails for its observed cause before correction and passes afterward. Existing preservation cases remain green; acceptance evidence stays pending."
+          ],
+          "specRefs": [
+            "docs/ai/apps/asyra-design/specs/ai-conversation-experience.md#conversation-state-and-handoff-repair",
+            "docs/ai/apps/asyra-design/plans/ai-conversation-ownership-repair-plan.md"
+          ]
+        }
+      ]
+    }
+  },
+  "current": {
+    "observations": [
+      {
+        "nodeId": "design",
+        "criterionId": "acceptance",
+        "kind": "manual",
+        "status": "accepted",
+        "binding": "5454f3d037d0655e654378e1bf7fe27e90b5d1d830a6c7847e04fad11e2b1eaa",
+        "actor": "Codex development re-review",
+        "summary": "Reviewed all delivered owners, lifetimes, data handoffs and direct consumers. R1-R3 corrected at existing App owners. Release/template/packaging explicitly excluded; no framework implementation changes.",
+        "at": "2026-11-17T14:58:06.507Z"
+      },
+      {
+        "nodeId": "settlement",
+        "criterionId": "acceptance",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "b777478d8aa210b43a6232978d58f6aadf64d2aeba9ed109a801917cb57f9f70",
+        "actor": "Codex development re-review",
+        "summary": "R2 reproduced disposal completing before endTurn from admission/progress notifications (.ai-rereview-settlement-red.log); complete invocation is registered before publication and awaited through cleanup. F2, cancellation, conflicting terminals and real-runtime regressions pass.",
+        "at": "2026-11-17T14:58:06.514Z",
+        "executionId": "conversation-rereview-20261117",
+        "caseId": "ai-conversation-ownership-repair/settlement/acceptance"
+      },
+      {
+        "nodeId": "continuation",
+        "criterionId": "acceptance",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "2acc761bba1dca12c4391272cfe9e4381e49b4045172fbe4a4a96344c480939f",
+        "actor": "Codex development re-review",
+        "summary": "Ordered public context, retry image identity, replacement indexes, independent requests, pure profiler correlation and server ingress regressions pass. Actual configured model retains both clarification answers and performs no canvas writes.",
+        "at": "2026-11-17T14:58:06.519Z",
+        "executionId": "conversation-rereview-20261117",
+        "caseId": "ai-conversation-ownership-repair/continuation/acceptance"
+      },
+      {
+        "nodeId": "drafts",
+        "criterionId": "acceptance",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "13ed84e1dc7d736c9d0ebd125873e6fce5564c7450a2d60c1992fb382e9e1418",
+        "actor": "Codex development re-review",
+        "summary": "App-owned drafts retain input across panel lifetime; generation/revision admission, re-entry, later typing, rejection and document separation pass. Publication-time pending reads cannot be bypassed.",
+        "at": "2026-11-17T14:58:06.523Z",
+        "executionId": "conversation-rereview-20261117",
+        "caseId": "ai-conversation-ownership-repair/drafts/acceptance"
+      },
+      {
+        "nodeId": "attachments",
+        "criterionId": "acceptance",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "d5ae67ad2194d32ab77faa9ca4b197c3dc62ecfe79f15001f4b66663eaf17f97",
+        "actor": "Codex development re-review",
+        "summary": "R1 red evidence .ai-rereview-attachments-red.log: observer submitted before pending reads were registered. One publication now owns slots/error/count/images. Actual FileReader and first-notification cancel/dispose tests pass.",
+        "at": "2026-11-17T14:58:06.528Z",
+        "executionId": "conversation-rereview-20261117",
+        "caseId": "ai-conversation-ownership-repair/attachments/acceptance"
+      },
+      {
+        "nodeId": "presentation",
+        "criterionId": "acceptance",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "246617c897f5e2980bd3830b7cac1d97821c6a0a5c5dc405efcb36e1871f147c",
+        "actor": "Codex development re-review",
+        "summary": "Authored replies and authoritative storage notices remain distinct, without changing transaction or persistence truth. Producer and presentation tests pass; responsive screenshots inspected.",
+        "at": "2026-11-17T14:58:06.532Z",
+        "executionId": "conversation-rereview-20261117",
+        "caseId": "ai-conversation-ownership-repair/presentation/acceptance"
+      },
+      {
+        "nodeId": "recovery",
+        "criterionId": "acceptance",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "69680268f764aeb045a5ea2f8e0afd9ba0f61947d9d8f6d445fd6d06934add59",
+        "actor": "Codex development re-review",
+        "summary": "Actual Feature/runtime cancellation and negative-shape regressions pass. No replay after observed read/write/transaction; original confirmation and permission owners remain authoritative.",
+        "at": "2026-11-17T14:58:06.537Z",
+        "executionId": "conversation-rereview-20261117",
+        "caseId": "ai-conversation-ownership-repair/recovery/acceptance"
+      },
+      {
+        "nodeId": "observation",
+        "criterionId": "acceptance",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "135209864b76570046d3b7ca882ad0757a3d940483d8bc13370775808a678d79",
+        "actor": "Codex development re-review",
+        "summary": "R3 red evidence .ai-rereview-observation-red.log: disposed controls retained an image-bearing active turn. Active controls/reference now retire with projection; whole-snapshot retention removed. Original real 0/10/100 work-count and independent consumer tests still pass.",
+        "at": "2026-11-17T14:58:06.541Z",
+        "executionId": "conversation-rereview-20261117",
+        "caseId": "ai-conversation-ownership-repair/observation/acceptance"
+      },
+      {
+        "nodeId": "verification",
+        "criterionId": "acceptance",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "54cb5a0ffad2f33a2e2becb1afc36183e08292bb67fe9c78ef97961358498b0c",
+        "actor": "Codex development re-review",
+        "summary": "Frozen source: 2786 App passing executions (2 existing retained-input skips), 414 runtime passes, 69 browser passes (2 unavailable recorded-input skips) including live provider and 16/320/1280 cases. Typecheck/build/lint/naming and Flow tests pass. Evidence .ai-rereview-app.log, .ai-rereview-runtime.log, .ai-rereview-e2e.log and plan re-review section.",
+        "at": "2026-11-17T14:58:06.546Z",
+        "executionId": "conversation-rereview-20261117",
+        "caseId": "ai-conversation-ownership-repair/verification/acceptance"
+      },
+      {
+        "nodeId": "integration",
+        "criterionId": "integrated-review",
+        "kind": "manual",
+        "status": "accepted",
+        "binding": "3412946d9538060cd7d60aaf8ce0095529be6b5d2b3b9f3274bef2060b2f1656",
+        "actor": "Codex development re-review",
+        "summary": "Inspected real 360/1280 journey and live-provider screenshots; reviewed original repair and R1-R3 root-owner corrections, preserved semantics and formal regression oracles. Frozen-source App/runtime/browser development gates pass with four explicit retained-input skips across backend/browser suites. No release scope or universal model-quality claim.",
+        "at": "2026-11-17T14:58:06.551Z"
+      }
+    ],
+    "notes": [],
+    "progress": [],
+    "sources": [
+      {
+        "nodeId": "design",
+        "revision": "working-tree-sha256:8cb00e4662731bfefc21490a69a57fa27129f20294f7000b51dfbb6b87a5b433"
+      },
+      {
+        "nodeId": "settlement",
+        "revision": "working-tree-sha256:8cb00e4662731bfefc21490a69a57fa27129f20294f7000b51dfbb6b87a5b433"
+      },
+      {
+        "nodeId": "continuation",
+        "revision": "working-tree-sha256:8cb00e4662731bfefc21490a69a57fa27129f20294f7000b51dfbb6b87a5b433"
+      },
+      {
+        "nodeId": "drafts",
+        "revision": "working-tree-sha256:8cb00e4662731bfefc21490a69a57fa27129f20294f7000b51dfbb6b87a5b433"
+      },
+      {
+        "nodeId": "attachments",
+        "revision": "working-tree-sha256:8cb00e4662731bfefc21490a69a57fa27129f20294f7000b51dfbb6b87a5b433"
+      },
+      {
+        "nodeId": "presentation",
+        "revision": "working-tree-sha256:8cb00e4662731bfefc21490a69a57fa27129f20294f7000b51dfbb6b87a5b433"
+      },
+      {
+        "nodeId": "recovery",
+        "revision": "working-tree-sha256:8cb00e4662731bfefc21490a69a57fa27129f20294f7000b51dfbb6b87a5b433"
+      },
+      {
+        "nodeId": "observation",
+        "revision": "working-tree-sha256:8cb00e4662731bfefc21490a69a57fa27129f20294f7000b51dfbb6b87a5b433"
+      },
+      {
+        "nodeId": "verification",
+        "revision": "working-tree-sha256:8cb00e4662731bfefc21490a69a57fa27129f20294f7000b51dfbb6b87a5b433"
+      },
+      {
+        "nodeId": "integration",
+        "revision": "working-tree-sha256:8cb00e4662731bfefc21490a69a57fa27129f20294f7000b51dfbb6b87a5b433"
+      }
+    ],
+    "warnings": []
+  }
+}

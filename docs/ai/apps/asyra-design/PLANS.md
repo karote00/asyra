@@ -4,6 +4,10 @@ Never record completed plans here.
 
 ## Current Status
 
+- Active - [AI Conversation Ownership Repair](plans/ai-conversation-ownership-repair-plan.md):
+  eight reviewed findings, explicit lifecycle and handoff contracts, formal
+  regressions and source-bound Flow acceptance. Development verified; parent review remains separate.
+
 - Active - [Operation discovery and ordered drawing composition](plans/ai-operation-pipeline-plan.md).
 
 - Active - [Container double-click selection](plans/container-double-click-selection-plan.md).

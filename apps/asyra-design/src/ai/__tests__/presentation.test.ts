@@ -1,3 +1,5 @@
+import { canRetryAiTurn } from '../conversation-recovery'
+import { interpretAiConversationResult } from '../conversation-result'
 import recordedEvents from '../../../server/__tests__/fixtures/recorded-101/activity-events-20261017.json'
 import recordedStarts from '../../../server/__tests__/fixtures/recorded-101/activity-starts-20261017.json'
 import type { AiRuntimeProgressUpdate } from '@asyra/ai-agent-runtime'
@@ -5,7 +7,6 @@ import { reduceAiActivity } from '../activity-state'
 import { describe, expect, it } from 'vitest'
 import { projectAiActivity, createAiActivityProjection } from '../presentation'
 import {
-  canRetryAiTurn,
   formatElapsedTime,
   projectAiDrawingDetailChoice,
   summarizeAiTurn
@@ -176,7 +177,11 @@ describe('Asyra Design AI presentation summaries', () => {
       }
     }
 
-    const projection = projectAiDrawingDetailChoice(clarificationTurn)
+    const semanticTurn = {
+      ...clarificationTurn,
+      ...interpretAiConversationResult(clarificationTurn.result)
+    }
+    const projection = projectAiDrawingDetailChoice(semanticTurn)
 
     expect(projection).toEqual({
       choices: [
@@ -197,7 +202,7 @@ describe('Asyra Design AI presentation summaries', () => {
       ],
       kind: 'drawing-detail'
     })
-    expect(summarizeAiTurn(clarificationTurn).message).toBe(
+    expect(summarizeAiTurn(semanticTurn).message).toBe(
       'Choose a drawing detail level.'
     )
     expect(JSON.stringify(projection)).not.toMatch(
@@ -2168,3 +2173,34 @@ it('projects actual descendant dispatch effects without replacing the principal 
   append('principal', 'executing', undefined, true)
   expect(projection.result().current.message).toBeUndefined()
 })
+
+it.each(['local-only', 'unavailable'])(
+  'preserves authored advice alongside a %s storage notice',
+  (status) => {
+    const response = {
+      ...turn('no-change'),
+      result: {
+        status: 'executed',
+        actionResults: [
+          {
+            actionName: 'report_outcome',
+            result: {
+              outcome: 'completed',
+              message: 'Use stronger heading contrast.',
+              persistence: { status }
+            }
+          }
+        ]
+      }
+    }
+    const summary = summarizeAiTurn(response)
+    expect(summary.message).toBe('Use stronger heading contrast.')
+    expect(summary).toMatchObject({
+      storageNotice: expect.any(String),
+      outcome: 'no-change'
+    })
+    expect((summary as { storageNotice?: string }).storageNotice).not.toMatch(
+      /Drawing work is complete|Changes have been kept/
+    )
+  }
+)

@@ -2,6 +2,11 @@
 
 ## Current direction
 
+The 2026-11-17 [ownership repair follow-up](ai-conversation-ownership-repair-plan.md)
+repairs eight confirmed findings with explicit owners, lifetimes, handoffs and
+regressions. Its implementation was explicitly authorized after design review;
+it does not inherit push authorization from this document.
+
 The [Editable Design Agent plan](ai-design-agent-plan.md) now owns the broader
 prompt-to-editable-design work, native research, complete UI/UX and PR delivery.
 The sections below retain prior accepted contracts and historical local evidence;

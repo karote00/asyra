@@ -1,3 +1,4 @@
+import { createAiConversationController } from '../conversation'
 import type { AiActionBatch, AiProvider } from '@asyra/ai-agent-runtime'
 import { createAiAgentRuntime } from '@asyra/ai-agent-runtime'
 import { MouseButton, SystemMode } from '@asyra/utils'
@@ -508,6 +509,180 @@ describe('Asyra Design server action-batch runtime integration', () => {
       unsubscribe()
       await runtime.dispose()
       await confirmation.dispose()
+    }
+  })
+})
+
+describe('conversation settlement through real runtime batches', () => {
+  beforeEach(prepareCommonApis)
+  afterEach(() => vi.restoreAllMocks())
+  it.each(['read_design_context', 'set_element_visibility'])(
+    'denies cancellation replay after real execution of %s',
+    async (name) => {
+      const abort = new AbortController()
+      const input = createAiRuntimeInput({
+        permissionRules: { [name]: 'allow' },
+        provider: {
+          requestActionBatch: async (_input, options) => {
+            if (!options.executeBatch) throw new Error('Missing batch executor')
+            await options.executeBatch({
+              batchId: 'prior',
+              actions: [
+                {
+                  id: 'prior',
+                  name,
+                  arguments:
+                    name === 'read_design_context'
+                      ? { scope: 'selection' }
+                      : { elementId: 'shape-1', visible: false },
+                  summary: {}
+                }
+              ]
+            })
+            abort.abort()
+            return { batchId: 'terminal', actions: [] }
+          }
+        }
+      })
+      const runtime = createAiAgentRuntime({
+        ...input,
+        actionDefinitions: input.actionDefinitions.map((definition) =>
+          definition.name === 'read_design_context'
+            ? { ...definition, execute: async () => ({ status: 'no-change' }) }
+            : definition
+        )
+      })
+      const controller = createAiConversationController({
+        feature: {
+          execute: (request) =>
+            runtime.run({ ...request, signal: abort.signal }),
+          cancel: () => true
+        },
+        getElementType: vi.fn()
+      })
+      try {
+        const turn = await controller.submit('Inspect then stop')
+        expect(turn.result).toMatchObject({
+          status: 'cancelled',
+          transaction: expect.any(Object)
+        })
+        await expect(controller.retry(turn.turnId)).rejects.toThrow(
+          'Review the canvas'
+        )
+      } finally {
+        await controller.dispose()
+        await runtime.dispose()
+      }
+    }
+  )
+
+  it('permits explicit retry of a real runtime cancellation before execution', async () => {
+    const runtime = createAiAgentRuntime(
+      createAiRuntimeInput({
+        provider: providerForBatch({ batchId: 'empty', actions: [] })
+      })
+    )
+    let calls = 0
+    const controller = createAiConversationController({
+      feature: {
+        execute: (request) => {
+          const abort = new AbortController()
+          if (++calls === 1) abort.abort()
+          return runtime.run({ ...request, signal: abort.signal })
+        },
+        cancel: () => true
+      },
+      getElementType: vi.fn()
+    })
+    try {
+      const cancelled = await controller.submit('Draw a poster')
+      expect(cancelled.result).toMatchObject({
+        status: 'cancelled',
+        audit: { actions: [], outcome: 'cancelled' }
+      })
+      expect(cancelled.result).not.toHaveProperty('transaction')
+      await expect(controller.retry(cancelled.turnId)).resolves.toMatchObject({
+        retryOfTurnId: cancelled.turnId
+      })
+      expect(calls).toBe(2)
+    } finally {
+      await controller.dispose()
+      await runtime.dispose()
+    }
+  })
+
+  it('retains a terminal question after an executed read receipt', async () => {
+    const input = createAiRuntimeInput({
+      permissionRules: {
+        read_design_context: 'allow',
+        request_clarification: 'allow'
+      },
+      provider: {
+        requestActionBatch: async (_input, options) => {
+          if (!options.executeBatch) throw new Error('Missing batch executor')
+          await options.executeBatch({
+            batchId: 'read',
+            actions: [
+              {
+                id: 'read',
+                name: 'read_design_context',
+                arguments: { scope: 'selection' },
+                summary: {}
+              }
+            ]
+          })
+          return {
+            batchId: 'question',
+            actions: [
+              {
+                id: 'question',
+                name: 'request_clarification',
+                arguments: { question: 'Which color?' },
+                summary: {}
+              }
+            ]
+          }
+        }
+      }
+    })
+    const runtime = createAiAgentRuntime({
+      ...input,
+      actionDefinitions: input.actionDefinitions.map((definition) =>
+        definition.name === 'read_design_context'
+          ? {
+              ...definition,
+              execute: async () => ({ status: 'no-change', available: true })
+            }
+          : definition
+      )
+    })
+    const controller = createAiConversationController({
+      feature: {
+        execute: (request) =>
+          runtime.run({ ...request, signal: new AbortController().signal }),
+        cancel: () => false
+      },
+      getElementType: vi.fn()
+    })
+    try {
+      const turn = await controller.submit('Draw a poster')
+      expect(turn.result).toMatchObject({
+        status: 'executed',
+        actionResults: [
+          expect.objectContaining({ actionName: 'read_design_context' }),
+          expect.objectContaining({ actionName: 'request_clarification' })
+        ]
+      })
+      expect(turn.question).toEqual({
+        kind: 'question',
+        message: 'Which color?'
+      })
+      await expect(
+        controller.submit({ intent: 'Blue', replyToTurnId: turn.turnId })
+      ).resolves.toMatchObject({ replyToTurnId: turn.turnId })
+    } finally {
+      await controller.dispose()
+      await runtime.dispose()
     }
   })
 })
