@@ -574,6 +574,7 @@ const exactResultAlternatives = (schema: unknown) => {
 // Independent semantic controls and formal owner/provider suites remain required.
 const originalUsageProjection = workflowOwner.workflowUsageParameters
 const usageProjection = vi.spyOn(workflowOwner, 'workflowUsageParameters')
+const originalScopeProjection = workflowOwner.projectWorkflowInput
 const scopeProjection = vi.spyOn(workflowOwner, 'projectWorkflowInput')
 
 afterEach(() => {
@@ -617,21 +618,271 @@ const observedUsageSource = (delivered: unknown): unknown => {
   return source
 }
 
-const observedScopedInput = (input: unknown, scope: unknown): unknown => {
-  const index = scopeProjection.mock.calls.findIndex(
-    (call) => isEqual(call[0], input) && isEqual(call[1], scope)
+// Independent expectations for the sole opted-in owner. Never call its scope
+// selector/projector or inspect their returned values to construct an oracle.
+// All node kinds are selected here, so their complete canonical contracts remain.
+// Narrow node/repetition behavior has separate semantic owner regressions.
+const canonicalWorkflowScope = (input: unknown, scope: unknown): unknown => {
+  if (!isRecord(input) || !isRecord(scope) || !Array.isArray(input.oneOf)) {
+    throw new Error('Missing canonical workflow scope')
+  }
+
+  const expected = structuredClone(input)
+  const properties = expected.properties
+  const definitions = expected.$defs
+
+  if (!isRecord(properties) || !isRecord(definitions)) {
+    throw new Error('Missing canonical workflow properties')
+  }
+
+  const operations = input.oneOf.filter(isRecord)
+
+  expect(operations.map((branch) => branch.required)).toEqual([
+    ['draft'],
+    ['repair'],
+    ['parts']
+  ])
+  const branch = operations.find((entry) =>
+    isEqual(entry.required, [scope.operation])
   )
 
-  expect(
-    index,
-    'Selected input must originate at the registered owner'
-  ).toBeGreaterThanOrEqual(0)
-  const result = scopeProjection.mock.results[index]
+  if (!branch || !isRecord(branch.properties)) {
+    throw new Error('Missing canonical operation alternative')
+  }
 
-  expect(result.type).toBe('return')
+  expected.oneOf = [structuredClone(branch)]
+  delete expected['x-design-input-scope']
+  for (const [name, constraint] of Object.entries(branch.properties)) {
+    expect(constraint, 'Operation exclusions must be explicit').toBe(false)
+    properties[name] = false
+  }
 
-  return result.value
+  const selected = Array.isArray(scope.optionalInputs)
+    ? scope.optionalInputs
+    : []
+
+  for (const name of ['retain', 'delivery']) {
+    expect(Object.hasOwn(properties, name)).toBe(true)
+    if (!selected.includes(name)) {
+      properties[name] = false
+    }
+  }
+
+  const draft = definitions.readyDraft
+  const node = definitions.node
+
+  if (!isRecord(draft) || !isRecord(node) || !Array.isArray(node.anyOf)) {
+    throw new Error('Missing canonical draft and node contracts')
+  }
+
+  const nodes = node.anyOf.filter(isRecord)
+  const kinds = nodes.flatMap((entry) => {
+    const type = schemaProperty(entry, 'type')
+
+    if (!isRecord(type)) {
+      throw new Error('Missing canonical node discriminator')
+    }
+
+    return Array.isArray(type.enum) ? type.enum : [type.const]
+  })
+
+  expect(scope.nodeTypes).toEqual(kinds)
+  const ordinaryNode = nodes.find((entry) => {
+    const type = schemaProperty(entry, 'type')
+
+    return (
+      isRecord(type) &&
+      Array.isArray(type.enum) &&
+      type.enum.includes('group') &&
+      type.enum.includes('frame')
+    )
+  })
+
+  if (!ordinaryNode) {
+    throw new Error('Missing canonical ordinary-node contract')
+  }
+
+  const optionalGroups = [
+    {
+      name: 'layout',
+      owners: [draft, ordinaryNode],
+      fields: ['layout', 'padding', 'gap', 'columns', 'align']
+    },
+    { name: 'relations', owners: [draft], fields: ['relations'] },
+    { name: 'sharedFills', owners: [draft], fields: ['sharedFills'] }
+  ]
+
+  for (const group of optionalGroups) {
+    for (const owner of group.owners) {
+      if (!isRecord(owner.properties)) {
+        throw new Error('Missing canonical authoring fields')
+      }
+
+      for (const name of group.fields) {
+        expect(Object.hasOwn(owner.properties, name)).toBe(true)
+        if (!selected.includes(group.name)) {
+          owner.properties[name] = false
+        }
+      }
+    }
+  }
+
+  return expected
 }
+
+const assertScopedParameters = (
+  delivered: unknown,
+  canonical: unknown,
+  scope: unknown,
+  registered = false
+) => {
+  const parameterSource = observedUsageSource(delivered)
+
+  if (!isRecord(parameterSource)) {
+    throw new Error('Missing actual parameter source')
+  }
+
+  const params = registered
+    ? schemaProperty(parameterSource, 'input')
+    : parameterSource
+
+  expect(
+    equivalentDeliveredSchema(params, canonicalWorkflowScope(canonical, scope)),
+    'Selected contract must preserve canonical scope constraints'
+  ).toBe(true)
+}
+
+it.each([
+  'unchanged',
+  'equivalent-reference',
+  'equivalent-intersection',
+  'equivalent-union',
+  'weaken-message',
+  'open-draft',
+  'remove-operation'
+])(
+  'checks canonical scope preservation through discovery - %s',
+  async (fault) => {
+    const current = createDeliveryAuditFixture()
+    const name = 'design_workflow.prepare_and_apply_design'
+    const definition = current.host
+      .definitions()
+      .find((item) => item.registeredName === name)
+
+    if (!definition) {
+      throw new Error('Missing workflow registration')
+    }
+
+    const choices = workflowInputScopes(definition.inputSchema)
+
+    if (!choices) {
+      throw new Error('Missing workflow choices')
+    }
+
+    const scope = { operation: 'draft', nodeTypes: choices.nodeTypes }
+    let reached = 0
+
+    scopeProjection.mockImplementation((input, selection) => {
+      const selected = structuredClone(
+        originalScopeProjection(input, selection)
+      )
+
+      if (
+        !isRecord(selected.properties) ||
+        !isRecord(selected.$defs) ||
+        !isRecord(selected.$defs.readyDraft) ||
+        !isRecord(selected.properties.message)
+      ) {
+        throw new Error('Missing selected workflow constraints')
+      }
+
+      reached++
+      if (fault === 'weaken-message') {
+        selected.properties.message.maxLength = 2000
+      } else if (fault === 'open-draft') {
+        selected.$defs.readyDraft.additionalProperties = true
+      } else if (fault === 'remove-operation') {
+        delete selected.oneOf
+      } else if (fault === 'equivalent-reference') {
+        selected.$defs.auditMessage = selected.properties.message
+        selected.properties.message = { $ref: '#/$defs/auditMessage' }
+      } else if (fault === 'equivalent-intersection') {
+        selected.properties.message = {
+          allOf: [{ allOf: [selected.properties.message] }]
+        }
+      } else if (fault === 'equivalent-union') {
+        selected.properties.message = {
+          anyOf: [
+            selected.properties.message,
+            { anyOf: [selected.properties.message] }
+          ]
+        }
+      }
+
+      return selected
+    })
+    try {
+      const responseText = await readCompleteInformation(
+        async (input, tool) =>
+          (
+            await current.host.invoke({
+              name: 'design_operations.' + tool,
+              input
+            })
+          ).text,
+        {
+          names: [name],
+          view: 'usage',
+          scopes: { [name]: { inputScope: scope } }
+        },
+        'read_design_contracts'
+      )
+      const response = JSON.parse(responseText).tools?.[0]
+
+      expect(response, responseText).toBeDefined()
+      expect(reached).toBeGreaterThan(0)
+      expect(response.execution.kind).toBe('host-operation')
+
+      if (fault === 'weaken-message') {
+        const invocation = response.invocationExample.invocation
+        const input = {
+          ...invocation.arguments.operations[0].arguments,
+          message: 'x'.repeat(1001)
+        }
+
+        expect(operationInputIssue(input, definition.inputSchema)).toContain(
+          'string is too long'
+        )
+        expect(
+          operationInputIssue(input, response.usageGuide.parameters)
+        ).toBeUndefined()
+      }
+
+      const audit = () =>
+        assertScopedParameters(
+          response.usageGuide.parameters,
+          definition.inputSchema,
+          scope
+        )
+
+      if (
+        ['weaken-message', 'open-draft', 'remove-operation'].includes(fault)
+      ) {
+        expect(audit).toThrow(
+          /Selected contract must preserve canonical scope constraints/
+        )
+      } else {
+        audit()
+      }
+
+      expect(current.execute).not.toHaveBeenCalled()
+    } finally {
+      scopeProjection.mockReset()
+      scopeProjection.mockImplementation(originalScopeProjection)
+      await current.dispose()
+    }
+  }
+)
 
 it.each(['parameters', 'results'])(
   'rejects corrupted calculation %s in the shared delivered-contract audit',
@@ -1253,10 +1504,25 @@ it.each(native)(
     if (scopes) {
       expect(entry.inputScopes).toEqual(scopes)
       expect(entry.definition.nextAction).toBe('select-operation-scope')
-      for (const operation of scopes.operations) {
+      const selections = scopes.operations.flatMap((operation) => [
+        { operation, optionalInputs: undefined },
+        {
+          operation,
+          optionalInputs: [
+            'retain',
+            'delivery',
+            'layout',
+            'relations',
+            'sharedFills'
+          ]
+        }
+      ])
+
+      for (const { operation, optionalInputs } of selections) {
         const inputScope = {
           operation,
-          ...(scopes.nodeTypes.length ? { nodeTypes: scopes.nodeTypes } : {})
+          ...(scopes.nodeTypes.length ? { nodeTypes: scopes.nodeTypes } : {}),
+          ...(optionalInputs ? { optionalInputs } : {})
         }
         const selected = JSON.parse(
           await readCompleteInformation(
@@ -1290,23 +1556,11 @@ it.each(native)(
           ).toBeUndefined()
         }
 
-        const parameterSource = observedUsageSource(
-          selected.usageGuide.parameters
-        )
-
-        if (!isRecord(parameterSource)) {
-          throw new Error('Missing actual parameter source')
-        }
-
-        const params =
+        assertScopedParameters(
+          selected.usageGuide.parameters,
+          registeredDefinition.inputSchema,
+          inputScope,
           selected.execution.kind === 'registered-tool'
-            ? schemaProperty(parameterSource, 'input')
-            : parameterSource
-
-        expect(resolvedSchema(params, parameterSource)).toEqual(
-          resolvedSchema(
-            observedScopedInput(registeredDefinition.inputSchema, inputScope)
-          )
         )
         observedUsageSource(selected.usageGuide.results)
         expect(selected.usageGuide.results.anyOf).toEqual(expect.any(Array))

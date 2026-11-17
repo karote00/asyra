@@ -56,6 +56,13 @@ input proves lineage, not lossless delivery. Legal reference compaction and
 inclusive union/intersection regrouping preserve constraints; sibling constraints,
 literal values and exclusive-union multiplicity cannot be discarded. Fault
 controls must reach this same audit assertion, with a legal equivalent control.
+For selected input scopes, the source is the original registered owner contract,
+not the selector's returned schema. Independently specify the operation exclusions
+and optional-group selection, preserving every remaining canonical constraint.
+Observe selection output only as evidence under test. Exercise corruption before
+compaction as well as after it; an independent compaction check does not prove the
+preceding scope selection. Equivalent references and inclusive regrouping must
+remain valid through the same selected-scope assertion.
 
 Review these requirements for each new or changed method and at whole-feature
 acceptance. Missing proof is incomplete, not a waived requirement. An inapplicable

@@ -4,9 +4,9 @@
 
 Completed task: [History admission and independent contract verification](#history-admission-and-independent-contract-verification).
 Completed task: [Uniform verification contract](#uniform-verification-contract).
-The previous parent acceptance is historical. The subsequent product and verifier
-defects are corrected and the current source has renewed whole-feature acceptance
-under the uniform standard, recorded below; earlier counts are not its authority.
+The previous parent acceptance is historical. Whole-feature acceptance remains
+reopened. The [selected-scope correction](#independent-selected-scope-contract-audit)
+below is complete, but its bounded evidence does not renew whole-feature acceptance.
 Completed child corrections and prior execution records have moved to the
 [closeout record](completed/agent-context-and-report-continuity-record-2026-11-16.md).
 This plan retains the completed corrections and historical acceptance evidence.
@@ -751,3 +751,80 @@ changed exchange tests), four-file lint, naming and diff checks pass. Review was
 limited to these guards, their direct consumers, the permanent regressions and the
 existing settle flow. No compatibility, validation relaxation, new retry behavior,
 101, whole-feature/repository test, commit or push was introduced.
+
+
+### Independent selected-scope contract audit
+
+November 17, 2026. Base: baa0550b235b9ef02831163b39822170c413a159.
+Status: complete within this bounded task. The reached review experiment changed the selected message limit
+from 1,000 to 2,000 characters. The canonical owner rejected 1,001 characters but
+the selected guide accepted them and the audit passed. `observedScopedInput` used
+the production selector's return value as its expected contract. The existing
+independent compaction comparison cannot detect an earlier selection error.
+
+Execution card - compose verification owner: compare the actual contract-read
+reply with the original registered owner and independently authored scope
+expectations. Inputs are the canonical schema and explicit operation/optional
+selection. Output is a rejecting audit for lost or added constraints, with legal
+reference compaction and inclusive regrouping preserved. The existing compose
+flow and Selected operation contract delivery spec remain unchanged. Only the
+current opted-in workflow owner has scope expectations; the existing inventory
+assertion must reject another scoped owner until its semantics are supplied.
+
+1. Add permanent fault controls through actual Host contract discovery. Reuse the
+   same assertion as the per-registration audit; prove an altered shared limit,
+   nested constraint and operation boundary cannot pass. Preserve a valid control
+   and equivalent local-reference/inclusive-union controls. Confirm RED before
+   replacing the circular oracle.
+2. Remove the selector-output expectation. Derive full-schema expectations from
+   the untouched canonical owner, explicit operation exclusions and selected
+   optional groups, independently of production projection/usage helpers. Check
+   every currently published operation with and without optional groups, retaining
+   the existing downstream result/admission and independent compaction assertions.
+3. Review the bounded diff and direct consumers. Run the affected audit consumers,
+   scope/discovery regressions, flow-proof type project, naming and scoped lint.
+   Record reached RED/GREEN evidence and limits. Do not infer parent acceptance.
+
+Mutation scope: the existing audit and its test-owned schema expectations, current
+verification spec clarification and this plan. No product schema/validator change,
+compatibility path, relaxed assertion, new dependency, new product flow, full local
+run, 101, commit or push. Test-only helper names are internal and non-persisted.
+Stop and replan only if canonical owner semantics contradict the scoped delivery
+spec; an unrelated discovery does not expand this task.
+
+Implementation review: the first expectation assumed a separate group/frame node
+branch. The canonical schema instead owns all ordinary node kinds in one branch;
+its layout fields share that branch and per-kind exclusions remain nested. Correct
+the test-owned source selection to that canonical owner, preserve the complete
+nested constraints and rerun the unchanged fault/valid controls. This is an oracle
+fixture correction, not a product schema change or a relaxed acceptance rule.
+
+Scoped result: the selector-output oracle is deleted. The audit now compares the
+original registered owner, independently declared operation/optional restrictions,
+and the observed discovery/compaction handoff. All three operations run with both
+default omission and all optional groups; canonical nested restrictions remain in
+the expectation. The existing opted-in-owner inventory prevents silent adoption
+of an owner without independent scope coverage. No production code changed.
+
+Permanent RED: tmp/scope-audit-red-reached.json has three reached failures because
+the old audit accepted a weakened message bound, an open nested draft, and a
+missing operation discriminator. Its three valid controls passed. Initial setup
+and ordinary-node fixture failures remain separate non-proof artifacts; none is
+counted as product failure or passing evidence.
+
+Focused GREEN: tmp/scope-audit-final.json records 226 passed cases across the audit,
+contract acquisition and selected discovery/owner consumers. The final control
+run, tmp/scope-audit-controls-final.json, passes seven cases: the same three faults
+are detected; unchanged, local-reference, intersection and inclusive-union controls
+remain valid. Six controls overlap the preceding selection and one is additional.
+The 1,001-character witness explicitly verifies that the corrupted delivered guide
+accepts a value rejected by the untouched canonical contract before requiring the
+audit to fail. Unselected siblings are not passing coverage.
+
+Flow-proof types, scoped ESLint, naming (15 cases) and diff checks pass. Bounded
+review checked canonical-source independence, the original assertion's direct
+consumer, scope inventory rejection, equivalent transforms and unchanged result
+admission. Narrow representation/repair/optional-authoring owner regressions remain
+covered by the focused discovery selection; this is not an exhaustive claim about
+all combinations, provider behavior or whole-feature acceptance. No compatibility,
+validation relaxation, 101, full local test, commit or push was introduced.
