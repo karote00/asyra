@@ -15,7 +15,7 @@ handshake and publishes canonical document changes, while the socket server
 owns ordering, live fan-out, persistence batching, retry, and durable-watermark
 tracking. The browser does not save document snapshots.
 
-This is the only production document flow. It replaces browser-to-document-
+This is the only production document persistence flow. It replaces browser-to-document-
 database writes rather than coexisting with them as a second autosave mode.
 
 ## Product Decisions
@@ -97,14 +97,15 @@ An authoritative remote load always uses the socket handshake. Socket
 availability does not determine whether the already initialized local runtime
 can accept canonical actions.
 
-The production path has no local-only document mode. A one-Actor document and
-a multi-Actor document use the same handshake, publication, sequencing,
-broadcast, recovery-outbox, and persistence path.
+With a configured endpoint, a one-Actor document and a multi-Actor document use
+the same handshake, publication, sequencing, broadcast, recovery-outbox, and
+persistence path. Without an endpoint, the explicit local-only composition
+described above performs no persistence or Collaboration setup.
 
 The bundled `crdt-7076-sample` Agent flow remains inside that same document
-path. No file identity may bypass the socket workflow because an endpoint is
-absent or unavailable. The sample has no direct compressed-document load,
-localStorage bootstrap, or nullable Collaboration mode. The permanent toolbar
+path when an endpoint is configured. No file identity may bypass the socket
+workflow because that endpoint is unavailable. The sample has no direct
+compressed-document load or localStorage bootstrap. The permanent toolbar
 Reset remains a separate stored-file utility and never becomes a document
 session mode.
 

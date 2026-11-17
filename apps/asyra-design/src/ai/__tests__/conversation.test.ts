@@ -808,9 +808,16 @@ it('starts new conversations without losing prior messages or target context', a
     getElementType: (id) => (id === 'f' ? 'frame' : 'text'),
     createConversationId: () => `chat-${++id}`
   })
-  await controller.submit('Create the first design')
+  const title =
+    'Create the first design with a detailed heading, a large reference illustration, and a readable description of the summer exhibition.'
+  await controller.submit(title)
+  expect(controller.getNavigationSnapshot().title).toBe(title)
   const first = controller.getSnapshot()
   controller.newConversation()
+  expect(controller.getNavigationSnapshot().conversations).toContainEqual({
+    id: first.conversationId,
+    title
+  })
   expect(controller.getSnapshot()).toMatchObject({
     conversationId: 'chat-2',
     settledTurns: [],

@@ -20,7 +20,15 @@ export const AiConversationNavigation = ({
     onNavigate(id)
   }
   return (
-    <div className="flex min-w-0 flex-1 items-center gap-2">
+    <div
+      className="flex min-w-0 flex-1 items-center gap-2"
+      onKeyDown={(event) => {
+        if (!historyOpen || event.key !== 'Escape') return
+        event.stopPropagation()
+        setHistoryOpen(false)
+        toggleRef.current?.focus()
+      }}
+    >
       <button
         ref={toggleRef}
         type="button"
@@ -72,12 +80,6 @@ export const AiConversationNavigation = ({
         <section
           id={historyId}
           aria-label="Conversation history"
-          onKeyDown={(event) => {
-            if (event.key !== 'Escape') return
-            event.stopPropagation()
-            setHistoryOpen(false)
-            toggleRef.current?.focus()
-          }}
           className="absolute inset-x-0 top-full z-10 max-h-64 overflow-y-auto border-b border-[#45464b] bg-[#202124] p-2 shadow-lg"
         >
           <ul className="m-0 list-none space-y-2 p-0">

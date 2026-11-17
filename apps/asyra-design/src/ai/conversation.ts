@@ -399,11 +399,8 @@ export const createAiConversationController = (
   let navigationSnapshot: AiConversationNavigationSnapshot | undefined
   let publishedNavigation: AiConversationNavigationSnapshot | undefined
   const getNavigationSnapshot = (): AiConversationNavigationSnapshot => {
-    const title = (
-      settledTurns[0]?.intent ??
-      activeTurn?.intent ??
-      'New conversation'
-    ).slice(0, 100)
+    const title =
+      settledTurns[0]?.intent ?? activeTurn?.intent ?? 'New conversation'
     const busy = activeTurn !== null
     if (
       navigationSnapshot?.conversationId === conversationId &&
@@ -416,7 +413,7 @@ export const createAiConversationController = (
       .map(([id, state]) =>
         Object.freeze({
           id,
-          title: (state.turns[0]?.intent ?? 'New conversation').slice(0, 100)
+          title: state.turns[0]?.intent ?? 'New conversation'
         })
       )
     conversations.unshift(Object.freeze({ id: conversationId, title }))

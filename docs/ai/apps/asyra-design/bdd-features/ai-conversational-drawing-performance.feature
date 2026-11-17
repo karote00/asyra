@@ -204,24 +204,25 @@ Feature: Conversational AI drawing performance
     And the next batch should begin only after a browser paint opportunity in the same serialized loop
     And a microtask-only yield or one independently scheduled timeout per range should not satisfy that boundary
     And the Feature-owned AbortSignal should be checked after every awaited boundary
-    And all batches should remain inside one outer transaction
+    And each synchronous mutation batch should enter the invocation's lazy Factory history group through its own finite transaction
     And the complete turn should create one Undo action
-    And fatal failure or cancellation should roll back the complete composition
+    And a failed synchronous member should roll back its own writes while fatal failure or cancellation preserves earlier completed members
     And no loading, progress, or slice-policy parameter should enter Core, Props Manager, or Scene Tree
 
-  Scenario: Drawing progress keeps navigation responsive while edits stay locked
+  Scenario: Drawing progress keeps ordinary interactions independent
     Given one progressive local AI drawing turn is active
-    And the App acquired its document interaction lock before the outer transaction
+    And AI mutation members use the existing idle-boundary admission
     When the serialized composition loop yields through a browser paint opportunity
     Then ordinary viewport pan and zoom should remain available
     And pan and zoom should repaint the same live loading frame and ordinary Vector output
     And navigation may continue through ordinary Feature execution and its existing transaction wrapper
     And navigation should produce no canonical mutation or History
-    And navigation should not alter the AI action transaction evidence
-    And every other tool interaction and document mutation should remain blocked
-    And another mutating Agent turn, selection changes, property edits, deletion, Undo, and Redo should create no canonical mutation or history
+    And navigation should not alter the AI invocation's history group
+    And ordinary user edits, selection, deletion, Undo, and Redo should retain their existing transaction and History routes
+    And an AI member should wait for an active user transaction to settle before admission
+    And another Agent turn and conversation switching should remain blocked until the active turn settles
     And AI cancellation should remain available
-    And success, failure, cancellation, or teardown should release the App lock
+    And success, failure, cancellation, or teardown should retire the AI invocation and drawing progress
     And a second reactive-events bus should not act as the scheduling or admission lock
     And the complete drawing turn should still create one Undo action
 
@@ -231,12 +232,12 @@ Feature: Conversational AI drawing performance
     Then it should call plural "Core.createElementsInParent"
     And Core should return only ordered canonical element ids
     And a single-item create API should use the same batch-of-one canonical path
-    And Group and children should remain inside one outer Factory transaction
+    And Group and child creation should use finite Factory members of one invocation history group
     And Core should expose no Factory delivery handle, progressive handle, timing result, or transport receipt
     And the active Factory transaction should record ordered Props and Scene owner evidence directly
     And Core should receive no loading, progress, AI mode, slice size, or host-yield parameters
     And every non-empty plural Core batch should complete one canonical atomic apply before the serialized loop advances
-    And the complete composition should submit multiple ordered plural batches without opening another transaction
+    And the complete composition should submit ordered plural batches without opening another invocation history group
 
   Scenario: Production App exposes one formal server-backed Agent route
     Given the ordinary production entry starts with one required fileId
@@ -659,7 +660,7 @@ Feature: Conversational AI drawing performance
     And file-scoped App persistence remains enabled with separate save timing
     When Actor A creates the server-prepared 7076-element high-detail composition once
     Then Actor A should show connected exact-bounds loading and ordinary Vector milestones while pan and zoom remain responsive
-    And every other document interaction should leave canonical state and history unchanged until terminal cleanup releases the lock
+    And independent user interactions should retain their ordinary canonical and History behavior during the invocation
     And bounded counters should report Actor A settled, Actor B first-visible and complete, convergence, Render, UI, harness, and separately attributed server timing
     And Actor A should produce one terminal exact canonical summary while Actor B should prove only trusted publication settlement and O(1) canonical and Render convergence
     And exact canonical work-unit phases, sampled visible progress, and coalesced publication windows should remain independent counters rather than equality oracles
@@ -690,6 +691,6 @@ Feature: Conversational AI drawing performance
   Scenario: Performance work preserves cancellation and failure semantics
     When the user cancels, a recoverable item fails, a fatal canonical error occurs, a frame is invalid, the transport closes, the worker tears down, or the app tears down
     Then recoverable siblings should still commit as one partial result
-    And fatal failure should roll back the complete turn
+    And fatal failure should roll back the failed synchronous member while retaining earlier completed members in one Undo entry
     And an already-published immediate slice should use the inverse already retained by the existing Factory journal for compensation
     And no performance path should fabricate success, skip an owner, move App database policy into Collaboration, or leave an extra history action

@@ -516,6 +516,75 @@ describe('Asyra Design server action-batch runtime integration', () => {
 describe('conversation settlement through real runtime batches', () => {
   beforeEach(prepareCommonApis)
   afterEach(() => vi.restoreAllMocks())
+
+  it('keeps Stop authoritative when the runtime has committed but its result has not reached the conversation', async () => {
+    const abort = new AbortController()
+    const batch = referenceBatch()
+    const runtime = createAiAgentRuntime(
+      createAiRuntimeInput({
+        permissionRules: {
+          [AiActionNames.SET_ELEMENT_VISIBILITY]: 'allow',
+          [AiActionNames.SELECT_ELEMENTS]: 'allow',
+          [AiActionNames.REPORT_OUTCOME]: 'allow'
+        },
+        provider: providerForBatch({
+          ...batch,
+          actions: [
+            ...batch.actions,
+            {
+              id: 'report',
+              name: AiActionNames.REPORT_OUTCOME,
+              arguments: {
+                outcome: 'completed',
+                message: 'The drawing is complete.'
+              },
+              summary: {}
+            }
+          ]
+        })
+      })
+    )
+    const conversation = createAiConversationController({
+      feature: {
+        execute: (request) => runtime.run({ ...request, signal: abort.signal }),
+        cancel: () => {
+          abort.abort()
+          return true
+        }
+      },
+      getElementType: elementApis.getElementType
+    })
+    const detach = conversation.subscribe((snapshot) => {
+      if (snapshot.activeTurn?.progress.at(-1)?.phase === 'settled')
+        conversation.cancel('user-cancelled')
+    })
+    try {
+      const turn = await conversation.submit(
+        'Hide the shape and select both shapes'
+      )
+      expect(elementApis.setElementVisible).toHaveBeenCalledWith(
+        'shape-1',
+        false,
+        expect.objectContaining({ undoable: true })
+      )
+      expect(turn.result).toMatchObject({
+        status: 'executed',
+        transaction: { status: 'committed' }
+      })
+      expect(turn.outcome).toBe('cancelled')
+      expect(turn.authoredReply).toBeNull()
+      expect(
+        conversation.presentation.getTurn(turn.turnId)?.summary?.message
+      ).toBe('The request was stopped. Changes already applied have been kept.')
+      await expect(conversation.retry(turn.turnId)).rejects.toThrow(
+        'Review the canvas'
+      )
+    } finally {
+      detach()
+      await conversation.dispose()
+      await runtime.dispose()
+    }
+  })
   it.each(['read_design_context', 'set_element_visibility'])(
     'denies cancellation replay after real execution of %s',
     async (name) => {

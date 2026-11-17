@@ -182,6 +182,19 @@ export const summarizeAiTurn = (turn: AiSettledTurn): AiTurnSummary => {
       outcome: turn.outcome
     })
   }
+  if (turn.outcome === 'cancelled') {
+    const committed =
+      isPlainObject(turn.result) &&
+      isPlainObject(turn.result.transaction) &&
+      turn.result.transaction.status === 'committed'
+    return Object.freeze({
+      durationLabel: formatElapsedTime(turn.durationMs),
+      outcome: turn.outcome,
+      message: committed
+        ? 'The request was stopped. Changes already applied have been kept.'
+        : 'The request was cancelled.'
+    })
+  }
   if (
     isPlainObject(turn.result) &&
     turn.result.status === 'failed' &&
@@ -197,19 +210,6 @@ export const summarizeAiTurn = (turn: AiSettledTurn): AiTurnSummary => {
       durationLabel: formatElapsedTime(turn.durationMs),
       outcome: turn.outcome,
       message: `${label} could not be completed.${executionReason} Changes already applied have been kept.`
-    })
-  }
-  if (
-    isPlainObject(turn.result) &&
-    turn.result.status === 'cancelled' &&
-    isPlainObject(turn.result.transaction) &&
-    turn.result.transaction.status === 'committed'
-  ) {
-    return Object.freeze({
-      durationLabel: formatElapsedTime(turn.durationMs),
-      outcome: turn.outcome,
-      message:
-        'The request was stopped. Changes already applied have been kept.'
     })
   }
   const reported =
@@ -274,8 +274,6 @@ export const summarizeAiTurn = (turn: AiSettledTurn): AiTurnSummary => {
     message = `Partially updated the drawing: ${counts.applied} applied, ${counts.skipped} skipped.`
   } else if (turn.outcome === 'no-change') {
     message = 'No canvas changes were needed.'
-  } else if (turn.outcome === 'cancelled') {
-    message = 'The request was cancelled.'
   }
   return Object.freeze({
     durationLabel: formatElapsedTime(turn.durationMs),

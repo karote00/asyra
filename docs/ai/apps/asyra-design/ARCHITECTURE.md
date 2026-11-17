@@ -80,13 +80,13 @@
 - Core prepares the checkpoint/tail handshake, loads the returned read-only
   checkpoint source, initializes Features, applies the pending tail, activates
   live transport, and only then publishes ready
-- every required `fileId`, including `crdt-7076-sample`, receives its initial
+- with a configured endpoint, every required `fileId`, including
+  `crdt-7076-sample`, receives its initial
   checkpoint from the same socket document session. The prepared 7,076-element
   sample enters only through Actor A's request-time HTTP action-batch after
   Send; the checked-in compressed document is a regression asset, not a
   RenderApp load source
-- currently has no IndexedDB publication recovery outbox; the accepted
-  socket-authoritative target adds one App-owned IndexedDB outbox containing
+- owns one App-level IndexedDB publication recovery outbox containing
   only unaccepted `SharedPublication` values, never a materialized document,
   compatibility format, or second canonical persistence route
 - starts framework via `core.start(...)` using Core's default `RenderAdapter`;
@@ -98,8 +98,8 @@
   collaboration session before the renderer and owns idempotent runtime cleanup.
   Teardown does not reopen composition, and an unmount during pending startup
   cannot activate collaboration afterward
-- collaboration setup is mandatory for every required `fileId`. Session
-  failure uses provisional local state, durable publication retention, and
+- with a configured endpoint, collaboration setup applies to every required
+  `fileId`. Session failure uses provisional local state, durable publication retention, and
   continued editing without selecting a second RenderApp composition
 - imports no Pixi SDK or concrete render-engine package
 

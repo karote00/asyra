@@ -460,47 +460,55 @@ describe('AI Agent conversation panel intent boundary', () => {
     expect(screen.queryByText('Canvas')).toBeNull()
   })
 
-  it('uses icon navigation and a toggleable title list with keyboard dismissal', () => {
-    const harness = createPanelHarness()
-    const onClose = vi.fn()
-    render(
-      <AiConversationPanel
-        confirmation={harness.confirmation}
-        conversation={harness.conversation}
-        drafts={draftsFor(harness.conversation)}
-        onClose={onClose}
-      />
-    )
-    expect(screen.queryByRole('combobox')).toBeNull()
-    const toggle = screen.getByRole('button', {
-      name: 'Toggle conversation history'
-    })
-    const create = screen.getByRole('button', { name: 'New conversation' })
-    const close = screen.getByRole('button', { name: 'Close Agent panel' })
-    for (const button of [toggle, create, close]) {
-      expect(button.textContent).toBe('')
-      expect(button.querySelector('svg')?.getAttribute('width')).toBe('24')
-      expect(button.querySelector('svg')?.getAttribute('height')).toBe('24')
+  it.each(['toggle', 'entry'] as const)(
+    'dismisses conversation history with Escape from the focused %s',
+    (target) => {
+      const harness = createPanelHarness()
+      const onClose = vi.fn()
+      render(
+        <AiConversationPanel
+          confirmation={harness.confirmation}
+          conversation={harness.conversation}
+          drafts={draftsFor(harness.conversation)}
+          onClose={onClose}
+        />
+      )
+      expect(screen.queryByRole('combobox')).toBeNull()
+      const toggle = screen.getByRole('button', {
+        name: 'Toggle conversation history'
+      })
+      const create = screen.getByRole('button', { name: 'New conversation' })
+      const close = screen.getByRole('button', { name: 'Close Agent panel' })
+      for (const button of [toggle, create, close]) {
+        expect(button.textContent).toBe('')
+        expect(button.querySelector('svg')?.getAttribute('width')).toBe('24')
+        expect(button.querySelector('svg')?.getAttribute('height')).toBe('24')
+      }
+      expect(toggle.getAttribute('aria-expanded')).toBe('false')
+      fireEvent.click(toggle)
+      expect(toggle.getAttribute('aria-expanded')).toBe('true')
+      const history = screen.getByRole('region', {
+        name: 'Conversation history'
+      })
+      expect(history.querySelector('[aria-current="true"]')).toBeTruthy()
+      const focused =
+        target === 'toggle' ? toggle : within(history).getByRole('button')
+      focused.focus()
+      fireEvent.keyDown(focused, { key: 'Escape' })
+      expect(
+        screen.queryByRole('region', { name: 'Conversation history' })
+      ).toBeNull()
+      expect(document.activeElement).toBe(toggle)
+      expect(onClose).not.toHaveBeenCalled()
+      fireEvent.click(toggle)
+      fireEvent.click(toggle)
+      expect(
+        screen.queryByRole('region', { name: 'Conversation history' })
+      ).toBeNull()
+      fireEvent.click(close)
+      expect(onClose).toHaveBeenCalledOnce()
     }
-    expect(toggle.getAttribute('aria-expanded')).toBe('false')
-    fireEvent.click(toggle)
-    expect(toggle.getAttribute('aria-expanded')).toBe('true')
-    const history = screen.getByRole('region', { name: 'Conversation history' })
-    expect(history.querySelector('[aria-current="true"]')).toBeTruthy()
-    fireEvent.keyDown(history, { key: 'Escape' })
-    expect(
-      screen.queryByRole('region', { name: 'Conversation history' })
-    ).toBeNull()
-    expect(document.activeElement).toBe(toggle)
-    expect(onClose).not.toHaveBeenCalled()
-    fireEvent.click(toggle)
-    fireEvent.click(toggle)
-    expect(
-      screen.queryByRole('region', { name: 'Conversation history' })
-    ).toBeNull()
-    fireEvent.click(close)
-    expect(onClose).toHaveBeenCalledOnce()
-  })
+  )
 
   it('navigates history without sending and preserves each unsent draft', async () => {
     const harness = createPanelHarness()
@@ -826,6 +834,60 @@ describe('AI Agent conversation panel intent boundary', () => {
     expect(harness.conversation.presentation.getTurn(turnId)).not.toBe(
       projected
     )
+  })
+
+  it('does not display a late completion reply after Stop and accepts the next draft', async () => {
+    const harness = createPanelHarness()
+    render(
+      <AiConversationPanel
+        confirmation={harness.confirmation}
+        conversation={harness.conversation}
+        drafts={draftsFor(harness.conversation)}
+        onClose={vi.fn()}
+      />
+    )
+    const input = screen.getByLabelText('Message Agent')
+    fireEvent.change(input, { target: { value: 'Draw a poster' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }))
+    fireEvent.change(input, { target: { value: 'Make the title blue' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel request' }))
+    await act(async () => {
+      harness.pending.resolve({
+        status: 'executed',
+        transaction: { status: 'committed' },
+        actionResults: [
+          {
+            actionId: 'report',
+            actionName: 'report_outcome',
+            result: {
+              status: 'no-change',
+              outcome: 'completed',
+              message: 'The poster is finished.'
+            }
+          }
+        ]
+      })
+    })
+    expect(
+      screen.getByTestId('ai-agent-message').getAttribute('data-outcome')
+    ).toBe('cancelled')
+    expect(screen.queryByText('The poster is finished.')).toBeNull()
+    expect(
+      screen.getByText(
+        'The request was stopped. Changes already applied have been kept.'
+      )
+    ).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Try again' })).toBeNull()
+    expect((input as HTMLTextAreaElement).value).toBe('Make the title blue')
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }))
+    await waitFor(() =>
+      expect(harness.feature.execute).toHaveBeenCalledTimes(2)
+    )
+    expect(harness.feature.execute).toHaveBeenLastCalledWith(
+      expect.objectContaining({ intent: 'Make the title blue' })
+    )
+    await harness.conversation.dispose()
+    await harness.confirmation.dispose()
   })
 
   it('accepts one trimmed draft, stays non-modal, and exposes active cancellation', () => {

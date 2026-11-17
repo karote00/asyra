@@ -238,9 +238,11 @@ the canvas; selecting history restores its settled messages and target hints.
 IDs and turn counters remain owned by each conversation. Navigation is disabled
 while any turn is active. An already empty conversation is reused. History is kept
 only for the current document runtime and cleared on disposal. A separate stable
-navigation subscription projects identity, short title and busy state; progress
-updates must not rebuild or notify unchanged navigation. Composer drafts and
-attachments are preserved per conversation by presentation, never sent on switch.
+navigation subscription projects identity, full title and busy state; visual
+truncation belongs to the title list, and its tooltip retains the complete title.
+Progress updates must not rebuild or notify unchanged navigation. Composer drafts
+and attachments are preserved per conversation by the document-owned draft store,
+never sent on switch.
 
 Panel text supports native selection and copy. Clicking non-interactive panel
 text focuses the panel without entering the Tab order, keeping copy shortcuts
@@ -305,12 +307,8 @@ states including durable-storage waiting override drawing descriptions. Status
 language remains authored language. The same projection serves history and the
 current status. The test oracle includes actual provider-generated system text.
 
-## Conversation state and handoff repair
+## Conversation state and handoff
 
-Current contract - 2026-11-17. The bounded
-[ownership repair plan](../plans/ai-conversation-ownership-repair-plan.md) and
-[repair Flow](../plans/ai-conversation-ownership-repair/ai-conversation-ownership-repair.flow.json)
-refine conversation lifecycle ownership. Current acceptance is recorded in the repair Flow.
 Existing canonical mutation, persistence, permissions and transaction contracts
 remain authoritative.
 
@@ -348,5 +346,4 @@ remain authoritative.
   this property; they do not assert an unmeasured latency budget.
 
 Each repair requires a permanent regression that fails before the owner correction,
-then passes together with existing behavior on the same source. The repair Flow
-starts with empty acceptance evidence; prior passing suites do not close it.
+then passes together with existing behavior on the same source.

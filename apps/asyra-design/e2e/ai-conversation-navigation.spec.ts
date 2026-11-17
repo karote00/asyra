@@ -42,9 +42,9 @@ for (const width of [360, 1440]) {
       page.getByRole('note', { name: 'Your AI subscription' })
     ).toBeVisible()
     await expect(page.getByLabel('Design context')).toHaveCount(0)
-    await page
-      .getByLabel('Message Agent')
-      .fill('Give me design advice without drawing.')
+    const firstTitle =
+      'Give me design advice without drawing. Explain the visual hierarchy, typography, spacing, and contrast for a summer exhibition poster.'
+    await page.getByLabel('Message Agent').fill(firstTitle)
     await page.getByRole('button', { name: 'Send', exact: true }).click()
     await expect(page.getByTestId('ai-agent-message').last()).toHaveAttribute(
       'data-outcome',
@@ -54,9 +54,18 @@ for (const width of [360, 1440]) {
       name: 'Toggle conversation history'
     })
     const history = page.getByRole('region', { name: 'Conversation history' })
+    await toggleHistory.press('Enter')
+    await expect(history).toBeVisible()
+    await expect(toggleHistory).toBeFocused()
+    await page.keyboard.press('Escape')
+    await expect(history).toHaveCount(0)
+    await expect(toggleHistory).toBeFocused()
     const openConversation = async (name: string) => {
       await toggleHistory.click()
       await expect(history).toBeVisible()
+      await expect(
+        history.getByRole('button', { name, exact: true })
+      ).toHaveAttribute('title', name)
       await history.getByRole('button', { name, exact: true }).click()
       await expect(history).toHaveCount(0)
     }
@@ -70,7 +79,7 @@ for (const width of [360, 1440]) {
     await expect(page.getByLabel('Message Agent')).toHaveValue('')
     await expect(page.getByTestId('ai-agent-message')).toHaveCount(0)
     await page.getByLabel('Message Agent').fill('Unsent second draft')
-    await openConversation('Give me design advice without drawing.')
+    await openConversation(firstTitle)
     await expect(page.getByLabel('Message Agent')).toHaveValue(
       'Unsent first draft'
     )
@@ -79,7 +88,7 @@ for (const width of [360, 1440]) {
     await expect(page.getByLabel('Message Agent')).toHaveValue(
       'Unsent second draft'
     )
-    await openConversation('Give me design advice without drawing.')
+    await openConversation(firstTitle)
     expect(requests).toBe(1)
     expect(await getCoreDocumentDigest(page)).toEqual(before)
     for (const control of [
