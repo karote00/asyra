@@ -119,3 +119,7 @@ independent semantic review and original uncertainties are retained in the
 [closeout report](/docs/ai/apps/asyra-design/reports/conversation-closeout-2026-11-18.md).
 Proceed only with the already authorized delivery to PR #365; remote CI,
 merging and publication remain separate.
+
+Reviewed implementation source: `8c870e6e845cbb09ce33a09035acda09ba2241dc`. Completed plan records now retain this
+exact source identity and the complete local evidence. Subsequent changes in this
+closeout stage only record that acceptance.
