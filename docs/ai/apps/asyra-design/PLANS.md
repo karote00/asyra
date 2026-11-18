@@ -27,40 +27,6 @@ Never record completed plans here.
   implemented. Continuous timing measurements stay local-only. Full local CI
   resumes before the authorized feature-branch push; AI workflow work is deferred.
 
-- Active: [AI execution improvement](plans/ai-execution-improvement-plan.md) -
-  recording first, then evaluation, retrieval, efficiency and local validation.
-- Active: [Editable Design Agent](plans/ai-design-agent-plan.md), including the
-  accepted [AI Conversation Experience](plans/ai-conversation-experience-plan.md) contracts.
-  Completed bounded task: [History admission and independent contract verification](plans/agent-context-and-report-continuity-plan.md#history-admission-and-independent-contract-verification) -
-  strict history outcomes, complete selected-result semantics, executable Knowledge
-  examples, and consistent saved-context authority. All four corrections and the
-  twelve-handoff source review are complete with focused owner/consumer evidence
-  and independent case reconciliation.
-  Completed bounded task: [Uniform verification contract](plans/agent-context-and-report-continuity-plan.md#uniform-verification-contract) -
-  shared report admission, actual-entry corruption controls, independent contract
-  oracles and current-source feature acceptance completed on November 17, 2026.
-  All verification methods must continue to follow the
-  [verification standard](specs/ai-conversation-verification.md), including the
-  independent semantic review. [Current evidence and limits](reports/conversation-spec-coverage-review-2026-11-14.md#uniform-verification-implementation---november-16-2026):
-  367 files and 6,940 cases reconcile; 157 semantic selectors, source/build/definition
-  identity and the formal manual criterion are satisfied. No 101 or full repo test.
-  The [historical acceptance](reports/conversation-spec-coverage-review-2026-11-14.md#whole-conversation-acceptance---november-16-2026)
-  recorded 6,890 passes; subsequent product and verifier findings reopened that
-  conclusion and are resolved by the separately recorded current review.
-  Completed child corrections and superseded execution records:
-  [November 16 closeout record](plans/completed/agent-context-and-report-continuity-record-2026-11-16.md).
-  The record preserves original failures, withdrawn conclusions and validation
-  limits; the current parent work is recorded separately above.
-  Implemented task: [Staged Design Execution and Conversation Context](plans/staged-design-execution-plan.md) -
-  preserve useful stage results in App context, apply each ready stage, continue
-  through the host and overlap independent preparation; consolidate recorded
-  discovery, retention and review improvements. The eighteen-minute follow-up
-  completed drawing naturally in 14m59s and the unlimited same-session report.
-  Seven stages used direct preparation/application bindings; eleven named values
-  were saved without later named reuse. A real host catalog defect found live
-  was fixed with focused regression coverage. Original browser evidence closeout
-  failed; separate read-only recovery proved saved-document equality and durable
-  persistence. See the [follow-up report](reports/taipei-101-continuation-contracts-2026-11-06.md).
 - Most recently completed canonical App plan:
   `plans/completed/trusted-publication-and-crdt-7076-flow-realignment-plan.md`.
 - The completed plan retains the accepted one-time canonical data admission,

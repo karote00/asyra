@@ -3,7 +3,7 @@
 ## Scope and evidence
 
 This is an audit and proposed follow-up, not an implementation change. It belongs
-to the [Editable Design Agent plan](../plans/ai-design-agent-plan.md).
+to the [Editable Design Agent plan](../plans/completed/ai-design-agent-plan.md).
 The baseline is the current dirty `codex/ai-conversation-improvements` worktree at
 HEAD `a1ed9040315a70be8a6fbf13c79b072536d6ac0d`; HEAD alone does not identify all
 source changes already present. Existing changes are preserved.
@@ -79,7 +79,7 @@ Relevant implementation paths are relative to `apps/asyra-design/`:
 
 ## Recommended follow-up
 
-The [plan](../plans/ai-design-agent-plan.md#follow-up---reduce-exploration-and-repeated-work---2026-11-03)
+The [plan](../plans/completed/ai-design-agent-plan.md#follow-up---reduce-exploration-and-repeated-work---2026-11-03)
 owns the execution order. Its objective is to reduce exploration and repeated
 work while satisfying the user's request. This audit does not prescribe a drawing
 sequence, increased detail or a target number of Knowledge calls.

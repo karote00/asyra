@@ -1192,6 +1192,7 @@ describe('request conversation continuity', () => {
   const question = (text: string) =>
     executed(
       {
+        action: 'request_clarification',
         status: 'no-change',
         clarification: { kind: 'question', question: text }
       },
@@ -1594,6 +1595,7 @@ describe('settled conversation context delivery', () => {
         .mockResolvedValueOnce(
           executed(
             {
+              action: 'request_clarification',
               status: 'no-change',
               clarification: { kind: 'question', question: 'Which tone?' }
             },
@@ -1701,3 +1703,187 @@ it.each([
     })
   }
 )
+
+describe('cross-branch settlement and continuation regressions', () => {
+  const clarification = () => ({
+    actionId: 'question',
+    actionName: 'request_clarification',
+    result: {
+      action: 'request_clarification',
+      status: 'no-change',
+      clarification: { kind: 'question', question: 'Which color?' }
+    }
+  })
+
+  it.each(['no-change', 'complete'])(
+    'continues a terminal question after a %s receipt',
+    async (status) => {
+      const feature = createFeature(
+        vi.fn().mockResolvedValue({
+          status: 'executed',
+          actionResults: [
+            {
+              actionId: 'prior',
+              actionName: 'read_design_context',
+              result: { status }
+            },
+            clarification()
+          ]
+        })
+      )
+      const controller = createAiConversationController({
+        feature,
+        getElementType: vi.fn()
+      })
+      const first = await controller.submit('Refine this card.')
+
+      expect(summarizeAiTurn(first).message).toBe('Which color?')
+      await controller.submit('Blue.')
+      expect(
+        vi.mocked(feature.execute).mock.calls[1][0].metadata
+      ).toMatchObject({
+        conversationContext: {
+          turns: [{ question: { message: 'Which color?', choices: [] } }]
+        }
+      })
+      expect(controller.getSnapshot().settledTurns[1].replyToTurnId).toBe(
+        first.turnId
+      )
+    }
+  )
+
+  it.each(['failed', 'cancelled', 'ambiguous', 'nonterminal'])(
+    'does not admit a %s question as an answer target',
+    async (kind) => {
+      const question = clarification()
+      let actionResults = [question]
+
+      if (kind === 'ambiguous') {
+        actionResults = [question, { ...question, actionId: 'other' }]
+      }
+
+      const result = {
+        status: kind === 'failed' || kind === 'cancelled' ? kind : 'executed',
+        actionResults:
+          kind === 'nonterminal'
+            ? [
+                ...actionResults,
+                { actionName: 'read_design_context', result: {} }
+              ]
+            : actionResults
+      }
+      const feature = createFeature(async () => result)
+      const controller = createAiConversationController({
+        feature,
+        getElementType: vi.fn()
+      })
+      const first = await controller.submit('Refine this card.')
+
+      await expect(
+        controller.submit({ intent: 'Blue.', replyToTurnId: first.turnId })
+      ).rejects.toMatchObject({ code: 'AI_CONVERSATION_INVALID_REPLY' })
+    }
+  )
+
+  it('keeps retry image provenance on the original message and provider indexes', async () => {
+    const image = {
+      dataUrl: 'data:image/png;base64,AAAA',
+      mediaType: 'image/png' as const,
+      name: 'reference.png',
+      size: 3
+    }
+    const feature = createFeature(async () => ({
+      status: 'failed',
+      stage: 'provider',
+      code: 'AI_PROVIDER_TIMEOUT'
+    }))
+    const controller = createAiConversationController({
+      feature,
+      getElementType: vi.fn()
+    })
+    const failed = await controller.submit({
+      intent: 'Draw this.',
+      attachments: [image]
+    })
+    const retry = await controller.retry(failed.turnId)
+
+    expect(retry.attachments).toEqual([])
+    expect(retry.requestAttachments).toEqual([image])
+    expect(vi.mocked(feature.execute).mock.calls[1][0].metadata).toMatchObject({
+      imageAttachments: [image],
+      conversationContext: {
+        attachmentIndexes: [],
+        turns: [{ attachmentIndexes: [0] }]
+      }
+    })
+  })
+
+  it.each(['local-only', 'unavailable'])(
+    'preserves authored advice independently of %s storage',
+    async (status) => {
+      const feature = createFeature(async () =>
+        executed(
+          {
+            action: 'report_outcome',
+            status: status === 'unavailable' ? 'partial' : 'no-change',
+            outcome: 'completed',
+            message: 'Use a warmer background.',
+            persistence: {
+              status,
+              ...(status === 'unavailable' ? { message: 'Offline' } : {})
+            }
+          },
+          'report_outcome'
+        )
+      )
+      const controller = createAiConversationController({
+        feature,
+        getElementType: vi.fn()
+      })
+      const first = await controller.submit('Suggest a color.')
+
+      expect(summarizeAiTurn(first)).toMatchObject({
+        message: 'Use a warmer background.',
+        storageNotice: expect.any(String)
+      })
+      await controller.submit('Explain the suggestion.')
+      expect(
+        vi.mocked(feature.execute).mock.calls[1][0].metadata
+      ).toMatchObject({
+        conversationContext: {
+          turns: [{ message: 'Use a warmer background.' }]
+        }
+      })
+    }
+  )
+
+  it('does not display a late successful reply after explicit Stop', async () => {
+    const pending = createDeferred<unknown>()
+    const controller = createAiConversationController({
+      feature: createFeature(() => pending.promise),
+      getElementType: vi.fn()
+    })
+    const work = controller.submit('Draw a card.')
+
+    controller.cancel('user-cancelled')
+    pending.resolve({
+      ...executed(
+        {
+          action: 'report_outcome',
+          status: 'no-change',
+          outcome: 'completed',
+          message: 'All done.'
+        },
+        'report_outcome'
+      ),
+      transaction: { status: 'committed' }
+    })
+    const stopped = await work
+
+    expect(stopped.outcome).toBe('cancelled')
+    expect(summarizeAiTurn(stopped).message).toBe(
+      'The request was stopped. Changes already applied have been kept.'
+    )
+    expect(canRetryAiTurn(stopped)).toBe(false)
+  })
+})

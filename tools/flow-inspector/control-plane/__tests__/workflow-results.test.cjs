@@ -1411,9 +1411,14 @@ test('workflow waits on reusable producers and always collects after failed test
     .split('      - name: Run E2E Tests\n')[1]
     .split('      - name: ')[0]
 
+  assert.match(step, /E2E_SUITE: functional/)
   assert.match(
     step,
-    /RUN_BALANCED_AI_CORRECTNESS: \$\{\{ steps\.balanced_ai_scope\.outputs\.run_balanced_ai_correctness \}\}/
+    /FLOW_CI_REPORT: \$\{\{ github.workspace \}\}\/tmp\/flow-ci\/design\.json/
+  )
+  assert.doesNotMatch(
+    e2e + runner,
+    /RUN_BALANCED_AI_CORRECTNESS|balanced_ai_scope/
   )
   assert.match(
     main,

@@ -259,7 +259,7 @@ available I/O on forced termination; do not retry or invent unavailable output.
 The old saved-reply native dispatcher and its package gate have been removed.
 Saved raw-text and image fixtures remain immutable inputs, not executable acceptance
 routes. Production-path verification is being rebuilt under the
-[active conversation plan](../../../../docs/ai/apps/asyra-design/plans/agent-context-and-report-continuity-plan.md#spec-derived-conversation-verification).
+[active conversation plan](../../../../docs/ai/apps/asyra-design/plans/completed/agent-context-and-report-continuity-plan.md#spec-derived-conversation-verification).
 The replacement must observe App-produced replies and actual successor requests;
 preconstructed replies cannot certify App handoff. Partial focused results do not
 establish complete feature acceptance. No live inference or 101 is required.

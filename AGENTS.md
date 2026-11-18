@@ -35,6 +35,10 @@ These rules apply to every task without requiring additional document reads:
   validated step/stage boundaries. Never push unless the user explicitly
   requests the remote operation. Follow
   `docs/ai/workflows/git-commit-push-policy.md`.
+- Dependency security audits retain indirect-only advisories without blocking
+  delivery. Direct-dependency findings and scanner failures remain blocking.
+  Use the shared policy and command in `docs/ai/framework/SECURITY.md`; do not
+  hide advisories or require per-advisory exceptions for indirect dependencies.
 - Create new linked worktrees under the main repository's `.worktrees/`
   directory, never inside `.git/`. Follow the worktree location and collision
   rules in `docs/ai/workflows/git-commit-push-policy.md`.

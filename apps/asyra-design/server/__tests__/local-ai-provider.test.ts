@@ -2356,6 +2356,7 @@ describe('local subscription AI backend', () => {
                 actionId: 'question',
                 actionName: 'request_clarification',
                 result: {
+                  action: AiActionNames.REQUEST_CLARIFICATION,
                   status: 'no-change',
                   clarification: {
                     kind: 'question',

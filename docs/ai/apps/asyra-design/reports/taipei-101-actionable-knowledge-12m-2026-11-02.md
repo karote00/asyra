@@ -22,7 +22,7 @@ recorded execution, model judgments and independent screenshot inspection.
 ## Implementation and verification before the run
 
 Source commit: `77e54d91c22e027b07fefca634e720e50810eae1`.
-Associated plan: [Optional design guidance](../plans/ai-design-agent-plan.md#optional-design-guidance---2026-11-02).
+Associated plan: [Optional design guidance](../plans/completed/ai-design-agent-plan.md#optional-design-guidance---2026-11-02).
 Implementation/review: [Knowledge ownership follow-up](ai-prompt-ownership-review-2026-11-02.md#follow-up-implementation-and-bounded-review).
 
 The changes improve discovery utility and topic descriptions, retain concrete

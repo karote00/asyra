@@ -247,7 +247,8 @@ measurements precede image review, so concrete overflow can be corrected without
 repeated screenshots. Review uses actual canvas captures, with bounded correction
 cycles and explicit remaining limitations. Execution success alone is not visual
 approval. Ordinary later failures retain completed changes; one request remains
-one Undo. Explicit cancellation follows the App's rollback policy.
+one Undo. Explicit cancellation stops future writes and retains acknowledged
+finite members; a failed member rolls back only its own writes.
 
 Codex may apply your personal global `AGENTS.md` or `AGENTS.override.md` from its
 effective home directory. Project instructions remain excluded. Personal

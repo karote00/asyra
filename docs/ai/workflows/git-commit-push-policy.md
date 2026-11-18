@@ -94,6 +94,14 @@ Before every commit:
 - When push is not authorized, finish with local commits only and state clearly
   that nothing was pushed.
 
+## Dependency Audit Outcomes
+
+Apply the [shared dependency audit policy](../framework/SECURITY.md#dependency-audit-and-delivery-policy)
+through `yarn security:audit` before delivery. Recorded transitive-only advisories
+are a passing audit with findings, not a failed-check exception. Direct-dependency
+findings and scanner/evidence failures remain blocking. Do not demand a separate
+owner waiver for each indirect advisory or hide it from the retained report.
+
 ## Source Synchronization
 
 Fetch the intended PR target and source branches before pushing. If the target

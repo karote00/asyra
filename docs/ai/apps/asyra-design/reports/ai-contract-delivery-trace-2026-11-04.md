@@ -62,7 +62,7 @@ are not token counts, and smaller inputs alone do not prove lower model latency.
 
 ## Authorized implementation
 
-See the bounded task in the [parent plan](../plans/ai-design-agent-plan.md#contract-delivery-and-evidence-closure---2026-11-04).
+See the bounded task in the [parent plan](../plans/completed/ai-design-agent-plan.md#contract-delivery-and-evidence-closure---2026-11-04).
 Preserve successful discovery, local repairs, current-image validation, optional
 Knowledge, no-replay, the fixed prompt and the original-session untimed report.
 The new acceptance boundary is source-to-delivery-to-consumer correctness plus

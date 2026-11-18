@@ -75,3 +75,28 @@ Collaboration instances remain with their declared owners. Disposal prevents
 new AI work, aborts active request signals, waits for active runtime settlement,
 and removes request-local listeners, timers, retry state, and detached
 intermediate values.
+
+## Dependency audit and delivery policy
+
+`yarn security:audit` checks all Yarn workspaces and both production and
+development dependencies at the high/critical threshold. Yarn owns dependency
+resolution and scope: the recursive scan includes indirect dependencies; the
+non-recursive `--all` scan includes direct workspace dependencies.
+
+- Retain every recursive advisory, including package, affected/installed versions,
+  advisory URL and dependency information, in the command log and per-run evidence.
+- A finding only in indirect dependencies is informational for delivery. It does
+  not require an App workaround, a forced transitive override or waiting for a fix.
+- A finding in the direct scan blocks delivery, including a package that also
+  appears indirectly. Repair the directly selected dependency, or wait for an
+  appropriate upstream version before upgrading with normal authorization.
+- Registry failures, process failures, malformed/truncated reports and evidence
+  write failures block validation; they are not indirect-dependency exceptions.
+- Do not suppress advisories or exclude packages to implement this distinction.
+  Keep both scans and their raw outcomes. An informational advisory remains an
+  unresolved upstream issue, not a statement that the package is safe or fixed.
+
+The shared entry is `scripts/security-audit.mjs`; local validation, CI and
+existing delivery consumers use that same entry. Each invocation retains raw
+NDJSON, stderr and a summary under `tmp/security-audit/`. The earlier
+advisory-specific ignore list is superseded by this ownership policy.

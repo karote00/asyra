@@ -17,7 +17,7 @@ is not a completed, accepted benchmark.
 The recorder exited 0. Document, durable checkpoint and reloaded document are
 exactly equal. No automatic rerun, coaching, extra model assessment, product fix,
 publication or push was performed. This report is associated with the
-[decision and execution responsibilities follow-up](../plans/ai-design-agent-plan.md#follow-up---decision-and-execution-responsibilities---2026-11-03).
+[decision and execution responsibilities follow-up](../plans/completed/ai-design-agent-plan.md#follow-up---decision-and-execution-responsibilities---2026-11-03).
 
 ## Identity and conditions
 

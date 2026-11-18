@@ -12,7 +12,7 @@ The task ended because the benchmark cancelled at its soft deadline. The model
 had recovered a stale-evidence binding and had not recorded final acceptance.
 This is an incomplete benchmark, not an autonomous premature-stop regression.
 
-Association: [decision and execution responsibilities follow-up](../plans/ai-design-agent-plan.md#follow-up---decision-and-execution-responsibilities---2026-11-03).
+Association: [decision and execution responsibilities follow-up](../plans/completed/ai-design-agent-plan.md#follow-up---decision-and-execution-responsibilities---2026-11-03).
 The [original run report](taipei-101-decision-delegation-15m-2026-11-03.md)
 retains identity, all call timings, source fingerprint and runtime measurements.
 This review covers that single run, its captured payloads and images, and direct

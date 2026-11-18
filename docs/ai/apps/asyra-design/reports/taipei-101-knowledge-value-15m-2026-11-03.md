@@ -49,7 +49,7 @@ attachments, extra instructions, model assessment or rerun. Only this invocation
 time ceiling changed. Source stayed fixed during execution. Post-stop evidence
 collection is separate from AI work time.
 
-Association: [Optional design guidance](../plans/ai-design-agent-plan.md#optional-design-guidance---2026-11-02),
+Association: [Optional design guidance](../plans/completed/ai-design-agent-plan.md#optional-design-guidance---2026-11-02),
 value-before-discovery follow-up. The preceding source change was verified with
 255 passing prompt/provider tests, one existing skip, typecheck, naming and
 Inspector candidate `4130308f-554b-4fa1-a079-d25859c238b2`. Those checks establish

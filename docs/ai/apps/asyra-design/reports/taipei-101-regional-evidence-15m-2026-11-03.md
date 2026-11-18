@@ -20,7 +20,7 @@ geometry, references, checking and repair choices differ between runs. The
 runtime fix has a separate deterministic before/after regression proof; the new
 Knowledge advice was not retrieved during this live run.
 
-Association: [regional evidence and occlusion diagnosis](../plans/ai-design-agent-plan.md#follow-up---regional-evidence-and-occlusion-diagnosis---2026-11-03).
+Association: [regional evidence and occlusion diagnosis](../plans/completed/ai-design-agent-plan.md#follow-up---regional-evidence-and-occlusion-diagnosis---2026-11-03).
 Background: [preceding evidence review](taipei-101-decision-delegation-analysis-2026-11-03.md).
 No additional model assessment, second live run, product changes during the run,
 full local suite, publication or remote operation was performed.

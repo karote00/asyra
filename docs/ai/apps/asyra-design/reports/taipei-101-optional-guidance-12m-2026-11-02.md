@@ -59,7 +59,7 @@ The exact [fixed user prompt](../../../../../apps/asyra-design/test-data/ai-draw
 matched the recorded prompt and actual submission, removing only the fixture's
 final newline. This was a fresh document and conversation with no user attachments,
 prepared design, coaching or supplied clarification. Source stayed fixed during
-execution. Association: [Optional design guidance](../plans/ai-design-agent-plan.md#optional-design-guidance---2026-11-02).
+execution. Association: [Optional design guidance](../plans/completed/ai-design-agent-plan.md#optional-design-guidance---2026-11-02).
 
 ## Timeline
 

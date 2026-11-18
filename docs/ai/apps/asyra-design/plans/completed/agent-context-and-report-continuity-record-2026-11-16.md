@@ -29,7 +29,7 @@ completed/superseded work from the active task list, carry unresolved parent
 acceptance forward, update links and append the decision. No release, version,
 Changeset, live model, 101, commit or push is included.
 
-Current work: [active plan](../agent-context-and-report-continuity-plan.md).
+Current work: [active plan](agent-context-and-report-continuity-plan.md).
 The new four-finding task and its in-progress changes are not closed here.
 
 ## Preserved correction and execution records
@@ -6652,7 +6652,7 @@ The previous original session remains retained and idle.
 ## Previous target status
 
 November 8, 2026 - implementation is authorized in the existing worktree,
-under [Editable Design Agent](../ai-design-agent-plan.md). The user approved removing
+under [Editable Design Agent](ai-design-agent-plan.md). The user approved removing
 mandatory data-evidence review and completion gates, retaining tool input/output
 validation and the primary AI's final verification, and examining other tools
 for the same unnecessary procedural coupling. Review and iterate each owner slice

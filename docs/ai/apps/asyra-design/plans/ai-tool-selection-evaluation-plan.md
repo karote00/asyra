@@ -6,7 +6,7 @@ Pixi coordinate hit-test prerequisite, now repaired. Browser fixture readiness
 now observes Core's actual frame completion; all 151 registered basic API cases
 and their direct interaction regressions pass.
 Matched live model comparison remains unmeasured. No remote operations.
-Parent: [tool contract refactor](ai-tool-contract-refactor-plan.md).
+Parent: [tool contract refactor](completed/ai-tool-contract-refactor-plan.md).
 
 Current-contract note - 2026-10-17: this is historical evaluation evidence, not
 an active execution plan. Current review tools, explicit image dependencies and

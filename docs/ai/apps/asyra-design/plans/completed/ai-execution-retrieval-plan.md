@@ -1,5 +1,21 @@
 # AI precise retrieval and work reuse
 
+## November 18 closeout
+
+Implementation record archived on 2026-11-18. Current behavior is owned by the
+App specifications and executable owner contracts, not the historical instructions
+below. Earlier failures, withdrawn conclusions, timing aspirations and unverified
+model choices remain historical evidence; archival does not turn them into passes.
+The user accepted the latest complete drawing and normal recoverable exploration.
+Final current-source verification and delivery status are recorded in the
+[conversation closeout report](../../reports/conversation-closeout-2026-11-18.md).
+The owner subsequently approved recording transitive-only advisories without
+blocking delivery; the closeout report records policy validation and Git delivery.
+No new drawing, release, compatibility path or completion gate is introduced.
+
+## Historical task record
+
+
 Status: completed locally; final live evidence recorded in the parent results.
 Parent: [improvement plan](ai-execution-improvement-plan.md).
 
@@ -170,7 +186,7 @@ A fresh full acceptance remains required.
 ## Final acceptance
 
 Completed locally. The corrected canonical property descriptors passed the native
-regression and successful final drawing. See [parent results](ai-execution-improvement-results.md).
+regression and successful final drawing. See [parent results](../ai-execution-improvement-results.md).
 Remaining recovered argument failures and large responses are recorded as
 observations, not concealed or treated as proven redundant queries. No push.
 

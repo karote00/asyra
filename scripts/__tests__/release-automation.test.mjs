@@ -145,7 +145,7 @@ test('Framework release validation can preserve its successful isolated build fo
   ])
 })
 
-test('public release gates high-severity dependency advisories', () => {
+test('public release uses the shared direct-dependency security gate', () => {
   const manifest = JSON.parse(
     readFileSync(path.join(repositoryRoot, 'package.json'), 'utf8')
   )
@@ -156,7 +156,7 @@ test('public release gates high-severity dependency advisories', () => {
 
   assert.equal(
     manifest.scripts['security:audit'],
-    'yarn npm audit --all --recursive --severity high'
+    'node scripts/security-audit.mjs'
   )
   assert.match(
     workflow,

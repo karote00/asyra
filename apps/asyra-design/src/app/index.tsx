@@ -1,3 +1,4 @@
+import type { ConversationDrafts } from '../ai/conversation-drafts'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import ToolBar from '../toolbar'
 import Contents from '../contents'
@@ -29,6 +30,7 @@ import type { AiHistoryProjection } from '../common-apis/history'
 
 interface AppProps {
   ai: {
+    readonly drafts: ConversationDrafts
     readonly confirmation: AiConfirmationBroker
     readonly conversation: AiConversationController
     readonly history: AiHistoryProjection
@@ -212,6 +214,7 @@ const App: React.FC<AppProps> = ({
       />
       {aiOpen ? (
         <AiConversationPanel
+          drafts={ai.drafts}
           confirmation={ai.confirmation}
           conversation={ai.conversation}
           onClose={() => closeAiPanel({})}

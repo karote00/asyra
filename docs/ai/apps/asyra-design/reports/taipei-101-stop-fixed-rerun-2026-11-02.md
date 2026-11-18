@@ -47,7 +47,7 @@ imported two reference images through ordinary App tools; these were not test
 attachments or prepared reference hints.
 
 Task association: the inspection delivery correction follow-up in the
-[Editable Design Agent plan](../plans/ai-design-agent-plan.md). This run only tests
+[Editable Design Agent plan](../plans/completed/ai-design-agent-plan.md). This run only tests
 and reports current behavior; it does not change or accept an Inspector contract.
 
 ## Timing and progression

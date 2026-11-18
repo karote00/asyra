@@ -93,7 +93,7 @@ No commit, push or plan archive move was performed in this acceptance task.
 
 ## Four-finding handoff review - November 16, 2026
 
-Current task: [history admission and independent contract verification](../plans/agent-context-and-report-continuity-plan.md#history-admission-and-independent-contract-verification).
+Current task: [history admission and independent contract verification](../plans/completed/agent-context-and-report-continuity-plan.md#history-admission-and-independent-contract-verification).
 This review supersedes completion implications from earlier sections for the
 current source. Those sections remain historical evidence, including failures and
 withdrawn conclusions. This is a source review plus focused execution, not current
@@ -811,7 +811,7 @@ source and its independent review are recorded above.
 
 Authority is the [verification contract](../specs/ai-conversation-verification.md),
 not this report or the selected test totals. The implementation follows the
-[bounded plan](../plans/agent-context-and-report-continuity-plan.md#uniform-verification-contract).
+[bounded plan](../plans/completed/agent-context-and-report-continuity-plan.md#uniform-verification-contract).
 The complete run is recorded below. This section records the independent source
 and oracle review separately from execution and formal manual acceptance.
 

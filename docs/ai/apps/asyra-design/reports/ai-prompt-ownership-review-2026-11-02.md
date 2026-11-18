@@ -4,7 +4,7 @@
 
 Review baseline: `d0075d16e0c01776211a8bd773c222a20e3d1422`, existing
 `codex/ai-conversation-improvements` worktree. Associated product plan:
-[Editable Design Agent](../plans/ai-design-agent-plan.md). This is a user-requested
+[Editable Design Agent](../plans/completed/ai-design-agent-plan.md). This is a user-requested
 review follow-up, not reopening accepted conversation corrections or closing the
 parent plan.
 
@@ -190,7 +190,7 @@ quality after removal. At the review checkpoint, production behavior remained un
 ## Subsequent authorized implementation
 
 The user subsequently authorized implementation in this conversation. The
-[plan task](../plans/ai-design-agent-plan.md#optional-design-guidance---2026-11-02)
+[plan task](../plans/completed/ai-design-agent-plan.md#optional-design-guidance---2026-11-02)
 records the bounded change and validation. Global default-method and representative
 sequence mandates were removed; existing shared/App knowledge now explains the
 optional method, cost and applicability. Review and reference invocation details

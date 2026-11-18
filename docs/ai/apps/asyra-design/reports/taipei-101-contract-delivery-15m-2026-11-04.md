@@ -15,7 +15,7 @@ all recorded App and Inspector files were verified unchanged after the run. No c
 push, release, full local suite or additional live drawing was performed.
 The unrelated prior framing-recovery report remains untouched.
 
-Parent: [bounded task and per-owner reviews](../plans/ai-design-agent-plan.md#contract-delivery-and-evidence-closure---2026-11-04).
+Parent: [bounded task and per-owner reviews](../plans/completed/ai-design-agent-plan.md#contract-delivery-and-evidence-closure---2026-11-04).
 Baseline: [contract trace](ai-contract-delivery-trace-2026-11-04.md).
 
 ## Changes actually delivered

@@ -1,9 +1,25 @@
 # Plan: Staged Design Execution and Conversation Context
 
+## November 18 closeout
+
+Implementation record archived on 2026-11-18. Current behavior is owned by the
+App specifications and executable owner contracts, not the historical instructions
+below. Earlier failures, withdrawn conclusions, timing aspirations and unverified
+model choices remain historical evidence; archival does not turn them into passes.
+The user accepted the latest complete drawing and normal recoverable exploration.
+Final current-source verification and delivery status are recorded in the
+[conversation closeout report](../../reports/conversation-closeout-2026-11-18.md).
+The owner subsequently approved recording transitive-only advisories without
+blocking delivery; the closeout report records policy validation and Git delivery.
+No new drawing, release, compatibility path or completion gate is introduced.
+
+## Historical task record
+
+
 ## Next follow-up
 
 The November 8 approved
-[Predictable tools without mandatory review ceremonies](completed/agent-context-and-report-continuity-record-2026-11-16.md#predictable-tools-without-mandatory-review-ceremonies)
+[Predictable tools without mandatory review ceremonies](agent-context-and-report-continuity-record-2026-11-16.md#predictable-tools-without-mandatory-review-ceremonies)
 replaces the next-task direction: remove compulsory evidence/approval procedures
 and completion gates while preserving tool validation, AI final verification and
 stage continuity. The current task is documentation and review, not implementation.
@@ -28,7 +44,7 @@ Authorized November 7, 2026 after reviewing attempt 5
 (`taipei-101-fixed-1794042914204`). The five implementation slices and focused checks are complete. Five current-task
 live launches were retained; the last completed its full 15-minute drawing window
 and unlimited same-thread report, but artwork acceptance remains incomplete.
-See [implementation and live report](../reports/discovery-stage-continuity-2026-11-07.md)
+See [implementation and live report](../../reports/discovery-stage-continuity-2026-11-07.md)
 for every failure, correction, evidence limitation and remaining adoption gap.
 Previous follow-up results below remain historical evidence.
 
@@ -477,7 +493,7 @@ status; the drawing turn completed before deadline with accepted=true. Acceptanc
 is the drawing AI's judgment, not independent architectural fidelity; its own
 report questions its broad treatment of estimated dimensions. No more launches,
 full suite, commit or push are required by this bounded follow-up. The final
-[analysis and all five original reports](../reports/contract-delivery-review-2026-11-07.md)
+[analysis and all five original reports](../../reports/contract-delivery-review-2026-11-07.md)
 record every failure, correction, formal/live verification boundary and remaining
 model-choice or provider-lookup issue.
 
@@ -500,7 +516,7 @@ maps the App request to partial; it is not a drawing failure or quality acceptan
 The 91-case accepted source proof and focused regressions passed. Three baseline
 test discrepancies remain explicitly separate; no full-suite pass is claimed.
 The final investigation and every attempt are recorded in
-[Capability search investigation](../reports/capability-search-investigation-2026-11-07.md).
+[Capability search investigation](../../reports/capability-search-investigation-2026-11-07.md).
 Do not spend the remaining nine launches solely to exhaust the allowance.
 
 The first related slice addresses search misses and premature contract expansion
@@ -764,7 +780,7 @@ force Knowledge, add a synonym list or bypass native invocation admission. Relat
 target diagnostics and normal visual rework remain separately classified. Keep all
 existing source and the original AI report; no full local suite or release work.
 
-The [end-to-end investigation](../reports/capability-search-investigation-2026-11-07.md)
+The [end-to-end investigation](../../reports/capability-search-investigation-2026-11-07.md)
 now supersedes the initial shallow-metadata/first-sentence approach for the next
 implementation iteration. The complete provider catalog reproduces three failures:
 legal enum vocabulary is not searchable, ordinary request wording pushes grouping
@@ -920,7 +936,7 @@ round trip is required unless a new decision is genuinely needed.
 
 ## Planning baseline
 
-The [November 5/6 test and report](../reports/taipei-101-motif-variants-2026-11-06.md)
+The [November 5/6 test and report](../../reports/taipei-101-motif-variants-2026-11-06.md)
 records seven motif definitions, working overrides, zero cross-draft template
 exports/reuses, one rejected whole-receipt save and two single-operation
 execute_design calls. Nonplanar geometry recovered through two replacements.
@@ -1207,7 +1223,7 @@ Mechanism tests do not establish model adoption or a stable speed improvement.
 
 ### Live validation outcome
 
-The [staged execution report](../reports/taipei-101-staged-execution-2026-11-06.md)
+The [staged execution report](../../reports/taipei-101-staged-execution-2026-11-06.md)
 records run `taipei-101-fixed-1793900303093`: 899.716 seconds of drawing,
 602.310 seconds of reporting, no runner/evidence errors, unchanged report-phase
 document and equal reload. All 122 frozen source/test/document hashes remained
@@ -1288,7 +1304,7 @@ recovery confirmed canonical equality against the work snapshot, durable sequenc
 24m10s video decodes and its 400s/900s frames show the fitted complete building.
 The native catalog correction was validated after this run through focused tests;
 the live artifacts do not represent that later correction. See the
-[full follow-up report](../reports/taipei-101-continuation-contracts-2026-11-06.md)
+[full follow-up report](../../reports/taipei-101-continuation-contracts-2026-11-06.md)
 and linked original AI report. Broader model adoption and the cause of the browser
 close remain outside this bounded implementation's completion claim.
 

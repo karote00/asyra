@@ -2470,3 +2470,20 @@ it('retains canonical concurrent outcomes only after every principal settles', (
   expect(projection.result().current.message).toBe('New inspection')
   expect(settled.current.label).toBe('Partially completed operation (2)')
 })
+
+it.each([
+  {
+    status: 'failed',
+    stage: 'provider',
+    actionResults: [
+      { actionName: 'set_element_visibility', result: { status: 'complete' } }
+    ]
+  },
+  { status: 'executed', stage: 'provider' },
+  { status: 'failed', stage: ['provider'] }
+])(
+  'does not infer pre-write retry from a contradictory stage: %j',
+  (result) => {
+    expect(canRetryAiTurn({ ...turn('failed'), result })).toBe(false)
+  }
+)

@@ -410,6 +410,7 @@
           'apps/asyra-design/server/local-tool-invocation.ts',
           'apps/asyra-design/server/__tests__/local-tool-invocation.test.ts',
           'apps/asyra-design/server/__tests__/tool-contract-assertions.ts',
+          'apps/asyra-design/server/__tests__/contract-read-fixture.ts',
           'apps/asyra-design/server/__tests__/local-ai-provider.test.ts',
           'apps/asyra-design/server/local-operation-tools.ts',
           'apps/asyra-design/server/design-discovery-contract.ts',

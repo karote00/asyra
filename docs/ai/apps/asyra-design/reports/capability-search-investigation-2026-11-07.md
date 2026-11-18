@@ -11,7 +11,7 @@ entry-state findings; the implementation and final evidence sections describe th
 corrected state. Three independently reproduced baseline test discrepancies remain
 outside this bounded correction, and no full-suite result is claimed.
 The active scope is
-[Capability search and precise acquisition](../plans/staged-design-execution-plan.md#follow-up-capability-search-and-precise-acquisition).
+[Capability search and precise acquisition](../plans/completed/staged-design-execution-plan.md#follow-up-capability-search-and-precise-acquisition).
 
 The central defect is not missing tool names. Search treats instructions, schema
 fields, execution receipts and capability descriptions as interchangeable text,

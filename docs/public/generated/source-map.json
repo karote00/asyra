@@ -10,15 +10,15 @@
         },
         {
           "path": "packages/ai-agent-runtime/src/knowledge.ts",
-          "sha256": "db98b68ca36bf6bfa9e8db36c6d6e959afe541d2dc31882c4658b01027a3ccd7"
+          "sha256": "5e25ce3379772275d1139ad1b23b59b2c80ee3e5c8f4be6c27a1b888f2f8269f"
         },
         {
           "path": "apps/asyra-design/server/local-knowledge.ts",
-          "sha256": "4e84111b1f09a314f5de7beebe4b45f77e567649d2261c1e6655021f1dfea1a0"
+          "sha256": "f590d7b826cb3059a8b45055a6d6249c48aa64a9f40ac078ce3c7d0240a21cd0"
         },
         {
           "path": "apps/asyra-design/server/local-operation-tools.ts",
-          "sha256": "22c43122ad86a4cd2e93f16e5fea028cdac2dea911aa89da91d7a342d9981aa4"
+          "sha256": "9ce2b19a8a46bec0f6d51201fa29f06de0b40414351ff6e41432f3a9499864d3"
         }
       ]
     },
@@ -46,7 +46,7 @@
         },
         {
           "path": "create-app/asyra-design/template/README.md",
-          "sha256": "5563440186cec64f6e27f3ba552d09049e3bf45ce966d41c64f409bcec567ed7"
+          "sha256": "ebe0494354c340e1b0c13fb5a0859b4499e9775ce983303d52c00ad3fb4a7878"
         }
       ]
     },
@@ -74,7 +74,7 @@
         },
         {
           "path": "docs/ai/framework/packages/preset.md",
-          "sha256": "de6b4208a20b5ea32e3f363e3840ab9e24a66df2403c1855b47e5c10102b6572"
+          "sha256": "06fc4febe8a71d8c2baa9d83c44c6f9f58b770514530c13ad247df83a4625e8a"
         }
       ]
     },
@@ -104,7 +104,7 @@
         },
         {
           "path": "docs/ai/apps/asyra-design/specs/socket-authoritative-document-session.md",
-          "sha256": "d6360496df659ca50aec0f709d50bd60d76f3d59ac234adc46710895db69841e"
+          "sha256": "1c11168c789736452f181a01f4388b3f91fa0c22f7a46f99b000923629f0256b"
         }
       ]
     },
@@ -282,7 +282,7 @@
         },
         {
           "path": "docs/ai/apps/asyra-design/features/group-interactions.md",
-          "sha256": "779e46d5ed2323d64aff2777f6852b7d939333352bf9486c24327e0305d1dd4d"
+          "sha256": "8589b3928d4cd695cc03a0634944a293ec8a887a9edd88b5cdf5096e37ec8525"
         }
       ]
     },
@@ -320,7 +320,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/ai-agent-runtime.md",
-          "sha256": "e56cc86b78918c9b913d41748dd0aabf6e56196a8e787385f0cfbdf8913a8767"
+          "sha256": "71567ddc02254997631b4a7979ca0b33a4fdc1cf49559b8b49820485a874462d"
         },
         {
           "path": "docs/ai/framework/golden-paths/compose-ai-agent-runtime.md",
@@ -334,7 +334,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/ai-agent-runtime.md",
-          "sha256": "e56cc86b78918c9b913d41748dd0aabf6e56196a8e787385f0cfbdf8913a8767"
+          "sha256": "71567ddc02254997631b4a7979ca0b33a4fdc1cf49559b8b49820485a874462d"
         },
         {
           "path": "docs/ai/framework/packages/feature-system.md",
@@ -572,7 +572,7 @@
         },
         {
           "path": "docs/ai/framework/packages/preset.md",
-          "sha256": "de6b4208a20b5ea32e3f363e3840ab9e24a66df2403c1855b47e5c10102b6572"
+          "sha256": "06fc4febe8a71d8c2baa9d83c44c6f9f58b770514530c13ad247df83a4625e8a"
         },
         {
           "path": "docs/ai/framework/specs/preset-3d-foundation.md",
@@ -586,7 +586,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/ai-agent-runtime.md",
-          "sha256": "e56cc86b78918c9b913d41748dd0aabf6e56196a8e787385f0cfbdf8913a8767"
+          "sha256": "71567ddc02254997631b4a7979ca0b33a4fdc1cf49559b8b49820485a874462d"
         },
         {
           "path": "packages/ai-agent-runtime/package.json",
@@ -698,7 +698,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/preset.md",
-          "sha256": "de6b4208a20b5ea32e3f363e3840ab9e24a66df2403c1855b47e5c10102b6572"
+          "sha256": "06fc4febe8a71d8c2baa9d83c44c6f9f58b770514530c13ad247df83a4625e8a"
         },
         {
           "path": "packages/preset/package.json",
@@ -868,7 +868,7 @@
         },
         {
           "path": "package.json",
-          "sha256": "006b08ba28ec6e65c0d5715dc265980815cf71bb727ea4515c679799e4639bfe"
+          "sha256": "16015836f0c0d70c147a1297bdbbdcd1b6d6036b9dbbfde2bc937392fe196dd0"
         }
       ]
     },
@@ -882,11 +882,11 @@
         },
         {
           "path": "docs/ai/apps/asyra-design/ARCHITECTURE.md",
-          "sha256": "f95877aaf81c1f63aad72553cc6dab5c8dbe1f6aece01f557eb7b3c74b660fe7"
+          "sha256": "21818a703802b7daee079d0e58a4a4a3b2b03d49698fc4230faec364143c8b54"
         },
         {
           "path": "docs/ai/apps/asyra-design/modules/init-and-startup.md",
-          "sha256": "65f45376ceec69a346b050d27ccfb7f28189e5c860774a4961c96c9e7d5d6de2"
+          "sha256": "e4f68f9841dbddaedd1b1c298aee3a6357a82fffa9ed68acdb2774e8530bae2a"
         }
       ]
     },
@@ -918,15 +918,15 @@
       "sources": [
         {
           "path": "apps/asyra-design/server/local-operation-tools.ts",
-          "sha256": "22c43122ad86a4cd2e93f16e5fea028cdac2dea911aa89da91d7a342d9981aa4"
+          "sha256": "9ce2b19a8a46bec0f6d51201fa29f06de0b40414351ff6e41432f3a9499864d3"
         },
         {
           "path": "apps/asyra-design/server/local-design-workflow.ts",
-          "sha256": "4cf8d0370651193a05e9a986a6e523abf0a33e275a9d96fd44523ad7c174348f"
+          "sha256": "57fae9a136806e5b22bd23d723e65bd4c78920046b718bf51e178f150a51fe64"
         },
         {
           "path": "packages/ai-agent-runtime/src/recipe-schema.ts",
-          "sha256": "2e2be96a78fc087902717a70f7d6566bca521125d41dd1924c557be91de951f8"
+          "sha256": "4c5a2056501bbec6bddc6f50d099f99c9e0ca5ae723b8daa5b17bfdd907c3fcb"
         },
         {
           "path": "packages/preset/src/props/components/text-component.ts",

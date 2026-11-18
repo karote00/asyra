@@ -10,6 +10,7 @@ if (process.env.SITE_OUTPUT === 'export' && !process.env.NEXT_PUBLIC_SITE_URL) {
 }
 
 const nextConfig: NextConfig = {
+  devIndicators: false,
   distDir: process.env.SITE_OUTPUT === 'export' ? 'out' : 'dist',
   poweredByHeader: false,
   reactStrictMode: true,

@@ -1,8 +1,24 @@
 # Plan: Editable Design Agent
 
+## November 18 closeout
+
+Implementation record archived on 2026-11-18. Current behavior is owned by the
+App specifications and executable owner contracts, not the historical instructions
+below. Earlier failures, withdrawn conclusions, timing aspirations and unverified
+model choices remain historical evidence; archival does not turn them into passes.
+The user accepted the latest complete drawing and normal recoverable exploration.
+Final current-source verification and delivery status are recorded in the
+[conversation closeout report](../../reports/conversation-closeout-2026-11-18.md).
+The owner subsequently approved recording transitive-only advisories without
+blocking delivery; the closeout report records policy validation and Git delivery.
+No new drawing, release, compatibility path or completion gate is introduced.
+
+## Historical task record
+
+
 ## Status and authority
 
-Current task: [Predictable tools without mandatory review ceremonies](completed/agent-context-and-report-continuity-record-2026-11-16.md#predictable-tools-without-mandatory-review-ceremonies).
+Current task: [Predictable tools without mandatory review ceremonies](agent-context-and-report-continuity-record-2026-11-16.md#predictable-tools-without-mandatory-review-ceremonies).
 The approved direction removes compulsory evidence/approval procedures and their
 completion gates while preserving fixed tool contracts, staged context reuse and
 AI final verification. This task updates the plan only; implementation is pending.
@@ -87,7 +103,7 @@ checksums stayed unchanged, the report left the document unchanged, and durable
 sequence 451 matched reload. It used motif overrides but did not execute template
 export or cross-draft named reuse. Drawing remained partial at the deadline after
 a successful final deletion without subsequent AI visual acceptance. See the
-[implementation and live report](../reports/taipei-101-motif-variants-2026-11-06.md).
+[implementation and live report](../../reports/taipei-101-motif-variants-2026-11-06.md).
 This bounded slice is complete; broader discovery/adoption recommendations remain
 observations rather than new authorized implementation.
 
@@ -168,7 +184,7 @@ expanded key succeeds in one host call with status delivery. Recovery reuses
 the saved base root from a new host after a failed region edit. Thirteen
 focused integration cases and twelve Inspector/recorder cases passed.
 
-The <a href="../reports/taipei-101-bound-order-2026-11-05.md" target="_blank" rel="noopener noreferrer">live observation and original report</a>
+The <a href="../../reports/taipei-101-bound-order-2026-11-05.md" target="_blank" rel="noopener noreferrer">live observation and original report</a>
 record a completed drawing and report, with partial browser evidence.
 
 ## Sequence result delivery and reuse
@@ -209,7 +225,7 @@ and document isolation, field-only retrieval and nonportable artifact checks
 passed. Focused gates passed 157 App server, 65 browser, three selected provider,
 47 Runtime and 12 Inspector/recorder cases.
 
-The [benchmark report and independent measurements](../reports/taipei-101-app-result-context-2026-11-05.md)
+The [benchmark report and independent measurements](../../reports/taipei-101-app-result-context-2026-11-05.md)
 record 239,237 App text bytes, 6,752 execute_design text bytes, two successful
 84-byte status acknowledgements, and zero confirmed transfer-only calls.
 Named persistence was exercised in cross-turn regressions and not chosen in
@@ -251,7 +267,7 @@ large-sequence, provider inventory and receipt gates passed. Before the live
 run, 546 App cases, three selected provider cases, 128 Runtime cases and 12
 Inspector/recorder cases passed. Only focused suites were used.
 
-The [single host live run and original AI report](../reports/taipei-101-single-host-15m-2026-11-05.md)
+The [single host live run and original AI report](../../reports/taipei-101-single-host-15m-2026-11-05.md)
 finished drawing in 687.220 seconds and reporting in 295.200 seconds. Three
 unified calls grouped 2, 2 and 7 operations. The same-thread report explains
 why the four construction requests were separate. All 10 review units passed
@@ -259,7 +275,7 @@ self-assessment. The document matched after reporting and reload.
 
 ## Host execution of decided actions
 
-The previous [101 trace](../reports/taipei-101-created-targets-15m-2026-11-04.md)
+The previous [101 trace](../../reports/taipei-101-created-targets-15m-2026-11-04.md)
 returned a new trim root to the agent before it requested ordering, and its
 query "edit delete elements by artifact keys" missed. Work on the current
 reviewed feature tree.
@@ -291,7 +307,7 @@ optional retained sets. Cross-turn membership would require a document-scoped
 reference available to the conversation and validation against current objects.
 Focused Runtime (110), App (334), Inspector and recorder (12) cases passed.
 
-The [fresh live run and full original AI report](../reports/taipei-101-decided-actions-15m-2026-11-04.md)
+The [fresh live run and full original AI report](../../reports/taipei-101-decided-actions-15m-2026-11-04.md)
 record four multi-operation batch calls and no inline recipe. Work stopped at
 the 15-minute deadline. The untimed report completed on the same native thread.
 The browser closed during evidence collection; the work snapshot matched durable
@@ -300,7 +316,7 @@ storage and the retained recording played through the cutoff.
 ## Created targets and routed discovery
 
 Base: current reviewed ai-conversation-improvements working tree on 736bd1431.
-Owner: current task owner. Evidence: [last 101 run](../reports/taipei-101-purpose-inline-15m-2026-11-04.md),
+Owner: current task owner. Evidence: [last 101 run](../../reports/taipei-101-purpose-inline-15m-2026-11-04.md),
 native calls 711, 1012, 1666 and 1704. Initial admission rejected the real
 window-trim workflow input as opaque. Its nested acknowledgement ID was not
 guaranteed by the successful registered result. The composite lookup missed
@@ -339,13 +355,13 @@ Live outcome: the original prompt finished in 750.343 seconds. The same thread
 completed its untimed report. The live agent passed the returned trim ID to
 ordering in a separate call. A paraphrased deletion query with an additional
 word missed, while the recovered prefix deletion succeeded.
-See the [measured calls, evidence and original report](../reports/taipei-101-created-targets-15m-2026-11-04.md).
+See the [measured calls, evidence and original report](../../reports/taipei-101-created-targets-15m-2026-11-04.md).
 
 ## Purpose discovery and single-call execution
 
 Parent: Editable Design Agent. Base: the reviewed working tree on 736bd1431,
 including the completed exact-usage changes. Owner: current task owner.
-Evidence: [observed host dispatch and round trips](../reports/taipei-101-exact-usage-15m-2026-11-04.md).
+Evidence: [observed host dispatch and round trips](../../reports/taipei-101-exact-usage-15m-2026-11-04.md).
 
 1. Compose - use owner capability descriptions for purpose discovery and
    missing-name recovery across admitted actions and the native catalog. Exact
@@ -382,7 +398,7 @@ The fixed drawing input was not edited. Only the post-run report asks for
 lookup counts, inner host work and handoff causes.
 
 The fixed run completed before the deadline. The original native thread delivered
-the untimed report. See the [live report, host round trips and original AI assessment](../reports/taipei-101-purpose-inline-15m-2026-11-04.md).
+the untimed report. See the [live report, host round trips and original AI assessment](../../reports/taipei-101-purpose-inline-15m-2026-11-04.md).
 The live AI used the existing workflows and artifact-based review and did not
 use inline recipes. A mixed-intent purpose lookup missed. Durability, report
 integrity and intermediate video were verified. This bounded task is complete.
@@ -391,7 +407,7 @@ integrity and intermediate video were verified. This bounded task is complete.
 
 Parent: Editable Design Agent. Base: the reviewed working tree on 736bd1431,
 including the preceding contract delivery changes. Owner: current task owner.
-Evidence: [15-minute run and original report](../reports/taipei-101-contract-delivery-15m-2026-11-04.md).
+Evidence: [15-minute run and original report](../../reports/taipei-101-contract-delivery-15m-2026-11-04.md).
 
 The real short-name fill/retain/batch usage lookup advertised 86,909 bytes. A
 single read_design_context lookup advertised 56,463. Each delivered only its
@@ -445,7 +461,7 @@ the drawing deadline. The original thread delivered the complete untimed report.
 The runner exited 1 after the browser page closed during evidence collection.
 Independent recovery confirmed cutoff/checkpoint equality, fresh App reopening
 and playable intermediate video. The original final App receipt is unavailable.
-See the [live report and original AI assessment](../reports/taipei-101-exact-usage-15m-2026-11-04.md).
+See the [live report and original AI assessment](../../reports/taipei-101-exact-usage-15m-2026-11-04.md).
 This bounded task is ready for review.
 
 ## Contract delivery and evidence closure - 2026-11-04
@@ -454,7 +470,7 @@ Status: implementation, per-owner reviews, focused gates and one live test compl
 Parent: Editable Design Agent; closeout owner: current task owner, with Asa's review.
 Base: `736bd14316756765abc8aa189feb6bf38fb3db4f` on
 `codex/ai-conversation-improvements`. Preserve the existing untracked live report.
-Evidence and historical classification: [contract delivery trace](../reports/ai-contract-delivery-trace-2026-11-04.md).
+Evidence and historical classification: [contract delivery trace](../../reports/ai-contract-delivery-trace-2026-11-04.md).
 
 Objective: correct inconsistent contract projections, reduce redundant acquisition,
 separate canonical data evidence from visual evidence, and retain enough safe
@@ -602,7 +618,7 @@ The drawing remained partially accepted (three of six checks unresolved); this i
 not a completed-drawing benchmark. Wide usage acquisition and provider latency
 attribution remain explicitly limited, not claimed solved.
 
-See the [implementation and live report](../reports/taipei-101-contract-delivery-15m-2026-11-04.md)
+See the [implementation and live report](../../reports/taipei-101-contract-delivery-15m-2026-11-04.md)
 for gates, call/gap tables, original AI report, recording and retained evidence.
 This bounded task is complete; the parent product plan remains active. No commit
 or push was performed.
@@ -635,8 +651,8 @@ before including them in the PR. Never reset unrelated changes.
 
 Completed and accepted by Asa on 2026-11-02. The four corrections and one recorded
 fixed-prompt full-building test are closed; remaining quality limitations are
-accepted as non-blocking. See the [completed task record](completed/ai-conversation-improvements-plan.md)
-and [test report](completed/ai-conversation-improvements-2026-11-02-report.md).
+accepted as non-blocking. See the [completed task record](ai-conversation-improvements-plan.md)
+and [test report](ai-conversation-improvements-2026-11-02-report.md).
 PR creation is authorized; the product parent remains active. No release or merge.
 
 ## Inspection image delivery correction - 2026-11-02
@@ -686,13 +702,13 @@ stop helper with the existing real-browser streamed drawing cancellation/Undo
 case. The original selector fails there; the corrected selector passes and keeps
 applied content plus one Undo entry. Prompt, deadline, production cancellation
 policy and model continuation remain unchanged. No second live run is implied.
-See the [repair and live report](../reports/taipei-101-snapshot-delivery-fix-2026-11-02.md).
+See the [repair and live report](../../reports/taipei-101-snapshot-delivery-fix-2026-11-02.md).
 
 ## Optional design guidance - 2026-11-02
 
 Implemented and locally validated; live drawing performance is unmeasured.
 User-approved implementation of the
-[prompt ownership review](../reports/ai-prompt-ownership-review-2026-11-02.md),
+[prompt ownership review](../../reports/ai-prompt-ownership-review-2026-11-02.md),
 based on `d0075d16e0c01776211a8bd773c222a20e3d1422` in the existing worktree.
 
 Step Execution Card - compose: original intent, tool contracts and optional
@@ -750,7 +766,7 @@ remaining contradiction in changed method guidance or loss in tested handoffs.
 ### Follow-up - actionable knowledge and selective delivery
 
 User-authorized implementation at source `170185b57665dd23bb7873e33989ec0772f6bdfb`.
-The [follow-up review](../reports/ai-prompt-ownership-review-2026-11-02.md#follow-up-review---reduce-task-time-derivation)
+The [follow-up review](../../reports/ai-prompt-ownership-review-2026-11-02.md#follow-up-review---reduce-task-time-derivation)
 owns findings. Step Execution Card - compose: current intent and registered
 knowledge metadata enter optional discovery; selected advice and necessary
 constraints reach the provider through existing delivery. Improve problem-oriented
@@ -785,7 +801,7 @@ typecheck/build pass, lint has no errors. Current-source Inspector candidate
 documents/two pages to five documents/one page, preserving material meaning and
 recovery. See the review report for exact metrics, iterations and limitations.
 The single requested live test is recorded in the
-[twelve-minute report](../reports/taipei-101-actionable-knowledge-12m-2026-11-02.md).
+[twelve-minute report](../../reports/taipei-101-actionable-knowledge-12m-2026-11-02.md).
 Recorder exit 0; exact source/checkpoint/reload equality; 705.480-second deadline
 cancellation. Knowledge was not read and final refinement was not visually
 accepted. Static delivery improvement is proven; live speed/quality benefit is not.
@@ -817,7 +833,7 @@ Current-source Inspector candidate `4130308f-554b-4fa1-a079-d25859c238b2` passes
 Bounded review confirms the guidance explains potential value without a lookup
 requirement, promised quality result or construction sequence. No live model run
 was performed during implementation. The subsequent user-authorized
-[fifteen-minute test](../reports/taipei-101-knowledge-value-15m-2026-11-03.md)
+[fifteen-minute test](../../reports/taipei-101-knowledge-value-15m-2026-11-03.md)
 exited 0 with exact document/checkpoint/reload equality. It stopped at 886.043 s
 without final visual acceptance and made zero Knowledge calls. The provider record
 retains one incomplete span; instruction delivery is verified but improved
@@ -879,7 +895,7 @@ prompt is unchanged. New work remains local; the preceding push contains only th
 earlier implementation and reports.
 
 A subsequent user-authorized single
-[fifteen-minute test](../reports/taipei-101-decision-delegation-15m-2026-11-03.md)
+[fifteen-minute test](../../reports/taipei-101-decision-delegation-15m-2026-11-03.md)
 ran on this uncommitted source, with retained patch and file hashes. The recorder
 exited 0 after the deadline stop at 885.481 s; first paint was 169.065 s. Source,
 checkpoint and reload match exactly (17,883 nodes). All 33 App calls settled:
@@ -890,7 +906,7 @@ The complete provider lifecycle has no report issues; token usage is partial.
 Full silhouette, saved state and successful binding do not certify completed
 visual acceptance or a speed improvement. No rerun or product fix followed.
 
-The subsequent [evidence review](../reports/taipei-101-decision-delegation-analysis-2026-11-03.md)
+The subsequent [evidence review](../../reports/taipei-101-decision-delegation-analysis-2026-11-03.md)
 confirms an insufficient first hierarchy repair and byte-identical recaptures,
 while distinguishing suspected invalidation imprecision from a proven runtime bug.
 The two existing inspection suites pass (34 tests); their coverage does not yet
@@ -951,7 +967,7 @@ load check, not whole-plan acceptance. The new topic advice reaches real catalog
 read delivery and remains absent from unrelated contexts. No App prompt or
 benchmark prompt was changed in this slice.
 
-The [single fifteen-minute-budget run and analysis](../reports/taipei-101-regional-evidence-15m-2026-11-03.md)
+The [single fifteen-minute-budget run and analysis](../../reports/taipei-101-regional-evidence-15m-2026-11-03.md)
 completed in 693.783 s with seven accepted visual checks and 371 passed request
 checks, no unresolved results, and exact source/checkpoint/reload equality
 (17,356 nodes). Ten captured images had ten distinct hashes; the original tier
@@ -1080,7 +1096,7 @@ attempt, full local test, commit or push was performed.
 ### Follow-up - reduce exploration and repeated work - 2026-11-03
 
 Status: implemented and reviewed. Original findings and audit test limitations are in
-the [self-report audit](../reports/taipei-101-self-report-audit-2026-11-03.md).
+the [self-report audit](../../reports/taipei-101-self-report-audit-2026-11-03.md).
 
 Objective: help the AI find and use relevant capabilities with less exploration,
 repeated calculation and tool interaction. Knowledge supplies useful decision
@@ -1173,7 +1189,7 @@ started on the same native thread. The existing five-minute report guard interru
 its final paragraph; 10,777 public characters were retained verbatim as incomplete.
 The outer request timed out and artifact finalization did not confirm persistence
 or reload. The progress fix is validated; the full-report delivery requirement is
-not complete. See [live result](../reports/taipei-101-progress-isolation-15m-2026-11-03.md).
+not complete. See [live result](../../reports/taipei-101-progress-isolation-15m-2026-11-03.md).
 
 ### Follow-up - untimed benchmark report and resilient evidence - 2026-11-03
 
@@ -1181,7 +1197,7 @@ Completed and live-verified. The unchanged-prompt run completed drawing in
 14m 15.87s and its same-thread full report in 3m 34.44s. Report text, source,
 receipt, persistence, checkpoint, screenshots, reload, and video were retained
 without evidence errors; canonical content matches across report and reload.
-See [run evidence](../reports/taipei-101-untimed-report-15m-2026-11-03.md).
+See [run evidence](../../reports/taipei-101-untimed-report-15m-2026-11-03.md).
 
 User contract: only drawing is limited to 15 minutes. The fixed benchmark explicitly
 selects an untimed report on the same native thread. Existing explicitly timed
@@ -1278,7 +1294,7 @@ Gates: test-first provider/registration/advertisement cases, scoped native deliv
 Inspector contract, naming, lint and affected types. No live model run in this step.
 
 The previous order is superseded by the
-[end-to-end source review](../reports/ai-conversation-end-to-end-plan-review-2026-11-03.md).
+[end-to-end source review](../../reports/ai-conversation-end-to-end-plan-review-2026-11-03.md).
 Implementation is authorized by the 2026-11-04 user instruction; a new live model
 run remains outside this task.
 

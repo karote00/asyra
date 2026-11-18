@@ -64,6 +64,11 @@ for (const button of ['middle', 'left'] as const) {
     await page.keyboard.up('Shift')
     await expect(page.getByLabel('Object name')).toHaveValue('J1 - Base yaw')
     await expect(page.getByTestId('history-depth')).toHaveText(history)
+    // Camera submissions are applied on a Framework frame. Observe the rendered
+    // pan before clicking its independently calculated destination.
+    await canvas.screenshot({
+      path: info.outputPath('panned-before-selection.png')
+    })
     // Independent Three.js perspective oracle: ray selection must follow the panned geometry.
     const eye = new THREE.Vector3(3.2, 2.4, 3.6),
       target = new THREE.Vector3(0, 0.9, 0)
@@ -112,7 +117,11 @@ for (const button of ['middle', 'left'] as const) {
           fov: 46
         },
         selection: 'example:fixture-post',
-        screenshots: ['before-pan.png', 'after-pan.png']
+        screenshots: [
+          'before-pan.png',
+          'panned-before-selection.png',
+          'after-pan.png'
+        ]
       })
     })
   })

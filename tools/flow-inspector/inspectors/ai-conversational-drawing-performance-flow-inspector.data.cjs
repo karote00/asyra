@@ -1579,7 +1579,8 @@
       'Follow-up hints retain current non-workspace objects of any registered representation; revalidate distinct IDs once per submission and discard deleted/workspace references without granting new capabilities.',
       'One App activity projection owns the status below the work-history disclosure and its ordered entries. The disclosure summary shows Working for or Worked for with elapsed time, never an Activity title, describes real work transitions without tool names or AI-wait terminology, attaches model updates to their event, and projects approval/stop from existing controller state. Settlement removes the active disclosure status and marker, retains the result without a Result heading, and never appends success to failed partial work. Model-authored messages retain their language without language instructions or filtering. Missing or oversized operational descriptions use registered labels.',
       'Activity precedes independent question and answer controls. Questions wait for user input without Finished or a completion timestamp; provider completion alone does not complete the drawing goal. Terminal explanations remain outside the disclosure and show the controller-owned settlement time in the user local timezone at the left instead of a completion bell.',
-      'Panel closure hides presentation; document disposal cancels and retires late events.',
+      'Panel closure hides presentation and retains Core-registered runtime-only conversation drafts; accepted send retires its draft generation, while App disposal clears drafts, releases Core observable subscriptions and cancels/retires late events. Drafts are excluded from canonical persistence, collaboration and unsubmitted provider input. Only the active message subscribes to progress; settled snapshots remain stable until settlement or navigation.',
+      'A unique valid final question remains answerable after earlier operation receipts. Cancelled/failed invocations, conflicting terminals and malformed/nonterminal questions do not admit answers. Controller and presentation share result semantics. Storage notices never replace authored replies. Explicit Stop cannot expose a late successful reply; only authoritative pre-write cancellation without a transaction admits retry. Retry preserves original image provenance without adding a submitted attachment.',
       'Document-scoped new/history navigation retains per-conversation messages and targets, rejects switches while active, and exposes stable navigation updates independently of progress; presentation preserves unsent drafts. Asynchronous image success/errors bind to the originating draft generation; navigation retains it, while accepted send and panel/document disposal retire pending completions.',
       'Only existing feature and requestActionBatch owners may execute; status never writes canonical state.',
       'Capability limits are normal explained outcomes with no blind retry; successful prior changes are described accurately and remain one undoable action.'
@@ -1591,6 +1592,7 @@
     ],
     allowedContributors: [
       'App conversation, confirmation and presentation adapters',
+      'App initialization registers validated conversation drafts through Core system context',
       'App panel and history presentation',
       'bounded runtime outcomes and current target references'
     ],
@@ -1604,6 +1606,11 @@
     cacheDimensions: [],
     implementationBoundary: [
       'apps/asyra-design/src/ai/conversation.ts',
+      'apps/asyra-design/src/ai/conversation-result.ts',
+      'apps/asyra-design/src/ai/conversation-drafts.ts',
+      'apps/asyra-design/src/init/init-app.ts',
+      'apps/asyra-design/src/index.tsx',
+      'apps/asyra-design/src/constants/system-properties.ts',
       'apps/asyra-design/src/ai/presentation.ts',
       'apps/asyra-design/src/ai/confirmation.ts',
       'apps/asyra-design/src/ai/__tests__',

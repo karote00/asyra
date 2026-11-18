@@ -11,7 +11,8 @@
     "types": [
       "node",
       "vite/client"
-    ]
+    ],
+    "jsx": "react-jsx"
   },
   "include": [
     "server/__tests__/batch-exchange.test.ts",
@@ -51,6 +52,12 @@
     "server/__tests__/local-design-workflow.test.ts",
     "server/__tests__/native-provider-handoff.integration.test.ts",
     "server/__tests__/conversation-production-handoff.integration.test.ts",
-    "server/__tests__/native-output-observation.integration.test.ts"
+    "server/__tests__/native-output-observation.integration.test.ts",
+    "src/ai/__tests__/conversation.test.ts",
+    "src/ai/__tests__/presentation.test.ts",
+    "src/ai/__tests__/runtime-integration.test.ts",
+    "src/app/__tests__/ai-conversation-panel.test.tsx",
+    "src/ai/__tests__/conversation-drafts.test.ts",
+    "src/init/__tests__/init-app.test.ts"
   ]
 }

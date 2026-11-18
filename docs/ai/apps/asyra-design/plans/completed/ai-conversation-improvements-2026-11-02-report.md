@@ -1,7 +1,7 @@
 # AI conversation corrections - implementation and Taipei 101 report
 
 Date: 2026-11-02 (Taiwan). Status: local implementation and one live test complete;
-accepted by Asa for closeout and PR creation. Parent: [Editable Design Agent](../ai-design-agent-plan.md#conversation-continuity-and-tool-contract-corrections---2026-11-02).
+accepted by Asa for closeout and PR creation. Parent: [Editable Design Agent](ai-design-agent-plan.md#conversation-continuity-and-tool-contract-corrections---2026-11-02).
 
 ## Scope and delivered behavior
 

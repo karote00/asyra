@@ -1,6 +1,106 @@
 # Plan: Agent Context and Report Continuity
 
+## November 18 closeout
+
+Implementation record archived on 2026-11-18. Current behavior is owned by the
+App specifications and executable owner contracts, not the historical instructions
+below. Earlier failures, withdrawn conclusions, timing aspirations and unverified
+model choices remain historical evidence; archival does not turn them into passes.
+The user accepted the latest complete drawing and normal recoverable exploration.
+Final current-source verification and delivery status are recorded in the
+[conversation closeout report](../../reports/conversation-closeout-2026-11-18.md).
+The owner subsequently approved recording transitive-only advisories without
+blocking delivery; the closeout report records policy validation and Git delivery.
+No new drawing, release, compatibility path or completion gate is introduced.
+
+## Final evidence reconciliation
+
+The complete current run `tmp/conversation-proof-z1Oq2M` executes all five
+groups without a failed or skipped case; its final verdict remains blocked by
+three earlier unmapped failures. Before manual acceptance, map the exact audit,
+storage-notice and recorded-document cases to explicit integration criteria.
+Preserve the original failed warnings and run reports, author their exact criterion
+associations, and rerun those criteria through the unchanged producer admission.
+Only complete matching evidence may retire these now-mapped warnings. Do not
+change the verifier, product code, timeouts or any assertion. Review source
+identity, all twelve owner handoffs and the independent verifier controls before
+publishing manual acceptance. This is bounded evidence closeout, not a new audit.
+
+## Historical task record
+
+
 ## Status and task boundary
+
+November 18 closeout task: consolidate the completed conversation changes, run
+the formal full local development validation and current-source conversation
+verification, resolve demonstrated gate failures at their owners, and archive
+the completed conversation plans before pushing the existing PR #365. Preserve
+input validation and correctable failure continuation. The accepted live run
+`taipei-101-fixed-1794940085035` completed drawing naturally; normal exploration,
+estimated geometry and successful recovery are not new product defects. Do not
+run another 101 or add new product requirements. Automated evidence supplies
+facts; final interpretation remains the reviewing agent's responsibility.
+
+Initial gate blocker: full validation cannot classify the root conversation Flow
+configuration. Add a formal consumer-selection regression before declaring its
+actual App verification owner; preserve unknown-input rejection. Required gates
+are focused checks for corrections, full local validation, conversation evidence
+reconciliation and bounded closeout/link review. No release or publication work.
+
+The first full run stopped at the published picomatch high-severity advisory;
+the registry has no patched release. Preserve that failure as a delivery blocker.
+Independent remaining checks found three owner corrections: move the formal
+collection fixture under `__tests__`, regenerate stale public API/source indexes
+from current source, and remove the workflow assertion requiring the already
+retired balanced-correctness gate. Existing tests reproduce all three; retain
+their current behavior obligations rather than restoring obsolete gates.
+
+The independent website gate first lost its dev server after a Next.js startup
+security notice; that original exit cause is not established by the later retry. The unchanged retry reached 167 passing browser cases and one
+real observation failure: the Next.js dev indicator covered a mobile caption.
+Keep the hit-test oracle intact and disable the development-only indicator through
+Next's supported configuration. Add a configuration regression and rerun the
+original visual case; do not alter layout or ignore covering elements.
+
+Two further full-check failures have existing failing regressions. The Sim pan
+case clicked a predicted destination before the displayed camera frame reached
+it: the retained trace's last pre-click frame still shows the old target position.
+Observe the rendered pan before the unchanged independent projection/picking
+assertions, retaining before-pan, pre-selection and post-selection evidence.
+Do not change product picking or camera ownership. The control-plane localization
+fixture omitted the execution proof's current contract-read test dependency;
+four cases failed during module loading rather than fault injection. Declare
+that verification-only dependency in the existing compose proof boundary so
+the normal fixture preparation and observation fingerprint both include it.
+Do not add an untracked fixture-only copy. Retain all baseline, fault localization,
+captured-entry and recovery assertions. The initial dependency proof passes all
+four cases; the final boundary declaration is rechecked through captured-entry
+failure/recovery and the control-plane suite. Sim's original middle/left pan cases
+pass three repetitions each with unchanged projection, selection and history
+assertions; the new pre-selection image shows the predicted target in place.
+
+The corrected full Sim and control-plane checks pass. Collaboration E2E then
+reproduces an outdated Reset fixture: its retained pre-Reset publication omits
+`documentGeneration`, so current strict storage admission correctly pauses
+recovery. Supply the known pre-Reset generation `0`; keep the existing invalid
+generation regression and unchanged browser assertions for retirement, connected
+state, no pending publications and no startup error. Do not restore a missing-value
+fallback or change product recovery behavior.
+
+The complete collaboration rerun passes. The Board's Design execution case
+finds the expected failed cases but no highlighted owner nodes. Preserve the
+existing four-owner assertion and add retained page-state evidence to that
+formal case before diagnosing the UI handoff; do not infer a product cause
+from the failed highlight count alone.
+The retained page proves a stale generated Board bundle after the compose
+boundary edit: Board digest `9213cf6884ce77c7e488610578e2a5a5019b94f938aa04535af709d5b967c3f9`
+differs from the current contract digest
+`dfecfba92d74dd3e7f221780cde604db3e978d7e9b36387ec7b8b4c7f95585f3`.
+The bundle lacks the newly declared helper. This is an omitted rebuild in the
+agent's resumed checks, not a product highlighting defect. Regenerate the normal
+workspace data, prove equal digests, and rerun the unchanged owner assertion.
+
+Current bounded task: [Cross-branch conversation repair assessment](#cross-branch-conversation-repair-assessment).
 
 Completed task: [History admission and independent contract verification](#history-admission-and-independent-contract-verification).
 Completed task: [Uniform verification contract](#uniform-verification-contract).
@@ -8,9 +108,135 @@ The previous parent acceptance is historical. Whole-feature acceptance remains
 reopened. The [selected-scope correction](#independent-selected-scope-contract-audit)
 below is complete, but its bounded evidence does not renew whole-feature acceptance.
 Completed child corrections and prior execution records have moved to the
-[closeout record](completed/agent-context-and-report-continuity-record-2026-11-16.md).
+[closeout record](agent-context-and-report-continuity-record-2026-11-16.md).
 This plan retains the completed corrections and historical acceptance evidence.
 The documentation closeout does not close retained provider sessions.
+
+## Cross-branch conversation repair assessment
+
+November 18, 2026. Target: `codex/ai-conversation-improvements` at
+`fb8e516be`. Reference findings: `f6656d0f0` and `99e619cb4` on
+`codex/ai-conversation-repair-plan-20261117`. No cherry-pick or merge.
+
+Objective: reproduce the reference branch's conversation defects against this
+branch's current contracts and correct only defects that remain. Discovery is
+bounded to those commits, their eight findings, settlement/navigation follow-up,
+current conversation owners and direct consumers/tests. Existing full-history,
+historical source-image availability, Unicode code-point validation, tool delivery,
+saved context and same-session evaluation reporting remain authoritative here.
+The reference branch's image-selection policy is not this branch's contract.
+
+Assessment: complete question/answer history, originating-draft image completion,
+and untruncated navigation titles already have implementations here. Verify their
+existing regressions rather than replacing them. Remaining candidates are terminal
+questions after other results, storage notices replacing authored answers, retry
+image identity, pre-execution cancellation recovery, late success after Stop,
+draft lifetime, progress-driven historical projection, and Escape from the history
+toggle. Each must fail a formal regression before its owner changes.
+
+Execution cards (existing Inspector `conversation-lifecycle`):
+
+1. Settlement and continuation. Consume authoritative Runtime results at the App
+   result boundary; distinguish an unambiguous terminal question from canvas
+   disposition. Presentation and continuation consume the same question semantics.
+   Preserve authored replies separately from storage notices. Retry appends no new
+   source image and admits only confirmed pre-write failure/cancellation. Stop
+   cannot become a success reply from a late resolved result. Tests include real
+   Runtime execution/cancellation, invalid/contradictory terminals, historical
+   source associations, and next-request public context.
+2. Draft lifetime. Per the owner's subsequent direction, register one runtime-only
+   App system-context property for per-conversation drafts through Core before
+   startup. initApp owns the adapter lifetime; Core owns values and observation.
+   Panel closure retains accepted draft values;
+   pending reads keep their existing source/generation checks and retirement on
+   panel closure or accepted send. Document disposal retires the store. Use the
+   supported Core managed-property validator and observable. No duplicate
+   Map/observer store, browser persistence or backend history is introduced. Verify
+   remount, conversation isolation, send, rejected input, late reads and disposal.
+3. Projection. Keep settled snapshots stable until settlement/navigation. Progress
+   updates only the active message, not historical activity or answer searches.
+   Reuse controller activity state; no React memo wrapper, deep comparison or new
+   canonical state. Count actual projection calls through the mounted panel and
+   verify settlement, question controls, scroll-follow and document retirement.
+4. Navigation. Escape closes history both from the toggle and within the list,
+   restoring focus without affecting canvas shortcuts or sending a request.
+
+Allowed writes: conversation/presentation and their directly owned App helpers,
+panel/navigation, App initialization and its system-property constant, formal
+tests/type configurations, this plan, conversation spec and its existing
+Inspector owner boundary. No changes to provider lifetime, geometry, tool contracts,
+Knowledge, release configuration or the reference checkout. No compatibility,
+validation relaxation, dependencies, 101, full repository gate or remote operation.
+Run focused owner/consumer tests, scoped types/lint, naming and bounded diff review.
+This assessment does not renew whole-feature acceptance. This bounded repair and
+its scoped verification are complete; final evidence is recorded below.
+
+Self-review: the source branch's F1 history loss, F4 cross-conversation attachment
+completion and truncated navigation title are already corrected here. Preserve
+our existing historical-source image contract rather than importing the reference
+branch's incompatible image-selection rule. F2/F3/F5/F6/F7/F8 and the Escape/late
+Stop follow-ups reproduced here and are corrected at their App owners. Questions
+now use one shared semantic reader rather than depending on display text or the
+number of all action results. No Runtime transaction or provider session lifecycle
+was changed.
+
+Evidence: `tmp/conversation-port-settlement-red.json` (six reproduced failures),
+`tmp/conversation-port-recovery-red.json` (actual Runtime pre-write cancellation),
+and `tmp/conversation-port-panel-red.json` (draft remount, Escape and historical
+projection failures). Three malformed old clarification fixtures lacked the
+registered action identity; repair their inputs, retaining their question/history
+assertions. The existing retired-panel case now checks preserved completed drafts
+and images as well as rejected late image completion. This removes its obsolete
+empty-on-remount expectation. Runtime integration fixtures were corrected to send
+required summaries/signals before evaluating their actual handoffs.
+
+Bounded review also proved three contradictory retry inputs bypassed the old
+stage-only predicate (`tmp/conversation-port-retry-negative-red.json`): existing
+operation receipts, executed status and an array impostor for stage. Reject these
+without changing the canonical cancelled result or adding a recovery marker.
+Actual pre-write cancellation retries successfully in the same conversation.
+
+For thirty settled messages, a progress event previously read every old activity;
+the final mounted-panel assertion requires exactly one activity read for the active
+turn and preserves all thirty-one messages. No deep comparison, React memoization,
+geometry query or tool computation was added. Immutable settled snapshots belong
+to the document controller. Draft values move
+to the App system-context owner; App disposal retires observations and clears its
+runtime-only values. A future backend history contract remains separate from
+canonical document persistence and is not implemented here.
+
+Revised draft execution card: `conversation-lifecycle`, with App startup as the
+registration contributor. Inputs are conversation IDs, draft text, attachment
+values and generation; outputs are validated serializable values in
+`SystemPropertyKeys.CONVERSATION_DRAFTS` and Core observable notifications. The
+App adapter delegates get/set/subscribe to the Core facade and has no value store
+or observer bus. It disposes subscriptions and clears state with its document.
+Tests first prove that the initial custom container does not populate Core, then
+verify actual Core rejection, independent conversations, remount, disposal and
+late writes. Do not persist these private drafts into the collaborative document.
+
+Final scoped evidence on the Core-backed draft implementation:
+
+- `tmp/conversation-port-complete-focused.json`: 203 passed, no failures or skips;
+  conversation, drafts, presentation, real Runtime integration, mounted panel,
+  App initialization and App consumers.
+- `tmp/conversation-port-complete-provider.json`: nine passed, no failures or
+  skips; production provider handoff including native delivery and Knowledge.
+- `tmp/conversation-port-system-browser.json`: four passed, no skips or flaky
+  results; mobile/desktop navigation, draft remount, late attachments and canvas
+  selection/history preservation through the actual App startup path.
+- `tmp/conversation-port-system-types.log` and
+  `tmp/conversation-port-system-proof-types.log`: scoped type checks passed.
+- Scoped ESLint, naming (15 checks), documentation contracts (seven checks), and
+  final whitespace/diff review passed. The final formatting-only test edit does
+  not change the validated behavior.
+
+Core validation rejects malformed draft values without replacing accepted state.
+Disposal clears runtime values and ignores late adapter updates. The permanent
+privacy regression verifies that Core holds drafts while canonical document save
+and provider context exclude them. Backend history persistence is not implemented.
+No 101 run, full repository test, commit, push, or reference-branch mutation was
+performed for this task.
 
 ## History admission and independent contract verification
 
@@ -114,7 +340,7 @@ failure evidence. The corrected command uses the environment declared by the
 formal App verification group; no assertion or product behavior was changed.
 
 The twelve-handoff source review is recorded in the
-[independent review](../reports/conversation-spec-coverage-review-2026-11-14.md#four-finding-handoff-review---november-16-2026).
+[independent review](../../reports/conversation-spec-coverage-review-2026-11-14.md#four-finding-handoff-review---november-16-2026).
 It distinguishes current execution, inspected source and unexecuted parent
 obligations. Fixture type coverage now includes the corpus and request admission
 tests; actual DOM iterable types replace fetch casts, without weakening runtime
@@ -259,7 +485,7 @@ tmp/conversation-proof-bRBTC2/manual-review.json accepts the current criterion
 binding after source and evidence review. All twelve Flow nodes and integration
 are done, with no node warnings. Recorded runner processes have exited.
 
-The [independent acceptance report](../reports/conversation-spec-coverage-review-2026-11-14.md#whole-conversation-acceptance---november-16-2026)
+The [independent acceptance report](../../reports/conversation-spec-coverage-review-2026-11-14.md#whole-conversation-acceptance---november-16-2026)
 records all three attempts, exact failure causes, retained negative cases and
 evidence by handoff. It covers actual native-provider data, state and images,
 Knowledge provenance and execution, direct/composed execution, retention and
@@ -271,11 +497,11 @@ or validation was changed for the three stale fixture failures; no compatibility
 path was added. Scoped lint retains one pre-existing console warning and no
 errors. No commit, push or archival closeout is part of this acceptance task.
 
-Authorities: [conversation experience](../specs/ai-conversation-experience.md),
-[execution flow](../specs/ai-execution-flow.md), [local provider](../specs/local-ai-provider.md),
-[design preparation](../specs/design-preparation.md), Runtime
-[tool specification](../../../../../packages/ai-agent-runtime/TOOL_SPECIFICATION.md)
-and [package contract](../../../framework/packages/ai-agent-runtime.md).
+Authorities: [conversation experience](../../specs/ai-conversation-experience.md),
+[execution flow](../../specs/ai-execution-flow.md), [local provider](../../specs/local-ai-provider.md),
+[design preparation](../../specs/design-preparation.md), Runtime
+[tool specification](../../../../../../packages/ai-agent-runtime/TOOL_SPECIFICATION.md)
+and [package contract](../../../../framework/packages/ai-agent-runtime.md).
 The existing Inspector request/compose/prepare/apply/inspect/settle/observe routes
 retain their exact ownership and failure boundaries. Canonical state, transactions,
 rendering and collaboration retain their existing owners.
@@ -313,7 +539,7 @@ old verdict or a mandatory new App workflow for this review.
 November 16-17, 2026. Status: five implementation steps and current-source
 acceptance complete. This task follows the user's request for one
 mandatory standard governing every verification method, not another repair list.
-Authority: [AI conversation verification contract](../specs/ai-conversation-verification.md).
+Authority: [AI conversation verification contract](../../specs/ai-conversation-verification.md).
 The twelve handoffs above remain navigation, not a closed universe of obligations.
 
 ### Bounded task and findings
@@ -595,7 +821,7 @@ without requiring the developer shell to supply that fixture.
 
 Steps 1-4 have completed their bounded owner changes and focused review. The
 independent source-to-proof reconciliation is recorded in the existing
-[coverage report](../reports/conversation-spec-coverage-review-2026-11-14.md#uniform-verification-implementation---november-16-2026),
+[coverage report](../../reports/conversation-spec-coverage-review-2026-11-14.md#uniform-verification-implementation---november-16-2026),
 including actual producer routes, independent oracles, permitted substitutions,
 retained legal controls and the limits of each evidence method. The original
 three counterexamples, report omission faults, circular schema oracle and
@@ -828,3 +1054,77 @@ admission. Narrow representation/repair/optional-authoring owner regressions rem
 covered by the focused discovery selection; this is not an exhaustive claim about
 all combinations, provider behavior or whole-feature acceptance. No compatibility,
 validation relaxation, 101, full local test, commit or push was introduced.
+
+## November 18 final provider fixture correction
+
+The complete verifier's server group reaches one failing provider/history case:
+`delivers controller follow-up history and original sources through one fresh
+native turn`. Its synthetic clarification result lacks the canonical action
+identity returned by `createAiActions`; the shared terminal reader correctly
+rejects it. Seven report-admission findings describe that one failed assertion,
+not seven product defects. Original evidence: `tmp/conversation-proof-9xPt6C`.
+The failed run was stopped before completing further groups; it is incomplete.
+
+Bounded correction: supply the required action identity in that synthetic result.
+Preserve all successor native-input, question history, image identity and fresh-turn
+assertions, plus the existing real-Runtime clarification and malformed-terminal
+controls. Do not change product validation or add compatibility. Run the exact
+provider regression and related terminal/Runtime cases, review, then renew the
+current-source complete verifier before final semantic acceptance.
+
+The unchanged provider assertion passes with the canonical fixture. All 65 related
+conversation and actual-Runtime cases pass; scoped lint passes. Preserve the first
+App focused setup failure (missing jsdom) separately from these reached results.
+
+## November 18 verification iteration - bounded case workload
+
+The renewed server run (`tmp/conversation-proof-AVNOhw`) passes the repaired
+provider fixture but times out the calculation-parameter corruption case at
+5,120.8 ms. The installed Vitest timeout wrapper produces the observed
+`STACK_TRACE_ERROR`; the unchanged control/corruption pair took 4,567/4,787 ms in
+the preceding run and the result variant takes 4,950 ms in the renewed run.
+This is not evidence that the audit accepted the corrupted contract.
+
+Revised bounded verification step: the current case constructs two complete Host
+fixtures and reads both healthy and corrupted usage under one five-second test.
+Separate the healthy control and corruption into independently collected cases,
+each using one real Host read. Preserve both fields, illegal-value witnesses,
+independent delivered/source comparison, no-execution assertions and both original
+corruption case titles. Keep the five-second limit and production code unchanged.
+Each pair still proves legal acceptance and detection of a reached violation;
+independent case reconciliation must collect the added controls. Run the four
+cases, the complete audit file, affected lint/types and then the complete verifier.
+No additional source discovery or product optimization is authorized by this
+iteration. The interrupted run remains incomplete evidence.
+
+The four legal/fault controls pass at 2.2-2.3 seconds each with the unchanged
+five-second limit. The complete audit file passes 1,394 cases with no skips
+(`tmp/conversation-closeout-audit-complete-final.json`). Both original corruption
+titles are retained; an initial quoted-title filter miss is not passing evidence.
+Scoped lint passes. Renew complete verification before accepting the feature.
+
+## November 18 final App projection and environment evidence
+
+The complete `tmp/conversation-proof-c7f82U` run passes server, Runtime and Node
+verification. App verification finds two obsolete expectations in the real-action
+storage-status test: they still require the persistence warning to replace the
+authored reply. Current conversation-lifecycle authority explicitly preserves the
+reply and exposes independent storage notices. Keep the real action, raw output
+validation, partial outcome, persistence status and no-retry assertions; assert
+the unchanged authored reply plus the corresponding separate notice (and no
+notice for durable storage). Do not change production presentation or hide a
+storage failure. Run the complete action test file and direct presentation/panel
+consumers before renewing final verification.
+
+Browser evidence has one separate environment failure: the recorded-document
+backend rejects a write with ENOSPC. Preserve the failed run and inspect only
+project-local test storage before retrying the unchanged case. Do not relax
+persistence, extend deadlines or remove retained live drawings/reports to mask it.
+The original scripted large-document fixture is not a new 101 model run.
+
+All 168 action, presentation and panel consumer cases pass with separate authored
+reply and storage-state assertions. The original large-document reload case
+passes unchanged after lossless archival of task-generated test copies restores
+disk headroom. Manifests preserve original paths and verified bytes; original live
+recordings and session data remain untouched. Renew current-source whole-feature
+evidence once after collecting and correcting all findings from the completed run.

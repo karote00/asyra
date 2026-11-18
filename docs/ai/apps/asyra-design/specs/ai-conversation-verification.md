@@ -20,10 +20,11 @@ remain unresolved until the owning specification is clarified, before changing
 assertions or product behavior.
 
 Enforcement status: the requirements below are binding for review and acceptance.
-Automated enforcement is not complete. The
-[implementation plan](../plans/agent-context-and-report-continuity-plan.md#uniform-verification-contract)
-identifies the pending work. Linking this document or passing existing tests does
-not establish compliance.
+The executable verification path, independent case reconciliation and corruption
+controls are implemented. Independent semantic review remains mandatory and is
+not automated by passing test totals. The [implementation record](../plans/completed/agent-context-and-report-continuity-plan.md#uniform-verification-contract)
+and [current closeout evidence](../reports/conversation-closeout-2026-11-18.md)
+distinguish completed mechanisms from each source-specific acceptance decision.
 
 ## Required proof for every verification method
 

@@ -519,15 +519,21 @@ it.each(['unavailable', 'local-only', 'durable'] as const)(
       const turn = await controller.submit('Finish this drawing')
       const summary = summarizeAiTurn(turn)
 
+      expect(summary.message).toBe('Drawing saved successfully.')
+      expect(turn.result).toMatchObject({
+        actionResults: [{ result: { persistence: { status: storage } } }]
+      })
+
       if (storage === 'unavailable') {
         expect(turn.outcome).toBe('partial')
-        expect(summary.message).toContain('could not be confirmed')
-        expect(summary.message).not.toContain('saved successfully')
+        expect(summary.storageNotice).toContain('could not be confirmed')
+        expect(summary.storageNotice).toContain('do not repeat the drawing')
       } else if (storage === 'local-only') {
-        expect(summary.message).toContain('locally')
-        expect(summary.message).not.toContain('saved successfully')
+        expect(summary.storageNotice).toBe(
+          'Durable document storage is not connected.'
+        )
       } else {
-        expect(summary.message).toBe('Drawing saved successfully.')
+        expect(summary).not.toHaveProperty('storageNotice')
       }
 
       expect(canRetryAiTurn(turn)).toBe(false)

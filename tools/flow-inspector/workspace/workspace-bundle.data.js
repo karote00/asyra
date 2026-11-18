@@ -133,7 +133,7 @@
               "Resolve references against current document identity",
               "Validated current creation receipts update composition identity and their schema-valid role mapping. A new target with an empty role mapping clears prior roles; missing required fields reject at the owner boundary. Missing identity and failed creation never invent a target. Revalidate the target in the next request.",
               "On saving, App conversation context derives bounded name, operation/source provenance and shape once. The execution receipt and next request reuse it without stored values. Direct known-field bindings need no model read or mandatory reuse.",
-              "Project exact public conversation context once per submission, never on progress; reject over-limit history without truncation or Feature execution. Preserve source images and question/answer links; exclude raw tool results and request-owned evidence.",
+              "Project exact public conversation context once per submission, never on progress; reject over-limit history without truncation or Feature execution. Preserve source images and question/answer links; exclude raw tool results and request-owned evidence. Initial selected-element bounds retain their parent-local basis and canonical parent identity without exposing raw properties.",
               "Retained values preserve declared request lifetimes: Knowledge context identities, information-page continuations, discovery result keys and tool-save retry receipts remain within their request. Portable advice and contract content can cross turns without those capabilities."
             ],
             "bypasses": [
@@ -146,7 +146,7 @@
             ],
             "forbiddenContributors": [
               "renderer state as authority",
-              "cross-request geometry cache",
+              "request-owned geometry handles as cross-request authority",
               "native thread or Knowledge session continuity"
             ],
             "cacheDimensions": [],
@@ -205,13 +205,13 @@
               "Purpose discovery ranks matched purpose/input coverage before weighted relevance. All purpose matches remain candidate metadata; exact contract reads acquire the selected owner. Preserve caller-selected scope and exact recovery.",
               "Discovery ranks owner-declared purpose separately from actual input fields and identity words. Optional query inputFields requires declared field paths; open records and output prose do not establish acceptance. Candidates disclose applicability boundaries and matching paths. Exact identities retain authority, and no candidate is executed by search. Preserve registry-revision invalidation and request-local metadata reuse.",
               "Reference selection stores existing attachment indexes and optional authored purpose, region and limitations. Image consumers take the source identity/crop directly. Validate access, decoding and pixel bounds without suitability approval or a signed use receipt. Portable notes and request-owned image access have separate lifetimes.",
-              "Reference import has one references/actionResults envelope for static composition and recovery. Acquisition caches bytes but never suppresses pixels based on prior invocation. Outer delivery selects pixels; metadata/status and cancelled or failed delivery never prove display. Reject request-image retention; preserve portable source input and within-reply deduplication.",
+              "Reference import has one references/actionResults envelope for static composition and recovery. Acquisition caches bytes but never suppresses pixels based on prior invocation. Outer delivery selects pixels; metadata/status and cancelled or failed delivery never prove display. Reject retention of request-owned image handles. Portable captured pixel values retain source provenance in the existing conversation store without request authority, duplicated pixels or recapture. Named delivery returns selected pixels and provenance together through ordinary native validation; shape-only and authored lookalike values remain ordinary data. Preserve portable source input and within-reply deduplication.",
               "Selected capture usage derives target membership from the inspection owner: capture only the target subtree, not overlapping siblings; a group region uses that group local coordinates. Preserve native limits, evidence invalidation and read-only execution.",
               "Selected construction result navigation derives owner-declared resultPaths from the canonical step output schema. Preserve multiple composition mappings, escaped source keys, document revalidation and optional bounded shape reads without fetching all values.",
               "Retention uses nonportable JSON Pointer subtrees from the validated public projection contract and selected invocation input contract. Equal scalar values outside those subtrees remain portable. Rebase public input paths with their values; final and named-step selectors share lifetime enforcement. Successful final iteration checks hand off their resolved input and validated output; intermediate repairs and failed checks are not stable selections. Preserve secret/request exclusion, declared artifact leases and successor-request storage consumption without another model read.",
               "Knowledge context keys, retained-document references and nested preparation repair handles declare request lifetimes at their producers. Static retention rejects proven nonportable selections; conditional paths use the validated actual public value for both named and final selectors. Missing fields and actual request descendants fail storage without data substitution or replay; portable advice survives a successor request without reloading its producer.",
               "Select each leaf execution and model contract through the same Host boundary before admission and resource acquisition. Direct, library and composed calls validate input, output and resource transfer with those selected schemas before dependent execution. Preserve registered identity/effects and carry resolved input by exact invocation identity through named, default, iteration and recovery projection. Reuse an already validated public projection for the same invocation without repeating owner work. Clear this evidence when outer delivery settles; it is not conversation storage. Invalid model output remains a delivery failure with actual execution settlement.",
-              "External execute_design result selection uses delivery, independent of retain. Omitted delivery returns the final public result and its images for ordinary sequences, stages and direct drawing; ready batches preserve their ordinary receipt. Retain only adds save receipts and never selects status-only delivery. Explicit status suppresses values/images; explicit fields select only their values/images. Reject superseded public output/response before effects; Runtime output and private canvas receipts remain internal. Prepared application always acknowledges IDs/counts; workflow createdTargets exposes source-key mappings without includeTargets. No public or internal response selector exists. Delivery alone controls model output while binding and retention consume validated results. Select intermediate images explicitly. Preserve staged ordering, canonical result validation, resource lifetimes and successful-prefix recovery; storage failure cannot replay execution.",
+              "External execute_design result selection uses delivery, independent of retain. Omitted delivery returns the final public result and its images for ordinary sequences, stages and direct drawing; ready batches preserve their ordinary receipt. Retain only adds save receipts and never selects status-only delivery. Explicit status suppresses values/images; explicit fields select only their values/images. Reject superseded public output/response before effects; Runtime output and private canvas receipts remain internal. Prepared application always acknowledges IDs/counts; workflow createdTargets exposes source-key mappings without includeTargets. No public or internal response selector exists. Delivery alone controls model output while binding and retention consume validated results. Select intermediate images explicitly. Preserve staged ordering, canonical result validation, resource lifetimes and successful-prefix recovery; storage failure cannot replay execution. Mutation receipt identities must cover the declared owner targets before retention or projection, excluding read-only sources and distinguishing generated identities. Invalid receipts acquire no target handles; their declared failure view preserves original owner output and settlement. Valid partial and unchanged receipts remain valid.",
               "Request-sequence eligibility is distinct from durable recipe composition. Registered reference import, reference selection and capture may run through execute_design with ordinary arguments, bound results, images and truthful receipts. Saved recipes reject request-only dependencies. Discovery publishes the executable host route and route-correct retention. Saved context exposes bounded shape navigation without values, including explicit subtree reads through the same conversation exchange; portable creation mappings are acknowledged output, never live document authority. Request-sequence inputs may select declared optional paths or fields from non-null result branches; the Runtime validates presence and actual values before dependent dispatch. Unknown or incompatible paths reject; saved recipes keep guaranteed-presence admission. Request-step numeric bindings use the same structural comparator for whole objects, arrays and fieldwise selection. Numeric type, required fields, extra-field policy and runtime lifetimes stay checked; actual numeric refinements are checked against the unchanged destination schema before dispatch; durable recipes retain static range guarantees. Selected optional result fields are checked against actual returned values; missing values stop delivery or the dependent operation without replay.",
               "Canonical property target rejection is owner-typed before writes. The App adapter translates only recognized authored input; Runtime preserves the diagnostic independently of settlement. Canonical TOOL_INPUT_INVALID identifies authored argument rejection with confirmed no-write settlement; no extra correction permission is published; generic/internal/unknown failures retain their actual status and block dependent work until the model reconciles state. Preserve prefix receipts and IDs through native delivery. Tool failures stop unsafe dependent operations and settle recovery delivery without interrupting the model turn. Only explicit operator control, cancellation or work deadline ends the task. Deadlines remain immediate. No retry, field rerouting, duplicate registry or compatibility route.",
               "Pure target field/path/conflict and action-argument validation emits the existing typed TOOL_INPUT_INVALID rejection before any target lookup or canvas dispatch. Direct batch admission and scheduled host validation preserve that identity. field names and explicit path arrays remain distinct; no dotted-path alias. Unresolved authored registry identities or artifact selections remain correctable inputs; missing registered dependencies/readers and incomplete/unknown execution data remain blocking errors. Arbitrary caught exceptions are not input correction; evaluation consumes the validated final native outcome.",
@@ -257,7 +257,7 @@
               "Explicit local evaluation windows stop App tool work and interrupt the active native work turn at cutoff. Only after acknowledgement start a report-only turn in the same thread. Report instructions accept nonblank strings without a character ceiling; preserve the full instructions without truncation. Deny App operations and final drawing actions during reporting; preserve transport errors and ordinary requests.",
               "Native capture shares one App-owned edge bound across selected input schema, output image bounds, execution and recovery. Detail without region requires the entire target to fit the bound; larger targets need an explicit smaller child or local region. Overview remains a scaled whole-target preview. No silent crop/downscale, new cap, inferred target or approval. Selected usage must deliver this condition before capture.",
               "Recorder-owned evaluation control accepts only explicit operator-stop for its exact workDeadlineAt. Tool failure status never interrupts the native model: preserve failure reason, actual settlement, completed prefixes and resource recovery for correction or informed handoff in the same turn. Unknown settlement prohibits automatic write replay, not model observation. Validate malformed results at their ordinary boundary. Deadlines, explicit cancellation and unusable provider transport retain their existing termination semantics. Dispose observation at settlement and cleanup. Recorder-owned untimed reporting may survive request-closed transport cancellation in the original thread with tools disabled; explicit cancellation still aborts. Evidence collection awaits the retained report before owned-service cleanup.",
-              "Opt-in retained evaluation reports transfer native process ownership to the service after the initial request returns. Release drawing tools and request artifacts at settlement; serialized report-only follow-ups keep the original native thread with no idle model calls or time limit. Retain public exchanges separately from the sealed initial execution. Local admitted status/ask/close controls expose loss explicitly; close cancels active reporting, drains queued questions and releases once. Ordinary requests never retain a session. Recorder finalizes evidence without stopping the owning service until explicit close.",
+              "Opt-in retained evaluation reports transfer native process ownership to the service after the initial request returns. Release drawing tools and request artifacts at settlement; serialized report-only follow-ups keep the original native thread with no idle model calls or time limit. Retain public exchanges separately from the sealed initial execution. Input recording remains admission before inference. Successful replies include their original native identity/messages and a mandatory recording receipt (saved, or failed with message). Output recording failure preserves HTTP answer delivery without inference replay; the report client validates and exposes the receipt alongside its saved answer. Genuine provider errors and partial replies survive secondary failure-recording errors. Failed disk recording cannot promise retention after HTTP disconnect. Local admitted status/ask/close controls expose loss explicitly; close cancels active reporting, drains queued questions and releases once. Ordinary requests never retain a session. Recorder finalizes evidence without stopping the owning service until explicit close.",
               "Explicit report instructions accept nonblank strings without a character ceiling and delivered only after work settles in the same native thread. A null reportTimeoutMs explicitly disables the report timer; a positive report timeout is independently bounded to five minutes; optional deadline-announcement suppression preserves fixed work prompts. Exclude host evaluation metadata from drawing input. Retain ordinary request and default concise-report behavior; detailed public commentary does not enlarge the final 1000-character summary.",
               "Artifact-key discovery joins registered mutation intent and target-resolution metadata with bindable examples. Purpose search returns metadata and exact routes, never acquired contracts. Exact names resolve independently of lexical matching, preserve primary action ownership and qualified native envelopes, and carry per-identity scopes. Invalid scopes return same-owner choices; missing names preserve successful siblings and recovery candidates. Preserve paging, revision invalidation and no replay; related catalog growth cannot inflate exact delivery.",
               "The existing selection reply and direct selected usage distinguish draft roots from child nodeTypes, including nested containers. Every draft guide retains group/frame root constraints. Selecting optionalInputs includes documentation without making fields required; changing only the root or omitting an already documented plan needs no reread. Preserve nested-frame discovery, dimensions, group restrictions, current input validation and no-replay recovery without new state or exchanges.",
@@ -503,6 +503,7 @@
               "apps/asyra-design/server/local-tool-invocation.ts",
               "apps/asyra-design/server/__tests__/local-tool-invocation.test.ts",
               "apps/asyra-design/server/__tests__/tool-contract-assertions.ts",
+              "apps/asyra-design/server/__tests__/contract-read-fixture.ts",
               "apps/asyra-design/server/__tests__/local-ai-provider.test.ts",
               "apps/asyra-design/server/local-operation-tools.ts",
               "apps/asyra-design/server/design-discovery-contract.ts",
@@ -3561,7 +3562,8 @@
               "Follow-up hints retain current non-workspace objects of any registered representation; revalidate distinct IDs once per submission and discard deleted/workspace references without granting new capabilities.",
               "One App activity projection owns the status below the work-history disclosure and its ordered entries. The disclosure summary shows Working for or Worked for with elapsed time, never an Activity title, describes real work transitions without tool names or AI-wait terminology, attaches model updates to their event, and projects approval/stop from existing controller state. Settlement removes the active disclosure status and marker, retains the result without a Result heading, and never appends success to failed partial work. Model-authored messages retain their language without language instructions or filtering. Missing or oversized operational descriptions use registered labels.",
               "Activity precedes independent question and answer controls. Questions wait for user input without Finished or a completion timestamp; provider completion alone does not complete the drawing goal. Terminal explanations remain outside the disclosure and show the controller-owned settlement time in the user local timezone at the left instead of a completion bell.",
-              "Panel closure hides presentation; document disposal cancels and retires late events.",
+              "Panel closure hides presentation and retains Core-registered runtime-only conversation drafts; accepted send retires its draft generation, while App disposal clears drafts, releases Core observable subscriptions and cancels/retires late events. Drafts are excluded from canonical persistence, collaboration and unsubmitted provider input. Only the active message subscribes to progress; settled snapshots remain stable until settlement or navigation.",
+              "A unique valid final question remains answerable after earlier operation receipts. Cancelled/failed invocations, conflicting terminals and malformed/nonterminal questions do not admit answers. Controller and presentation share result semantics. Storage notices never replace authored replies. Explicit Stop cannot expose a late successful reply; only authoritative pre-write cancellation without a transaction admits retry. Retry preserves original image provenance without adding a submitted attachment.",
               "Document-scoped new/history navigation retains per-conversation messages and targets, rejects switches while active, and exposes stable navigation updates independently of progress; presentation preserves unsent drafts. Asynchronous image success/errors bind to the originating draft generation; navigation retains it, while accepted send and panel/document disposal retire pending completions.",
               "Only existing feature and requestActionBatch owners may execute; status never writes canonical state.",
               "Capability limits are normal explained outcomes with no blind retry; successful prior changes are described accurately and remain one undoable action."
@@ -3573,6 +3575,7 @@
             ],
             "allowedContributors": [
               "App conversation, confirmation and presentation adapters",
+              "App initialization registers validated conversation drafts through Core system context",
               "App panel and history presentation",
               "bounded runtime outcomes and current target references"
             ],
@@ -3586,6 +3589,11 @@
             "cacheDimensions": [],
             "implementationBoundary": [
               "apps/asyra-design/src/ai/conversation.ts",
+              "apps/asyra-design/src/ai/conversation-result.ts",
+              "apps/asyra-design/src/ai/conversation-drafts.ts",
+              "apps/asyra-design/src/init/init-app.ts",
+              "apps/asyra-design/src/index.tsx",
+              "apps/asyra-design/src/constants/system-properties.ts",
               "apps/asyra-design/src/ai/presentation.ts",
               "apps/asyra-design/src/ai/confirmation.ts",
               "apps/asyra-design/src/ai/__tests__",
@@ -10913,12 +10921,14 @@
             "purpose": "Route toolbar and keyboard tool selection through the App feature.",
             "inputs": [
               "Shortcut or toolbar primaryTool value",
+              "For keyboard input: held phase, changed key, repeat and composition metadata",
               "Current pathEditingMode and path continuation state"
             ],
             "outputs": [
               "artifact:switch-tool-outcome"
             ],
             "conditions": [
+              "Admit only a fresh matching tool keydown before session cancellation; ignore repeats and unrelated held changes.",
               "Apply the selected tool and its path-editing transition through system context."
             ],
             "bypasses": [
@@ -10935,6 +10945,7 @@
             "cacheDimensions": [],
             "implementationBoundary": [
               "apps/asyra-design/src/features/switch-primary-tool/index.ts",
+              "apps/asyra-design/src/config/key-combinations.ts",
               "apps/asyra-design/src/common-apis/system-context.ts",
               "apps/asyra-design/src/toolbar/tool-button.tsx"
             ],
@@ -10992,7 +11003,8 @@
             "inputs": [
               "Pointer position, area-selection bounds and Shift modifier",
               "Current selection, registered container capabilities and raw render hit",
-              "Canonical hierarchy and locked/hidden state"
+              "Canonical hierarchy and locked/hidden state",
+              "Current viewport projection for workspace marquee endpoints"
             ],
             "outputs": [
               "artifact:select-elements-outcome"
@@ -11011,9 +11023,12 @@
               "Observation records or test assertions as canonical product state",
               "Guessed ownership or test-specific runtime output"
             ],
-            "cacheDimensions": [],
+            "cacheDimensions": [
+              "Projected marquee endpoints and selection presence"
+            ],
             "implementationBoundary": [
               "apps/asyra-design/src/features/selection/feature.ts",
+              "apps/asyra-design/src/render-layers/area-selection-render-layer.ts",
               "apps/asyra-design/src/common-apis/selection.ts",
               "apps/asyra-design/src/controllers/canvas-hierarchy-target.ts",
               "apps/asyra-design/src/contents/contents-panel.tsx",
@@ -11057,6 +11072,7 @@
             "cacheDimensions": [],
             "implementationBoundary": [
               "apps/asyra-design/src/features/hover-element/index.ts",
+              "apps/asyra-design/src/controllers/hover-target.ts",
               "apps/asyra-design/src/common-apis/system-context.ts"
             ],
             "specRefs": [
@@ -11135,6 +11151,7 @@
             "cacheDimensions": [],
             "implementationBoundary": [
               "apps/asyra-design/src/features/delete-element/index.ts",
+              "apps/asyra-design/src/controllers/hover-target.ts",
               "apps/asyra-design/src/common-apis/element/apis.ts"
             ],
             "specRefs": [
@@ -11412,7 +11429,10 @@
               "Observation records or test assertions as canonical product state",
               "Guessed ownership or test-specific runtime output"
             ],
-            "cacheDimensions": [],
+            "cacheDimensions": [
+              "One current Preset-published descriptor map identity, flattened order identity and workspace; released by Core runtime cleanup",
+              "Dynamic hit, selection and modifiers are resolved on each call; mutable explicit inputs are always admitted afresh"
+            ],
             "implementationBoundary": [
               "apps/asyra-design/src/controllers/canvas-hierarchy-target.ts",
               "apps/asyra-design/src/features/selection/feature.ts",
@@ -22972,7 +22992,7 @@
             ],
             "conditions": [
               "For exactly one selected element outside path-editing mode, clear selection and invoke element deletion within the transaction.",
-              "After successful deletion, reevaluate the hovered element at the current pointer position."
+              "After successful deletion, reevaluate the current render hit through the shared hierarchy, editing-scope and lock/visibility hover policy; rejected deletion preserves selection and hover."
             ],
             "bypasses": [
               "Path editing or selection count other than one leaves element deletion unchanged.",
@@ -22990,6 +23010,7 @@
             "cacheDimensions": [],
             "implementationBoundary": [
               "apps/asyra-design/src/features/delete-element/index.ts",
+              "apps/asyra-design/src/controllers/hover-target.ts",
               "apps/asyra-design/src/common-apis/element/apis.ts",
               "apps/asyra-design/src/common-apis/selection.ts",
               "apps/asyra-design/src/common-apis/system-context.ts",

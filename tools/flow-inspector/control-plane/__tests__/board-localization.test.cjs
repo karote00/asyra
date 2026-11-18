@@ -456,6 +456,8 @@ test(
     const fixture = localizationFixture()
     const { page, server } = await openBoard(t, fixture)
 
+    t.diagnostic('Execution Board evidence: ' + fixture.directory)
+
     for (const scenario of [
       'omit-registered-tools',
       'misclassify-combined-tool',
@@ -511,7 +513,19 @@ test(
           nodes.map((node) => node.getAttribute('data-step-id')).sort()
         )
 
-    await expect.poll(failedOwners).toEqual(expectedOwners)
+    try {
+      await expect.poll(failedOwners).toEqual(expectedOwners)
+    } finally {
+      await page.screenshot({
+        path: path.join(fixture.directory, 'execution-owner-status.png'),
+        fullPage: true
+      })
+      fs.writeFileSync(
+        path.join(fixture.directory, 'execution-owner-status.txt'),
+        await page.locator('body').innerText()
+      )
+    }
+
     const details = frame.locator('#test-result-detail')
 
     for (const [index, item] of failures.entries()) {
@@ -555,7 +569,6 @@ test(
     await expect.poll(failedOwners).toEqual(expectedOwners)
     await buttons.first().click()
     await expect(details).toContainText(failures[0].failures[0])
-    t.diagnostic('Execution Board evidence: ' + fixture.directory)
   }
 )
 

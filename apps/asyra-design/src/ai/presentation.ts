@@ -1,9 +1,11 @@
+import { readConversationQuestion } from './conversation-result'
 import { activityToolLabels } from './activity-state'
 export { createAiActivityProjection, projectAiActivity } from './activity-state'
 import type { AiConversationOutcome, AiSettledTurn } from './conversation'
 import { AiActionNames, AiDrawingDetailOptionIds } from '../constants'
 
 export interface AiTurnSummary {
+  readonly storageNotice?: string
   readonly durationLabel: string
   readonly message: string
   readonly outcome: AiConversationOutcome
@@ -58,42 +60,10 @@ const DRAWING_DETAIL_CHOICE_PROJECTION: AiDrawingDetailChoiceProjection =
 export const projectAiDrawingDetailChoice = (
   turn: AiSettledTurn
 ): AiDrawingDetailChoiceProjection | null => {
-  if (
-    turn.outcome !== 'no-change' ||
-    !isPlainObject(turn.result) ||
-    turn.result.status !== 'executed' ||
-    !Array.isArray(turn.result.actionResults) ||
-    turn.result.actionResults.length !== 1
-  ) {
-    return null
-  }
-
-  const actionResult = turn.result.actionResults[0]
-
-  if (
-    !isPlainObject(actionResult) ||
-    actionResult.actionName !== AiActionNames.REQUEST_DRAWING_DETAIL_CHOICE ||
-    !isPlainObject(actionResult.result)
-  ) {
-    return null
-  }
-
-  const result = actionResult.result
-
-  if (
-    result.action !== AiActionNames.REQUEST_DRAWING_DETAIL_CHOICE ||
-    result.status !== 'no-change' ||
-    !isPlainObject(result.clarification) ||
-    result.clarification.kind !== 'drawing-detail' ||
-    !Array.isArray(result.clarification.optionIds) ||
-    result.clarification.optionIds.length !== 2 ||
-    result.clarification.optionIds[0] !== AiDrawingDetailOptionIds.BALANCED ||
-    result.clarification.optionIds[1] !== AiDrawingDetailOptionIds.MAXIMUM
-  ) {
-    return null
-  }
-
-  return DRAWING_DETAIL_CHOICE_PROJECTION
+  return readConversationQuestion(turn.result, turn.outcome === 'cancelled')
+    ?.kind === 'drawing-detail'
+    ? DRAWING_DETAIL_CHOICE_PROJECTION
+    : null
 }
 
 const partialCounts = (
@@ -240,6 +210,21 @@ export const summarizeAiTurn = (turn: AiSettledTurn): AiTurnSummary => {
     })
   }
 
+  if (turn.outcome === 'cancelled') {
+    const committed =
+      isPlainObject(turn.result) &&
+      isPlainObject(turn.result.transaction) &&
+      turn.result.transaction.status === 'committed'
+
+    return Object.freeze({
+      durationLabel: formatElapsedTime(turn.durationMs),
+      outcome: turn.outcome,
+      message: committed
+        ? 'The request was stopped. Changes already applied have been kept.'
+        : 'The request was cancelled.'
+    })
+  }
+
   if (
     isPlainObject(turn.result) &&
     turn.result.status === 'failed' &&
@@ -256,20 +241,6 @@ export const summarizeAiTurn = (turn: AiSettledTurn): AiTurnSummary => {
       durationLabel: formatElapsedTime(turn.durationMs),
       outcome: turn.outcome,
       message: `${label} could not be completed.${executionReason} Changes already applied have been kept.`
-    })
-  }
-
-  if (
-    isPlainObject(turn.result) &&
-    turn.result.status === 'cancelled' &&
-    isPlainObject(turn.result.transaction) &&
-    turn.result.transaction.status === 'committed'
-  ) {
-    return Object.freeze({
-      durationLabel: formatElapsedTime(turn.durationMs),
-      outcome: turn.outcome,
-      message:
-        'The request was stopped. Changes already applied have been kept.'
     })
   }
 
@@ -290,21 +261,17 @@ export const summarizeAiTurn = (turn: AiSettledTurn): AiTurnSummary => {
     typeof reported.result.message === 'string' &&
     Array.from(reported.result.message).length <= 1000
   ) {
+    let storageNotice: string | undefined
+
     if (
       reported.result.outcome === 'completed' &&
       isPlainObject(reported.result.persistence)
     ) {
-      const status = reported.result.persistence.status
-
-      if (status === 'unavailable' || status === 'local-only') {
-        return Object.freeze({
-          durationLabel: formatElapsedTime(turn.durationMs),
-          message:
-            status === 'unavailable'
-              ? 'Drawing work is complete, but saving could not be confirmed. Changes have been kept. Resolve document storage before closing; do not repeat the drawing.'
-              : 'Drawing work is complete locally. Durable document storage is not connected.',
-          outcome: turn.outcome
-        })
+      if (reported.result.persistence.status === 'unavailable') {
+        storageNotice =
+          'Saving could not be confirmed. Changes have been kept. Resolve document storage before closing; do not repeat the drawing.'
+      } else if (reported.result.persistence.status === 'local-only') {
+        storageNotice = 'Durable document storage is not connected.'
       }
     }
 
@@ -318,6 +285,7 @@ export const summarizeAiTurn = (turn: AiSettledTurn): AiTurnSummary => {
     return Object.freeze({
       durationLabel: formatElapsedTime(turn.durationMs),
       message: reported.result.message + disposition,
+      ...(storageNotice ? { storageNotice } : {}),
       outcome: turn.outcome
     })
   }
@@ -347,8 +315,6 @@ export const summarizeAiTurn = (turn: AiSettledTurn): AiTurnSummary => {
     message = `Partially updated the drawing: ${counts.applied} applied, ${counts.skipped} skipped.`
   } else if (turn.outcome === 'no-change') {
     message = 'No canvas changes were needed.'
-  } else if (turn.outcome === 'cancelled') {
-    message = 'The request was cancelled.'
   }
 
   return Object.freeze({
@@ -379,13 +345,54 @@ export const canRetryAiTurn = (turn: AiSettledTurn): boolean => {
     return false
   }
 
-  return [
-    'context',
-    'provider',
-    'resolution',
-    'permission',
-    'confirmation'
-  ].includes(String(turn.result.stage))
+  if (
+    Object.hasOwn(turn.result, 'transaction') ||
+    Object.hasOwn(turn.result, 'actionResults')
+  ) {
+    return false
+  }
+
+  if (turn.outcome === 'cancelled') {
+    const result = turn.result
+
+    if (
+      result.status !== 'cancelled' ||
+      (result.reason !== 'aborted' &&
+        result.reason !== 'confirmation-cancelled')
+    ) {
+      return false
+    }
+
+    if (!Object.hasOwn(result, 'audit')) {
+      return (
+        result.reason === 'aborted' &&
+        Object.keys(result).every((key) => key === 'status' || key === 'reason')
+      )
+    }
+
+    return (
+      isPlainObject(result.audit) &&
+      result.audit.outcome === 'cancelled' &&
+      Array.isArray(result.audit.actions) &&
+      result.audit.actions.length === 0 &&
+      Number.isSafeInteger(result.audit.retryCount) &&
+      Number(result.audit.retryCount) >= 0 &&
+      !Object.hasOwn(result, 'actionResults') &&
+      !Object.hasOwn(result, 'stage')
+    )
+  }
+
+  return (
+    turn.result.status === 'failed' &&
+    typeof turn.result.stage === 'string' &&
+    [
+      'context',
+      'provider',
+      'resolution',
+      'permission',
+      'confirmation'
+    ].includes(turn.result.stage)
+  )
 }
 
 export const projectAiQuestion = (
@@ -394,45 +401,20 @@ export const projectAiQuestion = (
   readonly message: string
   readonly choices: readonly AiDrawingDetailChoice[]
 } | null => {
-  const detail = projectAiDrawingDetailChoice(turn)
+  const question = readConversationQuestion(
+    turn.result,
+    turn.outcome === 'cancelled'
+  )
 
-  if (detail) {
-    return {
-      message: 'Choose a drawing detail level.',
-      choices: detail.choices
-    }
-  }
-
-  if (
-    turn.outcome !== 'no-change' ||
-    !isPlainObject(turn.result) ||
-    !Array.isArray(turn.result.actionResults) ||
-    turn.result.actionResults.length !== 1
-  ) {
+  if (!question) {
     return null
   }
 
-  const action = turn.result.actionResults[0]
-
-  if (
-    !isPlainObject(action) ||
-    action.actionName !== AiActionNames.REQUEST_CLARIFICATION ||
-    !isPlainObject(action.result) ||
-    !isPlainObject(action.result.clarification)
-  ) {
-    return null
+  return {
+    message: question.message,
+    choices:
+      question.kind === 'drawing-detail'
+        ? DRAWING_DETAIL_CHOICE_PROJECTION.choices
+        : []
   }
-
-  const { question, kind } = action.result.clarification
-
-  if (
-    kind !== 'question' ||
-    typeof question !== 'string' ||
-    !question.trim() ||
-    Array.from(question).length > 1000
-  ) {
-    return null
-  }
-
-  return { message: question, choices: [] }
 }

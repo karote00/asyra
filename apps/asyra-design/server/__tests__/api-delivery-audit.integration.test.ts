@@ -884,17 +884,23 @@ it.each([
   }
 )
 
-it.each(['parameters', 'results'])(
-  'rejects corrupted calculation %s in the shared delivered-contract audit',
-  async (field) => {
+it.each(
+  ['parameters', 'results'].flatMap((field) =>
+    ['accepts healthy', 'rejects corrupted'].map((expectation) => [
+      expectation,
+      field
+    ])
+  )
+)(
+  '%s calculation %s in the shared delivered-contract audit',
+  async (expectation, field) => {
     const current = createDeliveryAuditFixture()
-    const corruptedFixture = createDeliveryAuditFixture()
 
-    const read = async (selectedHost: typeof current.host) => {
+    const read = async () => {
       const text = await readCompleteInformation(
         async (input, tool) =>
           (
-            await selectedHost.invoke({
+            await current.host.invoke({
               name: 'design_operations.' + tool,
               input
             })
@@ -928,26 +934,26 @@ it.each(['parameters', 'results'])(
     }
 
     try {
-      const healthy = await read(current.host)
+      if (expectation === 'rejects corrupted') {
+        usageProjection.mockImplementation((input) => {
+          const projected = originalUsageProjection(input)
 
-      expect(() => observedUsageSource(healthy[field])).not.toThrow()
-      usageProjection.mockImplementation((input) => {
-        const projected = originalUsageProjection(input)
+          if (field === 'results' && Array.isArray(projected.anyOf)) {
+            return { ...projected, anyOf: [...projected.anyOf, {}] }
+          }
 
-        if (field === 'results' && Array.isArray(projected.anyOf)) {
-          return { ...projected, anyOf: [...projected.anyOf, {}] }
-        }
+          const rewritten =
+            field === 'parameters' ? rewrite(projected) : projected
 
-        const rewritten =
-          field === 'parameters' ? rewrite(projected) : projected
+          if (!isRecord(rewritten)) {
+            throw new Error('Malformed audit fault')
+          }
 
-        if (!isRecord(rewritten)) {
-          throw new Error('Malformed audit fault')
-        }
+          return rewritten
+        })
+      }
 
-        return rewritten
-      })
-      const corrupted = await read(corruptedFixture.host)
+      const delivered = await read()
       const probe =
         field === 'parameters'
           ? {
@@ -955,18 +961,21 @@ it.each(['parameters', 'results'])(
             }
           : {}
 
-      expect(operationInputIssue(probe, healthy[field])).toBeDefined()
-      expect(operationInputIssue(probe, corrupted[field])).toBeUndefined()
-      expect(() => observedUsageSource(corrupted[field])).toThrow(
-        /Delivered schema must preserve source constraints/
-      )
+      if (expectation === 'accepts healthy') {
+        expect(operationInputIssue(probe, delivered[field])).toBeDefined()
+        expect(() => observedUsageSource(delivered[field])).not.toThrow()
+      } else {
+        expect(operationInputIssue(probe, delivered[field])).toBeUndefined()
+        expect(() => observedUsageSource(delivered[field])).toThrow(
+          /Delivered schema must preserve source constraints/
+        )
+      }
+
       expect(current.execute).not.toHaveBeenCalled()
-      expect(corruptedFixture.execute).not.toHaveBeenCalled()
     } finally {
       usageProjection.mockReset()
       usageProjection.mockImplementation(originalUsageProjection)
       await current.dispose()
-      await corruptedFixture.dispose()
     }
   }
 )

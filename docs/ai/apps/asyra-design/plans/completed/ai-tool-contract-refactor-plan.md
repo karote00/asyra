@@ -1,5 +1,21 @@
 # AI tool contract refactor
 
+## November 18 closeout
+
+Implementation record archived on 2026-11-18. Current behavior is owned by the
+App specifications and executable owner contracts, not the historical instructions
+below. Earlier failures, withdrawn conclusions, timing aspirations and unverified
+model choices remain historical evidence; archival does not turn them into passes.
+The user accepted the latest complete drawing and normal recoverable exploration.
+Final current-source verification and delivery status are recorded in the
+[conversation closeout report](../../reports/conversation-closeout-2026-11-18.md).
+The owner subsequently approved recording transitive-only advisories without
+blocking delivery; the closeout report records policy validation and Git delivery.
+No new drawing, release, compatibility path or completion gate is introduced.
+
+## Historical task record
+
+
 Status: DONE - approved post-run improvements locally validated, 2026-10-04. Historical drawing outcomes are preserved. No push.
 Owner: this conversation. Parent: [execution improvement](ai-execution-improvement-plan.md).
 Baseline: `c6506a164bea82a5c7284dd3c4a0b4f3bb17c7a5` plus the preserved, locally

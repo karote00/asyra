@@ -236,6 +236,7 @@ const seedPriorGenerationRemoval = async (page: Page, fileId: string) => {
         fileId: documentId,
         publicationId,
         appendOrder: 1,
+        documentGeneration: 0,
         publication,
         status: 'pending'
       })

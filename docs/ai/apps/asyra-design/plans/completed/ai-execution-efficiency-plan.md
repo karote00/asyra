@@ -1,5 +1,21 @@
 # AI execution efficiency
 
+## November 18 closeout
+
+Implementation record archived on 2026-11-18. Current behavior is owned by the
+App specifications and executable owner contracts, not the historical instructions
+below. Earlier failures, withdrawn conclusions, timing aspirations and unverified
+model choices remain historical evidence; archival does not turn them into passes.
+The user accepted the latest complete drawing and normal recoverable exploration.
+Final current-source verification and delivery status are recorded in the
+[conversation closeout report](../../reports/conversation-closeout-2026-11-18.md).
+The owner subsequently approved recording transitive-only advisories without
+blocking delivery; the closeout report records policy validation and Git delivery.
+No new drawing, release, compatibility path or completion gate is introduced.
+
+## Historical task record
+
+
 Status: completed locally; final live evidence recorded in the parent results.
 Parent: [improvement plan](ai-execution-improvement-plan.md).
 
@@ -120,7 +136,7 @@ creation before this plan is closed. No wall-clock improvement is claimed yet.
 
 ## Final acceptance
 
-See [parent results](ai-execution-improvement-results.md). The successful live
+See [parent results](../ai-execution-improvement-results.md). The successful live
 request, period report, independent post-run process opinion, zero-call reuse of
 current visual-review opinion, native detail screenshots and full recording are
 retained locally. Speed and visual limitations remain explicit; model opinion is

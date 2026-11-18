@@ -33,6 +33,21 @@ const createAppManifests = readCreateAppManifests(repositoryRoot)
 const names = (scope) =>
   scope.relationshipMap.workspaceMatrix.map(({ name }) => name)
 
+test('conversation Flow configuration selects its App verification consumer', () => {
+  const scope = classifyChanges(
+    ['conversation-flow-inspector.config.json'],
+    manifests
+  )
+
+  assert.deepEqual(scope.unknownPaths, [])
+  assert.ok(names(scope).includes('@asyra/asyra-design'))
+  assert.deepEqual(scope.executionPlan.unknownRelations, [])
+  assert.deepEqual(
+    classifyChanges(['unregistered-flow.config.json'], manifests).unknownPaths,
+    ['unregistered-flow.config.json']
+  )
+})
+
 test('model reference documents and images are recognized without runtime selection', () => {
   const result = classifyChanges(
     [

@@ -14,7 +14,7 @@
         "./node"
       ],
       "sourceDigests": {
-        "contract": "e56cc86b78918c9b913d41748dd0aabf6e56196a8e787385f0cfbdf8913a8767",
+        "contract": "71567ddc02254997631b4a7979ca0b33a4fdc1cf49559b8b49820485a874462d",
         "guide": "cf8444e4e1a59b845cccd592ea8eed85841bc8530f9aff884f67a20870056e09",
         "manifest": "b7333829a47fb2da53c13255b6ebf741ab7163cfcac0d628f9479d0e9fb2bed0"
       },
@@ -213,7 +213,7 @@
         "./spatial-engine"
       ],
       "sourceDigests": {
-        "contract": "de6b4208a20b5ea32e3f363e3840ab9e24a66df2403c1855b47e5c10102b6572",
+        "contract": "06fc4febe8a71d8c2baa9d83c44c6f9f58b770514530c13ad247df83a4625e8a",
         "guide": "96d66df52c5f73e156dc28a7b7d354769452d56677ea23a34fb9a38796ab24ff",
         "manifest": "faeadb90e225de890dabcaf27c479aab9d863760855f05712ffe744af93ebd8c"
       },

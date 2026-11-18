@@ -1,3 +1,7 @@
+import {
+  createConversationDrafts,
+  type ConversationDrafts
+} from '../ai/conversation-drafts'
 import { applyPreset } from '@asyra/preset'
 import { initText } from './capabilities/init-text'
 import core from '../contexts'
@@ -25,6 +29,7 @@ import {
 } from './performance/ai-drawing-performance-profile'
 
 export interface AppInitialization {
+  readonly aiDrafts: ConversationDrafts
   readonly aiConfirmation: AiConfirmationBroker
   readonly aiConversation: AiConversationController
   readonly aiHistory: AiHistoryProjection
@@ -92,6 +97,7 @@ export const initApp = (): AppInitialization => {
     throw error
   }
 
+  const aiDrafts = createConversationDrafts(core)
   const aiFeature = initializedFeatures.ai
   const aiConversation = createAiConversationController({
     confirmation: aiStartup.confirmation,
@@ -154,6 +160,7 @@ export const initApp = (): AppInitialization => {
       disposal = (async () => {
         window.removeEventListener('pagehide', handlePageHide)
         detachPerformanceRuntimeEvidence?.()
+        aiDrafts.dispose()
         await aiConversation.dispose()
         await aiStartup.confirmation.dispose()
         aiStartup.history.dispose()
@@ -172,6 +179,7 @@ export const initApp = (): AppInitialization => {
   window.addEventListener('pagehide', handlePageHide, { once: true })
 
   return Object.freeze({
+    aiDrafts,
     aiConfirmation: aiStartup.confirmation,
     aiConversation,
     aiHistory: aiStartup.history,

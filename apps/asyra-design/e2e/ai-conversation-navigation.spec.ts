@@ -68,7 +68,19 @@ for (const width of [360, 1440]) {
       await expect(history).toHaveCount(0)
     }
 
+    await toggleHistory.click()
+    await toggleHistory.press('Escape')
+    await expect(history).toHaveCount(0)
+    await expect(toggleHistory).toBeFocused()
+    await expect(page.getByTestId('ai-agent-result')).toContainText(
+      'Use a clear hierarchy and consistent spacing.'
+    )
     await page.getByLabel('Message Agent').fill('Unsent first draft')
+    await page.getByRole('button', { name: 'Close Agent panel' }).click()
+    await page.getByRole('button', { name: 'Open Agent' }).click()
+    await expect(page.getByLabel('Message Agent')).toHaveValue(
+      'Unsent first draft'
+    )
     await page.getByRole('button', { name: 'New conversation' }).click()
     await expect(page.getByLabel('Message Agent')).toHaveValue('')
     await expect(page.getByTestId('ai-agent-message')).toHaveCount(0)

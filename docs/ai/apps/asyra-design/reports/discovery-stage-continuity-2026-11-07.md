@@ -1,7 +1,7 @@
 # Discovery and stage continuity - implementation and live evidence
 
 Date: November 7, 2026. Branch: `codex/ai-conversation-improvements`.
-Associated plan: [Staged Design Execution](../plans/staged-design-execution-plan.md#follow-up-discovery-and-stage-continuity).
+Associated plan: [Staged Design Execution](../plans/completed/staged-design-execution-plan.md#follow-up-discovery-and-stage-continuity).
 
 This report concerns the five authorized continuity steps and their direct live
 regressions. It does not compare drawing speed across differently detailed

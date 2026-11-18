@@ -4364,7 +4364,7 @@ preparation may overlap pending application only under owner-declared access and
 resolved input dependencies. Canvas-dependent work waits for acknowledgement.
 Started work settles before terminal delivery; acknowledged work is never replayed.
 Implementation and focused evidence are tracked in
-[the staged execution plan](../plans/staged-design-execution-plan.md).
+[the staged execution plan](../plans/completed/staged-design-execution-plan.md).
 
 ### Direct stage continuation and selected reference ownership
 

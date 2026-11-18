@@ -3,7 +3,7 @@
 Completed: 2026-11-02. Asa reviewed the full-building Taipei 101 result and accepted
 this bounded scope for closeout and PR creation. Remaining realism and report
 freshness limitations are non-blocking and need not be changed now.
-Parent: [Editable Design Agent](../ai-design-agent-plan.md).
+Parent: [Editable Design Agent](ai-design-agent-plan.md).
 
 ## Accepted outcome and exit criteria
 

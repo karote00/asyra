@@ -24,7 +24,7 @@ for (const group of [
       'apps/asyra-design/test-data/conversation-verification/runtime.vitest.config.mjs',
     environment: 'node',
     files: [
-      'apps/asyra-design/test-data/conversation-verification/fixtures/collection-identity.test.ts'
+      'apps/asyra-design/test-data/conversation-verification/fixtures/__tests__/collection-identity.test.ts'
     ],
     title: 'outer > literal nested value > 1'
   },

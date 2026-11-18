@@ -1,10 +1,7 @@
+import { readConversationQuestion } from './conversation-result'
 import { projectConversationContext } from './conversation-context-projection'
 import { ConversationContextError } from './conversation-context'
-import {
-  canRetryAiTurn,
-  projectAiQuestion,
-  createAiActivityProjection
-} from './presentation'
+import { canRetryAiTurn, createAiActivityProjection } from './presentation'
 import type { AiActivityProjectionState } from './activity-state'
 import { AiActionNames, AiDrawingDetailSelectionIntents } from '../constants'
 import type {
@@ -171,7 +168,7 @@ const EMPTY_TARGET_HINTS: AiTargetHints = Object.freeze({
 
 const EMPTY_IMAGE_ATTACHMENTS: readonly AiImageAttachment[] = Object.freeze([])
 
-const ACCEPTED_IMAGE_MEDIA_TYPES = new Set<AiImageMediaType>([
+const ACCEPTED_IMAGE_MEDIA_TYPES: ReadonlySet<string> = new Set([
   'image/jpeg',
   'image/png',
   'image/webp'
@@ -190,6 +187,29 @@ const isPlainObject = (value: unknown): value is Record<string, unknown> => {
   return prototype === Object.prototype || prototype === null
 }
 
+export const isAiImageAttachment = (
+  value: unknown
+): value is AiImageAttachment => {
+  if (!isPlainObject(value)) {
+    return false
+  }
+
+  const { dataUrl, mediaType, name, size } = value
+
+  return (
+    typeof mediaType === 'string' &&
+    ACCEPTED_IMAGE_MEDIA_TYPES.has(mediaType) &&
+    typeof dataUrl === 'string' &&
+    dataUrl.startsWith(`data:${mediaType};base64,`) &&
+    dataUrl.length > `data:${mediaType};base64,`.length &&
+    typeof name === 'string' &&
+    name.trim().length > 0 &&
+    typeof size === 'number' &&
+    Number.isSafeInteger(size) &&
+    size > 0
+  )
+}
+
 const normalizeImageAttachments = (
   value: unknown
 ): readonly AiImageAttachment[] => {
@@ -203,30 +223,15 @@ const normalizeImageAttachments = (
 
   return Object.freeze(
     value.map((attachment) => {
-      if (!isPlainObject(attachment)) {
+      if (!isAiImageAttachment(attachment)) {
         throw new AiConversationError('AI_CONVERSATION_INVALID_ATTACHMENT')
       }
 
       const { dataUrl, mediaType, name, size } = attachment
 
-      if (
-        typeof mediaType !== 'string' ||
-        !ACCEPTED_IMAGE_MEDIA_TYPES.has(mediaType as AiImageMediaType) ||
-        typeof dataUrl !== 'string' ||
-        !dataUrl.startsWith(`data:${mediaType};base64,`) ||
-        dataUrl.length <= `data:${mediaType};base64,`.length ||
-        typeof name !== 'string' ||
-        name.trim().length === 0 ||
-        typeof size !== 'number' ||
-        !Number.isSafeInteger(size) ||
-        size <= 0
-      ) {
-        throw new AiConversationError('AI_CONVERSATION_INVALID_ATTACHMENT')
-      }
-
       return Object.freeze({
         dataUrl,
-        mediaType: mediaType as AiImageMediaType,
+        mediaType,
         name: name.trim(),
         size
       })
@@ -398,7 +403,7 @@ export const createAiConversationController = (
     throw new AiConversationError('AI_CONVERSATION_INVALID_INTENT')
   }
 
-  let settledTurns: AiSettledTurn[] = []
+  let settledTurns: readonly AiSettledTurn[] = Object.freeze([])
   const observers = new Set<(snapshot: AiConversationSnapshot) => void>()
   let activeTurn: MutableActiveTurn | null = null
   let activeSettlement: Promise<unknown> | null = null
@@ -407,7 +412,11 @@ export const createAiConversationController = (
   let turnIndex = 0
   const storedConversations = new Map<
     string,
-    { turns: AiSettledTurn[]; targets: AiTargetHints; turnIndex: number }
+    {
+      turns: readonly AiSettledTurn[]
+      targets: AiTargetHints
+      turnIndex: number
+    }
   >()
   const navigationObservers = new Set<() => void>()
   let navigationSnapshot: AiConversationNavigationSnapshot | undefined
@@ -538,7 +547,7 @@ export const createAiConversationController = (
             }),
       conversationId,
       disposed,
-      settledTurns: Object.freeze([...settledTurns]),
+      settledTurns,
       targetHints
     })
   }
@@ -651,7 +660,7 @@ export const createAiConversationController = (
 
       storeCurrent()
       conversationId = id
-      settledTurns = []
+      settledTurns = Object.freeze([])
       targetHints = EMPTY_TARGET_HINTS
       turnIndex = 0
       navigationSnapshot = undefined
@@ -713,7 +722,10 @@ export const createAiConversationController = (
       }
 
       const pendingQuestion =
-        latest && projectAiQuestion(latest) ? latest : undefined
+        latest &&
+        readConversationQuestion(latest.result, latest.outcome === 'cancelled')
+          ? latest
+          : undefined
       const replyToTurnId = submission?.replyToTurnId ?? pendingQuestion?.turnId
       const replyTo = replyToTurnId ? pendingQuestion : undefined
 
@@ -911,7 +923,7 @@ export const createAiConversationController = (
 
       activeSettlement = null
       if (!disposed) {
-        settledTurns.push(settled)
+        settledTurns = Object.freeze([...settledTurns, settled])
         notify()
         try {
           options.onPublished?.(settled)
@@ -932,7 +944,7 @@ export const createAiConversationController = (
 
       return controller.submit({
         intent: turn.intent,
-        attachments: turn.attachments,
+        attachments: [],
         retryOfTurnId: turnId
       })
     },
@@ -984,7 +996,7 @@ export const createAiConversationController = (
       disposed = true
       activeTurn = null
       targetHints = EMPTY_TARGET_HINTS
-      settledTurns.length = 0
+      settledTurns = Object.freeze([])
       observers.clear()
       navigationObservers.clear()
       storedConversations.clear()

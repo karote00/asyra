@@ -1,5 +1,21 @@
 # AI execution improvement
 
+## November 18 closeout
+
+Implementation record archived on 2026-11-18. Current behavior is owned by the
+App specifications and executable owner contracts, not the historical instructions
+below. Earlier failures, withdrawn conclusions, timing aspirations and unverified
+model choices remain historical evidence; archival does not turn them into passes.
+The user accepted the latest complete drawing and normal recoverable exploration.
+Final current-source verification and delivery status are recorded in the
+[conversation closeout report](../../reports/conversation-closeout-2026-11-18.md).
+The owner subsequently approved recording transitive-only advisories without
+blocking delivery; the closeout report records policy validation and Git delivery.
+No new drawing, release, compatibility path or completion gate is introduced.
+
+## Historical task record
+
+
 Created: 2026-10-03. Status: completed locally; no push or remote CI claimed.
 Owner and whole-plan closeout: this conversation. Continue
 `.worktrees/ai-execution-flow`, branch `codex/ai-execution-flow`, from
@@ -22,7 +38,7 @@ remains evidence and requires a bounded owner correction before retrying.
 2. [Evaluation and periodic reports](ai-execution-evaluation-plan.md).
 3. [Precise retrieval and reuse](ai-execution-retrieval-plan.md).
 4. [Execution efficiency](ai-execution-efficiency-plan.md).
-5. [Local affected validation](../../../framework/plans/completed/local-affected-validation-plan.md)
+5. [Local affected validation](../../../../framework/plans/completed/local-affected-validation-plan.md)
    - independent developer-tool work, reusable by the other plans.
 
 Mutation scope: Design provider/diagnostics/tool owners and their direct tests,
@@ -81,7 +97,7 @@ registry semantic correction preceded the successful repeat.
 The final headless run passed, preserved the requested editable detail and scale
 contract, and retained ten seconds after completion. It took 15m27s; the 1–2 minute
 aspiration is **not achieved**, and this single run does not prove a speedup.
-See [results and evidence](ai-execution-improvement-results.md) for timings,
+See [results and evidence](../ai-execution-improvement-results.md) for timings,
 visual limitations, validation, exact brief, replay artifacts and report commands.
 No shared renderer or speculative RAG/cache was added without owner evidence.
 

@@ -7,6 +7,13 @@ identity and position across active and settled work. Assistant output appears o
 the left. The App conversation controller owns request lifecycle, answered questions,
 continuation and recovery; the panel is a projection. One active request is admitted.
 A resolved provider attempt may ask a question rather than complete the user goal.
+Question admission reads the unique final control receipt of a successful
+invocation, including earlier streamed operation receipts. Earlier reads or
+committed edits do not hide that question. Failed/cancelled invocations,
+conflicting terminal controls, nonterminal questions and malformed question
+receipts do not admit answers. The controller and presentation consume the same
+result interpretation; canvas disposition remains independent of waiting for an
+answer. Explicit Stop cannot display a late successful reply.
 Successor requests receive bounded complete prior messages from the selected
 conversation under [request continuity](ai-execution-flow.md#request-and-continuity),
 with actual outcomes and explicit omissions. This does not resume native tool
@@ -17,6 +24,16 @@ retry requests retain the original reference as request context without presenti
 it as a newly attached image. No Edit request action or automatic draft restoration
 is offered. Panel text supports native mouse selection and copying. Composer keyboard events stay in the text
 input, preserving native editing and IME without invoking canvas shortcuts.
+Unsubmitted drafts live in the App-owned `conversationDrafts` system-context
+property, registered through Core during App initialization. Core validates values
+and supplies observation; the App adapter holds no parallel value store or event
+bus. Drafts survive panel remounts and conversation navigation. This retention does not restore
+an already submitted request as a draft. Accepted submission retires the draft
+generation; App document disposal releases subscriptions and clears drafts. The
+property is runtime-only: it does not enter canonical document persistence or
+collaboration. Unsubmitted text/images are not part of provider context. Backend
+conversation-history persistence is a separate future capability. Pending image reads retain
+their source/generation checks and cannot write back from a retired panel.
 
 Initial selected-element summaries disclose the canonical `parentId` (or null
 when unavailable) and `coordinateSpace: "parent-local"` alongside bounds. These
@@ -60,7 +77,11 @@ permission enforcement. Unknown actions remain rejected.
 Execution activity uses each action’s explicitly authored `{kind: "work", text}` visible-change summary (for example, “Smoothing the outlines” or “Reshaping the tail”), emitted when that action starts. Missing or unsuitable summaries use the registered action label; never display “Applying changes” or invent a specific edit.
 
 Current activity is derived from real execution phases, with one concise visible
-status and collapsed details. One App-owned activity projection produces the
+status and collapsed details. Settled message snapshots remain stable during active progress. Only the active
+message subscribes to progress revisions; historical activity and answer lookup
+are not recomputed for each event. Settlement/navigation refresh membership and
+answer eligibility. No view memo wrapper replaces these ownership boundaries.
+One App-owned activity projection produces the
 ordered entries and the current entry shared by the current status below the disclosure and its history.
 History deduplicates the same authored identity/revision, not equal prose from
 separate tasks. Principal purpose appears first; operation state is secondary.
@@ -130,11 +151,20 @@ No synthetic reasoning or timed
 percentage is allowed.
 Private model reasoning is never displayed. Explicit operational messages from registered backend operations may be displayed. Model-authored operational descriptions, questions and replies retain their language; the App does not prescribe or filter their language.
 
-Completion describes actual results and does not certify visual fidelity. Failure
-identifies a sanitized cause and canvas disposition, retains the request and image,
+Completion describes actual results and does not certify visual fidelity.
+Authored replies remain visible when document storage is local-only or unavailable;
+storage is a separate notice, not replacement assistant text or a new instruction
+in subsequent public conversation history.
+Failure identifies a sanitized cause and canvas disposition, retains the request and image,
 and offers safe retry when eligible. Partial-result messages do not append a generic
 reminder that earlier changes are kept or that Undo is available. Retry is admitted only for confirmed pre-write
-failure or cancellation; partial/unknown outcomes require review. An explicit image
+failure or cancellation; partial/unknown outcomes require review.
+Runtime cancellation before execution has no stage or transaction; its authoritative
+cancelled audit (or the Feature's explicit abort-before-run result) permits retry.
+Any execution transaction, unknown disposition or action receipts forbid blind
+replay. Retry appends no newly submitted image and retains source indexes from
+the original history.
+An explicit image
 tracing request uses registered VTracer or fails honestly, never a fabricated trace.
 Replacement accepts the referenced native Frame or traced Group, prepares new content before removing only that root and executes in one
 request-owned history group. Each finite mutation member commits independently; failure rolls back its active member. Tool failure is returned to the AI within that request; only request settlement, cancellation or terminal transport failure seals prior successful members into one Undo entry. Target ambiguity

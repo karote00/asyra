@@ -26,7 +26,7 @@ not reverse the completed drawing turn or accepted checks.
 
 No full local suite, CI, publication, commit or push was performed. Existing dirty
 worktree changes were preserved. Scope is the
-[contract delivery follow-up](../plans/staged-design-execution-plan.md#follow-up-contract-delivery-and-final-review-acquisition).
+[contract delivery follow-up](../plans/completed/staged-design-execution-plan.md#follow-up-contract-delivery-and-final-review-acquisition).
 
 ## Every launch and correction
 

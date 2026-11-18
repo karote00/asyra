@@ -5,11 +5,16 @@ import process from 'node:process'
 import test from 'node:test'
 
 import playwrightConfig from '../playwright.config.ts'
+import nextConfig from '../next.config.ts'
 
 const siteRoot = path.resolve(import.meta.dirname, '..')
 const e2eRoot = path.join(siteRoot, '__tests__', 'e2e')
 const expectedOutputRoot = path.join(siteRoot, 'test-results', 'platform')
 const recursiveSiteRoot = path.join(siteRoot, 'apps', 'asyra-framework-site')
+
+test('development tooling does not cover the website during visual interaction', () => {
+  assert.equal(nextConfig.devIndicators, false)
+})
 
 test('ordinary visual review uses the installed Chrome in and outside CI', async () => {
   const previousCI = process.env.CI
