@@ -366,3 +366,65 @@ The final live dependency audit also passes with transitive findings retained
 in `tmp/security-audit/run-i4VBJT`. No ignored local artifacts or `.env` files
 are part of the commit. Push targets the existing `codex/ai-conversation-improvements`
 branch and PR #365; the actual remote result is reported after execution.
+
+## CI follow-up - native admission and Board execution scope
+
+This bounded follow-up belongs to the existing conversation closeout in PR #365.
+Run `44345335529` at `514fa7c0770bb7ff28cf2a91983fd099aca1624c` exposed missing
+CI native-client provisioning and a 30-second Board fixture process timeout.
+The local full run remains valid local evidence, not remote acceptance.
+
+1. Add a failing workflow regression for native admission before functional E2E.
+   Install the approved Codex CLI version from the existing admission authority
+   into project-local temporary storage and validate it before exporting its path.
+   Preserve offline model responses, isolated credentials and strict version checks.
+2. Trace Board proof execution without reducing registered coverage. The initial
+   case-selection hypothesis was rejected: all 89 current cases are registered.
+   A temporary sentinel confirmed file-wide selection but does not explain this
+   timeout. CI shows cleanup from the evaluation case continuing during the next
+   case. Its Date-only offset and real timeout can interrupt query setup before
+   both leases exist. Add delayed-transport regression, then control the scripted
+   deadline with one clock and retain cleanup before advancing cases.
+3. Review the bounded diff; run workflow/native admission, actual native browser
+   handoff and affected Board regressions through the actual runner/localization
+   path, scoped lint, naming and dependency audit. Push to PR #365; the owner will check CI without agent polling.
+
+Do not change product behavior, contract inventories, process/test deadlines,
+assertions, skip rules or credentials. No 101 or full repository test rerun. Any
+additional unrelated CI failure is reported separately before expanding repairs.
+
+### CI follow-up validation
+
+The missing setup regression failed before the workflow change. The exact new
+workflow shell installed `@openai/codex@0.160.0` locally and passed canonical
+version admission. The real browser/native handoff file passed all 8 cases using
+that installation, including attachment corruption detection. No model account
+or paid model service was used. Workflow and native admission tests passed all
+53 cases; the final focused workflow checks passed both selected cases.
+
+The delayed-transport regression reproduced premature cutoff: with an 800 ms
+response delay, the old 700 ms real timer released the parent before the child
+query existed. Date and timeout now share the same virtual clock. The proof
+waits for both query receipts, checks no interrupt at 699 ms, then advances the
+last millisecond. All existing release, sibling lease, capacity, cancellation,
+disconnect, report-failure, retained mutation and failed-release assertions remain.
+Cleanup is idempotent and registered with test completion as well as `finally`,
+so an early test exit aborts and joins the request before another case starts.
+No production implementation, test/process deadline or contract inventory changed.
+
+Final Board evidence: `tmp/flow-inspector/localization-runtime-qzPBkC`. The actual
+Board case passed, preserving the expected four injected failures among all 89
+registered cases and then all 89 passing after recovery, with original failure
+history retained. Both child invocations stayed within the unchanged 30-second
+process guard. This is local evidence, not a guarantee of remote runner timing.
+
+Evidence logs: `tmp/ci-native-red.log`, `tmp/ci-native-install.log`,
+`tmp/ci-native-focused.log`, `tmp/ci-native-browser.log`,
+`tmp/ci-board-clock-red.log`, `tmp/ci-board-clock-green.log`,
+`tmp/ci-board-focused-final.log`, and `tmp/ci-workflow-final.log`. Flow-proof
+typecheck and naming passed; scoped ESLint has no errors and retains its existing
+console warning. Security audit passed with the recorded indirect picomatch
+finding (`tmp/security-audit/run-ZpbBxQ`).
+
+The owner explicitly cancelled agent-side CI waiting to conserve credits. Push
+this bounded correction to PR #365; remote CI acceptance remains owner-reviewed.

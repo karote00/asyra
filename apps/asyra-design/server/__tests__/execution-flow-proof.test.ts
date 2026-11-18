@@ -43,6 +43,7 @@ import { designReportPolicy } from '../design-profiler-policy'
 import { EventEmitter } from 'node:events'
 import { PassThrough, Writable } from 'node:stream'
 import { beforeEach, afterEach, expect, it, vi } from 'vitest'
+import { setTimeout as delay } from 'node:timers/promises'
 beforeEach(() => vi.stubGlobal('window', {}))
 afterEach(() => vi.unstubAllGlobals())
 import { AiActionNames } from '../../src/constants/ai-actions'
@@ -7500,7 +7501,8 @@ const proveDeadlineQueryCleanup = async (
   directory: string,
   mode:
     'deadline' | 'cancel' | 'disconnect' | 'report-failure' | 'release-failure',
-  observations: CleanupProofObservation[]
+  observations: CleanupProofObservation[],
+  onTestFinished: (cleanup: () => Promise<void>) => void
 ) => {
   // Each case owns/disposes its runtime and restores Core below. Re-importing
   // the complete source graph per case is not part of the cleanup contract.
@@ -7562,17 +7564,14 @@ const proveDeadlineQueryCleanup = async (
     return queries.read(blockedQuery, pressureSignal)
   }
 
-  // Start this deterministic work window when the scripted first turn begins.
-  // Cold contract construction is not the cancellation/cleanup oracle.
-  const realNow = Date.now
-  const origin = realNow()
-  let startedAt: number | undefined
-  const clock = vi
-    .spyOn(Date, 'now')
-    .mockImplementation(
-      () => origin + (startedAt === undefined ? 0 : realNow() - startedAt)
-    )
-  const deadline = origin + 700
+  // One clock owns Date and the provider's deadline timer. Advance only after
+  // both query receipts arrive; source loading and transport are not the oracle.
+  vi.useFakeTimers({ toFake: ['Date', 'setTimeout', 'clearTimeout'] })
+  const deadline = Date.now() + 700
+  let finishQueries!: () => void
+  const queriesReady = new Promise<void>((resolve) => {
+    finishQueries = resolve
+  })
   let turns = 0
   const retained: { snapshotId: string; leaseId: string }[] = []
   const releaseAttempts: string[] = []
@@ -7667,7 +7666,7 @@ const proveDeadlineQueryCleanup = async (
       const packet = JSON.parse(String(chunk)) as (typeof packets)[number]
 
       packets.push(packet)
-      queueMicrotask(() => {
+      queueMicrotask(async () => {
         if (packet.method && packet.id !== undefined) {
           let result: unknown = {}
 
@@ -7690,7 +7689,6 @@ const proveDeadlineQueryCleanup = async (
           }
 
           if (packet.method === 'turn/start') {
-            startedAt ??= realNow()
             result = { turn: { id: `turn-${++turns}` } }
           }
 
@@ -7733,6 +7731,12 @@ const proveDeadlineQueryCleanup = async (
 
           if (parent) {
             retained.push(parent)
+            // Slow transport must not consume the scripted work window before
+            // both query leases exist; the proof controls cutoff explicitly.
+            if (mode === 'deadline') {
+              await delay(800)
+            }
+
             call(801, AiActionNames.READ_DESIGN_CONTEXT, {
               arguments: {
                 scope: 'snapshot',
@@ -7760,6 +7764,8 @@ const proveDeadlineQueryCleanup = async (
           if (mode === 'disconnect') {
             child.emit('close', 1, null)
           }
+
+          finishQueries()
         } else if (packet.id === 802) {
           finishReport()
         }
@@ -7934,11 +7940,48 @@ const proveDeadlineQueryCleanup = async (
     permissionPolicy: { evaluate: () => 'allow' }
   })
 
+  const execution = runtime.run({
+    intent: 'Adjust one panel and report remaining review',
+    signal: controller.signal
+  })
+
+  let cleanupTask: Promise<void> | undefined
+
+  const cleanup = () => {
+    cleanupTask ??= (async () => {
+      controller.abort()
+      try {
+        await execution
+      } finally {
+        try {
+          await runtime.dispose()
+        } finally {
+          vi.useRealTimers()
+          hostSpy.mockRestore()
+          createQueries.mockRestore()
+          core.load(initial)
+          vi.unstubAllGlobals()
+        }
+      }
+    })()
+
+    return cleanupTask
+  }
+
+  // A test timeout must abort/join this request before Vitest starts another case.
+  onTestFinished(cleanup)
   try {
-    const result = await runtime.run({
-      intent: 'Adjust one panel and report remaining review',
-      signal: controller.signal
-    })
+    await Promise.race([queriesReady, execution])
+    expect(retained).toHaveLength(2)
+    if (mode !== 'cancel' && mode !== 'disconnect') {
+      await vi.advanceTimersByTimeAsync(699)
+      expect(packets.some((packet) => packet.method === 'turn/interrupt')).toBe(
+        false
+      )
+      await vi.advanceTimersByTimeAsync(1)
+    }
+
+    const result = await execution
 
     if (capturedHost) {
       await providerSettled
@@ -8051,13 +8094,7 @@ const proveDeadlineQueryCleanup = async (
       expect(releaseReceipts).toHaveLength(0)
     }
   } finally {
-    controller.abort()
-    await runtime.dispose()
-    clock.mockRestore()
-    hostSpy.mockRestore()
-    createQueries.mockRestore()
-    core.load(initial)
-    vi.unstubAllGlobals()
+    await cleanup()
   }
 }
 
@@ -8305,7 +8342,12 @@ it('execution proof separates bounded work from same-thread self-report without 
     'report-failure',
     'release-failure'
   ] as const) {
-    await proveDeadlineQueryCleanup(directory, mode, observations)
+    await proveDeadlineQueryCleanup(
+      directory,
+      mode,
+      observations,
+      onTestFinished
+    )
   }
 }, 15000)
 

@@ -1723,3 +1723,31 @@ test('heavy profile files run in bounded independent jobs without cancelling sib
     ])
   }
 })
+
+test('functional CI provisions and admits the pinned offline native client before E2E', () => {
+  const workflow = yaml.load(readText('.github/workflows/e2e.yml'))
+  const steps = workflow.jobs['e2e-tests'].steps
+  const setupIndex = steps.findIndex(
+    (step) => step.name === 'Prepare offline native test client'
+  )
+  const runIndex = steps.findIndex(
+    (step) => step.env?.E2E_SUITE === 'functional'
+  )
+
+  assert.ok(setupIndex >= 0, 'functional E2E requires native client setup')
+  assert.ok(setupIndex < runIndex, 'native admission must precede E2E')
+  const setup = steps[setupIndex]
+
+  assert.notEqual(setup['continue-on-error'], true)
+  assert.match(setup.run, /nativeTestClientVersion/)
+  assert.match(setup.run, /native-client-admission\.mjs/)
+  assert.match(setup.run, /npm install.*--prefix/)
+  assert.match(setup.run, /@openai\/codex@\$native_version/)
+  assert.match(setup.run, /resolveNativeTestExecutable/)
+  assert.match(setup.run, /GITHUB_ENV/)
+  assert.ok(
+    setup.run.indexOf('resolveNativeTestExecutable') <
+      setup.run.indexOf('GITHUB_ENV')
+  )
+  assert.doesNotMatch(setup.run, /secrets\.|codex login|--global/)
+})

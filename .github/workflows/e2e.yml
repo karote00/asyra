@@ -138,6 +138,16 @@ jobs:
       - name: Install dependencies
         run: yarn install --immutable
 
+      - name: Prepare offline native test client
+        env:
+          npm_config_cache: ${{ github.workspace }}/tmp/npm-cache
+        run: |
+          native_version="$(node --input-type=module -e "import { nativeTestClientVersion } from './apps/asyra-design/scripts/native-client-admission.mjs'; process.stdout.write(nativeTestClientVersion.replace('codex-cli ', ''))")"
+          npm install --prefix "$GITHUB_WORKSPACE/tmp/native-test-client" --no-save --package-lock=false "@openai/codex@$native_version"
+          export NATIVE_DELIVERY_CODEX="$GITHUB_WORKSPACE/tmp/native-test-client/node_modules/.bin/codex"
+          node --input-type=module -e "import { resolveNativeTestExecutable } from './apps/asyra-design/scripts/native-client-admission.mjs'; resolveNativeTestExecutable()"
+          printf 'NATIVE_DELIVERY_CODEX=%s\n' "$NATIVE_DELIVERY_CODEX" >> "$GITHUB_ENV"
+
       - name: Run E2E Tests
         env:
           E2E_SUITE: functional
