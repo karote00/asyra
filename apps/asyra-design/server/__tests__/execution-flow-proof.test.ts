@@ -7782,6 +7782,14 @@ const proveDeadlineQueryCleanup = async (
     }),
     provider: {
       requestActionBatch: async (input, options) => {
+        expect(input.actions.map((action) => action.name).sort()).toEqual(
+          [
+            AiActionNames.READ_DESIGN_CONTEXT,
+            AiActionNames.RELEASE_DESIGN_CONTEXT,
+            AiActionNames.REPORT_OUTCOME,
+            'api_element_setElementsVisible'
+          ].sort()
+        )
         const executeBatch = options.executeBatch
 
         if (!executeBatch) {
@@ -7935,8 +7943,20 @@ const proveDeadlineQueryCleanup = async (
     (resource) => 'retainReceipt' in resource
   ) as ReturnType<typeof createRetainedDesignContext>
   let sibling!: ReturnType<typeof queries.read>
+  // This lifecycle fixture exercises these four canonical actions. Other
+  // declarations have dedicated full-inventory proofs; do not rebuild their
+  // model schemas for every cleanup variant.
+  const cleanupActions = new Set<string>([
+    AiActionNames.READ_DESIGN_CONTEXT,
+    AiActionNames.RELEASE_DESIGN_CONTEXT,
+    AiActionNames.REPORT_OUTCOME,
+    'api_element_setElementsVisible'
+  ])
   const runtime = createAiAgentRuntime({
     ...input,
+    actionDefinitions: input.actionDefinitions?.filter((action) =>
+      cleanupActions.has(action.name)
+    ),
     permissionPolicy: { evaluate: () => 'allow' }
   })
 

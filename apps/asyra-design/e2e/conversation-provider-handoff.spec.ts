@@ -615,6 +615,21 @@ test('submits a translated hierarchy through the real App and delivers its actua
       .toEqual(createdDigest)
     expect(await getUndoHistoryDepth(collaborator)).toBe(0)
     expect(await getUndoHistoryDepth(page)).toBe(historyBefore + 1)
+    // Replay may settle after the old helper's fixed sleep on slower runners.
+    // Delay the actual App API, preserving its real implementation and result.
+    await page.evaluate(async () => {
+      const { historyApis } = await import('../src/common-apis')
+
+      for (const direction of ['undo', 'redo'] as const) {
+        const original = historyApis[direction]
+
+        historyApis[direction] = async (...args) => {
+          await new Promise((resolve) => setTimeout(resolve, 1200))
+
+          return original(...args)
+        }
+      }
+    })
     await undo(page)
     expect(await names()).not.toContain('Coordinate sample')
     await expect

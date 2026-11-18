@@ -428,3 +428,72 @@ finding (`tmp/security-audit/run-ZpbBxQ`).
 
 The owner explicitly cancelled agent-side CI waiting to conserve credits. Push
 this bounded correction to PR #365; remote CI acceptance remains owner-reviewed.
+
+## CI follow-up iteration - bounded preparation and history settlement
+
+Run `44352672580` at `6fef5f69691305ba63d0d3aa4be6a305c46a9d5d` proves the
+prior local Board pass did not resolve CI execution cost. Native installation
+now succeeds; functional E2E reaches translated hierarchy undo before failing.
+Board and four localization cases exceed the same 30-second process guard.
+
+Revised bounded work: retain all 89 registered cases and the unchanged process
+guards. CPU profiling of the cleanup proof (`tmp/ci-proof-profile`) attributes
+most sampled CPU to JSON detachment and schema conversion, repeated for the
+complete App tool inventory in five resource-lifecycle variants. Those variants
+exercise four real actions, not every tool's model schema. Explicitly register
+those four canonical App actions in that fixture; assert the exact admitted set
+and preserve all five variants and existing handoff/cleanup assertions. Full
+App declaration coverage remains in its existing dedicated cases and native E2E.
+No product schema cache or validation bypass is authorized.
+
+The E2E history helper returns after a fixed 500/1000 ms sleep, not observed
+replay settlement. Inject delayed real history execution into the failing native
+case to prove this race. Repair the shared helper's completion boundary using
+canonical history state, keeping keyboard dispatch, continuity checks and exact
+undo/redo output assertions. Inspect platform key handling without assuming it
+is the cause: the App registers both Meta and Control.
+
+Gates: failing regressions first, all cumulative execution-localization scenarios,
+actual Board recovery, native browser handoff and ordinary undo/redo tests, scoped
+type/lint/naming and security. This replaces the earlier sufficient-clock-fix
+hypothesis. No longer timeouts, skipped cases, relaxed assertions, product changes,
+101, full repository test or CI polling. Push the correction to PR #365.
+
+### Iteration validation
+
+The exact cleanup action-set assertion failed before narrowing fixture registration
+(`tmp/ci2-cleanup-red.log`). The same five real Runtime/App/provider lifecycle
+variants now pass in 1.63 seconds versus approximately 11 seconds in the profiled
+full-inventory fixture. There is no stubbed schema validator or product cache.
+Only the fixture's registered action set changed; canonical handlers, contracts,
+query leases, publication, rejection and cleanup remain real.
+
+All five selected Board/localization regressions pass, including cumulative
+omission/classification/evidence faults and the captured runtime setup failure
+(`tmp/ci2-execution-localization.log`). Board evidence is retained at
+`tmp/flow-inspector/localization-runtime-Txlx9m`: four expected failures plus 85
+passes, then 89 passes after recovery. The recovery child takes 11.98 seconds
+locally, including all cases and source loading, within the unchanged 30-second
+guard. Original failure history and owner mapping remain verified.
+
+A 1200 ms delay before the real App history API reproduced the exact CI assertion:
+the helper returned while the created hierarchy still existed
+(`tmp/ci2-history-red.log`). The helper now dispatches the platform shortcut and
+observes canonical history depth plus replay completion instead of sleeping.
+Final document, peer convergence and capture assertions are unchanged. All eight
+native browser cases pass with the new helper and delayed undo/redo regression.
+
+The first combined browser run passed 18 cases and failed the ordinary durable
+reload case before any undo/redo call. The local command supplied the unsupported
+`COLLABORATION_HEALTH_URL` variable; environment resolution still selected port
+4145 and reused a retained service while this run read backend port 4265. Preserve
+that failed run (`tmp/ci2-history-green.log`). Correcting the execution environment
+to explicit `COLLABORATION_WS_PORT=4165` and backend 4265 passed the exact durable
+case with trace, then all 11 ordinary undo/redo cases
+(`tmp/ci2-durable-recheck.log`, `tmp/ci2-history-isolated.log`). No product change
+or assertion relaxation was used for this setup error; retained services remain.
+
+App typecheck, scoped lint and naming pass. The existing console warning is
+unchanged. Dependency audit passes (`tmp/security-audit/run-X1UlVp`). This is
+bounded local verification, not remote CI acceptance. The owner will check CI
+after the authorized push to existing PR #365; no agent CI waiting is scheduled.
