@@ -619,6 +619,18 @@ test('submits a translated hierarchy through the real App and delivers its actua
     // Delay the actual App API, preserving its real implementation and result.
     await page.evaluate(async () => {
       const { historyApis } = await import('../src/common-apis')
+      const {
+        yieldToCooperativeHost,
+        waitForCooperativePaint,
+        testRuntimeState
+      } = await import('../src/testing/runtime-access')
+      const phases: { phase: string; at: number }[] = []
+
+      const record = (phase: string) => {
+        phases.push({ phase, at: performance.now() })
+      }
+
+      testRuntimeState.set('native-history-phases', phases)
 
       for (const direction of ['undo', 'redo'] as const) {
         const original = historyApis[direction]
@@ -626,21 +638,76 @@ test('submits a translated hierarchy through the real App and delivers its actua
         historyApis[direction] = async (...args) => {
           await new Promise((resolve) => setTimeout(resolve, 1200))
 
-          return original(...args)
+          const options = args[0] ?? {}
+
+          record(`${direction}:start`)
+          try {
+            await original({
+              ...options,
+
+              yieldToHost: async () => {
+                record(`${direction}:host:start`)
+                await (options.yieldToHost ?? yieldToCooperativeHost)()
+                record(`${direction}:host:complete`)
+              },
+
+              waitForPaint: async () => {
+                record(`${direction}:paint:start`)
+                await (options.waitForPaint ?? waitForCooperativePaint)()
+                record(`${direction}:paint:complete`)
+              }
+            })
+          } finally {
+            record(`${direction}:exit`)
+          }
         }
       }
     })
-    await undo(page)
-    expect(await names()).not.toContain('Coordinate sample')
-    await expect
-      .poll(() => names(collaborator))
-      .not.toContain('Coordinate sample')
-    await redo(page)
-    expect(await names()).toContain('Coordinate sample')
-    await expect.poll(() => names(collaborator)).toContain('Coordinate sample')
-    await page.screenshot({
-      path: testInfo.outputPath('conversation-capture.png')
-    })
+    try {
+      await undo(page)
+      expect(await names()).not.toContain('Coordinate sample')
+      await expect
+        .poll(() => names(collaborator))
+        .not.toContain('Coordinate sample')
+      await redo(page)
+      expect(await names()).toContain('Coordinate sample')
+      await expect
+        .poll(() => names(collaborator))
+        .toContain('Coordinate sample')
+      // Exercise the other supported platform shortcut on this browser too.
+      const alternateModifier =
+        process.platform === 'darwin' ? 'Control' : 'Meta'
+
+      await page.keyboard.press(`${alternateModifier}+z`)
+      await expect.poll(() => getUndoHistoryDepth(page)).toBe(historyBefore)
+      expect(await names()).not.toContain('Coordinate sample')
+      await expect
+        .poll(() => names(collaborator))
+        .not.toContain('Coordinate sample')
+      await page.keyboard.press(`${alternateModifier}+Shift+z`)
+      await expect.poll(() => getUndoHistoryDepth(page)).toBe(historyBefore + 1)
+      await expect
+        .poll(() => getCoreDocumentDigest(page))
+        .toEqual(createdDigest)
+      await expect
+        .poll(() => getCoreDocumentDigest(collaborator))
+        .toEqual(createdDigest)
+      await page.screenshot({
+        path: testInfo.outputPath('conversation-capture.png')
+      })
+    } finally {
+      await testInfo.attach('history-replay-phases', {
+        body: JSON.stringify(
+          await page.evaluate(async () => {
+            const { testRuntimeState } =
+              await import('../src/testing/runtime-access')
+
+            return testRuntimeState.get('native-history-phases')
+          })
+        ),
+        contentType: 'application/json'
+      })
+    }
   })
 })
 

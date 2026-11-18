@@ -497,3 +497,114 @@ App typecheck, scoped lint and naming pass. The existing console warning is
 unchanged. Dependency audit passes (`tmp/security-audit/run-X1UlVp`). This is
 bounded local verification, not remote CI acceptance. The owner will check CI
 after the authorized push to existing PR #365; no agent CI waiting is scheduled.
+
+## CI follow-up iteration - real browser history interaction
+
+At `e147a0614f978f5512b1f0fd868f13ddf0e2930b`, run `44362414760` has one
+observed failing producer: native hierarchy browser replay remains at history
+depth 1 with replay active. The two failed summary jobs derive from that producer;
+collaboration and Board producers pass. Other queued/running jobs are not passes.
+The previous delayed-replay proof established a helper defect, but did not prove
+the cause of the Linux runner's stalled replay. Do not treat matching symptoms
+as causal evidence.
+
+Trace the real history route from toolbar focus through keyboard input, progressive
+Factory replay and the shared host/paint scheduler. The test creates another tab
+before driving the first tab; establish whether its UI operations activate the
+intended page. Add real-browser focus/foreground regression before changing the
+interaction helper. Change product scheduling only if evidence independently
+proves a product contract violation, not merely to make an inactive test page pass.
+Preserve the same original source, peer convergence, captures, all history checks
+and timeout limits.
+
+Completion requires focused native replay/ordinary history tests followed by the
+complete Design functional E2E selection, because the shared helper has many
+consumers. Reconcile all failed jobs from this source, distinguish independent
+failures from summaries and pending jobs, and address confirmed in-scope causes.
+No full repository test, skipped/relaxed case, longer timeout or repeated CI
+monitoring. Push to existing PR #365; the owner checks the new CI run.
+
+### Browser interaction proof
+
+The initial focus probe failed its own precondition: ordinary Playwright focus
+emulation reports the source tab as focused even after activating its peer.
+Disabling emulation in a second CDP session did not remove the original session's
+override. Neither probe was evidence of a product defect. Explicit Control and
+Meta history shortcuts both pass locally; platform key choice is not established
+as the stalled replay's cause.
+
+The permanent `history-foreground.spec.ts` uses the installed Chrome and public
+CDP `noDefaults` option with a separately owned browser. It verifies genuine
+inactive source focus before invoking the unchanged shared helper. The old helper
+fails at toolbar click, waiting for stability on that inactive page
+(`tmp/ci3-foreground-action-red.log`); activating the target tab first passes both
+Undo and Redo and restores exact document digests. The helper keeps canonical
+replay/depth assertions and the same timeout; no product scheduling changes or
+compatibility route are introduced.
+
+The native hierarchy proof now also exercises the alternate platform shortcut
+and retains host-yield, paint-wait and API-exit phases. Recording is synchronous
+inside the browser and delegates to the actual public scheduler functions; it
+adds no extra awaited IPC boundary or substitute scheduler. Access uses the
+existing test-only runtime module. An initial full-selection attempt exposed an
+invalid bare package import in the diagnostic setup, after 218 cases passed
+(`tmp/ci3-functional.json`); that setup error is corrected through the test module,
+not counted as a product failure or completed suite.
+
+The old CI evidence establishes active replay but does not distinguish its awaited
+phase. Native-focus reproduction proves the missing interaction precondition;
+it does not retrospectively prove the exact Linux scheduler phase. Retained phase
+evidence and the complete local functional selection are required before delivery;
+remote Linux acceptance remains pending until the owner checks CI.
+
+### Held-replay consumer correction
+
+The complete functional run reaches 503 passes before the 360px native Frame
+revision case fails (`tmp/ci3-functional-final.json`). Its recorded lifecycle shows
+two completed replays, then `undo-yield-held` with no release. This fixture waits
+for the completion helper before releasing the very promise that completes replay.
+The four history-admission variants have the same conflict, including commands
+that must be ignored while replay is busy. This is a consumer mismatch introduced
+when the shared helper changed from fixed-delay dispatch to settled completion.
+
+Keep the settled `undo`/`redo` contract. Extract the shared real UI shortcut dispatch
+for tests that explicitly own an in-flight pause, failure, or ignored command.
+Those consumers must independently observe the held state, release it, then assert
+canonical completion/compensation, exact history, durable state and reload. Keep
+all original negative-input and publication checks; do not make the completion
+helper silently accept pending or ignored transitions. Validate both Frame widths
+and all four admission variants before repeating the complete functional gate.
+
+The first corrected focused run passes the held 360px case, then loses the 1280px
+conversation during a development-server reload. The browser trace records a
+second document request at `2026-11-18T18:37:42.229Z`, matching this task's formatting
+writes to E2E source at `18:37:42Z`. Preserve `tmp/ci3-held-green.log` and its trace;
+this agent-caused reload invalidates that run, rather than demonstrating another
+product failure. Freeze source writes during subsequent browser gates.
+
+### Final bounded validation
+
+The frozen-source focused run passes both Frame widths and all four history
+admission variants (6 cases, `tmp/ci3-held-frozen.log`). The completed ordinary
+functional selection contains 558 cases: 544 passed, 14 existing conditional skips,
+zero failures and zero flaky results (`tmp/ci3-functional-complete.json`, 19.9
+minutes). No case, assertion or timeout was removed or relaxed. Five direct
+collaboration consumers also pass: finite publication, two-actor convergence,
+nested Group Undo, Group Redo and partial Fill Undo/Redo
+(`tmp/ci3-collaboration.json`). The isolated status-toast case passes, as do App
+typechecks, scoped lint, naming and dependency audit (`tmp/security-audit/run-LJxCSK`).
+The earlier 20-case focused browser run and all invalidated/failed attempts remain
+recorded above rather than being replaced by the final passing result.
+
+The completed original CI run has one independent failed producer (Design E2E)
+and three derived failures (the two forwarders and final workflow validation).
+Its workspace, Board, collaboration, render-contract and Inspector producer
+checks pass. Final validation identifies only failed Design observations and
+those dependent jobs as blockers; there is no separate unaddressed failed producer.
+
+This delivery corrects real test interaction and held-replay consumer boundaries.
+It does not change application history/render scheduling. The exact awaited phase
+of the original Linux failure was not retained by that old run; new native phase
+observations close that diagnostic gap. Local acceptance is complete for the
+stated scope. The owner will check the new Linux CI run after push to PR #365;
+no remote-pass claim or agent CI wait is part of this delivery.

@@ -691,7 +691,7 @@ export const setSelectedGradient = async (
   }, gradient)
 }
 
-export { undo, redo } from './execution-evidence'
+export { dispatchHistoryShortcut, undo, redo } from './execution-evidence'
 
 /**
  * Check if an element is selected by checking the Properties Panel

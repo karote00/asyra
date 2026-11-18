@@ -308,13 +308,16 @@ const readHistoryState = (page: Page) =>
     }
   })
 
-/** Perform one history shortcut through the real UI and await its result. */
-async function replayHistory(
+/** Dispatch real input; held-replay tests own its subsequent settlement. */
+export async function dispatchHistoryShortcut(
   page: Page,
   direction: 'undo' | 'redo',
   assertContinuous?: () => Promise<void>
 ) {
   await assertContinuous?.()
+  // A real user activates the target tab before a keyboard interaction.
+  // Focus emulation does not guarantee that background painting is scheduled.
+  await page.bringToFront()
   // The toolbar padding blurs editable fields without invoking a tool.
   await page.getByTestId('toolbar').click({ position: { x: 5, y: 5 } })
   await assertContinuous?.()
@@ -323,6 +326,22 @@ async function replayHistory(
   await page.keyboard.press(
     direction === 'undo' ? 'ControlOrMeta+z' : 'ControlOrMeta+Shift+z'
   )
+
+  return before
+}
+
+/** Perform one history shortcut through the real UI and await its result. */
+async function replayHistory(
+  page: Page,
+  direction: 'undo' | 'redo',
+  assertContinuous?: () => Promise<void>
+) {
+  const before = await dispatchHistoryShortcut(
+    page,
+    direction,
+    assertContinuous
+  )
+
   await expect
     .poll(() => readHistoryState(page))
     .toEqual({

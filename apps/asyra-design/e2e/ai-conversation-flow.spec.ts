@@ -12,6 +12,7 @@ import {
   getCoreDocumentDigest,
   getPersistedDocumentDigest,
   getUndoHistoryDepth,
+  dispatchHistoryShortcut,
   undo,
   redo,
   waitForAppReady
@@ -2289,10 +2290,24 @@ for (const width of [360, 1280]) {
               await import('../src/testing/runtime-access')
             ).testRuntimeState.set('frame-history-arm', true)
           )
-        }
+          await dispatchHistoryShortcut(page, 'undo')
+          await expect
+            .poll(() =>
+              page.evaluate(async () => {
+                const { core, testRuntimeState } =
+                  await import('../src/testing/runtime-access')
 
-        await undo(page)
-        if (width === 360 && i === 0) {
+                return {
+                  held: testRuntimeState
+                    .get<{ kind: string }[]>('frame-history-events')
+                    ?.filter((event) => event.kind === 'undo-yield-held')
+                    .length,
+                  replaying: core.isInUndoRedo(),
+                  depth: core.getUndoHistoryDepth()
+                }
+              })
+            )
+            .toEqual({ held: 1, replaying: true, depth: depth + 1 })
           const events = await page.evaluate(async () =>
             (
               await import('../src/testing/runtime-access')
@@ -2302,7 +2317,7 @@ for (const width of [360, 1280]) {
           expect(
             events?.filter((event) => event.kind === 'undo-yield-held')
           ).toHaveLength(1)
-          // A keyboard helper's delay does not acknowledge a completed transaction.
+          // Dispatch is not completion: the third replay is still held.
           expect(
             events?.filter((event) => event.kind === 'undo-replay-completed')
           ).toHaveLength(2)
@@ -2311,6 +2326,17 @@ for (const width of [360, 1280]) {
               await import('../src/testing/runtime-access')
             ).testRuntimeState.get<() => void>('frame-history-release')?.()
           )
+          await expect
+            .poll(() =>
+              page.evaluate(async () =>
+                (
+                  await import('../src/testing/runtime-access')
+                ).core.isInUndoRedo()
+              )
+            )
+            .toBe(false)
+        } else {
+          await undo(page)
         }
 
         await expect
@@ -2607,7 +2633,7 @@ for (const direction of ['undo', 'redo'] as const) {
         { direction, fail }
       )
       try {
-        await (direction === 'undo' ? undo(page) : redo(page))
+        await dispatchHistoryShortcut(page, direction)
         await expect
           .poll(() =>
             page.evaluate(async () =>
@@ -2618,9 +2644,9 @@ for (const direction of ['undo', 'redo'] as const) {
           )
           .toBe(true)
         // Both same/opposite commands are ignored, rather than deferred until idle.
-        await undo(page)
-        await redo(page)
-        await undo(page)
+        await dispatchHistoryShortcut(page, 'undo')
+        await dispatchHistoryShortcut(page, 'redo')
+        await dispatchHistoryShortcut(page, 'undo')
         await page.keyboard.press('v')
         expect(
           await page.evaluate(async () => {
