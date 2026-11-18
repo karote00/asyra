@@ -518,6 +518,7 @@ test('submits a translated hierarchy through the real App and delivers its actua
     await waitForAppReady(peer)
     const historyBefore = await getUndoHistoryDepth(page)
 
+    await page.bringToFront()
     await page.getByRole('button', { name: 'Open Agent' }).click()
     await page
       .getByLabel('Message Agent')
@@ -598,6 +599,7 @@ test('submits a translated hierarchy through the real App and delivers its actua
     )
     const collaborator = peer
 
+    await collaborator.bringToFront()
     await expect
       .poll(() => names(collaborator))
       .toEqual(
@@ -666,11 +668,13 @@ test('submits a translated hierarchy through the real App and delivers its actua
     try {
       await undo(page)
       expect(await names()).not.toContain('Coordinate sample')
+      await collaborator.bringToFront()
       await expect
         .poll(() => names(collaborator))
         .not.toContain('Coordinate sample')
       await redo(page)
       expect(await names()).toContain('Coordinate sample')
+      await collaborator.bringToFront()
       await expect
         .poll(() => names(collaborator))
         .toContain('Coordinate sample')
@@ -678,17 +682,21 @@ test('submits a translated hierarchy through the real App and delivers its actua
       const alternateModifier =
         process.platform === 'darwin' ? 'Control' : 'Meta'
 
+      await page.bringToFront()
       await page.keyboard.press(`${alternateModifier}+z`)
       await expect.poll(() => getUndoHistoryDepth(page)).toBe(historyBefore)
       expect(await names()).not.toContain('Coordinate sample')
+      await collaborator.bringToFront()
       await expect
         .poll(() => names(collaborator))
         .not.toContain('Coordinate sample')
+      await page.bringToFront()
       await page.keyboard.press(`${alternateModifier}+Shift+z`)
       await expect.poll(() => getUndoHistoryDepth(page)).toBe(historyBefore + 1)
       await expect
         .poll(() => getCoreDocumentDigest(page))
         .toEqual(createdDigest)
+      await collaborator.bringToFront()
       await expect
         .poll(() => getCoreDocumentDigest(collaborator))
         .toEqual(createdDigest)
@@ -894,6 +902,7 @@ for (const removeImages of [false, true]) {
 
         const beforeCount = await count()
 
+        await page.bringToFront()
         await page.getByRole('button', { name: 'Open Agent' }).click()
         await page
           .getByLabel('Message Agent')
@@ -1052,6 +1061,7 @@ for (const removeImages of [false, true]) {
 
         const completed = await getCoreDocumentDigest(page)
 
+        await peer.bringToFront()
         await expect
           .poll(() => getCoreDocumentDigest(peer, beforeCount + 5))
           .toEqual(completed)
@@ -1059,11 +1069,13 @@ for (const removeImages of [false, true]) {
         expect(await getUndoHistoryDepth(peer)).toBe(0)
         await undo(page)
         await expect.poll(() => count()).toBe(beforeCount)
+        await peer.bringToFront()
         await expect.poll(() => count(peer)).toBe(beforeCount)
         await redo(page)
         await expect
           .poll(() => getCoreDocumentDigest(page, beforeCount + 5))
           .toEqual(completed)
+        await peer.bringToFront()
         await expect
           .poll(() => getCoreDocumentDigest(peer, beforeCount + 5))
           .toEqual(completed)
@@ -1665,6 +1677,7 @@ for (const corruptVerdict of [false, true]) {
         await expect.poll(() => getCoreDocumentDigest(peer)).toEqual(initial)
         const history = await getUndoHistoryDepth(page)
 
+        await page.bringToFront()
         await page.getByRole('button', { name: 'Open Agent' }).click()
         await page
           .getByLabel('Message Agent')

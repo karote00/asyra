@@ -608,3 +608,110 @@ of the original Linux failure was not retained by that old run; new native phase
 observations close that diagnostic gap. Local acceptance is complete for the
 stated scope. The owner will check the new Linux CI run after push to PR #365;
 no remote-pass claim or agent CI wait is part of this delivery.
+
+## CI follow-up - consumer-owned history completion
+
+Run `44376337605` at `a37f734dc` exposes two failed producers: Board localization
+and collaboration. The preceding validation omitted the execution-proof fixture
+and the 320-item history consumer; its passing selected consumers were insufficient.
+This bounded revision repairs these test-owner handoffs, not production history.
+
+1. Restore the continuity proof's Page fixture to the real interaction contract.
+   The unchanged formal case fails with `page.bringToFront is not a function`
+   instead of the intended runtime-replacement violation
+   (`tmp/ci4-continuity-red.log`). Verify activation and the original continuity
+   failure still prevent shortcut dispatch. Preserve Board's exact four deliberate
+   failures and recovery history; do not add the accidental failure to its oracle.
+2. Restore the 320-item test's ownership of cooperative history completion. CI
+   records Redo still replaying when the shared helper's default five-second poll
+   fails, before this case's existing 180-second completion poll. Use the existing
+   real shortcut dispatcher; require canonical count, history depth and replay
+   settlement together under the existing case-owned budget. Preserve both actors,
+   exact snapshots, hierarchy, publication, navigation and measured timings.
+3. Validate the complete execution-proof file, actual Board fault/recovery flow
+   and complete collaboration selection, plus App types, scoped lint, naming and
+   dependency audit. Freeze source writes during browser validation. Reconcile
+   the failed CI producers once before delivery; pending checks are not passes.
+
+No timeout increase, assertion relaxation, expected-failure expansion, product
+change, dependency, compatibility path, 101 run or full-repository gate is in scope.
+Commit and push to the existing PR #365 after bounded validation; the owner will
+inspect the successor CI run without agent monitoring.
+
+### Native peer observation investigation
+
+The same run subsequently fails the native two-capture sequence at the final
+peer digest after Redo (`conversation-provider-handoff.spec.ts:1069`), returning
+null because the peer's element count is incomplete. The unmodified focused
+local pair passes (`tmp/ci4-native-baseline.json`); that does not explain CI.
+Remote publication processing explicitly awaits a cooperative paint before
+advancing its queue, whereas the source history helper now activates the source
+tab. Investigate this visibility precondition using real browser focus, retaining
+the actual two-capture native sequence and its corruption negative case. Prove
+the observation failure before changing the test's page-activation handoff; do
+not remove remote convergence, substitute atomic replay or increase its timeout.
+This direct failed consumer joins the bounded repair and native focused gates.
+
+The first native pair with only a peer CDP focus override still passes
+(`tmp/ci4-native-focus-red.json`); it is not a reproducer and that setup was
+removed. Extending the existing genuinely native-focus browser proof with a
+second participant reproduces a stalled peer after source Undo: expected zero
+objects, received one (`tmp/ci4-peer-red.json`). This confirms a missing visible
+observation handoff; the original Linux run did not retain its precise pending
+phase. Explicitly activate the participant being observed, preserving ordinary
+background behavior, exact peer digests and both Undo/Redo transitions. Apply the
+same activation ownership to the native hierarchy/two-capture direct consumers;
+retain the original source-activation proof and all corruption checks.
+
+### Complete CI inventory follow-up
+
+The final 44-job inventory includes an independent Inspector validation producer,
+not merely an aggregate failure. Four of its failures share the already-proven
+missing `bringToFront` fixture method. Its fifth failure correctly rejects the
+unregistered `history-foreground.spec.ts` case. The unchanged complete-discovery
+regression also fails locally (`tmp/ci4-inventory-red.log`). Register that existing
+case under the current `replay-history` responsibility, whose inputs are user
+history intent and recorded canonical history; its output is the original grouped
+replay outcome. The current Inspector permits public App/Framework APIs and
+forbids test-owned product state. This case uses the real shortcut, App history
+and remote canonical state, so its investigation entry points are the existing
+Undo/Redo feature and history/transaction APIs. Do not change the architecture,
+invent a new product owner or weaken exact discovery equality. Validate the
+complete contract suite and all four affected runtime-localization scenarios.
+
+### Completed local validation
+
+- The full execution proof passes all 89 cases (`tmp/ci4-execution-proof.log`).
+  The actual Board fault/recovery test passes with exactly the original four
+  injected failures (`tmp/ci4-board-ready.log`). The first local Board command
+  omitted its required `FLOW_PROOF_URL`; retain `tmp/ci4-board.log` as an invalid
+  invocation, not a product failure.
+- All nine native handoff/focus cases pass with zero skips or flaky results
+  (`tmp/ci4-native-green.json`), including both image-delivery corruption oracles.
+- The complete collaboration selection passes 19 cases with three existing
+  conditional skips and no failures/flaky results (`tmp/ci4-collaboration.json`).
+  The 320-item cooperative Undo/Redo keeps the original completion budget and
+  now proves history settlement together with the local canonical count.
+- The complete functional selection passes 544 cases with 14 existing conditional
+  skips, no failures and no flaky results (`tmp/ci4-functional.json`, 19.9 minutes).
+  Its observation is retained by the formal recorder. Isolated unavailable-service
+  status also passes (`tmp/ci4-status.json`). Source files were frozen during these
+  browser runs. The subsequently added manifest row changes observation ownership,
+  not the already-executed test or runtime; the full suite is not rerun for that
+  metadata-only correction.
+- All 50 contract tests pass, including independent complete discovery; all four
+  previously failing runtime-localization cases pass with original failure history
+  and recovery assertions (`tmp/ci4-contracts-green.log`, `tmp/ci4-localization.log`).
+- App typechecks, naming, scoped lint and dependency audit pass. Scoped lint retains
+  one pre-existing `no-console` warning outside the changed lines; no errors remain.
+  Security evidence is `tmp/security-audit/run-vlxtCd`.
+
+The completed 44-job CI inventory has four failed producers: Design functional,
+Board, collaboration and Inspector validation. The two forwarding failures and
+final `validate` failure are derived. All producer failure cases are accounted for
+above. The final diff contains only test fixtures, real browser test handoffs,
+case registration and this report. No product scheduler, timeout, compatibility
+path or rejection condition changed. Native-focus reproduction proves the missing
+observation precondition; it does not invent the original Linux wait phase.
+Local validation is complete for this bounded correction. The owner will inspect
+the successor PR #365 CI run; no remote-pass claim is made here.

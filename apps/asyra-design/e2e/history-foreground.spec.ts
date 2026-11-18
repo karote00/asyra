@@ -52,10 +52,17 @@ test('history interaction activates its page before replay with native browser f
       await waitForAppReady(page)
       const before = await getElementCount(page)
       const initial = await getCoreDocumentDigest(page)
+      const peer = await context.newPage()
 
+      await peer.goto(page.url())
+      await waitForAppReady(peer)
+      await page.bringToFront()
       await createRectangle(page, 0.3, 0.3)
       expect(await getElementCount(page)).toBe(before + 1)
       const created = await getCoreDocumentDigest(page)
+
+      await peer.bringToFront()
+      await expect.poll(() => getCoreDocumentDigest(peer)).toEqual(created)
       const otherPage = await context.newPage()
 
       await otherPage.goto('about:blank')
@@ -65,11 +72,21 @@ test('history interaction activates its page before replay with native browser f
       expect(await page.evaluate(() => document.hasFocus())).toBe(true)
       expect(await getElementCount(page)).toBe(before)
       expect(await getCoreDocumentDigest(page)).toEqual(initial)
+      expect(await peer.evaluate(() => document.hasFocus())).toBe(false)
+      await peer.bringToFront()
+      expect(await peer.evaluate(() => document.hasFocus())).toBe(true)
+      await expect.poll(() => getElementCount(peer)).toBe(before)
       await otherPage.bringToFront()
       expect(await page.evaluate(() => document.hasFocus())).toBe(false)
       await test.step('Activate the source page and redo', () => redo(page))
       expect(await page.evaluate(() => document.hasFocus())).toBe(true)
       expect(await getCoreDocumentDigest(page)).toEqual(created)
+      expect(await peer.evaluate(() => document.hasFocus())).toBe(false)
+      await peer.bringToFront()
+      expect(await peer.evaluate(() => document.hasFocus())).toBe(true)
+      await expect
+        .poll(() => getCoreDocumentDigest(peer, before + 1))
+        .toEqual(created)
     } finally {
       await browser.close()
     }

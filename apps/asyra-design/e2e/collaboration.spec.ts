@@ -7,6 +7,7 @@ import type { PreparedDrawingArtifact } from '../src/ai/prepared-drawing-artifac
 import type { CanonicalChange } from '../src/collaboration/app-protocol-types'
 import {
   createRectangle,
+  dispatchHistoryShortcut,
   dragSelectedElementBy,
   getCanvasPosition,
   getContentsPanel,
@@ -1998,12 +1999,27 @@ test('320-item AI response converges through the ordinary cooperative two-actor 
 
     const undoStartedAt = Date.now()
 
-    await undo(actorA)
+    await dispatchHistoryShortcut(actorA, 'undo')
     await expect
-      .poll(() => getCanonicalCount(actorA), {
-        timeout: CRDT_COMPLETION_TIMEOUT_MS
+      .poll(
+        async () => ({
+          canonicalCount: await getCanonicalCount(actorA),
+          ...(await actorA.evaluate(async () => {
+            const { core } = await import('../src/testing/runtime-access')
+
+            return {
+              depth: core.getUndoHistoryDepth(),
+              replaying: core.isInUndoRedo()
+            }
+          }))
+        }),
+        { timeout: CRDT_COMPLETION_TIMEOUT_MS }
+      )
+      .toEqual({
+        canonicalCount: 0,
+        depth: actorAUndoDepthBefore,
+        replaying: false
       })
-      .toBe(0)
     const actorAUndoCompleteMs = Date.now() - undoStartedAt
 
     try {
@@ -2045,12 +2061,27 @@ test('320-item AI response converges through the ordinary cooperative two-actor 
 
     const redoStartedAt = Date.now()
 
-    await redo(actorA)
+    await dispatchHistoryShortcut(actorA, 'redo')
     await expect
-      .poll(() => getCanonicalCount(actorA), {
-        timeout: CRDT_COMPLETION_TIMEOUT_MS
+      .poll(
+        async () => ({
+          canonicalCount: await getCanonicalCount(actorA),
+          ...(await actorA.evaluate(async () => {
+            const { core } = await import('../src/testing/runtime-access')
+
+            return {
+              depth: core.getUndoHistoryDepth(),
+              replaying: core.isInUndoRedo()
+            }
+          }))
+        }),
+        { timeout: CRDT_COMPLETION_TIMEOUT_MS }
+      )
+      .toEqual({
+        canonicalCount: 321,
+        depth: actorAUndoDepthAfter,
+        replaying: false
       })
-      .toBe(321)
     const actorARedoCompleteMs = Date.now() - redoStartedAt
 
     await expect

@@ -939,6 +939,18 @@
       "stepIds": ["replay-history"],
       "cases": [
         {
+          "id": "functional.history-foreground.native-focus",
+          "stepId": "replay-history",
+          "testFile": "apps/asyra-design/e2e/history-foreground.spec.ts",
+          "testName": "history interaction activates its page before replay with native browser focus",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/features/undo-redo/index.ts",
+            "apps/asyra-design/src/common-apis/history.ts",
+            "apps/asyra-design/src/common-apis/transaction.ts"
+          ]
+        },
+        {
           "id": "functional.delete-element.41e27778b047",
           "stepId": "replay-history",
           "testFile": "apps/asyra-design/e2e/delete-element.spec.ts",

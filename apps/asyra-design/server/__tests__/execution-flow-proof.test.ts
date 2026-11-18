@@ -9972,7 +9972,10 @@ it('execution proof preserves face-referenced boundaries through retained source
 it('execution proof preserves E2E runtime continuity and original failure attribution', async () => {
   const { undo } = await import('../../e2e/execution-evidence')
   const press = vi.fn()
+  const bringToFront = vi.fn(async () => undefined)
   const page = {
+    bringToFront,
+
     getByTestId: () => ({ click: async () => undefined }),
 
     keyboard: { down: vi.fn(), press, up: vi.fn() },
@@ -9987,6 +9990,7 @@ it('execution proof preserves E2E runtime continuity and original failure attrib
       throw violation
     })
   ).rejects.toBe(violation)
+  expect(bringToFront).not.toHaveBeenCalled()
   expect(press).not.toHaveBeenCalled()
 
   const { createExecutionEvidence } =
@@ -10162,7 +10166,10 @@ it('execution proof preserves E2E runtime continuity and original failure attrib
 
   const focus = await make()
   const focusPress = vi.fn()
+  const focusBringToFront = vi.fn(async () => undefined)
   const focusPage = {
+    bringToFront: focusBringToFront,
+
     getByTestId: () => ({
       click: async () => {
         focus.reload()
@@ -10176,6 +10183,7 @@ it('execution proof preserves E2E runtime continuity and original failure attrib
   await expect(
     undo(focusPage, focus.evidence.assertContinuous)
   ).rejects.toThrow('environment')
+  expect(focusBringToFront).toHaveBeenCalledOnce()
   expect(focusPress).not.toHaveBeenCalled()
   await expect(focus.evidence.finish()).rejects.toThrow('environment')
 
