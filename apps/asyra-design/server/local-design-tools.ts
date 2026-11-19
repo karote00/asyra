@@ -1,6 +1,9 @@
+import { DesignInputError } from './design-input-error'
+import { AiToolFailureCodes } from '../src/constants/ai-design'
 import { isReservedDraftRepairKey } from './design-draft-repair'
 import {
   toolInternalResult,
+  toolDocumentReference,
   toolResultBoolean,
   toolResultIds,
   toolResultObject,
@@ -315,17 +318,9 @@ const referenceSchema = {
   properties: {
     artifactId: toolRequestReference,
     parentId: {
-      type: 'string',
-      minLength: 1,
+      ...toolDocumentReference,
       description:
         'Existing editable container ID. Draft coordinates are local to this parent; omit for workspace insertion.'
-    },
-    response: {
-      type: 'string',
-      enum: ['compact', 'full'],
-      default: 'compact',
-      description:
-        'Compact receipts keep identity mappings in the prepared artifact. Use artifactId with target keys/keyPrefix for later edits. Request full only when the full mapping is needed.'
     }
   },
   description: 'Use the artifactId returned by prepare_design in this request.'
@@ -335,7 +330,7 @@ export class DesignReferenceError extends LocalToolInputError {
   constructor() {
     super(
       'Use a valid artifactId returned by prepare_design in this request. Do not send raw design descriptors. No changes were applied by this operation.',
-      'REFERENCE_UNAVAILABLE'
+      AiToolFailureCodes.INPUT_INVALID
     )
     this.name = 'DesignReferenceError'
   }
@@ -371,7 +366,7 @@ export const createLocalDesignTools = (
       preparationInput: toolResultObject(
         {
           kind: { enum: ['source', 'retained-repair'] },
-          draftId: { type: 'string', minLength: 1 },
+          draftId: toolRequestReference,
           revision: { type: 'string' },
           partitions: { type: 'array' },
           partitionLimitation: { type: 'object' },
@@ -386,13 +381,9 @@ export const createLocalDesignTools = (
     ['available', 'artifactId', 'applicable', 'elementCount', 'findings']
   )
   const recoveryFields = {
-    preparationInput: preparedOutputSchema.properties.preparationInput,
+    ...preparedOutputSchema.properties,
     available: { type: 'boolean' },
-    applicable: { type: 'boolean' },
-    artifactId: toolRequestReference,
     elementCount: { type: 'integer', minimum: 0 },
-    findings: { type: 'array' },
-    review: { type: 'object' },
     message: { type: 'string' },
     code: { type: 'string' },
     settlement: { type: 'string' },
@@ -465,15 +456,27 @@ export const createLocalDesignTools = (
       if (
         !Array.isArray(value.keys) ||
         !value.keys.length ||
-        value.keys.some(
-          (key) =>
-            typeof key !== 'string' || !Object.hasOwn(design.keyToId, key)
-        )
+        value.keys.some((key) => typeof key !== 'string')
       ) {
         throw new DesignReferenceError()
       }
 
       keys = value.keys as string[]
+      const missing = keys.find((key) => !Object.hasOwn(design.keyToId, key))
+
+      if (missing !== undefined) {
+        const examples = session
+          .selectKeys(value.artifactId, missing)
+          .slice(0, 3)
+
+        throw new LocalToolInputError(
+          `Unknown exact artifact key ${JSON.stringify(missing)}.` +
+            (examples.length
+              ? ` Matching keys include ${examples.join(', ')}.`
+              : ''),
+          AiToolFailureCodes.INPUT_INVALID
+        )
+      }
     } else {
       if (
         value.keyPrefix !== undefined &&
@@ -557,6 +560,16 @@ export const createLocalDesignTools = (
   }
 
   return {
+    canOverlapPreparation(name: string, input: unknown) {
+      return (
+        name === AiDesignToolIds.PREPARE_DESIGN &&
+        record(input) &&
+        'draft' in input &&
+        !('repair' in input) &&
+        !('materialSourceId' in input)
+      )
+    },
+
     expandedNodeLimit,
     capacityOutputSchema,
     recoveryFields,
@@ -580,7 +593,7 @@ export const createLocalDesignTools = (
       const budget = inspectDesignBudget(args.draft, expandedNodeLimit)?.budget
 
       return {
-        recovery: 'correct_input',
+        code: AiToolFailureCodes.INPUT_INVALID,
         ...retainInputFailure(
           args.draft,
           issues,
@@ -781,6 +794,7 @@ export const createLocalDesignTools = (
               ]
             },
             name: AiDesignToolIds.PREPARE_DESIGN,
+            revision: 5,
             executionAccess: LocalToolAccess.INDEPENDENT,
             description:
               designRepresentationGuidance +
@@ -871,6 +885,34 @@ export const createLocalDesignTools = (
                 }
               }
             }
+          },
+          {
+            type: 'function',
+            ...toolSemantics(
+              toolResultObject({
+                motifTemplates: {
+                  ...designConstructionSchema.motifTemplates,
+                  additionalProperties: surfaceMotifsSchema
+                },
+                fillTemplates: designFillTemplatesSchema,
+                linearFields: designConstructionSchema.linearFields,
+                sharedFills: designSharedFillsSchema
+              }),
+              'read',
+              ['request-artifacts']
+            ),
+            composition: 'allowed' as const,
+            name: AiDesignToolIds.READ_DESIGN_TEMPLATES,
+            revision: 3,
+            executionAccess: LocalToolAccess.INDEPENDENT,
+            description:
+              'Read public authoring definitions from an owned prepared artifact. In execute_design, bind artifactId from the preparation step and retain this result under a name in App conversation context. Later drafts bind motifTemplates, fillTemplates, linearFields and sharedFills from that named value; no model transfer is needed. Definitions are immutable value snapshots, not live document links; each preparation creates its own shared Fill sources. Use native shared properties for persistent linkage.',
+            inputSchema: {
+              type: 'object',
+              additionalProperties: false,
+              required: ['artifactId'],
+              properties: { artifactId: toolRequestReference }
+            }
           }
         ]
       : [],
@@ -946,11 +988,8 @@ export const createLocalDesignTools = (
             !enabled ||
             !record(args) ||
             Object.keys(args).some(
-              (key) => !['artifactId', 'response', 'parentId'].includes(key)
+              (key) => !['artifactId', 'parentId'].includes(key)
             ) ||
-            (args.response !== undefined &&
-              args.response !== 'compact' &&
-              args.response !== 'full') ||
             (args.parentId !== undefined &&
               (typeof args.parentId !== 'string' || !args.parentId.trim())) ||
             typeof args.artifactId !== 'string'
@@ -985,7 +1024,6 @@ export const createLocalDesignTools = (
             arguments: {
               design: deliverPreparedDesign(design),
               ...(materialElementIds.length ? { materialElementIds } : {}),
-              response: args.response ?? 'compact',
               ...(args.parentId === undefined
                 ? {}
                 : { parentId: args.parentId })
@@ -1003,6 +1041,29 @@ export const createLocalDesignTools = (
     ): Promise<string> => {
       if (signal.aborted) {
         throw new Error('Design preparation cancelled')
+      }
+
+      if (enabled && name === AiDesignToolIds.READ_DESIGN_TEMPLATES) {
+        if (
+          !record(args) ||
+          Object.keys(args).length !== 1 ||
+          typeof args.artifactId !== 'string'
+        ) {
+          throw new LocalToolInputError('Provide artifactId.')
+        }
+
+        const source = session.recipe(args.artifactId).recipe
+
+        if (!record(source)) {
+          throw new DesignReferenceError()
+        }
+
+        return JSON.stringify({
+          motifTemplates: source.motifTemplates ?? {},
+          fillTemplates: source.fillTemplates ?? {},
+          linearFields: source.linearFields ?? {},
+          sharedFills: source.sharedFills ?? {}
+        })
       }
 
       if (enabled && name === AiDesignToolIds.RETAIN_DESIGN_TARGETS) {
@@ -1099,6 +1160,8 @@ export const createLocalDesignTools = (
       if (!hasExactlyOnePreparationSource || hasInvalidMaterialSource) {
         return JSON.stringify({
           available: false,
+          settlement: 'not-started',
+          code: AiToolFailureCodes.INPUT_INVALID,
           message:
             'Provide one semantic draft or a rejected-draft repair. No canvas changes were made.'
         })
@@ -1162,7 +1225,7 @@ export const createLocalDesignTools = (
           return JSON.stringify({
             available: false,
             settlement: 'not-started',
-            recovery: 'correct_input',
+            code: AiToolFailureCodes.INPUT_INVALID,
             ...retainInputFailure(draft, inputIssues),
             message: `${formatOperationInputIssues(inputIssues)}. Correct the listed fields; use the retained repair guide when provided. Geometry has not been compiled.`
           })
@@ -1184,29 +1247,39 @@ export const createLocalDesignTools = (
           return JSON.stringify({
             available: false,
             settlement: 'not-started',
-            recovery: 'correct_input',
+            code: AiToolFailureCodes.INPUT_INVALID,
             message:
               'arguments.draft.projection: provide one shared camera (azimuth, elevation, scale, originX, originY); arguments.draft.layout: projected faces and patterns require absolute layout. Reuse the chosen viewpoint; no new reference search is needed.'
           })
         }
 
+        const prepared = await session.prepareAsync(
+          draft,
+          signal,
+          record(args.repair) &&
+            typeof args.repair.draftId === 'string' &&
+            typeof args.repair.partition === 'number'
+            ? {
+                draftId: args.repair.draftId,
+                partition: args.repair.partition,
+                ...(typeof args.repair.continueFromArtifact === 'string'
+                  ? { continueFromArtifact: args.repair.continueFromArtifact }
+                  : {})
+              }
+            : undefined
+        )
+
         return JSON.stringify({
-          available: true,
-          ...(await session.prepareAsync(
-            draft,
-            signal,
-            record(args.repair) &&
-              typeof args.repair.draftId === 'string' &&
-              typeof args.repair.partition === 'number'
-              ? {
-                  draftId: args.repair.draftId,
-                  partition: args.repair.partition,
-                  ...(typeof args.repair.continueFromArtifact === 'string'
-                    ? { continueFromArtifact: args.repair.continueFromArtifact }
-                    : {})
-                }
-              : undefined
-          )),
+          available: prepared.applicable,
+          ...prepared,
+          ...(!prepared.applicable
+            ? {
+                settlement: 'not-started',
+                code: AiToolFailureCodes.INPUT_INVALID,
+                message:
+                  'Resolve the reported preparation findings in the source before applying. No canvas operation has started; retain successful earlier parts.'
+              }
+            : {}),
           preparationInput:
             record(args.repair) && typeof args.repair.draftId === 'string'
               ? {
@@ -1220,12 +1293,19 @@ export const createLocalDesignTools = (
         })
       } catch (error) {
         signal.throwIfAborted()
+        const invalidInput =
+          error instanceof DesignInputError ||
+          error instanceof DesignGeometryError ||
+          error instanceof DesignKeyConflictError ||
+          error instanceof LocalToolInputError
         const retained = draft === undefined ? undefined : retainDraft(draft)
 
         return JSON.stringify({
           available: false,
           settlement: 'not-started',
-          recovery: 'correct_input',
+          code: invalidInput
+            ? AiToolFailureCodes.INPUT_INVALID
+            : AiToolFailureCodes.EXECUTION_FAILED,
           ...retained,
           ...(error instanceof DesignGeometryError
             ? {

@@ -11,6 +11,7 @@ export const renderLayerApis = {
   ) => {
     core.registerRenderLayer(registration, options)
   },
+
   unregisterRenderLayer: (name: string) => {
     return core.unregisterRenderLayer(name)
   }

@@ -166,7 +166,9 @@ const DOUBLE_CLICK_HIT_PADDING = 8
 type Vec2 = PositionData
 
 const add = (a: Vec2, b: Vec2): Vec2 => ({ x: a.x + b.x, y: a.y + b.y })
+
 const sub = (a: Vec2, b: Vec2): Vec2 => ({ x: a.x - b.x, y: a.y - b.y })
+
 const scale = (v: Vec2, k: number): Vec2 => ({ x: v.x * k, y: v.y * k })
 
 const computeSymmetricHandles = (
@@ -174,6 +176,7 @@ const computeSymmetricHandles = (
   mouse: Vec2
 ): { inHandle: Vec2; outHandle: Vec2; dragVector: Vec2 } => {
   const dragVector = sub(mouse, anchor)
+
   return {
     inHandle: add(anchor, scale(dragVector, -1)),
     outHandle: add(anchor, dragVector),
@@ -227,6 +230,7 @@ const resolveAutoUpdateConnectedHandleTarget = (
 
   const topology = elementApis.getVectorTopology(elementId)
   const network = topology.networks[continuation.networkId]
+
   if (
     !network ||
     network.closed ||
@@ -238,6 +242,7 @@ const resolveAutoUpdateConnectedHandleTarget = (
   }
 
   const target = getConnectedHandleTargetForSide(continuation.side)
+
   return hasActualControlRecord(elementId, continuation.pointId, target)
     ? null
     : target
@@ -286,6 +291,7 @@ const setSelectedAnchorPoint = (
   if (!selectedPoint) {
     selectionApis.clearVectorPointSelection(options)
     systemContextApis.setSelectedVectorPoint(null)
+
     return
   }
 
@@ -317,6 +323,7 @@ const setSelectedAnchorPoint = (
 
 const getCurrentMouseWorkspacePos = () => {
   const snapshot = systemContextApis.getSystemContextSnapshot()
+
   return elementApis.getMousePosInWorkspace({
     x: snapshot.mousePosition.x,
     y: snapshot.mousePosition.y
@@ -327,6 +334,7 @@ const hasMovedBeyondPenCurveThreshold = (
   snapshot: SystemContextSnapshot
 ): boolean => {
   const dragStart = snapshot.mouseDragStart
+
   if (!dragStart) {
     return false
   }
@@ -342,6 +350,7 @@ const hasMovedBeyondVectorPointDragThreshold = (
   snapshot: SystemContextSnapshot
 ): boolean => {
   const dragStart = snapshot.mouseDragStart ?? snapshot.mousePosition
+
   return elementApis.hasMovedBeyondThreshold(
     dragStart,
     snapshot.mousePosition,
@@ -383,6 +392,7 @@ const syncSelectedVectorPointMirror = (
     selectedPoint.point,
     target
   )
+
   if (!targetPosition) {
     return false
   }
@@ -401,6 +411,7 @@ const syncSelectedVectorPointMirror = (
   }
 
   flushSelectedVectorPointMirror(nextState)
+
   return true
 }
 
@@ -444,6 +455,7 @@ const applyBezierDragForNewPoint = (
   const connectedPoint = anchorPoints.find(
     (point) => point.id === state.connectedPointId
   )
+
   if (!newPoint || !connectedPoint) {
     return false
   }
@@ -475,9 +487,11 @@ const applyBezierDragForNewPoint = (
     state.connectionSide === VECTOR_TOKENS.ENDPOINT.SIDE.START
       ? computeConnectedInHandle(connectedPoint)
       : computeConnectedOutHandle(connectedPoint)
+
   if (firstSegmentHandles) {
     connectedHandle = firstSegmentHandles.connectedOutHandle
   }
+
   const currentSegmentHandle = firstSegmentHandles
     ? firstSegmentHandles.currentInHandle
     : symmetric.inHandle
@@ -560,6 +574,7 @@ const removeSelectedSinglePointSubpathOnCancel = (
 
   const subpaths = elementApis.getVectorAnchorSubpaths(elementId)
   const lastSubpath = subpaths[subpaths.length - 1]
+
   if (!lastSubpath || lastSubpath.length !== 1) {
     return false
   }
@@ -568,9 +583,11 @@ const removeSelectedSinglePointSubpathOnCancel = (
   const selectedPoint = systemContextApis.getSelectedVectorPoint()
   const continuation = systemContextApis.getPathEditingContinuation()
   let activePointId: string | null = null
+
   if (continuation?.elementId === elementId) {
     activePointId = continuation.pointId
   }
+
   if (
     selectedPoint?.elementId === elementId &&
     selectedPoint.target === VECTOR_TOKENS.POINT.TARGET.ANCHOR
@@ -583,6 +600,7 @@ const removeSelectedSinglePointSubpathOnCancel = (
   }
 
   const removed = elementApis.removeLastSinglePointSubpath(elementId).value
+
   if (!removed) {
     return false
   }
@@ -592,6 +610,7 @@ const removeSelectedSinglePointSubpathOnCancel = (
   systemContextApis.setHoveredVectorSegment(null)
   systemContextApis.setHoveredVectorSegmentInsertPoint(null)
   cursorApis.resetCanvasCursor()
+
   return true
 }
 
@@ -616,6 +635,7 @@ export const penFeature = defineFeature<Record<string, unknown>, PenState>(
         if (!dragStartWorkspace) {
           return null
         }
+
         transactionApis.configureSharedDeliverySequence({
           mode: 'atomic',
           batchPublications: false,
@@ -657,6 +677,7 @@ export const penFeature = defineFeature<Record<string, unknown>, PenState>(
               pathEditingVectorId,
               clickedPoint.point.id
             )
+
             setSelectedAnchorPoint(pathEditingVectorId, selectedPoint)
             systemContextApis.setSelectedVectorSegment(null)
             systemContextApis.setHoveredVectorSegment(null)
@@ -669,6 +690,7 @@ export const penFeature = defineFeature<Record<string, unknown>, PenState>(
               sourceContinuation.pointId === clickedPoint.point.id
             ) {
               systemContextApis.setPathEditingStartNewSubpath(false)
+
               return null
             }
 
@@ -680,6 +702,7 @@ export const penFeature = defineFeature<Record<string, unknown>, PenState>(
                 changedRecords: ['segment:create'],
                 undoable: true
               })
+
             if (!structuralOperationIntent) {
               return null
             }
@@ -692,6 +715,7 @@ export const penFeature = defineFeature<Record<string, unknown>, PenState>(
                 structuralOperationIntent
               }
             ).value
+
             if (!connected) {
               return null
             }
@@ -701,12 +725,14 @@ export const penFeature = defineFeature<Record<string, unknown>, PenState>(
               pathEditingVectorId,
               clickedPoint.point.id
             )
+
             setSelectedAnchorPoint(pathEditingVectorId, nextSelectedPoint)
             systemContextApis.setSelectedVectorSegment(null)
             systemContextApis.setHoveredVectorSegment(null)
             systemContextApis.setHoveredVectorSegmentInsertPoint(null)
             systemContextApis.setHoveredVectorPoint(null)
             systemContextApis.setPathEditingStartNewSubpath(false)
+
             return null
           }
 
@@ -748,6 +774,7 @@ export const penFeature = defineFeature<Record<string, unknown>, PenState>(
                 changedRecords: ['segment:replace', 'point:create'],
                 undoable: true
               })
+
             if (!structuralOperationIntent) {
               return null
             }
@@ -807,6 +834,7 @@ export const penFeature = defineFeature<Record<string, unknown>, PenState>(
                 : ['point:create'],
               undoable: true
             })
+
           if (!structuralOperationIntent) {
             return null
           }
@@ -821,11 +849,13 @@ export const penFeature = defineFeature<Record<string, unknown>, PenState>(
               structuralOperationIntent
             }
           ).value
+
           selectionApis.selectElements([pathEditingVectorId])
           setSelectedAnchorPoint(pathEditingVectorId, newSelectedPoint)
           if (startNewSubpath) {
             systemContextApis.setPathEditingStartNewSubpath(false)
           }
+
           systemContextApis.setHoveredVectorPoint(null)
 
           return {
@@ -845,6 +875,7 @@ export const penFeature = defineFeature<Record<string, unknown>, PenState>(
           firstPoint.id,
           dragStartWorkspace
         ).value
+
         if (!elementId) {
           return null
         }
@@ -885,6 +916,7 @@ export const penFeature = defineFeature<Record<string, unknown>, PenState>(
         }
 
         const mouseWorkspacePos = getCurrentMouseWorkspacePos()
+
         if (!mouseWorkspacePos) {
           return
         }
@@ -896,12 +928,14 @@ export const penFeature = defineFeature<Record<string, unknown>, PenState>(
             ? PEN_REPLACE_POINT_HANDLES_OPTIONS
             : PEN_CREATE_POINT_HANDLES_OPTIONS
         )
+
         if (applied) {
           state.hasAppliedCurveFrame = true
         }
 
         return
       },
+
       onCancel: (_snapshot, state): undefined => {
         elementApis.discardTransientVectorPreviews([state.elementId])
         restoreVectorEditingRuntimeState(state.runtimeBefore)
@@ -926,6 +960,7 @@ export const selectVectorPointFeature = defineFeature<
 
       const selectedIds = selectionApis.getSelectedIds()
       const pathEditingVectorId = systemContextApis.getPathEditingVectorId()
+
       if (!isPathEditingVectorSelected(selectedIds, pathEditingVectorId)) {
         return null
       }
@@ -942,6 +977,7 @@ export const selectVectorPointFeature = defineFeature<
                 pathEditingVectorId,
                 snapshot.mousePosition
               )
+
               if (!hit) {
                 return null
               }
@@ -987,6 +1023,7 @@ export const selectVectorPointFeature = defineFeature<
             elementId: pathEditingVectorId,
             segmentId: activeHoveredSegmentId
           })
+
           return {
             segmentId: activeHoveredSegmentId,
             dragTarget: null,
@@ -999,6 +1036,7 @@ export const selectVectorPointFeature = defineFeature<
         selectionApis.clearVectorSegmentSelection()
         systemContextApis.setSelectedVectorPoint(null)
         systemContextApis.setSelectedVectorSegment(null)
+
         return null
       }
 
@@ -1018,6 +1056,7 @@ export const selectVectorPointFeature = defineFeature<
         activeHoveredPoint.elementId,
         activeHoveredPoint.pointId
       )
+
       systemContextApis.setSelectedVectorPoint({
         elementId: activeHoveredPoint.elementId,
         pointId: activeHoveredPoint.pointId,
@@ -1073,11 +1112,13 @@ export const selectVectorPointFeature = defineFeature<
             : null
       }
     },
+
     onUpdate: (
       snapshot: SystemContextSnapshot,
       state: SelectVectorPointState
     ) => {
       const dragTarget = state.dragTarget
+
       if (!dragTarget) {
         return
       }
@@ -1092,6 +1133,7 @@ export const selectVectorPointFeature = defineFeature<
       const currentWorkspacePos = elementApis.getMousePosInWorkspace(
         snapshot.mousePosition
       )
+
       if (!currentWorkspacePos) {
         return
       }
@@ -1101,6 +1143,7 @@ export const selectVectorPointFeature = defineFeature<
         currentWorkspacePos,
         phase: 'update'
       })
+
       if (!computedPatchIntent) {
         return
       }
@@ -1114,19 +1157,23 @@ export const selectVectorPointFeature = defineFeature<
             SELECT_VECTOR_POINT_TARGET_OPTIONS
           )
       )
+
       if (updatedPoint === null) {
         return
       }
 
       state.computedPatchIntent = computedPatchIntent
       dragTarget.hasMoved = true
+
       return
     },
+
     onEnd: (
       _snapshot: SystemContextSnapshot,
       state: SelectVectorPointState
     ) => {
       const dragTarget = state.dragTarget
+
       if (!dragTarget) {
         return
       }
@@ -1135,13 +1182,16 @@ export const selectVectorPointFeature = defineFeature<
         if (!dragTarget.hasMoved) {
           return
         }
+
         const committedPoint = elementApis.getVectorAnchorPointById(
           dragTarget.elementId,
           dragTarget.pointId
         )
+
         if (!committedPoint) {
           return
         }
+
         syncSelectedVectorPointMirror(
           dragTarget.elementId,
           committedPoint,
@@ -1150,13 +1200,17 @@ export const selectVectorPointFeature = defineFeature<
       } finally {
         state.dragTarget = null
       }
+
       return
     },
+
     onCancel: (_snapshot, state): undefined => {
       const previewElementId = state.dragTarget?.elementId
+
       if (previewElementId) {
         elementApis.discardTransientVectorPreviews([previewElementId])
       }
+
       state.dragTarget = null
       restoreVectorEditingRuntimeState(state.runtimeBefore)
       cursorApis.resetCanvasCursor()
@@ -1170,13 +1224,16 @@ export const hoverVectorPointCursorFeature = defineFeature(
   {
     priority: 20,
     exclusive: false,
+
     execution: (snapshot: SystemContextSnapshot) => {
       const pathEditingVectorId = systemContextApis.getPathEditingVectorId()
+
       if (!pathEditingVectorId) {
         cursorApis.resetCanvasCursor()
         systemContextApis.setHoveredVectorPoint(null)
         systemContextApis.setHoveredVectorSegment(null)
         systemContextApis.setHoveredVectorSegmentInsertPoint(null)
+
         return null
       }
 
@@ -1189,6 +1246,7 @@ export const hoverVectorPointCursorFeature = defineFeature(
           pathEditingVectorId,
           snapshot.mousePosition
         )
+
         if (!rawHoveredPoint) {
           return null
         }
@@ -1203,6 +1261,7 @@ export const hoverVectorPointCursorFeature = defineFeature(
 
         return rawHoveredPoint
       })()
+
       if (hoveredPoint) {
         systemContextApis.setHoveredVectorPoint({
           elementId: pathEditingVectorId,
@@ -1215,6 +1274,7 @@ export const hoverVectorPointCursorFeature = defineFeature(
         systemContextApis.setHoveredVectorSegment(null)
         systemContextApis.setHoveredVectorSegmentInsertPoint(null)
         cursorApis.setCanvasCursor('pointer')
+
         return null
       }
 
@@ -1226,6 +1286,7 @@ export const hoverVectorPointCursorFeature = defineFeature(
       const suppressConnectedSegmentHover =
         snapshot.primaryTool === PrimaryToolType.PEN &&
         previewMode === PenHoverPreviewMode.CONNECTED_SEGMENT_PREVIEW
+
       if (hoveredSegmentHit && !suppressConnectedSegmentHover) {
         hoveredSegment = {
           elementId: pathEditingVectorId,
@@ -1247,6 +1308,7 @@ export const hoverVectorPointCursorFeature = defineFeature(
           : null
       )
       cursorApis.setCanvasCursor(hoveredSegment ? 'pointer' : 'default')
+
       return null
     }
   }
@@ -1258,6 +1320,7 @@ export const cancelPenEditingFeature = defineFeature(
   {
     priority: 100,
     exclusive: true,
+
     execution: (snapshot: SystemContextSnapshot) => {
       const pathEditingMode = systemContextApis.getPathEditingMode()
       const editingVectorId = systemContextApis.getPathEditingVectorId()
@@ -1281,6 +1344,7 @@ export const cancelPenEditingFeature = defineFeature(
             systemContextApis.setHoveredVectorSegment(null)
             systemContextApis.setHoveredVectorSegmentInsertPoint(null)
             cursorApis.resetCanvasCursor()
+
             return {
               cancelled: true,
               elementId: editingVectorId,
@@ -1290,6 +1354,7 @@ export const cancelPenEditingFeature = defineFeature(
 
           systemContextApis.exitPathEditingMode()
           cursorApis.resetCanvasCursor()
+
           return {
             cancelled: true,
             elementId: editingVectorId,
@@ -1299,17 +1364,21 @@ export const cancelPenEditingFeature = defineFeature(
 
         systemContextApis.exitPathEditingMode()
         cursorApis.resetCanvasCursor()
+
         return { cancelled: true, elementId: editingVectorId }
       }
 
       const selectedIds = selectionApis.getSelectedIds()
+
       if (selectedIds.length > 0) {
         selectionApis.clearSelection({ undoable: false })
         cursorApis.resetCanvasCursor()
+
         return { cancelled: true, selection: 'element' }
       }
 
       cursorApis.resetCanvasCursor()
+
       return null
     }
   }
@@ -1321,18 +1390,22 @@ export const enterPathEditingFeature = defineFeature(
   {
     priority: 100,
     exclusive: true,
+
     execution: () => {
       const selectedIds = selectionApis.getSelectedIds()
+
       if (selectedIds.length !== 1) {
         return null
       }
 
       const selectedId = selectedIds[0]
+
       if (elementApis.getElementType(selectedId) !== 'vector') {
         return null
       }
 
       systemContextApis.enterPathEditingMode(selectedId)
+
       return { pathEditingVectorId: selectedId, source: 'enter' }
     }
   }
@@ -1344,17 +1417,20 @@ export const enterPathEditingByDoubleClickFeature = defineFeature(
   {
     priority: 90,
     exclusive: true,
+
     execution: (snapshot: SystemContextSnapshot) => {
       if (snapshot.primaryTool === PrimaryToolType.PEN) {
         return null
       }
 
       const selectedIds = selectionApis.getSelectedIds()
+
       if (selectedIds.length !== 1) {
         return null
       }
 
       const selectedId = selectedIds[0]
+
       if (elementApis.getElementType(selectedId) !== 'vector') {
         return null
       }
@@ -1385,6 +1461,7 @@ export const enterPathEditingByDoubleClickFeature = defineFeature(
       }
 
       systemContextApis.enterPathEditingMode(selectedId)
+
       return { pathEditingVectorId: selectedId, source: 'double-click' }
     }
   }

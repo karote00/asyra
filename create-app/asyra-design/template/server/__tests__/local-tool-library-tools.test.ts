@@ -6,8 +6,10 @@ import {
 import { createLocalToolLibrary } from '../local-tool-library'
 import { createLocalToolLibraryTools as createOwner } from '../local-tool-library-tools'
 import { withToolContractAssertions } from './tool-contract-assertions'
+
 const createLocalToolLibraryTools = (...args: Parameters<typeof createOwner>) =>
   withToolContractAssertions(createOwner(...args))
+
 import { invokeLocalTool } from '../local-tool-invocation'
 import {
   nativeToolInputSchema,
@@ -21,6 +23,7 @@ import { AiDesignToolIds } from '../../src/constants/ai-design'
 const fixture = () => {
   const registry = createAiActionRegistry()
   const execute = vi.fn(async (input: unknown) => input)
+
   registry.register({
     name: 'design.number',
     description: 'Use a supplied number.',
@@ -49,55 +52,77 @@ const fixture = () => {
     validate: operationContractIssue,
     store: {
       read: async (key) => entries.get(key),
+
       list: async () => [...entries.values()],
+
       write: async (input) => {
-        if (storageUnavailable) throw new Error('Storage unavailable')
-        if (entries.get(input.key)?.version !== input.expectedVersion)
+        if (storageUnavailable) {
+          throw new Error('Storage unavailable')
+        }
+
+        if (entries.get(input.key)?.version !== input.expectedVersion) {
           throw Error('conflict')
+        }
+
         const entry = {
           key: input.key,
           version: String(++version),
           record: input.record
         }
+
         entries.set(input.key, entry)
+
         return entry
       }
     },
+
     execute: (call, definition) =>
       schedule(undefined, async () => ({
         status: 'success',
         settlement: 'completed',
         value: await definition.execute(call.input, { signal })
       })),
+
     leases: {
       open: async () => undefined,
+
       retain: async () => undefined,
+
       release: async () => undefined
     },
+
     check: async () => ({ ok: true, scope: 'Canonical numeric result only.' })
   })
   const owner = createLocalToolLibraryTools(
     () => library,
     () => ({ parentCallId: 'provider-call' })
   )
+
   const call = async (name: string, input: unknown) => {
     const definition = owner.definitions.find((item) => item.name === name)
-    if (!definition) throw new Error('Missing control definition')
+
+    if (!definition) {
+      throw new Error('Missing control definition')
+    }
+
     return schedule(definition.executionAccess, () =>
       invokeLocalTool(owner, definition, input, signal)
     )
   }
+
   return {
     library,
     owner,
     execute,
     call,
     entries,
+
     failStorage: (value: boolean) => {
       storageUnavailable = value
     }
   }
 }
+
 const proposal = {
   format: 1,
   name: 'reuse-number',
@@ -121,8 +146,13 @@ it('exposes canonical recursive bindings through native conversion and validates
   const definition = owner.definitions.find(
     (d) => d.name === AiDesignToolIds.SUBMIT_TOOL
   )
-  if (!definition) throw new Error('Missing submit definition')
+
+  if (!definition) {
+    throw new Error('Missing submit definition')
+  }
+
   const valid = { submissionId: 'one', proposal }
+
   expect(operationInputIssue(valid, definition.inputSchema)).toBeUndefined()
   expect(
     operationInputIssue(valid, nativeToolInputSchema(definition.inputSchema))
@@ -136,6 +166,7 @@ it('exposes canonical recursive bindings through native conversion and validates
       ]
     }
   }
+
   expect(
     operationInputIssue(invalid, nativeToolInputSchema(definition.inputSchema))
   ).toBeDefined()
@@ -157,6 +188,7 @@ it('repairs admission, dispatches exact revisions and keeps durable management s
       })
     ).text
   )
+
   expect(rejected).toMatchObject({
     ok: false,
     code: 'admission',
@@ -171,6 +203,7 @@ it('repairs admission, dispatches exact revisions and keeps durable management s
       })
     ).text
   )
+
   expect(submitted).toMatchObject({
     ok: true,
     storage: { status: 'saved', availability: 'candidate' }
@@ -184,6 +217,7 @@ it('repairs admission, dispatches exact revisions and keeps durable management s
       })
     ).text
   )
+
   expect(applied).toMatchObject({
     execution: { status: 'success', value: 7 },
     storage: { status: 'saved', availability: 'eligible' }
@@ -221,6 +255,7 @@ it('repairs admission, dispatches exact revisions and keeps durable management s
 
 it('does not promote a model-authored receipt or accept unknown controls', async () => {
   const { call, execute, owner } = fixture()
+
   await call(AiDesignToolIds.SUBMIT_TOOL, { submissionId: 'one', proposal })
   const saved = JSON.parse(
     (
@@ -231,6 +266,7 @@ it('does not promote a model-authored receipt or accept unknown controls', async
       })
     ).text
   )
+
   expect(saved).toMatchObject({
     status: 'unsaved',
     toolOutcome: { status: 'failed', settlement: 'not-started' }
@@ -239,12 +275,14 @@ it('does not promote a model-authored receipt or accept unknown controls', async
   await expect(
     owner.call('unknown', {}, new AbortController().signal)
   ).rejects.toThrow()
-  for (const definition of owner.definitions)
+  for (const definition of owner.definitions) {
     expect(definition.composition).toBe('control-plane')
+  }
 })
 
 it('retries failed storage through save_tool without repeating successful product work', async () => {
   const { call, execute, failStorage, entries } = fixture()
+
   await call(AiDesignToolIds.SUBMIT_TOOL, {
     submissionId: 'storage-recovery',
     proposal
@@ -259,6 +297,7 @@ it('retries failed storage through save_tool without repeating successful produc
       })
     ).text
   )
+
   expect(applied).toMatchObject({
     execution: { status: 'success', value: 23 },
     storage: { status: 'unsaved' }
@@ -275,6 +314,7 @@ it('retries failed storage through save_tool without repeating successful produc
       })
     ).text
   )
+
   expect(saved).toMatchObject({ status: 'saved', availability: 'eligible' })
   expect(
     [...entries.values()].some(

@@ -20,7 +20,7 @@ Merge is not authorized. Single-agent execution remains the default.
 
 This is a continuation of the merged Design implementation, not a restart of
 the discarded delegated AI panel experiment. The existing
-[Editable Design Agent plan](../ai-design-agent-plan.md) is historical execution
+[Editable Design Agent plan](ai-design-agent-plan.md) is historical execution
 context for this work; this task does not declare that entire plan complete or
 activate deferred manual Text authoring.
 

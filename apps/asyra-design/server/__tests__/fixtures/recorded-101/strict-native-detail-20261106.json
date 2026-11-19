@@ -1,0 +1,294 @@
+{
+  "source": {
+    "run": "taipei-101-fixed-1793951748371",
+    "callId": "call_oTnJyvWIlg3J1CoSi9jI3kyc"
+  },
+  "query": {
+    "names": [
+      "review_drawing"
+    ],
+    "view": "usage",
+    "inputScope": {
+      "operation": "capture"
+    }
+  },
+  "input": {
+    "phase": "visual",
+    "final": false,
+    "inspections": [
+      {
+        "elementId": "workspace",
+        "view": "overview",
+        "checks": [
+          {
+            "criterionId": "whole"
+          },
+          {
+            "criterionId": "view"
+          }
+        ]
+      },
+      {
+        "elementId": "design-13bab670-6498-4cb7-a937-bc362b3183a6-0",
+        "view": "detail",
+        "checks": [
+          {
+            "criterionId": "detail",
+            "unitId": "base"
+          }
+        ]
+      },
+      {
+        "elementId": "design-b3d8a4ab-700e-4663-add4-83d8c76fd61f-0",
+        "view": "detail",
+        "checks": [
+          {
+            "criterionId": "detail",
+            "unitId": "tiers"
+          }
+        ]
+      },
+      {
+        "elementId": "design-52ceaa49-be87-4ac9-9449-61ae3b2b07dd-0",
+        "view": "detail",
+        "checks": [
+          {
+            "criterionId": "detail",
+            "unitId": "crown"
+          }
+        ]
+      }
+    ]
+  },
+  "output": {
+    "available": false,
+    "status": "partial",
+    "settlement": "completed",
+    "phase": "visual",
+    "accepted": false,
+    "reviewOperation": "capture",
+    "recordedChecks": [],
+    "inspectionIds": [
+      "33f50abe-b469-47d6-a176-cac813e0b6f3"
+    ],
+    "failedInspections": [
+      {
+        "inspection": {
+          "elementId": "design-13bab670-6498-4cb7-a937-bc362b3183a6-0",
+          "view": "detail",
+          "checks": [
+            {
+              "criterionId": "detail",
+              "unitId": "base"
+            }
+          ]
+        },
+        "code": "CAPTURE_UNAVAILABLE",
+        "message": "Capture is unavailable; no image or judgment was produced. Retry only this failed capture, preserving valid images and completed edits. For native detail exceeding 1024 pixels per side, inspect a smaller child or specify a target-local region within that limit. Use view=overview for composition framing; an overview does not prove native detail. Do not claim verification from an unavailable image."
+      },
+      {
+        "inspection": {
+          "elementId": "design-b3d8a4ab-700e-4663-add4-83d8c76fd61f-0",
+          "view": "detail",
+          "checks": [
+            {
+              "criterionId": "detail",
+              "unitId": "tiers"
+            }
+          ]
+        },
+        "code": "CAPTURE_UNAVAILABLE",
+        "message": "Capture is unavailable; no image or judgment was produced. Retry only this failed capture, preserving valid images and completed edits. For native detail exceeding 1024 pixels per side, inspect a smaller child or specify a target-local region within that limit. Use view=overview for composition framing; an overview does not prove native detail. Do not claim verification from an unavailable image."
+      },
+      {
+        "inspection": {
+          "elementId": "design-52ceaa49-be87-4ac9-9449-61ae3b2b07dd-0",
+          "view": "detail",
+          "checks": [
+            {
+              "criterionId": "detail",
+              "unitId": "crown"
+            }
+          ]
+        },
+        "code": "CAPTURE_UNAVAILABLE",
+        "message": "Capture is unavailable; no image or judgment was produced. Retry only this failed capture, preserving valid images and completed edits. For native detail exceeding 1024 pixels per side, inspect a smaller child or specify a target-local region within that limit. Use view=overview for composition framing; an overview does not prove native detail. Do not claim verification from an unavailable image."
+      }
+    ],
+    "coverage": {
+      "required": 7,
+      "passed": 0,
+      "pending": [
+        {
+          "id": "visual:whole",
+          "criterionId": "whole",
+          "status": "stale"
+        },
+        {
+          "id": "visual:view",
+          "criterionId": "view",
+          "status": "stale"
+        },
+        {
+          "id": "visual-unit:[\"detail\",\"base\"]",
+          "criterionId": "detail",
+          "unitId": "base",
+          "status": "unverified"
+        },
+        {
+          "id": "visual-unit:[\"detail\",\"tiers\"]",
+          "criterionId": "detail",
+          "unitId": "tiers",
+          "status": "unverified"
+        },
+        {
+          "id": "visual-unit:[\"detail\",\"crown\"]",
+          "criterionId": "detail",
+          "unitId": "crown",
+          "status": "unverified"
+        },
+        {
+          "id": "visual:native",
+          "criterionId": "native",
+          "status": "stale"
+        },
+        {
+          "id": "visual:scale",
+          "criterionId": "scale",
+          "status": "stale"
+        }
+      ]
+    },
+    "acceptanceContext": {
+      "method": "\u4ee5\u516c\u5206\u4e16\u754c\u5ea7\u6a19\u3001scale=1\u3001azimuth38/elevation25\u56fa\u5b9a\u6b63\u6295\u5f71\u5efa\u7acb\u53ef\u7de8\u8f2f2D\u53ef\u898b\u9762\u3002\u7e3d\u9ad850800cm\uff1b\u5c40\u90e8\u5bec\u5ea6\u3001\u6a13\u5c64\u6a19\u9ad8\u8207\u88dd\u98fe\u8f2a\u5ed3\u4f9d\u8cc7\u6599\u6bd4\u4f8b\u4f30\u7b97\u3002\u900f\u660e\u80cc\u666f\u3002\u5206\u88d9\u6a13\u57fa\u5ea7\u3001\u516b\u7d44\u5854\u7bc0\u3001\u51a0\u90e8\u5854\u5c16\u88fd\u4f5c\u3002",
+      "requirementRevision": 1,
+      "checks": [
+        {
+          "criterionId": "whole",
+          "requirement": "\u5f9e\u57fa\u5ea7\u5230\u5854\u5c16\u5b8c\u6574\u53f0\u5317101\u3001\u9ad8\u7d30\u7bc0\u5beb\u5be6\u5efa\u7bc9\u63d2\u756b",
+          "description": "\u5168\u68df\u8f2a\u5ed3\u3001\u516b\u7d44\u5916\u5f35\u7af9\u7bc0\u3001\u51a0\u90e8\u8207\u5b8c\u6574\u57fa\u5ea7\uff1b\u4e0d\u5f97\u50c5\u70ba\u793a\u610f\u91cf\u9ad4\u6216\u589e\u6dfb\u7121\u95dc\u666f\u7269\u3002"
+        },
+        {
+          "criterionId": "view",
+          "requirement": "\u56fa\u5b9a\u4fef\u8996\u4e09\u5206\u4e4b\u56db\u8996\u89d2\u8207\u4e00\u81f4\u900f\u8996\uff0c\u9802\u9762\u53ef\u898b",
+          "description": "\u5169\u5074\u53ef\u898b\u7acb\u9762\u3001\u9732\u81fa\u8207\u5c4b\u9802\u5747\u9075\u5faa\u540c\u4e00\u6295\u5f71\u3002"
+        }
+      ]
+    },
+    "next": {
+      "tool": "review_drawing",
+      "arguments": {
+        "phase": "visual",
+        "final": false,
+        "inspectionIds": [
+          "33f50abe-b469-47d6-a176-cac813e0b6f3"
+        ],
+        "bindChecks": [
+          {
+            "criterionId": "whole",
+            "inspectionIds": [
+              "33f50abe-b469-47d6-a176-cac813e0b6f3"
+            ]
+          },
+          {
+            "criterionId": "view",
+            "inspectionIds": [
+              "33f50abe-b469-47d6-a176-cac813e0b6f3"
+            ]
+          }
+        ]
+      },
+      "requiredInputs": [
+        "bindChecks"
+      ],
+      "instruction": "No complete check binding was issued. Preserve the known roles in bindChecks. Assign reused images explicitly to checks that need them; unused menu images are not dependencies. Complete bindChecks with criterionId, optional unitId/supersedes and every required delivered inspectionId for each check. Binding does not judge or record anything. Retry failed captures before binding an incomplete scope."
+    },
+    "actionResults": [
+      {
+        "actionId": "6d980531-8dd5-4e79-95ae-0aed8fe49619",
+        "actionName": "inspect_drawing",
+        "result": {
+          "available": true,
+          "image": {
+            "width": 296,
+            "height": 1024
+          },
+          "toolOutcome": {
+            "status": "success",
+            "settlement": "completed"
+          },
+          "inspectionId": "33f50abe-b469-47d6-a176-cac813e0b6f3",
+          "revision": 3
+        }
+      },
+      {
+        "actionId": "6f8eb69a-abd0-4505-a98a-b4edfc69c032",
+        "actionName": "inspect_drawing",
+        "result": {
+          "available": false,
+          "code": "CAPTURE_UNAVAILABLE",
+          "settlement": "completed",
+          "message": "Capture is unavailable; no image or judgment was produced. Retry only this failed capture, preserving valid images and completed edits. For native detail exceeding 1024 pixels per side, inspect a smaller child or specify a target-local region within that limit. Use view=overview for composition framing; an overview does not prove native detail. Do not claim verification from an unavailable image.",
+          "toolOutcome": {
+            "status": "failed",
+            "settlement": "completed"
+          }
+        }
+      },
+      {
+        "actionId": "7c536fad-6af3-4db1-8822-391c9262cd17",
+        "actionName": "inspect_drawing",
+        "result": {
+          "available": false,
+          "code": "CAPTURE_UNAVAILABLE",
+          "settlement": "completed",
+          "message": "Capture is unavailable; no image or judgment was produced. Retry only this failed capture, preserving valid images and completed edits. For native detail exceeding 1024 pixels per side, inspect a smaller child or specify a target-local region within that limit. Use view=overview for composition framing; an overview does not prove native detail. Do not claim verification from an unavailable image.",
+          "toolOutcome": {
+            "status": "failed",
+            "settlement": "completed"
+          }
+        }
+      },
+      {
+        "actionId": "3ebcac2d-7bd1-42b9-9de3-0413252ca35a",
+        "actionName": "inspect_drawing",
+        "result": {
+          "available": false,
+          "code": "CAPTURE_UNAVAILABLE",
+          "settlement": "completed",
+          "message": "Capture is unavailable; no image or judgment was produced. Retry only this failed capture, preserving valid images and completed edits. For native detail exceeding 1024 pixels per side, inspect a smaller child or specify a target-local region within that limit. Use view=overview for composition framing; an overview does not prove native detail. Do not claim verification from an unavailable image.",
+          "toolOutcome": {
+            "status": "failed",
+            "settlement": "completed"
+          }
+        }
+      }
+    ],
+    "message": "Required captures are unavailable. Retry corrected failedInspections targets as inspections; include inspectionIds only when the returned list is nonempty. Assessment has not run.",
+    "toolOutcome": {
+      "status": "partial",
+      "settlement": "completed",
+      "issues": [
+        {
+          "code": "RESULT_UNAVAILABLE",
+          "message": "Required captures are unavailable. Retry corrected failedInspections targets as inspections; include inspectionIds only when the returned list is nonempty. Assessment has not run."
+        },
+        {
+          "actionName": "inspect_drawing",
+          "code": "CAPTURE_UNAVAILABLE",
+          "message": "Capture is unavailable; no image or judgment was produced. Retry only this failed capture, preserving valid images and completed edits. For native detail exceeding 1024 pixels per side, inspect a smaller child or specify a target-local region within that limit. Use view=overview for composition framing; an overview does not prove native detail. Do not claim verification from an unavailable image."
+        },
+        {
+          "actionName": "inspect_drawing",
+          "code": "CAPTURE_UNAVAILABLE",
+          "message": "Capture is unavailable; no image or judgment was produced. Retry only this failed capture, preserving valid images and completed edits. For native detail exceeding 1024 pixels per side, inspect a smaller child or specify a target-local region within that limit. Use view=overview for composition framing; an overview does not prove native detail. Do not claim verification from an unavailable image."
+        },
+        {
+          "actionName": "inspect_drawing",
+          "code": "CAPTURE_UNAVAILABLE",
+          "message": "Capture is unavailable; no image or judgment was produced. Retry only this failed capture, preserving valid images and completed edits. For native detail exceeding 1024 pixels per side, inspect a smaller child or specify a target-local region within that limit. Use view=overview for composition framing; an overview does not prove native detail. Do not claim verification from an unavailable image."
+        }
+      ]
+    }
+  }
+}

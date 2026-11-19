@@ -17,6 +17,7 @@ export const updateElementProperties = (
   options?: EVENT_OPTIONS
 ): PropertyMutationReceipt => {
   const entries = Object.entries(values ?? {})
+
   if (elementIds.length === 0) {
     return Object.freeze({ acceptedIds: Object.freeze([]), changed: false })
   }
@@ -44,6 +45,7 @@ export const updateElementProperties = (
             )
           : directRequest
       const result = core.updateElementProperties(request, options)
+
       return Object.freeze({
         acceptedIds: Object.freeze([...new Set(elementIds)]),
         changed: result.changed

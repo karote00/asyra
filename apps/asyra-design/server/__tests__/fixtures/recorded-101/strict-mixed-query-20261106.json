@@ -1,0 +1,102 @@
+{
+  "source": {
+    "run": "taipei-101-fixed-1793950347595",
+    "callId": "call_86LCmoAaZZ1fWqOi3ov4CECC"
+  },
+  "query": {
+    "names": [
+      "prepare_and_apply_design"
+    ],
+    "view": "usage",
+    "inputScope": {
+      "operation": "draft",
+      "nodeTypes": [
+        "projected-face",
+        "surface-grid",
+        "pattern",
+        "vector"
+      ]
+    }
+  },
+  "receivedExample": {
+    "illustrative": true,
+    "invocation": {
+      "namespace": "design_workflow",
+      "tool": "prepare_and_apply_design",
+      "arguments": {
+        "draft": {
+          "type": "group",
+          "name": "Visible surface",
+          "brief": {
+            "intent": "One editable visible surface",
+            "viewpoint": "Fixed 2D view",
+            "sources": [],
+            "assumptions": [
+              "Illustrative dimensions"
+            ],
+            "checks": [
+              {
+                "key": "surface",
+                "property": "width",
+                "expected": 100,
+                "tolerance": 0
+              }
+            ]
+          },
+          "children": [
+            {
+              "type": "vector",
+              "key": "surface",
+              "name": "Surface",
+              "rings": [
+                [
+                  {
+                    "x": 0,
+                    "y": 10
+                  },
+                  {
+                    "x": 100,
+                    "y": 0
+                  },
+                  {
+                    "x": 90,
+                    "y": 70
+                  },
+                  {
+                    "x": 0,
+                    "y": 80
+                  }
+                ]
+              ],
+              "fill": {
+                "gradientType": "linear",
+                "gradientHandles": [
+                  {
+                    "x": 0,
+                    "y": 0
+                  },
+                  {
+                    "x": 1,
+                    "y": 0
+                  }
+                ],
+                "gradientStops": [
+                  {
+                    "position": 0,
+                    "color": "#123456",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 1,
+                    "color": "#abcdef",
+                    "opacity": 1
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}

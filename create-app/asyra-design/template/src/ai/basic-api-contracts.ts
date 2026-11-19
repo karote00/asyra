@@ -51,6 +51,7 @@ const resultDescriptions: Record<BasicApiResultKind, string> = {
   removed:
     'value contains the owner removal receipt; an empty removed list is no-change.'
 }
+
 export interface BasicApiContract {
   owner: BasicApiOwner
   category: string
@@ -77,6 +78,7 @@ export const apiSingleElementId = {
 }
 export const apiNumber = { type: 'number' }
 export const apiBoolean = { type: 'boolean' }
+
 export const apiObject = (
   properties: Record<string, unknown>,
   required = Object.keys(properties)
@@ -86,7 +88,9 @@ export const apiObject = (
   properties,
   required
 })
+
 export const apiArray = (items: unknown) => ({ type: 'array', items })
+
 export const apiPosition = apiObject({ x: apiNumber, y: apiNumber })
 export const apiIds = apiArray(apiId)
 export const retainedElementSetSchema = apiObject({
@@ -103,21 +107,31 @@ export const apiUniqueElementIds = {
   'x-design-element-binding': 'all',
   anyOf: [{ ...apiIds, uniqueItems: true }, retainedElementSetSchema]
 }
+
 /** These canonical declaration objects identify element membership at the App boundary. */
 export const isElementTargetSchema = (schema: unknown): boolean =>
   schema === apiElementIds || schema === apiUniqueElementIds
+
 export const hasElementTargetSchema = (schema: unknown): boolean => {
-  if (isElementTargetSchema(schema)) return true
-  if (!schema || typeof schema !== 'object' || Array.isArray(schema))
+  if (isElementTargetSchema(schema)) {
+    return true
+  }
+
+  if (!schema || typeof schema !== 'object' || Array.isArray(schema)) {
     return false
+  }
+
   const properties = (schema as Record<string, unknown>).properties
+
   return (
     !!properties &&
     typeof properties === 'object' &&
     Object.values(properties).some(hasElementTargetSchema)
   )
 }
+
 export const apiRecord = { type: 'object', additionalProperties: true }
+
 /** Declaration order is the public method's positional argument order. */
 export interface BasicApiParameterDefinition {
   name: string
@@ -142,11 +156,19 @@ const describeResultContract = (
   declared?: BasicApiResultKind
 ) => {
   let kind = declared
-  if (!declared && effect === 'read') kind = 'value'
-  if (!declared && (effect === 'selection' || effect === 'viewport'))
+
+  if (!declared && effect === 'read') {
+    kind = 'value'
+  }
+
+  if (!declared && (effect === 'selection' || effect === 'viewport')) {
     kind = 'transient'
-  if (!kind)
+  }
+
+  if (!kind) {
     throw new Error('Document writers must declare an owner result contract.')
+  }
+
   return { kind, description: resultDescriptions[kind] }
 }
 

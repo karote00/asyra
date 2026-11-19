@@ -1,0 +1,247 @@
+{
+  "run": "taipei-101-fixed-1793905217176",
+  "callId": "call_2gvvwRqBN0F29l2Tqbq60Z2X",
+  "outputBytes": 1493110,
+  "input": {
+    "operations": [
+      {
+        "name": "api_fill_updateFillsAtIndex",
+        "arguments": {
+          "index": 0,
+          "patch": {
+            "kind": "solid",
+            "gradient": null
+          }
+        },
+        "target": {
+          "field": "elementIds",
+          "query": {
+            "scope": "region",
+            "bounds": {
+              "x": 6200,
+              "y": 12000,
+              "width": 7800,
+              "height": 28000
+            },
+            "filter": {
+              "ancestorId": "design-6a08846f-78bc-4068-b06b-bbf33cce758e-0",
+              "name": {
+                "suffix": "獨立玻璃窗與窗框反光"
+              }
+            }
+          }
+        }
+      },
+      {
+        "name": "api_fill_updateFillsAtIndex",
+        "arguments": {
+          "index": 0,
+          "patch": {
+            "kind": "solid",
+            "gradient": null
+          }
+        },
+        "target": {
+          "field": "elementIds",
+          "query": {
+            "scope": "region",
+            "bounds": {
+              "x": 3800,
+              "y": 37000,
+              "width": 12500,
+              "height": 14000
+            },
+            "filter": {
+              "ancestorId": "design-3a3e74e8-8bd8-4eb6-8ef5-111221653712-0",
+              "name": {
+                "suffix": "玻璃與細框反光"
+              }
+            }
+          }
+        }
+      },
+      {
+        "name": "api_fill_updateFillsAtIndex",
+        "arguments": {
+          "index": 0,
+          "patch": {
+            "opacity": 0.24
+          }
+        },
+        "target": {
+          "field": "elementIds",
+          "query": {
+            "scope": "region",
+            "bounds": {
+              "x": 6200,
+              "y": 12000,
+              "width": 7800,
+              "height": 28000
+            },
+            "filter": {
+              "ancestorId": "design-6a08846f-78bc-4068-b06b-bbf33cce758e-0",
+              "name": {
+                "suffix": "分片玻璃反射層"
+              }
+            }
+          }
+        }
+      },
+      {
+        "name": "api_hierarchy_moveElementsRelative",
+        "arguments": {
+          "request": {
+            "placement": "after"
+          }
+        },
+        "target": [
+          {
+            "field": "elementIds",
+            "query": {
+              "scope": "region",
+              "bounds": {
+                "x": 6200,
+                "y": 12000,
+                "width": 7800,
+                "height": 28000
+              },
+              "filter": {
+                "parentId": "design-6a08846f-78bc-4068-b06b-bbf33cce758e-0",
+                "type": "oval"
+              }
+            }
+          },
+          {
+            "field": "anchorId",
+            "path": [
+              "request",
+              "anchorId"
+            ],
+            "query": {
+              "scope": "region",
+              "bounds": {
+                "x": 6200,
+                "y": 12000,
+                "width": 7800,
+                "height": 28000
+              },
+              "filter": {
+                "name": {
+                  "equals": "竹節主要窗框與反射層次"
+                }
+              },
+              "expectedCount": 1
+            }
+          }
+        ]
+      },
+      {
+        "name": "api_hierarchy_moveElementsRelative",
+        "arguments": {
+          "request": {
+            "placement": "after"
+          }
+        },
+        "target": [
+          {
+            "field": "elementIds",
+            "query": {
+              "scope": "region",
+              "bounds": {
+                "x": 6200,
+                "y": 12000,
+                "width": 7800,
+                "height": 28000
+              },
+              "filter": {
+                "parentId": "design-6a08846f-78bc-4068-b06b-bbf33cce758e-0",
+                "name": {
+                  "suffix": "如意垂飾金屬柄"
+                }
+              }
+            }
+          },
+          {
+            "field": "anchorId",
+            "path": [
+              "request",
+              "anchorId"
+            ],
+            "query": {
+              "scope": "region",
+              "bounds": {
+                "x": 6200,
+                "y": 12000,
+                "width": 7800,
+                "height": 28000
+              },
+              "filter": {
+                "name": {
+                  "equals": "竹節主要窗框與反射層次"
+                }
+              },
+              "expectedCount": 1
+            }
+          }
+        ]
+      },
+      {
+        "name": "api_hierarchy_moveElementsRelative",
+        "arguments": {
+          "request": {
+            "placement": "after"
+          }
+        },
+        "target": [
+          {
+            "field": "elementIds",
+            "query": {
+              "scope": "region",
+              "bounds": {
+                "x": 6200,
+                "y": 12000,
+                "width": 7800,
+                "height": 28000
+              },
+              "filter": {
+                "parentId": "design-6a08846f-78bc-4068-b06b-bbf33cce758e-0",
+                "name": {
+                  "suffix": "正面如意飾帶"
+                }
+              }
+            }
+          },
+          {
+            "field": "anchorId",
+            "path": [
+              "request",
+              "anchorId"
+            ],
+            "query": {
+              "scope": "region",
+              "bounds": {
+                "x": 6200,
+                "y": 12000,
+                "width": 7800,
+                "height": 28000
+              },
+              "filter": {
+                "name": {
+                  "equals": "竹節主要窗框與反射層次"
+                }
+              },
+              "expectedCount": 1
+            }
+          }
+        ]
+      }
+    ],
+    "inspection": "defer",
+    "message": "啟用連續反射色彩並恢復如意裝飾前後遮擋"
+  },
+  "acceptedCounts": [
+    7936,
+    2896,
+    3840
+  ]
+}

@@ -6,22 +6,38 @@ export const createDesignTargetIndex = (
   const sorted = orderedKeys
     .map((key, order) => ({ key, order }))
     .sort((left, right) => {
-      if (left.key < right.key) return -1
-      if (left.key > right.key) return 1
+      if (left.key < right.key) {
+        return -1
+      }
+
+      if (left.key > right.key) {
+        return 1
+      }
+
       return 0
     })
 
   return {
     keys(prefix?: string): string[] {
-      if (prefix === undefined) return [...orderedKeys]
+      if (prefix === undefined) {
+        return [...orderedKeys]
+      }
+
       let low = 0
       let high = sorted.length
+
       while (low < high) {
         const middle = low + Math.floor((high - low) / 2)
-        if (sorted[middle].key < prefix) low = middle + 1
-        else high = middle
+
+        if (sorted[middle].key < prefix) {
+          low = middle + 1
+        } else {
+          high = middle
+        }
       }
+
       const matches: (typeof sorted)[number][] = []
+
       for (
         let index = low;
         index < sorted.length && sorted[index].key.startsWith(prefix);
@@ -29,6 +45,7 @@ export const createDesignTargetIndex = (
       ) {
         matches.push(sorted[index])
       }
+
       return matches
         .sort((left, right) => left.order - right.order)
         .map(({ key }) => key)

@@ -1,3 +1,5 @@
+import { resolveLocalSchemaReference } from '../src/ai/tool-schema'
+import { LocalToolInputError } from './local-tool-invocation'
 import type { AiRecipeLeaseAdapter } from '@asyra/ai-agent-runtime'
 import { operationInputIssue } from './operation-input-schema'
 
@@ -24,11 +26,17 @@ const record = (value: unknown): value is Record<string, unknown> =>
 /** Inspect only declared reference fields, never opaque product payloads or names. */
 export const localToolReferences = (
   value: unknown,
-  schema: unknown
+  schema: unknown,
+  nonPortable?: Set<string>
 ): string[] => {
   const result = new Set<string>()
 
-  const visit = (item: unknown, shape: unknown, depth: number) => {
+  const visit = (
+    item: unknown,
+    shape: unknown,
+    depth: number,
+    path: string
+  ) => {
     if (depth > 48) {
       throw new Error('Artifact reference schema exceeds its depth budget')
     }
@@ -38,30 +46,23 @@ export const localToolReferences = (
     }
 
     if (typeof shape.$ref === 'string') {
-      if (!shape.$ref.startsWith('#/')) {
-        throw new Error('Artifact reference schema must be local')
-      }
+      visit(
+        item,
+        resolveLocalSchemaReference(schema, shape.$ref),
+        depth + 1,
+        path
+      )
+    }
 
-      let target: unknown = schema
-
-      for (const key of shape.$ref
-        .slice(2)
-        .split('/')
-        .map((part) => part.replace(/~1/g, '/').replace(/~0/g, '~'))) {
-        if (
-          (!record(target) && !Array.isArray(target)) ||
-          !Object.hasOwn(target, key)
-        ) {
-          throw new Error('Missing artifact reference schema')
-        }
-
-        target = (target as Record<string, unknown>)[key]
-      }
-
-      visit(item, target, depth + 1)
+    if (
+      nonPortable &&
+      ['request', 'secret'].includes(String(shape['x-runtime-value']))
+    ) {
+      nonPortable.add(path)
     }
 
     if (shape['x-runtime-value'] === 'request-artifact') {
+      nonPortable?.add(path)
       if (typeof item === 'string') {
         result.add(item)
 
@@ -89,7 +90,7 @@ export const localToolReferences = (
 
       for (const branch of branches) {
         if (mode === 'allOf' || !operationInputIssue(item, branch, schema)) {
-          visit(item, branch, depth + 1)
+          visit(item, branch, depth + 1, path)
         }
       }
     }
@@ -97,7 +98,12 @@ export const localToolReferences = (
     if (record(item) && record(shape.properties)) {
       for (const [key, child] of Object.entries(shape.properties)) {
         if (Object.hasOwn(item, key)) {
-          visit(item[key], child, depth + 1)
+          visit(
+            item[key],
+            child,
+            depth + 1,
+            path + '/' + key.replace(/~/g, '~0').replace(/\//g, '~1')
+          )
         }
       }
     }
@@ -108,7 +114,12 @@ export const localToolReferences = (
           !record(shape.properties) ||
           !Object.hasOwn(shape.properties, key)
         ) {
-          visit(child, shape.additionalProperties, depth + 1)
+          visit(
+            child,
+            shape.additionalProperties,
+            depth + 1,
+            path + '/' + key.replace(/~/g, '~0').replace(/\//g, '~1')
+          )
         }
       }
     }
@@ -120,13 +131,14 @@ export const localToolReferences = (
           Array.isArray(shape.prefixItems) && index < shape.prefixItems.length
             ? shape.prefixItems[index]
             : shape.items,
-          depth + 1
+          depth + 1,
+          path + '/' + index
         )
       )
     }
   }
 
-  visit(value, schema, 0)
+  visit(value, schema, 0, '')
 
   return [...result]
 }
@@ -205,8 +217,12 @@ export const createLocalToolLeases = (options: {
   const artifact = (handle: string) => {
     const item = artifacts.get(canonical(handle))
 
-    if (!item || item.state !== 'live') {
-      throw new Error('Artifact is unavailable for this request')
+    if (!item) {
+      throw new LocalToolInputError('Artifact is unavailable for this request')
+    }
+
+    if (item.state !== 'live') {
+      throw new Error('Artifact cleanup is incomplete for this request')
     }
 
     item.validate?.()
@@ -272,7 +288,7 @@ export const createLocalToolLeases = (options: {
         const item = artifact(handle)
 
         if (![...item.owners].some((owner) => ancestors.has(owner))) {
-          throw new Error('Artifact is outside caller ownership')
+          throw new LocalToolInputError('Artifact is outside caller ownership')
         }
 
         return item
@@ -432,7 +448,7 @@ export const createLocalToolLeases = (options: {
         !item.owners.has(callId ?? requestOwner) &&
         !item.owners.has(requestOwner)
       ) {
-        throw new Error('Artifact is outside caller ownership')
+        throw new LocalToolInputError('Artifact is outside caller ownership')
       }
     },
 
@@ -454,7 +470,7 @@ export const createLocalToolLeases = (options: {
       }
 
       if (!allowed) {
-        throw new Error('Artifact is outside caller ownership')
+        throw new LocalToolInputError('Artifact is outside caller ownership')
       }
 
       item.owners.add(callId)
@@ -526,5 +542,139 @@ export const createLocalToolLeases = (options: {
 
       return disposal
     }
+  }
+}
+
+/** Discovery considers every possible field. Preflight may consider only required
+ * fields; retention still checks all fields present in the validated actual value. */
+export const localToolSchemaIsPortable = (
+  schema: unknown,
+  referenceRoot: unknown = schema,
+  requiredOnly = false
+): boolean => {
+  const seen = new Set<unknown>()
+
+  const visit = (shape: unknown): boolean => {
+    if (!record(shape) || seen.has(shape)) {
+      return true
+    }
+
+    seen.add(shape)
+    if (
+      ['request', 'request-artifact', 'secret'].includes(
+        String(shape['x-runtime-value'])
+      )
+    ) {
+      return false
+    }
+
+    if (
+      typeof shape.$ref === 'string' &&
+      !visit(resolveLocalSchemaReference(referenceRoot, shape.$ref))
+    ) {
+      return false
+    }
+
+    for (const key of ['properties', 'patternProperties']) {
+      const fields = shape[key]
+
+      if (!record(fields)) {
+        continue
+      }
+
+      const portable = Object.entries(fields).every(([name, field]) => {
+        if (
+          requiredOnly &&
+          (key !== 'properties' ||
+            !Array.isArray(shape.required) ||
+            !shape.required.includes(name))
+        ) {
+          return true
+        }
+
+        return visit(field)
+      })
+
+      if (!portable) {
+        return false
+      }
+    }
+
+    for (const key of ['anyOf', 'oneOf', 'allOf', 'prefixItems']) {
+      const fields = shape[key]
+
+      if (!Array.isArray(fields)) {
+        continue
+      }
+
+      const portable =
+        requiredOnly && (key === 'anyOf' || key === 'oneOf')
+          ? fields.some(visit)
+          : fields.every((field, index) => {
+              if (
+                requiredOnly &&
+                key === 'prefixItems' &&
+                index >= Number(shape.minItems ?? 0)
+              ) {
+                return true
+              }
+
+              return visit(field)
+            })
+
+      if (!portable) {
+        return false
+      }
+    }
+
+    return ['items', 'additionalProperties'].every((key) =>
+      requiredOnly && (key !== 'items' || Number(shape.minItems ?? 0) === 0)
+        ? true
+        : visit(shape[key])
+    )
+  }
+
+  return visit(schema)
+}
+
+/** Top-level result choices retain their declared lifetime even when conditional. */
+export const localToolResultFieldLifetimes = (schema: unknown) => {
+  const fields = new Set<string>()
+  const requestScoped = new Set<string>()
+  const seen = new Set<unknown>()
+
+  const visit = (node: unknown): void => {
+    if (!record(node) || seen.has(node)) {
+      return
+    }
+
+    seen.add(node)
+    if (typeof node.$ref === 'string') {
+      visit(resolveLocalSchemaReference(schema, node.$ref))
+    }
+
+    if (record(node.properties)) {
+      for (const [name, value] of Object.entries(node.properties)) {
+        const path = '/' + name.replace(/~/g, '~0').replace(/\//g, '~1')
+
+        fields.add(path)
+        if (!localToolSchemaIsPortable(value, schema)) {
+          requestScoped.add(path)
+        }
+      }
+    }
+
+    for (const key of ['allOf', 'anyOf', 'oneOf']) {
+      if (Array.isArray(node[key])) {
+        node[key].forEach(visit)
+      }
+    }
+  }
+
+  visit(schema)
+
+  return {
+    fields: [...fields].sort(),
+    requestScopedFields: [...requestScoped].sort()
   }
 }

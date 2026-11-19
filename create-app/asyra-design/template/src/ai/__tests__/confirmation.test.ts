@@ -46,6 +46,7 @@ it('distinguishes replacing canvas objects from overwriting earlier Undo history
       { id: 'replace', name: 'replace_vector_composition', summary: 'Replace' }
     ]
   } as AiActionBatchPreview)
+
   expect(summary.message).toContain(
     'Previous steps remain available through Undo.'
   )

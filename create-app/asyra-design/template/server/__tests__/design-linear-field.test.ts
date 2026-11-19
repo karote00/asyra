@@ -14,6 +14,7 @@ const field = {
   end: { x: 0, y: 0, z: 50800 },
   gradientStops: stops
 }
+
 const source = () => ({
   ...structuredClone(recorded.draft),
   linearFields: { glass: structuredClone(field) },
@@ -22,11 +23,13 @@ const source = () => ({
     materialField: 'glass'
   }))
 })
+
 const project = (p: { x: number; y: number; z: number }) => {
   const { azimuth, elevation, scale, originX, originY } =
     recorded.draft.projection
   const a = (azimuth * Math.PI) / 180,
     e = (elevation * Math.PI) / 180
+
   return {
     x: originX + scale * (Math.cos(a) * p.x - Math.sin(a) * p.y),
     y:
@@ -36,22 +39,27 @@ const project = (p: { x: number; y: number; z: number }) => {
           Math.cos(e) * p.z)
   }
 }
+
 const phase = (g: DesignGradientData, x: number, y: number) => {
   const [s, e] = g.gradientHandles,
     dx = e.x - s.x,
     dy = e.y - s.y
+
   return ((x - s.x) * dx + (y - s.y) * dy) / (dx * dx + dy * dy)
 }
+
 const gradient = (entry: ReturnType<typeof prepareDesign>['entries'][number]) =>
   (entry.descriptor.fills as { gradient: DesignGradientData }[])[0].gradient
 
 describe('world material preparation through native artifact admission', () => {
   it('maps recorded first and later glass faces to one world field instead of restarting each local box', () => {
     const original = prepareDesign(recorded.draft)
+
     expect(gradient(original.entries[1])).toEqual(gradient(original.entries[2]))
     const draft = source(),
       before = structuredClone(draft)
     const prepared = prepareDesign(draft)
+
     expect(admitPreparedDesign(JSON.parse(JSON.stringify(prepared)))).toEqual(
       prepared
     )
@@ -64,6 +72,7 @@ describe('world material preparation through native artifact admission', () => {
         y = Math.min(...ys),
         w = Math.max(...xs) - x,
         h = Math.max(...ys) - y
+
       points.forEach((p, j) =>
         expect(
           phase(gradient(prepared.entries[i + 1]), (p.x - x) / w, (p.y - y) / h)
@@ -76,6 +85,7 @@ describe('world material preparation through native artifact admission', () => {
   })
   it('rejects conflicting fill intent before creating an artifact', () => {
     const draft = source()
+
     Object.assign(draft.children[0], { fill: '#ffffff' })
     expect(() => prepareDesign(draft)).toThrow(
       /materialField.*fill|fill.*materialField/
@@ -120,8 +130,10 @@ it('preserves world phase across translated templates with independent Fill iden
       }
     ]
   }
+
   try {
     const result = prepareDesign(draft)
+
     expect(compiled).toHaveBeenCalledTimes(1)
     result.entries.slice(1).forEach((entry, i) => {
       expect(phase(gradient(entry), 0.5, 0.5)).toBeCloseTo(
@@ -129,14 +141,17 @@ it('preserves world phase across translated templates with independent Fill iden
         10
       )
     })
-    for (let i = 1; i < 3; i++)
+    for (let i = 1; i < 3; i++) {
       expect(phase(gradient(result.entries[i]), 0.5, 0)).toBeCloseTo(
         phase(gradient(result.entries[i + 1]), 0.5, 1),
         10
       )
+    }
+
     const ids = result.entries
       .slice(1)
       .map((e) => (e.descriptor.fills as { id: string }[])[0].id)
+
     expect(new Set(ids).size).toBe(3)
     expect(admitPreparedDesign(JSON.parse(JSON.stringify(result)))).toEqual(
       JSON.parse(JSON.stringify(result))
@@ -185,14 +200,17 @@ it.each([
   ]
 ])('rejects %s without changing the caller source', (_name, change) => {
   const d = source()
+
   change(d)
   const before = structuredClone(d)
+
   expect(() => prepareDesign(d)).toThrow(/linear material field/)
   expect(d).toEqual(before)
 })
 
 it('samples a constant planar field with opacity and right-hand hard-stop semantics', () => {
   const d = source()
+
   d.linearFields.glass = {
     frame: 'world',
     start: { x: 0, y: 0, z: 0 },
@@ -211,6 +229,7 @@ it('samples a constant planar field with opacity and right-hand hard-stop semant
     })
   )
   const result = prepareDesign(d)
+
   result.entries.slice(1).forEach((entry) =>
     expect(gradient(entry).gradientStops).toEqual([
       { position: 0, color: '#00ff00', opacity: 0.7 },
@@ -223,16 +242,19 @@ it('reverses a field without changing geometry or borrowing shared Fill identiti
   const d = source(),
     original = prepareDesign(d, 'same')
   const start = d.linearFields.glass.start
+
   d.linearFields.glass.start = d.linearFields.glass.end
   d.linearFields.glass.end = start
   const reversed = prepareDesign(d, 'same')
+
   original.entries.slice(1).forEach((e, i) => {
     expect(phase(gradient(reversed.entries[i + 1]), 0.3, 0.7)).toBeCloseTo(
       1 - phase(gradient(e), 0.3, 0.7),
       10
     )
-    for (const key of ['x', 'y', 'width', 'height', 'points', 'segments'])
+    for (const key of ['x', 'y', 'width', 'height', 'points', 'segments']) {
       expect(reversed.entries[i + 1].descriptor[key]).toEqual(e.descriptor[key])
+    }
   })
 })
 
@@ -257,6 +279,7 @@ it('keeps advertised field exclusivity equivalent at canonical and native schema
       }
     ]
   }
+
   for (const transform of [(s: unknown) => s, nativeToolInputSchema]) {
     expect(
       operationInputIssue(face, transform(projectedFaceSchema))
@@ -283,6 +306,7 @@ it('keeps advertised field exclusivity equivalent at canonical and native schema
       )
     ).toBeDefined()
   }
+
   expect(() =>
     prepareDesign({
       ...source(),
@@ -301,6 +325,7 @@ it.each([
   'samples constant field at world y=%s with native stop clamping',
   (y, color, opacity) => {
     const d = source()
+
     d.linearFields.glass = {
       frame: 'world',
       start: { x: 0, y: 0, z: 0 },
@@ -316,33 +341,40 @@ it.each([
       })
     )
     const result = prepareDesign(d)
-    for (const e of result.entries.slice(1))
+
+    for (const e of result.entries.slice(1)) {
       expect(gradient(e).gradientStops).toEqual([
         { position: 0, color, opacity },
         { position: 1, color, opacity }
       ])
+    }
   }
 )
 
 it('keeps field phase invariant under camera translation and uniform scale', () => {
   const d = source(),
     original = prepareDesign(d)
+
   d.projection = { ...d.projection, scale: 0.04, originX: -300, originY: 700 }
   const changed = prepareDesign(d)
-  for (let i = 1; i < original.entries.length; i++)
+
+  for (let i = 1; i < original.entries.length; i++) {
     for (const [x, y] of [
       [0, 0],
       [0.2, 0.7],
       [1, 1]
-    ])
+    ]) {
       expect(phase(gradient(changed.entries[i]), x, y)).toBeCloseTo(
         phase(gradient(original.entries[i]), x, y),
         9
       )
+    }
+  }
 })
 
 it('rejects unrepresentable native handles and unsupported nodes without fallback paint', () => {
   const d = source()
+
   d.linearFields.glass.end.z = 100000
   d.children = [
     {
@@ -410,10 +442,12 @@ it('cancels real field expansion and retries through the same owner without publ
     'cancelled-root',
     controller.signal
   )
+
   setImmediate(() => controller.abort(new Error('Cancelled field expansion')))
   await expect(pending).rejects.toThrow('Cancelled field expansion')
   expect(draft).toEqual(before)
   const retried = prepareDesign(draft)
+
   expect(retried.entries).toHaveLength(2201)
   expect(phase(gradient(retried.entries[2200]), 0.5, 0.5)).toBeCloseTo(
     2199.5 / 4000,
@@ -460,6 +494,7 @@ it('evaluates native handle bounds at actual pattern placement rather than an un
     ]
   }
   const result = prepareDesign(draft)
+
   expect(phase(gradient(result.entries[1]), 0.5, 0.5)).toBeCloseTo(0.05, 9)
   expect(admitPreparedDesign(JSON.parse(JSON.stringify(result)))).toEqual(
     JSON.parse(JSON.stringify(result))
@@ -487,6 +522,7 @@ it('preserves intentionally separate material domains instead of forcing every f
   }
   const result = prepareDesign(draft),
     baseline = prepareDesign(original)
+
   expect(gradient(result.entries[1])).toEqual(gradient(baseline.entries[1]))
   expect(gradient(result.entries[2]).gradientStops).toEqual(
     draft.linearFields.trim.gradientStops
@@ -546,6 +582,7 @@ it.each([false, true])(
         : [{ ...face, type: 'projected-face' }]
     }
     const prepared = prepareDesign(draft)
+
     expect(admitPreparedDesign(JSON.parse(JSON.stringify(prepared)))).toEqual(
       prepared
     )
@@ -553,11 +590,13 @@ it.each([false, true])(
       { position: 0, color: '#808080', opacity: 0.5 },
       { position: 1, color: '#808080', opacity: 0.5 }
     ])
-    if (pattern)
+    if (pattern) {
       expect(gradient(prepared.entries[2]).gradientStops).toEqual([
         { position: 0, color: '#ffffff', opacity: 1 },
         { position: 1, color: '#ffffff', opacity: 1 }
       ])
+    }
+
     // A real weak slope is not silently snapped to constant paint.
     draft.linearFields.glass.end.z += 1e-10
     expect(() => prepareDesign(draft)).toThrow(/native bounded handles/)
@@ -619,12 +658,17 @@ it('preserves two-axis world phase and source order when recovering sparse insta
     children: [{ ...pattern, instanceRanges: ranges }]
   })
   const sparse = session.resolve(sparseReceipt.artifactId)
+
   expect(sparse.entries.slice(1).map((e) => e.key)).toEqual(
     [1, 2, 5].flatMap((i) => faces.map((face) => `p-${i}-${face.key}`))
   )
   for (const entry of sparse.entries.slice(1)) {
     const original = full.entries.find((e) => e.key === entry.key)
-    if (!original) throw new Error(`Missing original entry ${entry.key}`)
+
+    if (!original) {
+      throw new Error(`Missing original entry ${entry.key}`)
+    }
+
     expect(gradient(entry)).toEqual(gradient(original))
     const [, instance, , faceIndex] = entry.key.split('-')
     const i = Number(instance),
@@ -633,13 +677,16 @@ it('preserves two-axis world phase and source order when recovering sparse insta
       x: 7 + Math.floor(i / 2) * 12 + (i % 2),
       z: 11 + Math.floor(i / 2) * 2 + (i % 2) * 15
     }
+
     face.vertices.forEach((point) => {
       const x = (point.x - face.vertices[0].x) / 8
       const y = 1 - point.z / 10
       const expected = (point.x + offset.x + 10 + point.z + offset.z + 20) / 200
+
       expect(phase(gradient(entry), x, y)).toBeCloseTo(expected, 10)
     })
   }
+
   expect(admitPreparedDesign(structuredClone(sparse))).toEqual(sparse)
   expect(() =>
     session.prepare({
@@ -655,6 +702,7 @@ it.each(['facade', 'horizontal'] as const)(
   'recompiles a known palette with exact world color and opacity on %s faces',
   (kind) => {
     const draft = source()
+
     draft.linearFields.glass = {
       ...field,
       end: { x: 0, y: 0, z: 20000 },
@@ -663,7 +711,7 @@ it.each(['facade', 'horizontal'] as const)(
         { position: 1, color: '#ffffff', opacity: 1 }
       ]
     }
-    if (kind === 'horizontal')
+    if (kind === 'horizontal') {
       draft.children.forEach((face, index) => {
         face.vertices = [
           { x: -2000, y: 1000, z: 4000 + index * 8000 },
@@ -672,17 +720,22 @@ it.each(['facade', 'horizontal'] as const)(
           { x: -2000, y: 3000, z: 4000 + index * 8000 }
         ]
       })
+    }
+
     const before = prepareDesign(draft)
+
     draft.linearFields.glass.gradientStops = [
       { position: 0, color: '#ff0000', opacity: 0.2 },
       { position: 1, color: '#0000ff', opacity: 0.8 }
     ]
     const after = prepareDesign(draft)
+
     expect(admitPreparedDesign(JSON.parse(JSON.stringify(after)))).toEqual(
       JSON.parse(JSON.stringify(after))
     )
     draft.children.forEach((face, index) => {
       const g = gradient(after.entries[index + 1])
+
       expect(g.gradientHandles).toEqual(
         gradient(before.entries[index + 1]).gradientHandles
       )
@@ -701,6 +754,7 @@ it.each(['facade', 'horizontal'] as const)(
           z: face.vertices.reduce((n, p) => n + p.z, 0) / 4
         }
       ]
+
       for (const point of samples) {
         const projected = project(point)
         const t = Math.max(
@@ -715,9 +769,12 @@ it.each(['facade', 'horizontal'] as const)(
           )
         )
         const [a, b] = g.gradientStops
+
         const channel = (color: string, offset: number) =>
           parseInt(color.slice(offset, offset + 2), 16)
+
         const expected = point.z / 20000
+
         expect(
           channel(a.color, 1) * (1 - t) + channel(b.color, 1) * t
         ).toBeCloseTo(255 * (1 - expected), 0)
@@ -733,6 +790,7 @@ it.each(['facade', 'horizontal'] as const)(
     if (kind === 'horizontal') {
       const lower = gradient(after.entries[1]),
         upper = gradient(after.entries[2])
+
       expect(lower.gradientHandles).toEqual(upper.gradientHandles)
       expect(lower.gradientStops).not.toEqual(upper.gradientStops)
       // Identical native handles cannot recover different source phases.
@@ -758,16 +816,20 @@ it('revises a retained world material without changing creation identities or un
     definition,
     new AbortController().signal
   )
+
   expect(revised.materialRevisionId).not.toBe(first.artifactId)
   const material = session.materialRevision(revised.materialRevisionId)
+
   expect(material.rootId).toBe(original.rootId)
   expect(material.updates.map((item) => item.elementId)).toEqual(
     original.entries.slice(1).map((entry) => entry.descriptor.id)
   )
   const changed = session.resolve(revised.materialRevisionId)
+
   changed.entries.forEach((entry, i) => {
     const { fills: _fills, ...geometry } = entry.descriptor
     const { fills: _before, ...before } = original.entries[i].descriptor
+
     expect(geometry).toEqual(before)
   })
   expect(session.resolve(first.artifactId)).toEqual(original)
@@ -790,6 +852,7 @@ it('revises a retained world material without changing creation identities or un
     )
   ).rejects.toThrow(/field/i)
   const cancelled = new AbortController()
+
   cancelled.abort()
   await expect(
     session.reviseMaterial(
@@ -808,6 +871,7 @@ it('revises a retained world material without changing creation identities or un
 
 it('revises sampled constant-phase faces from their world source without normalizing phases', async () => {
   const draft = source()
+
   draft.linearFields.glass = { ...field, end: { x: 0, y: 0, z: 20000 } }
   draft.children.forEach((face, index) => {
     face.vertices = [
@@ -833,12 +897,14 @@ it('revises sampled constant-phase faces from their world source without normali
     new AbortController().signal
   )
   const updates = session.materialRevision(revision.materialRevisionId).updates
+
   expect(updates).toHaveLength(2)
   expect(updates[0].gradient).not.toEqual(updates[1].gradient)
   const expected = prepareDesign({
     ...draft,
     linearFields: { glass: definition }
   })
+
   updates.forEach((item, index) =>
     expect(item.gradient).toEqual(gradient(expected.entries[index + 1]))
   )

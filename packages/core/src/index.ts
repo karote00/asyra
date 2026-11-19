@@ -1,3 +1,4 @@
+export { ElementPropertyInputError } from '@asyra/scene-tree'
 import { Core } from './core.js'
 export { default } from './core.js'
 export {

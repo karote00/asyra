@@ -94,7 +94,7 @@ test.describe('Gradient Fill Handles', () => {
     const duringTransaction = await getTransactionSnapshot(page)
 
     expect(duringTransaction.undoCount).toBe(before.undoCount)
-    expect(duringTransaction.isTransacting).toBeGreaterThan(0)
+    expect(duringTransaction.isIdle).toBe(false)
     const previewDeliveries = await page.evaluate(async () => {
       const { readTestCapture } = await import('../src/testing/runtime-access')
 
@@ -132,7 +132,7 @@ test.describe('Gradient Fill Handles', () => {
     const afterTransaction = await getTransactionSnapshot(page)
 
     expect(afterTransaction.undoCount).toBe(before.undoCount + 1)
-    expect(afterTransaction.isTransacting).toBe(0)
+    expect(afterTransaction.isIdle).toBe(true)
 
     await undo(page)
     await page.waitForTimeout(180)

@@ -776,3 +776,72 @@ it('preserves an explicitly public executor failure reason without exposing ordi
     expect(JSON.stringify(result)).not.toContain('private execution details')
   }
 })
+
+it.each([
+  { label: 'ASCII at limit', message: 'a'.repeat(1000), preserved: true },
+  { label: 'ASCII over limit', message: 'a'.repeat(1001), preserved: false },
+  {
+    label: 'supplementary 501',
+    message: '\u{2000B}'.repeat(501),
+    preserved: true
+  },
+  {
+    label: 'supplementary at limit',
+    message: '\u{2000B}'.repeat(1000),
+    preserved: true
+  },
+  {
+    label: 'supplementary over limit',
+    message: '\u{2000B}'.repeat(1001),
+    preserved: false
+  },
+  {
+    label: 'combining at limit',
+    message: 'e\u0301'.repeat(500),
+    preserved: true
+  },
+  {
+    label: 'combining over limit',
+    message: 'e\u0301'.repeat(500) + 'a',
+    preserved: false
+  },
+  { label: 'blank', message: '   ', preserved: false }
+])(
+  'preserves the public error code-point boundary through Runtime settlement - $label',
+  async ({ message, preserved }) => {
+    const transaction = transactionEvidence()
+    const runtime = createAiAgentRuntime(
+      runtimeInput({
+        options: { failurePolicy: 'preserve-progress' },
+        transactionRunner: transaction.runner,
+        actionDefinitions: [
+          visibilityAction(
+            vi.fn(async () => {
+              throw new AiActionExecutionError(message)
+            })
+          )
+        ]
+      })
+    )
+
+    try {
+      const result = await runtime.run({
+        intent: 'revise',
+        signal: new AbortController().signal
+      })
+
+      expect(result).toMatchObject({
+        status: 'failed',
+        stage: 'execution',
+        code: 'AI_EXECUTION_FAILED',
+        message: preserved ? message : 'AI action execution failed.',
+        failedAction: 'set_element_visibility',
+        transaction: { status: 'committed' }
+      })
+      expect(transaction.commits).toBe(1)
+      expect(transaction.rollbacks).toBe(0)
+    } finally {
+      await runtime.dispose()
+    }
+  }
+)

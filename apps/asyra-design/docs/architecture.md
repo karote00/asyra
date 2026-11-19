@@ -57,16 +57,16 @@ the panel hides it without cancelling the request or pending approval; Stop canc
 explicitly. Tool activity is streamed on the same action-batch request, separately
 from the final prepared batch. Failures keep intent and attachments for recovery.
 Reference replacement uses one registered action and one ordinary transaction: insert
-complete replacement, then remove only the referenced Group or Frame. Ordinary failure retains applied progress; explicit cancellation rolls back. Each modifying request appends one independent Undo entry.
+complete replacement, then remove only the referenced Group or Frame. Ordinary failure and explicit cancellation preserve acknowledged finite members. A failed member rolls back its own writes; cancellation prevents later writes. Retained mutations share one request-owned Undo entry.
 App UI text is English; user and model-authored content preserve their language.
 
 ## AI tool discovery and reference acquisition
 
 Provider-native discovery owns native tool schemas. App API discovery returns
-native execution routes and versioned action definitions. A request returns an
-unchanged action definition once, then a compact reference; explicit refresh
-restores it after context loss or delivery failure. Category menus do not consume
-schema delivery. Execution is never deduplicated by discovery state.
+native execution routes and versioned action definitions. Valid repeated reads
+return the requested contract content; explicit paging and refresh preserve
+readability without assuming the model received an earlier result. Category menus
+do not consume schema delivery. Execution is never deduplicated by discovery state.
 
 Reference acquisition accepts independent candidate image/source URL pairs in one
 batch. The importer shares simultaneous reads of the same URL within one request
@@ -139,7 +139,8 @@ JavaScript orchestration dependency. The local native adapter derives its direct
 configuration from the installed executable and releases it with the request.
 prepare_and_apply_design joins existing preparation and application, preserving
 validation, measurement, inspection, permissions and the invocation transaction.
-Compact and full receipts remain available. Concurrent writes queue; only
+`delivery` alone selects returned fields or status; `retain` independently saves
+portable results. No response-mode selector remains. Concurrent writes queue; only
 owner-declared independent work overlaps. Cancellation prevents queued work from
 starting, and unsupported environment output cannot become a canonical batch.
 

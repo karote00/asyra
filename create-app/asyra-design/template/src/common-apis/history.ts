@@ -50,20 +50,27 @@ interface AiHistoryProjectionDependencies {
 
 const defaultAiHistoryDependencies: AiHistoryProjectionDependencies = {
   redo: historyApis.redo,
+
   subscribeToActions: (observer) => {
     const subscription = subscribeToUserActionCompleted((event) => {
       observer(event.payload.actionId)
     })
+
     return () => subscription.unsubscribe()
   },
+
   subscribeToRedo: (observer) => {
     const subscription = subscribeToRedo(observer)
+
     return () => subscription.unsubscribe()
   },
+
   subscribeToUndo: (observer) => {
     const subscription = subscribeToUndo(observer)
+
     return () => subscription.unsubscribe()
   },
+
   undo: historyApis.undo
 }
 
@@ -86,6 +93,7 @@ export const createAiHistoryProjection = (
 
   const notify = () => {
     const snapshot = getSnapshot()
+
     observers.forEach((observer) => {
       try {
         observer(snapshot)
@@ -131,6 +139,7 @@ export const createAiHistoryProjection = (
         activeTurnId = turnId
       }
     },
+
     correlateCommittedAction: (actionId: number): boolean => {
       if (
         disposed ||
@@ -140,17 +149,21 @@ export const createAiHistoryProjection = (
       ) {
         return false
       }
+
       setControl({
         actionId,
         direction: 'undo',
         turnId: activeTurnId
       })
+
       return true
     },
+
     dispose: (): void => {
       if (disposed) {
         return
       }
+
       disposed = true
       activeTurnId = null
       control = null
@@ -160,51 +173,63 @@ export const createAiHistoryProjection = (
       unsubscribeUndo()
       unsubscribeRedo()
     },
+
     endTurn: (turnId: string): void => {
       if (activeTurnId === turnId) {
         activeTurnId = null
       }
     },
+
     getCurrentActionId: (): number | null => currentActionId,
+
     getSnapshot,
+
     redoCurrent: async (): Promise<boolean> => {
       if (disposed || replaying || control?.direction !== 'redo') {
         return false
       }
+
       replaying = true
       notify()
       try {
         await dependencies.redo()
+
         return true
       } finally {
         replaying = false
         notify()
       }
     },
+
     subscribe: (
       observer: (snapshot: AiHistorySnapshot) => void
     ): (() => void) => {
       if (disposed) {
         return () => undefined
       }
+
       observers.add(observer)
       try {
         observer(getSnapshot())
       } catch {
         // Presentation observers cannot affect canonical history.
       }
+
       return () => {
         observers.delete(observer)
       }
     },
+
     undoCurrent: async (): Promise<boolean> => {
       if (disposed || replaying || control?.direction !== 'undo') {
         return false
       }
+
       replaying = true
       notify()
       try {
         await dependencies.undo()
+
         return true
       } finally {
         replaying = false

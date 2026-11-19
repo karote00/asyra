@@ -77,11 +77,14 @@ const host = createLocalToolHost({
   },
   store: {
     read: async () => undefined,
+
     list: async () => [],
+
     write: async () => {
       throw new Error('No recipe write in discovery audit')
     }
   },
+
   createGroups: () =>
     owners.map((owner) => ({
       name: owner === operations ? 'design_operations' : 'design',
@@ -92,9 +95,13 @@ const host = createLocalToolHost({
 const native = owners.flatMap((owner) =>
   owner.definitions.map((definition) => ({ owner, definition }))
 )
+
 afterAll(async () => {
   await host.dispose()
-  for (const owner of runtime.ownedResources ?? []) await owner.dispose()
+  for (const owner of runtime.ownedResources ?? []) {
+    await owner.dispose()
+  }
+
   knowledge.dispose()
 })
 
@@ -106,11 +113,13 @@ it.each(runtime.actionDefinitions)(
     expect(action.outputSchema, action.name).toBeDefined()
     expect(action.description.trim().length).toBeGreaterThan(0)
     const schema = action.inputSchema as { examples?: unknown[] }
-    for (const example of schema.examples ?? [])
+
+    for (const example of schema.examples ?? []) {
       expect(
         operationInputIssue(example, action.inputSchema),
         action.name
       ).toBeUndefined()
+    }
   }
 )
 
@@ -120,15 +129,17 @@ it.each(native)(
     const reply = JSON.parse(
       (await invokeLocalTool(owner, definition, null, signal)).text
     )
+
     expect(reply.toolOutcome.status).toBe('failed')
     expect(reply.toolOutcome.settlement).toBe('not-started')
     expect(execute).not.toHaveBeenCalled()
     for (const example of (definition.inputSchema as { examples?: unknown[] })
-      .examples ?? [])
+      .examples ?? []) {
       expect(
         operationInputIssue(example, definition.inputSchema),
         definition.name
       ).toBeUndefined()
+    }
   }
 )
 
@@ -138,7 +149,11 @@ it.each(basicApiContracts)(
     const definition = operations.definitions.find(
       (d) => d.name === 'describe_design_apis'
     )
-    if (!definition) throw new Error('Missing discovery owner')
+
+    if (!definition) {
+      throw new Error('Missing discovery owner')
+    }
+
     let response = JSON.parse(
       (
         await invokeLocalTool(
@@ -150,16 +165,23 @@ it.each(basicApiContracts)(
       ).text
     )
     let serialized = ''
+
     while (response.contentDelivery) {
       serialized += response.contentDelivery.text
       const next = response.contentDelivery.next
-      if (!next) break
+
+      if (!next) {
+        break
+      }
+
       response = JSON.parse(
         (await invokeLocalTool(operations, definition, next.arguments, signal))
           .text
       )
     }
+
     const tool = (serialized ? JSON.parse(serialized) : response).apis[0]
+
     expect(tool, JSON.stringify(response).slice(0, 1600)).toBeDefined()
     expect(tool.name).toBe(contract.name)
     expect(tool.execution.kind).toBe('batch-action')
@@ -169,7 +191,11 @@ it.each(basicApiContracts)(
       const target = operations.definitions.find(
         (d) => d.name === invocation.tool
       )
-      if (!target) throw new Error('Missing invocation owner')
+
+      if (!target) {
+        throw new Error('Missing invocation owner')
+      }
+
       expect(target).toBeDefined()
       expect(
         operationInputIssue(invocation.arguments, target.inputSchema)
@@ -179,7 +205,10 @@ it.each(basicApiContracts)(
 )
 
 it('retains an explicit per-API audit inventory from actual registrations when requested', () => {
-  if (!process.env.API_DELIVERY_AUDIT) return
+  if (!process.env.API_DELIVERY_AUDIT) {
+    return
+  }
+
   writeFileSync(
     resolve('../../tmp/api-delivery-audit.json'),
     JSON.stringify(
@@ -212,16 +241,23 @@ const unionAlternatives = (schema: unknown): unknown[] => {
     // Distribute shared parent constraints before comparing alternatives; never
     // discard them when a compact result shares host metadata at the parent.
     const value = nativeToolInputSchema(schema) as Record<string, unknown>
-    if (Object.keys(value).length === 1 && Array.isArray(value.anyOf))
+
+    if (Object.keys(value).length === 1 && Array.isArray(value.anyOf)) {
       return value.anyOf.flatMap(unionAlternatives)
+    }
+
     return [value]
   }
+
   return [schema]
 }
 
 const canonicalShape = (value: unknown): unknown => {
-  if (Array.isArray(value)) return value.map(canonicalShape)
-  if (value && typeof value === 'object')
+  if (Array.isArray(value)) {
+    return value.map(canonicalShape)
+  }
+
+  if (value && typeof value === 'object') {
     return expect.objectContaining(
       Object.fromEntries(
         Object.entries(value).map(([key, child]) => [
@@ -232,6 +268,8 @@ const canonicalShape = (value: unknown): unknown => {
         ])
       )
     )
+  }
+
   return value
 }
 
@@ -241,32 +279,45 @@ const resolvedSchema = (
   root: unknown = schema,
   references: readonly unknown[] = []
 ): unknown => {
-  if (Array.isArray(schema))
+  if (Array.isArray(schema)) {
     return schema.map((entry) => resolvedSchema(entry, root, references))
-  if (!schema || typeof schema !== 'object') return schema
+  }
+
+  if (!schema || typeof schema !== 'object') {
+    return schema
+  }
+
   const value = schema as Record<string, unknown>
   const { $ref, $defs: _definitions, ...rest } = value
+
   if (typeof $ref === 'string') {
     let target = root as Record<string, unknown>
-    for (const token of $ref.slice(2).split('/'))
+
+    for (const token of $ref.slice(2).split('/')) {
       target = target[token.replace(/~1/g, '/').replace(/~0/g, '~')] as Record<
         string,
         unknown
       >
+    }
+
     expect(target, $ref).toBeDefined()
-    if (references.includes(target))
+    if (references.includes(target)) {
       return { recursive: references.indexOf(target) }
+    }
+
     return {
       ...(resolvedSchema(target, root, [...references, target]) as object),
       ...(resolvedSchema(rest, root, references) as object)
     }
   }
+
   const resolved = Object.fromEntries(
     Object.entries(rest).map(([key, entry]) => [
       key,
       resolvedSchema(entry, root, references)
     ])
   )
+
   // Normalize shared same-instance constraints at every nested result union.
   // AnyOf membership is idempotent; oneOf multiplicity remains exact.
   return Array.isArray(resolved.anyOf)
@@ -280,7 +331,11 @@ it.each(native)(
     const query = operations.definitions.find(
       (d) => d.name === 'describe_design_apis'
     )
-    if (!query) throw new Error('Missing discovery definition')
+
+    if (!query) {
+      throw new Error('Missing discovery definition')
+    }
+
     const namespace = operations.definitions.includes(definition)
       ? 'design_operations'
       : 'design'
@@ -296,12 +351,18 @@ it.each(native)(
       args
     )
     const entry = JSON.parse(text).tools[0]
+
     expect(entry, text.slice(0, 1000)).toBeDefined()
     const registeredDefinition = host
       .definitions()
       .find((d) => d.registeredName === `${namespace}.${definition.name}`)
-    if (!registeredDefinition) throw new Error('Missing host registration')
+
+    if (!registeredDefinition) {
+      throw new Error('Missing host registration')
+    }
+
     const scopes = workflowInputScopes(registeredDefinition.inputSchema)
+
     if (scopes) {
       expect(entry.inputScopes).toEqual(scopes)
       expect(entry.definition.nextAction).toBe('select-operation-scope')
@@ -323,7 +384,8 @@ it.each(native)(
           )
         ).tools[0]
         const invocation = selected.invocationExample?.invocation
-        if (invocation)
+
+        if (invocation) {
           expect(
             operationInputIssue(
               invocation.arguments,
@@ -331,10 +393,13 @@ it.each(native)(
             ),
             `${definition.name}:${operation}`
           ).toBeUndefined()
+        }
+
         const params =
           selected.execution.kind === 'registered-tool'
             ? selected.usageGuide.parameters.properties.input
             : selected.usageGuide.parameters
+
         expect(resolvedSchema(params, selected.usageGuide.parameters)).toEqual(
           resolvedSchema(
             workflowUsageParameters(
@@ -359,6 +424,7 @@ it.each(native)(
                 }
               })
             : rejected
+
         expect(
           operationInputIssue(
             JSON.parse(boundary.text),
@@ -372,6 +438,7 @@ it.each(native)(
       const parameters = registered
         ? entry.usageGuide?.parameters.properties.input
         : entry.usageGuide?.parameters
+
       expect(
         resolvedSchema(parameters, entry.usageGuide.parameters),
         definition.name
@@ -401,11 +468,14 @@ it.each(native)(
           ).outputSchema
         )
       )
-      for (const alternative of unionAlternatives(canonical))
+
+      for (const alternative of unionAlternatives(canonical)) {
         expect(delivered, definition.name).toEqual(
           expect.arrayContaining([canonicalShape(alternative)])
         )
+      }
     }
+
     expect(execute).not.toHaveBeenCalled()
   }
 )
@@ -416,7 +486,11 @@ it.each(runtime.actionDefinitions)(
     const query = operations.definitions.find(
       (d) => d.name === 'describe_design_apis'
     )
-    if (!query) throw new Error('Missing discovery definition')
+
+    if (!query) {
+      throw new Error('Missing discovery definition')
+    }
+
     const args = { names: [action.name], view: 'usage' }
     const text = await readCompleteInformation(
       async (input) =>
@@ -429,12 +503,17 @@ it.each(runtime.actionDefinitions)(
       args
     )
     const entry = JSON.parse(text).apis[0]
+
     expect(entry, text.slice(0, 1000)).toBeDefined()
     expect(entry.usageGuide).toBeDefined()
     const admitted = designs
       .modelActions(actions)
       .find((entry) => entry.name === action.name)
-    if (!admitted) throw new Error('Missing admitted action')
+
+    if (!admitted) {
+      throw new Error('Missing admitted action')
+    }
+
     expect(
       entry.usageGuide.operationParameters ?? entry.usageGuide.parameters
     ).toEqual(workflowUsageParameters(admitted.inputSchema))
@@ -453,6 +532,7 @@ it.each(runtime.actionDefinitions)(
       const operation =
         complete.anyOf[0].properties.actionResults.items.anyOf[0].properties
           .result.anyOf[0]
+
       expect(operation).toMatchObject(
         resolvedSchema(
           workflowUsageParameters(admitted.delivery.outputSchema)
@@ -464,12 +544,17 @@ it.each(runtime.actionDefinitions)(
       // permissive internal resource branch.
       expect(operationInputIssue({}, operation), action.name).toBeDefined()
     }
+
     if (!admitted.delivery) {
       const canonical = basicApiContracts.find(
         (contract) => contract.name === action.name
       )
-      if (canonical) expect(entry.result).toEqual(canonical.result)
+
+      if (canonical) {
+        expect(entry.result).toEqual(canonical.result)
+      }
     }
+
     expect(entry.definition.nextAction).toBe('execute-with-delivered-contract')
     expect(execute).not.toHaveBeenCalled()
   }
@@ -479,7 +564,11 @@ it('executes a delivered final-response contract through its real control owner 
   const definition = operations.definitions.find(
     (d) => d.name === 'describe_design_apis'
   )
-  if (!definition) throw new Error('Missing discovery definition')
+
+  if (!definition) {
+    throw new Error('Missing discovery definition')
+  }
+
   const args = { names: ['report_outcome'], view: 'usage' }
   const text = await readCompleteInformation(
     async (input) =>
@@ -487,11 +576,13 @@ it('executes a delivered final-response contract through its real control owner 
     args
   )
   const tool = JSON.parse(text).apis[0]
+
   expect(tool.execution.kind).toBe('final-response')
   const input = {
     outcome: 'unsupported',
     message: 'This request is outside the available capability.'
   }
+
   expect(operationInputIssue(input, tool.usageGuide.parameters)).toBeUndefined()
   expect(
     operationInputIssue(
@@ -502,8 +593,13 @@ it('executes a delivered final-response contract through its real control owner 
   const owner = runtime.actionDefinitions.find(
     (d) => d.name === tool.execution.action
   )
-  if (!owner) throw new Error('Missing final response owner')
+
+  if (!owner) {
+    throw new Error('Missing final response owner')
+  }
+
   const reply = await owner.execute(input as never, { signal } as never)
+
   expect(reply).toMatchObject({
     status: 'no-change',
     outcome: 'unsupported',
@@ -548,6 +644,7 @@ it.each(host.definitions())(
         ? { ...entry.execution.arguments, revision: 0, input: {} }
         : null
     })
+
     expect(reply.success).toBe(false)
     expect(JSON.parse(reply.text).toolOutcome.settlement).toBe('not-started')
     expect(entry.usageGuide.results.anyOf).toEqual(expect.any(Array))

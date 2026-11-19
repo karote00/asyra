@@ -235,8 +235,8 @@ export const evaluateExecution = (
       ) {
         executionStatus = 'failed'
         if (
-          result.stage === 'admission' ||
-          result.code === 'PREPARATION_REJECTED'
+          result.settlement === 'not-started' &&
+          (result.stage === 'admission' || result.code === 'TOOL_INPUT_INVALID')
         ) {
           executionStatus = 'rejected'
         }
@@ -371,11 +371,7 @@ export const evaluateExecution = (
           status: executionStatus,
           stage: text(metadata.stage),
           code: text(metadata.code) ?? text(evidence.code),
-          settlement: text(metadata.settlement),
-          recoverable:
-            typeof metadata.recoverable === 'boolean'
-              ? metadata.recoverable
-              : null
+          settlement: text(metadata.settlement)
         },
         tool: step.tool,
         phase: text(args.phase),

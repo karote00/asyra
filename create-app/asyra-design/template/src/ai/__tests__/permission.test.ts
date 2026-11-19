@@ -16,6 +16,7 @@ const action = (name: string): AiPreparedAction =>
     summary: Object.freeze({
       affectedCount: 0
     }),
+
     execute: async () => null
   })
 
@@ -37,6 +38,7 @@ describe('Asyra Design AI permission policy', () => {
       delete_elements: 'confirm'
     }
     const policy = createAiPermissionPolicy(rules)
+
     rules.resize = 'confirm'
 
     await expect(

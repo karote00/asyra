@@ -33,11 +33,8 @@ export interface DocumentPersistenceBatch {
 
 export interface MaterializedDocumentRecord<Document> {
   readonly document: Document
-  /**
-   * Destructive document Reset generation. Legacy records may omit this field
-   * and are normalized by the concrete store before use.
-   */
-  readonly documentGeneration?: number
+  /** Explicit backend-owned destructive Reset generation. */
+  readonly documentGeneration: number
   readonly durableSequence: number
   readonly publicationSequences: Readonly<Record<string, number>>
   readonly publicationDigests?: Readonly<Record<string, string>>
@@ -401,7 +398,7 @@ export const createDocumentMaterializationService = <Document>({
         }
 
         persistenceDetail(observation, {
-          documentGeneration: current.documentGeneration ?? 0
+          documentGeneration: current.documentGeneration
         })
         const endApply = persistenceSpan(observation, 'canonical-apply')
         let document: Document
@@ -434,7 +431,7 @@ export const createDocumentMaterializationService = <Document>({
         })
         commit({
           document,
-          documentGeneration: current.documentGeneration ?? 0,
+          documentGeneration: current.documentGeneration,
           durableSequence: batch.lastSequence,
           publicationSequences: Object.freeze(publicationSequences),
           publicationDigests: Object.freeze(publicationDigests),

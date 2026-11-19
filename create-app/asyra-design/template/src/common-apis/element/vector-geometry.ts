@@ -37,6 +37,7 @@ export const calculateVectorBounds = (topology: VectorTopology) => {
       kind: typeof VECTOR_TOKENS.POINT.KIND.ANCHOR
     } => point.kind === VECTOR_TOKENS.POINT.KIND.ANCHOR
   )
+
   if (anchorNodes.length === 0) {
     return { x: 0, y: 0, width: MIN_VECTOR_SIZE, height: MIN_VECTOR_SIZE }
   }
@@ -53,6 +54,7 @@ export const calculateVectorBounds = (topology: VectorTopology) => {
   Object.values(topology.segments).forEach((segment) => {
     const start = topology.points[segment.startId]
     const end = topology.points[segment.endId]
+
     if (!isAnchorNode(start) || !isAnchorNode(end)) {
       return
     }
@@ -74,6 +76,7 @@ export const calculateVectorBounds = (topology: VectorTopology) => {
         : { x: end.x, y: end.y }
 
     const hasCurve = !!(segment.outControlId || segment.inControlId)
+
     if (!hasCurve) {
       return
     }

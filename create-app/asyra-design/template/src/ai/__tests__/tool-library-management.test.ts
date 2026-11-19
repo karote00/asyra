@@ -24,7 +24,11 @@ it.each([
 it('refuses malformed inventory without claiming an empty library', async () => {
   vi.stubGlobal(
     'fetch',
-    vi.fn(async () => ({ ok: true, json: async () => ({ entries: [] }) }))
+    vi.fn(async () => ({
+      ok: true,
+
+      json: async () => ({ entries: [] })
+    }))
   )
   await expect(readToolLibrary(new AbortController().signal)).rejects.toThrow(
     'inventory was invalid'
@@ -35,6 +39,7 @@ it('does not accept an acknowledgement for the wrong requested state', async () 
     'fetch',
     vi.fn(async () => ({
       ok: true,
+
       json: async () => ({
         status: 'saved',
         availability: 'eligible',

@@ -31,6 +31,7 @@ const Harness = ({ id, onController }: HarnessProps) => {
         type="button"
         onClick={() => {
           const canvas = screen.getByTestId(invoker) as HTMLDivElement
+
           controller.open({
             clientX: 120,
             clientY: 80,
@@ -44,6 +45,7 @@ const Harness = ({ id, onController }: HarnessProps) => {
         type="button"
         onClick={() => {
           const canvas = screen.getByTestId(invoker) as HTMLDivElement
+
           controller.open({
             clientX: 640,
             clientY: 410,
@@ -87,6 +89,7 @@ describe('app context-menu session', () => {
 
   it('dismisses with focus return except when Tab must continue traversal', async () => {
     let controller: AppContextMenuSessionController | undefined
+
     render(
       <>
         <Harness
@@ -126,6 +129,7 @@ describe('app context-menu session', () => {
 
   it('treats dismissal without a session as a no-op', async () => {
     let controller: AppContextMenuSessionController | undefined
+
     render(
       <Harness
         id="one"
@@ -135,6 +139,7 @@ describe('app context-menu session', () => {
       />
     )
     const canvas = screen.getByTestId('one-canvas')
+
     canvas.focus()
 
     controller?.dismiss('escape')

@@ -6,8 +6,10 @@ const artifact = (path: string) =>
   parseLocalVectorArtifact(
     `<svg width="100" height="100"><path d="${path}" fill="#008800"/></svg>`
   )
+
 const circle =
   'M90,50C90,72.0914,72.0914,90,50,90C27.9086,90,10,72.0914,10,50C10,27.9086,27.9086,10,50,10C72.0914,10,90,27.9086,90,50Z'
+
 const analyze = (path: string) =>
   analyzeVectorComponents(
     artifact(path),
@@ -24,6 +26,7 @@ describe('read-only component analysis', () => {
       ['path-1'],
       new AbortController().signal
     )
+
     expect(JSON.stringify(source)).toBe(before)
     expect(result.paths[0].candidates).toEqual(
       expect.arrayContaining([
@@ -56,6 +59,7 @@ describe('read-only component analysis', () => {
       'M10,10L90,90L10,90L90,10Z'
     ]) {
       const result = analyze(path)
+
       expect(
         result.paths[0].candidates.every((candidate) => !candidate.eligible)
       ).toBe(true)
@@ -64,6 +68,7 @@ describe('read-only component analysis', () => {
   })
   it('returns bounded evidence for complex paths without aborting other candidates', () => {
     const source = artifact('M10,10L90,10L90,90L10,90Z')
+
     source.paths[0].rings = Array.from(
       { length: 3000 },
       () => source.paths[0].rings[0]
@@ -73,6 +78,7 @@ describe('read-only component analysis', () => {
       ['path-1'],
       new AbortController().signal
     )
+
     expect(result.paths[0].limitation).toMatch(/limit/i)
     expect(
       result.paths[0].candidates.every((candidate) => !candidate.eligible)
@@ -83,17 +89,25 @@ describe('read-only component analysis', () => {
     const result = analyze(
       Array.from({ length: 30 }, () => 'M10,10L90,10L90,90L10,90Z').join(' ')
     )
+
     expect(result.paths[0].contourCount).toBe(30)
     expect(result.paths[0].contours.length).toBeLessThanOrEqual(8)
     expect(result.paths[0].contoursTruncated).toBe(true)
   })
   it('measures an ellipse and retains a visibly dented near-rectangle', () => {
     const source = artifact(circle)
+
     for (const point of source.paths[0].rings[0]) {
       point.x *= 2
-      if (point.inControl) point.inControl.x *= 2
-      if (point.outControl) point.outControl.x *= 2
+      if (point.inControl) {
+        point.inControl.x *= 2
+      }
+
+      if (point.outControl) {
+        point.outControl.x *= 2
+      }
     }
+
     source.paths[0].bounds.x *= 2
     source.paths[0].bounds.width *= 2
     const result = analyzeVectorComponents(
@@ -101,6 +115,7 @@ describe('read-only component analysis', () => {
       ['path-1'],
       new AbortController().signal
     )
+
     expect(result.paths[0].candidates).toContainEqual(
       expect.objectContaining({ componentType: 'oval', eligible: true })
     )
@@ -112,11 +127,15 @@ describe('read-only component analysis', () => {
   })
   it('rejects invalid selections and cancelled work', () => {
     const source = artifact(circle)
-    for (const ids of [[], ['missing'], ['path-1', 'path-1']])
+
+    for (const ids of [[], ['missing'], ['path-1', 'path-1']]) {
       expect(() =>
         analyzeVectorComponents(source, ids, new AbortController().signal)
       ).toThrow()
+    }
+
     const controller = new AbortController()
+
     controller.abort()
     expect(() =>
       analyzeVectorComponents(source, ['path-1'], controller.signal)

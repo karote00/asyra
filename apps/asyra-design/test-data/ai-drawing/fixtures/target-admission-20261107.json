@@ -1,0 +1,878 @@
+{
+  "sourceRun": "taipei-101-fixed-1794039515609",
+  "input": {
+    "operations": [
+      {
+        "name": "api_hierarchy_moveElementsRelative",
+        "arguments": {
+          "request": {
+            "anchorId": "design-52d0b0b6-f197-47c9-ba4a-5e24204d5c9e-250",
+            "placement": "before"
+          }
+        },
+        "target": {
+          "field": "request.elementIds",
+          "query": {
+            "scope": "region",
+            "bounds": {
+              "x": 3500,
+              "y": 6000,
+              "width": 5000,
+              "height": 7000
+            },
+            "filter": {
+              "name": {
+                "equals": "水平簷板頂面"
+              },
+              "ancestorId": "design-52d0b0b6-f197-47c9-ba4a-5e24204d5c9e-0"
+            }
+          }
+        }
+      },
+      {
+        "name": "map_retained_fills",
+        "arguments": {
+          "mappings": [
+            {
+              "query": {
+                "scope": "region",
+                "bounds": {
+                  "x": 1000,
+                  "y": 38000,
+                  "width": 10000,
+                  "height": 12500
+                },
+                "filter": {
+                  "name": {
+                    "equals": "青綠反射玻璃"
+                  },
+                  "ancestorId": "design-210a8c21-b4d6-4c09-89b4-8245ed0f835e-0"
+                }
+              },
+              "coordinateSpace": "parent-local",
+              "axis": "x",
+              "domain": [
+                0,
+                9716
+              ],
+              "index": 0,
+              "kind": "solid",
+              "outside": "clamp",
+              "stops": [
+                {
+                  "at": 0,
+                  "color": "#365F68"
+                },
+                {
+                  "at": 0.18,
+                  "color": "#507C80"
+                },
+                {
+                  "at": 0.3,
+                  "color": "#335C69"
+                },
+                {
+                  "at": 0.4,
+                  "color": "#568286"
+                },
+                {
+                  "at": 0.52,
+                  "color": "#7A9C99"
+                },
+                {
+                  "at": 0.58,
+                  "color": "#325963"
+                },
+                {
+                  "at": 0.7,
+                  "color": "#214552"
+                },
+                {
+                  "at": 0.82,
+                  "color": "#416A74"
+                },
+                {
+                  "at": 1,
+                  "color": "#284F5E"
+                }
+              ]
+            },
+            {
+              "query": {
+                "scope": "region",
+                "bounds": {
+                  "x": 3000,
+                  "y": 5000,
+                  "width": 6000,
+                  "height": 9500
+                },
+                "filter": {
+                  "name": {
+                    "equals": "塔冠玻璃窗"
+                  },
+                  "ancestorId": "design-52d0b0b6-f197-47c9-ba4a-5e24204d5c9e-0"
+                }
+              },
+              "coordinateSpace": "parent-local",
+              "axis": "x",
+              "domain": [
+                1400,
+                4800
+              ],
+              "index": 0,
+              "kind": "solid",
+              "outside": "clamp",
+              "stops": [
+                {
+                  "at": 0,
+                  "color": "#466F79"
+                },
+                {
+                  "at": 0.16,
+                  "color": "#82A5A5"
+                },
+                {
+                  "at": 0.33,
+                  "color": "#37616E"
+                },
+                {
+                  "at": 0.48,
+                  "color": "#719698"
+                },
+                {
+                  "at": 0.54,
+                  "color": "#315863"
+                },
+                {
+                  "at": 0.75,
+                  "color": "#416D76"
+                },
+                {
+                  "at": 1,
+                  "color": "#254A57"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "id": "frames",
+        "name": "prepare_and_apply_design",
+        "arguments": {
+          "parentId": "design-813db5e0-1061-4b5e-b278-5c3b7aa739db-0",
+          "draft": {
+            "type": "group",
+            "name": "竹節精細窗框倒角",
+            "projection": {
+              "azimuth": 38,
+              "elevation": 25,
+              "scale": 1,
+              "originX": 3714.800724646684,
+              "originY": 36553.423204577964
+            },
+            "children": [
+              {
+                "type": "pattern",
+                "key": "bevels",
+                "name": "八節窗框倒角與密封膠",
+                "origin": {
+                  "x": 0,
+                  "y": 0,
+                  "z": 10000
+                },
+                "axes": [
+                  {
+                    "count": 8,
+                    "step": {
+                      "x": 0,
+                      "y": 0,
+                      "z": 3600
+                    }
+                  }
+                ],
+                "members": [
+                  {
+                    "type": "surface-grid",
+                    "key": "Y",
+                    "name": "明面窗框金屬細邊",
+                    "boundary": [
+                      {
+                        "x": -2000,
+                        "y": 2300,
+                        "z": 0
+                      },
+                      {
+                        "x": 2000,
+                        "y": 2300,
+                        "z": 0
+                      },
+                      {
+                        "x": 2450,
+                        "y": 2800,
+                        "z": 3400
+                      },
+                      {
+                        "x": -2450,
+                        "y": 2800,
+                        "z": 3400
+                      }
+                    ],
+                    "rows": 8,
+                    "columns": 28,
+                    "order": "cell-major",
+                    "motifs": [
+                      {
+                        "key": "bevel",
+                        "name": "窗框亮側倒角",
+                        "fill": "#BDCCC1",
+                        "vertices": [
+                          {
+                            "u": 0.035,
+                            "v": 0.16
+                          },
+                          {
+                            "u": 0.96,
+                            "v": 0.16
+                          },
+                          {
+                            "u": 0.96,
+                            "v": 0.175
+                          },
+                          {
+                            "u": 0.06,
+                            "v": 0.175
+                          },
+                          {
+                            "u": 0.06,
+                            "v": 0.93
+                          },
+                          {
+                            "u": 0.035,
+                            "v": 0.93
+                          }
+                        ]
+                      },
+                      {
+                        "key": "seal",
+                        "name": "窗框右側密封膠",
+                        "fill": "#214C56",
+                        "vertices": [
+                          {
+                            "u": 0.93,
+                            "v": 0.19
+                          },
+                          {
+                            "u": 0.955,
+                            "v": 0.19
+                          },
+                          {
+                            "u": 0.955,
+                            "v": 0.945
+                          },
+                          {
+                            "u": 0.06,
+                            "v": 0.945
+                          },
+                          {
+                            "u": 0.06,
+                            "v": 0.93
+                          },
+                          {
+                            "u": 0.93,
+                            "v": 0.93
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "surface-grid",
+                    "key": "X",
+                    "name": "暗面窗框金屬細邊",
+                    "boundary": [
+                      {
+                        "x": 2300,
+                        "y": 2000,
+                        "z": 0
+                      },
+                      {
+                        "x": 2300,
+                        "y": -2000,
+                        "z": 0
+                      },
+                      {
+                        "x": 2800,
+                        "y": -2450,
+                        "z": 3400
+                      },
+                      {
+                        "x": 2800,
+                        "y": 2450,
+                        "z": 3400
+                      }
+                    ],
+                    "rows": 8,
+                    "columns": 28,
+                    "order": "cell-major",
+                    "motifs": [
+                      {
+                        "key": "bevel",
+                        "name": "側窗框倒角",
+                        "fill": "#8DABA7",
+                        "vertices": [
+                          {
+                            "u": 0.035,
+                            "v": 0.16
+                          },
+                          {
+                            "u": 0.96,
+                            "v": 0.16
+                          },
+                          {
+                            "u": 0.96,
+                            "v": 0.175
+                          },
+                          {
+                            "u": 0.06,
+                            "v": 0.175
+                          },
+                          {
+                            "u": 0.06,
+                            "v": 0.93
+                          },
+                          {
+                            "u": 0.035,
+                            "v": 0.93
+                          }
+                        ]
+                      },
+                      {
+                        "key": "seal",
+                        "name": "側窗框密封膠",
+                        "fill": "#183B46",
+                        "vertices": [
+                          {
+                            "u": 0.93,
+                            "v": 0.19
+                          },
+                          {
+                            "u": 0.955,
+                            "v": 0.19
+                          },
+                          {
+                            "u": 0.955,
+                            "v": 0.945
+                          },
+                          {
+                            "u": 0.06,
+                            "v": 0.945
+                          },
+                          {
+                            "u": 0.06,
+                            "v": 0.93
+                          },
+                          {
+                            "u": 0.93,
+                            "v": 0.93
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "projected-face",
+                    "key": "ruyiXinner",
+                    "name": "側如意浮雕凹紋",
+                    "fill": "#435F66",
+                    "vertices": [
+                      {
+                        "x": 2823,
+                        "y": -350,
+                        "z": 3270
+                      },
+                      {
+                        "x": 2823,
+                        "y": -170,
+                        "z": 3140
+                      },
+                      {
+                        "x": 2823,
+                        "y": 0,
+                        "z": 3240
+                      },
+                      {
+                        "x": 2823,
+                        "y": 170,
+                        "z": 3140
+                      },
+                      {
+                        "x": 2823,
+                        "y": 350,
+                        "z": 3270
+                      },
+                      {
+                        "x": 2823,
+                        "y": 240,
+                        "z": 3130
+                      },
+                      {
+                        "x": 2823,
+                        "y": 50,
+                        "z": 3070
+                      },
+                      {
+                        "x": 2823,
+                        "y": 50,
+                        "z": 2930
+                      },
+                      {
+                        "x": 2823,
+                        "y": -50,
+                        "z": 2930
+                      },
+                      {
+                        "x": 2823,
+                        "y": -50,
+                        "z": 3070
+                      },
+                      {
+                        "x": 2823,
+                        "y": -240,
+                        "z": 3130
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "inspection": "defer",
+          "message": "補入竹節窗框倒角、膠縫與如意凹紋"
+        }
+      },
+      {
+        "id": "coins",
+        "name": "prepare_and_apply_design",
+        "arguments": {
+          "parentId": "design-210a8c21-b4d6-4c09-89b4-8245ed0f835e-0",
+          "draft": {
+            "type": "group",
+            "name": "錢幣金屬浮雕細節",
+            "projection": {
+              "azimuth": 38,
+              "elevation": 25,
+              "scale": 1,
+              "originX": 4904.235337349277,
+              "originY": 9230.60516088514
+            },
+            "fillTemplates": {
+              "metal": {
+                "gradientType": "linear",
+                "gradientHandles": [
+                  {
+                    "x": 0,
+                    "y": 0
+                  },
+                  {
+                    "x": 1,
+                    "y": 1
+                  }
+                ],
+                "gradientStops": [
+                  {
+                    "position": 0,
+                    "color": "#E3E4CF",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 0.25,
+                    "color": "#BAC8BD",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 0.52,
+                    "color": "#75938E",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 0.75,
+                    "color": "#C4D0C1",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 1,
+                    "color": "#59777B",
+                    "opacity": 1
+                  }
+                ]
+              }
+            },
+            "children": [
+              {
+                "type": "projected-face",
+                "key": "coinY",
+                "name": "錢幣外圈金屬倒角",
+                "fill": {
+                  "template": "metal"
+                },
+                "ellipse": {
+                  "center": {
+                    "x": 0,
+                    "y": 2450,
+                    "z": 9340
+                  },
+                  "u": {
+                    "x": 535,
+                    "y": 0,
+                    "z": 0
+                  },
+                  "v": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 535
+                  }
+                }
+              },
+              {
+                "type": "projected-face",
+                "key": "recessY",
+                "name": "錢幣內圈陰影",
+                "fill": "#365C64",
+                "ellipse": {
+                  "center": {
+                    "x": 8,
+                    "y": 2452,
+                    "z": 9332
+                  },
+                  "u": {
+                    "x": 467,
+                    "y": 0,
+                    "z": 0
+                  },
+                  "v": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 467
+                  }
+                }
+              },
+              {
+                "type": "projected-face",
+                "key": "innerY",
+                "name": "錢幣內盤金屬",
+                "fill": {
+                  "template": "metal"
+                },
+                "ellipse": {
+                  "center": {
+                    "x": 0,
+                    "y": 2454,
+                    "z": 9340
+                  },
+                  "u": {
+                    "x": 445,
+                    "y": 0,
+                    "z": 0
+                  },
+                  "v": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 445
+                  }
+                }
+              },
+              {
+                "type": "projected-face",
+                "key": "wellY",
+                "name": "錢幣青銅內盤",
+                "fill": "#6B8C8D",
+                "ellipse": {
+                  "center": {
+                    "x": 0,
+                    "y": 2456,
+                    "z": 9340
+                  },
+                  "u": {
+                    "x": 420,
+                    "y": 0,
+                    "z": 0
+                  },
+                  "v": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 420
+                  }
+                }
+              },
+              {
+                "type": "projected-face",
+                "key": "squareY",
+                "name": "方孔厚實金屬框",
+                "fill": {
+                  "template": "metal"
+                },
+                "vertices": [
+                  {
+                    "x": -210,
+                    "y": 2458,
+                    "z": 9120
+                  },
+                  {
+                    "x": 210,
+                    "y": 2458,
+                    "z": 9120
+                  },
+                  {
+                    "x": 210,
+                    "y": 2458,
+                    "z": 9560
+                  },
+                  {
+                    "x": -210,
+                    "y": 2458,
+                    "z": 9560
+                  }
+                ]
+              },
+              {
+                "type": "projected-face",
+                "key": "holeY",
+                "name": "方孔深凹陰影",
+                "fill": "#244B55",
+                "vertices": [
+                  {
+                    "x": -135,
+                    "y": 2460,
+                    "z": 9200
+                  },
+                  {
+                    "x": 135,
+                    "y": 2460,
+                    "z": 9200
+                  },
+                  {
+                    "x": 135,
+                    "y": 2460,
+                    "z": 9480
+                  },
+                  {
+                    "x": -135,
+                    "y": 2460,
+                    "z": 9480
+                  }
+                ]
+              },
+              {
+                "type": "projected-face",
+                "key": "holebevelY",
+                "name": "方孔內側倒角",
+                "fill": "#B0C0B4",
+                "vertices": [
+                  {
+                    "x": -135,
+                    "y": 2462,
+                    "z": 9200
+                  },
+                  {
+                    "x": 135,
+                    "y": 2462,
+                    "z": 9200
+                  },
+                  {
+                    "x": 135,
+                    "y": 2462,
+                    "z": 9220
+                  },
+                  {
+                    "x": -115,
+                    "y": 2462,
+                    "z": 9220
+                  },
+                  {
+                    "x": -115,
+                    "y": 2462,
+                    "z": 9480
+                  },
+                  {
+                    "x": -135,
+                    "y": 2462,
+                    "z": 9480
+                  }
+                ]
+              },
+              {
+                "type": "projected-face",
+                "key": "coinX",
+                "name": "側錢幣外圈金屬倒角",
+                "fill": {
+                  "template": "metal"
+                },
+                "ellipse": {
+                  "center": {
+                    "x": 2450,
+                    "y": 0,
+                    "z": 9340
+                  },
+                  "u": {
+                    "x": 0,
+                    "y": 535,
+                    "z": 0
+                  },
+                  "v": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 535
+                  }
+                }
+              },
+              {
+                "type": "projected-face",
+                "key": "recessX",
+                "name": "側錢幣內圈陰影",
+                "fill": "#284A55",
+                "ellipse": {
+                  "center": {
+                    "x": 2452,
+                    "y": 8,
+                    "z": 9332
+                  },
+                  "u": {
+                    "x": 0,
+                    "y": 467,
+                    "z": 0
+                  },
+                  "v": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 467
+                  }
+                }
+              },
+              {
+                "type": "projected-face",
+                "key": "innerX",
+                "name": "側錢幣內盤金屬",
+                "fill": {
+                  "template": "metal"
+                },
+                "ellipse": {
+                  "center": {
+                    "x": 2454,
+                    "y": 0,
+                    "z": 9340
+                  },
+                  "u": {
+                    "x": 0,
+                    "y": 445,
+                    "z": 0
+                  },
+                  "v": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 445
+                  }
+                }
+              },
+              {
+                "type": "projected-face",
+                "key": "wellX",
+                "name": "側錢幣青銅內盤",
+                "fill": "#50777E",
+                "ellipse": {
+                  "center": {
+                    "x": 2456,
+                    "y": 0,
+                    "z": 9340
+                  },
+                  "u": {
+                    "x": 0,
+                    "y": 420,
+                    "z": 0
+                  },
+                  "v": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 420
+                  }
+                }
+              },
+              {
+                "type": "projected-face",
+                "key": "squareX",
+                "name": "側方孔金屬框",
+                "fill": {
+                  "template": "metal"
+                },
+                "vertices": [
+                  {
+                    "x": 2458,
+                    "y": -210,
+                    "z": 9120
+                  },
+                  {
+                    "x": 2458,
+                    "y": 210,
+                    "z": 9120
+                  },
+                  {
+                    "x": 2458,
+                    "y": 210,
+                    "z": 9560
+                  },
+                  {
+                    "x": 2458,
+                    "y": -210,
+                    "z": 9560
+                  }
+                ]
+              },
+              {
+                "type": "projected-face",
+                "key": "holeX",
+                "name": "側方孔深凹陰影",
+                "fill": "#203F4D",
+                "vertices": [
+                  {
+                    "x": 2460,
+                    "y": -135,
+                    "z": 9200
+                  },
+                  {
+                    "x": 2460,
+                    "y": 135,
+                    "z": 9200
+                  },
+                  {
+                    "x": 2460,
+                    "y": 135,
+                    "z": 9480
+                  },
+                  {
+                    "x": 2460,
+                    "y": -135,
+                    "z": 9480
+                  }
+                ]
+              }
+            ]
+          },
+          "inspection": "defer",
+          "message": "補入錢幣多層金屬倒角、內圈及方孔陰影"
+        }
+      }
+    ],
+    "retain": {
+      "taipeiFrames": {
+        "step": "frames",
+        "path": "/compositionIds"
+      },
+      "taipeiRelief": {
+        "step": "coins",
+        "path": "/compositionIds"
+      }
+    },
+    "delivery": "status",
+    "message": "修正塔冠遮蔽並增強玻璃與金屬細節"
+  }
+}

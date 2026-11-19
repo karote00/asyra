@@ -41,6 +41,7 @@ describe('canvas hover modifier snapshot', () => {
     const setSystemProperty = vi
       .spyOn(core, 'setSystemProperty')
       .mockImplementation(() => undefined)
+
     vi.spyOn(core, 'getSystemProperty').mockReturnValue(undefined)
 
     keyCombinations[InputSystemEvents.INPUT_MOUSE_MOVE][0].callback(

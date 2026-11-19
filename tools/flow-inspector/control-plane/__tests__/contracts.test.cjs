@@ -1134,6 +1134,33 @@ test('functional responsibility follows the asserted operation across test-file 
 
   const selected = (id) => contract.cases.find((item) => item.id === id)
 
+  const named = (name) => contract.cases.find((item) => item.testName === name)
+
+  const observer = named(
+    'observes actual program state and forwards changed and repeated matrices'
+  )
+
+  assert.equal(observer.stepId, 'render-material')
+  assert.deepEqual(observer.implementationPaths, [
+    'apps/asyra-design/e2e/render-state-observer.ts'
+  ])
+  const framing = named(
+    'recording resumes after overview navigation and frames later geometry without document edits'
+  )
+
+  assert.equal(framing.stepId, 'navigate-viewport')
+  assert.ok(
+    framing.implementationPaths.includes(
+      'apps/asyra-design/test-data/ai-drawing/drawing-framing.mjs'
+    )
+  )
+  assert.equal(
+    named(
+      'records accepted hierarchy and coordinate batches at immediate read barriers'
+    ).stepId,
+    'retain-navigation'
+  )
+
   assert.equal(
     selected('functional.pen-tool.db4841244256').stepId,
     'switch-tool'

@@ -10,6 +10,7 @@ const requestIndex = 'request-id'
 
 const controlSequence = -1
 const controlReserveBytes = 512
+
 type StoredGap = Omit<ExecutionRecordGap, 'requestId'>
 interface RecordControl {
   requestId: string
@@ -18,6 +19,7 @@ interface RecordControl {
   gap: StoredGap | null
   padding: string
 }
+
 const validGap = (gap: StoredGap): boolean =>
   !!gap &&
   Number.isSafeInteger(gap.fromSequence) &&
@@ -25,6 +27,7 @@ const validGap = (gap: StoredGap): boolean =>
   Number.isSafeInteger(gap.throughSequence) &&
   gap.throughSequence >= gap.fromSequence &&
   ['capture', 'storage', 'mixed'].includes(gap.stage)
+
 const controlRecord = (
   requestId: string,
   gap: StoredGap | null
@@ -35,6 +38,7 @@ const controlRecord = (
   gap,
   padding: ' '.repeat(controlReserveBytes - JSON.stringify(gap).length)
 })
+
 const readControl = (
   value: RecordControl | undefined,
   requestId: string
@@ -46,8 +50,10 @@ const readControl = (
       value.sequence !== controlSequence ||
       typeof value.padding !== 'string' ||
       (value.gap !== null && !validGap(value.gap)))
-  )
+  ) {
     throw new Error('Invalid recording control')
+  }
+
   return value
 }
 
@@ -60,59 +66,79 @@ export const createBrowserRecordOutbox = (
 ): ExecutionRecordOutbox & { close(): Promise<void> } => {
   let connection: Promise<IDBDatabase> | undefined
   let closed = false
+
   const open = (): Promise<IDBDatabase> => {
-    if (closed) return Promise.reject(new Error('Recording outbox is closed'))
+    if (closed) {
+      return Promise.reject(new Error('Recording outbox is closed'))
+    }
+
     connection ??= new Promise<IDBDatabase>((resolve, reject) => {
       const factory = options.factory ?? globalThis.indexedDB
+
       if (!factory) {
         reject(new Error('Recording storage is unavailable'))
+
         return
       }
+
       const request = factory.open(databaseName, 1)
       let rejected = false
+
       request.onupgradeneeded = () => {
         const store = request.result.createObjectStore(recordsStore, {
           keyPath: ['requestId', 'sequence']
         })
+
         store.createIndex(requestIndex, 'requestId')
       }
+
       request.onerror = () => {
         rejected = true
         reject(request.error ?? new Error('Recording storage open failed'))
       }
+
       request.onblocked = () => {
         rejected = true
         reject(new Error('Recording storage upgrade is blocked'))
       }
+
       request.onsuccess = () => {
         const database = request.result
+
         if (closed || rejected) {
           database.close()
           reject(new Error('Recording outbox is closed'))
+
           return
         }
+
         database.onversionchange = () => {
           database.close()
           connection = undefined
         }
+
         resolve(database)
       }
     }).catch((error) => {
       connection = undefined
       throw error
     })
+
     return connection
   }
+
   const transact = async <T>(
     mode: IDBTransactionMode,
     work: (store: IDBObjectStore, set: (value: T) => void) => void
   ): Promise<T> => {
     const database = await open()
+
     return new Promise<T>((resolve, reject) => {
       const transaction = database.transaction(recordsStore, mode, {
         durability: 'strict'
       })
       let result: T
+
       transaction.oncomplete = () => resolve(result)
       transaction.onabort = () =>
         reject(
@@ -133,11 +159,13 @@ export const createBrowserRecordOutbox = (
       }
     })
   }
+
   const range = (requestId: string, fromSequence = 0) =>
     (options.keyRange ?? globalThis.IDBKeyRange).bound(
       [requestId, fromSequence],
       [requestId, Number.MAX_SAFE_INTEGER]
     )
+
   const control = <T>(
     requestId: string,
     mode: IDBTransactionMode,
@@ -149,6 +177,7 @@ export const createBrowserRecordOutbox = (
   ) =>
     transact<T>(mode, (store, set) => {
       const request = store.get([requestId, controlSequence])
+
       request.onsuccess = () => {
         try {
           work(readControl(request.result, requestId), store, set)
@@ -157,15 +186,21 @@ export const createBrowserRecordOutbox = (
         }
       }
     })
+
   return {
     reserve: (requestId) =>
       control<undefined>(requestId, 'readwrite', (value, store) => {
-        if (!value) store.add(controlRecord(requestId, null))
+        if (!value) {
+          store.add(controlRecord(requestId, null))
+        }
       }),
+
     recordGap: ({ requestId, ...gap }) =>
       control<undefined>(requestId, 'readwrite', (value, store) => {
-        if (!value || !validGap(gap))
+        if (!value || !validGap(gap)) {
           throw new Error('Missing reservation or invalid gap')
+        }
+
         const previous = value.gap
         const merged: StoredGap = previous
           ? {
@@ -177,14 +212,18 @@ export const createBrowserRecordOutbox = (
               stage: previous.stage === gap.stage ? gap.stage : 'mixed'
             }
           : gap
+
         store.put(controlRecord(requestId, merged))
       }),
+
     gap: (requestId) =>
       control(requestId, 'readonly', (value, _store, set) => {
         set(value?.gap ? { requestId, ...value.gap } : undefined)
       }),
+
     append: (records) => {
       const first = records[0]
+
       if (
         !first ||
         (records.length > 1 &&
@@ -197,51 +236,67 @@ export const createBrowserRecordOutbox = (
             record.requestId !== first.requestId ||
             record.sequence !== first.sequence + index
         )
-      )
+      ) {
         return Promise.reject(
           new Error('Invalid payload batch sequence or ownership')
         )
+      }
+
       return transact<undefined>('readwrite', (store) => {
-        for (const record of records) store.add(record)
+        for (const record of records) {
+          store.add(record)
+        }
       })
     },
+
     read: (requestId, fromSequence, limit) => {
       if (
         !Number.isSafeInteger(fromSequence) ||
         fromSequence < 0 ||
         !Number.isSafeInteger(limit) ||
         limit < 1
-      )
+      ) {
         return Promise.reject(new Error('Invalid payload sequence or limit'))
+      }
+
       return transact('readonly', (store, set) => {
         const request = store.getAll(range(requestId, fromSequence), limit)
+
         request.onsuccess = () => set(request.result)
       })
     },
+
     requests: () =>
       transact('readonly', (store, set) => {
         const ids: string[] = []
         const request = store
           .index(requestIndex)
           .openKeyCursor(null, 'nextunique')
+
         request.onsuccess = () => {
           const cursor = request.result
+
           if (!cursor) {
             set(ids)
+
             return
           }
+
           ids.push(String(cursor.key))
           cursor.continue()
         }
       }),
+
     remove: (requestId) =>
       transact<undefined>('readwrite', (store) => {
         store.delete(range(requestId))
         store.delete([requestId, controlSequence])
       }),
+
     async close() {
       closed = true
       const database = await connection?.catch(() => undefined)
+
       database?.close()
       connection = undefined
     }

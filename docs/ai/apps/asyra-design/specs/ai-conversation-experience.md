@@ -7,6 +7,13 @@ identity and position across active and settled work. Assistant output appears o
 the left. The App conversation controller owns request lifecycle, answered questions,
 continuation and recovery; the panel is a projection. One active request is admitted.
 A resolved provider attempt may ask a question rather than complete the user goal.
+Question admission reads the unique final control receipt of a successful
+invocation, including earlier streamed operation receipts. Earlier reads or
+committed edits do not hide that question. Failed/cancelled invocations,
+conflicting terminal controls, nonterminal questions and malformed question
+receipts do not admit answers. The controller and presentation consume the same
+result interpretation; canvas disposition remains independent of waiting for an
+answer. Explicit Stop cannot display a late successful reply.
 Successor requests receive bounded complete prior messages from the selected
 conversation under [request continuity](ai-execution-flow.md#request-and-continuity),
 with actual outcomes and explicit omissions. This does not resume native tool
@@ -17,6 +24,43 @@ retry requests retain the original reference as request context without presenti
 it as a newly attached image. No Edit request action or automatic draft restoration
 is offered. Panel text supports native mouse selection and copying. Composer keyboard events stay in the text
 input, preserving native editing and IME without invoking canvas shortcuts.
+Unsubmitted drafts live in the App-owned `conversationDrafts` system-context
+property, registered through Core during App initialization. Core validates values
+and supplies observation; the App adapter holds no parallel value store or event
+bus. Drafts survive panel remounts and conversation navigation. This retention does not restore
+an already submitted request as a draft. Accepted submission retires the draft
+generation; App document disposal releases subscriptions and clears drafts. The
+property is runtime-only: it does not enter canonical document persistence or
+collaboration. Unsubmitted text/images are not part of provider context. Backend
+conversation-history persistence is a separate future capability. Pending image reads retain
+their source/generation checks and cannot write back from a retired panel.
+
+Initial selected-element summaries disclose the canonical `parentId` (or null
+when unavailable) and `coordinateSpace: "parent-local"` alongside bounds. These
+coordinates retain the public geometry owner's basis; no workspace transform is
+inferred. Missing geometry remains null. The same detached whitelist reaches the
+provider without raw properties or a prerequisite lookup.
+
+Each submission projects prior settled turns from the current conversation into
+bounded request data: exact user intent, public assistant explanation or question,
+offered choices, answer/retry links, outcome and source-attachment indexes. Latest
+explicit user revisions supersede earlier conflicting requirements. Assistant
+suggestions and failed work are not adopted user requirements. A new conversation
+starts without this context; returning to history restores its own context.
+
+Source images remain available to ordinary follow-ups as well as answers/retries.
+Inherited images are not displayed as new message attachments. Send each distinct
+source once and preserve its original per-turn association. Inspection IDs, leases,
+prepared artifacts, tool-call identities and raw execution results are excluded;
+current targets and permissions are freshly checked. Source URLs in public replies
+remain provenance, not proof or a reusable backend handle.
+
+Admission retains exact history up to 128 prior turns, 128 KiB of serialized text
+context (including the current intent), and 8 MiB of serialized source attachments.
+It never silently truncates requirements or references. Exceeding a bound produces
+an explicit no-write failure instructing the user to start a new conversation with
+the needed brief/references. Admission runs once on submission, not on progress or
+presentation reads. No extra model summary call or persistent conversation store.
 
 Questions expose clickable choices and a text answer path, preserve subject,
 dimensions, attachments and target context, and record the selected answer. Waiting
@@ -33,7 +77,11 @@ permission enforcement. Unknown actions remain rejected.
 Execution activity uses each action’s explicitly authored `{kind: "work", text}` visible-change summary (for example, “Smoothing the outlines” or “Reshaping the tail”), emitted when that action starts. Missing or unsuitable summaries use the registered action label; never display “Applying changes” or invent a specific edit.
 
 Current activity is derived from real execution phases, with one concise visible
-status and collapsed details. One App-owned activity projection produces the
+status and collapsed details. Settled message snapshots remain stable during active progress. Only the active
+message subscribes to progress revisions; historical activity and answer lookup
+are not recomputed for each event. Settlement/navigation refresh membership and
+answer eligibility. No view memo wrapper replaces these ownership boundaries.
+One App-owned activity projection produces the
 ordered entries and the current entry shared by the current status below the disclosure and its history.
 History deduplicates the same authored identity/revision, not equal prose from
 separate tasks. Principal purpose appears first; operation state is secondary.
@@ -57,6 +105,10 @@ Public commentary cannot prove that geometry is being computed or applied.
 Internal resolution/permission events do not erase active purpose. Duplicate
 phase/purpose pairs are suppressed, but completion is a real transition.
 Blank or over-1000-character authored descriptions do not replace valid purpose.
+Character limits use Unicode code points, consistent with JSON Schema, rather
+than UTF-16 storage units. Control questions/replies and their provider, Runtime
+and presentation handoffs use the same counting rule. Preserve the existing
+limits and whitespace rules; transport byte budgets remain byte budgets.
 The panel displays both phase and purpose, so a finished drawing verb is never
 presented alone as current execution. Stop, approval and settlement override work.
 The App activity state machine owns legal lifecycle transitions. Saving and
@@ -99,14 +151,23 @@ No synthetic reasoning or timed
 percentage is allowed.
 Private model reasoning is never displayed. Explicit operational messages from registered backend operations may be displayed. Model-authored operational descriptions, questions and replies retain their language; the App does not prescribe or filter their language.
 
-Completion describes actual results and does not certify visual fidelity. Failure
-identifies a sanitized cause and canvas disposition, retains the request and image,
+Completion describes actual results and does not certify visual fidelity.
+Authored replies remain visible when document storage is local-only or unavailable;
+storage is a separate notice, not replacement assistant text or a new instruction
+in subsequent public conversation history.
+Failure identifies a sanitized cause and canvas disposition, retains the request and image,
 and offers safe retry when eligible. Partial-result messages do not append a generic
 reminder that earlier changes are kept or that Undo is available. Retry is admitted only for confirmed pre-write
-failure or cancellation; partial/unknown outcomes require review. An explicit image
+failure or cancellation; partial/unknown outcomes require review.
+Runtime cancellation before execution has no stage or transaction; its authoritative
+cancelled audit (or the Feature's explicit abort-before-run result) permits retry.
+Any execution transaction, unknown disposition or action receipts forbid blind
+replay. Retry appends no newly submitted image and retains source indexes from
+the original history.
+An explicit image
 tracing request uses registered VTracer or fails honestly, never a fabricated trace.
 Replacement accepts the referenced native Frame or traced Group, prepares new content before removing only that root and executes in one
-request-owned history group. Each finite mutation member commits independently; failure rolls back its active member, and Stop or failure seals prior successful members into one Undo entry. Target ambiguity
+request-owned history group. Each finite mutation member commits independently; failure rolls back its active member. Tool failure is returned to the AI within that request; only request settlement, cancellation or terminal transport failure seals prior successful members into one Undo entry. Target ambiguity
 requires clarification, never deleting unrelated objects.
 
 The controller is document-scoped. Closing the panel hides it; reopening retains
@@ -174,7 +235,7 @@ Normal settlement commits all completed batches into one Undo entry. Capability
 limits are normal settlement: explain the unsupported remainder and whether any
 changes were made, with no Try again. A limitation of one tool requires checking
 other registered operations before declaring App capability unavailable. Never
-invent a tool or silently claim an incomplete request is complete. Ordinary executor/provider failures stop further work and commit applied progress in the same Undo entry. The partial result names the failed activity, never offers blind replay, and does not claim every operation completed. Each failed synchronous member rolls back its own writes. Explicit cancellation preserves completed members and seals their single Undo entry; pending members cannot start after cancellation. Settlement failures report unknown state rather than claiming retained progress.
+invent a tool or silently claim an incomplete request is complete. An executor failure stops unsafe dependent operations and returns its diagnostic, settlement and acknowledged progress to the same AI; it does not by itself end the conversation. The AI may correct input or reconcile state before further authorized work. An unusable provider transport or explicit task cancellation ends the invocation and commits applied progress in the same Undo entry. The partial result names the failed activity, never offers blind replay, and does not claim every operation completed. Each failed synchronous member rolls back its own writes. Explicit cancellation preserves completed members and seals their single Undo entry; pending members cannot start after cancellation. Settlement failures report unknown state rather than claiming retained progress.
 Questions before drawing remain non-mutating clarification; a new user request
 never silently joins an already settled history group. Each modifying user request appends its own Undo entry; replacing canvas objects never overwrites previous History. Confirmation explains that prior steps remain undoable. Known executor failures include a bounded App-authored cause and recovery guidance, not raw exceptions.
 
@@ -225,6 +286,10 @@ rectangles and native text, not just traced vector/oval roles. Revalidate each
 distinct referenced ID once per submission against current canonical existence;
 discard deleted and workspace IDs. The hints do not grant an editing capability
 or override current selection/permissions. No cross-request existence cache.
+Completed or partially completed creation receipts update the composition identity
+even when compact delivery omits role mappings. A new identity replaces prior
+roles with the supplied mappings, or an empty mapping when none was delivered;
+missing identity and failed actions do not invent a new target.
 
 ### Conversation navigation
 
@@ -245,6 +310,12 @@ only for the current document runtime and cleared on disposal. A separate stable
 navigation subscription projects identity, short title and busy state; progress
 updates must not rebuild or notify unchanged navigation. Composer drafts and
 attachments are preserved per conversation by presentation, never sent on switch.
+Asynchronous image reads and their errors belong to the originating draft generation.
+Switching conversations preserves that draft; completion must not modify the visible
+unrelated draft. An accepted send retires pending reads for the submitted generation,
+even if the request has already settled when a read completes. Panel/document disposal
+retires pending completions. Concurrent reads on a live draft accumulate without losing
+newer text or attachments.
 
 Panel text supports native selection and copy. Clicking non-interactive panel
 text focuses the panel without entering the Tab order, keeping copy shortcuts
@@ -268,26 +339,19 @@ requested. Criteria must preserve those choices. Detail views are conditional on
 the requested result needing local inspection; overview-only acceptance is valid
 for simple work. Never impose photorealism or beautification as a global policy.
 
-The local server operation owner records a request-local design review plan
-(method, reference sources, explicit acceptance criteria and whether detail views
-are required). Freeze these criteria before the first mutation. Existing concrete
-subjects require researched or attached references when fidelity is requested;
-research results alone are not imported image evidence. A chosen native geometry
-method must address silhouette, proportions, viewpoint and requested detail before
-ornament. Unsupported photorealistic requirements must remain explicit.
+The AI owns task planning, visual judgment and final verification against user
+intent. Tools validate their declared input/output and report execution status,
+requested inspection images, limitations and recoverable failures. No mandatory plan registration or signed completion gate is required. Reference selection and
+Knowledge remain available when the AI needs them; they do not authorize writes
+or block completion. A larger task may use retained stage inputs/results and Host
+dependencies without registering a separate review plan.
 
-Every mutation invalidates prior visual verdicts. Successful inspections issue
-opaque, request-local evidence IDs for the current mutation revision. Completion
-requires a model-authored assessment of every planned criterion against current
-rendered evidence; screenshot availability alone does not constitute review.
-Detailed work requires both the composition overview and a separate detail target or
-explicit native-resolution region. Region receipts never certify an overview.
-Repeated captures of the same target and region retain their evidence identity
-within one mutation revision; every call still captures fresh rendered content.
-The backend validates receipt identity, revision and criterion coverage; the model
-remains responsible for semantic visual judgment. Missing, failed or unverified
-criteria prevent a completed claim; preserve applied changes and explain the gap.
-No cumulative review count or duration limit is introduced.
+A capture reports its actual target, bounds and current rendered content. A local
+view is not a composition overview. The AI selects the views needed for its final
+judgment and explains gaps; the backend does not certify aesthetic quality or
+require criterion assessments. Changed geometry must be inspected again when a
+current visual decision depends on it. Unavailable capture preserves acknowledged
+edits and permits capture-only recovery; it never authorizes replaying writes.
 
 Structured `ai_request_trace` records share the usage request ID and carry sequence,
 elapsed time, tool call IDs, bounded allowlisted input/result summaries, reference

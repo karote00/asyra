@@ -29,12 +29,15 @@ test.describe('Property Management', () => {
       // Formal E2E reads use the module-owned test bridge, never DevTools globals.
       const core = (await import('../src/testing/runtime-access')).core
       const selectedId = core?.deps?.selection?.getElementSelectionIds?.()?.[0]
+
       if (!selectedId) {
         return null
       }
+
       const element = core?.deps?.sceneTree?.getElementById?.(selectedId)
       const renderElement = core?.deps?.render?.getElementById?.(selectedId)
       const computed = element?.getAllComputedData?.() ?? {}
+
       return {
         computed: {
           x: computed.x,
@@ -108,12 +111,14 @@ test.describe('Property Management', () => {
     page.evaluate(async () => {
       const core = (await import('../src/testing/runtime-access')).core
       const selectedId = core?.deps?.selection?.getElementSelectionIds?.()?.[0]
+
       if (!selectedId) {
         return null
       }
 
       const element = core?.deps?.sceneTree?.getElementById?.(selectedId)
       const computed = element?.getAllComputedData?.() ?? {}
+
       if (!Array.isArray(computed.fills) || !computed.fills[0]) {
         return null
       }
@@ -125,12 +130,14 @@ test.describe('Property Management', () => {
     page.evaluate(async () => {
       const core = (await import('../src/testing/runtime-access')).core
       const selectedId = core?.deps?.selection?.getElementSelectionIds?.()?.[0]
+
       if (!selectedId) {
         return 0
       }
 
       const element = core?.deps?.sceneTree?.getElementById?.(selectedId)
       const computed = element?.getAllComputedData?.() ?? {}
+
       return Array.isArray(computed.fills) ? computed.fills.length : 0
     })
 
@@ -138,6 +145,7 @@ test.describe('Property Management', () => {
     page.evaluate(async (targetStopIndex) => {
       const core = (await import('../src/testing/runtime-access')).core
       const selectedId = core?.deps?.selection?.getElementSelectionIds?.()?.[0]
+
       if (!selectedId) {
         return null
       }
@@ -146,6 +154,7 @@ test.describe('Property Management', () => {
       const computed = element?.getAllComputedData?.() ?? {}
       const gradient = computed?.fills?.[0]?.gradient
       const stop = gradient?.gradientStops?.[targetStopIndex]
+
       return stop?.color ?? null
     }, stopIndex)
 
@@ -156,12 +165,14 @@ test.describe('Property Management', () => {
     page.evaluate(async (targetStopIndex) => {
       const core = (await import('../src/testing/runtime-access')).core
       const selectedId = core?.deps?.selection?.getElementSelectionIds?.()?.[0]
+
       if (!selectedId) {
         return null
       }
 
       const element = core?.deps?.sceneTree?.getElementById?.(selectedId)
       const computed = element?.getAllComputedData?.() ?? {}
+
       return (
         computed?.fills?.[0]?.gradient?.gradientStops?.[targetStopIndex]
           ?.position ?? null
@@ -172,12 +183,14 @@ test.describe('Property Management', () => {
     page.evaluate(async () => {
       const core = (await import('../src/testing/runtime-access')).core
       const selectedId = core?.deps?.selection?.getElementSelectionIds?.()?.[0]
+
       if (!selectedId) {
         return 0
       }
 
       const element = core?.deps?.sceneTree?.getElementById?.(selectedId)
       const computed = element?.getAllComputedData?.() ?? {}
+
       return Array.isArray(computed.strokes) ? computed.strokes.length : 0
     })
 
@@ -249,6 +262,7 @@ test.describe('Property Management', () => {
 
     // Verify the empty state is visible
     const emptyState = propertiesPanel.locator('text=No selection')
+
     await expect(emptyState).toBeVisible()
 
     // Verify no property inputs are visible
@@ -267,6 +281,7 @@ test.describe('Property Management', () => {
   }) => {
     await createRectangle(page, 0.3, 0.3)
     const beforeProjection = await getSelectedLayoutProjection(page)
+
     expect(beforeProjection).not.toBeNull()
     const beforeHistory = await getTransactionSnapshot(page)
 
@@ -284,6 +299,7 @@ test.describe('Property Management', () => {
 
     // Verify the value was updated
     const newXValue = await xInput.inputValue()
+
     expect(newXValue).toBe('200')
     await expect
       .poll(() => getSelectedLayoutProjection(page))
@@ -309,6 +325,7 @@ test.describe('Property Management', () => {
 
     // Update Y position as well
     const yInput = propertiesPanel.getByTestId('prop-y')
+
     await yInput.click()
     await yInput.fill('300')
     await yInput.press('Enter')
@@ -316,6 +333,7 @@ test.describe('Property Management', () => {
 
     // Verify Y value was updated
     const newYValue = await yInput.inputValue()
+
     expect(newYValue).toBe('300')
   })
 
@@ -331,11 +349,13 @@ test.describe('Property Management', () => {
   }) => {
     await createRectangle(page, 0.3, 0.3)
     const beforeProjection = await getSelectedLayoutProjection(page)
+
     expect(beforeProjection).not.toBeNull()
     const beforeHistory = await getTransactionSnapshot(page)
 
     const propertiesPanel = getPropertiesPanel(page)
     const widthInput = propertiesPanel.getByTestId('prop-width')
+
     await widthInput.click()
     await widthInput.fill('300')
     await widthInput.press('Enter')
@@ -347,6 +367,7 @@ test.describe('Property Management', () => {
       })
 
     const heightInput = propertiesPanel.getByTestId('prop-height')
+
     await heightInput.click()
     await heightInput.fill('250')
     await heightInput.press('Enter')
@@ -386,6 +407,7 @@ test.describe('Property Management', () => {
   }) => {
     await createRectangle(page, 0.3, 0.3)
     const beforeProjection = await getSelectedLayoutProjection(page)
+
     expect(beforeProjection).not.toBeNull()
     const beforeHistory = await getTransactionSnapshot(page)
     const rotationInput = getPropertiesPanel(page).getByTestId('prop-rotation')
@@ -419,6 +441,7 @@ test.describe('Property Management', () => {
     await createRectangle(page, 0.3, 0.3)
 
     const propertiesPanel = getPropertiesPanel(page)
+
     await expect(
       propertiesPanel.getByTestId('prop-fills-section')
     ).toBeVisible()
@@ -432,10 +455,12 @@ test.describe('Property Management', () => {
     page
   }) => {
     const pageErrors: string[] = []
+
     page.on('pageerror', (error) => pageErrors.push(String(error)))
     await createRectangle(page, 0.3, 0.3)
 
     const propertiesPanel = getPropertiesPanel(page)
+
     await propertiesPanel.getByTestId('prop-fill-add').click()
     await expect.poll(() => getSelectedFillCount(page)).toBe(2)
     expect(pageErrors).toEqual([])
@@ -452,6 +477,7 @@ test.describe('Property Management', () => {
     await createRectangle(page, 0.3, 0.3)
 
     const propertiesPanel = getPropertiesPanel(page)
+
     await expect(
       propertiesPanel.getByTestId('prop-strokes-section')
     ).toBeVisible()
@@ -465,10 +491,12 @@ test.describe('Property Management', () => {
     page
   }) => {
     const pageErrors: string[] = []
+
     page.on('pageerror', (error) => pageErrors.push(String(error)))
     await createRectangle(page, 0.3, 0.3)
 
     const propertiesPanel = getPropertiesPanel(page)
+
     await propertiesPanel.getByTestId('prop-stroke-add').click()
     await page.waitForTimeout(100)
     expect(pageErrors).toEqual([])
@@ -482,6 +510,7 @@ test.describe('Property Management', () => {
             selectedId && core?.deps?.sceneTree?.getElementById?.(selectedId)
           const computed = element?.getAllComputedData?.() ?? {}
           const uiStrokes = core?.getUIProperty?.('strokes')
+
           return {
             computedStrokeCount: Array.isArray(computed.strokes)
               ? computed.strokes.length
@@ -528,6 +557,7 @@ test.describe('Property Management', () => {
     await createRectangle(page, 0.3, 0.3)
 
     const propertiesPanel = getPropertiesPanel(page)
+
     await propertiesPanel.getByTestId('prop-stroke-add').click()
     await page.waitForTimeout(120)
     const before = await getTransactionSnapshot(page)
@@ -537,6 +567,7 @@ test.describe('Property Management', () => {
       .click()
     const palette = page.getByTestId('prop-stroke-color-picker-0-saturation')
     const paletteBox = await palette.boundingBox()
+
     expect(paletteBox).not.toBeNull()
     if (!paletteBox) {
       return
@@ -545,6 +576,7 @@ test.describe('Property Management', () => {
     await page.evaluate(async () => {
       const { startSharedChannelCapture } =
         await import('../src/testing/runtime-access')
+
       startSharedChannelCapture('stroke-preview-deliveries', 'props')
     })
     await page.mouse.move(paletteBox.x + 24, paletteBox.y + 18)
@@ -557,12 +589,15 @@ test.describe('Property Management', () => {
     await page.waitForTimeout(120)
 
     const during = await getTransactionSnapshot(page)
+
     expect(during.undoCount).toBe(before.undoCount)
     expect(during.isTransacting).toBeGreaterThan(0)
     const previewDeliveries = await page.evaluate(async () => {
       const { readTestCapture } = await import('../src/testing/runtime-access')
+
       return readTestCapture('stroke-preview-deliveries')
     })
+
     expect(previewDeliveries).toContainEqual(
       expect.objectContaining({
         options: expect.objectContaining({ sharedDelivery: 'immediate' })
@@ -573,16 +608,20 @@ test.describe('Property Management', () => {
     await page.mouse.up()
     const finalDeliveries = await page.evaluate(async () => {
       const { readTestCapture } = await import('../src/testing/runtime-access')
+
       return readTestCapture('stroke-preview-deliveries')
     })
+
     expect(finalDeliveries).toHaveLength(previewDeliveryCount)
     await page.evaluate(async () => {
       const { stopTestCapture } = await import('../src/testing/runtime-access')
+
       stopTestCapture('stroke-preview-deliveries')
     })
     await page.waitForTimeout(200)
 
     const after = await getTransactionSnapshot(page)
+
     expect(after.undoCount).toBe(before.undoCount + 1)
     expect(after.isTransacting).toBe(0)
   })
@@ -593,6 +632,7 @@ test.describe('Property Management', () => {
     await createVectorPath(page, 0.3, 0.3, 0.2, 0.2)
     await page.evaluate(async () => {
       const core = (await import('../src/testing/runtime-access')).core
+
       core.setSystemProperty('selectedVectorPoint', null)
       core.setSystemProperty('pathEditingVectorId', null)
       core.setSystemProperty('pathEditingMode', false)
@@ -600,6 +640,7 @@ test.describe('Property Management', () => {
     await page.waitForTimeout(120)
 
     const propertiesPanel = getPropertiesPanel(page)
+
     await expect(
       propertiesPanel.getByTestId('prop-fills-section')
     ).toBeVisible()
@@ -612,13 +653,16 @@ test.describe('Property Management', () => {
 
     const propertiesPanel = getPropertiesPanel(page)
     const xInput = propertiesPanel.getByTestId('prop-vector-point-x')
+
     await expect(xInput).toBeVisible()
 
     const before = await getSelectedVectorPointProjection(page)
+
     expect(before).not.toBeNull()
     if (!before) {
       return
     }
+
     const beforeHistory = await getTransactionSnapshot(page)
     const nextX = before.computed.x + 48
 
@@ -632,6 +676,7 @@ test.describe('Property Management', () => {
         computed: { x: nextX }
       })
     const after = await getSelectedVectorPointProjection(page)
+
     expect(after?.rendered).not.toEqual(before.rendered)
     expect((await getTransactionSnapshot(page)).undoCount).toBe(
       beforeHistory.undoCount + 1
@@ -659,24 +704,29 @@ test.describe('Property Management', () => {
     await createRectangle(page, 0.3, 0.3)
 
     const initialFillColor = await getSelectedFillColor(page)
+
     expect(initialFillColor).not.toBeNull()
 
     const propertiesPanel = getPropertiesPanel(page)
+
     await propertiesPanel
       .getByTestId('prop-fill-color-picker-0-trigger')
       .click()
     const colorHexInput = page.getByTestId('prop-fill-color-picker-0-hex')
+
     await colorHexInput.fill('FF0000')
     await colorHexInput.press('Enter')
     await page.waitForTimeout(200)
 
     const selectedFillColor = await getSelectedFillColor(page)
+
     expect(selectedFillColor).toBe('#ff0000')
 
     await undo(page)
     await page.waitForTimeout(200)
 
     const fillColorAfterUndo = await getSelectedFillColor(page)
+
     expect(fillColorAfterUndo).toBe(initialFillColor)
   })
 
@@ -686,16 +736,19 @@ test.describe('Property Management', () => {
     await createRectangle(page, 0.3, 0.3)
 
     const initialFillColor = await getSelectedFillColor(page)
+
     expect(initialFillColor).not.toBeNull()
 
     const before = await getTransactionSnapshot(page)
 
     const propertiesPanel = getPropertiesPanel(page)
+
     await propertiesPanel
       .getByTestId('prop-fill-color-picker-0-trigger')
       .click()
     const palette = page.getByTestId('prop-fill-color-picker-0-saturation')
     const paletteBox = await palette.boundingBox()
+
     expect(paletteBox).not.toBeNull()
     if (!paletteBox) {
       return
@@ -705,6 +758,7 @@ test.describe('Property Management', () => {
     await page.evaluate(async () => {
       const { startSharedChannelCapture } =
         await import('../src/testing/runtime-access')
+
       startSharedChannelCapture('fill-preview-deliveries', 'props')
     })
     await page.mouse.down()
@@ -718,9 +772,11 @@ test.describe('Property Management', () => {
     await page.waitForTimeout(120)
 
     const duringFirstInput = await getTransactionSnapshot(page)
+
     expect(duringFirstInput.undoCount).toBe(before.undoCount)
     expect(duringFirstInput.isTransacting).toBeGreaterThan(0)
     const colorDuringDrag = await getSelectedFillColor(page)
+
     expect(colorDuringDrag).not.toBe(initialFillColor)
 
     await page.mouse.move(
@@ -733,14 +789,18 @@ test.describe('Property Management', () => {
     await page.waitForTimeout(120)
 
     const duringDragUpdates = await getTransactionSnapshot(page)
+
     expect(duringDragUpdates.undoCount).toBe(before.undoCount)
     expect(duringDragUpdates.isTransacting).toBeGreaterThan(0)
     const finalColor = await getSelectedFillColor(page)
+
     expect(finalColor).not.toBe(initialFillColor)
     const previewDeliveries = await page.evaluate(async () => {
       const { readTestCapture } = await import('../src/testing/runtime-access')
+
       return readTestCapture('fill-preview-deliveries')
     })
+
     expect(previewDeliveries).toContainEqual(
       expect.objectContaining({
         options: expect.objectContaining({ sharedDelivery: 'immediate' })
@@ -751,16 +811,20 @@ test.describe('Property Management', () => {
     await page.mouse.up()
     const finalDeliveries = await page.evaluate(async () => {
       const { readTestCapture } = await import('../src/testing/runtime-access')
+
       return readTestCapture('fill-preview-deliveries')
     })
+
     expect(finalDeliveries).toHaveLength(previewDeliveryCount)
     await page.evaluate(async () => {
       const { stopTestCapture } = await import('../src/testing/runtime-access')
+
       stopTestCapture('fill-preview-deliveries')
     })
     await page.waitForTimeout(200)
 
     const afterMouseUp = await getTransactionSnapshot(page)
+
     expect(afterMouseUp.undoCount).toBe(before.undoCount + 1)
     expect(afterMouseUp.isTransacting).toBe(0)
     expect(await getSelectedFillColor(page)).toBe(finalColor)
@@ -769,6 +833,7 @@ test.describe('Property Management', () => {
     await page.waitForTimeout(200)
 
     const fillColorAfterUndo = await getSelectedFillColor(page)
+
     expect(fillColorAfterUndo).toBe(initialFillColor)
   })
 
@@ -776,6 +841,7 @@ test.describe('Property Management', () => {
     await createRectangle(page, 0.3, 0.3)
 
     const propertiesPanel = getPropertiesPanel(page)
+
     await propertiesPanel
       .getByTestId('prop-fill-color-picker-0-trigger')
       .click()
@@ -791,6 +857,7 @@ test.describe('Property Management', () => {
     const stopHexInput = page.getByTestId(
       'prop-fill-gradient-stop-color-picker-0-1-hex'
     )
+
     await stopHexInput.fill('00FF00')
     await stopHexInput.press('Enter')
     await page.waitForTimeout(200)
@@ -802,6 +869,7 @@ test.describe('Property Management', () => {
     page
   }) => {
     const browserErrors: string[] = []
+
     page.on('pageerror', (error) => browserErrors.push(error.message))
     page.on('console', (message) => {
       if (message.type() === 'error') {
@@ -811,6 +879,7 @@ test.describe('Property Management', () => {
     await createRectangle(page, 0.3, 0.3)
 
     const propertiesPanel = getPropertiesPanel(page)
+
     await propertiesPanel
       .getByTestId('prop-fill-color-picker-0-trigger')
       .click()
@@ -818,12 +887,14 @@ test.describe('Property Management', () => {
     await page.waitForTimeout(120)
 
     const initialPosition = await getSelectedGradientStopPosition(page, 1)
+
     expect(initialPosition).not.toBeNull()
     const before = await getTransactionSnapshot(page)
     const strip = page.getByTestId('prop-fill-gradient-strip-0')
     const stop = page.getByTestId('prop-fill-gradient-stop-0-1')
     const stripBox = await strip.boundingBox()
     const stopBox = await stop.boundingBox()
+
     expect(stripBox).not.toBeNull()
     expect(stopBox).not.toBeNull()
     if (!stripBox || !stopBox) {
@@ -833,6 +904,7 @@ test.describe('Property Management', () => {
     await page.evaluate(async () => {
       const { startSharedChannelCapture } =
         await import('../src/testing/runtime-access')
+
       startSharedChannelCapture('gradient-strip-preview-deliveries', 'props')
     })
     await page.mouse.move(stopBox.x + stopBox.width / 2, stopBox.y + 8)
@@ -844,14 +916,18 @@ test.describe('Property Management', () => {
 
     expect(browserErrors).toEqual([])
     const duringPosition = await getSelectedGradientStopPosition(page, 1)
+
     expect(duringPosition).not.toBe(initialPosition)
     const during = await getTransactionSnapshot(page)
+
     expect(during.undoCount).toBe(before.undoCount)
     expect(during.isTransacting).toBeGreaterThan(0)
     const previewDeliveries = await page.evaluate(async () => {
       const { readTestCapture } = await import('../src/testing/runtime-access')
+
       return readTestCapture('gradient-strip-preview-deliveries')
     })
+
     expect(previewDeliveries).toContainEqual(
       expect.objectContaining({
         options: expect.objectContaining({ sharedDelivery: 'immediate' })
@@ -861,16 +937,20 @@ test.describe('Property Management', () => {
     await page.mouse.up()
     const finalDeliveries = await page.evaluate(async () => {
       const { readTestCapture } = await import('../src/testing/runtime-access')
+
       return readTestCapture('gradient-strip-preview-deliveries')
     })
+
     expect(finalDeliveries).toHaveLength(previewDeliveries.length)
     await page.evaluate(async () => {
       const { stopTestCapture } = await import('../src/testing/runtime-access')
+
       stopTestCapture('gradient-strip-preview-deliveries')
     })
     await page.waitForTimeout(160)
 
     const after = await getTransactionSnapshot(page)
+
     expect(after.undoCount).toBe(before.undoCount + 1)
     expect(after.isTransacting).toBe(0)
 
@@ -883,6 +963,7 @@ test.describe('Property Management', () => {
     page
   }) => {
     const browserErrors: string[] = []
+
     page.on('pageerror', (error) => browserErrors.push(error.message))
     page.on('console', (message) => {
       if (message.type() === 'error') {
@@ -892,6 +973,7 @@ test.describe('Property Management', () => {
     await createRectangle(page, 0.3, 0.3)
 
     const propertiesPanel = getPropertiesPanel(page)
+
     await propertiesPanel
       .getByTestId('prop-fill-color-picker-0-trigger')
       .click()
@@ -899,6 +981,7 @@ test.describe('Property Management', () => {
     await page.waitForTimeout(120)
 
     const initialStopColor = await getSelectedGradientStopColor(page, 1)
+
     expect(initialStopColor).not.toBeNull()
 
     await page
@@ -910,6 +993,7 @@ test.describe('Property Management', () => {
       'prop-fill-gradient-stop-color-picker-0-1-saturation'
     )
     const paletteBox = await palette.boundingBox()
+
     expect(paletteBox).not.toBeNull()
     if (!paletteBox) {
       return
@@ -919,6 +1003,7 @@ test.describe('Property Management', () => {
     await page.evaluate(async () => {
       const { startSharedChannelCapture } =
         await import('../src/testing/runtime-access')
+
       startSharedChannelCapture('gradient-stop-preview-deliveries', 'props')
     })
     await page.mouse.down()
@@ -933,14 +1018,18 @@ test.describe('Property Management', () => {
 
     expect(browserErrors).toEqual([])
     const duringDrag = await getTransactionSnapshot(page)
+
     expect(duringDrag.undoCount).toBe(before.undoCount)
     expect(duringDrag.isTransacting).toBeGreaterThan(0)
     const colorDuringDrag = await getSelectedGradientStopColor(page, 1)
+
     expect(colorDuringDrag).not.toBe(initialStopColor)
     const previewDeliveries = await page.evaluate(async () => {
       const { readTestCapture } = await import('../src/testing/runtime-access')
+
       return readTestCapture('gradient-stop-preview-deliveries')
     })
+
     expect(previewDeliveries).toContainEqual(
       expect.objectContaining({
         options: expect.objectContaining({ sharedDelivery: 'immediate' })
@@ -951,16 +1040,20 @@ test.describe('Property Management', () => {
     await page.mouse.up()
     const finalDeliveries = await page.evaluate(async () => {
       const { readTestCapture } = await import('../src/testing/runtime-access')
+
       return readTestCapture('gradient-stop-preview-deliveries')
     })
+
     expect(finalDeliveries).toHaveLength(previewDeliveryCount)
     await page.evaluate(async () => {
       const { stopTestCapture } = await import('../src/testing/runtime-access')
+
       stopTestCapture('gradient-stop-preview-deliveries')
     })
     await page.waitForTimeout(200)
 
     const afterMouseUp = await getTransactionSnapshot(page)
+
     expect(afterMouseUp.undoCount).toBe(before.undoCount + 1)
     expect(afterMouseUp.isTransacting).toBe(0)
 
@@ -976,6 +1069,7 @@ test.describe('Property Management', () => {
     await createRectangle(page, 0.3, 0.3)
 
     const propertiesPanel = getPropertiesPanel(page)
+
     await propertiesPanel
       .getByTestId('prop-fill-color-picker-0-trigger')
       .click()
@@ -994,6 +1088,7 @@ test.describe('Property Management', () => {
     const firstStopHexInput = page.getByTestId(
       'prop-fill-gradient-stop-color-picker-0-0-hex'
     )
+
     await expect(firstStopHexInput).toBeVisible()
     await expect(firstStopHexInput).toHaveValue('CCCCCC')
   })
@@ -1020,6 +1115,7 @@ test.describe('Property Management', () => {
     const firstElement = contentsPanel
       .locator('[data-layer-element="true"]')
       .first()
+
     await firstElement.click()
     await page.waitForTimeout(200)
 
@@ -1045,6 +1141,7 @@ test.describe('Property Management', () => {
 
     // Focus on X input
     const xInput = propertiesPanel.getByTestId('prop-x')
+
     await xInput.focus()
 
     // Press Tab to move to Y input
@@ -1052,6 +1149,7 @@ test.describe('Property Management', () => {
 
     // Verify Y input is now focused
     const yInput = propertiesPanel.getByTestId('prop-y')
+
     await expect(yInput).toBeFocused()
   })
 })

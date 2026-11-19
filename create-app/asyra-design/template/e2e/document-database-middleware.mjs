@@ -8,6 +8,7 @@ const MAX_DOCUMENT_BYTES = 64 * 1024 * 1024
 
 const sendJson = (response, statusCode, payload) => {
   const body = JSON.stringify(payload)
+
   response.statusCode = statusCode
   response.setHeader('cache-control', 'no-store')
   response.setHeader('content-type', 'application/json; charset=utf-8')
@@ -23,6 +24,7 @@ const readJsonBody = async (request) => {
     if (byteLength > MAX_DOCUMENT_BYTES) {
       throw new Error('Document database request exceeds the E2E byte limit')
     }
+
     chunks.push(chunk)
   }
 
@@ -42,8 +44,10 @@ export const createDocumentDatabaseMiddleware = ({
 
   return async (request, response, next) => {
     const url = new URL(request.url ?? '/', 'http://e2e.local')
+
     if (!url.pathname.startsWith(DOCUMENT_ENDPOINT_PREFIX)) {
       next()
+
       return
     }
 
@@ -57,6 +61,7 @@ export const createDocumentDatabaseMiddleware = ({
       BOOTSTRAP_CHECKPOINT_SUFFIX
     )
     let encodedFileId = encodedDocumentPath
+
     if (isPersistenceBatchRequest) {
       encodedFileId = encodedDocumentPath.slice(
         0,
@@ -68,16 +73,20 @@ export const createDocumentDatabaseMiddleware = ({
         -BOOTSTRAP_CHECKPOINT_SUFFIX.length
       )
     }
+
     if (!encodedFileId) {
       sendJson(response, 404, { error: 'Document fileId is required' })
+
       return
     }
 
     let fileId
+
     try {
       fileId = decodeURIComponent(encodedFileId)
     } catch {
       sendJson(response, 400, { error: 'Document fileId is invalid' })
+
       return
     }
 
@@ -88,16 +97,22 @@ export const createDocumentDatabaseMiddleware = ({
           sendJson(response, 405, {
             error: 'Document bootstrap checkpoint method is unsupported'
           })
+
           return
         }
+
         if (typeof readBootstrapCheckpoint !== 'function') {
           sendJson(response, 503, {
             error: 'Document bootstrap checkpoint reader is unavailable'
           })
+
           return
         }
+
         const checkpoint = await readBootstrapCheckpoint(fileId)
+
         sendJson(response, 200, checkpoint)
+
         return
       }
 
@@ -107,15 +122,20 @@ export const createDocumentDatabaseMiddleware = ({
           sendJson(response, 405, {
             error: 'Document persistence batch method is unsupported'
           })
+
           return
         }
+
         if (typeof materializePersistenceBatch !== 'function') {
           sendJson(response, 503, {
             error: 'Document persistence materializer is unavailable'
           })
+
           return
         }
+
         const batch = await readJsonBody(request)
+
         if (
           typeof batch !== 'object' ||
           batch === null ||
@@ -124,10 +144,14 @@ export const createDocumentDatabaseMiddleware = ({
           sendJson(response, 400, {
             error: 'Document persistence batch identity is invalid'
           })
+
           return
         }
+
         const acknowledgement = await materializePersistenceBatch(batch)
+
         sendJson(response, 200, acknowledgement)
+
         return
       }
 
@@ -135,27 +159,33 @@ export const createDocumentDatabaseMiddleware = ({
         sendJson(response, 200, {
           document: documents.has(fileId) ? documents.get(fileId) : null
         })
+
         return
       }
 
       if (request.method === 'PUT') {
         const payload = await readJsonBody(request)
+
         if (
           typeof payload !== 'object' ||
           payload === null ||
           !Object.hasOwn(payload, 'document')
         ) {
           sendJson(response, 400, { error: 'Document payload is invalid' })
+
           return
         }
+
         documents.set(fileId, payload.document)
         sendJson(response, 200, { ok: true })
+
         return
       }
 
       if (request.method === 'DELETE') {
         documents.delete(fileId)
         sendJson(response, 200, { ok: true })
+
         return
       }
 

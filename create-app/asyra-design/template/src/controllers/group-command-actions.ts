@@ -16,6 +16,7 @@ export const runGroupCommand = (
     const featureApi = getFeature(
       FeatureNames.GROUP_ELEMENTS
     ) as GroupCommandFeatureAPI
+
     return featureApi.execute?.(command) ?? null
   } catch {
     return null

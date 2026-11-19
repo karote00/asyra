@@ -239,7 +239,7 @@ it.each([
     reviewIds: ['a']
   }
 ])(
-  'keeps confirmed visibility identities and ordered $status outcomes',
+  'keeps confirmed visibility identities and ordered $status outcomes - case %#',
   async ({ ids, values, status }) => {
     const method = vi.fn(() => values)
     const action = createBasicApiActions(() => ({
@@ -279,7 +279,7 @@ it.each([
   { ids: undefined, values: ['changed'] },
   { ids: [''], values: ['changed'] }
 ])(
-  'rejects malformed visibility receipt alignment without certifying target identities',
+  'rejects malformed visibility receipt alignment without certifying target identities - case %#',
   async ({ ids, values }) => {
     const action = createBasicApiActions(() => ({
       core: {},
@@ -504,10 +504,10 @@ it('versions selected-owner property semantics separately from read and structur
     'api_fill_shareFillAtIndex',
     'api_stroke_updateStrokeFieldsBatch'
   ]) {
-    let revision = 9
+    let revision = 11
 
     if (name.startsWith('api_core_')) {
-      revision = 8
+      revision = 9
     }
 
     if (name === 'api_element_setElementsVisible') {
@@ -522,7 +522,7 @@ it('versions selected-owner property semantics separately from read and structur
   expect(
     actions.find((action) => action.name === 'api_core_getElementComputedData')
       ?.revision
-  ).toBe(2)
+  ).toBe(3)
 })
 
 it('rejects misaligned creation receipts while preserving acknowledged IDs', async () => {
@@ -720,3 +720,119 @@ it.each(['api_core_createElementsInParent', 'api_core_moveElements'])(
     })
   }
 )
+
+it('describes registered system context without requiring absent preset properties', () => {
+  const contract = basicApiContracts.find(
+    (item) => item.method === 'getSystemContextSnapshot'
+  )
+
+  if (!contract) {
+    throw Error('Missing system context contract')
+  }
+
+  for (const value of [
+    {},
+    { selectedElementIds: ['a'] },
+    {
+      selectedElementIds: ['a'],
+      hoveredElementId: null,
+      mousePosition: { x: 2, y: 3 },
+      customMode: 'editing'
+    }
+  ]) {
+    const result = describeBasicApiResult(contract, value)
+
+    expect(result.value).toEqual(value)
+    expect(
+      operationInputIssue(result.value, contract.result.valueSchema)
+    ).toBeUndefined()
+  }
+
+  for (const value of [
+    { selectedElementIds: [7] },
+    { hoveredElementId: false },
+    { mousePosition: { x: 2 } },
+    { mousePosition: { x: 2, y: '3' } }
+  ]) {
+    expect(
+      operationInputIssue(value, contract.result.valueSchema)
+    ).toBeDefined()
+  }
+})
+
+it('projects inherited rectangle coordinates without fabricating missing fields', () => {
+  const contract = basicApiContracts.find(
+    (item) => item.owner === 'core' && item.method === 'getCanvasBounds'
+  )
+
+  if (!contract) {
+    throw Error('Missing rectangle contract')
+  }
+
+  const rect = new DOMRect(3, 4, 50, 60)
+
+  expect(describeBasicApiResult(contract, rect).value).toEqual({
+    x: 3,
+    y: 4,
+    width: 50,
+    height: 60,
+    left: 3,
+    right: 53,
+    top: 4,
+    bottom: 64
+  })
+  const malformed = describeBasicApiResult(contract, { x: 3, y: 4 })
+
+  expect(
+    operationInputIssue(malformed.value, contract.result.valueSchema)
+  ).toBeDefined()
+  expect(describeBasicApiResult(contract, null).value).toBeNull()
+})
+
+it('converts absent optional read properties to JSON omission without hiding invalid required values', () => {
+  const contract = basicApiContracts.find(
+    (item) => item.method === 'getVectorAnchorPointAtWorkspacePos'
+  )
+
+  if (!contract) {
+    throw Error('Missing point contract')
+  }
+
+  const point = {
+    id: 'point',
+    x: 1,
+    y: 2,
+    type: 'sharp',
+    inHandle: null,
+    outHandle: null,
+    isMove: undefined
+  }
+  const result = describeBasicApiResult(contract, { point, index: 0 })
+
+  expect(result.value).toEqual({
+    point: {
+      id: 'point',
+      x: 1,
+      y: 2,
+      type: 'sharp',
+      inHandle: null,
+      outHandle: null
+    },
+    index: 0
+  })
+  expect(
+    operationInputIssue(result.value, contract.result.valueSchema)
+  ).toBeUndefined()
+  expect(Object.hasOwn(point, 'isMove')).toBe(true)
+  for (const wrong of [
+    { ...point, x: undefined },
+    { ...point, isMove: 'true' }
+  ]) {
+    expect(
+      operationInputIssue(
+        describeBasicApiResult(contract, { point: wrong, index: 0 }).value,
+        contract.result.valueSchema
+      )
+    ).toBeDefined()
+  }
+})

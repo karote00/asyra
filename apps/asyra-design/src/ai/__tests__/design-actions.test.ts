@@ -1,3 +1,4 @@
+import { requiredRecord } from '../../__tests__/assert-result'
 import { deliverPreparedDesign } from '../prepared-design'
 import recoveryFixture from '../../../server/__tests__/fixtures/recorded-101/pattern-budget-recovery-20261023.json'
 import { describe, expect, it, vi } from 'vitest'
@@ -11,11 +12,18 @@ import {
   type PreparedDesignApis
 } from '../design-actions'
 import type { PreparedDesign } from '../prepared-design'
+import { createAiConversationController } from '../conversation'
+import {
+  AiActionExecutionError,
+  registeredRecipeOutputAt
+} from '@asyra/ai-agent-runtime'
+import { operationInputIssue } from '../../../server/operation-input-schema'
 
-const fixture = () =>
+const fixture = (identity = 'application', rootKey?: string) =>
   prepareDesign(
     {
       type: 'frame',
+      ...(rootKey ? { key: rootKey } : {}),
       name: 'Editorial page',
       width: 800,
       height: 600,
@@ -41,7 +49,7 @@ const fixture = () =>
         }
       ]
     },
-    'application'
+    identity
   )
 
 const apis = (): PreparedDesignApis => ({
@@ -58,7 +66,9 @@ const apis = (): PreparedDesignApis => ({
 
   getElementType: () => undefined,
 
-  create: vi.fn((entries) => entries.map((d) => d.id)),
+  create: vi.fn<PreparedDesignApis['create']>((entries) =>
+    entries.map((d) => d.id)
+  ),
   select: vi.fn()
 })
 
@@ -68,6 +78,56 @@ const mutable = () =>
   JSON.parse(JSON.stringify(deliverPreparedDesign(fixture())))
 
 describe('prepared editable design application', () => {
+  it('carries the actual creation identity into the next conversation turn', async () => {
+    const design = fixture()
+    const result = await createPreparedDesignAction(
+      apis(),
+      async () => undefined
+    ).execute({ design: deliverPreparedDesign(design) }, context())
+    const execute = vi
+      .fn()
+      .mockResolvedValueOnce({
+        status: 'executed',
+        actionResults: [
+          {
+            actionId: 'previous',
+            actionName: 'apply_prepared_design',
+            result: {
+              status: 'complete',
+              compositionId: 'previous-root',
+              roleToElementIds: { previous: ['previous-child'] }
+            }
+          }
+        ]
+      })
+      .mockResolvedValueOnce({
+        status: 'executed',
+        actionResults: [
+          { actionId: 'created', actionName: 'apply_prepared_design', result }
+        ]
+      })
+      .mockResolvedValue({ status: 'executed', actionResults: [] })
+    const controller = createAiConversationController({
+      feature: {
+        execute,
+
+        cancel: () => true
+      },
+
+      getElementType: () => 'group'
+    })
+
+    await controller.submit('Create the first design')
+    await controller.submit('Create a new design')
+    await controller.submit('Adjust the new design')
+    expect(execute.mock.calls[2][0].metadata.aiTargets).toEqual({
+      compositionId: design.rootId,
+      roleToElementIds: Object.fromEntries(
+        Object.entries(design.keyToId).map(([key, id]) => [key, [id]])
+      )
+    })
+  })
+
   it('records canonical phase work only during its own creation callbacks', async () => {
     const api = apis()
 
@@ -103,7 +163,7 @@ describe('prepared editable design application', () => {
     let inMutation = false
     let members = 0
 
-    api.create = vi.fn((entries) => {
+    api.create = vi.fn<PreparedDesignApis['create']>((entries) => {
       expect(inMutation).toBe(true)
 
       return entries.map((d) => d.id)
@@ -250,17 +310,20 @@ describe('prepared editable design application', () => {
     (d: ReturnType<typeof mutable>) => {
       d.entries[0].descriptor.children = ['existing']
     }
-  ])('rejects malformed whole artifacts before writing', async (change) => {
-    const design = mutable()
+  ])(
+    'rejects malformed whole artifacts before writing - case %#',
+    async (change) => {
+      const design = mutable()
 
-    change(design)
-    const api = apis()
+      change(design)
+      const api = apis()
 
-    await expect(
-      createPreparedDesignAction(api).execute({ design }, context())
-    ).rejects.toThrow()
-    expect(api.create).not.toHaveBeenCalled()
-  })
+      await expect(
+        createPreparedDesignAction(api).execute({ design }, context())
+      ).rejects.toThrow()
+      expect(api.create).not.toHaveBeenCalled()
+    }
+  )
   it('admits native cubic topology and rejects disconnected or foreign controls before writes', async () => {
     const make = () =>
       JSON.parse(
@@ -518,7 +581,7 @@ it('measures canonical creation separately from cooperative paint waits', async 
   let clock = 0
   const api = apis()
 
-  api.create = vi.fn((entries) => {
+  api.create = vi.fn<PreparedDesignApis['create']>((entries) => {
     clock += 3
 
     return entries.map((d) => d.id)
@@ -570,13 +633,12 @@ it('yields to the host without requiring animation frames between prepared batch
   }
 })
 
-it('returns compact identity evidence without constructing full mapping receipts', async () => {
-  const result = await createPreparedDesignAction(
-    apis(),
-    async () => undefined
-  ).execute(
-    { design: deliverPreparedDesign(fixture()), response: 'compact' },
-    context()
+it('returns all acknowledged identity data before model delivery selection', async () => {
+  const result = requiredRecord(
+    await createPreparedDesignAction(apis(), async () => undefined).execute(
+      { design: deliverPreparedDesign(fixture()) },
+      context()
+    )
   )
 
   expect(result).toMatchObject({
@@ -584,9 +646,15 @@ it('returns compact identity evidence without constructing full mapping receipts
     compositionId: fixture().rootId,
     appliedElementCount: 3
   })
-  expect(result).not.toHaveProperty('appliedElementIds')
-  expect(result).not.toHaveProperty('keyToId')
-  expect(result).not.toHaveProperty('roleToElementIds')
+  expect(result.appliedElementIds).toEqual(
+    fixture().entries.map((entry) => entry.descriptor.id)
+  )
+  expect(result.keyToId).toEqual(fixture().keyToId)
+  expect(result.roleToElementIds).toEqual(
+    Object.fromEntries(
+      Object.entries(fixture().keyToId).map(([key, id]) => [key, [id]])
+    )
+  )
 })
 
 it.each(['frame', 'group'])(
@@ -634,8 +702,7 @@ it('appends a ready part to an existing custom container without recreating earl
   ).execute(
     {
       design: deliverPreparedDesign(part),
-      parentId: 'existing',
-      response: 'compact'
+      parentId: 'existing'
     },
     context()
   )
@@ -898,7 +965,7 @@ it('rejects changed reviewed attachment evidence at browser admission before any
     )
   ).rejects.toThrow(/evidence/i)
   expect(api.create).not.toHaveBeenCalled()
-  api.create = vi.fn((entries) => {
+  api.create = vi.fn<PreparedDesignApis['create']>((entries) => {
     evidence.isCurrent.mockReturnValue(false)
 
     return entries.map((entry) => entry.id)
@@ -982,10 +1049,11 @@ it('continues budget partitions in one canonical root and refuses duplicate appl
 
     getElementType: (id) => entries.get(id)?.type,
 
-    getElementMetadata: (id) =>
-      entries.has(id)
-        ? { type: entries.get(id)?.type, parentId: parents.get(id) }
-        : undefined,
+    getElementMetadata: (id) => {
+      const entry = entries.get(id)
+
+      return entry ? { type: entry.type, parentId: parents.get(id) } : undefined
+    },
 
     getPlacement: (id) => entries.get(id),
 
@@ -1089,7 +1157,7 @@ it('continues budget partitions in one canonical root and refuses duplicate appl
     context()
   )
 
-  expect(result.compositionId).toBe(rootId)
+  expect(requiredRecord(result).compositionId).toBe(rootId)
   expect(capture).toHaveBeenCalledWith(
     rootId,
     [],
@@ -1114,56 +1182,58 @@ it('continues budget partitions in one canonical root and refuses duplicate appl
   expect(entries.size).toBe(13095)
 })
 
-it.each(['compact', 'full'] as const)(
-  'retains the confirmed prefix after interruption in %s mode',
-  async (response) => {
-    const design = fixture()
-    const api = apis()
-    const controller = new AbortController()
-    const action = createPreparedDesignAction(api, async () =>
-      controller.abort()
-    )
-    const failure = await action
-      .execute(
-        { design: deliverPreparedDesign(design), response },
-        {
-          signal: controller.signal,
+it('retains every confirmed identity after interruption', async () => {
+  const design = fixture()
+  const api = apis()
+  const controller = new AbortController()
+  const action = createPreparedDesignAction(api, async () => controller.abort())
+  const failure = await action
+    .execute(
+      { design: deliverPreparedDesign(design) },
+      {
+        signal: controller.signal,
 
-          runMutation: async (write, settled) => {
-            const result = write()
+        runMutation: async (write, settled) => {
+          const result = write()
 
-            settled?.(result)
+          settled?.(result)
 
-            return result
-          }
-        }
-      )
-      .catch((error: unknown) => error)
-
-    expect(failure).toMatchObject({
-      receipt: {
-        settlement: 'partial',
-        result: {
-          status: 'partial',
-          compositionId: design.rootId,
-          appliedElementCount: 1,
-          plannedElementCount: 3,
-          appliedRange: { start: 0, end: 1 },
-          recovery: expect.stringContaining('Do not replay')
+          return result
         }
       }
-    })
-    expect(api.create).toHaveBeenCalledTimes(1)
-    expect(api.select).not.toHaveBeenCalled()
-    if (response === 'full') {
-      expect(failure).toMatchObject({
-        receipt: {
-          result: { appliedElementIds: [design.rootId] }
-        }
-      })
+    )
+    .catch((error: unknown) => error)
+
+  expect(failure).toMatchObject({
+    receipt: {
+      settlement: 'partial',
+      result: {
+        status: 'partial',
+        compositionId: design.rootId,
+        appliedElementCount: 1,
+        plannedElementCount: 3,
+        appliedRange: { start: 0, end: 1 },
+        recovery: expect.stringContaining('Do not replay')
+      }
     }
+  })
+  expect(failure).toBeInstanceOf(AiActionExecutionError)
+  if (!(failure instanceof AiActionExecutionError) || !failure.receipt) {
+    throw Error('Expected acknowledged application failure')
   }
-)
+
+  expect(
+    operationInputIssue(failure.receipt.result, action.outputSchema)
+  ).toBeUndefined()
+  expect(failure.receipt.result).toMatchObject({
+    timing: { elementCount: 1, sliceCount: 1 }
+  })
+  expect(api.create).toHaveBeenCalledTimes(1)
+  expect(api.select).not.toHaveBeenCalled()
+  expect(failure).toMatchObject({
+    receipt: { result: { appliedElementIds: [design.rootId] } }
+  })
+})
 
 it('retains all acknowledged writes when final selection fails without marking delivery complete', async () => {
   const api = apis()
@@ -1190,3 +1260,151 @@ it('retains all acknowledged writes when final selection fails without marking d
   expect(api.create).toHaveBeenCalledTimes(3)
   expect(api.select).toHaveBeenCalledTimes(1)
 })
+
+it('accounts for failed creation and settlement work in the acknowledged timing snapshot', async () => {
+  const api = apis()
+  let clock = 0
+  let attempts = 0
+
+  api.create = vi.fn<PreparedDesignApis['create']>((entries) => {
+    attempts++
+    clock += attempts === 1 ? 4 : 6
+    if (attempts === 2) {
+      throw Error('Child creation rejected')
+    }
+
+    return entries.map((entry) => entry.id)
+  })
+  const action = createPreparedDesignAction(
+    api,
+    async () => undefined,
+    () => clock
+  )
+  const failure = await action
+    .execute(
+      { design: deliverPreparedDesign(fixture()) },
+      {
+        signal: new AbortController().signal,
+
+        runMutation: async (write, settled) => {
+          clock += 3
+          try {
+            const value = write()
+
+            settled?.(value)
+
+            return value
+          } finally {
+            clock += 2
+          }
+        }
+      }
+    )
+    .catch((error: unknown) => error)
+
+  expect(failure).toBeInstanceOf(AiActionExecutionError)
+  if (!(failure instanceof AiActionExecutionError) || !failure.receipt) {
+    throw Error('Expected acknowledged application failure')
+  }
+
+  expect(
+    operationInputIssue(failure.receipt.result, action.outputSchema)
+  ).toBeUndefined()
+  expect(failure.receipt).toMatchObject({
+    settlement: 'partial',
+    result: {
+      appliedElementCount: 1,
+      timing: {
+        elementCount: 1,
+        sliceCount: 1,
+        totalMs: 20,
+        createMs: 10,
+        transactionMs: 10,
+        orchestrationMs: 0
+      }
+    }
+  })
+  expect(api.create).toHaveBeenCalledTimes(2)
+  expect(api.select).not.toHaveBeenCalled()
+})
+
+it('accepts existing parent identities with document reference semantics', () => {
+  const action = createPreparedDesignAction(apis())
+
+  expect(action.inputSchema).toMatchObject({
+    properties: {
+      parentId: { type: 'string', minLength: 1, 'x-runtime-value': 'document' }
+    }
+  })
+  expect(
+    operationInputIssue({ design: {}, parentId: '' }, action.inputSchema)
+  ).toBeDefined()
+  expect(
+    operationInputIssue(
+      { design: {}, parentId: 'existing' },
+      action.inputSchema
+    )
+  ).toBeUndefined()
+})
+
+it('publishes admitted composition identities as bounded document references', () => {
+  const action = createPreparedDesignAction(apis())
+
+  expect(
+    registeredRecipeOutputAt(action.outputSchema, '/compositionId', true)
+  ).toMatchObject({
+    type: 'string',
+    minLength: 1,
+    maxLength: 256,
+    'x-runtime-value': 'document'
+  })
+})
+
+it.each([256, 257])(
+  'preserves the prepared identity admission boundary at %i characters',
+  async (length) => {
+    const source = fixture()
+    const maximumIdentityLength = Math.max(
+      ...source.entries
+        .flatMap(({ descriptor }) => {
+          if (!Array.isArray(descriptor.fills)) {
+            throw Error('Expected prepared fill entries')
+          }
+
+          const fillIds = descriptor.fills.map((fill) => {
+            const { id } = requiredRecord(fill)
+
+            if (typeof id !== 'string') {
+              throw Error('Expected prepared fill identity')
+            }
+
+            return id
+          })
+
+          return [descriptor.id, ...Object.values(descriptor.props), ...fillIds]
+        })
+        .map((id) => id.length)
+    )
+    const design = fixture(
+      'x'.repeat('application'.length + length - maximumIdentityLength),
+      'root'
+    )
+    const api = apis()
+    const action = createPreparedDesignAction(api, async () => undefined)
+    const result = action.execute(
+      { design: deliverPreparedDesign(design) },
+      context()
+    )
+
+    if (length === 257) {
+      await expect(result).rejects.toThrow('Prepared design is invalid')
+      expect(api.create).not.toHaveBeenCalled()
+    } else {
+      const value = await result
+
+      expect(value).toMatchObject({ compositionId: design.rootId })
+      expect(operationInputIssue(value, action.outputSchema)).toBeUndefined()
+      expect(api.create).toHaveBeenCalledTimes(3)
+    }
+  }
+)

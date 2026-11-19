@@ -26,3 +26,20 @@ Before editing, answer these questions:
 
 Do not ask an agent to "improve the whole architecture". Give it one product
 behavior, its owner guide, explicit exclusions, and the required checks.
+
+## Embedded design conversation
+
+The in-app Agent supports editable drawing, registered style/structure edits and
+read-only design advice. Ordinary follow-ups retain the conversation brief and
+user reference images; latest explicit revisions override earlier requirements.
+Short clarification answers retain the exact question and offered choices.
+Navigation keeps each unsent draft and its pending image reads separate. Sending
+a draft retires its unfinished reads; add a still-needed image again to a new draft.
+Closing the panel retires its unfinished presentation drafts.
+
+History is bounded to 128 prior turns, 128 KiB of serialized text context and
+8 MiB of serialized source attachments. An over-limit conversation explains how
+to start again with the needed brief and references before making changes. Old
+request-owned tool/evidence handles are never revived by conversation history.
+The Agent still uses supported native editable operations; it does not insert
+raster generations. Successful execution alone does not establish visual fidelity.

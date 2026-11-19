@@ -34,6 +34,7 @@ describe('initAiDrawingProgress', () => {
       }
     )
     const validate = mocks.defineSystemProperty.mock.calls[0]?.[2]?.validate
+
     expect(
       validate?.({
         bounds: { height: 80, width: 120, x: 10, y: 20 },

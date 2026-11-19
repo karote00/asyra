@@ -36,6 +36,7 @@ const getChildren = (page: Page, parentId: string): Promise<string[]> =>
     const element = (
       await import('../src/testing/runtime-access')
     ).core.deps.sceneTree.getElementById(id)
+
     return [...((element?.get('children') as string[] | undefined) ?? [])]
   }, parentId)
 
@@ -45,32 +46,41 @@ const getWorldPositions = (
 ): Promise<Record<string, { x: number; y: number }>> =>
   page.evaluate(async (ids) => {
     const positions: Record<string, { x: number; y: number }> = {}
+
     for (const elementId of ids) {
       let currentId = elementId
       let x = 0
       let y = 0
       const visited = new Set<string>()
+
       while (currentId) {
         if (visited.has(currentId)) {
           throw new Error(`Hierarchy cycle reaches "${currentId}"`)
         }
+
         visited.add(currentId)
         const element = (
           await import('../src/testing/runtime-access')
         ).core.deps.sceneTree.getElementById(currentId)
+
         if (!element) {
           throw new Error(`Missing hierarchy element "${currentId}"`)
         }
+
         if (element.get('type') === 'workspace') {
           break
         }
+
         const computed = element.getAllComputedData()
+
         x += Number(computed.x)
         y += Number(computed.y)
         currentId = String(element.get('parentId') ?? '')
       }
+
       positions[elementId] = { x, y }
     }
+
     return positions
   }, elementIds)
 
@@ -84,13 +94,17 @@ const dragLayerToRow = async (
   const target = layerRow(page, targetId)
   const sourceBox = await source.boundingBox()
   const targetBox = await target.boundingBox()
+
   if (!sourceBox || !targetBox) {
     throw new Error('Layer drag rows must be visible')
   }
+
   let targetY = targetBox.y + targetBox.height / 2
+
   if (zone === 'before') {
     targetY = targetBox.y + 2
   }
+
   if (zone === 'after') {
     targetY = targetBox.y + targetBox.height - 2
   }
@@ -117,6 +131,7 @@ const dragLayerToWorkspace = async (page: Page, sourceId: string) => {
     '[data-layer-drop-workspace="true"]'
   )
   const workspaceBox = await workspace.boundingBox()
+
   if (!sourceBox || !workspaceBox) {
     throw new Error('Layer source and workspace target must be visible')
   }
@@ -148,12 +163,14 @@ test.describe('Asyra Design Layer Tree reparent and reorder', () => {
     await createRectangle(page, 0.7, 0.62)
 
     const initialIds = await getVisibleLayerIds(page)
+
     expect(initialIds).toHaveLength(3)
     const [firstId, secondId, thirdId] = initialIds
     const worldBefore = await getWorldPositions(page, initialIds)
 
     await page.evaluate(async (ids) => {
       const core = (await import('../src/testing/runtime-access')).core
+
       ;(
         window as typeof window & {
           __LayerMoveIdentity?: {
@@ -190,10 +207,12 @@ test.describe('Asyra Design Layer Tree reparent and reorder', () => {
     } finally {
       await page.keyboard.up('Shift')
     }
+
     await expect.poll(() => getSelectedIds(page)).toEqual([secondId, thirdId])
     await pressGroupCommandShortcut(page, 'group')
     await expect.poll(() => getSelectedIds(page)).toHaveLength(1)
     const groupId = (await getSelectedIds(page))[0]
+
     await expect(layerRow(page, groupId)).toBeVisible()
     expect(await getChildren(page, groupId)).toEqual([secondId, thirdId])
 
@@ -230,6 +249,7 @@ test.describe('Asyra Design Layer Tree reparent and reorder', () => {
     } finally {
       await page.keyboard.up('Shift')
     }
+
     await dragLayerToRow(page, secondId, firstId, 'before')
     expect(await getChildren(page, groupId)).toEqual([
       secondId,
@@ -253,9 +273,11 @@ test.describe('Asyra Design Layer Tree reparent and reorder', () => {
           }
         }
       ).__LayerMoveIdentity
+
       if (!stored) {
         throw new Error('Missing Layer move identity evidence')
       }
+
       return {
         scene: ids.every(
           (id, index) =>
@@ -267,15 +289,18 @@ test.describe('Asyra Design Layer Tree reparent and reorder', () => {
         )
       }
     }, initialIds)
+
     expect(identity).toEqual({ scene: true, render: true })
     expect(await getWorldPositions(page, initialIds)).toEqual(worldBefore)
 
     const orderBeforeCancel = await getChildren(page, groupId)
     const sourceBox = await layerRow(page, firstId).boundingBox()
     const targetBox = await layerRow(page, thirdId).boundingBox()
+
     if (!sourceBox || !targetBox) {
       throw new Error('Cancellation rows must be visible')
     }
+
     await page.mouse.move(
       sourceBox.x + sourceBox.width / 2,
       sourceBox.y + sourceBox.height / 2
@@ -293,6 +318,7 @@ test.describe('Asyra Design Layer Tree reparent and reorder', () => {
     )
 
     const finalDocumentDigest = await getCoreDocumentDigest(page)
+
     await expect
       .poll(() => getPersistedDocumentDigest(getCurrentDocumentFileId(page)))
       .toEqual(finalDocumentDigest)
@@ -314,6 +340,7 @@ test.describe('Asyra Design Layer Tree reparent and reorder', () => {
       await page.evaluate(
         async (ids) => {
           const { core } = await import('../src/testing/runtime-access')
+
           return ids.every((id) =>
             Boolean(core.deps.sceneTree.getElementById(id))
           )

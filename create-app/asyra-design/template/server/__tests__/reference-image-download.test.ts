@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { EventEmitter } from 'node:events'
 const network = vi.hoisted(() => ({ request: vi.fn(), lookup: vi.fn() }))
+
 vi.mock('node:https', () => ({ request: network.request }))
 vi.mock('node:dns/promises', () => ({ lookup: network.lookup }))
 afterEach(() => vi.resetAllMocks())
@@ -66,21 +67,25 @@ describe('bounded image transport', () => {
         expect(address).toBe('93.184.216.34')
       })
       const req = new EventEmitter() as EventEmitter & { end: () => void }
+
       req.end = () => {
         const response = Object.assign(new EventEmitter(), {
           statusCode,
           headers,
           destroy: vi.fn()
         })
+
         callback(response)
         queueMicrotask(() => {
           response.emit('data', Buffer.from(body))
           response.emit('end')
         })
       }
+
       return req
     })
   }
+
   it('retains HTTP failure diagnostics and retries only a bounded transient read', async () => {
     network.lookup.mockResolvedValue([{ address: '93.184.216.34', family: 4 }])
     reply(503, { 'content-type': 'text/html' })
@@ -89,6 +94,7 @@ describe('bounded image transport', () => {
       'https://example.org/image.png',
       new AbortController().signal
     )
+
     expect(await result.text()).toBe('original')
     expect(network.request).toHaveBeenCalledTimes(2)
     reply(403, { 'content-type': 'text/html' })
@@ -142,6 +148,7 @@ describe('bounded image transport', () => {
       }
     })
     const controller = new AbortController()
+
     controller.abort()
     await expect(
       downloadReferenceImage('https://example.org/image.png', controller.signal)
@@ -166,6 +173,7 @@ describe('bounded image transport', () => {
       controller.signal
     )
     const assertion = expect(pending).rejects.toThrow()
+
     controller.abort()
     await assertion
     expect(network.request).toHaveBeenCalledOnce()
@@ -182,6 +190,7 @@ describe('bounded image transport', () => {
       'https://example.org/start',
       new AbortController().signal
     )
+
     expect(page.url).toBe('https://example.org/gallery/page')
     expect(await page.response.text()).toContain('<script>')
     expect(network.lookup).toHaveBeenCalledTimes(2)
@@ -212,6 +221,7 @@ describe('bounded image transport', () => {
       'https://example.org/image.png',
       new AbortController().signal
     )
+
     expect(await response.text()).toBe('image')
     expect(network.lookup).toHaveBeenCalledTimes(1)
     expect(network.request.mock.calls[0]?.[1].headers).not.toHaveProperty(
@@ -239,6 +249,7 @@ describe('bounded image transport', () => {
       )
     ).rejects.toThrow()
     const controller = new AbortController()
+
     controller.abort()
     await expect(
       downloadReferenceImage('https://example.org/image.png', controller.signal)

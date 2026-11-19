@@ -17,6 +17,16 @@ Keep these stable where possible:
 
 ## Behavior Contract
 
+Rectangle creation helpers must acknowledge the real handoff before returning:
+the requested tool is active before pointer input, a new rectangle is the single
+canonical selection, the creation transaction is idle, the product has restored
+Select, and the position controls are visible. Fixed sleeps and a compensating
+Select shortcut are not completion evidence. Use bounded state assertions; never
+retry a creation mutation to satisfy a wait. Keep delayed-queue and rejected-input
+counterexamples in `e2e/rectangle-handoff.spec.ts`, using the real App runtime.
+An ordinary failure must retain input/tool/identity observations so a missing
+mutation is distinguishable from an incomplete display update.
+
 Behavior coverage source-of-truth:
 
 - `docs/ai/apps/asyra-design/bdd-features/README.md`
@@ -50,13 +60,18 @@ describe names, or test names.
 The server-response harness must exercise App discovery, paging, recovery and
 image-content construction without an installed AI client. Native successor-request
 and native unfinished-output observation tests are additional protocol evidence:
-set `NATIVE_DELIVERY_CODEX` to an existing executable of the fixture's declared
-version to enable them. These tests use the existing loopback scripted provider,
+set `NATIVE_DELIVERY_CODEX` to an absolute executable path matching
+`scripts/native-client-admission.mjs` (`codex-cli 0.160.0`) to enable them.
+The fixture validates once before allocating listeners or directories. These tests
+use the existing loopback scripted provider,
 not a real model. An explicitly configured missing or wrong-version executable
 fails; do not silently skip it or simulate native success. Without that setting,
 the runner reports these native-only cases as skipped. This does not establish
 native delivery correctness; run the same cases with the configured executable
-for changes to that handoff. App contract and pixel assertions remain mandatory.
+for changes to that handoff. Complete `verify:conversation` rejects missing native
+configuration before running gates; `--list` remains available without a client.
+The admitted path is shared by native fixtures and the browser provider protocol.
+App contract and pixel assertions remain mandatory.
 
 Large saved-input tests retain their complete inputs and correctness assertions.
 Separate preparation, equivalence and repeated timing measurements into bounded

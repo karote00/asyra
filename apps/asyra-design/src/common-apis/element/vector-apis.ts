@@ -183,14 +183,14 @@ type VectorOperationOptions = EVENT_OPTIONS &
     closed?: boolean
   }
 
-export interface AppendVectorAnchorPointOptions extends EVENT_OPTIONS {
+export interface AppendVectorAnchorPointOptions
+  extends EVENT_OPTIONS, VectorOperationIntentOptions {
   startNewSubpath?: boolean
   continuation?: {
     networkId: string
     pointId: string
     side: VectorEndpointSide
   } | null
-  structuralOperationIntent?: StructuralVectorOperationPatchIntent | null
 }
 
 export interface ValidatedVectorComputedPatchRequest {
@@ -879,7 +879,6 @@ const reconcileVectorSelectionAfterTopologyChange = (
 
   if (hasInvalidPointSelection) {
     selectionApis.clearVectorPointSelection({ undoable: false })
-    systemContextApis.setSelectedVectorPoint(null)
   }
 
   const hoveredVectorPoint = systemContextApis.getHoveredVectorPoint()
@@ -898,22 +897,6 @@ const reconcileVectorSelectionAfterTopologyChange = (
     systemContextApis.setHoveredVectorPoint(null)
   }
 
-  const selectedVectorPoint = systemContextApis.getSelectedVectorPoint()
-
-  if (
-    selectedVectorPoint &&
-    selectedVectorPoint.elementId === elementId &&
-    (removedAnchorIds.has(selectedVectorPoint.pointId) ||
-      (selectedVectorPoint.target !== VECTOR_TOKENS.POINT.TARGET.ANCHOR &&
-        !hasHandleTarget(
-          nextTopology,
-          selectedVectorPoint.pointId,
-          selectedVectorPoint.target
-        )))
-  ) {
-    systemContextApis.setSelectedVectorPoint(null)
-  }
-
   const selectedSegments = selectionApis
     .getSelectedVectorSegments()
     .filter((selection) => selection.elementId === elementId)
@@ -923,7 +906,6 @@ const reconcileVectorSelectionAfterTopologyChange = (
 
   if (hasInvalidSegmentSelection) {
     selectionApis.clearVectorSegmentSelection({ undoable: false })
-    systemContextApis.setSelectedVectorSegment(null)
   }
 
   const hoveredVectorSegment = systemContextApis.getHoveredVectorSegment()

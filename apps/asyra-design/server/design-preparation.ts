@@ -1,3 +1,4 @@
+import { DesignInputError } from './design-input-error'
 import { inspectDesignBudget } from './design-budget'
 import { createDesignCheckResults } from './design-check-results'
 import { createHash } from 'node:crypto'
@@ -87,7 +88,7 @@ const record = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
 
 const fail = (message: string): never => {
-  throw new Error(`Invalid design: ${message}`)
+  throw new DesignInputError(`Invalid design: ${message}`)
 }
 
 const finite = (value: unknown, name: string, minimum = 0): number => {
@@ -1090,7 +1091,9 @@ export const createDesignPreparationSession = (
         !record(recipe.linearFields) ||
         !Object.hasOwn(recipe.linearFields, field)
       ) {
-        throw new Error('Select an existing explicit world material field.')
+        throw new DesignInputError(
+          'Select an existing explicit world material field.'
+        )
       }
 
       const revisedRecipe = freeze(
@@ -1195,6 +1198,12 @@ export const createDesignPreparationSession = (
 
     withMaterialSource(input: unknown, sourceId: string) {
       ownership?.assertOwned(sourceId)
+      if (!artifacts.has(sourceId)) {
+        throw new DesignInputError(
+          'Select a current prepared world material source.'
+        )
+      }
+
       const source = recipes.get(sourceId)
 
       if (!record(source) || !record(source.linearFields) || !record(input)) {
@@ -1202,7 +1211,9 @@ export const createDesignPreparationSession = (
       }
 
       if (input.linearFields !== undefined) {
-        throw new Error('materialSourceId conflicts with inline linearFields.')
+        throw new DesignInputError(
+          'materialSourceId conflicts with inline linearFields.'
+        )
       }
 
       return { ...input, linearFields: structuredClone(source.linearFields) }
@@ -1347,7 +1358,7 @@ export const createDesignPreparationSession = (
           recovery.partition === 0 &&
           recovery.continueFromArtifact !== undefined
         ) {
-          throw new Error(
+          throw new DesignInputError(
             'The first partition cannot continue an existing root.'
           )
         }

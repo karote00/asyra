@@ -49,7 +49,9 @@ type SocketServerFailureCode =
 
 class SocketServerFailure extends Error {
   readonly code: SocketServerFailureCode
+
   readonly cause?: unknown
+
   readonly publicationId?: string
 
   constructor(
@@ -77,12 +79,15 @@ const allowedOrigin = appEnvironment.appURL
 const collaborationProfilingEnabled = process.env.COLLABORATION_PROFILE === '1'
 const persistenceBackendURL = (() => {
   const value = process.env.DOCUMENT_PERSISTENCE_BACKEND_URL?.trim()
+
   if (!value) {
     throw new Error(
       'DOCUMENT_PERSISTENCE_BACKEND_URL must define the production persistence backend origin'
     )
   }
+
   const resolved = new URL(value)
+
   if (
     (resolved.protocol !== 'http:' && resolved.protocol !== 'https:') ||
     resolved.username ||
@@ -95,20 +100,29 @@ const persistenceBackendURL = (() => {
       'DOCUMENT_PERSISTENCE_BACKEND_URL must be an http(s) origin'
     )
   }
+
   return resolved.origin
 })()
 const documentPersistenceClient = createHttpDocumentPersistenceClient({
   baseURL: persistenceBackendURL
 })
+
 const persistencePolicyNumber = (name: string, fallback: number): number => {
   const value = process.env[name]?.trim()
-  if (!value) return fallback
+
+  if (!value) {
+    return fallback
+  }
+
   const parsed = Number(value)
+
   if (!Number.isSafeInteger(parsed) || parsed <= 0) {
     throw new Error(`${name} must be a positive integer`)
   }
+
   return parsed
 }
+
 const persistenceFlushIntervalMs = persistencePolicyNumber(
   'DOCUMENT_PERSISTENCE_FLUSH_INTERVAL_MS',
   DEFAULT_DOCUMENT_PERSISTENCE_FLUSH_INTERVAL_MS
@@ -142,11 +156,15 @@ const PUBLICATION_FRAME_SEQUENCE_OFFSET = 44
 const PUBLICATION_FRAME_STRING_UTF8 = 0
 const PUBLICATION_FRAME_STRING_UTF16 = 1
 const publicationFrameTextEncoder = new TextEncoder()
+
 const rounded = (value: number): number => Math.round(value * 1_000) / 1_000
+
 const elapsed = (startedAtMs: number): number => performance.now() - startedAtMs
+
 const epochNow = (): number => performance.timeOrigin + performance.now()
 
 const COLLABORATION_PROFILE_BATCH_SIZE = 8
+
 type CollaborationProfilePrefix =
   | 'AI_COLLABORATION_SERVER_PROFILE'
   | 'AI_COLLABORATION_SERVER_PEER_WRITE'
@@ -181,19 +199,26 @@ const recordCollaborationProfile = (
   evidence: Readonly<Record<string, unknown>>,
   { immediate = false }: Readonly<{ immediate?: boolean }> = {}
 ): void => {
-  if (!collaborationProfilingEnabled) return
+  if (!collaborationProfilingEnabled) {
+    return
+  }
+
   if (immediate) {
     console.log(`${prefix} ${JSON.stringify({ ...evidence, sampleCount: 1 })}`)
+
     return
   }
 
   const current = collaborationProfileBatches.get(prefix)
   const maxima = { ...(current?.maxima ?? {}) }
+
   collaborationProfileMaximumKeys[prefix].forEach((key) => {
     const value = evidence[key]
+
     if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
       return
     }
+
     maxima[key] = Math.max(maxima[key] ?? 0, value)
   })
   const batch = {
@@ -201,8 +226,10 @@ const recordCollaborationProfile = (
     latest: evidence,
     maxima
   }
+
   if (batch.sampleCount < COLLABORATION_PROFILE_BATCH_SIZE) {
     collaborationProfileBatches.set(prefix, batch)
+
     return
   }
 
@@ -307,6 +334,7 @@ interface InboundFrameAdmissionResult {
 }
 
 const rooms = new Map<string, RoomState>()
+
 interface RoomInitialization {
   readonly controller: AbortController
   readonly promise: Promise<RoomState>
@@ -327,11 +355,15 @@ const sendControl = (
   socket: WebSocket,
   message: CollaborationServerMessage
 ): boolean => {
-  if (socket.readyState !== WebSocket.OPEN) return false
+  if (socket.readyState !== WebSocket.OPEN) {
+    return false
+  }
+
   socket.send(encodeCollaborationControlMessage(message), {
     binary: false,
     compress: false
   })
+
   return true
 }
 
@@ -343,6 +375,7 @@ const rawDataToBytes = (data: RawData): Uint8Array => {
     )
     const output = new Uint8Array(byteLength)
     let offset = 0
+
     data.forEach((chunk) => {
       output.set(
         new Uint8Array(chunk.buffer, chunk.byteOffset, chunk.byteLength),
@@ -350,23 +383,37 @@ const rawDataToBytes = (data: RawData): Uint8Array => {
       )
       offset += chunk.byteLength
     })
+
     return output
   }
-  if (data instanceof ArrayBuffer) return new Uint8Array(data)
+
+  if (data instanceof ArrayBuffer) {
+    return new Uint8Array(data)
+  }
+
   return new Uint8Array(data.buffer, data.byteOffset, data.byteLength)
 }
 
 const isWellFormedFrameString = (value: string): boolean => {
   for (let index = 0; index < value.length; index += 1) {
     const code = value.charCodeAt(index)
+
     if (code >= 0xd800 && code <= 0xdbff) {
       const next = value.charCodeAt(index + 1)
-      if (next < 0xdc00 || next > 0xdfff) return false
+
+      if (next < 0xdc00 || next > 0xdfff) {
+        return false
+      }
+
       index += 1
       continue
     }
-    if (code >= 0xdc00 && code <= 0xdfff) return false
+
+    if (code >= 0xdc00 && code <= 0xdfff) {
+      return false
+    }
   }
+
   return true
 }
 
@@ -374,17 +421,23 @@ const encodeFrameString = (value: string): Uint8Array => {
   if (isWellFormedFrameString(value)) {
     const utf8 = publicationFrameTextEncoder.encode(value)
     const encoded = new Uint8Array(utf8.byteLength + 1)
+
     encoded[0] = PUBLICATION_FRAME_STRING_UTF8
     encoded.set(utf8, 1)
+
     return encoded
   }
+
   const encoded = new Uint8Array(value.length * 2 + 1)
+
   encoded[0] = PUBLICATION_FRAME_STRING_UTF16
   for (let index = 0; index < value.length; index += 1) {
     const code = value.charCodeAt(index)
+
     encoded[index * 2 + 1] = code & 0xff
     encoded[index * 2 + 2] = code >>> 8
   }
+
   return encoded
 }
 
@@ -415,12 +468,14 @@ const reframePublicationForPeer = (
     PUBLICATION_FRAME_ACTOR_ID_LENGTH_OFFSET,
     true
   )
+
   if (sourceActorIdByteLength !== 0 || sourceHeader.fromActorId !== undefined) {
     throw new SocketServerFailure(
       'transport-failed',
       '[collaboration] source publication frame cannot supply fromActorId'
     )
   }
+
   const publicationIdOffset =
     PUBLICATION_FRAME_FIXED_HEADER_BYTES + requestIdByteLength
   const publicationIdBytes = source.subarray(
@@ -434,6 +489,7 @@ const reframePublicationForPeer = (
     actorIdBytes.byteLength
   const payload = source.subarray(sourceHeaderByteLength)
   const peer = new Uint8Array(peerHeaderByteLength + payload.byteLength)
+
   peer.set(source.subarray(0, 6), 0)
   peer[6] = source[6] ?? 0
   peer[PUBLICATION_FRAME_KIND_OFFSET] =
@@ -441,6 +497,7 @@ const reframePublicationForPeer = (
       ? 3
       : 4
   const peerView = new DataView(peer.buffer)
+
   peerView.setUint32(
     PUBLICATION_FRAME_HEADER_LENGTH_OFFSET,
     peerHeaderByteLength,
@@ -494,6 +551,7 @@ const reframePublicationForPeer = (
   )
   peer.set(payload, peerHeaderByteLength)
   const header = inspectPublicationFrameHeader(peer)
+
   return { bytes: peer, header }
 }
 
@@ -501,6 +559,7 @@ const sourcePublicationPayloadDigest = (
   frames: readonly InboundPublicationFrame[]
 ): string => {
   const digest = createHash('sha256')
+
   for (const { bytes } of frames) {
     const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength)
     const headerByteLength = view.getUint32(
@@ -509,10 +568,12 @@ const sourcePublicationPayloadDigest = (
     )
     const payload = bytes.subarray(headerByteLength)
     const payloadLength = new Uint8Array(4)
+
     new DataView(payloadLength.buffer).setUint32(0, payload.byteLength, true)
     digest.update(payloadLength)
     digest.update(payload)
   }
+
   return digest.digest('hex')
 }
 
@@ -533,8 +594,13 @@ const getOrCreateRoom = async (
 ): Promise<RoomState> => {
   signal.throwIfAborted()
   const existing = rooms.get(fileId)
-  if (existing) return existing
+
+  if (existing) {
+    return existing
+  }
+
   let pending = roomInitializations.get(fileId)
+
   if (!pending) {
     const controller = new AbortController()
     const promise = (async (): Promise<RoomState> => {
@@ -543,6 +609,7 @@ const getOrCreateRoom = async (
           fileId,
           controller.signal
         )
+
       controller.signal.throwIfAborted()
       const roomReference: { current?: RoomState } = {}
       const persistenceQueue = createDocumentPersistenceQueue({
@@ -552,15 +619,22 @@ const getOrCreateRoom = async (
         retryIntervalMs: persistenceRetryIntervalMs,
         maxPublicationCount: persistenceMaxPublicationCount,
         maxSerializedBytes: persistenceMaxSerializedBytes,
+
         sendBatch: (batch) => documentPersistenceClient.sendBatch(batch),
+
         onFailure: (failure) => {
           console.error(
             JSON.stringify({ event: 'document_persistence_failed', ...failure })
           )
         },
+
         onDurableSequenceChange: (durableSequence) => {
           const room = roomReference.current
-          if (!room) return
+
+          if (!room) {
+            return
+          }
+
           room.pendingPublications = room.pendingPublications.filter(
             ({ sequence }) => sequence > durableSequence
           )
@@ -580,8 +654,10 @@ const getOrCreateRoom = async (
         pendingAdmissions: 0,
         resetting: false
       }
+
       roomReference.current = room
       rooms.set(fileId, room)
+
       return room
     })()
     const initialization: RoomInitialization = {
@@ -589,20 +665,31 @@ const getOrCreateRoom = async (
       promise,
       waiters: 0
     }
+
     pending = initialization
     roomInitializations.set(fileId, initialization)
+
     const forget = () => {
-      if (roomInitializations.get(fileId) === initialization)
+      if (roomInitializations.get(fileId) === initialization) {
         roomInitializations.delete(fileId)
+      }
     }
+
     void promise.then(forget, forget)
   }
+
   const initialization = pending
+
   initialization.waiters += 1
+
   return new Promise<RoomState>((resolveRoom, rejectRoom) => {
     let settled = false
+
     const release = (): boolean => {
-      if (settled) return false
+      if (settled) {
+        return false
+      }
+
       settled = true
       signal.removeEventListener('abort', abort)
       initialization.waiters -= 1
@@ -613,33 +700,51 @@ const getOrCreateRoom = async (
         roomInitializations.delete(fileId)
         initialization.controller.abort()
       }
+
       return true
     }
+
     const abort = () => {
-      if (release()) rejectRoom(signal.reason)
+      if (release()) {
+        rejectRoom(signal.reason)
+      }
     }
+
     signal.addEventListener('abort', abort, { once: true })
     initialization.promise.then(
       (room) => {
-        if (release()) resolveRoom(room)
+        if (release()) {
+          resolveRoom(room)
+        }
       },
       (error) => {
-        if (release()) rejectRoom(error)
+        if (release()) {
+          rejectRoom(error)
+        }
       }
     )
-    if (signal.aborted) abort()
+    if (signal.aborted) {
+      abort()
+    }
   })
 }
 
 const notifyCapacityWaiters = (peer: PeerSession, available: boolean): void => {
   const waiters = [...peer.capacityWaiters]
+
   peer.capacityWaiters.clear()
   waiters.forEach((resolveWaiter) => resolveWaiter(available))
 }
 
 const canAdmitFrame = (peer: PeerSession, frameByteLength: number): boolean => {
-  if (peer.closed || peer.socket.readyState !== WebSocket.OPEN) return false
-  if (peer.queuedBytes === 0) return true
+  if (peer.closed || peer.socket.readyState !== WebSocket.OPEN) {
+    return false
+  }
+
+  if (peer.queuedBytes === 0) {
+    return true
+  }
+
   return (
     frameByteLength <= PEER_QUEUE_CAPACITY_BYTES &&
     peer.queuedBytes + frameByteLength <= PEER_QUEUE_CAPACITY_BYTES
@@ -659,20 +764,32 @@ const waitForFrameCapacity = async (
   ) {
     const available = await new Promise<boolean>((resolveWaiter) => {
       let settled = false
+
       const settle = (value: boolean): void => {
-        if (settled) return
+        if (settled) {
+          return
+        }
+
         settled = true
         signal.removeEventListener('abort', abort)
         peer.capacityWaiters.delete(settle)
         resolveWaiter(value)
       }
+
       const abort = (): void => settle(false)
+
       peer.capacityWaiters.add(settle)
       signal.addEventListener('abort', abort, { once: true })
-      if (signal.aborted) settle(false)
+      if (signal.aborted) {
+        settle(false)
+      }
     })
-    if (!available) return false
+
+    if (!available) {
+      return false
+    }
   }
+
   return (
     !signal.aborted && !peer.closed && peer.socket.readyState === WebSocket.OPEN
   )
@@ -684,27 +801,41 @@ const retireIdleRoom = (room: RoomState): boolean => {
     room.pendingAdmissions !== 0 ||
     room.pendingPublications.length !== 0 ||
     rooms.get(room.fileId) !== room
-  )
+  ) {
     return false
+  }
+
   room.persistenceQueue.dispose()
   rooms.delete(room.fileId)
+
   return true
 }
 
 const removePeer = (peer: PeerSession): void => {
-  if (peer.closed) return
+  if (peer.closed) {
+    return
+  }
+
   const wasReady = peer.ready
+
   peer.closed = true
   peer.outboundQueue.length = 0
   peer.queuedBytes = 0
   notifyCapacityWaiters(peer, false)
   const room = peer.room
   const actorId = peer.actorId
-  if (!room || !actorId || room.peers.get(actorId) !== peer) return
+
+  if (!room || !actorId || room.peers.get(actorId) !== peer) {
+    return
+  }
+
   room.peers.delete(actorId)
   if (wasReady) {
     for (const roomPeer of room.peers.values()) {
-      if (!roomPeer.ready) continue
+      if (!roomPeer.ready) {
+        continue
+      }
+
       sendControl(roomPeer.socket, {
         type: CollaborationMessageTypes.AWARENESS_DISCONNECT,
         actorId,
@@ -712,19 +843,36 @@ const removePeer = (peer: PeerSession): void => {
       })
     }
   }
-  if (retireIdleRoom(room)) return
-  if (room.peers.size === 0) void room.persistenceQueue.flushNow()
+
+  if (retireIdleRoom(room)) {
+    return
+  }
+
+  if (room.peers.size === 0) {
+    void room.persistenceQueue.flushNow()
+  }
 }
 
 const retireCompletedOutboundFrames = (peer: PeerSession): void => {
-  if (peer.closed) return
+  if (peer.closed) {
+    return
+  }
+
   let retired = false
+
   while (true) {
     const active = peer.outboundQueue[0]
-    if (!active?.sendCallbackDone || !active.frameConsumed) break
+
+    if (!active?.sendCallbackDone || !active.frameConsumed) {
+      break
+    }
+
     peer.outboundQueue.shift()
     peer.queuedBytes -= active.bytes.byteLength
-    if (peer.queuedBytes < 0) peer.queuedBytes = 0
+    if (peer.queuedBytes < 0) {
+      peer.queuedBytes = 0
+    }
+
     retired = true
     recordCollaborationProfile('AI_COLLABORATION_SERVER_PEER_DRAIN', {
       requestId: active.sourceRequestId,
@@ -736,6 +884,7 @@ const retireCompletedOutboundFrames = (peer: PeerSession): void => {
       drainMs: rounded(elapsed(active.enqueuedAtMs))
     })
   }
+
   if (retired && peer.capacityWaiters.size > 0) {
     notifyCapacityWaiters(peer, true)
   }
@@ -771,23 +920,32 @@ const sendAdmittedFrame = (
   peer: PeerSession,
   frame: OutboundPublicationFrame
 ): void => {
-  if (peer.closed) return
-  if (peer.socket.readyState !== WebSocket.OPEN) {
-    removePeer(peer)
+  if (peer.closed) {
     return
   }
+
+  if (peer.socket.readyState !== WebSocket.OPEN) {
+    removePeer(peer)
+
+    return
+  }
+
   const sendStartedAtMs = epochNow()
   const bufferedAmountBefore = peer.socket.bufferedAmount
+
   peer.socket.send(
     frame.bytes,
     { binary: true, compress: false },
     (error?: Error) => {
       if (error) {
         failPeerWrite(peer, frame, error)
+
         return
       }
+
       frame.sendCallbackDone = true
       const writeCallbackAtMs = epochNow()
+
       recordCollaborationProfile('AI_COLLABORATION_SERVER_PEER_WRITE', {
         requestId: frame.sourceRequestId,
         actorId: peer.actorId,
@@ -814,8 +972,10 @@ const enqueueOutboundFrame = (
 ): void => {
   if (peer.closed || peer.socket.readyState !== WebSocket.OPEN) {
     removePeer(peer)
+
     return
   }
+
   peer.queuedBytes += frame.bytes.byteLength
   const outbound = {
     ...frame,
@@ -824,13 +984,18 @@ const enqueueOutboundFrame = (
     sendCallbackDone: false,
     frameConsumed: false
   }
+
   peer.outboundQueue.push(outbound)
-  if (peer.ready) sendAdmittedFrame(peer, outbound)
+  if (peer.ready) {
+    sendAdmittedFrame(peer, outbound)
+  }
 }
 
 const sendQueuedBootstrapSuccessorFrames = (peer: PeerSession): void => {
   for (const frame of peer.outboundQueue) {
-    if (!frame.sendCallbackDone) sendAdmittedFrame(peer, frame)
+    if (!frame.sendCallbackDone) {
+      sendAdmittedFrame(peer, frame)
+    }
   }
 }
 
@@ -843,10 +1008,12 @@ const enqueueRoomAdmission = <T>(
     room.pendingAdmissions -= 1
     retireIdleRoom(room)
   })
+
   room.admissionTail = result.then(
     () => undefined,
     () => undefined
   )
+
   return result
 }
 
@@ -857,6 +1024,7 @@ const createDocumentSessionBootstrap = async (
   let checkpoint =
     room.bootstrapCheckpointSeed ??
     (await documentPersistenceClient.readCheckpoint(room.fileId, signal))
+
   room.bootstrapCheckpointSeed = undefined
   if (
     checkpoint.durableSequence <
@@ -867,6 +1035,7 @@ const createDocumentSessionBootstrap = async (
       signal
     )
   }
+
   if (
     checkpoint.durableSequence <
     room.persistenceQueue.getState().durableSequence
@@ -876,13 +1045,16 @@ const createDocumentSessionBootstrap = async (
       '[collaboration] backend checkpoint is behind acknowledged durability'
     )
   }
+
   if (checkpoint.durableSequence > room.headSequence) {
     throw new SocketServerFailure(
       'connection-rejected',
       '[collaboration] backend checkpoint is ahead of the document session'
     )
   }
+
   let checkpointDocument = checkpoint.checkpoint
+
   if (checkpointDocument == null) {
     if (checkpoint.durableSequence !== 0) {
       throw new SocketServerFailure(
@@ -890,14 +1062,17 @@ const createDocumentSessionBootstrap = async (
         '[collaboration] a durable document checkpoint is missing'
       )
     }
+
     checkpointDocument = createFormalInitialDocument()
   }
+
   const pendingTail = [...room.acceptedPublications.values()]
     .filter(
       ({ sequence }) =>
         sequence > checkpoint.durableSequence && sequence <= room.headSequence
     )
     .sort((left, right) => left.sequence - right.sequence)
+
   if (
     pendingTail.length !== room.headSequence - checkpoint.durableSequence ||
     pendingTail.some(
@@ -910,6 +1085,7 @@ const createDocumentSessionBootstrap = async (
       '[collaboration] document bootstrap tail is not gap-free'
     )
   }
+
   return Object.freeze({
     checkpoint: checkpointDocument,
     documentGeneration: checkpoint.documentGeneration,
@@ -927,6 +1103,7 @@ const createDocumentSessionBootstrap = async (
                   Buffer.from(encodedFrame, 'base64')
                 )
                 const sourceHeader = inspectPublicationFrameHeader(sourceBytes)
+
                 return Buffer.from(
                   reframePublicationForPeer(
                     sourceBytes,
@@ -956,6 +1133,7 @@ const admitFrameToRecipients = async (
       frame.bytes.byteLength,
       signal
     )
+
     if (!available && signal.aborted) {
       throw new SocketServerFailure(
         'transport-failed',
@@ -963,12 +1141,14 @@ const admitFrameToRecipients = async (
       )
     }
   }
+
   if (signal.aborted) {
     throw new SocketServerFailure(
       'transport-failed',
       '[collaboration] publication admission was cancelled'
     )
   }
+
   for (const peer of recipients) {
     enqueueOutboundFrame(peer, frame, sourceRequestId)
   }
@@ -985,7 +1165,11 @@ const consumeFrameCredit = (
       candidate.header.publicationId === message.publicationId &&
       candidate.header.frameByteLength === message.frameByteLength
   )
-  if (!frame) return
+
+  if (!frame) {
+    return
+  }
+
   frame.frameConsumed = true
   retireCompletedOutboundFrames(peer)
 }
@@ -1002,8 +1186,10 @@ const httpServer = createHttpServer((request, response) => {
         connectionParameter: 'fileId'
       })
     )
+
     return
   }
+
   response.writeHead(404)
   response.end()
 })
@@ -1017,15 +1203,20 @@ const webSocketServer = new WebSocketServer(webSocketServerOptions)
 
 httpServer.on('upgrade', (request, socket, head) => {
   const requestURL = new URL(request.url ?? '/', `http://${host}:${port}`)
+
   if (requestURL.pathname !== socketPath) {
     socket.destroy()
+
     return
   }
+
   if (request.headers.origin !== allowedOrigin) {
     socket.write('HTTP/1.1 403 Forbidden\r\n\r\n')
     socket.destroy()
+
     return
   }
+
   webSocketServer.handleUpgrade(request, socket, head, (webSocket) => {
     webSocketServer.emit('connection', webSocket, request)
   })
@@ -1057,7 +1248,10 @@ webSocketServer.on('connection', (socket) => {
   }, 5_000)
 
   const rejectConnection = (error: unknown, reason: string): void => {
-    if (inboundFailed) return
+    if (inboundFailed) {
+      return
+    }
+
     inboundFailed = true
     sourceFrameAdmission?.controller.abort()
     pendingSourcePublicationSettlement?.abort()
@@ -1080,25 +1274,30 @@ webSocketServer.on('connection', (socket) => {
         '[collaboration] identity hello can only be sent once'
       )
     }
+
     peer.identified = true
     const { identity } = message
     const fileId = identity.connectionMetadata?.fileId
+
     if (!isNonBlankString(fileId)) {
       throw new SocketServerFailure(
         'connection-rejected',
         '[collaboration] app-defined fileId and actor identity are required'
       )
     }
+
     const room = await getOrCreateRoom(fileId, bootstrapController.signal)
     const bootstrap = await enqueueRoomAdmission(room, async () => {
       const requireOpenPeer = () => {
         bootstrapController.signal.throwIfAborted()
-        if (peer.closed || socket.readyState !== WebSocket.OPEN)
+        if (peer.closed || socket.readyState !== WebSocket.OPEN) {
           throw new SocketServerFailure(
             'connection-rejected',
             '[collaboration] document session closed during bootstrap'
           )
+        }
       }
+
       requireOpenPeer()
       if (room.resetting) {
         throw new SocketServerFailure(
@@ -1106,24 +1305,29 @@ webSocketServer.on('connection', (socket) => {
           '[collaboration] document Reset is in progress'
         )
       }
+
       if (room.peers.has(identity.actorId)) {
         throw new SocketServerFailure(
           'connection-rejected',
           '[collaboration] actor is already connected to this room'
         )
       }
+
       const sessionBootstrap = await createDocumentSessionBootstrap(
         room,
         bootstrapController.signal
       )
+
       requireOpenPeer()
       peer.actorId = identity.actorId
       peer.fileId = fileId
       peer.room = room
       peer.bootstrapHeadSequence = sessionBootstrap.headSequence
       room.peers.set(identity.actorId, peer)
+
       return sessionBootstrap
     })
+
     clearTimeout(helloTimeout)
     sendControl(socket, {
       type: CollaborationMessageTypes.BOOTSTRAP_CHECKPOINT_READY
@@ -1147,6 +1351,7 @@ webSocketServer.on('connection', (socket) => {
         '[collaboration] document bootstrap completion does not match the reserved cutoff'
       )
     }
+
     peer.ready = true
     sendControl(socket, {
       type: CollaborationMessageTypes.RESPONSE,
@@ -1158,19 +1363,25 @@ webSocketServer.on('connection', (socket) => {
 
   const handleAwareness = (message: SendAwarenessRequest): void => {
     const room = peer.room
+
     if (!room || !peer.actorId || message.message.actorId !== peer.actorId) {
       throw new SocketServerFailure(
         'transport-failed',
         '[collaboration] awareness actor must match the connected identity'
       )
     }
+
     for (const roomPeer of room.peers.values()) {
-      if (roomPeer === peer || !roomPeer.ready) continue
+      if (roomPeer === peer || !roomPeer.ready) {
+        continue
+      }
+
       sendControl(roomPeer.socket, {
         type: CollaborationMessageTypes.AWARENESS,
         ...message.message
       })
     }
+
     sendControl(socket, {
       type: CollaborationMessageTypes.RESPONSE,
       requestId: message.requestId,
@@ -1180,12 +1391,14 @@ webSocketServer.on('connection', (socket) => {
 
   const handlePeerApplied = (message: PeerAppliedRequest): void => {
     const room = peer.room
+
     if (!room || !peer.actorId || message.fromActorId === peer.actorId) {
       throw new SocketServerFailure(
         'transport-failed',
         '[collaboration] peer-applied source must be another room actor'
       )
     }
+
     recordCollaborationProfile('AI_COLLABORATION_SERVER_PEER_APPLIED', {
       requestId: message.requestId,
       publicationId: message.publicationId,
@@ -1204,26 +1417,33 @@ webSocketServer.on('connection', (socket) => {
   ): Promise<void> => {
     const room = peer.room
     const cancellation = new AbortController()
+
     const closed = () =>
       cancellation.abort(new Error('Document session disconnected'))
+
     socket.once('close', closed)
     try {
       if (
         !room ||
         room.resetting ||
         room.documentGeneration !== message.documentGeneration
-      )
+      ) {
         throw new Error(
           'Document generation changed; persistence cannot be confirmed'
         )
+      }
+
       const durableSequence = await room.persistenceQueue.whenDurable(
         message.sequence,
         cancellation.signal
       )
-      if (room.resetting || peer.room !== room || peer.closed)
+
+      if (room.resetting || peer.room !== room || peer.closed) {
         throw new Error(
           'Document session changed during persistence confirmation'
         )
+      }
+
       sendControl(socket, {
         type: CollaborationMessageTypes.RESPONSE,
         requestId: message.requestId,
@@ -1236,13 +1456,14 @@ webSocketServer.on('connection', (socket) => {
         }
       })
     } catch (error) {
-      if (!peer.closed)
+      if (!peer.closed) {
         sendControl(socket, {
           type: CollaborationMessageTypes.RESPONSE,
           requestId: message.requestId,
           ok: false,
           error: failureMessage(error)
         })
+      }
     } finally {
       socket.removeListener('close', closed)
     }
@@ -1252,12 +1473,14 @@ webSocketServer.on('connection', (socket) => {
     message: ResetDocumentRequest
   ): Promise<void> => {
     const room = peer.room
+
     if (!room || !peer.actorId) {
       throw new SocketServerFailure(
         'not-connected',
         '[collaboration] provider handshake is incomplete'
       )
     }
+
     try {
       await enqueueRoomAdmission(room, async () => {
         if (room.resetting) {
@@ -1266,10 +1489,12 @@ webSocketServer.on('connection', (socket) => {
             '[collaboration] document Reset is already in progress'
           )
         }
+
         room.resetting = true
         await room.persistenceQueue.discardForReset()
         const documentGeneration =
           await documentPersistenceClient.resetCheckpoint(room.fileId)
+
         room.acceptedPublications.clear()
         room.pendingPublications = []
         room.headSequence = 0
@@ -1283,13 +1508,18 @@ webSocketServer.on('connection', (socket) => {
       if (room.resetting && rooms.get(room.fileId) === room) {
         rooms.delete(room.fileId)
       }
+
       if (room.resetting) {
         for (const roomPeer of room.peers.values()) {
-          if (roomPeer === peer || roomPeer.closed) continue
+          if (roomPeer === peer || roomPeer.closed) {
+            continue
+          }
+
           roomPeer.socket.close(1012, 'document reset')
         }
       }
     }
+
     sendControl(socket, {
       type: CollaborationMessageTypes.RESPONSE,
       requestId: message.requestId,
@@ -1301,29 +1531,36 @@ webSocketServer.on('connection', (socket) => {
     message: SourcePublicationSettlementMessage
   ): void => {
     const pending = pendingSourcePublicationSettlement
+
     if (!pending || pending.requestId !== message.requestId) {
       throw new SocketServerFailure(
         'acknowledgement-failed',
         '[collaboration] source publication settlement does not match an active proposal'
       )
     }
+
     pending.settle(message.ok)
   }
 
   const handleControl = async (encoded: string): Promise<void> => {
     let message
+
     try {
       message = parseCollaborationClientMessage(
         decodeCollaborationControlMessage(encoded)
       )
     } catch {
       socket.close(1007, 'invalid wire message')
+
       return
     }
+
     if (!message) {
       socket.close(1008, 'invalid protocol message')
+
       return
     }
+
     if (!peer.identified) {
       if (message.type !== CollaborationMessageTypes.HELLO) {
         throw new SocketServerFailure(
@@ -1331,44 +1568,58 @@ webSocketServer.on('connection', (socket) => {
           '[collaboration] hello must be the first message'
         )
       }
+
       await handleHello(message)
+
       return
     }
+
     if (!peer.ready) {
       if (message.type === CollaborationMessageTypes.BOOTSTRAP_CONSUMED) {
         handleBootstrapConsumed(message)
+
         return
       }
+
       throw new SocketServerFailure(
         'connection-rejected',
         '[collaboration] document bootstrap must complete before live collaboration'
       )
     }
+
     switch (message.type) {
       case CollaborationMessageTypes.HELLO:
         await handleHello(message)
+
         return
       case CollaborationMessageTypes.BOOTSTRAP_CONSUMED:
         handleBootstrapConsumed(message)
+
         return
       case CollaborationMessageTypes.SEND_AWARENESS:
         handleAwareness(message)
+
         return
       case CollaborationMessageTypes.FRAME_CONSUMED:
         consumeFrameCredit(peer, message)
+
         return
       case CollaborationMessageTypes.PEER_APPLIED:
         handlePeerApplied(message)
+
         return
       case CollaborationMessageTypes.CONFIRM_PERSISTENCE:
         // The watermark observer must not block publication control messages.
         void handleConfirmPersistence(message)
+
         return
       case CollaborationMessageTypes.RESET_DOCUMENT:
         await handleResetDocument(message)
+
         return
       case CollaborationMessageTypes.SOURCE_PUBLICATION_SETTLEMENT:
         handleSourcePublicationSettlement(message)
+
         return
       case CollaborationMessageTypes.SEND_PUBLICATION:
       case CollaborationMessageTypes.SEND_PUBLICATIONS:
@@ -1384,6 +1635,7 @@ webSocketServer.on('connection', (socket) => {
       () => handleControl(encoded),
       () => handleControl(encoded)
     )
+
     controlTail = task.then(
       () => undefined,
       () => undefined
@@ -1408,6 +1660,7 @@ webSocketServer.on('connection', (socket) => {
         '[collaboration] publication frames are out of order'
       )
     }
+
     if (header.chunkIndex === 0) {
       request.currentPublicationId = header.publicationId
       request.currentChunkCount = header.chunkCount
@@ -1420,16 +1673,20 @@ webSocketServer.on('connection', (socket) => {
         '[collaboration] publication chunk metadata changed'
       )
     }
+
     request.frameCount += 1
     request.frameBytes += header.frameByteLength
     if (header.chunkIndex + 1 < header.chunkCount) {
       request.nextChunkIndex += 1
+
       return false
     }
+
     request.nextPublicationIndex += 1
     request.nextChunkIndex = 0
     request.currentPublicationId = undefined
     request.currentChunkCount = undefined
+
     return request.nextPublicationIndex === request.publicationCount
   }
 
@@ -1445,24 +1702,33 @@ webSocketServer.on('connection', (socket) => {
         '[collaboration] source publication proposal overlapped'
       )
     }
+
     const publicationId = publicationIds[0]
+
     if (!publicationId) {
       throw new SocketServerFailure(
         'transport-failed',
         '[collaboration] source publication proposal identity is missing'
       )
     }
+
     return new Promise<boolean>((resolve, reject) => {
       let settled = false
+
       const finish = (operation: () => void): void => {
-        if (settled) return
+        if (settled) {
+          return
+        }
+
         settled = true
         signal.removeEventListener('abort', abort)
         if (pendingSourcePublicationSettlement === pending) {
           pendingSourcePublicationSettlement = null
         }
+
         operation()
       }
+
       const abort = (): void => {
         finish(() =>
           reject(
@@ -1475,25 +1741,34 @@ webSocketServer.on('connection', (socket) => {
           )
         )
       }
+
       const pending: PendingSourcePublicationSettlement = {
         requestId,
         publicationId,
+
         settle: (ok) => finish(() => resolve(ok)),
+
         abort
       }
+
       pendingSourcePublicationSettlement = pending
       signal.addEventListener('abort', abort, { once: true })
       if (signal.aborted) {
         abort()
+
         return
       }
+
       const proposed = sendControl(socket, {
         type: CollaborationMessageTypes.SOURCE_PUBLICATION_PROPOSED,
         requestId,
         publicationIds,
         sequences
       })
-      if (!proposed) abort()
+
+      if (!proposed) {
+        abort()
+      }
     })
   }
 
@@ -1503,12 +1778,14 @@ webSocketServer.on('connection', (socket) => {
   ): Promise<readonly number[]> => {
     const room = peer.room
     const actorId = peer.actorId
+
     if (!room || !actorId) {
       throw new SocketServerFailure(
         'not-connected',
         '[collaboration] provider handshake is incomplete'
       )
     }
+
     const digestStartedAtMs = performance.now()
     const publications = Array.from(
       { length: request.publicationCount },
@@ -1517,6 +1794,7 @@ webSocketServer.on('connection', (socket) => {
           ({ header }) => header.publicationIndex === publicationIndex
         )
         const publicationId = frames[0]?.header.publicationId
+
         if (
           !publicationId ||
           frames.length === 0 ||
@@ -1527,8 +1805,10 @@ webSocketServer.on('connection', (socket) => {
             '[collaboration] publication frame identity is inconsistent'
           )
         }
+
         const encodedPublicationFrames =
           encodePublicationFramesForStorage(frames)
+
         return Object.freeze({
           publicationId,
           frames,
@@ -1541,6 +1821,7 @@ webSocketServer.on('connection', (socket) => {
         })
       }
     )
+
     request.digestMs += elapsed(digestStartedAtMs)
 
     return enqueueRoomAdmission(room, async () => {
@@ -1550,10 +1831,12 @@ webSocketServer.on('connection', (socket) => {
           '[collaboration] document Reset is in progress'
         )
       }
+
       const accepted = publications.map(({ publicationId }) =>
         room.acceptedPublications.get(publicationId)
       )
       const acceptedCount = accepted.filter(Boolean).length
+
       if (acceptedCount > 0 && acceptedCount !== publications.length) {
         throw new SocketServerFailure(
           'acknowledgement-failed',
@@ -1562,6 +1845,7 @@ webSocketServer.on('connection', (socket) => {
           publications[0]?.publicationId
         )
       }
+
       if (acceptedCount === publications.length) {
         accepted.forEach((entry, index) => {
           if (
@@ -1577,16 +1861,20 @@ webSocketServer.on('connection', (socket) => {
             )
           }
         })
+
         return accepted.map((entry) => entry?.sequence as number)
       }
+
       const firstSequence = room.headSequence + 1
       const lastSequence = room.headSequence + publications.length
+
       if (!Number.isSafeInteger(lastSequence)) {
         throw new SocketServerFailure(
           'transport-failed',
           '[collaboration] document publication sequence overflow'
         )
       }
+
       const sequenced = publications.map((publication, index) => ({
         publicationId: publication.publicationId,
         encodedPublicationFrames: publication.encodedPublicationFrames,
@@ -1601,6 +1889,7 @@ webSocketServer.on('connection', (socket) => {
         sequenced.map(({ sequence }) => sequence),
         signal
       )
+
       if (!sourceApplied) {
         throw new SocketServerFailure(
           'acknowledgement-failed',
@@ -1609,7 +1898,9 @@ webSocketServer.on('connection', (socket) => {
           sequenced[0]?.publicationId
         )
       }
+
       const persistenceCapacityStartedAtMs = performance.now()
+
       try {
         await room.persistenceQueue.enqueueBatchWhenAvailable(
           sequenced.map(
@@ -1633,6 +1924,7 @@ webSocketServer.on('connection', (socket) => {
           error
         )
       }
+
       request.persistenceCapacityMs += elapsed(persistenceCapacityStartedAtMs)
       sequenced.forEach((entry) => {
         room.acceptedPublications.set(entry.publicationId, entry)
@@ -1642,20 +1934,24 @@ webSocketServer.on('connection', (socket) => {
 
       const sequences = sequenced.map(({ sequence }) => sequence)
       const peerAdmissionStartedAtMs = performance.now()
+
       for (const frame of request.frames) {
         const sequence = sequences[frame.header.publicationIndex]
+
         if (!sequence) {
           throw new SocketServerFailure(
             'transport-failed',
             '[collaboration] publication sequence is missing'
           )
         }
+
         const peerFrame = reframePublicationForPeer(
           frame.bytes,
           frame.header,
           actorId,
           sequence
         )
+
         await admitFrameToRecipients(
           request.recipients,
           peerFrame,
@@ -1663,7 +1959,9 @@ webSocketServer.on('connection', (socket) => {
           signal
         )
       }
+
       request.peerAdmissionMs += elapsed(peerAdmissionStartedAtMs)
+
       return sequences
     })
   }
@@ -1679,6 +1977,7 @@ webSocketServer.on('connection', (socket) => {
         '[collaboration] provider handshake is incomplete'
       )
     }
+
     if (
       header.messageType !== CollaborationMessageTypes.SEND_PUBLICATION &&
       header.messageType !== CollaborationMessageTypes.SEND_PUBLICATIONS
@@ -1688,6 +1987,7 @@ webSocketServer.on('connection', (socket) => {
         '[collaboration] client binary frame must send a publication'
       )
     }
+
     if (
       header.messageType === CollaborationMessageTypes.SEND_PUBLICATION &&
       header.publicationCount !== 1
@@ -1697,15 +1997,19 @@ webSocketServer.on('connection', (socket) => {
         '[collaboration] single-publication frame kind requires publicationCount 1'
       )
     }
+
     const requestId = header.requestId
+
     if (!requestId) {
       throw new SocketServerFailure(
         'transport-failed',
         '[collaboration] publication frame request identity is required'
       )
     }
+
     const existingRequest = inboundRequests.get(requestId)
     let request: InboundPublicationRequest
+
     if (!existingRequest) {
       if (header.publicationIndex !== 0 || header.chunkIndex !== 0) {
         throw new SocketServerFailure(
@@ -1713,6 +2017,7 @@ webSocketServer.on('connection', (socket) => {
           '[collaboration] publication request must start at its first frame'
         )
       }
+
       request = {
         requestId,
         messageType: header.messageType,
@@ -1737,20 +2042,25 @@ webSocketServer.on('connection', (socket) => {
         recipients: existingRequest.recipients
       }
     }
+
     const complete = validateAndAdvanceRequest(request, header)
+
     request.frames.push({
       bytes: sourceBytes.slice(),
       header
     })
     if (!complete) {
       inboundRequests.set(requestId, request)
+
       return { request, complete: false }
     }
+
     const queueStartedAtMs = performance.now()
     const acceptedSequences = await acceptCompletedPublicationRequest(
       request,
       signal
     )
+
     request.queueWaitMs += elapsed(queueStartedAtMs)
     if (signal.aborted) {
       throw new SocketServerFailure(
@@ -1758,7 +2068,9 @@ webSocketServer.on('connection', (socket) => {
         '[collaboration] publication admission was cancelled'
       )
     }
+
     inboundRequests.delete(requestId)
+
     return { request, complete: true, acceptedSequences }
   }
 
@@ -1774,12 +2086,15 @@ webSocketServer.on('connection', (socket) => {
         ),
         'publication frame before admission credit'
       )
+
       return
     }
+
     const admission: SourceFrameAdmission = {
       header,
       controller: new AbortController()
     }
+
     sourceFrameAdmission = admission
     void handlePublicationFrame(rawBytes, header, admission.controller.signal)
       .then(({ request, complete, acceptedSequences }) => {
@@ -1791,6 +2106,7 @@ webSocketServer.on('connection', (socket) => {
         ) {
           return
         }
+
         sourceFrameAdmission = null
         const credited = sendControl(socket, {
           type: CollaborationMessageTypes.SOURCE_FRAME_ADMITTED,
@@ -1799,7 +2115,11 @@ webSocketServer.on('connection', (socket) => {
           publicationId: header.publicationId,
           frameByteLength: header.frameByteLength
         })
-        if (!credited || !complete) return
+
+        if (!credited || !complete) {
+          return
+        }
+
         sendControl(socket, {
           type: CollaborationMessageTypes.RESPONSE,
           requestId: request.requestId,
@@ -1821,17 +2141,23 @@ webSocketServer.on('connection', (socket) => {
         })
       })
       .catch((error) => {
-        if (sourceFrameAdmission !== admission || inboundFailed) return
+        if (sourceFrameAdmission !== admission || inboundFailed) {
+          return
+        }
+
         sourceFrameAdmission = null
         if (
           error instanceof SocketServerFailure &&
           error.code === 'acknowledgement-failed'
         ) {
           const rejectedRequestId = header.requestId
+
           if (!rejectedRequestId) {
             rejectConnection(error, 'publication rejection identity missing')
+
             return
           }
+
           inboundRequests.delete(rejectedRequestId)
           const credited = sendControl(socket, {
             type: CollaborationMessageTypes.SOURCE_FRAME_ADMITTED,
@@ -1840,21 +2166,30 @@ webSocketServer.on('connection', (socket) => {
             publicationId: header.publicationId,
             frameByteLength: header.frameByteLength
           })
-          if (!credited) return
+
+          if (!credited) {
+            return
+          }
+
           sendControl(socket, {
             type: CollaborationMessageTypes.RESPONSE,
             requestId: rejectedRequestId,
             ok: false,
             error: failureMessage(error)
           })
+
           return
         }
+
         rejectConnection(error, 'publication relay failed')
       })
   }
 
   socket.on('message', (data, isBinary) => {
-    if (inboundFailed) return
+    if (inboundFailed) {
+      return
+    }
+
     if (isBinary && sourceFrameAdmission) {
       rejectConnection(
         new SocketServerFailure(
@@ -1863,9 +2198,12 @@ webSocketServer.on('connection', (socket) => {
         ),
         'publication frame before admission credit'
       )
+
       return
     }
+
     const rawBytes = rawDataToBytes(data)
+
     if (!isBinary) {
       enqueueControl(
         Buffer.from(
@@ -1874,15 +2212,20 @@ webSocketServer.on('connection', (socket) => {
           rawBytes.byteLength
         ).toString('utf8')
       )
+
       return
     }
+
     let header: PublicationFrameHeader
+
     try {
       header = inspectPublicationFrameHeader(rawBytes)
     } catch {
       socket.close(1007, 'invalid publication frame')
+
       return
     }
+
     admitSourceFrame(rawBytes, header)
   })
 
@@ -1897,6 +2240,7 @@ webSocketServer.on('connection', (socket) => {
     inboundRequests.clear()
     removePeer(peer)
   }
+
   socket.once('close', cleanup)
   socket.once('error', cleanup)
 })
@@ -1914,12 +2258,17 @@ console.log(
 )
 
 let closing = false
+
 const close = async (): Promise<void> => {
-  if (closing) return
+  if (closing) {
+    return
+  }
+
   closing = true
   for (const client of webSocketServer.clients) {
     client.close(1001, 'server shutdown')
   }
+
   await new Promise<void>((resolveClose, rejectClose) =>
     webSocketServer.close((error) =>
       error ? rejectClose(error) : resolveClose()
@@ -1931,6 +2280,7 @@ const close = async (): Promise<void> => {
   for (const room of rooms.values()) {
     room.persistenceQueue.dispose()
   }
+
   await new Promise<void>((resolveClose, rejectClose) =>
     httpServer.close((error) => (error ? rejectClose(error) : resolveClose()))
   )

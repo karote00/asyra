@@ -550,8 +550,7 @@ it.each(['vertices', 'ellipse'])(
                 id: 'apply',
                 name: action.name,
                 arguments: {
-                  design: deliverPreparedDesign(design),
-                  response: 'compact'
+                  design: deliverPreparedDesign(design)
                 },
                 summary: 'Apply retained part'
               }
@@ -806,37 +805,55 @@ it('applies descriptive brief capacity through the main dispatcher into one real
           }
         ]
       },
-      inspection: 'defer',
-      response: 'compact'
+      inspection: 'defer'
     },
     new AbortController().signal
   )
   const result = JSON.parse(reply.text)
 
-  // The headless Core fixture has no App inspection-evidence session. Both
-  // writes complete; retain the real unverified follow-up instead of inventing it.
-  expect(
-    result.parts.map((part: { toolOutcome: unknown }) => part.toolOutcome)
-  ).toEqual([
-    expect.objectContaining({ status: 'success', settlement: 'completed' }),
-    expect.objectContaining({ status: 'success', settlement: 'completed' })
-  ])
-  expect(result.measurementIssues).toHaveLength(1)
-  expect(result.toolOutcome).toMatchObject({
-    status: 'partial',
+  expect(reply.outcome.status, reply.text).toBe('success')
+  // Deferred inspection does not add a mechanical approval requirement.
+  for (const part of result.parts) {
+    expect(part).toMatchObject({
+      applicable: true,
+      completedSteps: ['prepare_design', 'apply_prepared_design']
+    })
+    expect(part.actionResults).toHaveLength(1)
+    expect(part.actionResults[0]).toMatchObject({
+      actionName: action.name,
+      result: {
+        status: 'complete',
+        compositionId: expect.any(String)
+      }
+    })
+  }
+
+  expect(result.measurementIssues).toBeUndefined()
+  expect(reply.outcome).toMatchObject({
+    status: 'success',
     settlement: 'completed'
   })
   expect(result.parts).toHaveLength(2)
   expect(batches.flat().filter((name) => name === action.name)).toHaveLength(2)
-  expect(batches.flat().filter((name) => name === review.name)).toHaveLength(1)
+  expect(batches.flat().filter((name) => name === review.name)).toHaveLength(0)
   const saved = projectedSnapshot()
 
   expect(Object.keys(saved.sceneTree.elements)).toHaveLength(2002)
-  expect(saved.sceneTree.elements.workspace.children).toHaveLength(1)
-  const rootId = saved.sceneTree.elements.workspace.children[0]
+  const workspace = saved.sceneTree.elements.workspace
 
-  expect(saved.sceneTree.elements[rootId].children).toHaveLength(2000)
-  expect(new Set(saved.sceneTree.elements[rootId].children).size).toBe(2000)
+  if (!('children' in workspace)) {
+    throw new Error('The saved workspace must preserve container children')
+  }
+
+  expect(workspace.children).toHaveLength(1)
+  const root = saved.sceneTree.elements[workspace.children[0]]
+
+  if (!('children' in root)) {
+    throw new Error('The applied root must remain a serialized container')
+  }
+
+  expect(root.children).toHaveLength(2000)
+  expect(new Set(root.children).size).toBe(2000)
   expect(factory.getUndoHistoryDepth()).toBe(2)
   core.load(saved)
   expect(projectedSnapshot()).toEqual(saved)

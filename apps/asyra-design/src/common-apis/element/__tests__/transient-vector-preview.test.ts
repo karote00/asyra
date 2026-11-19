@@ -65,9 +65,7 @@ vi.mock('../../system-context', () => ({
     getSelectedVectorPoint: vi.fn(() => null),
     setHoveredVectorPoint: vi.fn(),
     setHoveredVectorSegment: vi.fn(),
-    setHoveredVectorSegmentInsertPoint: vi.fn(),
-    setSelectedVectorPoint: vi.fn(),
-    setSelectedVectorSegment: vi.fn()
+    setHoveredVectorSegmentInsertPoint: vi.fn()
   }
 }))
 

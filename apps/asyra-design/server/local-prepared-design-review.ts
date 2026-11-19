@@ -1,9 +1,4 @@
 import {
-  referenceUsesSchema,
-  referenceUseDependency,
-  type ReferenceUseReceipt
-} from './local-reference-decisions'
-import {
   createDesignCheckResults,
   designCheckDeliverySchema
 } from './design-check-results'
@@ -20,10 +15,7 @@ import type { InspectionEvidenceStamp } from '../src/ai/inspection-evidence'
 import { AiDesignToolIds } from '../src/constants/ai-design'
 import { LocalToolAccess } from './local-tool-scheduler'
 import { operationInputIssue } from './operation-input-schema'
-import {
-  type DesignCheckAssessment,
-  type DesignCheckContext
-} from './design-check-contract'
+import type { DesignCheckAssessment } from './design-check-contract'
 
 const record = (value: unknown): value is Record<string, unknown> =>
   !!value && typeof value === 'object' && !Array.isArray(value)
@@ -31,9 +23,6 @@ const record = (value: unknown): value is Record<string, unknown> =>
 const identity = (value: unknown): string =>
   createHash('sha256').update(JSON.stringify(value)).digest('hex')
 
-export interface PreparedRecipeContext extends DesignCheckContext {
-  sourceAssertions?: unknown[]
-}
 export interface PreparedAttachment {
   workspaceId: string
   parentId: string
@@ -41,14 +30,12 @@ export interface PreparedAttachment {
   basis: { x: number; y: number }[]
   bounds?: unknown
 }
-export interface PreparedRecipePacket extends PreparedRecipeContext {
+export interface PreparedRecipePacket {
   attachment: PreparedAttachment
   recipe: unknown
   coverage: {
     keys: string[]
     wholeRecipe: boolean
-    criterionIds: string[]
-    pendingCriterionIds: string[]
   }
   previousReview?: {
     artifactId: string
@@ -74,17 +61,13 @@ export const preparedReviewDefinition = {
         appearance: { const: 'unverified' },
         evidenceCurrent: toolResultBoolean,
         reused: toolResultBoolean,
-        finalCanvasReviewRequired: { const: true },
         coverage: toolResultObject({
           keys: toolResultIds,
-          wholeRecipe: toolResultBoolean,
-          criterionIds: toolResultIds,
-          pendingCriterionIds: toolResultIds
+          wholeRecipe: toolResultBoolean
         }),
-        assessment: toolResultObject(
-          { checks: { type: 'array' }, overall: { type: 'object' } },
-          ['checks']
-        ),
+        assessment: toolResultObject({ overall: { type: 'object' } }, [
+          'overall'
+        ]),
         deterministicFindings: { type: 'array' },
         unresolvedPriorConflict: toolResultBoolean,
         results: designCheckDeliverySchema
@@ -98,7 +81,6 @@ export const preparedReviewDefinition = {
         'appearance',
         'evidenceCurrent',
         'reused',
-        'finalCanvasReviewRequired',
         'coverage',
         'assessment',
         'results'
@@ -111,22 +93,13 @@ export const preparedReviewDefinition = {
   name: AiDesignToolIds.REVIEW_PREPARED_DESIGN,
   executionAccess: LocalToolAccess.EXCLUSIVE,
   description:
-    'Check canonical attachment and explicit source coverage using program checks only. Preparation already retains compiler findings; this call is not needed merely to record them. No model is invoked. Pass covers data checks only; appearance and request interpretation remain for the primary agent using rendered output. Supply artifactId and intended parentId. Partial keys or criteria cannot hide a compiler failure. Correct failures and recheck. Exact dependencies reuse results; final canvas review remains required.',
+    'Check canonical attachment and selected recipe coverage using program checks only. Preparation already retains compiler findings; this call is not needed merely to record them. No model is invoked. Pass covers data checks only; appearance and request interpretation remain for the primary agent using rendered output. Supply artifactId and intended parentId. Partial keys cannot hide a compiler failure. Correct failures and recheck. Exact dependencies reuse results; the AI judges rendered appearance separately.',
   inputSchema: {
     type: 'object',
     additionalProperties: false,
     required: ['artifactId'],
     properties: {
-      referenceUses: referenceUsesSchema,
       artifactId: { type: 'string', minLength: 1 },
-      criterionIds: {
-        type: 'array',
-        minItems: 1,
-        uniqueItems: true,
-        items: { type: 'string', minLength: 1 },
-        description:
-          'Saved criterion IDs relevant to this ready stage. Omit to review all. Other criteria stay pending for final canvas review.'
-      },
       previousArtifactId: {
         type: 'string',
         minLength: 1,
@@ -163,7 +136,6 @@ export const createPreparedDesignReview = (options: {
     attachment: PreparedAttachment,
     signal: AbortSignal
   ) => Promise<boolean>
-  context: (receipts?: ReferenceUseReceipt[]) => PreparedRecipeContext
   results?: ReturnType<typeof createDesignCheckResults>
 }) => {
   const results = options.results ?? createDesignCheckResults()
@@ -172,10 +144,8 @@ export const createPreparedDesignReview = (options: {
   const artifactReviews = new Map<
     string,
     {
-      referenceUses: ReferenceUseReceipt[]
       recipeIdentity: string
       evidenceIdentity: string
-      contextIdentity: string
       attachment: PreparedAttachment
       evidenceCurrent: boolean
       status: string
@@ -192,9 +162,6 @@ export const createPreparedDesignReview = (options: {
     string,
     NonNullable<ReturnType<typeof artifactReviews.get>>
   >()
-
-  const evidence = (receipts: ReferenceUseReceipt[] = []) =>
-    options.context(receipts)
 
   return {
     read: results.read,
@@ -281,14 +248,6 @@ export const createPreparedDesignReview = (options: {
       }
 
       if (
-        reviewed.contextIdentity !== identity(evidence(reviewed.referenceUses))
-      ) {
-        throw new Error(
-          'Prepared review evidence changed; review current dependencies.'
-        )
-      }
-
-      if (
         (parentId ?? reviewed.attachment.workspaceId) !==
         reviewed.attachment.parentId
       ) {
@@ -327,16 +286,12 @@ export const createPreparedDesignReview = (options: {
       const {
         artifactId,
         parentId,
-        criterionIds: requestedCriteria,
         previousArtifactId,
-        referenceUses = [],
         keys = []
       } = input as {
         artifactId: string
         parentId?: string
-        criterionIds?: string[]
         previousArtifactId?: string
-        referenceUses?: ReferenceUseReceipt[]
         keys?: string[]
       }
       const source = options.resolveRecipe(artifactId)
@@ -381,46 +336,11 @@ export const createPreparedDesignReview = (options: {
       const attachment = await options.resolveAttachment(parentId, signal)
 
       signal.throwIfAborted()
-      const context = evidence(referenceUses)
-
-      if (!Object.keys(context.criteria).length) {
-        throw new Error(
-          'Define request-linked criteria before prepared review.'
-        )
-      }
-
-      if (
-        requestedCriteria?.some((id) => !Object.hasOwn(context.criteria, id))
-      ) {
-        throw new Error(
-          'Requested criterion is unavailable; use saved criterion IDs.'
-        )
-      }
-
-      const criterionIds = Object.keys(context.criteria).filter(
-        (id) => !requestedCriteria || requestedCriteria.includes(id)
-      )
-
-      if (
-        context.referenceUses?.some(
-          (use) => !criterionIds.includes(use.criterionId)
-        )
-      ) {
-        throw new Error(
-          'Preparation reference uses must match the requested criterion coverage.'
-        )
-      }
-
       const coverage = {
         keys: [...keys].sort(),
-        wholeRecipe: keys.length === 0,
-        criterionIds,
-        pendingCriterionIds: Object.keys(context.criteria).filter(
-          (id) => !criterionIds.includes(id)
-        )
+        wholeRecipe: keys.length === 0
       }
       const recipeIdentity = identity(source.recipe)
-      const contextIdentity = identity(context)
       // Currency receipts are renewed independently of attachment geometry.
       // The fresh receipt is still checked below and retained for apply admission.
       const { evidence: attachmentEvidence, ...attachmentContent } = attachment
@@ -429,7 +349,6 @@ export const createPreparedDesignReview = (options: {
         sessionId: attachmentEvidence.sessionId
       }
       const evidenceIdentity = identity({
-        context,
         attachment: semanticAttachment
       })
       let previousReview: PreparedRecipePacket['previousReview']
@@ -468,10 +387,6 @@ export const createPreparedDesignReview = (options: {
           !record(finding) || finding.kind !== 'text-metrics-required'
       )
       const packet = {
-        ...context,
-        criteria: Object.fromEntries(
-          criterionIds.map((id) => [id, context.criteria[id]])
-        ),
         attachment,
         recipe,
         coverage,
@@ -487,24 +402,17 @@ export const createPreparedDesignReview = (options: {
           ...(previousReview
             ? { previousReview: { ...previousReview, artifactId: undefined } }
             : {})
-        },
-        contextIdentity
+        }
       })
       const sourceKey = identity([recipeIdentity, evidenceIdentity])
       const prior = sourceReviews.get(sourceKey)
-      const coversPriorConflict =
-        keys.length === 0 &&
-        (!prior?.conflict ||
-          prior.conflict.coverage.criterionIds.every((id) =>
-            criterionIds.includes(id)
-          ))
+      const coversPriorConflict = keys.length === 0
       let assessment = cache.get(cacheKey)
 
       if (
         prior?.status === 'fail' &&
         coversPriorConflict &&
-        assessment?.overall.status === 'pass' &&
-        assessment.checks.every((check) => check.status === 'pass')
+        assessment?.overall.status === 'pass'
       ) {
         assessment = undefined
       }
@@ -518,19 +426,12 @@ export const createPreparedDesignReview = (options: {
             evidence: deterministicFindings.length
               ? 'Compiler checks found actionable data errors.'
               : 'Compiler admission and current attachment checks passed; appearance is not certified.'
-          },
-          checks: criterionIds.map((criterionId) => ({
-            criterionId,
-            status: 'unverified' as const,
-            evidence:
-              'The primary agent must judge this requirement using actual rendered evidence; no model is called by this tool.'
-          }))
+          }
         }
         signal.throwIfAborted()
       }
 
       const evidenceCurrent =
-        contextIdentity === identity(evidence(referenceUses)) &&
         (await options.attachmentCurrent(attachment, signal)) &&
         recipeIdentity === identity(options.resolveRecipe(artifactId).recipe)
 
@@ -563,10 +464,8 @@ export const createPreparedDesignReview = (options: {
       }
 
       const reviewed = {
-        referenceUses: structuredClone(referenceUses),
         recipeIdentity,
         evidenceIdentity,
-        contextIdentity,
         attachment,
         evidenceCurrent,
         status,
@@ -591,12 +490,6 @@ export const createPreparedDesignReview = (options: {
           : 'Canonical attachment changed during checking.',
         scope: [artifactId],
         dependencies: {
-          ...Object.fromEntries(
-            referenceUses.map((receipt) => [
-              referenceUseDependency(receipt),
-              String(receipt.revision)
-            ])
-          ),
           [`attachment:${lineage}`]: identity(attachment.evidence),
           [`recipe:${lineage}`]: recipeIdentity
         }
@@ -631,7 +524,6 @@ export const createPreparedDesignReview = (options: {
         appearance: 'unverified',
         deterministicFindings,
         assessment,
-        finalCanvasReviewRequired: true,
         results: results.deliver()
       }
     }

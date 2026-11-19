@@ -11,26 +11,33 @@ const mocks = vi.hoisted(() => ({
 vi.mock('../../../contexts', () => ({
   default: {
     getSystemProperty: mocks.getSystemProperty,
+
     getElementData: (id: string) => {
       const element = mocks.getElementById(id)
+
       return element ? { id, type: element.get('type') } : undefined
     },
+
     getElementComputedData: (id: string) =>
       mocks.getElementById(id)?.getAllComputedData?.(),
+
     elementSourceToWorkspace: (
       _id: string,
       position: { x: number; y: number }
     ) => ({ ...position }),
+
     workspaceToElementSource: (
       _id: string,
       position: { x: number; y: number }
     ) => ({ ...position }),
+
     projectLocalComputedDataForElements: (ids: readonly string[]) =>
       mocks.projectLocalComputedDataFromPropertyIds(
         ids.flatMap((id) =>
           mocks.getElementById(id).props.getCanonicalRootPropertyIds()
         )
       ),
+
     patchLocalComputedData: mocks.patchLocalComputedData,
     projectLocalComputedDataFromPropertyIds:
       mocks.projectLocalComputedDataFromPropertyIds
@@ -145,6 +152,7 @@ const applyComputedPatch = (
       nextRecord[recordId] = value
     })
     const removeIds = new Set(recordPatch.remove ?? [])
+
     ;(next as unknown as Record<string, DataTypes>)[key] = Object.fromEntries(
       Object.entries(nextRecord).filter(
         ([recordId]) => !removeIds.has(recordId)
@@ -160,6 +168,7 @@ describe('Vector transient preview cancellation', () => {
     vi.clearAllMocks()
     mocks.getElementById.mockImplementation((elementId: string) => ({
       get: (key: string) => (key === 'type' ? 'vector' : undefined),
+
       props: {
         getCanonicalRootPropertyIds: () => [`${elementId}-vector-root`]
       }
@@ -191,9 +200,12 @@ describe('Vector transient preview cancellation', () => {
       if (requestedId !== elementId) {
         return null
       }
+
       return {
         get: (key: string) => (key === 'type' ? 'vector' : undefined),
+
         getAllComputedData: () => computed,
+
         props: {
           getCanonicalRootPropertyIds: () => [propertyId]
         }

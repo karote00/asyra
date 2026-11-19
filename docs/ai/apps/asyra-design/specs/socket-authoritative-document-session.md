@@ -77,8 +77,11 @@ database writes rather than coexisting with them as a second autosave mode.
   materialized by the backend.
 - **Checkpoint**: one backend-owned materialized document snapshot labeled with
   its durable sequence and destructive Reset generation.
-- **Document generation**: a non-negative backend-owned identity that starts at
-  zero and advances exactly once for every successful destructive Reset.
+- **Document generation**: an explicit non-negative safe-integer backend identity
+  that starts at zero and advances exactly once for every successful destructive
+  Reset. Wire and persisted records cannot omit it or infer it from document
+  content. Reset rejects an exhausted identity before replacing the checkpoint.
+  Outbox records alone may carry null before the first successful handshake.
 - **Pending tail**: accepted sequenced publications after the checkpoint's
   durable sequence and through the current head sequence.
 - **Local outbox**: App-owned IndexedDB records containing immutable local
@@ -97,14 +100,14 @@ An authoritative remote load always uses the socket handshake. Socket
 availability does not determine whether the already initialized local runtime
 can accept canonical actions.
 
-The production path has no local-only document mode. A one-Actor document and
-a multi-Actor document use the same handshake, publication, sequencing,
-broadcast, recovery-outbox, and persistence path.
+With a configured endpoint, one-Actor and multi-Actor documents use the same
+handshake, publication, sequencing, broadcast, recovery-outbox and persistence
+path. Without an endpoint, local-only startup follows the Product Decisions above.
 
-The bundled `crdt-7076-sample` Agent flow remains inside that same document
-path. No file identity may bypass the socket workflow because an endpoint is
-absent or unavailable. The sample has no direct compressed-document load,
-localStorage bootstrap, or nullable Collaboration mode. The permanent toolbar
+The bundled `crdt-7076-sample` follows the same endpoint selection as ordinary
+files. A configured but unavailable endpoint retains the provisional socket
+session and outbox; it does not switch to local-only mode. The sample has no
+direct compressed-document load or localStorage bootstrap. The permanent toolbar
 Reset remains a separate stored-file utility and never becomes a document
 session mode.
 

@@ -27,15 +27,21 @@ it('reconciles real subtree receipts through retained reads, verification and fi
     left: { x: 10, y: 10, width: 40, height: 40, rotation: 0 },
     right: { x: 100, y: 10, width: 40, height: 40, rotation: 0 }
   }
+
   let change: (value?: InspectionDependencyChange) => void = () => undefined
+
   const read = vi.fn((id: string) => data[id])
   const reviewer = createDesignReviewer(
     {
       read,
+
       computed: (id) => geometry[id],
+
       measure: () => [],
+
       observeChanges(listener) {
         change = listener
+
         return () => undefined
       }
     },
@@ -54,6 +60,7 @@ it('reconciles real subtree receipts through retained reads, verification and fi
     )
   ]
   const checks = createDesignCheckResults()
+
   interface Observation {
     parentCallId?: string
     reason?: string
@@ -66,62 +73,89 @@ it('reconciles real subtree receipts through retained reads, verification and fi
   const abort = new AbortController()
   const owner = createLocalOperationTools(
     actions,
-    { modelActions: (a) => a, resolveBatch: (a) => a, checkResults: checks },
+    {
+      modelActions: (a) => a,
+
+      resolveBatch: (a) => a,
+
+      checkResults: checks
+    },
     async (batch) => {
       const actionResults = []
+
       for (const request of batch.actions) {
         if (
           dropCoverage &&
           request.name === AiActionNames.VALIDATE_INSPECTION_EVIDENCE &&
           request.arguments.measurementTargets
-        )
+        ) {
           throw new Error('Coverage delivery interrupted')
+        }
+
         const action = actions.find((a) => a.name === request.name)
-        if (!action) throw new Error('Missing action')
+
+        if (!action) {
+          throw new Error('Missing action')
+        }
+
         const result = await action.execute(
           request.arguments as never,
           { signal: abort.signal } as never
         )
+
         if (
           request.name === AiActionNames.VALIDATE_INSPECTION_EVIDENCE &&
           request.arguments.measurementTargets
         ) {
           const hook = afterCoverage
+
           afterCoverage = undefined
           hook?.()
         }
+
         actionResults.push({
           actionId: request.id,
           actionName: request.name,
           result
         })
       }
+
       return { context: {}, actionResults } as never
     },
     {
       observation: {
         parentCallId: () => 'root-tool-call',
+
         trace: (stage, evidence) => {
-          if (failObserver) throw new Error('Diagnostic observer unavailable')
+          if (failObserver) {
+            throw new Error('Diagnostic observer unavailable')
+          }
+
           observations.push({ stage, evidence: evidence as Observation })
         }
       }
     }
   )
+
   const call = async (name: string, input: unknown = {}) =>
     JSON.parse(await owner.call(name, input, abort.signal))
-  for (const id of ['left', 'right'])
+
+  for (const id of ['left', 'right']) {
     await call(AiActionNames.REVIEW_DESIGN, { arguments: { elementId: id } })
+  }
+
   geometry.left.width = 50
   geometry.right.height = 50
   change({ elementIds: ['left', 'right'] })
   const stale = await call('read_design_checks')
+
   expect(stale.counts.stale).toBe(2)
   expect(stale).not.toHaveProperty('items')
   const details = await call('read_design_checks', {
     view: 'details',
     limit: 1
   })
+
   expect(details.items).toHaveLength(1)
   expect(details.nextOffset).toBe(1)
   dropCoverage = true
@@ -133,11 +167,12 @@ it('reconciles real subtree receipts through retained reads, verification and fi
     ...source.input,
     arguments: { elementId: 'root' }
   })
+
   expect(
     (await call(recordedClosure.calls[1].tool, root.mechanicalSelection))
       .verification.status
   ).toBe('pass')
-  for (let i = 0; i < 2; i++)
+  for (let i = 0; i < 2; i++) {
     expect(
       (
         await call(
@@ -151,6 +186,8 @@ it('reconciles real subtree receipts through retained reads, verification and fi
       stale: 0,
       unverified: 0
     })
+  }
+
   expect(owner.settleOutcome({ batchId: 'done', actions: [] }).actions).toEqual(
     []
   )
@@ -164,6 +201,7 @@ it('reconciles real subtree receipts through retained reads, verification and fi
       (entry: { disposition: string }) => entry.disposition === 'updated'
     )
   )
+
   expect(reconciled).toMatchObject({
     stage: 'action_completed',
     evidence: {
@@ -182,6 +220,7 @@ it('reconciles real subtree receipts through retained reads, verification and fi
     }
   })
   const right = checks.selection(['measurement:right'])[0]
+
   checks.record({
     id: 'visual:right',
     origin: 'main-agent',
@@ -197,6 +236,7 @@ it('reconciles real subtree receipts through retained reads, verification and fi
   geometry.left.width = 60
   change({ elementIds: ['left'] })
   const next = await call('read_design_checks')
+
   expect(next.counts).toEqual({ pass: 2, fail: 0, stale: 2, unverified: 0 })
   failObserver = true
   await owner.finishInspection(new Set(['root']), undefined, true, abort.signal)
@@ -208,6 +248,7 @@ it('reconciles real subtree receipts through retained reads, verification and fi
   const repaired = await call(AiActionNames.REVIEW_DESIGN, {
     arguments: { elementId: 'root' }
   })
+
   expect(
     (await call('verify_design_checks', repaired.mechanicalSelection))
       .verification.status
@@ -222,12 +263,14 @@ it('reconciles real subtree receipts through retained reads, verification and fi
       reason: _reason,
       ...current
     } = checks.read({ ids: ['measurement:left'], includePassed: true }).items[0]
+
     checks.record({
       ...current,
       status: 'fail',
       evidence: 'A newer concurrent result must survive'
     })
   }
+
   await call(AiActionNames.REVIEW_DESIGN, { arguments: { elementId: 'root' } })
   expect(
     observations.some((event) =>
@@ -282,14 +325,19 @@ it('selects recorded mechanical coverage before reconciliation without probing u
     height: 100,
     rotation: 0
   }))
+
   let change: () => void = () => undefined
+
   const reviewer = createDesignReviewer(
     {
       read,
       computed,
+
       measure: () => [],
+
       observeChanges(listener) {
         change = listener
+
         return () => undefined
       }
     },
@@ -312,32 +360,50 @@ it('selects recorded mechanical coverage before reconciliation without probing u
   const controller = new AbortController()
   const owner = createLocalOperationTools(
     actions,
-    { modelActions: (a) => a, resolveBatch: (a) => a, checkResults: checks },
+    {
+      modelActions: (a) => a,
+
+      resolveBatch: (a) => a,
+
+      checkResults: checks
+    },
     async (batch) => {
       const actionResults = []
+
       for (const request of batch.actions) {
         const action = actions.find((item) => item.name === request.name)
-        if (!action) throw new Error('Missing registered review action')
+
+        if (!action) {
+          throw new Error('Missing registered review action')
+        }
+
         const result = await action.execute(request.arguments as never, {
           signal: controller.signal
         })
+
         actionResults.push({
           actionId: request.id,
           actionName: request.name,
           result
         })
       }
+
       const reply = { context: {}, actionResults }
+
       exchanges.push({ request: batch, reply })
+
       return reply as never
     }
   )
-  for (const elementId of roots)
+
+  for (const elementId of roots) {
     await owner.call(
       AiActionNames.REVIEW_DESIGN,
       { arguments: { elementId } },
       controller.signal
     )
+  }
+
   expect(exchanges).toHaveLength(roots.length)
   expect
     .soft(
@@ -354,6 +420,7 @@ it('selects recorded mechanical coverage before reconciliation without probing u
   expect(read).toHaveBeenCalledTimes(roots.length * 2)
   expect(computed).toHaveBeenCalledTimes(roots.length * 2)
   const items = checks.read({ includePassed: true }).items
+
   expect(
     new Set(items.map((item) => JSON.stringify(item.dependencies))).size
   ).toBe(roots.length)
@@ -361,12 +428,17 @@ it('selects recorded mechanical coverage before reconciliation without probing u
   // original extra validation exchanges on this same canonical fixture.
   const currentBytes = Buffer.byteLength(JSON.stringify(exchanges))
   const legacy = JSON.parse(JSON.stringify(exchanges))
+
   for (const exchange of legacy) {
-    for (const action of exchange.request.actions)
+    for (const action of exchange.request.actions) {
       delete action.arguments.measurementTargets
-    for (const action of exchange.reply.actionResults)
+    }
+
+    for (const action of exchange.reply.actionResults) {
       delete action.result.coveredMeasurementTargets
+    }
   }
+
   for (let index = 1; index < roots.length; index++) {
     const original = legacy[index]
     const evidence = original.reply.actionResults[0].result.evidence
@@ -384,6 +456,7 @@ it('selects recorded mechanical coverage before reconciliation without probing u
       request.actions[0].arguments as never,
       { signal: controller.signal }
     )
+
     legacy.push({
       request,
       reply: {
@@ -398,6 +471,7 @@ it('selects recorded mechanical coverage before reconciliation without probing u
       }
     })
   }
+
   expect(currentBytes).toBeLessThan(Buffer.byteLength(JSON.stringify(legacy)))
   process.stdout.write(
     `${JSON.stringify({ measurement: 'mechanical-coverage', bytes: currentBytes, previousBytes: Buffer.byteLength(JSON.stringify(legacy)), exchanges: exchanges.length, previousExchanges: legacy.length })}\n`
@@ -407,14 +481,17 @@ it('selects recorded mechanical coverage before reconciliation without probing u
   // Independent roots cannot turn an old failure into a pass. More retained
   // obligations must not produce more useless reconciliation dispatches.
   const { revision: _revision, reason: _reason, ...prior } = items[0]
+
   checks.record({
     ...prior,
     status: 'fail',
     evidence: 'Unresolved prior finding'
   })
   const failed = checks.read({ ids: [prior.id], includePassed: true }).items[0]
+
   for (let index = 0; index < 70; index++) {
     const elementId = `independent-${index}`
+
     data[elementId] = { type: 'frame', children: [`${elementId}:child`] }
     data[`${elementId}:child`] = { type: 'rectangle', parentId: elementId }
     await owner.call(
@@ -423,6 +500,7 @@ it('selects recorded mechanical coverage before reconciliation without probing u
       controller.signal
     )
   }
+
   expect(exchanges).toHaveLength(roots.length + 70)
   expect(
     checks.read({ ids: [prior.id], includePassed: true }).items[0]
@@ -443,8 +521,12 @@ it('selects recorded mechanical coverage before reconciliation without probing u
     { length: 70 },
     (_, index) => `independent-${index}`
   )
+
   data.parent = { type: 'frame', children: descendants }
-  for (const id of descendants) data[id].parentId = 'parent'
+  for (const id of descendants) {
+    data[id].parentId = 'parent'
+  }
+
   change()
   const parentReply = JSON.parse(
     await owner.call(
@@ -453,6 +535,7 @@ it('selects recorded mechanical coverage before reconciliation without probing u
       controller.signal
     )
   )
+
   expect(parentReply.actionResults[0].result).not.toHaveProperty(
     'coveredMeasurementTargets'
   )
@@ -471,10 +554,13 @@ it('selects recorded mechanical coverage before reconciliation without probing u
       ids: [`measurement:${id}`],
       includePassed: true
     }).items[0]
+
     expect(item.status).toBe('pass')
     const stamp = JSON.parse(item.dependencies[item.id])
+
     expect(reviewer.isCurrent(stamp)).toBe(true)
   }
+
   reviewer.dispose()
 })
 
@@ -486,8 +572,11 @@ it('omits automatic scope when only the root is retained but preserves explicit 
   const reviewer = createDesignReviewer(
     {
       read: (id) => data[id as keyof typeof data],
+
       computed: () => ({ x: 0, y: 0, width: 100, height: 100, rotation: 0 }),
+
       measure: () => [],
+
       observeChanges: () => () => undefined
     },
     async () => undefined,
@@ -499,6 +588,7 @@ it('omits automatic scope when only the root is retained but preserves explicit 
     [action],
     {
       modelActions: (a) => a,
+
       resolveBatch: (a) => a
     },
     async (batch) => ({
@@ -506,6 +596,7 @@ it('omits automatic scope when only the root is retained but preserves explicit 
       actionResults: await Promise.all(
         batch.actions.map(async (item) => {
           inputs.push(item.arguments)
+
           return {
             actionId: item.id,
             actionName: item.name,
@@ -517,10 +608,12 @@ it('omits automatic scope when only the root is retained but preserves explicit 
       )
     })
   )
+
   const call = async (args: object) =>
     JSON.parse(
       await owner.call(action.name, args, new AbortController().signal)
     )
+
   try {
     await call({ arguments: { elementId: 'root' } })
     await call({ arguments: { elementId: 'root' } })
@@ -531,10 +624,12 @@ it('omits automatic scope when only the root is retained but preserves explicit 
       const reply = await call({
         arguments: { elementId: 'root', measurementTargets: selection }
       })
+
       expect(reply.actionResults[0].result.coveredMeasurementTargets).toEqual(
         selection.length ? ['child'] : []
       )
     }
+
     // Retain a separate root without permitting it to certify this subtree.
     await call({ arguments: { elementId: 'missing' } })
     const full = await owner.finishInspection(
@@ -545,6 +640,7 @@ it('omits automatic scope when only the root is retained but preserves explicit 
       false,
       true
     )
+
     expect(full.actionResults[0].result.coveredMeasurementTargets).toEqual([
       'child'
     ])

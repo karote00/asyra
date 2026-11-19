@@ -57,6 +57,7 @@ const StrokeList = ({
 
       {strokes.map((stroke, index) => {
         const primaryStrokeId = stroke.ids[0]
+
         if (!primaryStrokeId) {
           return null
         }

@@ -5,7 +5,6 @@ const signal = () => new AbortController().signal
 
 const setup = () => {
   let current = true
-  let requirementRevision = 1
   const recipes = new Map<
     string,
     { recipe: unknown; findings: unknown[]; elementCount: number }
@@ -47,15 +46,6 @@ const setup = () => {
       return result
     },
 
-    context: () => ({
-      criteria: {
-        shape: { requirement: 'Draw a box' },
-        material: { requirement: 'Blue glass' }
-      },
-      requirementRevision,
-      referenceImageIndexes: []
-    }),
-
     resolveAttachment: async (parentId?: string) => ({
       workspaceId: 'workspace',
       parentId: parentId ?? 'workspace',
@@ -83,10 +73,6 @@ const setup = () => {
 
     invalidate: () => {
       current = false
-    },
-
-    changeReferences: () => {
-      requirementRevision++
     }
   }
 }
@@ -99,12 +85,10 @@ describe('tool-only prepared recipe checks', () => {
     expect(first).toMatchObject({
       status: 'pass',
       appearance: 'unverified',
-      reused: false,
-      finalCanvasReviewRequired: true
+      reused: false
     })
-    expect(
-      first.assessment.checks.every((check) => check.status === 'unverified')
-    ).toBe(true)
+    expect(first.assessment.overall.status).toBe('pass')
+    expect(first).not.toHaveProperty('finalCanvasReviewRequired')
     expect((await f.owner.review({ artifactId: 'a' }, signal())).reused).toBe(
       true
     )
@@ -114,7 +98,7 @@ describe('tool-only prepared recipe checks', () => {
     expect(f.owner.read({ includePassed: true }).items).toHaveLength(2)
   })
 
-  it('blocks compiler failures regardless of partial key or criterion coverage', async () => {
+  it('blocks compiler failures regardless of partial key coverage', async () => {
     const f = setup()
 
     f.recipe('a').findings.push({
@@ -125,7 +109,7 @@ describe('tool-only prepared recipe checks', () => {
       actual: 20
     })
     const first = await f.owner.review(
-      { artifactId: 'a', keys: ['body'], criterionIds: ['material'] },
+      { artifactId: 'a', keys: ['body'] },
       signal()
     )
 
@@ -167,8 +151,6 @@ describe('tool-only prepared recipe checks', () => {
 
     await f.owner.review({ artifactId: 'a', parentId: 'parent' }, signal())
     expect(() => f.owner.assertApplicable('a', 'other')).toThrow(/parent/)
-    f.changeReferences()
-    expect(() => f.owner.assertApplicable('a', 'parent')).toThrow(/evidence/)
     await f.owner.review({ artifactId: 'a', parentId: 'parent' }, signal())
     f.recipe('a').recipe = { type: 'rect', width: 42 }
     expect(() => f.owner.assertApplicable('a', 'parent')).toThrow(/recipe/)

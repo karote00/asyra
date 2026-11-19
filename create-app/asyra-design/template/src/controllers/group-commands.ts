@@ -23,6 +23,7 @@ const hasProjectedElement = (
   elementDataMap: GroupCommandElementDataMap
 ): boolean => {
   const element = elementDataMap[elementId]
+
   return (
     flattenedIdSet.has(elementId) &&
     element?.id === elementId &&
@@ -86,6 +87,7 @@ export const createGroupCommandRequest = (
 ): GroupCommandRequest | null => {
   const isAvailable =
     command === GroupCommandIds.GROUP ? state.canGroup : state.canUngroup
+
   if (!isAvailable) {
     return null
   }

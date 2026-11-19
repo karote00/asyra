@@ -1,0 +1,105 @@
+{
+  "source": {
+    "task": "continuation iteration",
+    "attempt": 20,
+    "run": "taipei-101-fixed-1793972096963",
+    "requestId": "9d14de8b-ff5b-40bb-aa18-737e6cf757f5"
+  },
+  "compound": {
+    "input": {
+      "query": "apply world material fields retained artifact faces gradients",
+      "view": "usage"
+    },
+    "output": {
+      "catalogSize": 182,
+      "guidance": {
+        "capabilities": "Find an operation by what it does: category menus, semantic operations or capability terms such as fill, hierarchy, bounds and inspection. Menus include execution routes; exact names retrieve input/output contracts. Query resolves exact registered identities before descriptive matching; use purpose terms or categories for related capabilities. Known tools need no repeated lookup.",
+        "references": "This catalog does not search subjects, photographs or design reference material. Use native web research for missing external facts/images, then import_reference_image for a selected source. A subject word may be absent from this capability catalog; do not infer a missing drawing capability or automatically repeat it as a tool query."
+      },
+      "message": "No lexical match; this is not evidence of an unavailable capability. Select an operation from its category.",
+      "categories": [
+        {
+          "category": "design",
+          "count": 26
+        },
+        {
+          "category": "core",
+          "count": 52
+        },
+        {
+          "category": "element",
+          "count": 26
+        },
+        {
+          "category": "hierarchy",
+          "count": 7
+        },
+        {
+          "category": "selection",
+          "count": 11
+        },
+        {
+          "category": "viewport",
+          "count": 6
+        },
+        {
+          "category": "fill",
+          "count": 17
+        },
+        {
+          "category": "stroke",
+          "count": 5
+        },
+        {
+          "category": "vector",
+          "count": 32
+        },
+        {
+          "category": "tools",
+          "count": 208
+        }
+      ],
+      "recovery": {
+        "tool": "describe_design_apis",
+        "arguments": {}
+      },
+      "apis": [],
+      "tools": [],
+      "complete": true,
+      "count": 0,
+      "offset": 0,
+      "resultKey": "VBCfxEtRXhmvnj6uJZ__wQ",
+      "toolOutcome": {
+        "status": "success",
+        "settlement": "completed",
+        "issues": []
+      }
+    }
+  },
+  "broad": {
+    "input": {
+      "query": "material",
+      "view": "usage"
+    },
+    "responseTextBytes": 23072,
+    "declaredContentBytes": 30162,
+    "deliveredContentBytes": 20963
+  },
+  "selectedInput": {
+    "names": [
+      "prepare_and_apply_design"
+    ],
+    "view": "usage",
+    "inputScope": {
+      "operation": "draft",
+      "nodeTypes": [
+        "projected-face",
+        "surface-grid",
+        "pattern"
+      ],
+      "optionalInputs": [
+        "plan"
+      ]
+    }
+  }
+}

@@ -25,8 +25,10 @@ vi.mock('@asyra/core', () => ({
     UPDATE_COMPUTED_DATA: 'updateComputedData',
     UPDATE_COMPUTED_DATA_PATCH: 'updateComputedDataPatch'
   },
+
   subscribeToEventBatches: (subscriber: BatchSubscriber) => {
     mocks.batchSubscriber = subscriber
+
     return { unsubscribe: vi.fn() }
   }
 }))
@@ -43,8 +45,10 @@ vi.mock('../../contexts', () => ({
   default: {
     subscribeToFrameComplete: (subscriber: () => void) => {
       mocks.frameCompleteSubscriber = subscriber
+
       return vi.fn()
     },
+
     getSystemProperty: mocks.getSystemProperty,
     getSystemPropertyObservable: mocks.getSystemPropertyObservable,
     getUIProperty: mocks.getUIProperty,
@@ -65,6 +69,7 @@ vi.mock('../../common-apis/element', () => ({
         y: 24
       }
     }),
+
     getVectorAnchorPointHandleMode: () => 'none'
   }
 }))
@@ -75,6 +80,7 @@ vi.mock('../../common-apis/selection', () => ({
     pointId: 'point-1',
     target: 'anchor'
   }),
+
   decodeVectorSegmentSelectionId: () => null
 }))
 

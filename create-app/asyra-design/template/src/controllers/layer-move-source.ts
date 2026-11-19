@@ -50,6 +50,7 @@ export const deriveLayerMoveSource = ({
   }
 
   const elements = candidateIds.map((elementId) => elementDataMap[elementId])
+
   if (
     elements.some(
       (element, index) =>
@@ -66,6 +67,7 @@ export const deriveLayerMoveSource = ({
   }
 
   const flattenedIdSet = new Set(flattenedIds)
+
   if (candidateIds.some((elementId) => !flattenedIdSet.has(elementId))) {
     return { ok: false, reason: 'stale-source-projection' }
   }
@@ -75,6 +77,7 @@ export const deriveLayerMoveSource = ({
   }
 
   const sourceParentId = elements[0]?.parentId
+
   if (
     typeof sourceParentId !== 'string' ||
     sourceParentId.length === 0 ||

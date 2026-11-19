@@ -21,11 +21,14 @@ describe('Asyra Design canonical collaboration delivery timeline', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
     vi.spyOn(elementApis, 'updateElementProperties').mockImplementation(
-      () => undefined
+      (ids) => ({ acceptedIds: [...ids], changed: true })
     )
-    vi.spyOn(elementApis, 'changeElementGeometry').mockImplementation(
-      () => undefined
-    )
+    vi.spyOn(elementApis, 'changeElementGeometry').mockImplementation((id) => ({
+      value: null,
+      acceptedIds: [id],
+      changed: true,
+      unavailableIds: []
+    }))
     vi.spyOn(elementApis, 'createElement').mockReturnValue('element-created')
     vi.spyOn(elementApis, 'getElementBounds').mockReturnValue({
       x: 0,
@@ -43,12 +46,25 @@ describe('Asyra Design canonical collaboration delivery timeline', () => {
     vi.spyOn(
       elementApis,
       'normalizeGroupGeometryForElements'
-    ).mockImplementation(() => undefined)
-    vi.spyOn(elementApis, 'resetElementSize').mockImplementation(
-      () => undefined
-    )
+    ).mockImplementation((ids) => ({
+      value: null,
+      acceptedIds: [...ids],
+      unavailableIds: [],
+      changed: true
+    }))
+    vi.spyOn(elementApis, 'resetElementSize').mockImplementation((id) => ({
+      value: null,
+      acceptedIds: [id],
+      unavailableIds: [],
+      changed: true
+    }))
     vi.spyOn(elementApis, 'setElementPositions').mockImplementation(
-      () => undefined
+      (updates) => ({
+        value: null,
+        acceptedIds: Object.keys(updates),
+        unavailableIds: [],
+        changed: true
+      })
     )
     vi.spyOn(selectionApis, 'selectElements').mockImplementation(
       () => undefined

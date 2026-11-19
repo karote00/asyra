@@ -13,11 +13,12 @@ import { AiActionNames } from '../constants'
 export const activityToolLabels: Readonly<Record<string, string>> =
   Object.freeze({
     vtracer: 'Converting artwork to vectors',
-    [AiDesignToolIds.DESCRIBE_DESIGN_APIS]: 'Finding available operations',
+    [AiDesignToolIds.SEARCH_DESIGN_TOOLS]: 'Finding available operations',
+    [AiDesignToolIds.READ_DESIGN_CONTRACTS]: 'Reading operation contracts',
     [AiDesignToolIds.READ_DESIGN_CHECKS]: 'Reading unresolved checks',
     [AiDesignToolIds.CHECK_DRAWING_IMAGE]: 'Comparing image regions',
     [AiDesignToolIds.PREPARE_AND_APPLY_DESIGN]: 'Running the planned task',
-    [AiDesignToolIds.EXECUTE_DESIGN_BATCH]: 'Running planned operations',
+    [AiDesignToolIds.EXECUTE_DESIGN]: 'Running planned operations',
     [AiDesignToolIds.RETAIN_DESIGN_TARGETS]: 'Retaining edit targets',
     [AiDesignToolIds.RELEASE_DESIGN_ARTIFACTS]: 'Releasing retained data',
     [AiDesignToolIds.SUBMIT_TOOL]: 'Validating a reusable operation',
@@ -28,8 +29,6 @@ export const activityToolLabels: Readonly<Record<string, string>> =
     [AiDesignToolIds.PREPARE_MATERIAL_REVISION]:
       'Calculating the material correction',
     [AiActionNames.APPLY_PREPARED_MATERIAL]: 'Applying the material correction',
-    [AiDesignToolIds.REVIEW_DRAWING]: 'Checking the requested details',
-    [AiDesignToolIds.DEFINE_DESIGN_CRITERIA]: 'Defining the requested checks',
     [AiDesignToolIds.RECORD_DESIGN_FACTS]: 'Recording verified sources',
     [AiDesignToolIds.RECORD_DESIGN_CALCULATIONS]:
       'Recording derived measurements',
@@ -65,7 +64,7 @@ const boundedActivityMessage = (
 ): string | undefined => {
   const message = value?.trim()
 
-  if (message && message.length <= 1000) {
+  if (message && Array.from(message).length <= 1000) {
     return message
   }
 }

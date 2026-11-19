@@ -1,12 +1,14 @@
 import { expect, it, vi } from 'vitest'
 import {
   createAiRecipeRecoverySchema,
-  createAiToolContract
+  createAiToolContract,
+  registeredRecipeOutputAt
 } from '@asyra/ai-agent-runtime'
 import { operationInputIssue } from '../operation-input-schema'
 import {
   createLocalToolLeases,
-  localToolReferences
+  localToolReferences,
+  localToolSchemaIsPortable
 } from '../local-tool-leases'
 
 const reference = {
@@ -14,6 +16,43 @@ const reference = {
   'x-runtime-value': 'request-artifact'
 } as const
 const value = { type: 'number' } as const
+
+it('classifies and validates selected references using their self-contained root', () => {
+  for (const lifetime of ['document', 'request-artifact', 'secret']) {
+    const root = {
+      type: 'object',
+      required: ['execution'],
+      properties: {
+        execution: {
+          type: 'object',
+          required: ['value'],
+          properties: {
+            value: {
+              type: 'object',
+              required: ['handle'],
+              properties: {
+                handle: {
+                  $ref: '#/properties/execution/properties/value/$defs/handle'
+                }
+              },
+              $defs: { handle: { type: 'string', 'x-runtime-value': lifetime } }
+            }
+          }
+        }
+      }
+    }
+    const selected = registeredRecipeOutputAt(root, '/execution/value/handle')
+
+    expect(localToolSchemaIsPortable(selected)).toBe(lifetime === 'document')
+    const container = registeredRecipeOutputAt(root, '/execution/value')
+
+    expect(localToolSchemaIsPortable(container)).toBe(lifetime === 'document')
+    expect(
+      operationInputIssue({ handle: 'retained-value' }, container)
+    ).toBeUndefined()
+    expect(operationInputIssue({ handle: 3 }, container)).toBeDefined()
+  }
+})
 
 it('keeps dependency-local schema references resolvable in a typed recovery envelope', () => {
   const schema = createAiRecipeRecoverySchema([
@@ -205,7 +244,7 @@ it('keeps failed cleanup retryable and rejects use while cleanup is incomplete',
     'temporary IO'
   )
   await expect(open(host, 'b', undefined, 'local', reference)).rejects.toThrow(
-    'unavailable'
+    'cleanup is incomplete'
   )
   await host.release({ requestId: 'r', callId: 'a' })
   await host.release({ requestId: 'r', callId: 'a' })
@@ -401,4 +440,114 @@ it('passes request data through real leases while retaining explicitly nested ar
   )
   await host.dispose()
   expect(release).toHaveBeenCalledOnce()
+})
+
+it('classifies retained result lifetime from schema metadata rather than names or examples', () => {
+  expect(
+    localToolSchemaIsPortable({
+      type: 'object',
+      properties: { artifactId: { type: 'string' } }
+    })
+  ).toBe(true)
+  expect(
+    localToolSchemaIsPortable({ type: 'string', 'x-runtime-value': 'document' })
+  ).toBe(true)
+  expect(
+    localToolSchemaIsPortable({
+      type: 'object',
+      properties: { a: { $ref: '#/$defs/value' } },
+      $defs: { value: reference }
+    })
+  ).toBe(false)
+  expect(
+    localToolSchemaIsPortable({
+      anyOf: [{ type: 'null' }, { type: 'array', items: reference }]
+    })
+  ).toBe(false)
+  expect(
+    localToolSchemaIsPortable({
+      type: 'object',
+      examples: [{ 'x-runtime-value': 'secret' }],
+      $defs: { unused: reference }
+    })
+  ).toBe(true)
+  expect(
+    localToolSchemaIsPortable({ type: 'string', 'x-runtime-value': 'secret' })
+  ).toBe(false)
+})
+
+it('tracks nonportable paths without tainting equal portable values', () => {
+  const schema = {
+    type: 'object',
+    $defs: { stamp: { type: 'object', 'x-runtime-value': 'request' } },
+    properties: {
+      stamp: { $ref: '#/$defs/stamp' },
+      'points/list': {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            x: { type: 'number' },
+            token: { type: 'string', 'x-runtime-value': 'secret' }
+          }
+        }
+      },
+      choice: {
+        anyOf: [
+          { type: 'number' },
+          { type: 'string', 'x-runtime-value': 'request' }
+        ]
+      },
+      handle: reference
+    }
+  }
+  const paths = new Set<string>()
+
+  expect(
+    localToolReferences(
+      {
+        stamp: { revision: 0 },
+        'points/list': [{ x: 0, token: 'zero' }],
+        choice: 0,
+        handle: 'live'
+      },
+      schema,
+      paths
+    )
+  ).toEqual(['live'])
+  expect([...paths].sort()).toEqual([
+    '/handle',
+    '/points~1list/0/token',
+    '/stamp'
+  ])
+})
+
+it('retains root-referenced portable values and finds recursive artifact lifetimes', () => {
+  const portable = {
+    type: 'object',
+    properties: { label: { type: 'string' }, child: { $ref: '#' } },
+    additionalProperties: false
+  }
+
+  expect(localToolSchemaIsPortable(portable)).toBe(true)
+  expect(
+    localToolReferences({ label: 'root', child: { label: 'leaf' } }, portable)
+  ).toEqual([])
+  const ephemeral = {
+    ...portable,
+    properties: { ...portable.properties, handle: reference }
+  }
+
+  expect(localToolSchemaIsPortable(ephemeral)).toBe(false)
+  expect(
+    localToolReferences({ child: { handle: 'nested-handle' } }, ephemeral)
+  ).toEqual(['nested-handle'])
+  for (const $ref of [
+    'https://invalid.test/schema',
+    '#/missing',
+    '#/properties/a~2b'
+  ]) {
+    expect(() => localToolSchemaIsPortable({ $ref })).toThrow()
+    expect(() => localToolReferences({}, { $ref })).toThrow()
+  }
 })

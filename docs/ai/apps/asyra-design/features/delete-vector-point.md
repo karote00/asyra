@@ -24,10 +24,13 @@ If any precondition fails, delete is a no-op in path-editing mode.
 
 1. Delete/Backspace removes the selected anchor point from the active path-editing vector.
 2. If removed point is an interior point of an open subpath:
+
 - subpath is split into two open subpaths
 - affected segment ids are regenerated
+
 3. Point/segment selection channels are cleared after successful point delete.
-4. Compatibility selected/hovered vector point states are cleared.
+4. Canonical point and segment selection channels and hovered point state are
+   cleared. Panel and overlay selection views remain derived projections.
 5. Active element selection is kept on the editing vector (`selectElements([pathEditingVectorId])`).
 
 ## Transaction Contract

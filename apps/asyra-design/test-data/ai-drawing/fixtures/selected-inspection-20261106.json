@@ -1,0 +1,88 @@
+{
+  "sourceRun": "taipei-101-fixed-1793959745424",
+  "request": {
+    "operations": [
+      {
+        "id": "group",
+        "name": "api_hierarchy_groupElements",
+        "arguments": {
+          "elementIds": [
+            "design-36afa93d-eee9-492d-804a-1c393ae8b773-0",
+            "design-14a9e85a-0fa4-4ebd-b484-ab18174c17c5-0",
+            "design-7f6e43c0-112f-4c35-a456-cc577c596acf-0",
+            "design-2e1560b7-493a-4c69-a820-cf5e0389af45-0"
+          ]
+        }
+      }
+    ],
+    "message": "整合完整建築圖層以檢查整體與細節",
+    "delivery": {
+      "fields": {
+        "receipt": {
+          "step": "group",
+          "path": "/actionResults"
+        }
+      }
+    }
+  },
+  "response": {
+    "saved": [],
+    "fields": {
+      "receipt": [
+        {
+          "actionId": "aec5e54d-1ec1-4253-9773-de1790e1fb3d",
+          "actionName": "api_hierarchy_groupElements",
+          "result": {
+            "status": "complete",
+            "value": {
+              "count": 4,
+              "groupId": "grp-actor-894ae840-6078-4524-b131-547615919f53-5"
+            },
+            "mutationScope": {
+              "complete": true,
+              "elementCount": 5,
+              "removedElementCount": 0
+            },
+            "retained": {
+              "snapshotId": "801ef5f0-d7e8-418a-bc5b-d1b84a37128d",
+              "leaseId": "05bbb1da-d3fd-4804-a215-910f0845462a",
+              "total": 4
+            },
+            "toolOutcome": {
+              "status": "success",
+              "settlement": "completed"
+            }
+          }
+        },
+        {
+          "actionId": "72de0f93-1049-4978-8cb5-3559046a1f69",
+          "actionName": "inspect_drawing",
+          "result": {
+            "available": true,
+            "image": {
+              "dataUrl": "[redacted]",
+              "width": 189,
+              "height": 1024
+            },
+            "toolOutcome": {
+              "status": "success",
+              "settlement": "completed"
+            },
+            "inspectionId": "26807825-26c9-4816-8123-916f6555dbb3",
+            "revision": 6
+          }
+        }
+      ]
+    },
+    "toolOutcome": {
+      "status": "success",
+      "settlement": "completed",
+      "issues": []
+    }
+  },
+  "observed": {
+    "responseTextBytes": 303374,
+    "imageCount": 0,
+    "callId": "call_ML274B2gJmAKAquXQyxRZo2a"
+  }
+}

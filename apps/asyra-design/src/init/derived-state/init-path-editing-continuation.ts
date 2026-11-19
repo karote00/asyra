@@ -6,11 +6,8 @@ import {
 } from '@asyra/core'
 import { PresetSystemPropertyKeys } from '@asyra/preset'
 import core from '../../contexts'
-import { elementApis } from '../../common-apis'
-import type {
-  PathEditingContinuationState,
-  SelectedVectorPointState
-} from '../../common-apis/system-context'
+import { elementApis, selectionApis } from '../../common-apis'
+import type { PathEditingContinuationState } from '../../common-apis/system-context'
 
 const VECTOR_TOPOLOGY_KEYS = new Set(['points', 'segments', 'networks'])
 
@@ -73,9 +70,9 @@ const calculateContinuation = (
     return null
   }
 
-  const selectedPoint = core.getSystemProperty<SelectedVectorPointState | null>(
-    PresetSystemPropertyKeys.SELECTED_VECTOR_POINT
-  )
+  const selectedPoint = selectionApis
+    .getSelectedVectorPoints()
+    .find((point) => point.elementId === vectorId)
   const subpaths = elementApis.getVectorAnchorSubpaths(vectorId)
 
   if (subpaths.length === 0) {

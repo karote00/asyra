@@ -1,3 +1,4 @@
+import { registerCollaborationSessionObservation } from './session-observation'
 import {
   settleCooperativeRenderSlice,
   type CoreCollaborationBridge,
@@ -130,11 +131,6 @@ export interface CollaborationDebugHandle {
   dispose(): Promise<void>
 }
 
-export interface PreparedCollaborationDocumentSession {
-  readonly bootstrap: DocumentSessionBootstrap
-  activate(): Promise<CollaborationDebugHandle>
-}
-
 interface CollaborationSessionComposition {
   readonly collaboration: Collaboration
   readonly provider: CollaborationWebSocketProvider
@@ -252,6 +248,15 @@ const createSessionComposition = (
 class CollaborationSessionController {
   readonly identity: CollaborationDebugHandle['identity']
 
+  get documentScope() {
+    return JSON.stringify([
+      this.identity.documentId,
+      this.identity.roomId,
+      this.identity.actorId,
+      this.outbox.getDocumentGeneration()
+    ])
+  }
+
   private readonly mode: CollaborationMode
 
   private readonly processRemotePublication: ProcessRemotePublication
@@ -359,7 +364,7 @@ class CollaborationSessionController {
 
       try {
         await this.outbox.bindDocumentGeneration(
-          prepared.bootstrap.documentGeneration ?? 0
+          prepared.bootstrap.documentGeneration
         )
       } catch (error) {
         if (!(error instanceof PublicationOutboxStorageError)) {
@@ -1134,7 +1139,7 @@ class CollaborationSessionController {
         }
 
         await this.outbox.bindDocumentGeneration(
-          next.bootstrap.documentGeneration ?? 0
+          next.bootstrap.documentGeneration
         )
         if (this.disposed || this.recoveryMode) {
           return
@@ -1356,27 +1361,12 @@ class CollaborationSessionController {
 
 let activeController: CollaborationSessionController | undefined
 let activeHandle: CollaborationDebugHandle | undefined
-let startPromise: Promise<CollaborationDebugHandle> | undefined
 
-export const getActiveCollaborationHandle = ():
-  CollaborationDebugHandle | undefined => activeHandle
+const releaseSessionObservation = registerCollaborationSessionObservation({
+  getHandle: () => activeHandle,
 
-const createCoreCollaborationBridge = (): CoreCollaborationBridge =>
-  Object.freeze({
-    applyRemoteCanonicalChangeSlices: (
-      input: Parameters<
-        CoreCollaborationBridge['applyRemoteCanonicalChangeSlices']
-      >[0]
-    ) => core.applyRemoteCanonicalChangeSlices(input),
-
-    load: (data: unknown) => core.load(data),
-
-    subscribeToSharedPublication: (
-      subscriber: Parameters<
-        CoreCollaborationBridge['subscribeToSharedPublication']
-      >[0]
-    ) => core.subscribeToSharedPublication(subscriber)
-  })
+  getDocumentScope: () => activeController?.documentScope
+})
 
 const prepareCollaborationController = async (
   mode: CollaborationMode,
@@ -1445,24 +1435,6 @@ const prepareCollaborationController = async (
     }
 
     throw error
-  }
-}
-
-/**
- * @deprecated Register createCollaborationDocumentSession(mode) with Core so
- * Core owns prepare/load/activate/dispose ordering.
- */
-export const prepareCollaborationDocumentSession = async (
-  mode: CollaborationMode
-): Promise<PreparedCollaborationDocumentSession> => {
-  const prepared = await prepareCollaborationController(
-    mode,
-    createCoreCollaborationBridge()
-  )
-
-  return {
-    bootstrap: prepared.bootstrap,
-    activate: prepared.activate
   }
 }
 
@@ -1541,31 +1513,11 @@ export const createCollaborationDocumentSession = (
   })
 }
 
-export const startCollaboration = (
-  mode: CollaborationMode
-): Promise<CollaborationDebugHandle> => {
-  if (startPromise) {
-    return startPromise
-  }
-
-  const pendingStart = prepareCollaborationDocumentSession(mode)
-    .then((prepared) => prepared.activate())
-    .catch((error) => {
-      startPromise = undefined
-      throw error
-    })
-
-  startPromise = pendingStart
-
-  return pendingStart
-}
-
 export const disposeCollaboration = async (): Promise<void> => {
   const controller = activeController
 
   activeController = undefined
   activeHandle = undefined
-  startPromise = undefined
   delete window.__Collaboration__
   await controller?.dispose()
 }
@@ -1592,7 +1544,6 @@ export const resetCollaborationDocument = async (
     if (activeController === controller) {
       activeController = undefined
       activeHandle = undefined
-      startPromise = undefined
       delete window.__Collaboration__
     }
 
@@ -1606,7 +1557,10 @@ export const resetCollaborationDocument = async (
 }
 
 if (import.meta.hot) {
-  import.meta.hot.dispose(() => void disposeCollaboration())
+  import.meta.hot.dispose(() => {
+    releaseSessionObservation()
+    void disposeCollaboration()
+  })
 }
 
 declare global {

@@ -551,11 +551,10 @@ export class CollaborationWebSocketProvider implements Provider {
     signal?.throwIfAborted()
     this.requireDocumentSessionLive()
     const sequence = this.appliedDocumentSequence
-    const documentGeneration =
-      this.documentSessionBootstrap?.documentGeneration ?? 0
+    const documentGeneration = this.documentSessionBootstrap?.documentGeneration
 
-    if (sequence === null) {
-      throw new Error('Document sequence is unavailable')
+    if (sequence === null || documentGeneration === undefined) {
+      throw new Error('Document version is unavailable')
     }
 
     const result = (await this.request(

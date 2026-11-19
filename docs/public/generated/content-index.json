@@ -1864,7 +1864,7 @@
       "wordCount": 818
     },
     {
-      "contentSha256": "2fd827443c789e040b1912952faed99c3e6ffeb2607216efb62296ad2f1e2620",
+      "contentSha256": "cf8444e4e1a59b845cccd592ea8eed85841bc8530f9aff884f67a20870056e09",
       "description": "Optional registry, schema, permission, and execution boundary for app-approved AI actions.",
       "headings": [
         {
@@ -1928,7 +1928,7 @@
       "path": "reference/packages/ai-agent-runtime.md",
       "section": "Reference",
       "title": "@asyra/ai-agent-runtime",
-      "wordCount": 723
+      "wordCount": 771
     },
     {
       "contentSha256": "d89bff16e1372b77541c570df2d78a8ec84f4159d0e20f3919e77bc44b621cd5",

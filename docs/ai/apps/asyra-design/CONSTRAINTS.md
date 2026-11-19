@@ -11,8 +11,8 @@
 3. Tool semantics
 - primary tool values are constrained to current tool set:
   - `select`, `rect`, `oval`, `pen`, `text`
-- Text has a toolbar selection entry; Canvas Text creation/direct editing and
-  its keyboard shortcut are not implemented.
+- Text supports toolbar selection, the T shortcut, Canvas creation and direct
+  plain-text editing through the current Canvas authoring feature.
 
 4. Property panel behavior
 - panel shows element layout properties for element selection

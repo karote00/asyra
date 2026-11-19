@@ -131,7 +131,7 @@ it.each(
       const canonical = preparation.resolve(prepared.artifactId)
 
       await operations.call(
-        AiDesignToolIds.EXECUTE_DESIGN_BATCH,
+        AiDesignToolIds.EXECUTE_DESIGN,
         {
           inspection: 'defer',
           operations: [
@@ -139,7 +139,7 @@ it.each(
               name: action.name,
               arguments: {
                 artifactId: prepared.artifactId,
-                response: 'full',
+
                 ...(parentId ? { parentId } : {})
               }
             }

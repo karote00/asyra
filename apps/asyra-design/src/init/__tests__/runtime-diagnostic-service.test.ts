@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import * as collaborationLifecycle from '../../collaboration/lifecycle'
+import * as collaborationLifecycle from '../../collaboration/session-observation'
 import * as performanceProfile from '../performance/ai-drawing-performance-profile'
 import {
   RUNTIME_DIAGNOSTIC_REQUEST_EVENT,

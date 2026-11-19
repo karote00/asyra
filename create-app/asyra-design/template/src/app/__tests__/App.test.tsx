@@ -13,6 +13,7 @@ vi.mock('../../toolbar', () => ({
     onAiToggle: (invoker: HTMLButtonElement) => void
   }) => {
     toolbarProps(props)
+
     return (
       <button
         data-testid="agent-toggle"
@@ -33,11 +34,14 @@ vi.mock('../ai-conversation-panel', () => ({
 }))
 vi.mock('../../providers', () => ({
   useElementSelection: () => new Set(),
+
   useFlattenedIdsData: () => [],
+
   useElementDataMap: () => ({})
 }))
 vi.mock('../../config/group-command-descriptors', () => ({
   createGroupCommandDescriptors: () => [],
+
   detectGroupCommandPlatform: () => 'macos'
 }))
 
@@ -46,6 +50,7 @@ test('renders the always-on Agent shell and opens its panel', () => {
     confirmation: {},
     conversation: {
       cancel: vi.fn(),
+
       getSnapshot: () => ({
         activeTurn: null,
         settledTurns: [
@@ -56,6 +61,7 @@ test('renders the always-on Agent shell and opens its panel', () => {
           }
         ]
       }),
+
       subscribe: () => () => undefined
     },
     history: {
@@ -64,6 +70,7 @@ test('renders the always-on Agent shell and opens its panel', () => {
         disposed: false,
         replaying: false
       }),
+
       subscribe: () => () => undefined
     }
   } as never

@@ -1,3 +1,4 @@
+export { ElementPropertyInputError } from './element-property-input-error.js'
 import { initSceneTreeSubscribes } from './subscribes.js'
 
 initSceneTreeSubscribes()

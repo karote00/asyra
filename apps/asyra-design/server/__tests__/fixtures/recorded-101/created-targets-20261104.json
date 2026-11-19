@@ -1,0 +1,301 @@
+{
+  "run": "taipei-101-fixed-1793784426007",
+  "create": {
+    "message": "增加八節玻璃帷幕的金屬壓條與接縫陰影",
+    "parentId": "grp-actor-cd1f77d8-6823-4545-a4d3-6e40b93f20e4-5",
+    "inspection": "defer",
+    "draft": {
+      "type": "group",
+      "name": "台北101｜窗框壓條與接縫",
+      "projection": {
+        "azimuth": 35,
+        "elevation": 25,
+        "scale": 1,
+        "originX": 6267.27816288017,
+        "originY": 46040.43558146182
+      },
+      "motifTemplates": {
+        "bevelL": [
+          {
+            "key": "bevel",
+            "name": "直框亮面壓條",
+            "fill": "#C3D9CE",
+            "vertices": [
+              {
+                "u": 0.012,
+                "v": 0
+              },
+              {
+                "u": 0.027,
+                "v": 0
+              },
+              {
+                "u": 0.027,
+                "v": 1
+              },
+              {
+                "u": 0.012,
+                "v": 1
+              }
+            ]
+          },
+          {
+            "key": "recess",
+            "name": "窗片邊緣膠縫陰影",
+            "fill": "#31595D",
+            "vertices": [
+              {
+                "u": 0.04,
+                "v": 0.29
+              },
+              {
+                "u": 0.057,
+                "v": 0.29
+              },
+              {
+                "u": 0.057,
+                "v": 0.96
+              },
+              {
+                "u": 0.04,
+                "v": 0.96
+              }
+            ]
+          },
+          {
+            "key": "ledge",
+            "name": "橫框上緣反光",
+            "fill": "#BBD4CA",
+            "vertices": [
+              {
+                "u": 0,
+                "v": 0.965
+              },
+              {
+                "u": 1,
+                "v": 0.965
+              },
+              {
+                "u": 1,
+                "v": 0.978
+              },
+              {
+                "u": 0,
+                "v": 0.978
+              }
+            ]
+          }
+        ],
+        "bevelD": [
+          {
+            "key": "bevel",
+            "name": "背光直框壓條",
+            "fill": "#84A6A6",
+            "vertices": [
+              {
+                "u": 0.012,
+                "v": 0
+              },
+              {
+                "u": 0.027,
+                "v": 0
+              },
+              {
+                "u": 0.027,
+                "v": 1
+              },
+              {
+                "u": 0.012,
+                "v": 1
+              }
+            ]
+          },
+          {
+            "key": "recess",
+            "name": "背光膠縫陰影",
+            "fill": "#183B46",
+            "vertices": [
+              {
+                "u": 0.04,
+                "v": 0.29
+              },
+              {
+                "u": 0.057,
+                "v": 0.29
+              },
+              {
+                "u": 0.057,
+                "v": 0.96
+              },
+              {
+                "u": 0.04,
+                "v": 0.96
+              }
+            ]
+          },
+          {
+            "key": "ledge",
+            "name": "背光橫框反光",
+            "fill": "#8EAFA9",
+            "vertices": [
+              {
+                "u": 0,
+                "v": 0.965
+              },
+              {
+                "u": 1,
+                "v": 0.965
+              },
+              {
+                "u": 1,
+                "v": 0.978
+              },
+              {
+                "u": 0,
+                "v": 0.978
+              }
+            ]
+          }
+        ]
+      },
+      "children": [
+        {
+          "type": "pattern",
+          "key": "frameDetails",
+          "name": "八節帷幕壓條",
+          "origin": {
+            "x": 0,
+            "y": 0,
+            "z": 11000
+          },
+          "axes": [
+            {
+              "count": 8,
+              "step": {
+                "x": 0,
+                "y": 0,
+                "z": 3500
+              }
+            }
+          ],
+          "members": [
+            {
+              "type": "surface-grid",
+              "key": "Y",
+              "name": "日照窗框細部",
+              "boundary": [
+                {
+                  "x": -2150,
+                  "y": 2150,
+                  "z": 0
+                },
+                {
+                  "x": 2150,
+                  "y": 2150,
+                  "z": 0
+                },
+                {
+                  "x": 2600,
+                  "y": 2600,
+                  "z": 3250
+                },
+                {
+                  "x": -2600,
+                  "y": 2600,
+                  "z": 3250
+                }
+              ],
+              "rows": 8,
+              "columns": 20,
+              "order": "cell-major",
+              "motifs": {
+                "template": "bevelL"
+              }
+            },
+            {
+              "type": "surface-grid",
+              "key": "X",
+              "name": "背光窗框細部",
+              "boundary": [
+                {
+                  "x": 2150,
+                  "y": 2150,
+                  "z": 0
+                },
+                {
+                  "x": 2150,
+                  "y": -2150,
+                  "z": 0
+                },
+                {
+                  "x": 2600,
+                  "y": -2600,
+                  "z": 3250
+                },
+                {
+                  "x": 2600,
+                  "y": 2600,
+                  "z": 3250
+                }
+              ],
+              "rows": 8,
+              "columns": 20,
+              "order": "cell-major",
+              "motifs": {
+                "template": "bevelD"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "order": {
+    "message": "將窗框壓條置於金屬飾件後方以保持正確遮擋",
+    "inspection": "defer",
+    "operations": [
+      {
+        "name": "api_hierarchy_moveElementsRelative",
+        "arguments": {
+          "request": {
+            "elementIds": [
+              "design-93de37aa-ac5f-4bee-b25f-1a1e85a0d225-0"
+            ],
+            "anchorId": "design-c2e12e63-7506-477c-9c11-8eb730aa5ee6-0",
+            "placement": "before"
+          }
+        }
+      }
+    ]
+  },
+  "lookup": {
+    "query": "resolve prepared artifact targets by keys delete elements",
+    "view": "usage"
+  },
+  "remove": {
+    "message": "移除遮擋通訊塔帷幕的錯誤整片翼板頂面",
+    "inspection": "defer",
+    "operations": [
+      {
+        "name": "api_element_deleteElements",
+        "arguments": {},
+        "target": {
+          "artifactId": "89dfd4b0-24fa-4485-a502-006f16ad7120",
+          "field": "elementIds",
+          "keys": [
+            "crownFins-0-top",
+            "crownFins-1-top",
+            "crownFins-2-top",
+            "crownFins-3-top",
+            "crownFins-4-top",
+            "crownFins-5-top",
+            "crownFins-6-top",
+            "crownFins-7-top",
+            "crownFins-8-top",
+            "crownFins-9-top"
+          ]
+        }
+      }
+    ]
+  }
+}

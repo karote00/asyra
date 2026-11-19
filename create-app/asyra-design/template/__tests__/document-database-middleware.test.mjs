@@ -8,10 +8,13 @@ const listen = (server) =>
     server.once('error', reject)
     server.listen(0, '127.0.0.1', () => {
       const address = server.address()
+
       if (!address || typeof address === 'string') {
         reject(new Error('E2E document database address is unavailable'))
+
         return
       }
+
       resolve(`http://127.0.0.1:${address.port}`)
     })
   })
@@ -21,8 +24,10 @@ const close = (server) =>
     server.close((error) => {
       if (error) {
         reject(error)
+
         return
       }
+
       resolve()
     })
   })
@@ -42,6 +47,7 @@ test('E2E document database implements the formal file-scoped HTTP contract', as
     const initial = await globalThis.fetch(endpoint, {
       headers: { accept: 'application/json' }
     })
+
     assert.equal(initial.status, 200)
     assert.deepEqual(await initial.json(), { document: null })
 
@@ -54,24 +60,29 @@ test('E2E document database implements the formal file-scoped HTTP contract', as
       },
       method: 'PUT'
     })
+
     assert.equal(saved.status, 200)
 
     const loaded = await globalThis.fetch(endpoint, {
       headers: { accept: 'application/json' }
     })
+
     assert.deepEqual(await loaded.json(), { document })
 
     const cleared = await globalThis.fetch(endpoint, {
       headers: { accept: 'application/json' },
       method: 'DELETE'
     })
+
     assert.equal(cleared.status, 200)
     const afterClear = await globalThis.fetch(endpoint, {
       headers: { accept: 'application/json' }
     })
+
     assert.deepEqual(await afterClear.json(), { document: null })
 
     const unrelated = await globalThis.fetch(`${origin}/health`)
+
     assert.equal(unrelated.status, 404)
   } finally {
     await close(server)
@@ -83,6 +94,7 @@ test('E2E document database forwards ordered persistence batches to the backend 
   const middleware = createDocumentDatabaseMiddleware({
     materializePersistenceBatch: async (batch) => {
       observed.push(batch)
+
       return { durableSequence: batch.lastSequence }
     }
   })
@@ -142,6 +154,7 @@ test('E2E document database exposes the authoritative bootstrap checkpoint contr
   const middleware = createDocumentDatabaseMiddleware({
     readBootstrapCheckpoint: async (fileId) => {
       observed.push(fileId)
+
       return {
         checkpoint: { elements: [{ id: 'element-a' }] },
         durableSequence: 4

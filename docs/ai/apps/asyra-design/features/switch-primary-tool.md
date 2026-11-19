@@ -16,6 +16,13 @@
 
 ## Behavior
 
+- Tool shortcuts use the Input System's held-key metadata to admit only a fresh
+  matching keydown before Feature session cancellation. Repeats, keyup, cancel,
+  IME composition and unrelated held-key/modifier changes do not switch tools.
+  Editable controls retain keyboard ownership. A fresh press still invokes the
+  feature even when that tool is already selected; Pen continuation behavior and
+  explicit toolbar/tool changes keep their existing semantics.
+
 1. Reads `snapshot.detail.primaryTool`.
 2. Updates `primaryTool` through `systemContextApis.switchPrimaryTool`.
 3. If path editing mode is active and target tool is `select`, keeps path editing mode and disconnects preview segment (`pathEditingStartNewSubpath = true`).
@@ -27,8 +34,8 @@
 
 - Toolbar active state must reflect `primaryTool`.
 - The Text toolbar entry selects `text` through this same controller/Feature.
-  Its T SVG is shared with Text rows in Layers. Canvas Text creation/editing and
-  a T keyboard shortcut are deferred; the entry changes tool state only.
+  Its T SVG is shared with Text rows in Layers. The T shortcut selects the same
+  tool; Canvas creation and editing follow [Editable Text](../specs/editable-text.md).
 - Keyboard shortcuts and toolbar click should produce the same final state.
 - Every path-editing exit leaves Select active.
 

@@ -59,7 +59,7 @@ request explicitly changes them.
 
 ```json native-palette-correction
 {
-  "tool": "execute_design_batch",
+  "tool": "execute_design",
   "arguments": {
     "inspection": "defer",
     "operations": [
@@ -151,17 +151,18 @@ patch over an intervening edit. Invalid input is not a write, but a partial/unkn
 batch requires reading acknowledged state before retrying only unfinished work.
 No automatic retry of a completed reset, detach or edit.
 
-After correction, use current affected-image bindings through the representative
-route in the materials.review child. Reuse unrelated passes, preserve the whole-result obligation, and
-set final on the actual final judgment. A completed mutation is distinct from a
-durable save acknowledgment. Reloaded native fills preserve their stored mapping,
-not lost source-world provenance or request-bound review credentials.
+After correction, inspect the affected area when visual judgment is needed, using
+an appropriate target and capture as described in the materials.review child.
+Preserve unrelated work. The AI checks the finished result against the user request;
+there is no required verdict registration, review credential or final flag.
+A completed mutation is distinct from durable save acknowledgment. Reloaded native
+fills preserve their stored mapping, not source-world provenance.
 
 ### Relevant capability handoffs
 
 | Intent/data already available                   | Existing consumer                                                                                                                         | Required handoff and limit                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | ----------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Correct existing local objects                  | execute_design_batch with a known contract and scoped target.query, or retained targets; discover only missing fields/routes              | Bounds plus relevant semantic/ancestor filters identify affected content. Query-bound argument slots are omitted, even empty placeholders. Respect expectedCount failures; do not increase expectedCount blindly. Prefer edits over reconstruction.                                                                                                                                                                                                       |
+| Correct existing local objects                  | execute_design with a known contract and scoped target.query, or retained targets; discover only missing fields/routes              | Bounds plus relevant semantic/ancestor filters identify affected content. Query-bound argument slots are omitted, even empty placeholders. Respect expectedCount failures; do not increase expectedCount blindly. Prefer edits over reconstruction.                                                                                                                                                                                                       |
 
 ### Local correction after material selection
 

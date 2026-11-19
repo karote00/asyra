@@ -39,18 +39,25 @@ const collectSourceFiles = (directory) =>
     if (ignoredDirectories.has(entry.name)) {
       return []
     }
+
     const entryPath = path.join(directory, entry.name)
+
     if (entry.isDirectory()) {
       return collectSourceFiles(entryPath)
     }
+
     return sourceExtensions.has(path.extname(entry.name)) ? [entryPath] : []
   })
 
 test('App-local code identifiers do not repeat the containing product name', () => {
   const violations = collectSourceFiles(appRoot).flatMap((filePath) => {
-    if (filePath.endsWith('app-local-naming.test.mjs')) return []
+    if (filePath.endsWith('app-local-naming.test.mjs')) {
+      return []
+    }
+
     const source = fs.readFileSync(filePath, 'utf8')
     const matches = source.match(redundantNamePattern) ?? []
+
     return matches.map((identifier) => ({
       file: path.relative(appRoot, filePath),
       identifier

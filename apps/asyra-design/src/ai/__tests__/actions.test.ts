@@ -1,9 +1,14 @@
+import { mutationReceipt } from '../../common-apis/mutation-receipt'
 import { AiExecutionError } from '@asyra/ai-agent-runtime'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import core from '../../contexts'
 import { selectionApis } from '../../common-apis/selection'
 import { createAiConversationController } from '../conversation'
-import { summarizeAiTurn, canRetryAiTurn } from '../presentation'
+import {
+  summarizeAiTurn,
+  canRetryAiTurn,
+  projectAiQuestion
+} from '../presentation'
 import { operationInputIssue } from '../tool-schema'
 import { observeAiAction } from '../runtime-input'
 import {
@@ -23,7 +28,6 @@ afterEach(() => {
 
 const actionApis = (): AiActionApis => ({
   changeElementGeometry: vi.fn(),
-  createCompositionElement: vi.fn(),
   createCompositionElements: vi.fn(),
   createCompositionGroup: vi.fn(),
   getElementBounds: vi.fn(),
@@ -31,7 +35,9 @@ const actionApis = (): AiActionApis => ({
   getElementStrokeColor: vi.fn(),
   getElementType: vi.fn(),
   removeSubtree: vi.fn(() => ({ removed: [] })),
-  scaleVectorElementGeometry: vi.fn(() => true),
+  scaleVectorElementGeometry: vi.fn((id) =>
+    mutationReceipt(true, { acceptedIds: [id], changed: true })
+  ),
   selectElements: vi.fn(),
   setDrawingProgress: vi.fn(),
   setElementsVisible: vi.fn(() => ['changed' as const]),
@@ -279,7 +285,7 @@ describe('Asyra Design AI actions', () => {
   })
 
   it.each([['missing'], ['shape-1', 'missing'], ['missing', 'shape-1']])(
-    'rejects unavailable selection targets atomically: %j',
+    'rejects unavailable selection targets atomically: %j - case %#',
     async (...ids) => {
       const apis = actionApis()
       let selected = ['previous']
@@ -513,15 +519,21 @@ it.each(['unavailable', 'local-only', 'durable'] as const)(
       const turn = await controller.submit('Finish this drawing')
       const summary = summarizeAiTurn(turn)
 
+      expect(summary.message).toBe('Drawing saved successfully.')
+      expect(turn.result).toMatchObject({
+        actionResults: [{ result: { persistence: { status: storage } } }]
+      })
+
       if (storage === 'unavailable') {
         expect(turn.outcome).toBe('partial')
-        expect(summary.message).toContain('could not be confirmed')
-        expect(summary.message).not.toContain('saved successfully')
+        expect(summary.storageNotice).toContain('could not be confirmed')
+        expect(summary.storageNotice).toContain('do not repeat the drawing')
       } else if (storage === 'local-only') {
-        expect(summary.message).toContain('locally')
-        expect(summary.message).not.toContain('saved successfully')
+        expect(summary.storageNotice).toBe(
+          'Durable document storage is not connected.'
+        )
       } else {
-        expect(summary.message).toBe('Drawing saved successfully.')
+        expect(summary).not.toHaveProperty('storageNotice')
       }
 
       expect(canRetryAiTurn(turn)).toBe(false)
@@ -539,6 +551,79 @@ const requireTestValue = <T>(value: T | undefined | null): T => {
 
   return value
 }
+
+it.each(
+  ['a', '\u{2000B}'].flatMap((character) =>
+    [501, 1000, 1001].flatMap((length) =>
+      [AiActionNames.REPORT_OUTCOME, AiActionNames.REQUEST_CLARIFICATION].map(
+        (name) => ({
+          character,
+          length,
+          name
+        })
+      )
+    )
+  )
+)(
+  'preserves code-point limits from control admission to presentation - $name $character $length',
+  async ({ character, length, name }) => {
+    const text = character.repeat(length)
+    const apis = actionApis()
+    const definition = actionByName(name, apis)
+    const action = observeAiAction(definition)
+    const input =
+      name === AiActionNames.REPORT_OUTCOME
+        ? { outcome: 'unsupported', message: text }
+        : { question: text }
+
+    if (length > 1000) {
+      expect(operationInputIssue(input, definition.inputSchema)).toBeDefined()
+      await expect(action.execute(input, executionContext())).rejects.toThrow()
+    } else {
+      expect(operationInputIssue(input, definition.inputSchema)).toBeUndefined()
+      const controller = createAiConversationController({
+        getElementType: () => undefined,
+
+        feature: {
+          cancel: () => false,
+
+          execute: async () => ({
+            status: 'executed',
+            actionResults: [
+              {
+                actionId: 'control',
+                actionName: name,
+                result: await action.execute(input, executionContext())
+              }
+            ]
+          })
+        }
+      })
+
+      try {
+        const settled = await controller.submit(
+          'Respond without changing the drawing'
+        )
+
+        expect(settled.outcome).toBe('no-change')
+        expect(summarizeAiTurn(settled).message).toBe(
+          name === AiActionNames.REPORT_OUTCOME
+            ? text + '\n\nNo canvas changes were made.'
+            : text
+        )
+        if (name === AiActionNames.REQUEST_CLARIFICATION) {
+          expect(projectAiQuestion(settled)?.message).toBe(text)
+        }
+      } finally {
+        controller.dispose()
+      }
+    }
+
+    for (const api of Object.values(apis)) {
+      expect(api).not.toHaveBeenCalled()
+    }
+  }
+)
 
 it.each([
   [AiActionNames.REQUEST_CLARIFICATION, { question: '   ' }],
@@ -589,7 +674,7 @@ it.each([
     }
   ]
 ])(
-  'executes control %s through public admission without document writes',
+  'executes control %s through public admission without document writes - case %#',
   async (name, input, expected) => {
     const apis = actionApis()
     const action = observeAiAction(actionByName(name as string, apis))

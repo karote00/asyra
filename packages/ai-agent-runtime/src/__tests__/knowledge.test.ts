@@ -1725,3 +1725,25 @@ it('keeps an effective override source without importing its unrelated overridde
 
   expect(explicit.documents).toEqual(previous.documents)
 })
+
+it('distinguishes an authored Knowledge root from a broken registered dependency', async () => {
+  const { access, reads } = fixture()
+
+  access.register(metadata('valid'), admin)
+  access.register(metadata('broken', { references: ['missing'] }), admin)
+  const session = access.openSession(reader, 'root-admission')
+
+  await expect(
+    session.retrieve({ ids: ['missing'] }, signal())
+  ).rejects.toMatchObject({ code: 'KNOWLEDGE_NOT_FOUND', stage: 'input' })
+  await expect(
+    session.retrieve({ ids: ['broken'] }, signal())
+  ).rejects.toMatchObject({ code: 'KNOWLEDGE_NOT_FOUND', stage: 'execution' })
+  expect(reads()).toBe(0)
+  expect(
+    (await session.retrieve({ ids: ['valid'] }, signal())).documents
+  ).toHaveLength(1)
+  expect(reads()).toBe(1)
+  session.dispose()
+  access.dispose()
+})

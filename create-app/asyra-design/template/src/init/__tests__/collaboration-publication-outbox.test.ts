@@ -62,10 +62,13 @@ const freezePublication = (
     if (value === null || typeof value !== 'object' || Object.isFrozen(value)) {
       return
     }
+
     Object.values(value).forEach(freezeValue)
     Object.freeze(value)
   }
+
   freezeValue(publication)
+
   return publication
 }
 
@@ -79,11 +82,13 @@ describe('document publication recovery outbox', () => {
   it('persists missing predecessors before successors and resumes the complete prefix after reopen', async () => {
     const storage = createStorage(factory, 'durable-prefix-recovery')
     const outbox = new DocumentPublicationOutbox({ fileId: 'prefix', storage })
+
     await outbox.initialize()
     await outbox.bindDocumentGeneration(1)
     const put = vi
       .spyOn(storage, 'put')
       .mockRejectedValue(new Error('disk full'))
+
     await expect(
       outbox.appendPreparationFailure(
         freezePublication(createPublication('first', 1)),
@@ -103,6 +108,7 @@ describe('document publication recovery outbox', () => {
       fileId: 'prefix',
       storage
     })
+
     await reopened.initialize()
     expect(reopened.getState()).toEqual({
       pendingCount: 2,
@@ -120,6 +126,7 @@ describe('document publication recovery outbox', () => {
   it('does not write over unknown storage and merges retained edits after a successful read retry', async () => {
     const storage = createStorage(factory, 'load-recovery')
     const initial = new DocumentPublicationOutbox({ fileId: 'load', storage })
+
     await initial.initialize()
     await initial.append(createPublication('older', 1))
     const load = vi
@@ -127,12 +134,14 @@ describe('document publication recovery outbox', () => {
       .mockRejectedValue(new Error('read failed'))
     const put = vi.spyOn(storage, 'put')
     const outbox = new DocumentPublicationOutbox({ fileId: 'load', storage })
+
     await expect(outbox.initialize()).rejects.toThrow('could not be loaded')
     await expect(outbox.append(createPublication('newer', 2))).rejects.toThrow()
     expect(put).not.toHaveBeenCalled()
     load.mockRestore()
     await outbox.retryStorage()
     const reopened = new DocumentPublicationOutbox({ fileId: 'load', storage })
+
     await reopened.initialize()
     expect(
       reopened
@@ -147,12 +156,14 @@ describe('document publication recovery outbox', () => {
   it('keeps the recovery document through rejected retry, reopen and successful preparation', async () => {
     const storage = createStorage(factory, 'draft-recovery')
     const outbox = new DocumentPublicationOutbox({ fileId: 'draft', storage })
+
     await outbox.initialize()
     const draft = {
       version: '1.0.0',
       sceneTree: { elements: { local: { name: 'Kept work' } } },
       props: {}
     }
+
     await outbox.appendPreparationFailure(
       freezePublication(createPublication('source', 1)),
       'converter failed',
@@ -164,6 +175,7 @@ describe('document publication recovery outbox', () => {
       })
     ).rejects.toThrow('still invalid')
     const reopened = new DocumentPublicationOutbox({ fileId: 'draft', storage })
+
     await reopened.initialize()
     expect(reopened.getRecoveryDocument()).toEqual(draft)
     await reopened.retryPreparation((source) => freezePublication(source))
@@ -179,6 +191,7 @@ describe('document publication recovery outbox', () => {
       fileId: 'file-a',
       storage: createStorage(factory, databaseName)
     })
+
     await first.initialize()
 
     await first.append(createPublication('publication-a', 1))
@@ -188,6 +201,7 @@ describe('document publication recovery outbox', () => {
       fileId: 'file-a',
       storage: createStorage(factory, databaseName)
     })
+
     await reloaded.initialize()
 
     expect(
@@ -219,6 +233,7 @@ describe('document publication recovery outbox', () => {
       fileId: 'file-first-generation',
       storage: createStorage(factory, databaseName)
     })
+
     await outbox.initialize()
     await outbox.append(createPublication('publication-offline-first', 1))
 
@@ -238,6 +253,7 @@ describe('document publication recovery outbox', () => {
       fileId: 'file-first-generation',
       storage: createStorage(factory, databaseName)
     })
+
     await reloaded.initialize()
     expect(reloaded.getRecoverablePublications()).toEqual([
       expect.objectContaining({ documentGeneration: 4 })
@@ -262,13 +278,17 @@ describe('document publication recovery outbox', () => {
         const index = records.findIndex(
           (record) => record.publicationId === publicationId
         )
-        if (index >= 0) records.splice(index, 1)
+
+        if (index >= 0) {
+          records.splice(index, 1)
+        }
       })
     }
     const outbox = new DocumentPublicationOutbox({
       fileId: 'file-reset-generation',
       storage
     })
+
     await outbox.initialize()
 
     await outbox.bindDocumentGeneration(1)
@@ -289,6 +309,7 @@ describe('document publication recovery outbox', () => {
       fileId: 'file-a',
       storage: createStorage(factory, 'publication-outbox-acceptance')
     })
+
     await outbox.initialize()
     await outbox.append(createPublication('publication-a', 1))
     await outbox.append(createPublication('publication-b', 2))
@@ -324,6 +345,7 @@ describe('document publication recovery outbox', () => {
       fileId: 'file-b',
       storage: createStorage(factory, databaseName)
     })
+
     await firstFile.initialize()
     await secondFile.initialize()
     await firstFile.append(createPublication('publication-a', 1))
@@ -344,6 +366,7 @@ describe('document publication recovery outbox', () => {
       fileId: 'file-b',
       storage: createStorage(factory, databaseName)
     })
+
     await reloadedFirstFile.initialize()
     await reloadedSecondFile.initialize()
     expect(reloadedFirstFile.getRecoverablePublications()).toEqual([])
@@ -367,6 +390,7 @@ describe('document publication recovery outbox', () => {
       fileId: 'file-storage-failure',
       storage
     })
+
     await outbox.initialize()
 
     await expect(
@@ -390,6 +414,7 @@ describe('document publication recovery outbox', () => {
       fileId: 'file-a',
       storage: createStorage(factory, 'publication-outbox-conflict')
     })
+
     await outbox.initialize()
     await outbox.append(createPublication('publication-conflict', 1))
 
@@ -417,6 +442,7 @@ describe('document publication recovery outbox', () => {
       fileId: 'file-a',
       storage: createStorage(factory, 'publication-outbox-conflict')
     })
+
     await reloaded.initialize()
     expect(reloaded.getConflicts()).toHaveLength(1)
     expect(reloaded.getRecoverablePublications()).toEqual([])
@@ -435,6 +461,7 @@ describe('document publication recovery outbox', () => {
       fileId: 'file-a',
       storage
     })
+
     await outbox.initialize()
     await outbox.append(createPublication('publication-a', 1))
 
@@ -456,6 +483,7 @@ describe('document publication recovery outbox', () => {
       fileId: 'file-owner-publication',
       storage
     })
+
     await outbox.initialize()
     const publication = freezePublication(
       createPublication('publication-owner-evidence', 3)
@@ -479,6 +507,7 @@ describe('document publication recovery outbox', () => {
       fileId: 'file-mutable-publication',
       storage
     })
+
     await outbox.initialize()
     const publication = Object.freeze(
       createPublication('publication-mutable', 5)
@@ -486,9 +515,11 @@ describe('document publication recovery outbox', () => {
 
     const record = await outbox.append(publication)
     const payload = publication.slices[0]?.batches[0]?.deliveries[0]?.payload
+
     if (!payload || payload.action !== 'updateProperty') {
       throw new Error('expected updateProperty publication payload')
     }
+
     payload.after = 999
 
     expect(record.publication).not.toBe(publication)
@@ -501,15 +532,19 @@ describe('document publication recovery outbox', () => {
 describe('source preparation failure retention', () => {
   it('restores source failure evidence and blocks subsequent publications in original order', async () => {
     const factory = new IDBFactory()
+
     const storage = () => createStorage(factory, 'preparation-failure-reload')
+
     const outbox = new DocumentPublicationOutbox({
       fileId: 'failed-source',
       storage: storage()
     })
+
     await outbox.initialize()
     await outbox.bindDocumentGeneration(3)
     await outbox.append(createPublication('before-failure', 1))
     const source = freezePublication(createPublication('invalid-source', 2))
+
     await outbox.appendPreparationFailure(
       source,
       'unsupported source operation'
@@ -528,6 +563,7 @@ describe('source preparation failure retention', () => {
       fileId: 'failed-source',
       storage: storage()
     })
+
     await reloaded.initialize()
     await reloaded.bindDocumentGeneration(3)
     expect(reloaded.getState()).toEqual({
@@ -544,6 +580,7 @@ describe('source preparation failure retention', () => {
       fileId: 'other-file',
       storage: storage()
     })
+
     await otherFile.initialize()
     expect(otherFile.getState()).toEqual({ pendingCount: 0, status: 'synced' })
     await reloaded.bindDocumentGeneration(4)
@@ -560,6 +597,7 @@ describe('source preparation failure retention', () => {
       fileId: 'failed-storage',
       storage
     })
+
     await outbox.initialize()
     await outbox.bindDocumentGeneration(1)
     vi.mocked(storage.put).mockRejectedValueOnce(new Error('disk full'))
@@ -585,6 +623,7 @@ describe('source preparation failure retention', () => {
       fileId: 'conflict-prefix',
       storage
     })
+
     await outbox.initialize()
     await outbox.append(createPublication('rejected', 1))
     await outbox.append(createPublication('dependent', 2))
@@ -597,6 +636,7 @@ describe('source preparation failure retention', () => {
       'generation-after-read-failure'
     )
     const old = new DocumentPublicationOutbox({ fileId: 'generation', storage })
+
     await old.initialize()
     await old.bindDocumentGeneration(1)
     await old.append(createPublication('old-generation', 1))
@@ -607,6 +647,7 @@ describe('source preparation failure retention', () => {
       fileId: 'generation',
       storage
     })
+
     await expect(current.initialize()).rejects.toThrow()
     await current.bindDocumentGeneration(2)
     await expect(
@@ -623,6 +664,7 @@ describe('source preparation failure retention', () => {
       fileId: 'generation',
       storage
     })
+
     await reopened.initialize()
     expect(
       reopened
@@ -638,6 +680,7 @@ it('finishes failed generation retirement before retry can release retained publ
     fileId: 'generation-retirement',
     storage
   })
+
   await outbox.initialize()
   await outbox.bindDocumentGeneration(0)
   await outbox.appendPreparationFailure(

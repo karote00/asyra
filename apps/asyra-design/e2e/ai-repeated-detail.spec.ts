@@ -1,8 +1,14 @@
-import { resolve } from 'node:path'
+import sharp from 'sharp'
+import { isRecord } from '@asyra/utils'
+import { requireBatchSuccess } from '../server/batch-exchange'
+import { observeActionBatch } from '../server/local-action-observation'
+import { createNativeProviderFixture } from '../server/__tests__/native-provider-fixture'
+import recordedPreparation from '../server/__tests__/fixtures/recorded-101/ordered-preparation-20261019.json' with { type: 'json' }
+import { createEvaluationReportSessions } from '../server/evaluation-report-sessions'
 import { requestLocalAiActionBatch } from '../server/local-ai-provider'
 import { localToolOutcome } from '../server/local-tool-invocation'
 import { expect, test, type Page } from '@playwright/test'
-import type { AiActionBatch } from '@asyra/ai-agent-runtime'
+import type { AiActionBatch, AiBatchReceipt } from '@asyra/ai-agent-runtime'
 import { recordedOrnaments } from '../server/__tests__/recorded-ornaments'
 import { designPreparationExamples } from '../server/design-preparation-examples'
 import { createLocalDesignTools } from '../server/local-design-tools'
@@ -30,69 +36,52 @@ const connected = (page: Page) =>
     )
     .toBe('connected')
 
-async function runtime(page: Page) {
-  const actions = await page.evaluate(async () => {
+async function runtime(page: Page, deniedActions: string[] = []) {
+  const actions = await page.evaluate(async (deniedActions) => {
     const { testRuntimeState } = await import('../src/testing/runtime-access')
-    const { createAiRuntimeInput } = await import('../src/ai/runtime-input')
-    const input = createAiRuntimeInput({
-      permissionRules: {},
-      provider: {
-        requestActionBatch: async () => {
-          throw new Error('Model execution is forbidden')
-        }
-      }
-    })
+    const { createRepeatedDetailRuntime } =
+      await import('../e2e/fixtures/repeated-detail-runtime')
+    const owner = createRepeatedDetailRuntime(deniedActions)
 
-    testRuntimeState.set('repeat-runtime', input)
+    testRuntimeState.set('repeat-execute', owner.execute)
+    testRuntimeState.set('repeat-dispose', owner.dispose)
 
-    return JSON.parse(JSON.stringify(input.actionDefinitions))
-  })
+    return JSON.parse(JSON.stringify(owner.actions))
+  }, deniedActions)
 
-  const execute = async (batch: AiActionBatch) =>
-    (await page.evaluate(async (batch) => {
+  const execute = (batch: AiActionBatch): Promise<AiBatchReceipt> =>
+    page.evaluate<AiBatchReceipt, string>(async (serialized) => {
       const { testRuntimeState } = await import('../src/testing/runtime-access')
+      const execute =
+        testRuntimeState.get<(batch: AiActionBatch) => Promise<AiBatchReceipt>>(
+          'repeat-execute'
+        )
 
-      type Input = ReturnType<
-        typeof import('../src/ai/runtime-input').createAiRuntimeInput
-      >
-      const input = testRuntimeState.get<Input>('repeat-runtime')
-
-      if (!input?.transactionRunner) {
-        throw new Error('Missing transaction owner')
+      if (!execute) {
+        throw new Error('Missing Runtime fixture')
       }
 
-      return input.transactionRunner.run(
-        'Repeated detail',
-        async (runMutation) => {
-          const actionResults = []
-
-          for (const item of batch.actions) {
-            const action = input.actionDefinitions.find(
-              (a) => a.name === item.name
-            )
-
-            if (!action) {
-              throw new Error('Unknown action')
-            }
-
-            actionResults.push({
-              actionId: item.id,
-              actionName: item.name,
-              result: await action.execute(item.arguments, {
-                signal: new AbortController().signal,
-                runMutation
-              })
-            })
-          }
-
-          return { context: {}, actionResults }
-        }
-      )
-    }, batch)) as never
+      return execute(JSON.parse(serialized))
+    }, JSON.stringify(batch))
 
   const signal = new AbortController().signal
   const designs = createLocalDesignTools(actions)
-  const operations = createLocalOperationTools(actions, designs, execute)
+  const operations = createLocalOperationTools(
+    actions,
+    designs,
+    async (batch) => {
+      const started = performance.now()
+      const receipt = await observeActionBatch(
+        batch,
+        execute,
+        actions,
+        undefined,
+        () => undefined
+      )
+
+      return requireBatchSuccess(batch, receipt, performance.now() - started)
+    }
+  )
   const workflow = createLocalDesignWorkflow(designs, operations)
 
   const invoke = async (name: string, args: unknown) =>
@@ -101,7 +90,185 @@ async function runtime(page: Page) {
   return { actions, designs, operations, workflow, execute, signal, invoke }
 }
 
-test('saved multi-face detail uses current targets and preserves sibling passes through edit, history, peer and durable reload', async ({
+test.afterEach(async ({ page }) => {
+  if (page.isClosed()) {
+    return
+  }
+
+  await page.evaluate(async () => {
+    const { testRuntimeState } = await import('../src/testing/runtime-access')
+
+    await testRuntimeState.get<() => Promise<void>>('repeat-dispose')?.()
+    testRuntimeState.delete('repeat-execute')
+    testRuntimeState.delete('repeat-dispose')
+  })
+})
+
+test('repeated-detail execution rejects denied writes before canonical mutation', async ({
+  page
+}) => {
+  await page.goto(createTestDocumentIdentity().url)
+  await waitForAppReady(page)
+  await connected(page)
+  const before = await getCoreDocumentDigest(page)
+  const { designs, signal, execute } = await runtime(page, [
+    'apply_prepared_design'
+  ])
+  const prepared = JSON.parse(
+    await designs.call(
+      'prepare_design',
+      {
+        draft: {
+          type: 'group',
+          key: 'denied',
+          name: 'Denied sample',
+          children: [
+            {
+              type: 'rect',
+              key: 'square',
+              name: 'Square',
+              width: 20,
+              height: 20
+            }
+          ]
+        }
+      },
+      signal
+    )
+  )
+
+  expect(prepared).toMatchObject({ available: true, applicable: true })
+  const batch = designs.resolveBatch({
+    batchId: 'denied',
+    actions: [
+      {
+        id: 'write',
+        name: 'apply_prepared_design',
+        arguments: { artifactId: prepared.artifactId },
+        summary: 'Denied write'
+      }
+    ]
+  })
+  const receipt = await execute(batch)
+
+  expect(receipt).toMatchObject({
+    actionResults: [],
+    failure: {
+      code: 'AI_PERMISSION_DENIED',
+      stage: 'permission',
+      settlement: 'not-started'
+    }
+  })
+  expect(await getCoreDocumentDigest(page)).toEqual(before)
+})
+
+test('native workflow preserves Runtime permission rejection without claiming unknown mutation', async ({
+  page
+}) => {
+  test.setTimeout(90000)
+  await page.goto(createTestDocumentIdentity().url)
+  await waitForAppReady(page)
+  await connected(page)
+  const before = await getCoreDocumentDigest(page)
+  const { actions, execute } = await runtime(page, ['apply_prepared_design'])
+  const receipts: AiBatchReceipt[] = []
+  const fixture = await createNativeProviderFixture([
+    {
+      type: 'tool_search_call',
+      id: 'discover',
+      call_id: 'discover',
+      execution: 'client',
+      status: 'completed',
+      arguments: { query: 'design_workflow.prepare_and_apply_design', limit: 1 }
+    },
+    {
+      type: 'function_call',
+      id: 'denied',
+      call_id: 'denied',
+      namespace: 'design_workflow',
+      name: 'prepare_and_apply_design',
+      arguments: JSON.stringify({
+        draft: {
+          type: 'group',
+          key: 'denied',
+          name: 'Denied sample',
+          children: [
+            {
+              type: 'rect',
+              key: 'square',
+              name: 'Square',
+              width: 20,
+              height: 20
+            }
+          ]
+        },
+        inspection: 'defer'
+      })
+    }
+  ])
+
+  try {
+    await requestLocalAiActionBatch(
+      {
+        actions,
+        attempt: 1,
+        context: {},
+        intent: 'Exercise a denied drawing operation.'
+      },
+      {
+        model: fixture.environment.AI_PROVIDER_MODEL,
+        executable: fixture.environment.AI_PROVIDER_EXECUTABLE,
+        toolLibraryDirectory: fixture.environment.AI_TOOL_LIBRARY_DIR,
+        recordDirectory: fixture.directory,
+
+        executeBatch: async (batch) => {
+          const receipt = await execute(batch)
+
+          receipts.push(receipt)
+
+          return receipt
+        }
+      }
+    )
+    expect(receipts).toHaveLength(1)
+    expect(receipts[0]).toMatchObject({
+      actionResults: [],
+      failure: {
+        code: 'AI_PERMISSION_DENIED',
+        stage: 'permission',
+        settlement: 'not-started'
+      }
+    })
+    expect(await getCoreDocumentDigest(page)).toEqual(before)
+    const reply = fixture.toolReply('denied')
+
+    expect(reply.success).toBe(false)
+    const text = reply.contentItems.map((item) => {
+      if (!('text' in item)) {
+        throw new Error('Expected text failure receipt')
+      }
+
+      return item.text
+    })
+
+    expect(fixture.successorContent('denied')).toEqual(
+      text.map((text) => ({ type: 'input_text', text }))
+    )
+    expect(JSON.parse(text[text.length - 1])).toMatchObject({
+      toolOutcome: { status: 'failed', settlement: 'not-started' }
+    })
+    expect(text.join('\n')).not.toContain('TOOL_RESULT_INVALID')
+    expect(text.join('\n')).not.toContain('TOOL_DELIVERY_INVALID')
+    expect(text.join('\n')).not.toContain(
+      'Mutation target coverage is unavailable'
+    )
+    expect(text.join('\n')).toContain('AI_PERMISSION_DENIED')
+  } finally {
+    await fixture.dispose()
+  }
+})
+
+test('saved multi-face detail uses current targets and preserves independent image currency through edit, history, peer and durable reload', async ({
   page,
   context
 }) => {
@@ -112,7 +279,7 @@ test('saved multi-face detail uses current targets and preserves sibling passes 
   await waitForAppReady(page)
   await connected(page)
   const { compact, correspondence } = recordedOrnaments()
-  const { designs, signal, invoke, execute, operations } = await runtime(page)
+  const { designs, signal, invoke, execute } = await runtime(page)
   const prepared = JSON.parse(
     await designs.call('prepare_design', { draft: compact }, signal)
   )
@@ -162,79 +329,48 @@ test('saved multi-face detail uses current targets and preserves sibling passes 
   const peer = await context.newPage()
 
   try {
-    await invoke('define_design_criteria', {
-      phase: 'plan',
-      method: 'Review independent current material regions.',
-      references: [],
-      detailRequired: false,
-      criteria: {
-        overall: {
-          requirement: 'The complete detail composition satisfies the request.',
-          description: 'Separate whole-view acceptance.',
-          verification: 'visual',
-          requiredUnits: []
-        },
-        material: {
-          requirement: 'Preserve intended detail material.',
-          description: 'Review this current region only.',
-          verification: 'visual',
-          requiredUnits: ['changed', 'unrelated']
-        }
-      }
-    })
-
-    const bind = async (id: string, unitId: string) => {
-      const capture = await invoke('inspect_drawing', {
+    const capture = async (id: string) => {
+      const response = await invoke('inspect_drawing', {
         arguments: { elementId: id, view: 'detail' }
       })
-      const image = capture.actionResults.find(
-        (r: { result: { inspectionId?: string } }) => r.result.inspectionId
+      const image = response.actionResults.find(
+        (entry: { result: { inspectionId?: string } }) =>
+          entry.result.inspectionId
       )?.result
 
       expect(image).toMatchObject({ available: true })
 
-      return (
-        await invoke('review_drawing', {
-          phase: 'visual',
-          bindChecks: [
-            {
-              criterionId: 'material',
-              unitId,
-              inspectionIds: [image.inspectionId]
-            }
-          ]
-        })
-      ).next.arguments
+      return image.evidence
     }
 
-    // Controlled observations prove evidence handoff, never visual/model quality.
-    const record = (binding: { checks: object[] }) =>
-      invoke('review_drawing', {
-        ...binding,
-        final: false,
-        checks: binding.checks.map((c) => ({
-          ...c,
-          status: 'pass',
-          evidence: 'Controlled current-region observation.'
-        }))
-      })
+    const stamps = [await capture(localIds[0]), await capture(ids[0])]
 
-    const old = await bind(localIds[0], 'changed')
-    const first = await record(old),
-      sibling = await record(await bind(ids[0], 'unrelated'))
-    const checkIds = [first.recordedChecks[0].id, sibling.recordedChecks[0].id]
+    const currency = async () =>
+      Promise.all(
+        stamps.map(async (evidence) => {
+          const receipt = await execute({
+            batchId: 'currency',
+            actions: [
+              {
+                id: 'validate',
+                name: 'validate_inspection_evidence',
+                arguments: { evidence },
+                summary: 'Validate source currency'
+              }
+            ]
+          })
 
-    const checks = async () =>
-      (
-        await invoke('read_design_checks', {
-          ids: checkIds,
-          includePassed: true
+          const value = receipt.actionResults[0]?.result
+
+          if (!isRecord(value) || typeof value.current !== 'boolean') {
+            throw new Error('Missing inspection currency result')
+          }
+
+          return value.current
         })
-      ).items
+      )
 
-    const unchanged = (await checks()).find(
-      (c: { id: string }) => c.id === checkIds[1]
-    )
+    expect(await currency()).toEqual([true, true])
     const created = await getCoreDocumentDigest(page)
 
     await expect
@@ -257,7 +393,7 @@ test('saved multi-face detail uses current targets and preserves sibling passes 
     const beforeFills = await fills()
 
     const edit = () =>
-      invoke('execute_design_batch', {
+      invoke('execute_design', {
         inspection: 'defer',
         operations: [
           {
@@ -278,20 +414,7 @@ test('saved multi-face detail uses current targets and preserves sibling passes 
         expect(afterFills[i]).toEqual(beforeFills[i])
       }
     })
-    expect(
-      (await checks()).find((c: { id: string }) => c.id === checkIds[0]).status
-    ).toBe('stale')
-    expect(
-      (await checks()).find((c: { id: string }) => c.id === checkIds[1])
-    ).toEqual(unchanged)
-    await record(old)
-    expect(
-      (await checks()).find((c: { id: string }) => c.id === checkIds[0]).status
-    ).toBe('stale')
-    await record(await bind(localIds[0], 'changed'))
-    expect(
-      (await checks()).every((c: { status: string }) => c.status === 'pass')
-    ).toBe(true)
+    expect(await currency()).toEqual([false, true])
     let edited = await getCoreDocumentDigest(page)
 
     await expect.poll(() => getCoreDocumentDigest(peer)).toEqual(edited)
@@ -303,18 +426,12 @@ test('saved multi-face detail uses current targets and preserves sibling passes 
     await expect.poll(() => getCoreDocumentDigest(peer)).toEqual(created)
     await redo(page)
     await expect.poll(() => getCoreDocumentDigest(page)).toEqual(edited)
-    expect(
-      (await checks()).find((c: { id: string }) => c.id === checkIds[1])
-    ).toEqual(unchanged)
-    expect(
-      (await checks()).find((c: { id: string }) => c.id === checkIds[0]).status
-    ).toBe('stale')
+    expect(await currency()).toEqual([false, true])
     await expect
       .poll(() => getPersistedDocumentDigest(document.fileId))
       .toEqual(edited)
-    const renewed = await bind(localIds[0], 'changed')
-
-    await record(renewed)
+    stamps[0] = await capture(localIds[0])
+    expect(await currency()).toEqual([true, true])
     await peer.evaluate(async (id) => {
       const { fillApis, transactionApis } = await import('../src/common-apis')
 
@@ -326,19 +443,18 @@ test('saved multi-face detail uses current targets and preserves sibling passes 
 
     expect(remoteEdit).not.toEqual(edited)
     await expect.poll(() => getCoreDocumentDigest(page)).toEqual(remoteEdit)
-    expect(
-      (await checks()).find((c: { id: string }) => c.id === checkIds[0]).status
-    ).toBe('stale')
-    expect(
-      (await checks()).find((c: { id: string }) => c.id === checkIds[1])
-    ).toEqual(unchanged)
-    await record(renewed)
-    expect(
-      (await checks()).find((c: { id: string }) => c.id === checkIds[0]).status
-    ).toBe('stale')
-    await record(await bind(localIds[0], 'changed'))
-    const rootId = (batch.actions[0].arguments.design as { rootId: string })
-      .rootId
+    expect(await currency()).toEqual([false, true])
+    const args = batch.actions[0].arguments
+
+    if (
+      !isRecord(args) ||
+      !isRecord(args.design) ||
+      typeof args.design.rootId !== 'string'
+    ) {
+      throw new Error('Missing prepared root identity')
+    }
+
+    const rootId = args.design.rootId
     const wholeCapture = await invoke('inspect_drawing', {
       arguments: { elementId: rootId, view: 'overview' }
     })
@@ -347,28 +463,6 @@ test('saved multi-face detail uses current targets and preserves sibling passes 
     )?.result
 
     expect(whole).toMatchObject({ available: true })
-    const wholeBinding = await invoke('review_drawing', {
-      phase: 'visual',
-      bindChecks: [
-        { criterionId: 'overall', inspectionIds: [whole.inspectionId] }
-      ]
-    })
-
-    expect(
-      await invoke('review_drawing', {
-        ...wholeBinding.next.arguments,
-        final: true,
-        checks: wholeBinding.next.arguments.checks.map((check: object) => ({
-          ...check,
-          status: 'pass',
-          evidence: 'Controlled complete-view observation after peer edit.'
-        }))
-      })
-    ).toMatchObject({ accepted: true, coverage: { passed: 3, required: 3 } })
-    await operations.validateCompletion(signal)
-    expect(
-      (await checks()).find((c: { id: string }) => c.id === checkIds[1])
-    ).toEqual(unchanged)
     edited = remoteEdit
     await expect
       .poll(() => getPersistedDocumentDigest(document.fileId))
@@ -440,6 +534,10 @@ test('ordered multi-face preparation preserves an acknowledged prefix and retrie
   }
 
   const invalid = structuredClone(example.draft)
+
+  if (!('reflection' in invalid.linearFields)) {
+    throw new Error('Missing reflection field')
+  }
 
   invalid.linearFields.reflection.end = {
     ...invalid.linearFields.reflection.start
@@ -546,49 +644,270 @@ test('actual provider receipt ownership preserves a recorded prefix through repa
   const { actions, execute } = await runtime(page)
   let prefix: Awaited<ReturnType<typeof getCoreDocumentDigest>> | undefined
   let mutations = 0
-  const result = await requestLocalAiActionBatch(
-    {
-      actions,
-      attempt: 1,
-      context: {},
-      intent: 'Exercise recorded preparation recovery without a model.'
+  let latestMutation:
+    Awaited<ReturnType<typeof getCoreDocumentDigest>> | undefined
+  const sessions = createEvaluationReportSessions()
+  const retain = sessions.retain
+  let retained: ReturnType<typeof retain> | undefined
+
+  sessions.retain = (owner) => {
+    retained = retain(owner)
+
+    return retained
+  }
+
+  const message = (id: string, text: string) => ({
+    type: 'message',
+    id,
+    role: 'assistant',
+    status: 'completed',
+    content: [{ type: 'output_text', text, annotations: [] }]
+  })
+
+  const call = (id: string, name: string, args: unknown) => ({
+    type: 'function_call',
+    id,
+    call_id: id,
+    namespace:
+      name === 'prepare_and_apply_design'
+        ? 'design_workflow'
+        : 'design_operations',
+    name,
+    arguments: JSON.stringify(args)
+  })
+
+  const readReceipt = (id: string) => {
+    const reply = fixture.toolReply(id)
+    const text = reply.contentItems.map((item) => {
+      if (item.type !== 'inputText' || !('text' in item)) {
+        throw new Error('Expected native text receipt')
+      }
+
+      return item.text
+    })
+
+    expect(text).toHaveLength(2)
+    expect(fixture.successorContent(id)).toEqual(
+      text.map((text) => ({ type: 'input_text', text }))
+    )
+
+    return {
+      success: reply.success,
+      value: JSON.parse(text[0]),
+      outcome: JSON.parse(text[1]).toolOutcome
+    }
+  }
+
+  const rootId = () =>
+    readReceipt('anchor').value.actionResults.find(
+      (item: { actionName: string }) =>
+        item.actionName === 'apply_prepared_design'
+    ).result.compositionId
+
+  const checkSelection = () => ({
+    ids: [
+      `measurement:${
+        readReceipt('failure').value.parts[0].actionResults.find(
+          (item: { actionName: string }) =>
+            item.actionName === 'apply_prepared_design'
+        ).result.compositionId
+      }`
+    ]
+  })
+
+  const fixture = await createNativeProviderFixture([
+    ...[
+      'design_workflow.prepare_and_apply_design',
+      'design_operations.read_design_checks'
+    ].map((name) => ({
+      type: 'tool_search_call',
+      id: `discover-${name}`,
+      call_id: `discover-${name}`,
+      execution: 'client',
+      status: 'completed',
+      arguments: { query: name, limit: 1 }
+    })),
+    call('anchor', 'prepare_and_apply_design', {
+      draft: {
+        type: 'group',
+        name: 'Receipt fixture anchor',
+        children: [
+          { type: 'rect', key: 'anchor', name: 'Anchor', width: 10, height: 10 }
+        ]
+      },
+      inspection: 'defer'
+    }),
+    () =>
+      call('failure', 'prepare_and_apply_design', {
+        parts: recordedPreparation.input.parts.map((part) => ({
+          ...part,
+          parentId: rootId()
+        })),
+        inspection: 'defer'
+      }),
+    () => call('before', 'read_design_checks', checkSelection()),
+    () => {
+      const rejected = readReceipt('failure').value.parts[1]
+      const children =
+        recordedPreparation.input.parts[1].draft.children.flatMap<unknown>(
+          (child) => {
+            if (child.type !== 'projected-face') {
+              return [child]
+            }
+
+            const vertices = child.vertices
+
+            if (!vertices || vertices.length < 3) {
+              throw new Error('Invalid recorded projected face')
+            }
+
+            return vertices.slice(2).map((vertex, index) => ({
+              ...child,
+              key: `${child.key}-triangle-${index}`,
+              vertices: [vertices[0], vertices[index + 1], vertex]
+            }))
+          }
+        )
+
+      return call('repaired', 'prepare_and_apply_design', {
+        parts: [
+          {
+            key: 'base-details',
+            parentId: rootId(),
+            repair: {
+              draftId: rejected.draftId,
+              replacements: [{ path: '/children', value: children }]
+            }
+          }
+        ],
+        inspection: 'defer'
+      })
     },
-    {
-      model: 'fixture-model',
-      executable: resolve('e2e/fixtures/receipt-provider.mjs'),
-      recordDirectory: testInfo.outputPath('provider-records'),
-      toolLibraryDirectory: testInfo.outputPath('tool-library'),
+    () => call('after', 'read_design_checks', checkSelection()),
+    () => undefined,
+    message(
+      'repair-report',
+      JSON.stringify({
+        batchId: 'repair-report',
+        actions: [
+          {
+            id: 'report',
+            name: 'report_outcome',
+            arguments: {
+              outcome: 'unsupported',
+              message: 'Offline repair report completed.'
+            },
+            summary: 'Describe the existing repair'
+          }
+        ]
+      })
+    ),
+    message(
+      'repair-followup',
+      'The completed prefix was retained without replay.'
+    )
+  ])
+  let report
 
-      executeBatch: async (batch) => {
-        const receipt = await execute(batch)
-
-        if (batch.actions.some((a) => a.name === 'apply_prepared_design')) {
-          mutations++
-          if (mutations === 2) {
-            prefix = await getCoreDocumentDigest(page)
+  try {
+    await requestLocalAiActionBatch(
+      {
+        actions,
+        attempt: 1,
+        context: {},
+        intent: 'Exercise recorded preparation recovery without a live model.',
+        metadata: {
+          evaluationWindow: {
+            workDeadlineAt: Date.now() + 60000,
+            reportTimeoutMs: null,
+            keepReportSession: true
           }
         }
+      },
+      {
+        reportSessions: sessions,
+        model: fixture.environment.AI_PROVIDER_MODEL,
+        executable: fixture.environment.AI_PROVIDER_EXECUTABLE,
+        recordDirectory: testInfo.outputPath('provider-records'),
+        toolLibraryDirectory: testInfo.outputPath('tool-library'),
 
-        return receipt
+        executeBatch: async (batch) => {
+          const receipt = await execute(batch)
+
+          if (batch.actions.some((a) => a.name === 'apply_prepared_design')) {
+            mutations++
+            latestMutation = await getCoreDocumentDigest(page)
+            if (mutations === 2) {
+              prefix = await getCoreDocumentDigest(page)
+            }
+          }
+
+          return receipt
+        }
       }
+    )
+    report = {
+      failure: readReceipt('failure'),
+      before: readReceipt('before'),
+      repaired: readReceipt('repaired'),
+      after: readReceipt('after')
     }
-  )
-  const report = JSON.parse(
-    (result.actions[0].arguments as { message: string }).message
-  )
+    if (!retained || !latestMutation) {
+      throw new Error(
+        'Missing retained report session or completed canonical mutation'
+      )
+    }
+
+    expect(await getCoreDocumentDigest(page)).toEqual(latestMutation)
+    const callsBeforeQuestion = fixture.toolCalls().length
+    const reply = await sessions.ask(
+      retained.sessionId,
+      'Explain whether repair repeated the completed prefix.'
+    )
+
+    expect(reply.nativeThreadId).toBe(retained.nativeThreadId)
+    expect(reply.messages.map((entry) => entry.text)).toContain(
+      'The completed prefix was retained without replay.'
+    )
+    expect(fixture.toolCalls()).toHaveLength(callsBeforeQuestion)
+    expect(mutations).toBe(3)
+    expect(await getCoreDocumentDigest(page)).toEqual(latestMutation)
+    expect(
+      fixture.appPackets().filter((entry) => entry.method === 'thread/start')
+    ).toHaveLength(1)
+    expect(
+      fixture.appPackets().filter((entry) => entry.method === 'turn/start')
+    ).toHaveLength(3)
+    await sessions.close(retained.sessionId)
+    expect(await getCoreDocumentDigest(page)).toEqual(latestMutation)
+  } finally {
+    await sessions.dispose()
+    await fixture.dispose()
+  }
 
   expect(report.failure.success).toBe(false)
+  expect(report.failure.outcome).toMatchObject({
+    status: 'partial',
+    settlement: 'partial'
+  })
   expect(report.failure.value).toMatchObject({
     status: 'partial',
     settlement: 'partial'
   })
   expect(report.failure.value.parts[1]).toMatchObject({
-    recovery: 'correct_input',
-    toolOutcome: { status: 'failed', settlement: 'not-started' },
+    code: 'TOOL_INPUT_INVALID',
+    available: false,
+    settlement: 'not-started',
+    completedSteps: [],
+    failedStep: 'prepare_design',
     draftId: expect.any(String)
   })
   expect(report.failure.value.parts[1].message).toContain('nonplanar face')
   expect(report.repaired.success).toBe(true)
+  expect(report.repaired.outcome).toMatchObject({
+    status: 'success',
+    settlement: 'completed'
+  })
   expect(mutations).toBe(3) // Anchor, successful prefix, repaired part. No prefix replay.
   const crown = report.failure.value.parts[0].actionResults.find(
     (r: { actionName: string }) => r.actionName === 'apply_prepared_design'
@@ -601,7 +920,7 @@ test('actual provider receipt ownership preserves a recorded prefix through repa
     (c) => c.id === `measurement:${crown}`
   )
 
-  expect(original).toMatchObject({ status: 'pass' })
+  expect(original).toBeUndefined()
   expect(
     entries(report.after).find((c) => c.id === `measurement:${crown}`)
   ).toEqual(original)
@@ -641,4 +960,126 @@ test('actual provider receipt ownership preserves a recorded prefix through repa
   await page.reload()
   await waitForAppReady(page)
   await expect.poll(() => getCoreDocumentDigest(page)).toEqual(next)
+})
+
+test('recorded leaf and group capture targets preserve subtree membership and local region pixels', async ({
+  page
+}) => {
+  test.setTimeout(90000)
+  const document = createTestDocumentIdentity()
+
+  await page.goto(document.url)
+  await waitForAppReady(page)
+  await connected(page)
+  const { designs, execute, invoke, signal } = await runtime(page)
+  const keys = ['base-y', 'bamboo-3-south', 'crown-taper-y']
+
+  const square = (
+    key: string,
+    x: number,
+    y: number,
+    size: number,
+    fill: string
+  ) => ({
+    type: 'vector',
+    key,
+    name: key,
+    fill,
+    rings: [
+      [
+        { x, y },
+        { x: x + size, y },
+        { x: x + size, y: y + size },
+        { x, y: y + size }
+      ]
+    ]
+  })
+
+  const prepared = JSON.parse(
+    await designs.call(
+      'prepare_design',
+      {
+        draft: {
+          type: 'group',
+          name: 'Capture membership',
+          children: keys.map((key, i) => ({
+            type: 'group',
+            key: `${key}-group`,
+            name: `${key} - Group`,
+            children: [
+              square(key, 200 + i * 140, 300, 100, '#ff0000'),
+              square(`${key}-windows`, 240 + i * 140, 340, 20, '#0000ff')
+            ]
+          }))
+        }
+      },
+      signal
+    )
+  )
+
+  expect(prepared.applicable).toBe(true)
+  await execute(
+    designs.resolveBatch({
+      batchId: 'capture-membership',
+      actions: [
+        {
+          id: 'apply',
+          name: 'apply_prepared_design',
+          arguments: { artifactId: prepared.artifactId },
+          summary: 'Create capture membership fixture'
+        }
+      ]
+    })
+  )
+  const before = await getCoreDocumentDigest(page)
+
+  for (const key of keys) {
+    const [leaf, group] = designs.resolveTargets({
+      artifactId: prepared.artifactId,
+      keys: [key, `${key}-group`]
+    })
+    const images = []
+
+    for (const [name, args] of [
+      ['leaf', { elementId: leaf, view: 'detail' }],
+      [
+        'group',
+        {
+          elementId: group,
+          view: 'detail',
+          region: { x: 20, y: 20, width: 60, height: 60 }
+        }
+      ]
+    ] as const) {
+      const result = await invoke('inspect_drawing', { arguments: args })
+      const captured = result.actionResults[0].result
+
+      expect(captured.available, JSON.stringify(captured)).toBe(true)
+      const bytes = Buffer.from(captured.image.dataUrl.split(',')[1], 'base64')
+
+      await test
+        .info()
+        .attach(`${key}-${name}.png`, { body: bytes, contentType: 'image/png' })
+      const { data, info } = await sharp(bytes)
+        .ensureAlpha()
+        .raw()
+        .toBuffer({ resolveWithObject: true })
+      const offset =
+        (Math.floor(info.height / 2) * info.width +
+          Math.floor(info.width / 2)) *
+        info.channels
+
+      images.push(Array.from(data.subarray(offset, offset + 4)))
+    }
+
+    expect(images).toEqual([
+      [255, 0, 0, 255],
+      [0, 0, 255, 255]
+    ])
+  }
+
+  expect(await getCoreDocumentDigest(page)).toEqual(before)
+  await page.screenshot({
+    path: test.info().outputPath('capture-membership-app.png')
+  })
 })

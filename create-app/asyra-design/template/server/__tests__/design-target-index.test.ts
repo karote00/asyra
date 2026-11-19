@@ -8,6 +8,7 @@ describe('prepared target index', () => {
     const index = createDesignTargetIndex(map)
     const expected = keys.filter((key) => key.startsWith('part-91'))
     const matches = vi.spyOn(String.prototype, 'startsWith')
+
     try {
       expect(index.keys('part-91')).toEqual(expected)
       expect(matches).toHaveBeenCalledTimes(expected.length + 1)
@@ -24,11 +25,13 @@ describe('prepared target index', () => {
     const index = createDesignTargetIndex(
       Object.fromEntries(keys.map((key) => [key, key]))
     )
+
     for (const prefix of ['', '窗', '窗-1', 'a/', '__', '\uffff', 'missing']) {
       expect(index.keys(prefix)).toEqual(
         keys.filter((key) => key.startsWith(prefix))
       )
     }
+
     index.keys().pop()
     expect(index.keys()).toEqual(keys)
   })

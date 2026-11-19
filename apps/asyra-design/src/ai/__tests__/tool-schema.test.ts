@@ -151,3 +151,61 @@ it.each(['constructor', '__proto__', 'toString'])(
     ).toBeDefined()
   }
 )
+
+it('enforces dependent fields in both directions only when their trigger is present', () => {
+  const schema = {
+    type: 'object',
+    properties: { left: { type: 'number' }, right: { type: 'number' } },
+    dependentRequired: { left: ['right'] },
+    additionalProperties: false
+  }
+
+  expect(operationInputIssue({ left: 1 }, schema)).toContain('right')
+  expect(operationInputIssue({ left: 1, right: 2 }, schema)).toBeUndefined()
+  expect(operationInputIssue({ right: 2 }, schema)).toBeUndefined()
+  expect(operationInputIssue({}, schema)).toBeUndefined()
+})
+
+it.each([
+  { type: 'number', multipleOf: 2 },
+  {
+    anyOf: [
+      { type: 'object' },
+      { patternProperties: { x: { type: 'number' } } }
+    ]
+  },
+  { not: { contains: { type: 'string' } } },
+  { properties: { optional: { format: 'email' } } },
+  { type: 3 },
+  { type: ['string', 'string'] },
+  { required: ['value', 'value'] },
+  { minimum: '3' },
+  { required: 'value' },
+  { dependentRequired: { left: true } }
+])(
+  'rejects unsupported or malformed schema semantics before value branch selection: %j',
+  (schema) => {
+    expect(operationInputIssue({}, schema)).toBeDefined()
+  }
+)
+
+it('treats examples and defaults as data and supports recursive local root references', () => {
+  const schema = {
+    type: 'object',
+    properties: {
+      count: { type: 'integer', minimum: 0 },
+      child: { $ref: '#' }
+    },
+    required: ['count'],
+    additionalProperties: false,
+    examples: [{ multipleOf: 'literal', $ref: 'not-a-schema-reference' }],
+    default: { format: 'literal data' }
+  }
+
+  expect(
+    operationInputIssue({ count: 1, child: { count: 2 } }, schema)
+  ).toBeUndefined()
+  expect(
+    operationInputIssue({ count: 1, child: { count: -1 } }, schema)
+  ).toBeDefined()
+})

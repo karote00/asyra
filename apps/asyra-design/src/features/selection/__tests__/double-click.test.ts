@@ -14,7 +14,7 @@ const mocks = vi.hoisted(() => ({
   >(),
   getSelectedIds: vi.fn(() => ['container']),
   getElementType: vi.fn(() => 'custom-group'),
-  isContainerType: vi.fn(() => true),
+  isContainerType: vi.fn<typeof core.isContainerType>(() => true),
   getPathEditingMode: vi.fn(() => false),
   resolveChild: vi.fn(() => 'child' as string | null),
   selectElements: vi.fn(),

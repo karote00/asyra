@@ -59,20 +59,24 @@ const stopColorCache = new Map<string, number>()
  */
 const hexToColorInt = (hex: string): number => {
   const cached = stopColorCache.get(hex)
+
   if (cached !== undefined) {
     return cached
   }
 
   const parsed = parseColor(hex)
+
   if (!parsed) {
     return 0xffffff
   }
 
   const colorInt = rgbaToColorInt(parsed)
+
   stopColorCache.set(hex, colorInt)
   if (stopColorCache.size > 256) {
     stopColorCache.clear()
   }
+
   return colorInt
 }
 
@@ -88,6 +92,7 @@ const getLineVectors = (
   const dist = Math.max(0.001, Math.sqrt(dx * dx + dy * dy))
   const ux = dx / dist // unit along gradient
   const uy = dy / dist
+
   return { ux, uy, px: -uy, py: ux } // px,py = perpendicular (left side)
 }
 
@@ -167,17 +172,21 @@ export const registerGradientFillHandlesRenderLayer = (
   const layerRegistration = createOverlayLayerRegistration({
     name: GRADIENT_FILL_HANDLES_LAYER_NAME,
     zIndex: 12,
+
     update: (canvas: OverlayCanvas) => {
       const activeGradientFill =
         deps.systemProperties.getSystemProperty<ActiveGradientFillState | null>(
           'activeGradientFill'
         ) ?? null
+
       if (!activeGradientFill) {
         if (lastDrawSignature === 'empty') {
           return false
         }
+
         lastDrawSignature = 'empty'
         canvas.clear()
+
         return true
       }
 
@@ -185,17 +194,21 @@ export const registerGradientFillHandlesRenderLayer = (
         activeGradientFill.elementId,
         activeGradientFill.fillId
       )
+
       if (!geometry) {
         const missingSignature = [
           'missing',
           activeGradientFill.elementId,
           activeGradientFill.fillId
         ].join('|')
+
         if (lastDrawSignature === missingSignature) {
           return false
         }
+
         lastDrawSignature = missingSignature
         canvas.clear()
+
         return true
       }
 
@@ -236,9 +249,11 @@ export const registerGradientFillHandlesRenderLayer = (
           ? `${selectedStop.elementId},${selectedStop.fillId},${selectedStop.stopIndex}`
           : ''
       ].join('|')
+
       if (drawSignature === lastDrawSignature) {
         return false
       }
+
       lastDrawSignature = drawSignature
 
       canvas.clear()
@@ -254,6 +269,7 @@ export const registerGradientFillHandlesRenderLayer = (
       const end = geometry.canvasHandles[1]
 
       const lineVectors = getLineVectors(start, end)
+
       geometry.fill.gradient?.gradientStops.forEach((stop, stopIndex) => {
         const linePos = {
           x: start.x + (end.x - start.x) * stop.position,
@@ -297,6 +313,7 @@ export const registerGradientFillHandlesRenderLayer = (
           }
         )
       })
+
       return true
     }
   })

@@ -263,6 +263,16 @@ it('keeps advertised field exclusivity equivalent at canonical and native schema
     await import('../design-construction-schema')
   const { nativeToolInputSchema, operationInputIssue } =
     await import('../operation-input-schema')
+  const { createLocalDesignTools } = await import('../local-design-tools')
+  const definition = createLocalDesignTools([
+    { name: 'apply_prepared_design', description: 'Apply', inputSchema: {} }
+  ]).definitions.find((entry) => entry.name === 'prepare_design')
+
+  if (!definition) {
+    throw new Error('Missing preparation contract')
+  }
+
+  const { $defs } = definition.inputSchema as { $defs: object }
   const face = source().children[0]
   const pattern = {
     type: 'pattern',
@@ -291,18 +301,18 @@ it('keeps advertised field exclusivity equivalent at canonical and native schema
       )
     ).toBeDefined()
     expect(
-      operationInputIssue(pattern, transform(designPatternSchema))
+      operationInputIssue(pattern, transform({ ...designPatternSchema, $defs }))
     ).toBeUndefined()
     expect(
       operationInputIssue(
         { ...pattern, fills: ['#ffffff'] },
-        transform(designPatternSchema)
+        transform({ ...designPatternSchema, $defs })
       )
     ).toBeDefined()
     expect(
       operationInputIssue(
         { ...pattern, faces: [{ ...pattern.faces[0], fill: '#ffffff' }] },
-        transform(designPatternSchema)
+        transform({ ...designPatternSchema, $defs })
       )
     ).toBeDefined()
   }

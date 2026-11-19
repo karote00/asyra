@@ -21,6 +21,32 @@ describe('request tool scheduling', () => {
     await parent
   })
 
+  it('allows isolated preparation during a pending write without releasing the canvas barrier', async () => {
+    const schedule = createLocalToolScheduler(new AbortController().signal)
+    let finish!: () => void
+    const events: string[] = []
+    const pending = schedule('exclusive', async () => {
+      events.push('write')
+      await new Promise<void>((resolve) => {
+        finish = resolve
+      })
+    })
+
+    await Promise.resolve()
+    await Promise.resolve()
+    const read = schedule('independent', async () => {
+      events.push('read')
+    })
+
+    await schedule('isolated', async () => {
+      events.push('prepare')
+    })
+    expect(events).toEqual(['write', 'prepare'])
+    finish()
+    await Promise.all([pending, read])
+    expect(events).toEqual(['write', 'prepare', 'read'])
+  })
+
   it('does not start a coordinator after cancellation', async () => {
     const controller = new AbortController()
 

@@ -39,8 +39,10 @@ const createFillRecordPatch = (
   fill: FillPatch
 ): ElementPropertyPatchUpdate => {
   const fields: Record<string, unknown> = {}
+
   for (const key of FILL_PATCH_KEYS) {
     const value = fill[key]
+
     if (value !== undefined) {
       fields[key] = value
     }
@@ -60,8 +62,9 @@ const createFillRecordPatch = (
 }
 
 const assertUniqueFillTargets = (elementIds: readonly string[]) => {
-  if (new Set(elementIds).size !== elementIds.length)
+  if (new Set(elementIds).size !== elementIds.length) {
     throw new Error('Fill row targets must contain unique element IDs')
+  }
 }
 
 // Logical child slots stay stable when effective bindings are isolated or re-shared.
@@ -70,8 +73,10 @@ const fillPropertyTargetsAtIndex = (
   index: number
 ): ElementPropertyTarget[] => {
   assertUniqueFillTargets(elementIds)
-  if (!Number.isInteger(index) || index < 0)
+  if (!Number.isInteger(index) || index < 0) {
     throw new Error('Fill row index must be a non-negative integer')
+  }
+
   const roots = core.readElementPropertyTargets(
     elementIds.map((elementId) => ({
       elementId,
@@ -79,10 +84,14 @@ const fillPropertyTargetsAtIndex = (
       path: []
     }))
   )
+
   return roots.map((root, offset) => {
     const slot = root.children[index]
-    if (!slot)
+
+    if (!slot) {
       throw new Error(`Missing Fill row ${index} for ${elementIds[offset]}`)
+    }
+
     return {
       elementId: elementIds[offset],
       propertyName: PropertyTypes.FILLS,
@@ -96,12 +105,17 @@ const fillPropertyTargetsAtIndex = (
 // Resolve relationships at the canonical caller boundary, once per owner.
 const fillRowsAtIndex = (elementIds: readonly string[], index: number) => {
   assertUniqueFillTargets(elementIds)
-  if (!Number.isSafeInteger(index) || index < 0)
+  if (!Number.isSafeInteger(index) || index < 0) {
     throw new Error('Invalid Fill row index')
+  }
+
   return elementIds.map((elementId) => {
     const fills = core.getElementComputedData(elementId, ['fills'])?.fills
-    if (!Array.isArray(fills) || !fills[index]?.id)
+
+    if (!Array.isArray(fills) || !fills[index]?.id) {
       throw new Error(`Missing Fill row ${index} on ${elementId}`)
+    }
+
     return {
       elementId,
       fills: fills as FillAttrs[],
@@ -125,6 +139,7 @@ const getDisplayStartHandle = (
   gradient: FillGradientData
 ): FillGradientData['gradientHandles'][number] => {
   const [startHandle, endHandle] = gradient.gradientHandles
+
   if (!startHandle || !endHandle) {
     return startHandle
   }
@@ -149,6 +164,7 @@ const getStoredHandleFromDisplay = (
   }
 
   const endHandle = gradient.gradientHandles[1]
+
   if (!endHandle) {
     return displayHandle
   }
@@ -168,15 +184,21 @@ const getElementFill = (
     width: number
     height: number
   }> | null
-  if (!computed) return null
+
+  if (!computed) {
+    return null
+  }
+
   const fills = Array.isArray(computed.fills) ? computed.fills : []
   const fill = fills.find((entry) => entry?.id === fillId)
+
   if (!fill) {
     return null
   }
 
   const width = computed.width
   const height = computed.height
+
   if (
     typeof width !== 'number' ||
     !Number.isFinite(width) ||
@@ -199,15 +221,19 @@ const getPrimaryFill = (elementId: string): FillAttrs | null => {
   const computed = core.getElementComputedData(elementId) as {
     fills?: unknown
   } | null
+
   if (!Array.isArray(computed?.fills)) {
     return null
   }
+
   const fill = computed.fills[0]
+
   return fill && typeof fill === 'object' ? (fill as FillAttrs) : null
 }
 
 const getCanvasPositionFromClient = (clientPos: PositionData): PositionData => {
   const canvasBounds = core.getCanvasBounds()
+
   if (!canvasBounds) {
     return clientPos
   }
@@ -223,13 +249,18 @@ export const fillApis = {
     elementIds: readonly string[],
     index: number
   ): FillTarget[] => {
-    if (!Number.isInteger(index) || index < 0)
+    if (!Number.isInteger(index) || index < 0) {
       throw new Error('Invalid Fill row index')
+    }
+
     return [...new Set(elementIds)].map((elementId) => {
       const fills = core.getElementComputedData(elementId, ['fills'])?.fills
       const fill = Array.isArray(fills) ? fills[index] : undefined
-      if (!fill?.id)
+
+      if (!fill?.id) {
         throw new Error(`Missing Fill row ${index} on ${elementId}`)
+      }
+
       return { elementId, fillId: fill.id }
     })
   },
@@ -242,8 +273,11 @@ export const fillApis = {
       elementId,
       fill: createDefaultFill({ id: id('fill') })
     }))
-    if (!entries.length)
+
+    if (!entries.length) {
       return mutationReceipt([], { acceptedIds: [], changed: false })
+    }
+
     const evidence = transactionApis.runTransaction(() =>
       core.patchElementProperties(
         entries.map(({ elementId, fill }) =>
@@ -252,6 +286,7 @@ export const fillApis = {
         options
       )
     )
+
     return mutationReceipt(
       entries.map(({ fill }) => fill.id),
       evidence
@@ -259,7 +294,10 @@ export const fillApis = {
   },
 
   addFill: (elementId: string, options?: EVENT_OPTIONS): string | null => {
-    if (!core.getElementData(elementId)) return null
+    if (!core.getElementData(elementId)) {
+      return null
+    }
+
     return fillApis.addFills([elementId], options).value[0] ?? null
   },
 
@@ -267,8 +305,10 @@ export const fillApis = {
     targets: readonly FillTarget[],
     options?: EVENT_OPTIONS
   ): MutationReceipt<null> => {
-    if (!targets.length)
+    if (!targets.length) {
       return mutationReceipt(null, { acceptedIds: [], changed: false })
+    }
+
     const evidence = transactionApis.runTransaction(() =>
       core.patchElementProperties(
         targets.map(({ elementId, fillId }) => ({
@@ -278,6 +318,7 @@ export const fillApis = {
         options
       )
     )
+
     return mutationReceipt(null, evidence)
   },
 
@@ -287,13 +328,17 @@ export const fillApis = {
     options?: EVENT_OPTIONS
   ): boolean => {
     const fills = core.getElementComputedData(elementId, ['fills'])?.fills
+
     if (
       !fillId ||
       !Array.isArray(fills) ||
       !fills.some((fill) => fill?.id === fillId)
-    )
+    ) {
       return false
+    }
+
     fillApis.removeFills([{ elementId, fillId }], options)
+
     return true
   },
 
@@ -306,6 +351,7 @@ export const fillApis = {
     canvasBounds?: DOMRect | null
   ): PositionData => {
     const resolvedBounds = canvasBounds ?? fillApis.getCanvasBounds()
+
     if (!resolvedBounds) {
       return clientPos
     }
@@ -322,6 +368,7 @@ export const fillApis = {
 
   getPrimaryFillColor: (elementId: string): string | null => {
     const fill = getPrimaryFill(elementId)
+
     return typeof fill?.color === 'string' ? fill.color : null
   },
 
@@ -332,6 +379,7 @@ export const fillApis = {
     clientPos: PositionData
   ) => {
     const geometry = fillApis.getGradientHandleGeometry(elementId, fillId)
+
     if (!geometry || !geometry.fill.gradient) {
       return null
     }
@@ -341,11 +389,16 @@ export const fillApis = {
       clientY: clientPos.y
     })
     const localPos = core.workspaceToElementLocal(elementId, workspacePos)
-    if (!localPos) return null
+
+    if (!localPos) {
+      return null
+    }
+
     const displayHandle = {
       x: localPos.x / geometry.width,
       y: localPos.y / geometry.height
     }
+
     if (
       handleIndex === 1 &&
       isNonLinearGradient(geometry.fill.gradient.gradientType)
@@ -365,9 +418,11 @@ export const fillApis = {
             if (index === 0) {
               return nextStartHandle ?? handle
             }
+
             if (index === 1) {
               return displayHandle
             }
+
             return handle
           }
         )
@@ -393,6 +448,7 @@ export const fillApis = {
     fillId: string
   ): GradientHandleGeometry | null => {
     const fillData = getElementFill(elementId, fillId)
+
     if (
       !fillData?.fill.gradient ||
       fillData.fill.gradient.gradientHandles.length < 2
@@ -410,9 +466,11 @@ export const fillApis = {
       x: endHandle.x * fillData.width,
       y: endHandle.y * fillData.height
     })
+
     if (!startWorkspace || !endWorkspace) {
       return null
     }
+
     const canvasHandles: [PositionData, PositionData] = [
       core.workspaceToCanvas(startWorkspace),
       core.workspaceToCanvas(endWorkspace)
@@ -435,6 +493,7 @@ export const fillApis = {
     hitRadius = 9
   ): { handleIndex: GradientHandleIndex } | null => {
     const geometry = fillApis.getGradientHandleGeometry(elementId, fillId)
+
     if (!geometry) {
       return null
     }
@@ -445,6 +504,7 @@ export const fillApis = {
     for (const [handleIndex, handlePos] of geometry.canvasHandles.entries()) {
       const dx = handlePos.x - canvasPos.x
       const dy = handlePos.y - canvasPos.y
+
       if (dx * dx + dy * dy <= hitRadiusSquared) {
         return {
           handleIndex: handleIndex as GradientHandleIndex
@@ -462,6 +522,7 @@ export const fillApis = {
     hitSize = 16
   ): { stopIndex: number } | null => {
     const geometry = fillApis.getGradientHandleGeometry(elementId, fillId)
+
     if (!geometry?.fill.gradient) {
       return null
     }
@@ -484,6 +545,7 @@ export const fillApis = {
     const offsetDist = stopOffsetFromLine + rectHalf
 
     const stops = geometry.fill.gradient.gradientStops
+
     for (let i = 0; i < stops.length; i++) {
       const stop = stops[i]
 
@@ -528,6 +590,7 @@ export const fillApis = {
       handleIndex,
       clientPos
     )
+
     if (!geometry || !geometry.fill.gradient || !nextGradient) {
       return mutationReceipt(null, { acceptedIds: [], changed: false }, [
         elementId
@@ -552,21 +615,28 @@ export const fillApis = {
     const results: ('changed' | 'unchanged' | 'unavailable')[] = []
     const prepared = updates.map(({ color, elementId }) => {
       const fill = getPrimaryFill(elementId)
+
       if (!fill || typeof color !== 'string' || color.length === 0) {
         results.push('unavailable')
+
         return null
       }
+
       if (fill.color === color) {
         results.push('unchanged')
+
         return null
       }
+
       results.push('changed')
+
       return {
         elementId,
         fillId: fill.id,
         patch: { color }
       }
     })
+
     if (!prepared.some((update) => update !== null)) {
       return Object.freeze(results)
     }
@@ -587,6 +657,7 @@ export const fillApis = {
         options
       )
     })
+
     return Object.freeze(results)
   },
 
@@ -613,9 +684,13 @@ export const fillApis = {
     options?: EVENT_OPTIONS
   ): MutationReceipt<null> => {
     const aligned = Array.isArray(patch) ? patch : undefined
-    if (aligned && aligned.length !== elementIds.length)
+
+    if (aligned && aligned.length !== elementIds.length) {
       throw new Error('Fill patches must be aligned with elementIds')
+    }
+
     const targets = fillRowsAtIndex(elementIds, index)
+
     return fillApis.updateFillFieldsBatch(
       targets.map(({ elementId, fill }, offset) => ({
         elementId,
@@ -639,18 +714,24 @@ export const fillApis = {
       index
     )
     const [source] = core.readElementPropertyTargets([sourceTarget])
-    if (source.mode === 'source-backed')
+
+    if (source.mode === 'source-backed') {
       throw new Error(
         'Choose an independent source or detach the source row before sharing its effective values'
       )
-    if (!targets.length)
+    }
+
+    if (!targets.length) {
       return mutationReceipt(null, { acceptedIds: [], changed: false })
+    }
+
     const evidence = transactionApis.runTransaction(() =>
       core.shareElementPropertyTargets(
         targets.map((target) => ({ target, sourceId: source.propertyId })),
         options
       )
     )
+
     return mutationReceipt(null, evidence)
   },
 
@@ -661,11 +742,15 @@ export const fillApis = {
     options?: EVENT_OPTIONS
   ): MutationReceipt<null> => {
     const targets = fillPropertyTargetsAtIndex(elementIds, index)
-    if (!targets.length)
+
+    if (!targets.length) {
       return mutationReceipt(null, { acceptedIds: [], changed: false })
+    }
+
     const evidence = transactionApis.runTransaction(() =>
       core.detachElementPropertyTargets(targets, options)
     )
+
     return mutationReceipt(null, evidence)
   },
 
@@ -676,9 +761,15 @@ export const fillApis = {
     for (const { elementId, fillId, patch } of updates) {
       if (!Object.values(patch).some((value) => value !== undefined)) {
         const fills = core.getElementComputedData(elementId, ['fills'])?.fills
-        if (!Array.isArray(fills) || !fills.some((fill) => fill.id === fillId))
+
+        if (
+          !Array.isArray(fills) ||
+          !fills.some((fill) => fill.id === fillId)
+        ) {
           throw new Error(`Missing Fill ${fillId} on ${elementId}`)
+        }
       }
+
       for (const key of Object.keys(patch)) {
         if (!FILL_PATCH_KEYS.some((allowed) => allowed === key)) {
           throw new Error(
@@ -687,6 +778,7 @@ export const fillApis = {
         }
       }
     }
+
     const patches = updates
       .filter(({ patch }) =>
         FILL_PATCH_KEYS.some((key) => patch[key] !== undefined)
@@ -694,14 +786,18 @@ export const fillApis = {
       .map(({ elementId, fillId, patch }) =>
         createFillRecordPatch(elementId, fillId, patch)
       )
-    if (!patches.length)
+
+    if (!patches.length) {
       return mutationReceipt(null, {
         acceptedIds: [...new Set(updates.map(({ elementId }) => elementId))],
         changed: false
       })
+    }
+
     const evidence = transactionApis.runTransaction(() =>
       core.patchElementProperties(patches, options)
     )
+
     return mutationReceipt(null, {
       acceptedIds: [...new Set(updates.map(({ elementId }) => elementId))],
       changed: evidence.changed
@@ -719,6 +815,7 @@ export const fillApis = {
       options
     )
   },
+
   updateFillField: <K extends FillWritableKey>(
     elementId: string,
     fillId: string,

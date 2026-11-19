@@ -11,11 +11,13 @@ const Position = () => {
   const handleChangeX = useCallback(
     (newValue: string) => {
       const nextValue = parseFiniteInputNumber(newValue)
+
       if (nextValue === null) {
         return false
       }
 
       updateSelectedElementProperties('x', nextValue)
+
       return true
     },
     [updateSelectedElementProperties]
@@ -24,11 +26,13 @@ const Position = () => {
   const handleChangeY = useCallback(
     (newValue: string) => {
       const nextValue = parseFiniteInputNumber(newValue)
+
       if (nextValue === null) {
         return false
       }
 
       updateSelectedElementProperties('y', nextValue)
+
       return true
     },
     [updateSelectedElementProperties]

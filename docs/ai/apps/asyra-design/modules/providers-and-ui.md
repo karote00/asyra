@@ -44,7 +44,8 @@ projection; the design-system package owns no canonical document behavior.
   - nested official Group rows projected only from canonical
     `flattenedElementIds` and `elementDataMap`
   - UI-local Group collapse/expand state
-  - Group/Ungroup command controls and visible availability
+  - Group/Ungroup commands remain in the canvas Context Menu and shortcuts;
+    the Layers header does not duplicate those controls
   - Layers hierarchy drag indicators (`before`, `after`, `inside`, workspace,
     or invalid) with pointer cleanup on every end/cancel route
 
@@ -85,8 +86,8 @@ projection; the design-system package owns no canonical document behavior.
 
 - No selection -> no layout fields shown.
 - Element selection -> layout, fills, and stroke color rows shown.
-- Single Text selection -> layout and Typography; unsupported Fill/Stroke lists
-  are hidden. See [Editable text](../specs/editable-text.md).
+- Single Text selection -> layout, Typography and the complete Fill panel;
+  unsupported Text Stroke controls are hidden. See [Editable text](../specs/editable-text.md).
 - Selected vector element in element-properties mode -> fills section shown.
 - Selected vector point in active path editing -> point panel shown.
 - Invalid numeric input must not write computed data.

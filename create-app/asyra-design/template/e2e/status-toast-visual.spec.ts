@@ -7,6 +7,7 @@ test('reports initial socket unavailability once while keeping the App editable'
   await page.goto('/?fileId=status-toast-visual')
   await waitForAppReady(page)
   const alerts = page.locator('[role="alert"]')
+
   await expect(alerts).toHaveCount(1)
   await expect(alerts).toHaveText(
     'The document session is offline. Local editing remains available and changes will sync after reconnection.'
@@ -17,6 +18,7 @@ test('reports initial socket unavailability once while keeping the App editable'
   await expect(alerts).toHaveCount(1)
 
   const reload = page.waitForNavigation({ waitUntil: 'domcontentloaded' })
+
   await page.getByTestId('reset-button').click()
   await reload
   await waitForAppReady(page)
@@ -27,6 +29,7 @@ test('reports initial socket unavailability once while keeping the App editable'
   )
 
   const screenshotPath = testInfo.outputPath('initial-offline-reset.png')
+
   await page.screenshot({
     path: screenshotPath,
     fullPage: true

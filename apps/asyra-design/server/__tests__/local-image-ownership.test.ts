@@ -220,7 +220,14 @@ it('composes contour review and component analysis using a fresh retained input'
       ).text
     )
 
-    expect(refused).toMatchObject({ ok: false })
+    expect(refused).toMatchObject({
+      available: false,
+      code: 'TOOL_INPUT_INVALID',
+      settlement: 'not-started',
+      inputIssues: expect.arrayContaining([
+        expect.objectContaining({ code: 'captured-value' })
+      ])
+    })
   } finally {
     await app.host.dispose()
   }

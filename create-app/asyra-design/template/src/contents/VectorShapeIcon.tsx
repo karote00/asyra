@@ -7,6 +7,7 @@ interface VectorShapeIconProps {
 
 export const VectorShapeIcon = ({ elementId }: VectorShapeIconProps) => {
   const path = useVectorIconPathMap(elementId)
+
   if (path === undefined || path === null) {
     return <Icon showCursor={false} name="Pen" />
   }

@@ -1,6 +1,6 @@
 import core from '../../src/contexts'
 import { historyApis } from '../../src/common-apis/history'
-import { getActiveCollaborationHandle } from '../../src/collaboration/lifecycle'
+import { getActiveCollaborationHandle } from '../../src/collaboration/session-observation'
 import { createAiRuntimeInput } from '../../src/ai/runtime-input'
 import { createAiTransactionRunner } from '../../src/ai/transaction'
 import { basicApiContracts } from '../../src/ai/basic-api-catalog'

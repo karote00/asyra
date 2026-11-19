@@ -1,3 +1,5 @@
+import { requiredArray, requiredRecord } from '../../__tests__/assert-result'
+import type core from '../../contexts'
 import { DEFAULT_TEXT_DATA, TextSizing } from '@asyra/preset'
 import { beforeEach, expect, it, vi } from 'vitest'
 const mocks = vi.hoisted(() => ({
@@ -8,7 +10,9 @@ const mocks = vi.hoisted(() => ({
     width: layout.width ?? 45,
     height: 40
   })),
-  createElementInParent: vi.fn(() => 'new-text'),
+  createElementInParent: vi.fn<typeof core.createElementInParent>(
+    () => 'new-text'
+  ),
   updateElementProperties: vi.fn(),
   selectElements: vi.fn(),
   switchPrimaryTool: vi.fn(),
@@ -96,9 +100,11 @@ it('does not commit an unchanged existing draft', () => {
 it('uses the app default Fill for newly authored text', () => {
   textCanvasApis.beginCreate({ x: 0, y: 0, width: 240, height: 80 })
   textCanvasApis.finish('Visible text')
-  expect(mocks.createElementInParent.mock.calls[0][0].fills[0].color).toBe(
-    '#cccccc'
-  )
+  expect(
+    requiredRecord(
+      requiredArray(mocks.createElementInParent.mock.calls[0][0].fills)[0]
+    ).color
+  ).toBe('#cccccc')
 })
 
 it('reuses the measured draft for the editor and the single canonical commit', () => {

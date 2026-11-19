@@ -61,7 +61,9 @@ test('endpoint routes and artifacts resolve through exact owners', () => {
 
   data.routes.forEach((route) => {
     assert.ok(stepIds.has(route.from), `${route.id} source`)
-    if (route.to) {assert.ok(stepIds.has(route.to), `${route.id} target`)}
+    if (route.to) {
+      assert.ok(stepIds.has(route.to), `${route.id} target`)
+    }
 
     route.producedArtifacts.forEach((artifactId) => {
       const artifact = artifacts.get(artifactId)
@@ -1056,11 +1058,11 @@ test('each ranked endpoint closes through the guarded proof schedule', () => {
   )
   assert.match(
     text,
-    /initial history baseline.*before request-ready.*loading at zero.*event-first.*first visible canonical element.*bounded frame handoff.*pan and zoom.*blocked input.*turn remains active/i
+    /initial history baseline.*before request-ready.*loading at zero.*event-first.*first visible canonical element.*bounded frame handoff.*pan, zoom.*independent tool activation.*turn remains active/i
   )
   assert.match(
     text,
-    /Independent loading-time interaction proofs.*pan after first visible.*zoom after 25-percent.*rectangle shortcut and button lock after 50 percent.*Delete plus Undo lock after 75 percent.*mutation-driven.*bounded frame.*no fixed delay/i
+    /Independent loading-time interaction proofs.*pan after first visible.*zoom after 25-percent.*rectangle keyboard activation after 50 percent.*return to selection.*rectangle pointer activation after 75 percent.*mutation-driven.*bounded frame.*no fixed delay/i
   )
   assert.match(
     text,
@@ -1442,7 +1444,7 @@ test('local progressive drawing paints exact bounds before cooperative canonical
   )
   assert.match(
     text,
-    /multiple deterministic progressive plural Core child batches.*one outer App transaction.*one intended history action/i
+    /multiple deterministic progressive plural Core child batches.*finite history-group members.*one intended AI Undo entry/i
   )
   assert.match(
     text,
@@ -1497,14 +1499,17 @@ test('local progressive drawing paints exact bounds before cooperative canonical
   assert.match(text, /clear.*success.*failure.*cancel.*rollback/i)
   assert.match(
     text,
-    /App-owned document interaction lock.*before.*outer App transaction.*pan.*zoom.*block.*document mutation/i
+    /finite synchronous mutation member.*canonical idle boundary.*no request-wide transaction or document interaction lock.*Independent user edits.*own history/i
   )
   assert.match(
     text,
-    /viewport navigation.*ordinary Feature execution.*no canonical mutation.*history.*AI action.*transaction evidence/i
+    /Viewport pan and zoom navigation.*ordinary Feature execution.*no canonical mutation or history.*User edits retain independent transaction ownership/i
   )
   assert.doesNotMatch(text, /navigation.*never joins the AI transaction/i)
-  assert.match(text, /release.*success.*failure.*cancel.*teardown/i)
+  assert.match(
+    text,
+    /clears drawing progress.*success.*failure.*cancellation.*teardown.*acknowledged members remain committed/i
+  )
   assert.ok(
     owner.forbiddenContributors.includes(
       'AI-only renderer or canonical loading placeholder'
@@ -1644,11 +1649,11 @@ test('local progressive drawing paints exact bounds before cooperative canonical
   )
   assert.match(
     plan,
-    /Cooperative Progressive Composition[\s\S]*point[\s\S]*element-count[\s\S]*browser paint opportunity[\s\S]*one outer transaction[\s\S]*one intended Undo/i
+    /Cooperative Progressive Composition[\s\S]*point[\s\S]*element-count[\s\S]*browser paint opportunity[\s\S]*finite synchronous members[\s\S]*one intended Undo/i
   )
   assert.match(
     plan,
-    /Document Interaction Lock[\s\S]*pan[\s\S]*zoom[\s\S]*document mutation[\s\S]*success[\s\S]*failure[\s\S]*cancellation[\s\S]*teardown/i
+    /Document Interaction and Member Admission[\s\S]*no document interaction lock[\s\S]*Independent user edits[\s\S]*own transactions and Undo entries[\s\S]*Stop prevents pending AI members/i
   )
   assert.match(
     plan,
@@ -1668,13 +1673,13 @@ test('local progressive drawing paints exact bounds before cooperative canonical
   )
   assert.match(
     feature,
-    /Scenario: Local progressive composition becomes visible in cooperative batches[\s\S]*point and element-count[\s\S]*browser paint opportunity[\s\S]*one outer transaction[\s\S]*one Undo/i
+    /Scenario: Local progressive composition becomes visible in cooperative batches[\s\S]*point and element-count[\s\S]*browser paint opportunity[\s\S]*synchronous members[\s\S]*one lazy AI history group[\s\S]*one Undo/i
   )
   assert.match(feature, /at most 32 elements per ordinary work unit/i)
   assert.match(plan, /32-element work-unit cap[\s\S]*fixed 2,048-point budget/i)
   assert.match(
     feature,
-    /Scenario: Drawing progress keeps navigation responsive while edits stay locked[\s\S]*pan[\s\S]*zoom[\s\S]*document mutation[\s\S]*one Undo/i
+    /Scenario: Drawing progress preserves independent user interactions[\s\S]*viewport navigation[\s\S]*independent user edits[\s\S]*own transactions and Undo entries[\s\S]*Stop should prevent pending AI members/i
   )
   assert.match(
     feature,
@@ -2042,4 +2047,80 @@ test('local-only startup is transport-free while configured socket remote apply 
     feature,
     /root start:asyra-design[\s\S]*Asyra Design dev server[\s\S]*explicit collaboration:server[\s\S]*collaboration Playwright[\s\S]*separately supply the WebSocket endpoint/i
   )
+})
+
+test('completion authorities leave visual acceptance to the model without a signed review gate', () => {
+  const experience = read(
+    'docs/ai/apps/asyra-design/specs/ai-conversation-experience.md'
+  )
+  const drawing = JSON.stringify(data)
+
+  assert.doesNotMatch(
+    experience,
+    /Freeze these criteria before the first mutation|Completion\s+requires a model-authored assessment of every planned criterion|backend validates receipt identity, revision and criterion coverage/
+  )
+  assert.doesNotMatch(
+    drawing,
+    /record_design_review|signed.*verdict|verdict.*signed/
+  )
+  assert.match(
+    experience,
+    /No mandatory plan registration or signed completion gate/
+  )
+})
+
+test('conversation projections preserve current optional review and finite-member recovery', () => {
+  const request = contractText(step('request-backend-action-batch'))
+  const capture = contractText(step('capture-drawing-review'))
+  const runtime = contractText(step('resolve-server-prepared-action-batch'))
+  const progressive = contractText(step('stage-local-interactive-composition'))
+
+  assert.doesNotMatch(
+    request,
+    /deferredDetails|deferredChecks|1,000 source nodes|20,000 source points|failed checks or overflow prevent|both review stages|requires a successful current measurement/
+  )
+  assert.doesNotMatch(
+    capture,
+    /review_design runs before snapshot|prevent completed settlement|phase completion requires fresh/
+  )
+  assert.doesNotMatch(
+    runtime,
+    /Cancellation rolls back|no per-action savepoint|stops further work/
+  )
+  assert.doesNotMatch(
+    progressive,
+    /one outer App transaction contains|blocks every other document|cancellation preserves canonical rollback/
+  )
+  assert.match(runtime, /history group.*synchronous.*members/i)
+  assert.match(capture, /no follow-up reads/i)
+  assert.match(progressive, /independent.*user.*history/i)
+})
+
+test('endpoint acceptance and BDD preserve finite members and independent input', () => {
+  for (const owner of [
+    'yield-ai-loading-paint',
+    'evaluate-endpoint-performance'
+  ]) {
+    assert.doesNotMatch(
+      contractText(step(owner)),
+      /every mutating document action remains locked|blocked document mutation and history while locked|terminal lock release|blocked input sequence|button lock after|Undo lock after/
+    )
+  }
+
+  assert.equal(
+    JSON.stringify(data).includes(
+      'One mutating user turn owns one outer transaction'
+    ),
+    false
+  )
+  const feature = read(
+    'docs/ai/apps/asyra-design/bdd-features/ai-conversational-drawing-performance.feature'
+  )
+
+  assert.equal(
+    feature.includes('until terminal cleanup releases the lock'),
+    false
+  )
+  assert.match(feature, /keyboard and pointer tool switching/)
+  assert.match(feature, /guard.*preserve.*interaction evidence/i)
 })

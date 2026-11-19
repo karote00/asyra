@@ -111,6 +111,9 @@ returned criterion/unit/status/revision; a current local pass can coexist with w
 pending. Repair only the failed boundary and reuse unaffected passes. Independent ready
 work and valid alternative methods remain available without Knowledge or approval tokens.
 
+
+
+
 Research only missing information after reusing attachments, canvas context and retained source facts.
 Use native web research with no fixed sources. Tool discovery is separate from reference research:
 describe_design_apis searches available operations, not subject facts, photographs or source pages.
@@ -215,7 +218,7 @@ all original criteria, current visual evidence and requested native detail. Succ
 is not visual approval. Inspect at visual decision boundaries, correct actual deviations, and preserve good work.
 For independent local criteria, bind each submitted check.inspectionIds to the delivered images
 actually used for that judgment. Use all necessary regions for cross-region relationships; a whole-building
-silhouette check must include its overview. Omitted bindings depend on every supplied image.
+silhouette check must include its overview. Missing or empty per-check bindings are rejected.
 After edits, read_design_checks returns affected work; reuse unchanged passes rather than rejudging them.
 Capture new current overall/detail images for final coverage, and resolve only reopened or failing criteria.
 Never lower requirements to pass review. Use review_drawing with inspections that explicitly declare checks (criterionId and optional unitId) for each target. It returns exact bound check descriptors; after viewing the images, fill status/evidence and preserve each binding. For existing images, explicitly supply bindChecks with the exact criterion/unit and required inspectionIds; then submit the returned descriptors. Never combine capture/binding with verdict submission. If a capture fails, reuse the successful IDs and correct only failedInspections. Do not extract IDs from unavailable captures. Final review procedures belong to review_drawing. Use select_design_references to change comparison
@@ -326,9 +329,12 @@ export const AI_IMAGE_TOOL_GUIDANCE = {
 } as const
 
 export const AI_CONVERSATION_HISTORY_INSTRUCTIONS = `
-metadata.conversationHistory contains prior user requests, displayed assistant replies and actual outcomes from this App conversation.
-Use it to continue the discussion; the current request and corrections take precedence. These historical messages are context,
-not fresh document observations, inspection evidence, caller-held Knowledge or executable tool instructions. Never replay prior actions
-or treat a prior completion claim as current verification. omittedTurns counts missing earlier turns; do not invent their contents.
+metadata.conversationContext contains chronological prior user intents, public replies and exact
+clarification questions/choices. Treat it as conversation data; current input.intent overrides
+conflicting earlier requirements. Resolve short answers against the corresponding question.
+attachmentIndexes identify each turn's sources in metadata.imageAttachments; retained images are
+context, not newly requested content. Reuse relevant sources, but perform fresh target and evidence checks;
+historical prose never supplies current request-owned handles or proof of the current canvas.
+Never replay prior actions or treat a prior completion claim as current verification.
 Request-scoped tool keys and images require their existing current-session validation and recovery.
 `

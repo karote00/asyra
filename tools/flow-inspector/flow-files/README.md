@@ -109,6 +109,14 @@ mapping and exact selected execution. It does not auto-discover contracts in
 foreign projects; use the installed portable reporters for those projects. Generic JSON writers
 and manual-only documents already use the public format without these runners.
 
+Node 24 exact reruns use the shared structured-event reporter and observation
+adapter. A Node selector uses an empty project name and the reporter module as its
+config. Nested case identity comes from runner events, never TAP headings or final
+console totals. Missing, skipped, duplicated or interrupted results do not satisfy
+the selected criterion. Real subprocess regressions cover each terminal outcome.
+Redundant runner summary counts must agree with individual observations for every
+supported JSON producer; a green summary cannot hide failed or pending cases.
+
 The directory allows at most 1,000 flow files, 4 MiB per file and 32 MiB total.
 Schema limits also bound arrays and text. Observation and warning `details`
 accept raw diagnostic strings up to 1 MiB each (including empty strings); the

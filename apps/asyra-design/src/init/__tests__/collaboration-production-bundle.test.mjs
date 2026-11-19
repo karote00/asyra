@@ -38,6 +38,53 @@ test('production bundle keeps local-only and configured collaboration modes dist
     buildProductionBundle(undefined),
     buildProductionBundle(configuredEndpoint)
   ])
+  const localChunks = new Map(
+    localOnlyChunks
+      .filter((output) => output.type === 'chunk')
+      .map((chunk) => [chunk.fileName, chunk])
+  )
+  const staticModules = new Set()
+  const visited = new Set()
+
+  const visit = (name) => {
+    if (visited.has(name)) {
+      return
+    }
+
+    visited.add(name)
+    const chunk = localChunks.get(name)
+
+    if (!chunk) {
+      return
+    }
+
+    Object.keys(chunk.modules).forEach((id) => staticModules.add(id))
+    chunk.imports.forEach(visit)
+  }
+
+  for (const chunk of localChunks.values()) {
+    if (chunk.isEntry) {
+      visit(chunk.fileName)
+    }
+  }
+
+  const isSessionOwner = (id) =>
+    /[/\\]src[/\\]collaboration[/\\](?:lifecycle|websocket-provider|publication-outbox)\.ts$/.test(
+      id
+    )
+
+  assert.deepEqual(
+    [...staticModules].filter(isSessionOwner),
+    [],
+    'local-only entry eagerly imports collaboration session owners'
+  )
+  assert.equal(
+    [...localChunks.values()].some((chunk) =>
+      Object.keys(chunk.modules).some(isSessionOwner)
+    ),
+    true,
+    'explicit Reset must retain deferred collaboration support'
+  )
   const chunks = configuredChunks
   const moduleIds = chunks
     .filter((output) => output.type === 'chunk')

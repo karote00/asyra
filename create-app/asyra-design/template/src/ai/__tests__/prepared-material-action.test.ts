@@ -19,6 +19,7 @@ const gradient = {
     { position: 1, color: '#eeeeee', opacity: 1 }
   ]
 }
+
 it('uses captured creation provenance, preflights all members and retains it across material edits only', async () => {
   const current = new Map([
     ['a', 'geometry-a-binding-a'],
@@ -30,6 +31,7 @@ it('uses captured creation provenance, preflights all members and retains it acr
       current.has(id)
         ? { geometry: current.get(id), binding: 'binding' }
         : null,
+
     update
   })
   const signal = new AbortController().signal
@@ -40,6 +42,7 @@ it('uses captured creation provenance, preflights all members and retains it acr
       { elementId: 'b', gradient, color: '#102030' }
     ]
   }
+
   await expect(owner.action.execute(input, { signal })).rejects.toThrow(
     /provenance|unavailable/i
   )
@@ -69,6 +72,7 @@ it('rejects foreign request, duplicates, missing members and abort before the fi
   const update = vi.fn(changedReceipt)
   const owner = createPreparedMaterialApplication({
     read: (id) => (id === 'a' ? { geometry: 'a', binding: 'binding' } : null),
+
     update
   })
   const controller = new AbortController()
@@ -76,6 +80,7 @@ it('rejects foreign request, duplicates, missing members and abort before the fi
     rootId: 'root',
     updates: [{ elementId: 'a', gradient, color: '#102030' }]
   }
+
   owner.capture('root', ['a'], controller.signal)
   await expect(
     owner.action.execute(input, { signal: new AbortController().signal })
@@ -104,21 +109,28 @@ it('preserves the committed receipt when provenance refresh fails and refuses a 
   let written = false
   const update = vi.fn((ids: readonly string[]) => {
     written = true
+
     return changedReceipt(ids)
   })
   const owner = createPreparedMaterialApplication({
     read: () => {
-      if (written) throw new Error('read unavailable')
+      if (written) {
+        throw new Error('read unavailable')
+      }
+
       return { geometry: 'g', binding: 'b' }
     },
+
     update
   })
   const signal = new AbortController().signal
+
   owner.capture('root', ['a'], signal)
   const input = {
     rootId: 'root',
     updates: [{ elementId: 'a', gradient, color: '#102030' }]
   }
+
   await expect(owner.action.execute(input, { signal })).resolves.toMatchObject({
     status: 'complete',
     appliedCount: 1,
@@ -137,6 +149,7 @@ it('keeps document material provenance across viewport transforms and rejects re
     await import('@asyra/preset')
   const { RenderContainer } = await import('@asyra/render')
   const { fillApis } = await import('../../common-apis/fills')
+
   applyPreset(core, {
     profile: PresetProfiles.CUSTOM,
     defaults: [PresetDefaults.BASIC_SHAPES, PresetDefaults.CONTAINERS]
@@ -183,12 +196,14 @@ it('keeps document material provenance across viewport transforms and rejects re
     x: 9378.905950335902,
     y: 33657.47156164411
   })
+
   view.addChild(frame)
   frame.addChild(face)
   const original = core.elementLocalToWorkspace
   const projected = vi.fn((_id: string, point: { x: number; y: number }) =>
     view.toLocal(face.toGlobal(point))
   )
+
   core.elementLocalToWorkspace = projected
   const owner = createPreparedMaterialApplication()
   const controller = new AbortController()
@@ -197,10 +212,12 @@ it('keeps document material provenance across viewport transforms and rejects re
     updates: [{ elementId: 'face', gradient, color: '#102030' }]
   }
   const context = { signal: controller.signal }
+
   try {
     owner.capture('frame', ['face'], controller.signal)
     expect(projected).not.toHaveBeenCalled()
     const document = core.save()
+
     view.scale.set(0.02, 0.02)
     view.position.set(600, 60)
     expect(core.save()).toEqual(document)
@@ -209,6 +226,7 @@ it('keeps document material provenance across viewport transforms and rejects re
       appliedElementIds: ['face']
     })
     const fills = core.getElementComputedData('face', ['fills'])?.fills
+
     expect(fills).toMatchObject([{ kind: 'gradient', gradient }])
     view.scale.set(2.75, 2.75)
     view.position.set(-331.25, 9.125)
@@ -221,6 +239,7 @@ it('keeps document material provenance across viewport transforms and rejects re
       { elementId: 'face', values: { x: 9378.905950335902 + 0.001 } }
     ])
     const moved = core.save()
+
     await expect(owner.action.execute(input, context)).rejects.toThrow(
       /geometry.computed.x: expected .*current .*delta/
     )
@@ -240,8 +259,10 @@ it('keeps document material provenance across viewport transforms and rejects re
     core.updateElementProperties([{ elementId: 'face', values: { width: 20 } }])
     fillApis.addFills(['face'])
     const originalFill = (fills as { id: string }[])[0].id
+
     fillApis.removeFills([{ elementId: 'face', fillId: originalFill }])
     const rebound = core.save()
+
     await expect(owner.action.execute(input, context)).rejects.toThrow(
       /binding/i
     )
@@ -259,9 +280,11 @@ it('reports a real small document delta without loosening admission or writing',
   const update = vi.fn(changedReceipt)
   const owner = createPreparedMaterialApplication({
     read: () => ({ geometry: { x }, binding: 'same' }),
+
     update
   })
   const signal = new AbortController().signal
+
   owner.capture('source', ['face'], signal)
   x += 1e-12
   await expect(
@@ -281,6 +304,7 @@ it.each([0, 0.63])(
   'retains earlier material members across a normalized partition continuation (rotation=%s)',
   async (rotation) => {
     const signal = new AbortController().signal
+
     const geometry = (x: number, rootX: number) => ({
       parents: ['root'],
       computed: { x, y: 3, width: 10, height: 20, rotation },
@@ -289,6 +313,7 @@ it.each([0, 0.63])(
         { x: 12, y: -5, rotation: 30, scaleX: 2, scaleY: 3 }
       ]
     })
+
     const values = new Map([
       ['a', { geometry: geometry(10, 20), binding: 'a' }],
       ['b', { geometry: geometry(40, 20), binding: 'b' }]
@@ -296,8 +321,10 @@ it.each([0, 0.63])(
     const update = vi.fn(changedReceipt)
     const owner = createPreparedMaterialApplication({
       read: (id) => values.get(id) ?? null,
+
       update
     })
+
     owner.capture('root', ['a'], signal)
     values.set('a', { geometry: geometry(30, 0), binding: 'a' })
     values.set('b', { geometry: geometry(60, 0), binding: 'b' })
@@ -325,6 +352,7 @@ it.each([0, 0.63])(
     )
     expect(update).toHaveBeenCalledOnce()
     const rotated = geometry(30, 0)
+
     rotated.computed.rotation += 0.1
     values.set('a', { geometry: rotated, binding: 'a' })
     expect(() => owner.capture('root', ['b'], signal, true)).toThrow(/changed/)

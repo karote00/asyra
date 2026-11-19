@@ -44,6 +44,7 @@ describe('viewport common APIs', () => {
       position: { x: 30, y: 40 }
     }
     const viewportAnchor = document.createElement('div')
+
     viewportAnchor.id = 'viewport-anchor'
     viewportAnchor.getBoundingClientRect = vi.fn(
       () =>
@@ -56,6 +57,7 @@ describe('viewport common APIs', () => {
           right: 880,
           bottom: 640,
           left: 80,
+
           toJSON: () => ({})
         }) as DOMRect
     )

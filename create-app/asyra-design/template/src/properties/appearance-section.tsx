@@ -21,4 +21,5 @@ const AppearanceSection = ({
     {children}
   </div>
 )
+
 export default AppearanceSection

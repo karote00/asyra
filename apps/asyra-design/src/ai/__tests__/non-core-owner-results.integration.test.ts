@@ -1,3 +1,4 @@
+import { requiredArray, requiredRecord } from '../../__tests__/assert-result'
 import factory from '@asyra/factory'
 import props from '@asyra/props-manager'
 import scene from '@asyra/scene-tree'
@@ -16,6 +17,7 @@ import { createBasicApiActions } from '../basic-api-actions'
 import { createAiTransactionRunner } from '../transaction'
 import { vectorApis } from '../../common-apis/element/vector-apis'
 import { invokeLocalTool } from '../../../server/local-tool-invocation'
+import { operationInputIssue } from '../tool-schema'
 
 const required = <T>(value: T | null | undefined): T => {
   if (value == null) {
@@ -103,6 +105,18 @@ it('delivers non-Core owner evidence through real Core, native validation and hi
     return { ...result, receipt: JSON.parse(result.text) }
   }
 
+  for (const contract of basicApiContracts.filter(
+    (contract) =>
+      contract.effect === 'read' &&
+      !operationInputIssue({}, contract.inputSchema)
+  )) {
+    const result = await invoke(contract.name, {})
+
+    expect(result.outcome.status, contract.name + ': ' + result.text).toBe(
+      'success'
+    )
+  }
+
   const lock = await invoke('api_element_setElementLock', {
     elementId: 'a',
     lock: true
@@ -112,46 +126,44 @@ it('delivers non-Core owner evidence through real Core, native validation and hi
     status: 'complete',
     changed: true,
     acceptedIds: ['a'],
-    unavailableIds: [],
-    toolOutcome: { status: 'success', settlement: 'completed' }
+    unavailableIds: []
   })
+  expect(lock.outcome).toMatchObject({
+    status: 'success',
+    settlement: 'completed'
+  })
+  expect(lock.receipt).not.toHaveProperty('toolOutcome')
   const depth = core.getUndoHistoryDepth()
 
   expect(
-    (await invoke('api_element_setElementLock', { elementId: 'a', lock: true }))
-      .receipt
+    await invoke('api_element_setElementLock', { elementId: 'a', lock: true })
   ).toMatchObject({
-    status: 'no-change',
-    changed: false,
-    toolOutcome: { status: 'success', settlement: 'completed' }
+    receipt: { status: 'no-change', changed: false },
+    outcome: { status: 'success', settlement: 'completed' }
   })
   expect(core.getUndoHistoryDepth()).toBe(depth)
   expect(
-    (
-      await invoke('api_element_setElementLock', {
-        elementId: 'missing',
-        lock: true
-      })
-    ).receipt
+    await invoke('api_element_setElementLock', {
+      elementId: 'missing',
+      lock: true
+    })
   ).toMatchObject({
-    status: 'failed',
-    unavailableIds: ['missing'],
-    changed: false,
-    toolOutcome: { status: 'failed', settlement: 'not-started' }
+    receipt: { status: 'failed', unavailableIds: ['missing'], changed: false },
+    outcome: { status: 'failed', settlement: 'not-started' }
   })
   await invoke('api_element_setElementLock', { elementId: 'a', lock: false })
   expect(
-    (
-      await invoke('api_element_setElementPositions', {
-        positionsById: { a: { x: 4, y: 5 }, missing: { x: 1, y: 2 } }
-      })
-    ).receipt
+    await invoke('api_element_setElementPositions', {
+      positionsById: { a: { x: 4, y: 5 }, missing: { x: 1, y: 2 } }
+    })
   ).toMatchObject({
-    status: 'partial',
-    acceptedIds: ['a'],
-    unavailableIds: ['missing'],
-    changed: true,
-    toolOutcome: { status: 'partial', settlement: 'partial' }
+    receipt: {
+      status: 'partial',
+      acceptedIds: ['a'],
+      unavailableIds: ['missing'],
+      changed: true
+    },
+    outcome: { status: 'partial', settlement: 'partial' }
   })
   expect(core.getElementComputedData('a')).toMatchObject({ x: 4, y: 5 })
   const fill = await invoke('api_fill_addFills', { elementIds: ['a'] })
@@ -610,7 +622,9 @@ it('delivers non-Core owner evidence through real Core, native validation and hi
   const original = add.execute
 
   add.execute = vi.fn(original)
-  const beforePrefix = core.getElementComputedData('a')?.fills?.length
+  const beforePrefix = requiredArray(
+    core.getElementComputedData('a')?.fills
+  ).length
   const runtime = createAiAgentRuntime({
     provider: {
       requestActionBatch: async (_input, options) => {
@@ -718,7 +732,9 @@ it('delivers non-Core owner evidence through real Core, native validation and hi
       })
     ).receipt
   ).toMatchObject({ status: 'complete', changed: true })
-  const widthBefore = core.getElementComputedData('a')?.strokes?.[0]?.width
+  const widthBefore = requiredRecord(
+    requiredArray(core.getElementComputedData('a')?.strokes)[0]
+  ).width
 
   await invoke('api_stroke_updateStrokeFieldsBatch', {
     updates: [
@@ -726,11 +742,15 @@ it('delivers non-Core owner evidence through real Core, native validation and hi
     ]
   })
   factory.undo()
-  expect(core.getElementComputedData('a')?.strokes?.[0]?.width).toBe(
-    widthBefore
-  )
+  expect(
+    requiredRecord(requiredArray(core.getElementComputedData('a')?.strokes)[0])
+      .width
+  ).toBe(widthBefore)
   factory.redo()
-  expect(core.getElementComputedData('a')?.strokes?.[0]?.width).toBe(7)
+  expect(
+    requiredRecord(requiredArray(core.getElementComputedData('a')?.strokes)[0])
+      .width
+  ).toBe(7)
   const saved = {
     version: '1.0.0',
     props: props.save(),
@@ -750,7 +770,7 @@ it('delivers non-Core owner evidence through real Core, native validation and hi
 
   expect(await invoke('api_fill_addFills', { elementIds: 'a' })).toMatchObject({
     success: false,
-    receipt: { code: 'PREPARATION_REJECTED', settlement: 'not-started' }
+    receipt: { code: 'TOOL_INPUT_INVALID', settlement: 'not-started' }
   })
   expect(calls).toHaveLength(beforeInvalid)
   const declared = basicApiContracts

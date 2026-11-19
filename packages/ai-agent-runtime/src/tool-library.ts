@@ -44,6 +44,7 @@ export interface AiToolLibraryOptions extends Omit<
   'resolve'
 > {
   readonly registry: AiVersionedActionRegistry
+  readonly allowDependency?: (name: string) => boolean
   readonly capacity: number
   /** Host construction is trusted code. A recipe can never supply a function. */
   readonly createExecutor: (
@@ -182,7 +183,9 @@ export const createAiToolLibrary = (options: AiToolLibraryOptions) => {
         ...options,
 
         resolve: (name) =>
-          options.registry.get(name, { requestId: input.requestId })
+          options.allowDependency?.(name) === false
+            ? undefined
+            : options.registry.get(name, { requestId: input.requestId })
       })
       let result: AiRecipeSubmissionResult
 

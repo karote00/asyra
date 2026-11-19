@@ -1,113 +1,100 @@
-import { it, expect } from 'vitest'
-
-const nativeIt = it.runIf(Boolean(process.env.NATIVE_DELIVERY_CODEX))
-
+import { it as nativeTest, expect } from 'vitest'
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
+import { isRecord } from '@asyra/utils'
+import { requestConfiguredAiActionBatch } from '../ai-model-provider'
+import {
+  createNativeProviderFixture,
+  nativeProviderExecutable
+} from './native-provider-fixture'
 
-const nativeModule = new URL(
-  '../../test-data/knowledge-evaluation/native-delivery.mjs',
-  import.meta.url
-).href
+const it = nativeTest.skipIf(!nativeProviderExecutable)
 
-nativeIt(
-  'characterizes actual native progressing and silent unfinished output with separate later execution',
-  async () => {
-    const { loadFixtures, runNativeDelivery } = await import(
-      /* @vite-ignore */ nativeModule
-    )
-    const fixture = { ...(await loadFixtures())[0], raw: '{"ok":true}' }
+for (const mode of ['progressive', 'silent', 'interrupted'] as const) {
+  it(
+    'observes actual native ' +
+      mode +
+      ' arguments before production App dispatch',
+    async () => {
+      const fixture = await createNativeProviderFixture(
+        [
+          {
+            type: 'function_call',
+            id: 'read',
+            call_id: 'read',
+            namespace: 'design_knowledge',
+            name: 'read_knowledge',
+            arguments: JSON.stringify({ ids: ['colors'] })
+          }
+        ],
+        undefined,
+        mode
+      )
+      const signal = AbortSignal.timeout(45000)
+      const request = requestConfiguredAiActionBatch(
+        {
+          actions: [],
+          context: {},
+          attempt: 1,
+          intent: 'Read color advice without editing.'
+        },
+        { environment: fixture.environment, signal }
+      )
+      // Attach rejection handling before intentionally disconnecting the native stream.
+      const outcome = request.then(
+        (value) => ({ value }),
+        (error) => ({ error })
+      )
 
-    for (const outputProbe of ['progressive', 'silent']) {
-      const result = await runNativeDelivery({
-        fixture,
-        outputProbe
-      })
-
-      expect(result.requests).toBe(2)
-      expect(result.comparison.exact).toBe(true)
-      expect(result.nativeReplyExact).toBe(true)
-      expect(result.cleanup.errors).toEqual([])
-      expect(result.outputProbe).toEqual({
-        mode: outputProbe,
-        emittedArgumentBytes: outputProbe === 'progressive' ? 64000 : 0,
-        completed: false,
-        publicItems: expect.any(Array)
-      })
-      expect(
-        result.outputProbe.publicItems.every(
-          (item: { kind: string }) => item.kind === 'userMessage'
+      try {
+        await Promise.race([
+          fixture.waitForUnfinished(),
+          outcome.then(() => {
+            throw Error('Provider settled before unfinished-output checkpoint')
+          })
+        ])
+        expect(fixture.emittedArgumentBytes()).toBe(
+          mode === 'silent' ? 0 : 64000
         )
-      ).toBe(true)
-      // The fixture has known differing byte schedules. Neither is exposed as an
-      // unfinished item by the native public stream. Later invocation is real.
-      const records = (await readFile(result.receipt.path, 'utf8'))
-        .trim()
-        .split('\n')
-        .map(JSON.parse)
-      const before = records.findIndex(
-        (r: { stage: string }) => r.stage === 'unfinished-output-probe'
-      )
-      const invoked = records.findIndex(
-        (r: { stage: string }) => r.stage === 'native-call'
-      )
+        expect(fixture.toolCalls()).toHaveLength(0)
+        const before: unknown[] = (
+          await readFile(
+            join(fixture.directory, 'native-protocol.jsonl'),
+            'utf8'
+          )
+        )
+          .trim()
+          .split('\n')
+          .map((line) => JSON.parse(line))
 
-      expect(before).toBeGreaterThan(-1)
-      expect(invoked).toBeGreaterThan(before)
-      const ref = records[before].receipt
-      const witness = JSON.parse(
-        await readFile(join(result.directory, ref.path), 'utf8')
-      )
+        expect(
+          before
+            .filter(isRecord)
+            .filter((packet) => packet.method === 'item/tool/call')
+        ).toHaveLength(0)
+        fixture.releaseUnfinished()
+        const settled = await outcome
 
-      expect(witness).toEqual(result.outputProbe)
-    }
-  },
-  100000
-)
+        if (mode === 'interrupted') {
+          expect(settled).toHaveProperty('error')
+          expect(fixture.toolCalls()).toHaveLength(0)
+          expect(fixture.requests).toHaveLength(1)
+        } else {
+          expect(settled).not.toHaveProperty('error')
+          expect(fixture.toolCalls()).toHaveLength(1)
+          const received = fixture.successorOutput('read')
 
-nativeIt(
-  'preserves a disconnected unfinished native output without inventing invocation',
-  async () => {
-    const { loadFixtures, runNativeDelivery } = await import(
-      /* @vite-ignore */ nativeModule
-    )
-    let error: Error | undefined
-
-    try {
-      await runNativeDelivery({
-        fixture: { ...(await loadFixtures())[0], raw: '{"ok":true}' },
-        outputProbe: 'interrupted'
-      })
-    } catch (value) {
-      error = value as Error
-    }
-
-    expect(error?.message).toMatch(/Native turn failed/)
-    const directory = error?.message.split('; evidence: ')[1]
-
-    expect(directory).toBeTruthy()
-    if (!directory) {
-      throw new Error('Missing native failure evidence')
-    }
-
-    const result = JSON.parse(
-      await readFile(join(directory, 'result.json'), 'utf8')
-    )
-    const records = (await readFile(result.receipt.path, 'utf8'))
-      .trim()
-      .split('\n')
-      .map(JSON.parse)
-
-    expect(
-      records.some(
-        (r: { stage: string }) => r.stage === 'unfinished-output-probe'
-      )
-    ).toBe(true)
-    expect(
-      records.some((r: { stage: string }) => r.stage === 'native-call')
-    ).toBe(false)
-    expect(result.outcome).toBeUndefined()
-    expect(result.cleanup.errors).toEqual([])
-  },
-  55000
-)
+          expect(received).toContain('"target":"colors"')
+          expect(received).toContain(
+            '"toolOutcome":{"status":"success","settlement":"completed","issues":[]}'
+          )
+        }
+      } finally {
+        fixture.releaseUnfinished()
+        await outcome
+        await fixture.dispose()
+      }
+    },
+    60000
+  )
+}

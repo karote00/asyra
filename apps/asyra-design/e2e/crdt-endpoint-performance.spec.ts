@@ -23,6 +23,7 @@ import {
   type ServerResponseItemCount
 } from './action-batch-interceptor'
 import { getPreparedServerResponseVariant } from './prepared-server-response-artifacts.mjs'
+import { normalizeEndpointInteractionEvidence } from './endpoint-interaction-evidence.mjs'
 import { RuntimeDiagnosticEvents } from '../src/constants/runtime-diagnostics'
 
 const expectedFixture = Object.freeze({
@@ -382,8 +383,6 @@ interface PreparedLocalInteractionProbe {
 }
 
 interface LocalDocumentEventCounts {
-  readonly deleteKey: number
-  readonly historyShortcut: number
   readonly rectangleButton: number
   readonly rectangleShortcut: number
 }
@@ -392,7 +391,6 @@ interface LocalInteractionProbeSnapshot {
   readonly canonicalElements: number
   readonly documentEventAttempts: LocalDocumentEventCounts
   readonly documentEventDeliveries: LocalDocumentEventCounts
-  readonly documentEventPreventions: LocalDocumentEventCounts
   readonly keyboardTargetActive: boolean
   readonly loadingAtZero: {
     readonly canonicalElements: number
@@ -453,16 +451,31 @@ interface LocalInteractionProbe {
   ): Promise<LocalInteractionProbeSnapshot>
 }
 
+type ToolSwitchEvidence = Pick<
+  LocalInteractionProbeSnapshot,
+  | 'canonicalElements'
+  | 'loadingConnected'
+  | 'rectangleActive'
+  | 'turnAccepted'
+  | 'turnOutcome'
+>
+
+const toolSwitchEvidence = (
+  snapshot: LocalInteractionProbeSnapshot
+): ToolSwitchEvidence => ({
+  canonicalElements: snapshot.canonicalElements,
+  loadingConnected: snapshot.loadingConnected,
+  rectangleActive: snapshot.rectangleActive,
+  turnAccepted: snapshot.turnAccepted,
+  turnOutcome: snapshot.turnOutcome
+})
+
 interface LocalInteractionEvidence {
-  readonly blockedActionAttempts: {
-    readonly deleteKeyBlocked: boolean
+  readonly duringCreation: {
+    readonly keyboard: ToolSwitchEvidence
+    readonly pointer: ToolSwitchEvidence
     readonly documentEventAttempts: LocalDocumentEventCounts
-    readonly documentEventDeliveries: LocalInteractionProbeSnapshot['documentEventDeliveries']
-    readonly documentEventPreventions: LocalDocumentEventCounts
-    readonly historyShortcutBlocked: boolean
-    readonly rectangleButtonBlocked: boolean
-    readonly rectangleShortcutBlocked: boolean
-    readonly rectangleToolRemainedInactive: boolean
+    readonly documentEventDeliveries: LocalDocumentEventCounts
   }
   readonly completion: {
     readonly canonicalElements: number
@@ -577,7 +590,10 @@ interface EndpointReport {
     readonly diagnostics: FinalActorDiagnostics
     readonly firstVisibleMs: number | null
     readonly summary:
-      CanonicalSummary | LocalAttributionSummary | TwoActorActivitySummary
+      | CanonicalSummary
+      | LocalAttributionSummary
+      | ReceiverConvergenceSummary
+      | TwoActorActivitySummary
   } | null
   readonly convergedMs: number | null
   readonly durationMs: number
@@ -981,7 +997,7 @@ const createConnectivityHeartbeat = (
 const createHeartbeatController = (
   actorA: Page,
   actorB: Page,
-  expectedTotal = expectedFixture.totalCount,
+  expectedTotal: number = expectedFixture.totalCount,
   proofKind: EndpointHeartbeat['proofKind'] = 'endpoint'
 ) => {
   let active = false
@@ -1719,12 +1735,29 @@ const readFinalDiagnostics = async (
       ).length
 
       return {
-        attributionPhaseCounts: Object.fromEntries(
-          requiredPhaseNames.map((name) => [
-            name,
-            request<number>('profile:readPhaseCount', [name])
+        attributionPhaseCounts: {
+          [requiredPhaseNames[0]]: request<number>('profile:readPhaseCount', [
+            requiredPhaseNames[0]
+          ]),
+          [requiredPhaseNames[1]]: request<number>('profile:readPhaseCount', [
+            requiredPhaseNames[1]
+          ]),
+          [requiredPhaseNames[2]]: request<number>('profile:readPhaseCount', [
+            requiredPhaseNames[2]
+          ]),
+          [requiredPhaseNames[3]]: request<number>('profile:readPhaseCount', [
+            requiredPhaseNames[3]
+          ]),
+          [requiredPhaseNames[4]]: request<number>('profile:readPhaseCount', [
+            requiredPhaseNames[4]
+          ]),
+          [requiredPhaseNames[5]]: request<number>('profile:readPhaseCount', [
+            requiredPhaseNames[5]
+          ]),
+          [requiredPhaseNames[6]]: request<number>('profile:readPhaseCount', [
+            requiredPhaseNames[6]
           ])
-        ),
+        },
         drawingProgress: {
           canonicalWorkUnitCount: request<number>('profile:readPhaseCount', [
             'ai-app:create-composition-batch'
@@ -1852,20 +1885,10 @@ const installLocalInteractionProbe = async (
       )
       const initialZoom = readProfile<number>('readZoom')
       const documentEventAttempts = {
-        deleteKey: 0,
-        historyShortcut: 0,
         rectangleButton: 0,
         rectangleShortcut: 0
       }
       const documentEventDeliveries = {
-        deleteKey: 0,
-        historyShortcut: 0,
-        rectangleButton: 0,
-        rectangleShortcut: 0
-      }
-      const documentEventPreventions = {
-        deleteKey: 0,
-        historyShortcut: 0,
         rectangleButton: 0,
         rectangleShortcut: 0
       }
@@ -1873,16 +1896,8 @@ const installLocalInteractionProbe = async (
 
       type DocumentActionName = keyof LocalDocumentEventCounts
 
-      const recordAttempt = (
-        action: DocumentActionName,
-        event: Event
-      ): void => {
+      const recordAttempt = (action: DocumentActionName): void => {
         documentEventAttempts[action] += 1
-        requestAnimationFrame(() => {
-          if (event.defaultPrevented) {
-            documentEventPreventions[action] += 1
-          }
-        })
       }
 
       const rectangleControl = document.querySelector<HTMLElement>(
@@ -1913,7 +1928,7 @@ const installLocalInteractionProbe = async (
             event.target instanceof Element &&
             event.target.closest('[data-testid="tool-rectangle"]')
           ) {
-            recordAttempt('rectangleButton', event)
+            recordAttempt('rectangleButton')
           }
         },
         { capture: true }
@@ -1921,22 +1936,14 @@ const installLocalInteractionProbe = async (
       window.addEventListener(
         'keydown',
         (event) => {
-          if (event.key === 'Delete') {
-            recordAttempt('deleteKey', event)
-          } else if (event.metaKey && event.key.toLowerCase() === 'z') {
-            recordAttempt('historyShortcut', event)
-          } else if (!event.metaKey && event.key.toLowerCase() === 'r') {
-            recordAttempt('rectangleShortcut', event)
+          if (!event.metaKey && event.key.toLowerCase() === 'r') {
+            recordAttempt('rectangleShortcut')
           }
         },
         { capture: true }
       )
       window.addEventListener('keydown', (event) => {
-        if (event.key === 'Delete') {
-          documentEventDeliveries.deleteKey += 1
-        } else if (event.metaKey && event.key.toLowerCase() === 'z') {
-          documentEventDeliveries.historyShortcut += 1
-        } else if (!event.metaKey && event.key.toLowerCase() === 'r') {
+        if (!event.metaKey && event.key.toLowerCase() === 'r') {
           documentEventDeliveries.rectangleShortcut += 1
         }
       })
@@ -2035,7 +2042,6 @@ const installLocalInteractionProbe = async (
           canonicalElements,
           documentEventAttempts: { ...documentEventAttempts },
           documentEventDeliveries: { ...documentEventDeliveries },
-          documentEventPreventions: { ...documentEventPreventions },
           keyboardTargetActive: document.activeElement === probeRoot,
           latestFactoryTransactionStatus,
           loadingAtZero,
@@ -2901,7 +2907,7 @@ test('single-Actor local attribution', async ({ browser }, testInfo) => {
   )
   const actorSession = await actor.context.newCDPSession(actor.page)
 
-  let stopCpuProfileDiagnostic = async () => undefined
+  let stopCpuProfileDiagnostic: () => Promise<void> = async () => undefined
 
   const testStartedAtMs = Date.now()
 
@@ -3115,7 +3121,7 @@ test('two-Actor operation and idle attribution', async ({
     throw new Error('Endpoint performance App URL is unavailable')
   }
 
-  let requestedItems = 16
+  let requestedItems: ServerResponseItemCount = 16
 
   if (endpointAttributionCase === '1280-two-actor-attribution') {
     requestedItems = 1280
@@ -3428,7 +3434,7 @@ test('creation-only high-detail endpoint proof', async ({
       baseURL,
       browser,
       fileId,
-      serverResponseItemCount: preparedResponse.itemCount
+      serverResponseItemCount: 7075
     })
   const heartbeat = createHeartbeatController(actorA, actorB)
   const testStartedAtMs = Date.now()
@@ -3573,13 +3579,27 @@ test('creation-only high-detail endpoint proof', async ({
     expect(keyboardTargetState.turnAccepted).toBe(true)
     expect(keyboardTargetState.turnOutcome).toBeNull()
     await heartbeat.assertGuarded(actorA.keyboard.press('r'))
-    await heartbeat.assertGuarded(
-      actorA.mouse.click(
-        localInteraction.rectangleCenter.x,
-        localInteraction.rectangleCenter.y
-      )
+    const keyboardActiveState = await heartbeat.assertGuarded(
+      waitForLocalInteractionProbe(actorA, 'rectangle-active')
     )
 
+    expect(keyboardActiveState.rectangleActive).toBe(true)
+    expect(keyboardActiveState.loadingConnected).toBe(true)
+    expect(keyboardActiveState.turnAccepted).toBe(true)
+    expect(keyboardActiveState.turnOutcome).toBeNull()
+    expect(keyboardActiveState.canonicalElements).toBeGreaterThan(0)
+    expect(keyboardActiveState.canonicalElements).toBeLessThan(7076)
+    await heartbeat.assertGuarded(
+      actorA.mouse.click(
+        localInteraction.selectCenter.x,
+        localInteraction.selectCenter.y
+      )
+    )
+    const selectionDuringCreation = await heartbeat.assertGuarded(
+      waitForLocalInteractionProbe(actorA, 'interaction-frame')
+    )
+
+    expect(selectionDuringCreation.rectangleActive).toBe(false)
     const threeQuarterProgressState = await heartbeat.assertGuarded(
       waitForLocalCanonicalProgress(
         actorA,
@@ -3589,38 +3609,30 @@ test('creation-only high-detail endpoint proof', async ({
 
     expect(threeQuarterProgressState.loadingConnected).toBe(true)
     expect(threeQuarterProgressState.canonicalElements).toBeLessThan(7076)
-    expect(threeQuarterProgressState.turnAccepted).toBe(true)
     expect(threeQuarterProgressState.turnOutcome).toBeNull()
-
-    await heartbeat.assertGuarded(actorA.keyboard.press('Delete'))
-    await heartbeat.assertGuarded(actorA.keyboard.press('Meta+z'))
-    const blockedState = await heartbeat.assertGuarded(
-      waitForLocalInteractionProbe(actorA, 'interaction-frame')
+    await heartbeat.assertGuarded(
+      actorA.mouse.click(
+        localInteraction.rectangleCenter.x,
+        localInteraction.rectangleCenter.y
+      )
+    )
+    const pointerActiveState = await heartbeat.assertGuarded(
+      waitForLocalInteractionProbe(actorA, 'rectangle-active')
     )
 
-    expect(blockedState.rectangleActive).toBe(false)
-    expect(blockedState.documentEventAttempts).toEqual({
-      deleteKey: 1,
-      historyShortcut: 1,
+    expect(pointerActiveState.rectangleActive).toBe(true)
+    expect(pointerActiveState.loadingConnected).toBe(true)
+    expect(pointerActiveState.turnAccepted).toBe(true)
+    expect(pointerActiveState.turnOutcome).toBeNull()
+    expect(pointerActiveState.canonicalElements).toBeLessThan(7076)
+    expect(pointerActiveState.documentEventAttempts).toEqual({
       rectangleButton: 1,
       rectangleShortcut: 1
     })
-    expect(blockedState.documentEventDeliveries).toEqual({
-      deleteKey: 0,
-      historyShortcut: 0,
-      rectangleButton: 0,
-      rectangleShortcut: 0
-    })
-    expect(blockedState.documentEventPreventions).toEqual({
-      deleteKey: 1,
-      historyShortcut: 1,
+    expect(pointerActiveState.documentEventDeliveries).toEqual({
       rectangleButton: 1,
       rectangleShortcut: 1
     })
-    expect(blockedState.loadingConnected).toBe(true)
-    expect(blockedState.canonicalElements).toBeLessThan(7076)
-    expect(blockedState.turnAccepted).toBe(true)
-    expect(blockedState.turnOutcome).toBeNull()
 
     const actorACompleted = await heartbeat.assertGuarded(
       heartbeat.waitForActorAComplete(
@@ -3670,6 +3682,16 @@ test('creation-only high-detail endpoint proof', async ({
     expect(loadingRemovedState.loadingConnected).toBe(false)
     await heartbeat.assertGuarded(
       actorA.mouse.click(
+        localInteraction.selectCenter.x,
+        localInteraction.selectCenter.y
+      )
+    )
+    await expect(actorA.getByTestId('tool-rectangle')).toHaveAttribute(
+      'data-active',
+      'false'
+    )
+    await heartbeat.assertGuarded(
+      actorA.mouse.click(
         localInteraction.rectangleCenter.x,
         localInteraction.rectangleCenter.y
       )
@@ -3680,8 +3702,7 @@ test('creation-only high-detail endpoint proof', async ({
 
     expect(releasedState.rectangleActive).toBe(true)
     expect(releasedState.documentEventAttempts.rectangleButton).toBe(2)
-    expect(releasedState.documentEventDeliveries.rectangleButton).toBe(1)
-    expect(releasedState.documentEventPreventions.rectangleButton).toBe(1)
+    expect(releasedState.documentEventDeliveries.rectangleButton).toBe(2)
     await heartbeat.assertGuarded(
       actorA.mouse.click(
         localInteraction.selectCenter.x,
@@ -3708,9 +3729,6 @@ test('creation-only high-detail endpoint proof', async ({
     )
     expect(
       keyboardReleasedState.documentEventDeliveries.rectangleShortcut
-    ).toBe(1)
-    expect(
-      keyboardReleasedState.documentEventPreventions.rectangleShortcut
     ).toBe(2)
     const equivalenceProofStartedAtMs = Date.now()
 
@@ -3833,19 +3851,11 @@ test('creation-only high-detail endpoint proof', async ({
       durationMs: Date.now() - testStartedAtMs,
       equivalenceProofMs,
       localInteraction: {
-        blockedActionAttempts: {
-          deleteKeyBlocked:
-            blockedState.documentEventDeliveries.deleteKey === 0,
-          documentEventAttempts: blockedState.documentEventAttempts,
-          documentEventDeliveries: blockedState.documentEventDeliveries,
-          documentEventPreventions: blockedState.documentEventPreventions,
-          historyShortcutBlocked:
-            blockedState.documentEventDeliveries.historyShortcut === 0,
-          rectangleButtonBlocked:
-            blockedState.documentEventDeliveries.rectangleButton === 0,
-          rectangleShortcutBlocked:
-            blockedState.documentEventDeliveries.rectangleShortcut === 0,
-          rectangleToolRemainedInactive: !blockedState.rectangleActive
+        duringCreation: {
+          keyboard: toolSwitchEvidence(keyboardActiveState),
+          pointer: toolSwitchEvidence(pointerActiveState),
+          documentEventAttempts: pointerActiveState.documentEventAttempts,
+          documentEventDeliveries: pointerActiveState.documentEventDeliveries
         },
         completion: {
           canonicalElements: actorASummary.totalCount,
@@ -3882,6 +3892,13 @@ test('creation-only high-detail endpoint proof', async ({
 
     expect(finalHeartbeat.actorA.complete).toBe(true)
     expect(finalHeartbeat.actorB.complete).toBe(true)
+    expect(
+      normalizeEndpointInteractionEvidence(
+        report.localInteraction,
+        expectedFixture.totalCount
+      )
+    ).toEqual(report.localInteraction)
+
     await postHeartbeat('complete', {
       ...finalHeartbeat,
       report

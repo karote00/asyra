@@ -96,12 +96,8 @@ export const createHttpDocumentPersistenceClient = ({
         !Object.prototype.hasOwnProperty.call(checkpoint, 'checkpoint') ||
         !Number.isSafeInteger(checkpoint.durableSequence) ||
         Number(checkpoint.durableSequence) < 0 ||
-        (Object.prototype.hasOwnProperty.call(
-          checkpoint,
-          'documentGeneration'
-        ) &&
-          (!Number.isSafeInteger(checkpoint.documentGeneration) ||
-            Number(checkpoint.documentGeneration) < 0))
+        !Number.isSafeInteger(checkpoint.documentGeneration) ||
+        Number(checkpoint.documentGeneration) < 0
       ) {
         throw new Error(
           '[document-persistence-client] backend checkpoint is invalid'
@@ -111,7 +107,7 @@ export const createHttpDocumentPersistenceClient = ({
       return Object.freeze({
         checkpoint: checkpoint.checkpoint,
         durableSequence: Number(checkpoint.durableSequence),
-        documentGeneration: Number(checkpoint.documentGeneration ?? 0)
+        documentGeneration: Number(checkpoint.documentGeneration)
       })
     },
 

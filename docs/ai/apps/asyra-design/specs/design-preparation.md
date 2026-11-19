@@ -1,5 +1,12 @@
 # General editable design preparation
 
+Application `parentId` retains document-reference semantics through both the
+canonical action and its artifact-based model projection. A previously produced
+composition ID can bind directly as the next part's parent. The prepared artifact
+remains request-scoped; material member identities still refer to pending entries,
+not existing document targets. Parent currency, capability and lock validation
+remain owned by application.
+
 ## Product contract
 
 The assistant can create varied editable layouts and illustrations, revise chosen
@@ -78,10 +85,11 @@ A draft may declare `linearFields`, a named map of
 `{frame:"world",start:{x,y,z},end:{x,y,z},gradientStops}`. Distinct finite endpoints
 use the same units and basis as projected vertices; t(p)=dot(p-start,end-start)/
 |end-start|^2. Stops retain the existing ordered linear color/opacity contract.
-Root projected faces and translated pattern faces select `materialField:key`
-instead of `fill`. A field-bound pattern face cannot receive palette overrides.
-Plain nodes, surface-grid motifs and shared/template Fill definitions do not accept
-this selector. Existing native fills remain independent supported construction.
+Root projected faces, translated pattern faces and surface-grid motifs select
+`materialField:key` instead of `fill`/`fills`. Plain nodes and shared/template Fill
+definitions do not accept this selector. Grid motif templates may select the same
+field or override paint mode: a field patch clears inherited fill/palette, and a
+fill/palette patch clears an inherited field. Conflicting modes in one patch reject. Existing native fills remain independent supported construction.
 
 Preparation maps the affine field on the admitted plane through the existing
 orthographic camera into the final normalized vector bounds, then emits ordinary
@@ -95,7 +103,8 @@ nonplanar field projection are unsupported. No renderer change is implied.
 
 Fields are immutable preparation intent, not persisted live constraints or linked
 Fill identities. Per-template plane derivation is reused only within this
-preparation; each instance consumes its actual world offset and produces its own
+preparation; grids solve once per boundary/field, normalize each cell bounds and
+retain actual motif offsets and pattern translation phase; each instance consumes its actual world offset and produces its own
 editable Fill. Reload restores ordinary fills. Explicit later reconstruction uses
 current arguments/authority; direct native edits remain valid. No mechanical
 conversion result or Knowledge read grants visual approval. Existing artifact
@@ -103,7 +112,10 @@ ownership, cancellation, partial-write receipts and save-only recovery apply.
 
 Admission rejects unknown fields, unsupported kinds, duplicate keys, nonfinite
 numbers, invalid colors/font values, contradictory layout fields and excessive
-input. Bounds: at most 1,000 source nodes and 20,000 source anchors and controls. Compact pattern expansion has a separate per-artifact bound of 10,000 total output nodes and 200,000 total points; these bounds contain memory and wire size rather than limiting the complete drawing request. Nesting depth remains 12,
+input. Bounded source work windows do not impose a 1,000-node cumulative input
+ceiling. Each artifact admits at most 10,000 source/expanded nodes and 200,000
+source/expanded points; each primitive admits at most 20,000 points. These bounds
+contain memory and wire size rather than limiting the complete drawing request. Nesting depth remains 12,
 100,000 total text characters, positive non-Group dimensions and derived Group dimensions up to 100,000px (empty Groups may be zero). Limits apply
 to the complete artifact, not separately to each child. No URL fetch or model call
 occurs during preparation. Layout overflow is reported with exact node keys and
@@ -123,15 +135,11 @@ full descriptor/path payload. No cross-request cache.
 The local provider advertises `prepare_design` only when `apply_prepared_design`
 is registered. The combined prepare_and_apply_design tool may perform both steps without an
 intermediate model round trip, preserving the same admission and receipt owners.
-When the registered review owner is available, the combined tool also accepts
-optional `plan` using that owner's exact schema. Its executable prompt example
-comes from the same owner. It validates the plan shape, prepares the draft, records
-the criteria, then applies; invalid preparation or plan never writes. Every
-criterion includes requirement, description and visual/data verification. A plan
-is supplied once before the first write; later parts reuse it. Standalone plans
-and direct edits remain available. This removes an unnecessary separate model
-roundtrip for ready drafts without bypassing retained facts, per-part inspections
-or final acceptance. It makes no claim that every task needs no planning.
+The combined tool validates and prepares the draft before applying it. It accepts
+no formal review plan and performs no criteria registration. Explicit capture can
+follow a settled application; mechanical review is optional. Final verification
+belongs to the AI. Invalid preparation cannot write, and a completed prefix is
+never replayed to recover a missing result.
 
 For preparation-only calls, the model supplies a semantic draft, receives a same-request
 artifact ID and findings, and applies that ID without copying native descriptors
@@ -141,8 +149,9 @@ has no request-total attempt limit. Bad
 preparation/reference inputs return actionable errors without canvas writes, so
 meaningful corrections can continue until completion or user cancellation. Unknown, cross-request
 or stale artifact IDs never resolve to a fallback design. Preparation never
-requires a reference image. The ordinary operation receipt and rendered inspection
-follow application before a success claim.
+requires a reference image. Application returns its ordinary receipt. The AI
+selects current observations for final verification; application success alone
+is not visual approval.
 
 ## Canonical execution
 
@@ -173,7 +182,7 @@ ID; pagination advances across those slots. Invalid input fails before reading.
 Text previews are limited to 2,000 characters and style lists to 8 entries, with
 explicit truncation flags. No vector points are requested. Reads are fresh;
 restart pagination after hierarchy changes. Parent children observation still
-copies the existing child list once per page. Pagination explicitly reports truncation. The targeted edit action changes one current object; execute_design_batch expands a target set to ordered actions in one call: optional name,
+copies the existing child list once per page. Pagination explicitly reports truncation. The targeted edit action changes one current object; execute_design expands a target set to ordered actions in one call: optional name,
 parent-local x/y/width/height/rotation, native typography patch, or primary fill and
 stroke color. It admits all fields first, checks the object's ancestor chain for
 locks, and requires existing property support. Typography uses its native schema.
@@ -185,21 +194,20 @@ ungroup or reorder on complete unique ID sets. Reorder stays within one parent a
 uses an index in the remaining sibling list. Group name is optional; ungroup takes
 one official Group, validates its children and preserves them. Check selected
 objects and ancestors for locks before writes. A request-local observation map
-reads each touched node once; never cache across calls. Structural receipts are
-reviewed directly without consuming screenshot correction attempts; explicit
+reads each touched node once; never cache across calls. Structural receipts describe the acknowledged organization change; explicit
 visual inspection remains available for stacking changes. This action does not
 provide arbitrary reparenting, deletion or reusable instances. Rename uses targeted
 edit; alignment/spacing belongs to a separate layout operation. Destructive changes use
 the existing confirmation policy. Unsupported reusable-instance operations are
-explained rather than treating groups as instances. Read-only operations do not
-trigger mutation review or consume visual-correction attempts.
+explained rather than treating groups as instances. Read-only operations do not trigger automatic mutation review. Inspection and
+measurement have no cumulative correction-attempt quota.
 
 ## Review and termination
 
-First resolve deterministic preparation findings. Then inspect real rendered
-output after application and make bounded targeted corrections. Actual text
-metrics, geometry and requested content are checked separately from subjective
-style judgment. Report success only for achieved requirements; retain partial
+Resolve invalid compiled input before application. The AI chooses useful
+observations and targeted corrections for the request; preparation does not enforce
+a fixed review sequence. Actual text metrics, geometry and requested content are
+reported separately from subjective style judgment. Report success only for achieved requirements; retain partial
 work and explain concrete unmet requirements. Do not repeatedly retry an
 unsupported capability or hide missing screenshot/font evidence behind success.
 
@@ -211,7 +219,8 @@ changed-input recomputation, ordered native creation, targeted edits and preserv
 unrelated objects, organization, read-only advice, partial failure, one Undo,
 save/reload and actual canvas screenshots. Provider protocol tests prove opaque
 preparation/application handoff and research remains independent of image inputs.
-The complete AI plan remains open until those flows and final CI pass.
+The complete AI plan requires its declared formal feature gates and independent
+specification review; a local test count alone does not close the plan.
 
 ## Arrangement
 
@@ -245,14 +254,11 @@ rendered visual review remains necessary for style and brief compliance.
 
 ### Provider review scheduling
 
-When review_design is registered, immediate mutations measure before image review;
-planned intermediate mutations may defer measurement until stage inspection. Concrete text-overflow
-findings return without an image so targeted corrections can happen cheaply.
-Incomplete measurement blocks completed claims; they are not full
-verification. Known unresolved text overflow prevents a completed outcome. There
-is no request-total measurement or image-review count limit; Stop controls request
-cancellation. Ordinary failures retain progress under existing transaction rules. Providers
-without deterministic review retain their existing inspection route.
+The AI may request mechanical review when its findings help a decision or a declared
+repair iteration. Mutations and captures do not automatically schedule quality
+measurements. Findings remain explicit diagnostic results; they do not create an
+App completion gate. Actual input, execution, cancellation and publication errors
+retain their original settlement and recovery owners.
 
 ## Server typography protocol
 
@@ -301,10 +307,11 @@ This does not infer 3D geometry from images, perform perspective reconstruction,
 hidden-surface removal, lighting, or automatic occlusion sorting. The AI must
 choose visible faces/order or a different supported representation.
 
-The prompt requires structure/viewpoint before details, source versus estimated
-measurements, explicit relations for regular geometry and meaningful requirement
-checks where measurable. Post-apply inspection compares the same brief against
-actual rendered output, with targeted correction and existing evidence validation. Passing deterministic checks alone is not a completed visual review.
+The AI chooses construction order and viewpoint from the request. Source and
+estimated measurements remain distinguishable. Relations and numeric checks are
+available when useful; they are not prerequisites for detail work. Inspection
+returns actual rendered output for AI judgment. Deterministic checks do not certify
+visual quality or authorize a completed-task claim.
 
 ## Repeated geometry and staged review
 
@@ -338,29 +345,18 @@ no recompilation; changed parts are prepared separately and ordinary targeted
 operations preserve unaffected canonical objects. This is not automatic whole-
 document diffing or a claim that changed drafts avoid necessary validation.
 
-Plans may name a subset `structureCriteria`. A `structure` review checks that
-subset against current overview evidence and returns `structureAccepted`; it never
-approves completion. The optional whole-structure checkpoint does not block ready
-parts or repeated-detail preparation. Final completion still requires every
-original criterion. A failed structure judgment reopens its affected obligations,
-while unrelated current visual passes remain retained.
-Refining an existing child preserves the established whole-drawing review target.
-Only evidence whose actual dependencies changed becomes stale; independent passes
-remain current. A child update receipt identifies the edited child, not a
-replacement overview target.
-Full visual review still covers every original criterion and required native
-detail evidence. The server retains the preceding visual assessment within the
-request and reports pass-to-nonpass `regressions` with previous evidence; these
-are model assessments, not an automated aesthetic oracle. Historical review
-records never validate the current revision. Correct or discard a worse candidate
-using ordinary authorized actions; retain prior artifacts until comparison, do
-not automatically roll back or delete applied work.
+The AI may inspect a partial structure or representative detail when that resolves
+an actual design question. The inspection owner captures the selected target; it
+does not register quality verdicts, require evidence credentials or gate completion.
+Refining an existing child does not change the user's whole-drawing requirement.
+The AI chooses the relevant final views and judges the result against the request.
+A child update receipt identifies the edited child, not a replacement overview target.
+Do not replay completed writes to recover a missing image or save acknowledgment.
 
 Formal gates cover compact/explicit geometry equivalence, input immutability,
-whole-output limits, template work counts, current artifact reuse, stale review
-rejection, structure not approving completion, and reported criterion regression.
-Browser construction/Undo tests and the same-prompt headless recording validate
-the existing application route; quality and performance are reported separately.
+whole-output limits, template work counts, current artifact reuse, target identity,
+capture delivery and operation recovery. Browser construction/Undo tests validate
+the existing application route; visual quality remains the AI's responsibility.
 
 ### Stage execution and measurement
 
@@ -373,26 +369,42 @@ boundary. No extra model call is needed per slice. Browser admission validates
 all entries before the first write. This reuses existing slicing, not a second
 geometry compiler or transaction path.
 
-For `inspection=defer`, the operation owner marks layout measurement pending as
-well as invalidating visual evidence. An explicit stage inspection measures the
-current overview target before capturing; further overview/detail captures reuse
-that measurement until a mutation. Immediate operations still measure pending changes immediately.
-Incomplete measurement, text overflow, or missing current visual evidence blocks
-a completed outcome. Deferring never changes mutation receipts or Undo boundaries.
+For `inspection=defer`, the operation owner omits automatic capture and performs
+no implicit follow-up reads. Explicit capture observes the selected current target;
+mechanical measurement is a separate requested operation. Current input validation,
+canonical invalidation and Undo boundaries remain unchanged. Measurement findings
+and missing visual observations describe their owning operations and do not create
+a global completion gate.
 
 ### Narrow receipts, affected checks and artifact lifetime
 
-Direct and combined prepared application default to a compact receipt at the
-canonical action source. It retains status, root ID, applied count and timing without constructing
-ID arrays/role maps for transmission. Explicit full mode preserves the existing
-maps. Runtime still refreshes the context used by permission decisions; this must
-not be replaced with stale model context to save work.
+Prepared element identities are admitted as nonempty document IDs of at most 256
+characters, including derived property identities. Application output declares this
+same document lifetime and bound for compositionId, applied IDs and semantic-key/role
+maps. Previous-result bindings can feed the produced root directly to review and
+capture, while actual current-target admission remains mandatory. The shared prepared
+format owns the length limit; Runtime assignability and inspection inputs are not
+relaxed to compensate for an underspecified output.
+
+Complete and acknowledged-partial application receipts include the same required
+timing snapshot from the application owner. Failed creation/selection work and
+transaction settlement are measured without counting unacknowledged elements as
+applied. Partial receipts remain valid at Runtime/Host/native delivery boundaries;
+retained prefixes are never replayed to recreate missing diagnostics.
+
+Successful direct and combined prepared application returns complete acknowledged
+IDs, counts, source-key/role mappings and timing at the canonical action boundary.
+Partial application preserves its declared acknowledged prefix without inventing
+uncompleted mappings. Host delivery projects the model-visible result after canonical validation; it
+does not change the values available to bindings or named retention. There is no
+separate full-response input mode. Runtime still refreshes the context used by
+permission decisions; stale model context cannot substitute for that observation.
 
 Layout checks remain composition-wide after edits. A same-request tool history is
 not proof that the canvas is unchanged: users and collaborators can also mutate it.
 Do not reuse an affected-subtree baseline without authoritative document revision
-and invalidation evidence. Incomplete checks and text overflow still block completion.
-Visual evidence is independently invalidated after changes.
+and invalidation evidence. Incomplete checks and text overflow remain findings for
+the AI. Visual observations are independently invalidated after changes.
 
 Repeated immutable template rings share measured bounds within one synchronous
 preparation, after admission. Each instance still receives its own ordered canonical
@@ -412,7 +424,7 @@ batch boundaries, with fresh evidence when dependencies change or are unknown.
 ### Request-owned targets and grouped operations
 
 Prepared `keyToId` remains authoritative for original creation identities during
-that request even when application returns compact receipts. `execute_design_batch`
+that request; model delivery selection does not change canonical identity data. `execute_design`
 accepts ordered registered operations and optional artifact targets (exact keys,
 key prefix, or the entire prepared set). Unknown/released artifacts and unknown
 keys reject before dispatch. References are not mutable Group membership or cached
@@ -422,12 +434,17 @@ and Undo/Redo follows the actual current document. No cross-request lookup is pr
 The backend validates all expanded arguments and submits one ordinary action batch.
 Its native response defaults to compact: successful basic mutations with a null
 return value and no extra data are counted by action name. Query values, returned
-identities, additional findings and uncertain outcomes stay complete. Explicit
-`response=full` includes every canonical acknowledgement. Review and state tracking
-consume the complete receipt before this transport projection.
+identities, additional findings and uncertain outcomes retain their owner contracts.
+`delivery` is the sole public result selector; named retention is independent of it.
+Canonical validation and state tracking consume the complete receipt before model
+projection. Prepared application returns complete acknowledged IDs and counts; workflow
+createdTargets exposes their source-key mappings. Neither public nor internal
+inputs accept response or includeTargets. The Host applies delivery after owner
+validation, independently of binding and named retention.
 It does not bypass action registration, permission, confirmation, cancellation,
-transaction, or failure semantics. Measurement and inspection run once after the
-batch (or at an explicit deferred stage boundary), not once per expanded edit.
+transaction, or failure semantics. Automatic capture, when enabled, runs after the
+batch rather than per expanded edit. Deferral suppresses that capture; explicit
+capture and mechanical review retain their own selected scopes and owners.
 Grouping and arrangement accept complete sibling sets without an artificial
 200-object split; existing hierarchy, locks, and geometry validation remain.
 
@@ -439,10 +456,10 @@ retain pagination for discovery only; do not restart discovery to recover known 
 
 ## Priority-based progressive work
 
-The AI makes a cheap global estimate of parts, rough bounds and likely visibility,
-then prioritizes user requirements, recognizable structure, visible area and uncertainty.
-It applies coherent reusable structure before unrelated dense detail analysis, then
-batches ready regions. Region boundaries do not require separate model round trips.
+The AI chooses a useful work order for the request. It may estimate parts, rough
+bounds and likely visibility, then apply coherent ready work while deferring
+unresolved detail. There is no prescribed structure-first order or global-estimate
+prerequisite. Region boundaries do not require separate model round trips.
 Intermediate LoD is a computation policy, not permission to reduce final quality,
 source resolution or requested dimensions. Deliberately simple results remain valid.
 
@@ -462,15 +479,10 @@ only missing ranges through normal preparation/application and uses current arti
 IDs; local pattern keys are not cross-artifact canonical element IDs. No hidden full
 instance array, visibility cache, clipping or geometry deletion is introduced.
 
-`define_design_criteria` and `review_drawing` accept incremental `deferredDetails`
-(id, description, reason) in their respective criteria and structure/visual calls. Its existing request-owned review state retains those
-parts across mutations. Final visual `deferredChecks` use current inspection IDs and
-one disposition per retained ID: `omit` with visual evidence, `restored` after drawing
-and checking, or `pending`. Missing/pending decisions block acceptance even when all
-original criteria pass. Mutations invalidate these decisions, not the retained part
-list; a successor request starts empty. The backend validates coverage and freshness,
-not whether the AI's visibility judgment is objectively correct. Per-call additions
-are compact; there is no cumulative deferred-part quota or new orchestration tool.
+The AI may defer unfinished detail while applying coherent ready work. No formal
+criteria, deferred-detail registration or approval step is required. Final
+verification remains against the original request, with limitations reported by
+the AI. Compiler findings and actual input validity remain mandatory.
 
 Formal tests cover selected/restored equivalence, original palette/index preservation,
 work proportional to selected ranges rather than the full Cartesian product, invalid
@@ -480,8 +492,9 @@ isolation. Runtime mutation, permissions, cancellation and Undo remain unchanged
 ## Preparation input repair
 
 The published preparation schema declares native node requirements by type:
-Frame and non-Group native nodes require positive width/height; Vector also requires
-rings, Text requires text, and Group excludes size/fill/layout fields. Construction
+Frame and sized native primitives require positive width/height. Vector requires
+rings and permits either an enclosing width/height pair or both dimensions omitted
+for owner measurement. Text requires text; Group excludes size/fill/layout fields. Construction
 faces retain their separate schema and derive native dimensions from the shared
 projection. Names and keys remain required where declared; no fabricated names or
 geometry are inserted to repair model input.
@@ -494,9 +507,9 @@ not a second geometry compiler or permission owner. Semantic geometry validation
 remains authoritative and may reveal further errors after schema repair; a reported
 list is not a promise that every other property or visual requirement passed.
 
-Failures distinguish `recovery=correct_input` (repair the same draft) from
-`recovery=review_structure` with `nextTool=review_drawing` (inspect the existing
-structure and record current evidence before retrying retained detail). Missing shared
+Rejected authored inputs report `TOOL_INPUT_INVALID` and actual no-write
+settlement, with retained source repair information where available. There is no structural-review prerequisite
+or approval operation before retrying corrected preparation. Missing shared
 projection points to the camera and absolute-layout requirement. Nonplanar faces identify
 the face key and vertices; repair/split the plane rather than search again. These
 failures do not imply an unsuitable reference. Preparation still never modifies the
@@ -515,8 +528,8 @@ Both preparation tools expose the same executable minimal examples in their nati
 tool descriptions: a 2D vector surface with a gradient and numeric check, and a compact
 repeated planar motif with a shared camera. Formal tests validate these through the
 actual schema/compiler and verify provider registration carries them. Examples are
-syntax guidance, never fallback artwork or per-request fixtures. Existing structure
-review remains mandatory for patterned detail. Retained artifact/key resolution does
+syntax guidance, never fallback artwork or per-request fixtures. Patterned detail
+has no mandatory structure-review prerequisite. Retained artifact/key resolution does
 not recompile or scan the canvas.
 
 A three-quarter view does not require spatial construction. The model chooses native
@@ -565,6 +578,6 @@ and construction/admission/compilation durations. Caches expire per preparation.
 
 Repeated checks of unchanged source and attachment semantics reuse mechanical
 assessment across receipt renewal. Fresh receipts must still pass canonical currency
-validation before any pass or apply. Document session, basis, bounds, parent,
-criteria and reference uses remain semantic dependencies. Receipt UUIDs alone are
+validation before any pass or apply. Document session, basis, bounds, parent, immutable recipe and compiler findings
+remain semantic dependencies. Receipt UUIDs alone are
 not changed geometry; they cannot erase an unresolved same-source conflict.

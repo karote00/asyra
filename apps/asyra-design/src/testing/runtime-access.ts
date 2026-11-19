@@ -1,13 +1,12 @@
 import { elementApis } from '../common-apis/element'
 import { hierarchyApis } from '../common-apis/hierarchy'
 import { strokeApis } from '../common-apis/strokes'
-import {
-  getActiveCollaborationHandle,
-  type CollaborationDebugHandle
-} from '../collaboration/lifecycle'
+import { getActiveCollaborationHandle } from '../collaboration/session-observation'
+import type { CollaborationDebugHandle } from '../collaboration/lifecycle'
 import { createDocumentCollaborationPublicationSource } from '../collaboration/factory-adapter'
 import { readDocumentPublicationSlices } from '../collaboration/document-publication'
 import core from '../contexts'
+export { getSessionManager } from '@asyra/core'
 import {
   getActiveAiDrawingPerformanceProfile,
   type AiDrawingPerformanceProfile
@@ -180,7 +179,12 @@ export {
 }
 export type { AiDrawingPerformanceProfile, CollaborationDebugHandle }
 
-export { subscribeToUndo, subscribeToRedo } from '@asyra/core'
+export {
+  subscribeToUndo,
+  subscribeToRedo,
+  yieldToCooperativeHost,
+  waitForCooperativePaint
+} from '@asyra/core'
 export { historyApis } from '../common-apis/history'
 
 export { textCanvasApis } from '../common-apis/text-canvas'

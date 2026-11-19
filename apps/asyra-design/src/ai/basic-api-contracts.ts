@@ -52,7 +52,18 @@ const resultDescriptions: Record<BasicApiResultKind, string> = {
     'value contains the owner removal receipt; an empty removed list is no-change.'
 }
 
+/** Canonical receipt identity semantics, distinct from read-only source inputs. */
+export type BasicApiReceiptTargets =
+  | {
+      parameter: string
+      kind: 'id' | 'ids' | 'keys'
+      excludeParameter?: string
+    }
+  | { parameter: string; kind: 'records'; identityPath: readonly string[] }
+  | { parameter: string; kind: 'created-id' }
+
 export interface BasicApiContract {
+  resultPaths?: readonly string[]
   owner: BasicApiOwner
   category: string
   operation: string
@@ -63,6 +74,9 @@ export interface BasicApiContract {
   effect: BasicApiEffect
   result: {
     kind: BasicApiResultKind
+    targets?: BasicApiReceiptTargets
+    valueFields?: readonly string[]
+    valueSchema?: Record<string, unknown>
     description: string
     identityPath?: readonly string[]
   }
@@ -140,10 +154,19 @@ export interface BasicApiParameterDefinition {
 }
 
 export interface BasicApiDefinition {
+  resultValueFields?: readonly string[]
+  resultValueSchema?: Record<string, unknown>
+  discovery?: {
+    purpose: string
+    terms?: readonly string[]
+    boundaries: readonly string[]
+  }
+  resultPaths?: readonly string[]
   examples?: readonly Record<string, unknown>[]
   category?: string
   resultKind?: BasicApiResultKind
   resultIdentityPath?: readonly string[]
+  resultTargets?: BasicApiReceiptTargets
   owner: BasicApiOwner
   method: string
   effect: BasicApiEffect
@@ -180,30 +203,56 @@ export const defineBasicApi = ({
   parameters,
   resultKind,
   resultIdentityPath,
+  resultTargets,
+  resultValueSchema,
+  resultValueFields,
+  resultPaths,
   examples,
-  description = ''
-}: BasicApiDefinition): BasicApiContract => ({
-  owner,
-  category,
-  operation: `${owner}.${method}`,
-  method,
-  effect,
-  result: {
-    ...describeResultContract(effect, resultKind),
-    ...(resultIdentityPath ? { identityPath: resultIdentityPath } : {})
-  },
-  name: `api_${owner}_${method}`,
-  description: `${owner}.${method}. ${description} Uses the existing public API. Event/history suppression options are not model inputs.${resultKind === 'mutation-receipt' ? ` ${resultDescriptions[resultKind]}` : ''}`,
-  parameters: parameters.map((parameter) => parameter.name),
-  inputSchema: {
-    ...apiObject(
-      Object.fromEntries(
-        parameters.map((parameter) => [parameter.name, parameter.schema])
-      ),
-      parameters
-        .filter((parameter) => !parameter.optional)
-        .map((parameter) => parameter.name)
-    ),
-    ...(examples ? { examples } : {})
+  description = '',
+  discovery
+}: BasicApiDefinition): BasicApiContract => {
+  if (
+    resultKind === 'mutation-receipt' &&
+    (!resultTargets ||
+      !parameters.some((p) => p.name === resultTargets.parameter))
+  ) {
+    throw new Error(
+      'Mutation receipts must declare their canonical target input.'
+    )
   }
-})
+
+  if (resultTargets && resultKind !== 'mutation-receipt') {
+    throw new Error('Receipt targets require a mutation receipt contract.')
+  }
+
+  return {
+    ...(resultPaths ? { resultPaths } : {}),
+    owner,
+    category,
+    operation: `${owner}.${method}`,
+    method,
+    effect,
+    result: {
+      ...describeResultContract(effect, resultKind),
+      ...(resultTargets ? { targets: resultTargets } : {}),
+      ...(resultValueSchema ? { valueSchema: resultValueSchema } : {}),
+      ...(resultValueFields ? { valueFields: resultValueFields } : {}),
+      ...(resultIdentityPath ? { identityPath: resultIdentityPath } : {})
+    },
+    name: `api_${owner}_${method}`,
+    description: `${owner}.${method}. ${description} Uses the existing public API. Event/history suppression options are not model inputs.${resultKind === 'mutation-receipt' ? ` ${resultDescriptions[resultKind]}` : ''}`,
+    parameters: parameters.map((parameter) => parameter.name),
+    inputSchema: {
+      ...(discovery ? { 'x-design-discovery': discovery } : {}),
+      ...apiObject(
+        Object.fromEntries(
+          parameters.map((parameter) => [parameter.name, parameter.schema])
+        ),
+        parameters
+          .filter((parameter) => !parameter.optional)
+          .map((parameter) => parameter.name)
+      ),
+      ...(examples ? { examples } : {})
+    }
+  }
+}

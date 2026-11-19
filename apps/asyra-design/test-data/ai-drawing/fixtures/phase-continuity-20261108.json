@@ -1,0 +1,6069 @@
+{
+  "sourceRun": "taipei-101-fixed-1794072813674",
+  "requestId": "2665b01f-a9ed-4231-9bd3-338edf9482d6",
+  "body": {
+    "operations": [
+      {
+        "id": "base",
+        "name": "design_workflow.prepare_and_apply_design",
+        "arguments": {
+          "message": "建立台北101透明畫布、基座、入口與下段帷幕牆",
+          "inspection": "defer",
+          "includeTargets": true,
+          "plan": {
+            "phase": "plan",
+            "method": "Editable projected 2D polygons, ovals and curtainwall grids. World geometry in centimetres at scale 1; orthographic elevated three-quarter azimuth 35°, elevation 28°. Overall height verified at 508m; local widths, tier elevations and ornaments estimated from published appearance, not construction documents. No surroundings or labels.",
+            "references": [
+              "Architect: https://www.onenessarchitects.com/project/Taipei-101?lang=en",
+              "CTBUH: https://www.skyscrapercenter.com/building/taipei-101/117"
+            ],
+            "criteria": {
+              "whole": {
+                "requirement": "Entire Taipei 101 from base to spire; distinctive silhouette in an elevated three-quarter view.",
+                "description": "All eight flared tiers, tapering base and complete crown/spire visible; roof surfaces and consistent projection; no unrelated additions.",
+                "verification": "visual",
+                "requiredUnits": []
+              },
+              "detail": {
+                "requirement": "Highly detailed realistic architecture without schematic simplification.",
+                "description": "Native windows, frames, setbacks, visible ornamentation, entry, crown and spire detail.",
+                "verification": "visual",
+                "requiredUnits": [
+                  "base",
+                  "tiers",
+                  "crown"
+                ]
+              },
+              "materials": {
+                "requirement": "Realistic materials, lighting and shadows.",
+                "description": "Green-blue reflective glazing, differentiated lit/shadow facades, metallic trim and recess shadows.",
+                "verification": "visual",
+                "requiredUnits": []
+              },
+              "scale": {
+                "requirement": "Real-world dimensions at 1 cm = 1 px before projection; projected lengths reflect viewing angle.",
+                "description": "50800 cm total world height, unit projection scale; local dimensions explicitly estimated where unpublished.",
+                "verification": "data"
+              },
+              "editable": {
+                "requirement": "Editable 2D shapes.",
+                "description": "Native editable vector/window/frame components, not raster artwork.",
+                "verification": "data"
+              }
+            },
+            "detailRequired": true
+          },
+          "draft": {
+            "type": "frame",
+            "key": "taipei101",
+            "name": "台北101｜508m｜1cm=1px｜局部尺寸依照片估算",
+            "width": 16000,
+            "height": 50000,
+            "projection": {
+              "azimuth": 35,
+              "elevation": 28,
+              "scale": 1,
+              "originX": 8000,
+              "originY": 45000
+            },
+            "brief": {
+              "intent": "Full-height realistic Taipei 101 architectural illustration, no background.",
+              "viewpoint": "Fixed elevated three-quarter orthographic, azimuth35 elevation28; +X and +Y exposed.",
+              "sources": [
+                "Architect project height 508m, eight eight-floor tiers and ornament descriptions",
+                "CTBUH published height 508m"
+              ],
+              "assumptions": [
+                "Base width63m, upper flare50m, tier pitch35m; dimensional reconstruction from appearance rather than measured drawings.",
+                "World coordinates cm. Root frame is transparent; local details estimated."
+              ]
+            },
+            "linearFields": {
+              "baseLight": {
+                "frame": "world",
+                "start": {
+                  "x": -3150,
+                  "y": 3150,
+                  "z": 0
+                },
+                "end": {
+                  "x": 3150,
+                  "y": 2150,
+                  "z": 15000
+                },
+                "gradientStops": [
+                  {
+                    "position": 0,
+                    "color": "#194449",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 0.42,
+                    "color": "#386E73",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 0.7,
+                    "color": "#568F91",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 1,
+                    "color": "#98BEBC",
+                    "opacity": 1
+                  }
+                ]
+              },
+              "baseDark": {
+                "frame": "world",
+                "start": {
+                  "x": 3150,
+                  "y": -3150,
+                  "z": 0
+                },
+                "end": {
+                  "x": 2150,
+                  "y": 3150,
+                  "z": 15000
+                },
+                "gradientStops": [
+                  {
+                    "position": 0,
+                    "color": "#102F3B",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 0.5,
+                    "color": "#28525F",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 1,
+                    "color": "#507C84",
+                    "opacity": 1
+                  }
+                ]
+              }
+            },
+            "motifTemplates": {
+              "baseWindow": [
+                {
+                  "key": "pane",
+                  "name": "獨立玻璃窗",
+                  "materialField": "baseLight",
+                  "vertices": [
+                    {
+                      "u": 0.045,
+                      "v": 0.08
+                    },
+                    {
+                      "u": 0.955,
+                      "v": 0.08
+                    },
+                    {
+                      "u": 0.955,
+                      "v": 0.94
+                    },
+                    {
+                      "u": 0.045,
+                      "v": 0.94
+                    }
+                  ]
+                },
+                {
+                  "key": "spandrel",
+                  "name": "樓板背襯玻璃",
+                  "fill": "#254E54",
+                  "vertices": [
+                    {
+                      "u": 0.045,
+                      "v": 0.015
+                    },
+                    {
+                      "u": 0.955,
+                      "v": 0.015
+                    },
+                    {
+                      "u": 0.955,
+                      "v": 0.25
+                    },
+                    {
+                      "u": 0.045,
+                      "v": 0.25
+                    }
+                  ]
+                },
+                {
+                  "key": "glint",
+                  "name": "鋁框亮邊",
+                  "fill": "#A4BDB7",
+                  "vertices": [
+                    {
+                      "u": 0.015,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.035,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.035,
+                      "v": 1
+                    },
+                    {
+                      "u": 0.015,
+                      "v": 1
+                    }
+                  ]
+                }
+              ]
+            },
+            "children": [
+              {
+                "type": "projected-face",
+                "key": "plinth-roof",
+                "name": "石材入口基座頂面",
+                "fill": "#A8AFA8",
+                "vertices": [
+                  {
+                    "x": -3300,
+                    "y": -3300,
+                    "z": 80
+                  },
+                  {
+                    "x": 3300,
+                    "y": -3300,
+                    "z": 80
+                  },
+                  {
+                    "x": 3300,
+                    "y": 3300,
+                    "z": 80
+                  },
+                  {
+                    "x": -3300,
+                    "y": 3300,
+                    "z": 80
+                  }
+                ]
+              },
+              {
+                "type": "projected-face",
+                "key": "plinth-y",
+                "name": "基座亮面",
+                "fill": "#929B94",
+                "vertices": [
+                  {
+                    "x": -3300,
+                    "y": 3300,
+                    "z": 0
+                  },
+                  {
+                    "x": 3300,
+                    "y": 3300,
+                    "z": 0
+                  },
+                  {
+                    "x": 3300,
+                    "y": 3300,
+                    "z": 80
+                  },
+                  {
+                    "x": -3300,
+                    "y": 3300,
+                    "z": 80
+                  }
+                ]
+              },
+              {
+                "type": "projected-face",
+                "key": "plinth-x",
+                "name": "基座陰面",
+                "fill": "#616D6C",
+                "vertices": [
+                  {
+                    "x": 3300,
+                    "y": -3300,
+                    "z": 0
+                  },
+                  {
+                    "x": 3300,
+                    "y": 3300,
+                    "z": 0
+                  },
+                  {
+                    "x": 3300,
+                    "y": 3300,
+                    "z": 80
+                  },
+                  {
+                    "x": 3300,
+                    "y": -3300,
+                    "z": 80
+                  }
+                ]
+              },
+              {
+                "type": "projected-face",
+                "key": "base-y",
+                "name": "下段塔身亮側窗框底材",
+                "fill": "#719C99",
+                "vertices": [
+                  {
+                    "x": -3120,
+                    "y": 3120,
+                    "z": 400
+                  },
+                  {
+                    "x": 3120,
+                    "y": 3120,
+                    "z": 400
+                  },
+                  {
+                    "x": 2150,
+                    "y": 2150,
+                    "z": 11200
+                  },
+                  {
+                    "x": -2150,
+                    "y": 2150,
+                    "z": 11200
+                  }
+                ]
+              },
+              {
+                "type": "surface-grid",
+                "key": "base-y-grid",
+                "name": "下段亮側樓層",
+                "boundary": {
+                  "face": "base-y"
+                },
+                "rows": 25,
+                "columns": 24,
+                "order": "cell-major",
+                "motifs": {
+                  "template": "baseWindow"
+                }
+              },
+              {
+                "type": "projected-face",
+                "key": "base-x",
+                "name": "下段塔身陰側窗框底材",
+                "fill": "#517B7B",
+                "vertices": [
+                  {
+                    "x": 3120,
+                    "y": 3120,
+                    "z": 400
+                  },
+                  {
+                    "x": 3120,
+                    "y": -3120,
+                    "z": 400
+                  },
+                  {
+                    "x": 2150,
+                    "y": -2150,
+                    "z": 11200
+                  },
+                  {
+                    "x": 2150,
+                    "y": 2150,
+                    "z": 11200
+                  }
+                ]
+              },
+              {
+                "type": "surface-grid",
+                "key": "base-x-grid",
+                "name": "下段陰側樓層",
+                "boundary": {
+                  "face": "base-x"
+                },
+                "rows": 25,
+                "columns": 24,
+                "order": "cell-major",
+                "motifs": {
+                  "template": "baseWindow",
+                  "overrides": {
+                    "pane": {
+                      "materialField": "baseDark"
+                    },
+                    "spandrel": {
+                      "fill": "#183B43"
+                    },
+                    "glint": {
+                      "fill": "#799B99"
+                    }
+                  }
+                }
+              },
+              {
+                "type": "projected-face",
+                "key": "base-corner-light",
+                "name": "下段轉角鋁包板亮面",
+                "fill": "#B6C2BB",
+                "vertices": [
+                  {
+                    "x": 3020,
+                    "y": 3124,
+                    "z": 400
+                  },
+                  {
+                    "x": 3125,
+                    "y": 3124,
+                    "z": 400
+                  },
+                  {
+                    "x": 2155,
+                    "y": 2154,
+                    "z": 11200
+                  },
+                  {
+                    "x": 2050,
+                    "y": 2154,
+                    "z": 11200
+                  }
+                ]
+              },
+              {
+                "type": "projected-face",
+                "key": "base-corner-dark",
+                "name": "下段轉角鋁包板陰面",
+                "fill": "#6B8987",
+                "vertices": [
+                  {
+                    "x": 3124,
+                    "y": 3124,
+                    "z": 400
+                  },
+                  {
+                    "x": 3124,
+                    "y": 3020,
+                    "z": 400
+                  },
+                  {
+                    "x": 2154,
+                    "y": 2050,
+                    "z": 11200
+                  },
+                  {
+                    "x": 2154,
+                    "y": 2154,
+                    "z": 11200
+                  }
+                ]
+              },
+              {
+                "type": "surface-grid",
+                "key": "base-pilasters-y",
+                "name": "下段亮側立柱",
+                "boundary": {
+                  "face": "base-y"
+                },
+                "rows": 1,
+                "columns": 6,
+                "order": "cell-major",
+                "motifs": [
+                  {
+                    "key": "rib",
+                    "name": "金屬立柱",
+                    "fill": "#90ACA5",
+                    "vertices": [
+                      {
+                        "u": 0.01,
+                        "v": 0
+                      },
+                      {
+                        "u": 0.055,
+                        "v": 0
+                      },
+                      {
+                        "u": 0.055,
+                        "v": 1
+                      },
+                      {
+                        "u": 0.01,
+                        "v": 1
+                      }
+                    ]
+                  },
+                  {
+                    "key": "shadow",
+                    "name": "立柱側影",
+                    "fill": "#2D5053",
+                    "vertices": [
+                      {
+                        "u": 0.055,
+                        "v": 0
+                      },
+                      {
+                        "u": 0.075,
+                        "v": 0
+                      },
+                      {
+                        "u": 0.075,
+                        "v": 1
+                      },
+                      {
+                        "u": 0.055,
+                        "v": 1
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "surface-grid",
+                "key": "base-pilasters-x",
+                "name": "下段陰側立柱",
+                "boundary": {
+                  "face": "base-x"
+                },
+                "rows": 1,
+                "columns": 6,
+                "order": "cell-major",
+                "motifs": [
+                  {
+                    "key": "rib",
+                    "name": "金屬立柱",
+                    "fill": "#5D817F",
+                    "vertices": [
+                      {
+                        "u": 0.01,
+                        "v": 0
+                      },
+                      {
+                        "u": 0.055,
+                        "v": 0
+                      },
+                      {
+                        "u": 0.055,
+                        "v": 1
+                      },
+                      {
+                        "u": 0.01,
+                        "v": 1
+                      }
+                    ]
+                  },
+                  {
+                    "key": "shadow",
+                    "name": "立柱側影",
+                    "fill": "#17363F",
+                    "vertices": [
+                      {
+                        "u": 0.055,
+                        "v": 0
+                      },
+                      {
+                        "u": 0.075,
+                        "v": 0
+                      },
+                      {
+                        "u": 0.075,
+                        "v": 1
+                      },
+                      {
+                        "u": 0.055,
+                        "v": 1
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "surface-grid",
+                "key": "base-belts-y",
+                "name": "基座三段橫向腰帶",
+                "boundary": {
+                  "face": "base-y"
+                },
+                "rows": 3,
+                "columns": 1,
+                "order": "cell-major",
+                "motifs": [
+                  {
+                    "key": "belt",
+                    "name": "凹入設備層",
+                    "fill": "#173A40",
+                    "vertices": [
+                      {
+                        "u": 0,
+                        "v": 0.935
+                      },
+                      {
+                        "u": 1,
+                        "v": 0.935
+                      },
+                      {
+                        "u": 1,
+                        "v": 0.985
+                      },
+                      {
+                        "u": 0,
+                        "v": 0.985
+                      }
+                    ]
+                  },
+                  {
+                    "key": "edge",
+                    "name": "設備層銀色收邊",
+                    "fill": "#A7BBB3",
+                    "vertices": [
+                      {
+                        "u": 0,
+                        "v": 0.985
+                      },
+                      {
+                        "u": 1,
+                        "v": 0.985
+                      },
+                      {
+                        "u": 1,
+                        "v": 1
+                      },
+                      {
+                        "u": 0,
+                        "v": 1
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "surface-grid",
+                "key": "base-belts-x",
+                "name": "基座陰側三段腰帶",
+                "boundary": {
+                  "face": "base-x"
+                },
+                "rows": 3,
+                "columns": 1,
+                "order": "cell-major",
+                "motifs": [
+                  {
+                    "key": "belt",
+                    "name": "設備層陰影",
+                    "fill": "#102F38",
+                    "vertices": [
+                      {
+                        "u": 0,
+                        "v": 0.935
+                      },
+                      {
+                        "u": 1,
+                        "v": 0.935
+                      },
+                      {
+                        "u": 1,
+                        "v": 0.985
+                      },
+                      {
+                        "u": 0,
+                        "v": 0.985
+                      }
+                    ]
+                  },
+                  {
+                    "key": "edge",
+                    "name": "設備層金屬收邊",
+                    "fill": "#6C9090",
+                    "vertices": [
+                      {
+                        "u": 0,
+                        "v": 0.985
+                      },
+                      {
+                        "u": 1,
+                        "v": 0.985
+                      },
+                      {
+                        "u": 1,
+                        "v": 1
+                      },
+                      {
+                        "u": 0,
+                        "v": 1
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "projected-face",
+                "key": "entry-y",
+                "name": "大廳玻璃入口",
+                "fill": "#12343B",
+                "vertices": [
+                  {
+                    "x": -1250,
+                    "y": 3160,
+                    "z": 80
+                  },
+                  {
+                    "x": 1250,
+                    "y": 3160,
+                    "z": 80
+                  },
+                  {
+                    "x": 1250,
+                    "y": 3160,
+                    "z": 850
+                  },
+                  {
+                    "x": -1250,
+                    "y": 3160,
+                    "z": 850
+                  }
+                ]
+              },
+              {
+                "type": "surface-grid",
+                "key": "entry-y-grid",
+                "name": "大廳門扇",
+                "boundary": {
+                  "face": "entry-y"
+                },
+                "rows": 1,
+                "columns": 10,
+                "order": "cell-major",
+                "motifs": [
+                  {
+                    "key": "glass",
+                    "name": "門玻璃",
+                    "fill": "#477B7E",
+                    "vertices": [
+                      {
+                        "u": 0.04,
+                        "v": 0.02
+                      },
+                      {
+                        "u": 0.96,
+                        "v": 0.02
+                      },
+                      {
+                        "u": 0.96,
+                        "v": 0.96
+                      },
+                      {
+                        "u": 0.04,
+                        "v": 0.96
+                      }
+                    ]
+                  },
+                  {
+                    "key": "frame",
+                    "name": "門框",
+                    "fill": "#B7C8BE",
+                    "vertices": [
+                      {
+                        "u": 0,
+                        "v": 0
+                      },
+                      {
+                        "u": 0.035,
+                        "v": 0
+                      },
+                      {
+                        "u": 0.035,
+                        "v": 1
+                      },
+                      {
+                        "u": 0,
+                        "v": 1
+                      }
+                    ]
+                  },
+                  {
+                    "key": "handle",
+                    "name": "門把",
+                    "fill": "#D4D8CE",
+                    "vertices": [
+                      {
+                        "u": 0.82,
+                        "v": 0.38
+                      },
+                      {
+                        "u": 0.85,
+                        "v": 0.38
+                      },
+                      {
+                        "u": 0.85,
+                        "v": 0.62
+                      },
+                      {
+                        "u": 0.82,
+                        "v": 0.62
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "projected-face",
+                "key": "canopy",
+                "name": "入口雨遮頂面",
+                "fill": "#A7BCB7",
+                "vertices": [
+                  {
+                    "x": -1400,
+                    "y": 3000,
+                    "z": 900
+                  },
+                  {
+                    "x": 1400,
+                    "y": 3000,
+                    "z": 900
+                  },
+                  {
+                    "x": 1400,
+                    "y": 3550,
+                    "z": 800
+                  },
+                  {
+                    "x": -1400,
+                    "y": 3550,
+                    "z": 800
+                  }
+                ]
+              },
+              {
+                "type": "projected-face",
+                "key": "canopy-edge",
+                "name": "雨遮厚邊",
+                "fill": "#527272",
+                "vertices": [
+                  {
+                    "x": -1400,
+                    "y": 3550,
+                    "z": 760
+                  },
+                  {
+                    "x": 1400,
+                    "y": 3550,
+                    "z": 760
+                  },
+                  {
+                    "x": 1400,
+                    "y": 3550,
+                    "z": 800
+                  },
+                  {
+                    "x": -1400,
+                    "y": 3550,
+                    "z": 800
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "body",
+        "name": "design_workflow.prepare_and_apply_design",
+        "arguments": {
+          "parentId": {
+            "kind": "step",
+            "step": "base",
+            "path": "/compositionIds/0"
+          },
+          "message": "建立八組外張竹節、逐窗帷幕牆與階梯轉角",
+          "inspection": "defer",
+          "includeTargets": true,
+          "draft": {
+            "type": "group",
+            "name": "八節主塔｜26F–90F",
+            "projection": {
+              "azimuth": 35,
+              "elevation": 28,
+              "scale": 1,
+              "originX": 8000,
+              "originY": 45000
+            },
+            "linearFields": {
+              "glassSun": {
+                "frame": "world",
+                "start": {
+                  "x": -2500,
+                  "y": 2500,
+                  "z": 9000
+                },
+                "end": {
+                  "x": 2500,
+                  "y": 2500,
+                  "z": 45000
+                },
+                "gradientStops": [
+                  {
+                    "position": 0,
+                    "color": "#255E62",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 0.3,
+                    "color": "#3D7C7F",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 0.5,
+                    "color": "#619A9A",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 0.68,
+                    "color": "#3E8185",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 1,
+                    "color": "#8AB6B2",
+                    "opacity": 1
+                  }
+                ]
+              },
+              "glassShade": {
+                "frame": "world",
+                "start": {
+                  "x": 2500,
+                  "y": -2500,
+                  "z": 9000
+                },
+                "end": {
+                  "x": 2500,
+                  "y": 2500,
+                  "z": 45000
+                },
+                "gradientStops": [
+                  {
+                    "position": 0,
+                    "color": "#123C48",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 0.35,
+                    "color": "#245763",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 0.65,
+                    "color": "#3F727B",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 1,
+                    "color": "#679A9F",
+                    "opacity": 1
+                  }
+                ]
+              }
+            },
+            "motifTemplates": {
+              "window": [
+                {
+                  "key": "pane",
+                  "name": "反射玻璃",
+                  "materialField": "glassSun",
+                  "vertices": [
+                    {
+                      "u": 0.035,
+                      "v": 0.06
+                    },
+                    {
+                      "u": 0.965,
+                      "v": 0.06
+                    },
+                    {
+                      "u": 0.965,
+                      "v": 0.955
+                    },
+                    {
+                      "u": 0.035,
+                      "v": 0.955
+                    }
+                  ]
+                },
+                {
+                  "key": "spandrel",
+                  "name": "樓板背襯玻璃",
+                  "fill": "#30666A",
+                  "vertices": [
+                    {
+                      "u": 0.035,
+                      "v": 0.065
+                    },
+                    {
+                      "u": 0.965,
+                      "v": 0.065
+                    },
+                    {
+                      "u": 0.965,
+                      "v": 0.265
+                    },
+                    {
+                      "u": 0.035,
+                      "v": 0.265
+                    }
+                  ]
+                },
+                {
+                  "key": "edge",
+                  "name": "窗框光邊",
+                  "fill": "#9BBCB5",
+                  "vertices": [
+                    {
+                      "u": 0.005,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.022,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.022,
+                      "v": 1
+                    },
+                    {
+                      "u": 0.005,
+                      "v": 1
+                    }
+                  ]
+                }
+              ]
+            },
+            "children": [
+              {
+                "type": "pattern",
+                "key": "tier",
+                "name": "竹節模組",
+                "origin": {
+                  "x": 0,
+                  "y": 0,
+                  "z": 11200
+                },
+                "axes": [
+                  {
+                    "count": 8,
+                    "step": {
+                      "x": 0,
+                      "y": 0,
+                      "z": 3500
+                    }
+                  }
+                ],
+                "members": [
+                  {
+                    "type": "projected-face",
+                    "key": "roof",
+                    "name": "退台銀灰頂面",
+                    "fill": "#A9BDB7",
+                    "vertices": [
+                      {
+                        "x": -2500,
+                        "y": -2500,
+                        "z": 3500
+                      },
+                      {
+                        "x": 2500,
+                        "y": -2500,
+                        "z": 3500
+                      },
+                      {
+                        "x": 2500,
+                        "y": 2500,
+                        "z": 3500
+                      },
+                      {
+                        "x": -2500,
+                        "y": 2500,
+                        "z": 3500
+                      }
+                    ]
+                  },
+                  {
+                    "type": "projected-face",
+                    "key": "south",
+                    "name": "亮側窗框底材",
+                    "fill": "#7FAAA4",
+                    "vertices": [
+                      {
+                        "x": -1892,
+                        "y": 2150,
+                        "z": 100
+                      },
+                      {
+                        "x": 1892,
+                        "y": 2150,
+                        "z": 100
+                      },
+                      {
+                        "x": 2200,
+                        "y": 2500,
+                        "z": 3380
+                      },
+                      {
+                        "x": -2200,
+                        "y": 2500,
+                        "z": 3380
+                      }
+                    ]
+                  },
+                  {
+                    "type": "surface-grid",
+                    "key": "southwin",
+                    "name": "亮側八樓窗格",
+                    "boundary": {
+                      "face": "south"
+                    },
+                    "rows": 8,
+                    "columns": 20,
+                    "order": "cell-major",
+                    "motifs": {
+                      "template": "window"
+                    }
+                  },
+                  {
+                    "type": "projected-face",
+                    "key": "east",
+                    "name": "陰側窗框底材",
+                    "fill": "#547E81",
+                    "vertices": [
+                      {
+                        "x": 2150,
+                        "y": 1892,
+                        "z": 100
+                      },
+                      {
+                        "x": 2150,
+                        "y": -1892,
+                        "z": 100
+                      },
+                      {
+                        "x": 2500,
+                        "y": -2200,
+                        "z": 3380
+                      },
+                      {
+                        "x": 2500,
+                        "y": 2200,
+                        "z": 3380
+                      }
+                    ]
+                  },
+                  {
+                    "type": "surface-grid",
+                    "key": "eastwin",
+                    "name": "陰側八樓窗格",
+                    "boundary": {
+                      "face": "east"
+                    },
+                    "rows": 8,
+                    "columns": 20,
+                    "order": "cell-major",
+                    "motifs": {
+                      "template": "window",
+                      "overrides": {
+                        "pane": {
+                          "materialField": "glassShade"
+                        },
+                        "spandrel": {
+                          "fill": "#1B4652"
+                        },
+                        "edge": {
+                          "fill": "#7DA1A0"
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "type": "projected-face",
+                    "key": "left-edge",
+                    "name": "遠端亮側斜柱",
+                    "fill": "#9DB6AF",
+                    "vertices": [
+                      {
+                        "x": -2150,
+                        "y": 2150,
+                        "z": 100
+                      },
+                      {
+                        "x": -1892,
+                        "y": 2150,
+                        "z": 100
+                      },
+                      {
+                        "x": -2200,
+                        "y": 2500,
+                        "z": 3380
+                      },
+                      {
+                        "x": -2500,
+                        "y": 2500,
+                        "z": 3380
+                      }
+                    ]
+                  },
+                  {
+                    "type": "projected-face",
+                    "key": "right-edge",
+                    "name": "遠端陰側斜柱",
+                    "fill": "#597E80",
+                    "vertices": [
+                      {
+                        "x": 2150,
+                        "y": -2150,
+                        "z": 100
+                      },
+                      {
+                        "x": 2150,
+                        "y": -1892,
+                        "z": 100
+                      },
+                      {
+                        "x": 2500,
+                        "y": -2200,
+                        "z": 3380
+                      },
+                      {
+                        "x": 2500,
+                        "y": -2500,
+                        "z": 3380
+                      }
+                    ]
+                  },
+                  {
+                    "type": "projected-face",
+                    "key": "c1",
+                    "name": "鋸齒轉角一亮面",
+                    "fill": "#BCD0C6",
+                    "vertices": [
+                      {
+                        "x": 1892,
+                        "y": 2150,
+                        "z": 100
+                      },
+                      {
+                        "x": 1978,
+                        "y": 2150,
+                        "z": 100
+                      },
+                      {
+                        "x": 2300,
+                        "y": 2500,
+                        "z": 3380
+                      },
+                      {
+                        "x": 2200,
+                        "y": 2500,
+                        "z": 3380
+                      }
+                    ]
+                  },
+                  {
+                    "type": "projected-face",
+                    "key": "c2",
+                    "name": "鋸齒轉角一暗面",
+                    "fill": "#4B7377",
+                    "vertices": [
+                      {
+                        "x": 1978,
+                        "y": 2150,
+                        "z": 100
+                      },
+                      {
+                        "x": 1978,
+                        "y": 2064,
+                        "z": 100
+                      },
+                      {
+                        "x": 2300,
+                        "y": 2400,
+                        "z": 3380
+                      },
+                      {
+                        "x": 2300,
+                        "y": 2500,
+                        "z": 3380
+                      }
+                    ]
+                  },
+                  {
+                    "type": "projected-face",
+                    "key": "c3",
+                    "name": "鋸齒轉角二亮面",
+                    "fill": "#ABC6BF",
+                    "vertices": [
+                      {
+                        "x": 1978,
+                        "y": 2064,
+                        "z": 100
+                      },
+                      {
+                        "x": 2064,
+                        "y": 2064,
+                        "z": 100
+                      },
+                      {
+                        "x": 2400,
+                        "y": 2400,
+                        "z": 3380
+                      },
+                      {
+                        "x": 2300,
+                        "y": 2400,
+                        "z": 3380
+                      }
+                    ]
+                  },
+                  {
+                    "type": "projected-face",
+                    "key": "c4",
+                    "name": "鋸齒轉角二暗面",
+                    "fill": "#527A7C",
+                    "vertices": [
+                      {
+                        "x": 2064,
+                        "y": 2064,
+                        "z": 100
+                      },
+                      {
+                        "x": 2064,
+                        "y": 1978,
+                        "z": 100
+                      },
+                      {
+                        "x": 2400,
+                        "y": 2300,
+                        "z": 3380
+                      },
+                      {
+                        "x": 2400,
+                        "y": 2400,
+                        "z": 3380
+                      }
+                    ]
+                  },
+                  {
+                    "type": "projected-face",
+                    "key": "c5",
+                    "name": "鋸齒轉角三亮面",
+                    "fill": "#A5BDB8",
+                    "vertices": [
+                      {
+                        "x": 2064,
+                        "y": 1978,
+                        "z": 100
+                      },
+                      {
+                        "x": 2150,
+                        "y": 1978,
+                        "z": 100
+                      },
+                      {
+                        "x": 2500,
+                        "y": 2300,
+                        "z": 3380
+                      },
+                      {
+                        "x": 2400,
+                        "y": 2300,
+                        "z": 3380
+                      }
+                    ]
+                  },
+                  {
+                    "type": "projected-face",
+                    "key": "c6",
+                    "name": "鋸齒轉角三暗面",
+                    "fill": "#6E9392",
+                    "vertices": [
+                      {
+                        "x": 2150,
+                        "y": 1978,
+                        "z": 100
+                      },
+                      {
+                        "x": 2150,
+                        "y": 1892,
+                        "z": 100
+                      },
+                      {
+                        "x": 2500,
+                        "y": 2200,
+                        "z": 3380
+                      },
+                      {
+                        "x": 2500,
+                        "y": 2300,
+                        "z": 3380
+                      }
+                    ]
+                  },
+                  {
+                    "type": "surface-grid",
+                    "key": "corner-joints",
+                    "name": "轉角水平接縫",
+                    "boundary": {
+                      "face": "c3"
+                    },
+                    "rows": 16,
+                    "columns": 1,
+                    "order": "cell-major",
+                    "motifs": [
+                      {
+                        "key": "joint",
+                        "name": "鋁板接縫",
+                        "fill": "#567A7B",
+                        "vertices": [
+                          {
+                            "u": 0,
+                            "v": 0.005
+                          },
+                          {
+                            "u": 1,
+                            "v": 0.005
+                          },
+                          {
+                            "u": 1,
+                            "v": 0.04
+                          },
+                          {
+                            "u": 0,
+                            "v": 0.04
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "surface-grid",
+                    "key": "fins-y",
+                    "name": "亮側立面細柱",
+                    "boundary": {
+                      "face": "south"
+                    },
+                    "rows": 1,
+                    "columns": 5,
+                    "order": "cell-major",
+                    "motifs": [
+                      {
+                        "key": "fin",
+                        "name": "豎向鋁翼",
+                        "fill": "#A6BEB7",
+                        "vertices": [
+                          {
+                            "u": 0.012,
+                            "v": 0
+                          },
+                          {
+                            "u": 0.034,
+                            "v": 0
+                          },
+                          {
+                            "u": 0.034,
+                            "v": 1
+                          },
+                          {
+                            "u": 0.012,
+                            "v": 1
+                          }
+                        ]
+                      },
+                      {
+                        "key": "side",
+                        "name": "鋁翼側影",
+                        "fill": "#315A5F",
+                        "vertices": [
+                          {
+                            "u": 0.034,
+                            "v": 0
+                          },
+                          {
+                            "u": 0.05,
+                            "v": 0
+                          },
+                          {
+                            "u": 0.05,
+                            "v": 1
+                          },
+                          {
+                            "u": 0.034,
+                            "v": 1
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "surface-grid",
+                    "key": "fins-x",
+                    "name": "陰側立面細柱",
+                    "boundary": {
+                      "face": "east"
+                    },
+                    "rows": 1,
+                    "columns": 5,
+                    "order": "cell-major",
+                    "motifs": [
+                      {
+                        "key": "fin",
+                        "name": "豎向鋁翼",
+                        "fill": "#739593",
+                        "vertices": [
+                          {
+                            "u": 0.012,
+                            "v": 0
+                          },
+                          {
+                            "u": 0.034,
+                            "v": 0
+                          },
+                          {
+                            "u": 0.034,
+                            "v": 1
+                          },
+                          {
+                            "u": 0.012,
+                            "v": 1
+                          }
+                        ]
+                      },
+                      {
+                        "key": "side",
+                        "name": "鋁翼側影",
+                        "fill": "#193E49",
+                        "vertices": [
+                          {
+                            "u": 0.034,
+                            "v": 0
+                          },
+                          {
+                            "u": 0.05,
+                            "v": 0
+                          },
+                          {
+                            "u": 0.05,
+                            "v": 1
+                          },
+                          {
+                            "u": 0.034,
+                            "v": 1
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "projected-face",
+                    "key": "belt-y",
+                    "name": "亮側簷口暗帶",
+                    "fill": "#244B51",
+                    "vertices": [
+                      {
+                        "x": -2500,
+                        "y": 2500,
+                        "z": 3260
+                      },
+                      {
+                        "x": 2500,
+                        "y": 2500,
+                        "z": 3260
+                      },
+                      {
+                        "x": 2500,
+                        "y": 2500,
+                        "z": 3430
+                      },
+                      {
+                        "x": -2500,
+                        "y": 2500,
+                        "z": 3430
+                      }
+                    ]
+                  },
+                  {
+                    "type": "surface-grid",
+                    "key": "vent-y",
+                    "name": "亮側通風百葉",
+                    "boundary": {
+                      "face": "belt-y"
+                    },
+                    "rows": 4,
+                    "columns": 1,
+                    "order": "cell-major",
+                    "motifs": [
+                      {
+                        "key": "louver",
+                        "name": "百葉銀邊",
+                        "fill": "#8FAAA4",
+                        "vertices": [
+                          {
+                            "u": 0,
+                            "v": 0.65
+                          },
+                          {
+                            "u": 1,
+                            "v": 0.65
+                          },
+                          {
+                            "u": 1,
+                            "v": 0.84
+                          },
+                          {
+                            "u": 0,
+                            "v": 0.84
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "projected-face",
+                    "key": "belt-x",
+                    "name": "陰側簷口暗帶",
+                    "fill": "#15353E",
+                    "vertices": [
+                      {
+                        "x": 2500,
+                        "y": -2500,
+                        "z": 3260
+                      },
+                      {
+                        "x": 2500,
+                        "y": 2500,
+                        "z": 3260
+                      },
+                      {
+                        "x": 2500,
+                        "y": 2500,
+                        "z": 3430
+                      },
+                      {
+                        "x": 2500,
+                        "y": -2500,
+                        "z": 3430
+                      }
+                    ]
+                  },
+                  {
+                    "type": "surface-grid",
+                    "key": "vent-x",
+                    "name": "陰側通風百葉",
+                    "boundary": {
+                      "face": "belt-x"
+                    },
+                    "rows": 4,
+                    "columns": 1,
+                    "order": "cell-major",
+                    "motifs": [
+                      {
+                        "key": "louver",
+                        "name": "百葉銀邊",
+                        "fill": "#638584",
+                        "vertices": [
+                          {
+                            "u": 0,
+                            "v": 0.65
+                          },
+                          {
+                            "u": 1,
+                            "v": 0.65
+                          },
+                          {
+                            "u": 1,
+                            "v": 0.84
+                          },
+                          {
+                            "u": 0,
+                            "v": 0.84
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "projected-face",
+                    "key": "rim-y",
+                    "name": "外張簷口亮邊",
+                    "fill": "#C4D1C7",
+                    "vertices": [
+                      {
+                        "x": -2530,
+                        "y": 2530,
+                        "z": 3430
+                      },
+                      {
+                        "x": 2530,
+                        "y": 2530,
+                        "z": 3430
+                      },
+                      {
+                        "x": 2530,
+                        "y": 2530,
+                        "z": 3500
+                      },
+                      {
+                        "x": -2530,
+                        "y": 2530,
+                        "z": 3500
+                      }
+                    ]
+                  },
+                  {
+                    "type": "projected-face",
+                    "key": "rim-x",
+                    "name": "外張簷口暗邊",
+                    "fill": "#8AA9A3",
+                    "vertices": [
+                      {
+                        "x": 2530,
+                        "y": -2530,
+                        "z": 3430
+                      },
+                      {
+                        "x": 2530,
+                        "y": 2530,
+                        "z": 3430
+                      },
+                      {
+                        "x": 2530,
+                        "y": 2530,
+                        "z": 3500
+                      },
+                      {
+                        "x": 2530,
+                        "y": -2530,
+                        "z": 3500
+                      }
+                    ]
+                  },
+                  {
+                    "type": "projected-face",
+                    "key": "neck-y",
+                    "name": "竹節退縮陰影亮側",
+                    "fill": "#153E43",
+                    "vertices": [
+                      {
+                        "x": -2150,
+                        "y": 2150,
+                        "z": 0
+                      },
+                      {
+                        "x": 2150,
+                        "y": 2150,
+                        "z": 0
+                      },
+                      {
+                        "x": 2150,
+                        "y": 2150,
+                        "z": 100
+                      },
+                      {
+                        "x": -2150,
+                        "y": 2150,
+                        "z": 100
+                      }
+                    ]
+                  },
+                  {
+                    "type": "projected-face",
+                    "key": "neck-x",
+                    "name": "竹節退縮陰影暗側",
+                    "fill": "#0F2D36",
+                    "vertices": [
+                      {
+                        "x": 2150,
+                        "y": -2150,
+                        "z": 0
+                      },
+                      {
+                        "x": 2150,
+                        "y": 2150,
+                        "z": 0
+                      },
+                      {
+                        "x": 2150,
+                        "y": 2150,
+                        "z": 100
+                      },
+                      {
+                        "x": 2150,
+                        "y": -2150,
+                        "z": 100
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      }
+    ],
+    "retain": {
+      "taipeiRoot": {
+        "step": "base",
+        "path": "/compositionIds/0"
+      },
+      "baseTargets": {
+        "step": "base",
+        "path": "/createdTargets"
+      },
+      "bodyTargets": {
+        "step": "body",
+        "path": "/createdTargets"
+      },
+      "baseSource": {
+        "step": "base",
+        "source": "input",
+        "path": "/draft"
+      },
+      "bodySource": {
+        "step": "body",
+        "source": "input",
+        "path": "/draft"
+      },
+      "bodyIds": {
+        "step": "body",
+        "path": "/compositionIds"
+      }
+    },
+    "delivery": {
+      "fields": {
+        "root": {
+          "step": "base",
+          "path": "/compositionIds"
+        },
+        "body": {
+          "step": "body",
+          "path": "/compositionIds"
+        }
+      }
+    }
+  },
+  "construction": {
+    "operations": [
+      {
+        "id": "crown",
+        "name": "design_workflow.prepare_and_apply_design",
+        "arguments": {
+          "parentId": {
+            "kind": "named",
+            "name": "taipeiRoot",
+            "path": ""
+          },
+          "message": "冠頂觀景層、金屬塔尖與設備細節",
+          "inspection": "defer",
+          "includeTargets": true,
+          "draft": {
+            "type": "group",
+            "name": "冠頂與塔尖｜392–508m",
+            "projection": {
+              "azimuth": 35,
+              "elevation": 28,
+              "scale": 1,
+              "originX": 8000,
+              "originY": 45000
+            },
+            "fillTemplates": {
+              "crownGlass": {
+                "gradientType": "linear",
+                "gradientHandles": [
+                  {
+                    "x": 0,
+                    "y": 1
+                  },
+                  {
+                    "x": 1,
+                    "y": 0
+                  }
+                ],
+                "gradientStops": [
+                  {
+                    "position": 0,
+                    "color": "#23515A",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 0.48,
+                    "color": "#639396",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 1,
+                    "color": "#9CB9B5",
+                    "opacity": 1
+                  }
+                ]
+              },
+              "metal": {
+                "gradientType": "linear",
+                "gradientHandles": [
+                  {
+                    "x": 0,
+                    "y": 0
+                  },
+                  {
+                    "x": 1,
+                    "y": 0
+                  }
+                ],
+                "gradientStops": [
+                  {
+                    "position": 0,
+                    "color": "#7C999A",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 0.35,
+                    "color": "#E1E3D6",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 0.7,
+                    "color": "#B5C4BE",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 1,
+                    "color": "#527079",
+                    "opacity": 1
+                  }
+                ]
+              }
+            },
+            "motifTemplates": {
+              "cw": [
+                {
+                  "key": "glass",
+                  "name": "冠頂玻璃",
+                  "fill": {
+                    "template": "crownGlass"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0.055,
+                      "v": 0.16
+                    },
+                    {
+                      "u": 0.945,
+                      "v": 0.16
+                    },
+                    {
+                      "u": 0.945,
+                      "v": 0.9
+                    },
+                    {
+                      "u": 0.055,
+                      "v": 0.9
+                    }
+                  ]
+                },
+                {
+                  "key": "recess",
+                  "name": "框架凹槽",
+                  "fill": "#2D525B",
+                  "vertices": [
+                    {
+                      "u": 0.04,
+                      "v": 0.09
+                    },
+                    {
+                      "u": 0.96,
+                      "v": 0.09
+                    },
+                    {
+                      "u": 0.96,
+                      "v": 0.16
+                    },
+                    {
+                      "u": 0.04,
+                      "v": 0.16
+                    }
+                  ]
+                },
+                {
+                  "key": "mullion",
+                  "name": "窗框亮邊",
+                  "fill": "#D0D9CE",
+                  "vertices": [
+                    {
+                      "u": 0.01,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.03,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.03,
+                      "v": 1
+                    },
+                    {
+                      "u": 0.01,
+                      "v": 1
+                    }
+                  ]
+                }
+              ]
+            },
+            "children": [
+              {
+                "type": "projected-face",
+                "key": "deck-lower",
+                "name": "圓形觀景平台側影",
+                "fill": "#5D777A",
+                "ellipse": {
+                  "center": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 39260
+                  },
+                  "u": {
+                    "x": 2130,
+                    "y": 0,
+                    "z": 0
+                  },
+                  "v": {
+                    "x": 0,
+                    "y": 2130,
+                    "z": 0
+                  }
+                }
+              },
+              {
+                "type": "projected-face",
+                "key": "deck-top",
+                "name": "圓形觀景平台頂面",
+                "fill": "#BCC5BA",
+                "ellipse": {
+                  "center": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 39340
+                  },
+                  "u": {
+                    "x": 2130,
+                    "y": 0,
+                    "z": 0
+                  },
+                  "v": {
+                    "x": 0,
+                    "y": 2130,
+                    "z": 0
+                  }
+                }
+              },
+              {
+                "type": "projected-face",
+                "key": "deck-inset",
+                "name": "平台金屬環道",
+                "fill": "#859E98",
+                "ellipse": {
+                  "center": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 39342
+                  },
+                  "u": {
+                    "x": 1990,
+                    "y": 0,
+                    "z": 0
+                  },
+                  "v": {
+                    "x": 0,
+                    "y": 1990,
+                    "z": 0
+                  }
+                }
+              },
+              {
+                "type": "projected-face",
+                "key": "deck-walk",
+                "name": "平台內圈",
+                "fill": "#C5CBC0",
+                "ellipse": {
+                  "center": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 39344
+                  },
+                  "u": {
+                    "x": 1900,
+                    "y": 0,
+                    "z": 0
+                  },
+                  "v": {
+                    "x": 0,
+                    "y": 1900,
+                    "z": 0
+                  }
+                }
+              },
+              {
+                "type": "projected-face",
+                "key": "shoulder-top",
+                "name": "觀景層上方屋面",
+                "fill": "#B8C6BD",
+                "vertices": [
+                  {
+                    "x": -1450,
+                    "y": -1450,
+                    "z": 40500
+                  },
+                  {
+                    "x": 1450,
+                    "y": -1450,
+                    "z": 40500
+                  },
+                  {
+                    "x": 1450,
+                    "y": 1450,
+                    "z": 40500
+                  },
+                  {
+                    "x": -1450,
+                    "y": 1450,
+                    "z": 40500
+                  }
+                ]
+              },
+              {
+                "type": "projected-face",
+                "key": "shoulder-y",
+                "name": "觀景層亮側",
+                "fill": "#9EB8AE",
+                "vertices": [
+                  {
+                    "x": -1750,
+                    "y": 1750,
+                    "z": 39350
+                  },
+                  {
+                    "x": 1750,
+                    "y": 1750,
+                    "z": 39350
+                  },
+                  {
+                    "x": 1450,
+                    "y": 1450,
+                    "z": 40500
+                  },
+                  {
+                    "x": -1450,
+                    "y": 1450,
+                    "z": 40500
+                  }
+                ]
+              },
+              {
+                "type": "surface-grid",
+                "key": "shoulder-yw",
+                "name": "觀景層玻璃亮側",
+                "boundary": {
+                  "face": "shoulder-y"
+                },
+                "rows": 3,
+                "columns": 16,
+                "order": "cell-major",
+                "motifs": {
+                  "template": "cw"
+                }
+              },
+              {
+                "type": "projected-face",
+                "key": "shoulder-x",
+                "name": "觀景層陰側",
+                "fill": "#6E8D8A",
+                "vertices": [
+                  {
+                    "x": 1750,
+                    "y": 1750,
+                    "z": 39350
+                  },
+                  {
+                    "x": 1750,
+                    "y": -1750,
+                    "z": 39350
+                  },
+                  {
+                    "x": 1450,
+                    "y": -1450,
+                    "z": 40500
+                  },
+                  {
+                    "x": 1450,
+                    "y": 1450,
+                    "z": 40500
+                  }
+                ]
+              },
+              {
+                "type": "surface-grid",
+                "key": "shoulder-xw",
+                "name": "觀景層玻璃陰側",
+                "boundary": {
+                  "face": "shoulder-x"
+                },
+                "rows": 3,
+                "columns": 16,
+                "order": "cell-major",
+                "motifs": {
+                  "template": "cw",
+                  "overrides": {
+                    "glass": {
+                      "fill": "#345E68"
+                    },
+                    "mullion": {
+                      "fill": "#8AA39D"
+                    }
+                  }
+                }
+              },
+              {
+                "type": "projected-face",
+                "key": "shoulder-rimy",
+                "name": "觀景層挑簷亮側",
+                "fill": "#D4DBCF",
+                "vertices": [
+                  {
+                    "x": -1580,
+                    "y": 1580,
+                    "z": 40450
+                  },
+                  {
+                    "x": 1580,
+                    "y": 1580,
+                    "z": 40450
+                  },
+                  {
+                    "x": 1580,
+                    "y": 1580,
+                    "z": 40550
+                  },
+                  {
+                    "x": -1580,
+                    "y": 1580,
+                    "z": 40550
+                  }
+                ]
+              },
+              {
+                "type": "projected-face",
+                "key": "shoulder-rimx",
+                "name": "觀景層挑簷陰側",
+                "fill": "#91AAA2",
+                "vertices": [
+                  {
+                    "x": 1580,
+                    "y": -1580,
+                    "z": 40450
+                  },
+                  {
+                    "x": 1580,
+                    "y": 1580,
+                    "z": 40450
+                  },
+                  {
+                    "x": 1580,
+                    "y": 1580,
+                    "z": 40550
+                  },
+                  {
+                    "x": 1580,
+                    "y": -1580,
+                    "z": 40550
+                  }
+                ]
+              },
+              {
+                "type": "projected-face",
+                "key": "neck-roof",
+                "name": "塔冠底座屋面",
+                "fill": "#BBC7BD",
+                "vertices": [
+                  {
+                    "x": -1200,
+                    "y": -1200,
+                    "z": 41100
+                  },
+                  {
+                    "x": 1200,
+                    "y": -1200,
+                    "z": 41100
+                  },
+                  {
+                    "x": 1200,
+                    "y": 1200,
+                    "z": 41100
+                  },
+                  {
+                    "x": -1200,
+                    "y": 1200,
+                    "z": 41100
+                  }
+                ]
+              },
+              {
+                "type": "projected-face",
+                "key": "neck-y",
+                "name": "塔冠底座亮側",
+                "fill": "#2E535A",
+                "vertices": [
+                  {
+                    "x": -1150,
+                    "y": 1150,
+                    "z": 40550
+                  },
+                  {
+                    "x": 1150,
+                    "y": 1150,
+                    "z": 40550
+                  },
+                  {
+                    "x": 1150,
+                    "y": 1150,
+                    "z": 41100
+                  },
+                  {
+                    "x": -1150,
+                    "y": 1150,
+                    "z": 41100
+                  }
+                ]
+              },
+              {
+                "type": "surface-grid",
+                "key": "neck-yw",
+                "name": "塔冠底座百葉亮側",
+                "boundary": {
+                  "face": "neck-y"
+                },
+                "rows": 7,
+                "columns": 14,
+                "order": "cell-major",
+                "motifs": [
+                  {
+                    "key": "slat",
+                    "name": "百葉片",
+                    "fill": "#9AB0A7",
+                    "vertices": [
+                      {
+                        "u": 0.025,
+                        "v": 0.55
+                      },
+                      {
+                        "u": 0.975,
+                        "v": 0.55
+                      },
+                      {
+                        "u": 0.975,
+                        "v": 0.8
+                      },
+                      {
+                        "u": 0.025,
+                        "v": 0.8
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "projected-face",
+                "key": "neck-x",
+                "name": "塔冠底座陰側",
+                "fill": "#203E48",
+                "vertices": [
+                  {
+                    "x": 1150,
+                    "y": -1150,
+                    "z": 40550
+                  },
+                  {
+                    "x": 1150,
+                    "y": 1150,
+                    "z": 40550
+                  },
+                  {
+                    "x": 1150,
+                    "y": 1150,
+                    "z": 41100
+                  },
+                  {
+                    "x": 1150,
+                    "y": -1150,
+                    "z": 41100
+                  }
+                ]
+              },
+              {
+                "type": "surface-grid",
+                "key": "neck-xw",
+                "name": "塔冠底座百葉陰側",
+                "boundary": {
+                  "face": "neck-x"
+                },
+                "rows": 7,
+                "columns": 14,
+                "order": "cell-major",
+                "motifs": [
+                  {
+                    "key": "slat",
+                    "name": "百葉片",
+                    "fill": "#6B8D89",
+                    "vertices": [
+                      {
+                        "u": 0.025,
+                        "v": 0.55
+                      },
+                      {
+                        "u": 0.975,
+                        "v": 0.55
+                      },
+                      {
+                        "u": 0.975,
+                        "v": 0.8
+                      },
+                      {
+                        "u": 0.025,
+                        "v": 0.8
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "projected-face",
+                "key": "crown-roof",
+                "name": "冠頂屋面",
+                "fill": "#CAD3C7",
+                "vertices": [
+                  {
+                    "x": -1290,
+                    "y": -1290,
+                    "z": 44400
+                  },
+                  {
+                    "x": 1290,
+                    "y": -1290,
+                    "z": 44400
+                  },
+                  {
+                    "x": 1290,
+                    "y": 1290,
+                    "z": 44400
+                  },
+                  {
+                    "x": -1290,
+                    "y": 1290,
+                    "z": 44400
+                  }
+                ]
+              },
+              {
+                "type": "projected-face",
+                "key": "crown-y",
+                "name": "外張冠頂亮側",
+                "fill": "#AEC3B8",
+                "vertices": [
+                  {
+                    "x": -830,
+                    "y": 830,
+                    "z": 41100
+                  },
+                  {
+                    "x": 830,
+                    "y": 830,
+                    "z": 41100
+                  },
+                  {
+                    "x": 1290,
+                    "y": 1290,
+                    "z": 44400
+                  },
+                  {
+                    "x": -1290,
+                    "y": 1290,
+                    "z": 44400
+                  }
+                ]
+              },
+              {
+                "type": "surface-grid",
+                "key": "crown-yw",
+                "name": "冠頂樓層亮側",
+                "boundary": {
+                  "face": "crown-y"
+                },
+                "rows": 9,
+                "columns": 12,
+                "order": "cell-major",
+                "motifs": {
+                  "template": "cw"
+                }
+              },
+              {
+                "type": "projected-face",
+                "key": "crown-x",
+                "name": "外張冠頂陰側",
+                "fill": "#7E9C94",
+                "vertices": [
+                  {
+                    "x": 830,
+                    "y": 830,
+                    "z": 41100
+                  },
+                  {
+                    "x": 830,
+                    "y": -830,
+                    "z": 41100
+                  },
+                  {
+                    "x": 1290,
+                    "y": -1290,
+                    "z": 44400
+                  },
+                  {
+                    "x": 1290,
+                    "y": 1290,
+                    "z": 44400
+                  }
+                ]
+              },
+              {
+                "type": "surface-grid",
+                "key": "crown-xw",
+                "name": "冠頂樓層陰側",
+                "boundary": {
+                  "face": "crown-x"
+                },
+                "rows": 9,
+                "columns": 12,
+                "order": "cell-major",
+                "motifs": {
+                  "template": "cw",
+                  "overrides": {
+                    "glass": {
+                      "fill": "#315B66"
+                    },
+                    "mullion": {
+                      "fill": "#9BB0A6"
+                    }
+                  }
+                }
+              },
+              {
+                "type": "pattern",
+                "key": "crown-bands",
+                "name": "冠頂雙重簷帶",
+                "origin": {
+                  "x": 0,
+                  "y": 0,
+                  "z": 43950
+                },
+                "axes": [
+                  {
+                    "count": 2,
+                    "step": {
+                      "x": 0,
+                      "y": 0,
+                      "z": 450
+                    }
+                  }
+                ],
+                "members": [
+                  {
+                    "type": "projected-face",
+                    "key": "top",
+                    "name": "挑簷頂",
+                    "fill": "#CCD6C9",
+                    "vertices": [
+                      {
+                        "x": -1410,
+                        "y": -1410,
+                        "z": 100
+                      },
+                      {
+                        "x": 1410,
+                        "y": -1410,
+                        "z": 100
+                      },
+                      {
+                        "x": 1410,
+                        "y": 1410,
+                        "z": 100
+                      },
+                      {
+                        "x": -1410,
+                        "y": 1410,
+                        "z": 100
+                      }
+                    ]
+                  },
+                  {
+                    "type": "projected-face",
+                    "key": "y",
+                    "name": "挑簷亮邊",
+                    "fill": "#B1C4B9",
+                    "vertices": [
+                      {
+                        "x": -1410,
+                        "y": 1410,
+                        "z": 0
+                      },
+                      {
+                        "x": 1410,
+                        "y": 1410,
+                        "z": 0
+                      },
+                      {
+                        "x": 1410,
+                        "y": 1410,
+                        "z": 100
+                      },
+                      {
+                        "x": -1410,
+                        "y": 1410,
+                        "z": 100
+                      }
+                    ]
+                  },
+                  {
+                    "type": "projected-face",
+                    "key": "x",
+                    "name": "挑簷陰邊",
+                    "fill": "#698B88",
+                    "vertices": [
+                      {
+                        "x": 1410,
+                        "y": -1410,
+                        "z": 0
+                      },
+                      {
+                        "x": 1410,
+                        "y": 1410,
+                        "z": 0
+                      },
+                      {
+                        "x": 1410,
+                        "y": 1410,
+                        "z": 100
+                      },
+                      {
+                        "x": 1410,
+                        "y": -1410,
+                        "z": 100
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "projected-face",
+                "key": "cap-roof",
+                "name": "最高樓屋面",
+                "fill": "#C4D1C5",
+                "vertices": [
+                  {
+                    "x": -1150,
+                    "y": -1150,
+                    "z": 44800
+                  },
+                  {
+                    "x": 1150,
+                    "y": -1150,
+                    "z": 44800
+                  },
+                  {
+                    "x": 1150,
+                    "y": 1150,
+                    "z": 44800
+                  },
+                  {
+                    "x": -1150,
+                    "y": 1150,
+                    "z": 44800
+                  }
+                ]
+              },
+              {
+                "type": "projected-face",
+                "key": "cap-y",
+                "name": "最高樓亮側窗框",
+                "fill": "#AEC1B7",
+                "vertices": [
+                  {
+                    "x": -1150,
+                    "y": 1150,
+                    "z": 44450
+                  },
+                  {
+                    "x": 1150,
+                    "y": 1150,
+                    "z": 44450
+                  },
+                  {
+                    "x": 1150,
+                    "y": 1150,
+                    "z": 44800
+                  },
+                  {
+                    "x": -1150,
+                    "y": 1150,
+                    "z": 44800
+                  }
+                ]
+              },
+              {
+                "type": "surface-grid",
+                "key": "cap-yw",
+                "name": "最高樓窗格亮側",
+                "boundary": {
+                  "face": "cap-y"
+                },
+                "rows": 1,
+                "columns": 12,
+                "order": "cell-major",
+                "motifs": {
+                  "template": "cw"
+                }
+              },
+              {
+                "type": "projected-face",
+                "key": "cap-x",
+                "name": "最高樓陰側窗框",
+                "fill": "#6E8F8C",
+                "vertices": [
+                  {
+                    "x": 1150,
+                    "y": -1150,
+                    "z": 44450
+                  },
+                  {
+                    "x": 1150,
+                    "y": 1150,
+                    "z": 44450
+                  },
+                  {
+                    "x": 1150,
+                    "y": 1150,
+                    "z": 44800
+                  },
+                  {
+                    "x": 1150,
+                    "y": -1150,
+                    "z": 44800
+                  }
+                ]
+              },
+              {
+                "type": "surface-grid",
+                "key": "cap-xw",
+                "name": "最高樓窗格陰側",
+                "boundary": {
+                  "face": "cap-x"
+                },
+                "rows": 1,
+                "columns": 12,
+                "order": "cell-major",
+                "motifs": {
+                  "template": "cw",
+                  "overrides": {
+                    "glass": {
+                      "fill": "#31515D"
+                    }
+                  }
+                }
+              },
+              {
+                "type": "projected-face",
+                "key": "spirebase-roof",
+                "name": "塔尖底座頂",
+                "fill": "#C8D2C8",
+                "vertices": [
+                  {
+                    "x": -450,
+                    "y": -450,
+                    "z": 46000
+                  },
+                  {
+                    "x": 450,
+                    "y": -450,
+                    "z": 46000
+                  },
+                  {
+                    "x": 450,
+                    "y": 450,
+                    "z": 46000
+                  },
+                  {
+                    "x": -450,
+                    "y": 450,
+                    "z": 46000
+                  }
+                ]
+              },
+              {
+                "type": "projected-face",
+                "key": "spirebase-y",
+                "name": "塔尖金屬底座亮側",
+                "fill": {
+                  "template": "metal"
+                },
+                "vertices": [
+                  {
+                    "x": -650,
+                    "y": 650,
+                    "z": 44800
+                  },
+                  {
+                    "x": 650,
+                    "y": 650,
+                    "z": 44800
+                  },
+                  {
+                    "x": 450,
+                    "y": 450,
+                    "z": 46000
+                  },
+                  {
+                    "x": -450,
+                    "y": 450,
+                    "z": 46000
+                  }
+                ]
+              },
+              {
+                "type": "surface-grid",
+                "key": "spirebase-seamsy",
+                "name": "底座金屬板接縫",
+                "boundary": {
+                  "face": "spirebase-y"
+                },
+                "rows": 8,
+                "columns": 8,
+                "order": "cell-major",
+                "motifs": [
+                  {
+                    "key": "joint",
+                    "name": "水平接縫",
+                    "fill": "#829C98",
+                    "vertices": [
+                      {
+                        "u": 0,
+                        "v": 0.02
+                      },
+                      {
+                        "u": 1,
+                        "v": 0.02
+                      },
+                      {
+                        "u": 1,
+                        "v": 0.035
+                      },
+                      {
+                        "u": 0,
+                        "v": 0.035
+                      }
+                    ]
+                  },
+                  {
+                    "key": "seam",
+                    "name": "垂直接縫",
+                    "fill": "#9DB2AA",
+                    "vertices": [
+                      {
+                        "u": 0,
+                        "v": 0
+                      },
+                      {
+                        "u": 0.015,
+                        "v": 0
+                      },
+                      {
+                        "u": 0.015,
+                        "v": 1
+                      },
+                      {
+                        "u": 0,
+                        "v": 1
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "projected-face",
+                "key": "spirebase-x",
+                "name": "塔尖金屬底座陰側",
+                "fill": "#66868A",
+                "vertices": [
+                  {
+                    "x": 650,
+                    "y": 650,
+                    "z": 44800
+                  },
+                  {
+                    "x": 650,
+                    "y": -650,
+                    "z": 44800
+                  },
+                  {
+                    "x": 450,
+                    "y": -450,
+                    "z": 46000
+                  },
+                  {
+                    "x": 450,
+                    "y": 450,
+                    "z": 46000
+                  }
+                ]
+              },
+              {
+                "type": "projected-face",
+                "key": "vent",
+                "name": "塔尖底座檢修百葉",
+                "fill": "#3F5E65",
+                "vertices": [
+                  {
+                    "x": -230,
+                    "y": 575,
+                    "z": 45150
+                  },
+                  {
+                    "x": 230,
+                    "y": 575,
+                    "z": 45150
+                  },
+                  {
+                    "x": 230,
+                    "y": 575,
+                    "z": 45450
+                  },
+                  {
+                    "x": -230,
+                    "y": 575,
+                    "z": 45450
+                  }
+                ]
+              },
+              {
+                "type": "surface-grid",
+                "key": "vent-slats",
+                "name": "塔尖檢修百葉片",
+                "boundary": {
+                  "face": "vent"
+                },
+                "rows": 7,
+                "columns": 1,
+                "order": "cell-major",
+                "motifs": [
+                  {
+                    "key": "slat",
+                    "name": "片緣",
+                    "fill": "#9BB0A8",
+                    "vertices": [
+                      {
+                        "u": 0,
+                        "v": 0.68
+                      },
+                      {
+                        "u": 1,
+                        "v": 0.68
+                      },
+                      {
+                        "u": 1,
+                        "v": 0.85
+                      },
+                      {
+                        "u": 0,
+                        "v": 0.85
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "projected-face",
+                "key": "dish-y",
+                "name": "塔尖托盤亮側",
+                "fill": {
+                  "template": "metal"
+                },
+                "vertices": [
+                  {
+                    "x": -320,
+                    "y": 320,
+                    "z": 46000
+                  },
+                  {
+                    "x": 320,
+                    "y": 320,
+                    "z": 46000
+                  },
+                  {
+                    "x": 670,
+                    "y": 670,
+                    "z": 46500
+                  },
+                  {
+                    "x": -670,
+                    "y": 670,
+                    "z": 46500
+                  }
+                ]
+              },
+              {
+                "type": "projected-face",
+                "key": "dish-x",
+                "name": "塔尖托盤陰側",
+                "fill": "#607C82",
+                "vertices": [
+                  {
+                    "x": 320,
+                    "y": -320,
+                    "z": 46000
+                  },
+                  {
+                    "x": 320,
+                    "y": 320,
+                    "z": 46000
+                  },
+                  {
+                    "x": 670,
+                    "y": 670,
+                    "z": 46500
+                  },
+                  {
+                    "x": 670,
+                    "y": -670,
+                    "z": 46500
+                  }
+                ]
+              },
+              {
+                "type": "projected-face",
+                "key": "dish-top",
+                "name": "塔尖托盤頂面",
+                "fill": "#C0CFC3",
+                "vertices": [
+                  {
+                    "x": -670,
+                    "y": -670,
+                    "z": 46500
+                  },
+                  {
+                    "x": 670,
+                    "y": -670,
+                    "z": 46500
+                  },
+                  {
+                    "x": 670,
+                    "y": 670,
+                    "z": 46500
+                  },
+                  {
+                    "x": -670,
+                    "y": 670,
+                    "z": 46500
+                  }
+                ]
+              },
+              {
+                "type": "projected-face",
+                "key": "mast-y",
+                "name": "塔尖亮面至508m",
+                "fill": {
+                  "template": "metal"
+                },
+                "vertices": [
+                  {
+                    "x": -160,
+                    "y": 160,
+                    "z": 46500
+                  },
+                  {
+                    "x": 160,
+                    "y": 160,
+                    "z": 46500
+                  },
+                  {
+                    "x": 22,
+                    "y": 22,
+                    "z": 50750
+                  },
+                  {
+                    "x": -22,
+                    "y": 22,
+                    "z": 50750
+                  }
+                ]
+              },
+              {
+                "type": "projected-face",
+                "key": "mast-x",
+                "name": "塔尖陰面至508m",
+                "fill": "#66858A",
+                "vertices": [
+                  {
+                    "x": 160,
+                    "y": -160,
+                    "z": 46500
+                  },
+                  {
+                    "x": 160,
+                    "y": 160,
+                    "z": 46500
+                  },
+                  {
+                    "x": 22,
+                    "y": 22,
+                    "z": 50750
+                  },
+                  {
+                    "x": 22,
+                    "y": -22,
+                    "z": 50750
+                  }
+                ]
+              },
+              {
+                "type": "projected-face",
+                "key": "tip",
+                "name": "避雷針尖端50800cm",
+                "fill": "#DFE4D9",
+                "vertices": [
+                  {
+                    "x": -22,
+                    "y": 22,
+                    "z": 50750
+                  },
+                  {
+                    "x": 22,
+                    "y": 22,
+                    "z": 50750
+                  },
+                  {
+                    "x": 0,
+                    "y": 0,
+                    "z": 50800
+                  }
+                ]
+              },
+              {
+                "type": "pattern",
+                "key": "mast-rings",
+                "name": "塔尖分節環",
+                "origin": {
+                  "x": 0,
+                  "y": 0,
+                  "z": 48600
+                },
+                "axes": [
+                  {
+                    "count": 13,
+                    "step": {
+                      "x": 0,
+                      "y": 0,
+                      "z": 160
+                    }
+                  }
+                ],
+                "members": [
+                  {
+                    "type": "projected-face",
+                    "key": "ring-shadow",
+                    "name": "金屬環陰影",
+                    "fill": "#5F7B80",
+                    "ellipse": {
+                      "center": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                      },
+                      "u": {
+                        "x": 105,
+                        "y": 0,
+                        "z": 0
+                      },
+                      "v": {
+                        "x": 0,
+                        "y": 105,
+                        "z": 0
+                      }
+                    }
+                  },
+                  {
+                    "type": "projected-face",
+                    "key": "ring-top",
+                    "name": "金屬環頂緣",
+                    "fill": "#D0DCD1",
+                    "ellipse": {
+                      "center": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 35
+                      },
+                      "u": {
+                        "x": 105,
+                        "y": 0,
+                        "z": 0
+                      },
+                      "v": {
+                        "x": 0,
+                        "y": 105,
+                        "z": 0
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "projected-face",
+                "key": "buttress-y-left",
+                "name": "冠頂左斜撐",
+                "fill": "#D3DBCF",
+                "vertices": [
+                  {
+                    "x": -1200,
+                    "y": 1580,
+                    "z": 39360
+                  },
+                  {
+                    "x": -1040,
+                    "y": 1580,
+                    "z": 39360
+                  },
+                  {
+                    "x": -690,
+                    "y": 1100,
+                    "z": 41100
+                  },
+                  {
+                    "x": -800,
+                    "y": 1100,
+                    "z": 41100
+                  }
+                ]
+              },
+              {
+                "type": "projected-face",
+                "key": "buttress-y-right",
+                "name": "冠頂右斜撐",
+                "fill": "#CAD5C9",
+                "vertices": [
+                  {
+                    "x": 1040,
+                    "y": 1580,
+                    "z": 39360
+                  },
+                  {
+                    "x": 1200,
+                    "y": 1580,
+                    "z": 39360
+                  },
+                  {
+                    "x": 800,
+                    "y": 1100,
+                    "z": 41100
+                  },
+                  {
+                    "x": 690,
+                    "y": 1100,
+                    "z": 41100
+                  }
+                ]
+              },
+              {
+                "type": "projected-face",
+                "key": "buttress-x-left",
+                "name": "冠頂陰側斜撐一",
+                "fill": "#8AA49D",
+                "vertices": [
+                  {
+                    "x": 1580,
+                    "y": -1200,
+                    "z": 39360
+                  },
+                  {
+                    "x": 1580,
+                    "y": -1040,
+                    "z": 39360
+                  },
+                  {
+                    "x": 1100,
+                    "y": -690,
+                    "z": 41100
+                  },
+                  {
+                    "x": 1100,
+                    "y": -800,
+                    "z": 41100
+                  }
+                ]
+              },
+              {
+                "type": "projected-face",
+                "key": "buttress-x-right",
+                "name": "冠頂陰側斜撐二",
+                "fill": "#A7BAB0",
+                "vertices": [
+                  {
+                    "x": 1580,
+                    "y": 1040,
+                    "z": 39360
+                  },
+                  {
+                    "x": 1580,
+                    "y": 1200,
+                    "z": 39360
+                  },
+                  {
+                    "x": 1100,
+                    "y": 800,
+                    "z": 41100
+                  },
+                  {
+                    "x": 1100,
+                    "y": 690,
+                    "z": 41100
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "ornaments",
+        "name": "design_workflow.prepare_and_apply_design",
+        "arguments": {
+          "parentId": {
+            "kind": "named",
+            "name": "taipeiRoot",
+            "path": ""
+          },
+          "message": "八節如意飾件、龍首角飾與圓形方孔徽飾",
+          "inspection": "defer",
+          "includeTargets": true,
+          "draft": {
+            "type": "group",
+            "name": "立面銀色裝飾｜如意・龍首・圓形徽飾",
+            "projection": {
+              "azimuth": 35,
+              "elevation": 28,
+              "scale": 1,
+              "originX": 8000,
+              "originY": 45000
+            },
+            "fillTemplates": {
+              "silver": {
+                "gradientType": "linear",
+                "gradientHandles": [
+                  {
+                    "x": 0,
+                    "y": 0
+                  },
+                  {
+                    "x": 0.8,
+                    "y": 1
+                  }
+                ],
+                "gradientStops": [
+                  {
+                    "position": 0,
+                    "color": "#E1E3D7",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 0.38,
+                    "color": "#B8C8BD",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 0.7,
+                    "color": "#72918E",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 1,
+                    "color": "#C9D3C7",
+                    "opacity": 1
+                  }
+                ]
+              }
+            },
+            "children": [
+              {
+                "type": "pattern",
+                "key": "ruyi",
+                "name": "八節如意飾件",
+                "origin": {
+                  "x": 0,
+                  "y": 0,
+                  "z": 11200
+                },
+                "axes": [
+                  {
+                    "count": 8,
+                    "step": {
+                      "x": 0,
+                      "y": 0,
+                      "z": 3500
+                    }
+                  }
+                ],
+                "members": [
+                  {
+                    "type": "projected-face",
+                    "key": "ruyi-y-shadow",
+                    "name": "亮側如意投影",
+                    "fill": "#274B50",
+                    "vertices": [
+                      {
+                        "x": -450,
+                        "y": 2540,
+                        "z": 3450
+                      },
+                      {
+                        "x": -280,
+                        "y": 2540,
+                        "z": 3570
+                      },
+                      {
+                        "x": -90,
+                        "y": 2540,
+                        "z": 3450
+                      },
+                      {
+                        "x": 100,
+                        "y": 2540,
+                        "z": 3570
+                      },
+                      {
+                        "x": 280,
+                        "y": 2540,
+                        "z": 3450
+                      },
+                      {
+                        "x": 450,
+                        "y": 2540,
+                        "z": 3510
+                      },
+                      {
+                        "x": 330,
+                        "y": 2540,
+                        "z": 3250
+                      },
+                      {
+                        "x": 110,
+                        "y": 2540,
+                        "z": 3130
+                      },
+                      {
+                        "x": 90,
+                        "y": 2540,
+                        "z": 2860
+                      },
+                      {
+                        "x": -90,
+                        "y": 2540,
+                        "z": 2860
+                      },
+                      {
+                        "x": -110,
+                        "y": 2540,
+                        "z": 3130
+                      },
+                      {
+                        "x": -330,
+                        "y": 2540,
+                        "z": 3250
+                      }
+                    ]
+                  },
+                  {
+                    "type": "projected-face",
+                    "key": "ruyi-y",
+                    "name": "亮側如意雲頭金屬浮雕",
+                    "fill": {
+                      "template": "silver"
+                    },
+                    "vertices": [
+                      {
+                        "x": -420,
+                        "y": 2560,
+                        "z": 3510
+                      },
+                      {
+                        "x": -370,
+                        "y": 2560,
+                        "z": 3600
+                      },
+                      {
+                        "x": -250,
+                        "y": 2560,
+                        "z": 3630
+                      },
+                      {
+                        "x": -160,
+                        "y": 2560,
+                        "z": 3580
+                      },
+                      {
+                        "x": -110,
+                        "y": 2560,
+                        "z": 3500
+                      },
+                      {
+                        "x": -70,
+                        "y": 2560,
+                        "z": 3620
+                      },
+                      {
+                        "x": 0,
+                        "y": 2560,
+                        "z": 3670
+                      },
+                      {
+                        "x": 70,
+                        "y": 2560,
+                        "z": 3620
+                      },
+                      {
+                        "x": 110,
+                        "y": 2560,
+                        "z": 3500
+                      },
+                      {
+                        "x": 160,
+                        "y": 2560,
+                        "z": 3580
+                      },
+                      {
+                        "x": 250,
+                        "y": 2560,
+                        "z": 3630
+                      },
+                      {
+                        "x": 370,
+                        "y": 2560,
+                        "z": 3600
+                      },
+                      {
+                        "x": 420,
+                        "y": 2560,
+                        "z": 3510
+                      },
+                      {
+                        "x": 390,
+                        "y": 2560,
+                        "z": 3390
+                      },
+                      {
+                        "x": 300,
+                        "y": 2560,
+                        "z": 3320
+                      },
+                      {
+                        "x": 170,
+                        "y": 2560,
+                        "z": 3320
+                      },
+                      {
+                        "x": 90,
+                        "y": 2560,
+                        "z": 3220
+                      },
+                      {
+                        "x": 65,
+                        "y": 2560,
+                        "z": 3000
+                      },
+                      {
+                        "x": -65,
+                        "y": 2560,
+                        "z": 3000
+                      },
+                      {
+                        "x": -90,
+                        "y": 2560,
+                        "z": 3220
+                      },
+                      {
+                        "x": -170,
+                        "y": 2560,
+                        "z": 3320
+                      },
+                      {
+                        "x": -300,
+                        "y": 2560,
+                        "z": 3320
+                      },
+                      {
+                        "x": -390,
+                        "y": 2560,
+                        "z": 3390
+                      }
+                    ]
+                  },
+                  {
+                    "type": "projected-face",
+                    "key": "ruyi-y-groove",
+                    "name": "如意亮側雕刻凹槽",
+                    "fill": "#577C7A",
+                    "vertices": [
+                      {
+                        "x": -320,
+                        "y": 2562,
+                        "z": 3490
+                      },
+                      {
+                        "x": -260,
+                        "y": 2562,
+                        "z": 3550
+                      },
+                      {
+                        "x": -170,
+                        "y": 2562,
+                        "z": 3470
+                      },
+                      {
+                        "x": -100,
+                        "y": 2562,
+                        "z": 3400
+                      },
+                      {
+                        "x": 0,
+                        "y": 2562,
+                        "z": 3520
+                      },
+                      {
+                        "x": 100,
+                        "y": 2562,
+                        "z": 3400
+                      },
+                      {
+                        "x": 170,
+                        "y": 2562,
+                        "z": 3470
+                      },
+                      {
+                        "x": 260,
+                        "y": 2562,
+                        "z": 3550
+                      },
+                      {
+                        "x": 320,
+                        "y": 2562,
+                        "z": 3490
+                      },
+                      {
+                        "x": 260,
+                        "y": 2562,
+                        "z": 3410
+                      },
+                      {
+                        "x": 140,
+                        "y": 2562,
+                        "z": 3390
+                      },
+                      {
+                        "x": 35,
+                        "y": 2562,
+                        "z": 3240
+                      },
+                      {
+                        "x": 35,
+                        "y": 2562,
+                        "z": 3060
+                      },
+                      {
+                        "x": -35,
+                        "y": 2562,
+                        "z": 3060
+                      },
+                      {
+                        "x": -35,
+                        "y": 2562,
+                        "z": 3240
+                      },
+                      {
+                        "x": -140,
+                        "y": 2562,
+                        "z": 3390
+                      },
+                      {
+                        "x": -260,
+                        "y": 2562,
+                        "z": 3410
+                      }
+                    ]
+                  },
+                  {
+                    "type": "projected-face",
+                    "key": "ruyi-x",
+                    "name": "陰側如意雲頭浮雕",
+                    "fill": {
+                      "template": "silver"
+                    },
+                    "vertices": [
+                      {
+                        "x": 2560,
+                        "y": -420,
+                        "z": 3510
+                      },
+                      {
+                        "x": 2560,
+                        "y": -370,
+                        "z": 3600
+                      },
+                      {
+                        "x": 2560,
+                        "y": -250,
+                        "z": 3630
+                      },
+                      {
+                        "x": 2560,
+                        "y": -160,
+                        "z": 3580
+                      },
+                      {
+                        "x": 2560,
+                        "y": -110,
+                        "z": 3500
+                      },
+                      {
+                        "x": 2560,
+                        "y": -70,
+                        "z": 3620
+                      },
+                      {
+                        "x": 2560,
+                        "y": 0,
+                        "z": 3670
+                      },
+                      {
+                        "x": 2560,
+                        "y": 70,
+                        "z": 3620
+                      },
+                      {
+                        "x": 2560,
+                        "y": 110,
+                        "z": 3500
+                      },
+                      {
+                        "x": 2560,
+                        "y": 160,
+                        "z": 3580
+                      },
+                      {
+                        "x": 2560,
+                        "y": 250,
+                        "z": 3630
+                      },
+                      {
+                        "x": 2560,
+                        "y": 370,
+                        "z": 3600
+                      },
+                      {
+                        "x": 2560,
+                        "y": 420,
+                        "z": 3510
+                      },
+                      {
+                        "x": 2560,
+                        "y": 390,
+                        "z": 3390
+                      },
+                      {
+                        "x": 2560,
+                        "y": 300,
+                        "z": 3320
+                      },
+                      {
+                        "x": 2560,
+                        "y": 170,
+                        "z": 3320
+                      },
+                      {
+                        "x": 2560,
+                        "y": 90,
+                        "z": 3220
+                      },
+                      {
+                        "x": 2560,
+                        "y": 65,
+                        "z": 3000
+                      },
+                      {
+                        "x": 2560,
+                        "y": -65,
+                        "z": 3000
+                      },
+                      {
+                        "x": 2560,
+                        "y": -90,
+                        "z": 3220
+                      },
+                      {
+                        "x": 2560,
+                        "y": -170,
+                        "z": 3320
+                      },
+                      {
+                        "x": 2560,
+                        "y": -300,
+                        "z": 3320
+                      },
+                      {
+                        "x": 2560,
+                        "y": -390,
+                        "z": 3390
+                      }
+                    ]
+                  },
+                  {
+                    "type": "projected-face",
+                    "key": "ruyi-x-groove",
+                    "name": "如意陰側雕刻凹槽",
+                    "fill": "#466769",
+                    "vertices": [
+                      {
+                        "x": 2562,
+                        "y": -320,
+                        "z": 3490
+                      },
+                      {
+                        "x": 2562,
+                        "y": -260,
+                        "z": 3550
+                      },
+                      {
+                        "x": 2562,
+                        "y": -170,
+                        "z": 3470
+                      },
+                      {
+                        "x": 2562,
+                        "y": -100,
+                        "z": 3400
+                      },
+                      {
+                        "x": 2562,
+                        "y": 0,
+                        "z": 3520
+                      },
+                      {
+                        "x": 2562,
+                        "y": 100,
+                        "z": 3400
+                      },
+                      {
+                        "x": 2562,
+                        "y": 170,
+                        "z": 3470
+                      },
+                      {
+                        "x": 2562,
+                        "y": 260,
+                        "z": 3550
+                      },
+                      {
+                        "x": 2562,
+                        "y": 320,
+                        "z": 3490
+                      },
+                      {
+                        "x": 2562,
+                        "y": 260,
+                        "z": 3410
+                      },
+                      {
+                        "x": 2562,
+                        "y": 140,
+                        "z": 3390
+                      },
+                      {
+                        "x": 2562,
+                        "y": 35,
+                        "z": 3240
+                      },
+                      {
+                        "x": 2562,
+                        "y": 35,
+                        "z": 3060
+                      },
+                      {
+                        "x": 2562,
+                        "y": -35,
+                        "z": 3060
+                      },
+                      {
+                        "x": 2562,
+                        "y": -35,
+                        "z": 3240
+                      },
+                      {
+                        "x": 2562,
+                        "y": -140,
+                        "z": 3390
+                      },
+                      {
+                        "x": 2562,
+                        "y": -260,
+                        "z": 3410
+                      }
+                    ]
+                  },
+                  {
+                    "type": "projected-face",
+                    "key": "dragon-y",
+                    "name": "轉角龍首亮面",
+                    "fill": "#CCD8CC",
+                    "vertices": [
+                      {
+                        "x": 2330,
+                        "y": 2420,
+                        "z": 3370
+                      },
+                      {
+                        "x": 2470,
+                        "y": 2420,
+                        "z": 3370
+                      },
+                      {
+                        "x": 2600,
+                        "y": 2420,
+                        "z": 3490
+                      },
+                      {
+                        "x": 2680,
+                        "y": 2420,
+                        "z": 3740
+                      },
+                      {
+                        "x": 2600,
+                        "y": 2420,
+                        "z": 3880
+                      },
+                      {
+                        "x": 2500,
+                        "y": 2420,
+                        "z": 3710
+                      },
+                      {
+                        "x": 2440,
+                        "y": 2420,
+                        "z": 3540
+                      },
+                      {
+                        "x": 2330,
+                        "y": 2420,
+                        "z": 3500
+                      }
+                    ]
+                  },
+                  {
+                    "type": "projected-face",
+                    "key": "dragon-x",
+                    "name": "轉角龍首陰面",
+                    "fill": "#6F9390",
+                    "vertices": [
+                      {
+                        "x": 2420,
+                        "y": 2330,
+                        "z": 3370
+                      },
+                      {
+                        "x": 2420,
+                        "y": 2470,
+                        "z": 3370
+                      },
+                      {
+                        "x": 2420,
+                        "y": 2600,
+                        "z": 3490
+                      },
+                      {
+                        "x": 2420,
+                        "y": 2680,
+                        "z": 3740
+                      },
+                      {
+                        "x": 2420,
+                        "y": 2600,
+                        "z": 3880
+                      },
+                      {
+                        "x": 2420,
+                        "y": 2500,
+                        "z": 3710
+                      },
+                      {
+                        "x": 2420,
+                        "y": 2440,
+                        "z": 3540
+                      },
+                      {
+                        "x": 2420,
+                        "y": 2330,
+                        "z": 3500
+                      }
+                    ]
+                  },
+                  {
+                    "type": "projected-face",
+                    "key": "dragon-eye",
+                    "name": "龍首陰刻",
+                    "fill": "#496C6B",
+                    "ellipse": {
+                      "center": {
+                        "x": 2580,
+                        "y": 2422,
+                        "z": 3680
+                      },
+                      "u": {
+                        "x": 35,
+                        "y": 0,
+                        "z": 0
+                      },
+                      "v": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 45
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "projected-face",
+                "key": "coin-y-shadow",
+                "name": "基座圓形徽飾陰影",
+                "fill": "#31575B",
+                "ellipse": {
+                  "center": {
+                    "x": 0,
+                    "y": 2400,
+                    "z": 10520
+                  },
+                  "u": {
+                    "x": 650,
+                    "y": 0,
+                    "z": 0
+                  },
+                  "v": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 650
+                  }
+                }
+              },
+              {
+                "type": "projected-face",
+                "key": "coin-y-rim",
+                "name": "基座圓形徽飾外框",
+                "fill": {
+                  "template": "silver"
+                },
+                "ellipse": {
+                  "center": {
+                    "x": 0,
+                    "y": 2420,
+                    "z": 10580
+                  },
+                  "u": {
+                    "x": 610,
+                    "y": 0,
+                    "z": 0
+                  },
+                  "v": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 610
+                  }
+                }
+              },
+              {
+                "type": "projected-face",
+                "key": "coin-y-inner",
+                "name": "圓徽內槽",
+                "fill": "#517E7E",
+                "ellipse": {
+                  "center": {
+                    "x": 0,
+                    "y": 2422,
+                    "z": 10580
+                  },
+                  "u": {
+                    "x": 545,
+                    "y": 0,
+                    "z": 0
+                  },
+                  "v": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 545
+                  }
+                }
+              },
+              {
+                "type": "projected-face",
+                "key": "coin-y-inner-rim",
+                "name": "圓徽內圈銀線",
+                "fill": "#A7C0B6",
+                "ellipse": {
+                  "center": {
+                    "x": 0,
+                    "y": 2424,
+                    "z": 10580
+                  },
+                  "u": {
+                    "x": 500,
+                    "y": 0,
+                    "z": 0
+                  },
+                  "v": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 500
+                  }
+                }
+              },
+              {
+                "type": "projected-face",
+                "key": "coin-y-center",
+                "name": "圓徽中心",
+                "fill": "#789D93",
+                "ellipse": {
+                  "center": {
+                    "x": 0,
+                    "y": 2426,
+                    "z": 10580
+                  },
+                  "u": {
+                    "x": 470,
+                    "y": 0,
+                    "z": 0
+                  },
+                  "v": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 470
+                  }
+                }
+              },
+              {
+                "type": "projected-face",
+                "key": "coin-y-square",
+                "name": "圓徽方孔銀框",
+                "fill": "#C0D1C4",
+                "vertices": [
+                  {
+                    "x": -220,
+                    "y": 2428,
+                    "z": 10360
+                  },
+                  {
+                    "x": 220,
+                    "y": 2428,
+                    "z": 10360
+                  },
+                  {
+                    "x": 220,
+                    "y": 2428,
+                    "z": 10800
+                  },
+                  {
+                    "x": -220,
+                    "y": 2428,
+                    "z": 10800
+                  }
+                ]
+              },
+              {
+                "type": "projected-face",
+                "key": "coin-y-hole",
+                "name": "圓徽方孔暗面",
+                "fill": "#3F686D",
+                "vertices": [
+                  {
+                    "x": -165,
+                    "y": 2430,
+                    "z": 10415
+                  },
+                  {
+                    "x": 165,
+                    "y": 2430,
+                    "z": 10415
+                  },
+                  {
+                    "x": 165,
+                    "y": 2430,
+                    "z": 10745
+                  },
+                  {
+                    "x": -165,
+                    "y": 2430,
+                    "z": 10745
+                  }
+                ]
+              },
+              {
+                "type": "projected-face",
+                "key": "coin-x-rim",
+                "name": "陰側圓徽外框",
+                "fill": {
+                  "template": "silver"
+                },
+                "ellipse": {
+                  "center": {
+                    "x": 2420,
+                    "y": 0,
+                    "z": 10580
+                  },
+                  "u": {
+                    "x": 0,
+                    "y": 610,
+                    "z": 0
+                  },
+                  "v": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 610
+                  }
+                }
+              },
+              {
+                "type": "projected-face",
+                "key": "coin-x-inner",
+                "name": "陰側圓徽內槽",
+                "fill": "#3B656C",
+                "ellipse": {
+                  "center": {
+                    "x": 2422,
+                    "y": 0,
+                    "z": 10580
+                  },
+                  "u": {
+                    "x": 0,
+                    "y": 545,
+                    "z": 0
+                  },
+                  "v": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 545
+                  }
+                }
+              },
+              {
+                "type": "projected-face",
+                "key": "coin-x-ring",
+                "name": "陰側圓徽內圈",
+                "fill": "#8FAEA5",
+                "ellipse": {
+                  "center": {
+                    "x": 2424,
+                    "y": 0,
+                    "z": 10580
+                  },
+                  "u": {
+                    "x": 0,
+                    "y": 500,
+                    "z": 0
+                  },
+                  "v": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 500
+                  }
+                }
+              },
+              {
+                "type": "projected-face",
+                "key": "coin-x-center",
+                "name": "陰側圓徽中心",
+                "fill": "#587D7C",
+                "ellipse": {
+                  "center": {
+                    "x": 2426,
+                    "y": 0,
+                    "z": 10580
+                  },
+                  "u": {
+                    "x": 0,
+                    "y": 470,
+                    "z": 0
+                  },
+                  "v": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 470
+                  }
+                }
+              },
+              {
+                "type": "projected-face",
+                "key": "coin-x-square",
+                "name": "陰側圓徽方孔框",
+                "fill": "#9DB8AE",
+                "vertices": [
+                  {
+                    "x": 2428,
+                    "y": -220,
+                    "z": 10360
+                  },
+                  {
+                    "x": 2428,
+                    "y": 220,
+                    "z": 10360
+                  },
+                  {
+                    "x": 2428,
+                    "y": 220,
+                    "z": 10800
+                  },
+                  {
+                    "x": 2428,
+                    "y": -220,
+                    "z": 10800
+                  }
+                ]
+              },
+              {
+                "type": "projected-face",
+                "key": "coin-x-hole",
+                "name": "陰側圓徽方孔暗面",
+                "fill": "#294E58",
+                "vertices": [
+                  {
+                    "x": 2430,
+                    "y": -165,
+                    "z": 10415
+                  },
+                  {
+                    "x": 2430,
+                    "y": 165,
+                    "z": 10415
+                  },
+                  {
+                    "x": 2430,
+                    "y": 165,
+                    "z": 10745
+                  },
+                  {
+                    "x": 2430,
+                    "y": -165,
+                    "z": 10745
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      }
+    ],
+    "retain": {
+      "crownIds": {
+        "step": "crown",
+        "path": "/compositionIds"
+      },
+      "crownTargets": {
+        "step": "crown",
+        "path": "/createdTargets"
+      },
+      "crownSource": {
+        "step": "crown",
+        "source": "input",
+        "path": "/draft"
+      },
+      "ornamentIds": {
+        "step": "ornaments",
+        "path": "/compositionIds"
+      },
+      "ornamentTargets": {
+        "step": "ornaments",
+        "path": "/createdTargets"
+      },
+      "ornamentSource": {
+        "step": "ornaments",
+        "source": "input",
+        "path": "/draft"
+      }
+    },
+    "delivery": {
+      "fields": {
+        "crown": {
+          "step": "crown",
+          "path": "/compositionIds"
+        },
+        "ornament": {
+          "step": "ornaments",
+          "path": "/compositionIds"
+        }
+      }
+    }
+  },
+  "capture": {
+    "operations": [
+      {
+        "name": "design_operations.review_drawing",
+        "arguments": {
+          "phase": "visual",
+          "final": false,
+          "inspections": [
+            {
+              "elementId": "design-0fced505-09d6-44da-8f19-2a2713648c52-0",
+              "view": "overview",
+              "checks": [
+                {
+                  "criterionId": "whole",
+                  "referenceUses": [
+                    {
+                      "requestId": "bba3e59e-51eb-4df1-8594-95fa1b447b48",
+                      "referenceId": "reference:a533706b71fa39e2e12f1aa23b0c658af0e60df9f7fefec8ea244fe9670b40d2",
+                      "useId": "form-photo",
+                      "revision": 1,
+                      "requirementRevision": 1
+                    }
+                  ]
+                },
+                {
+                  "criterionId": "materials"
+                }
+              ]
+            },
+            {
+              "elementId": "design-2418db44-94fb-480a-b61b-109bae3d885a-0",
+              "view": "overview",
+              "checks": [
+                {
+                  "criterionId": "detail",
+                  "unitId": "tiers",
+                  "referenceUses": [
+                    {
+                      "requestId": "bba3e59e-51eb-4df1-8594-95fa1b447b48",
+                      "referenceId": "reference:a533706b71fa39e2e12f1aa23b0c658af0e60df9f7fefec8ea244fe9670b40d2",
+                      "useId": "tier-photo",
+                      "revision": 2,
+                      "requirementRevision": 1
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "elementId": "design-5f73682c-b176-41f2-b9c5-733df429fdc7-0",
+              "view": "overview",
+              "checks": [
+                {
+                  "criterionId": "detail",
+                  "unitId": "crown",
+                  "referenceUses": [
+                    {
+                      "requestId": "bba3e59e-51eb-4df1-8594-95fa1b447b48",
+                      "referenceId": "reference:a533706b71fa39e2e12f1aa23b0c658af0e60df9f7fefec8ea244fe9670b40d2",
+                      "useId": "crown-photo",
+                      "revision": 3,
+                      "requirementRevision": 1
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ],
+    "delivery": {
+      "fields": {
+        "review": {
+          "path": ""
+        }
+      }
+    }
+  },
+  "replacement": {
+    "operations": [
+      {
+        "name": "api_element_deleteElements",
+        "arguments": {},
+        "target": {
+          "field": "elementIds",
+          "query": {
+            "scope": "region",
+            "bounds": {
+              "x": 6000,
+              "y": 2000,
+              "width": 4000,
+              "height": 6000
+            },
+            "filter": {
+              "ancestorId": "design-5f73682c-b176-41f2-b9c5-733df429fdc7-0",
+              "name": {
+                "prefix": "塔尖托盤"
+              }
+            }
+          }
+        }
+      },
+      {
+        "id": "dish",
+        "name": "design_workflow.prepare_and_apply_design",
+        "arguments": {
+          "parentId": {
+            "kind": "named",
+            "name": "taipeiRoot",
+            "path": ""
+          },
+          "inspection": "defer",
+          "message": "修正塔尖圓形金屬托盤",
+          "draft": {
+            "type": "group",
+            "name": "塔尖圓形托盤修正版",
+            "projection": {
+              "azimuth": 35,
+              "elevation": 28,
+              "scale": 1,
+              "originX": 8000,
+              "originY": 45000
+            },
+            "children": [
+              {
+                "type": "projected-face",
+                "key": "bowl-one",
+                "name": "托盤陰側弧面",
+                "fill": "#5A787D",
+                "vertices": [
+                  {
+                    "x": 226,
+                    "y": -226,
+                    "z": 46000
+                  },
+                  {
+                    "x": 320,
+                    "y": 0,
+                    "z": 46000
+                  },
+                  {
+                    "x": 670,
+                    "y": 0,
+                    "z": 46500
+                  },
+                  {
+                    "x": 474,
+                    "y": -474,
+                    "z": 46500
+                  }
+                ]
+              },
+              {
+                "type": "projected-face",
+                "key": "bowl-two",
+                "name": "托盤正側弧面",
+                "fill": "#789690",
+                "vertices": [
+                  {
+                    "x": 320,
+                    "y": 0,
+                    "z": 46000
+                  },
+                  {
+                    "x": 226,
+                    "y": 226,
+                    "z": 46000
+                  },
+                  {
+                    "x": 474,
+                    "y": 474,
+                    "z": 46500
+                  },
+                  {
+                    "x": 670,
+                    "y": 0,
+                    "z": 46500
+                  }
+                ]
+              },
+              {
+                "type": "projected-face",
+                "key": "bowl-three",
+                "name": "托盤亮側弧面",
+                "fill": "#B6C7BB",
+                "vertices": [
+                  {
+                    "x": 226,
+                    "y": 226,
+                    "z": 46000
+                  },
+                  {
+                    "x": 0,
+                    "y": 320,
+                    "z": 46000
+                  },
+                  {
+                    "x": 0,
+                    "y": 670,
+                    "z": 46500
+                  },
+                  {
+                    "x": 474,
+                    "y": 474,
+                    "z": 46500
+                  }
+                ]
+              },
+              {
+                "type": "projected-face",
+                "key": "bowl-four",
+                "name": "托盤外側弧面",
+                "fill": "#9BB5AA",
+                "vertices": [
+                  {
+                    "x": 0,
+                    "y": 320,
+                    "z": 46000
+                  },
+                  {
+                    "x": -226,
+                    "y": 226,
+                    "z": 46000
+                  },
+                  {
+                    "x": -474,
+                    "y": 474,
+                    "z": 46500
+                  },
+                  {
+                    "x": 0,
+                    "y": 670,
+                    "z": 46500
+                  }
+                ]
+              },
+              {
+                "type": "projected-face",
+                "key": "round-top",
+                "name": "圓形托盤頂面",
+                "fill": "#C6D3C6",
+                "ellipse": {
+                  "center": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 46500
+                  },
+                  "u": {
+                    "x": 670,
+                    "y": 0,
+                    "z": 0
+                  },
+                  "v": {
+                    "x": 0,
+                    "y": 670,
+                    "z": 0
+                  }
+                }
+              },
+              {
+                "type": "projected-face",
+                "key": "round-inset",
+                "name": "圓形托盤內緣",
+                "fill": "#8CA79E",
+                "ellipse": {
+                  "center": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 46502
+                  },
+                  "u": {
+                    "x": 595,
+                    "y": 0,
+                    "z": 0
+                  },
+                  "v": {
+                    "x": 0,
+                    "y": 595,
+                    "z": 0
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "name": "api_hierarchy_moveElementsRelative",
+        "arguments": {
+          "request": {
+            "elementIds": {
+              "kind": "step",
+              "step": "dish",
+              "path": "/compositionIds"
+            },
+            "anchorId": "design-5f73682c-b176-41f2-b9c5-733df429fdc7-0",
+            "placement": "before"
+          }
+        }
+      },
+      {
+        "id": "details",
+        "name": "design_workflow.prepare_and_apply_design",
+        "arguments": {
+          "parentId": {
+            "kind": "named",
+            "name": "taipeiRoot",
+            "path": ""
+          },
+          "inspection": "defer",
+          "includeTargets": true,
+          "message": "主塔雙窗細框、退台接縫與遮蔭細節",
+          "draft": {
+            "type": "group",
+            "name": "帷幕牆微細構造與退台陰影",
+            "projection": {
+              "azimuth": 35,
+              "elevation": 28,
+              "scale": 1,
+              "originX": 8000,
+              "originY": 45000
+            },
+            "children": [
+              {
+                "type": "pattern",
+                "key": "micro",
+                "name": "八節細部",
+                "origin": {
+                  "x": 0,
+                  "y": 0,
+                  "z": 11200
+                },
+                "axes": [
+                  {
+                    "count": 8,
+                    "step": {
+                      "x": 0,
+                      "y": 0,
+                      "z": 3500
+                    }
+                  }
+                ],
+                "members": [
+                  {
+                    "type": "surface-grid",
+                    "key": "ym",
+                    "name": "亮側雙窗中梃",
+                    "boundary": [
+                      {
+                        "x": -1892,
+                        "y": 2150,
+                        "z": 100
+                      },
+                      {
+                        "x": 1892,
+                        "y": 2150,
+                        "z": 100
+                      },
+                      {
+                        "x": 2200,
+                        "y": 2500,
+                        "z": 3380
+                      },
+                      {
+                        "x": -2200,
+                        "y": 2500,
+                        "z": 3380
+                      }
+                    ],
+                    "rows": 8,
+                    "columns": 20,
+                    "order": "cell-major",
+                    "motifs": [
+                      {
+                        "key": "frame",
+                        "name": "中梃亮邊",
+                        "fill": "#91B2AB",
+                        "vertices": [
+                          {
+                            "u": 0.488,
+                            "v": 0.265
+                          },
+                          {
+                            "u": 0.505,
+                            "v": 0.265
+                          },
+                          {
+                            "u": 0.505,
+                            "v": 0.955
+                          },
+                          {
+                            "u": 0.488,
+                            "v": 0.955
+                          }
+                        ]
+                      },
+                      {
+                        "key": "seal",
+                        "name": "中梃膠縫",
+                        "fill": "#376367",
+                        "vertices": [
+                          {
+                            "u": 0.505,
+                            "v": 0.265
+                          },
+                          {
+                            "u": 0.515,
+                            "v": 0.265
+                          },
+                          {
+                            "u": 0.515,
+                            "v": 0.955
+                          },
+                          {
+                            "u": 0.505,
+                            "v": 0.955
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "surface-grid",
+                    "key": "xm",
+                    "name": "陰側雙窗中梃",
+                    "boundary": [
+                      {
+                        "x": 2150,
+                        "y": 1892,
+                        "z": 100
+                      },
+                      {
+                        "x": 2150,
+                        "y": -1892,
+                        "z": 100
+                      },
+                      {
+                        "x": 2500,
+                        "y": -2200,
+                        "z": 3380
+                      },
+                      {
+                        "x": 2500,
+                        "y": 2200,
+                        "z": 3380
+                      }
+                    ],
+                    "rows": 8,
+                    "columns": 20,
+                    "order": "cell-major",
+                    "motifs": [
+                      {
+                        "key": "frame",
+                        "name": "中梃亮邊",
+                        "fill": "#6A9291",
+                        "vertices": [
+                          {
+                            "u": 0.488,
+                            "v": 0.265
+                          },
+                          {
+                            "u": 0.505,
+                            "v": 0.265
+                          },
+                          {
+                            "u": 0.505,
+                            "v": 0.955
+                          },
+                          {
+                            "u": 0.488,
+                            "v": 0.955
+                          }
+                        ]
+                      },
+                      {
+                        "key": "seal",
+                        "name": "中梃膠縫",
+                        "fill": "#244D59",
+                        "vertices": [
+                          {
+                            "u": 0.505,
+                            "v": 0.265
+                          },
+                          {
+                            "u": 0.515,
+                            "v": 0.265
+                          },
+                          {
+                            "u": 0.515,
+                            "v": 0.955
+                          },
+                          {
+                            "u": 0.505,
+                            "v": 0.955
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "projected-face",
+                    "key": "roof-shadow-y",
+                    "name": "退台亮側接觸陰影",
+                    "fill": "#668B86",
+                    "vertices": [
+                      {
+                        "x": -2150,
+                        "y": 2150,
+                        "z": 3502
+                      },
+                      {
+                        "x": 2150,
+                        "y": 2150,
+                        "z": 3502
+                      },
+                      {
+                        "x": 2250,
+                        "y": 2260,
+                        "z": 3502
+                      },
+                      {
+                        "x": -2050,
+                        "y": 2260,
+                        "z": 3502
+                      }
+                    ]
+                  },
+                  {
+                    "type": "projected-face",
+                    "key": "roof-shadow-x",
+                    "name": "退台陰側投影",
+                    "fill": "#527571",
+                    "vertices": [
+                      {
+                        "x": 2150,
+                        "y": -2150,
+                        "z": 3503
+                      },
+                      {
+                        "x": 2150,
+                        "y": 2150,
+                        "z": 3503
+                      },
+                      {
+                        "x": 2420,
+                        "y": 2390,
+                        "z": 3503
+                      },
+                      {
+                        "x": 2420,
+                        "y": -1910,
+                        "z": 3503
+                      }
+                    ]
+                  },
+                  {
+                    "type": "surface-grid",
+                    "key": "terrace-seams-y",
+                    "name": "退台亮側金屬拼縫",
+                    "boundary": [
+                      {
+                        "x": -2490,
+                        "y": 2320,
+                        "z": 3504
+                      },
+                      {
+                        "x": 2490,
+                        "y": 2320,
+                        "z": 3504
+                      },
+                      {
+                        "x": 2490,
+                        "y": 2480,
+                        "z": 3504
+                      },
+                      {
+                        "x": -2490,
+                        "y": 2480,
+                        "z": 3504
+                      }
+                    ],
+                    "rows": 1,
+                    "columns": 24,
+                    "order": "cell-major",
+                    "motifs": [
+                      {
+                        "key": "seam",
+                        "name": "金屬板拼縫",
+                        "fill": "#718E85",
+                        "vertices": [
+                          {
+                            "u": 0.02,
+                            "v": 0
+                          },
+                          {
+                            "u": 0.04,
+                            "v": 0
+                          },
+                          {
+                            "u": 0.04,
+                            "v": 1
+                          },
+                          {
+                            "u": 0.02,
+                            "v": 1
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "surface-grid",
+                    "key": "terrace-seams-x",
+                    "name": "退台陰側金屬拼縫",
+                    "boundary": [
+                      {
+                        "x": 2320,
+                        "y": -2490,
+                        "z": 3504
+                      },
+                      {
+                        "x": 2320,
+                        "y": 2490,
+                        "z": 3504
+                      },
+                      {
+                        "x": 2480,
+                        "y": 2490,
+                        "z": 3504
+                      },
+                      {
+                        "x": 2480,
+                        "y": -2490,
+                        "z": 3504
+                      }
+                    ],
+                    "rows": 1,
+                    "columns": 24,
+                    "order": "cell-major",
+                    "motifs": [
+                      {
+                        "key": "seam",
+                        "name": "金屬板拼縫",
+                        "fill": "#67867F",
+                        "vertices": [
+                          {
+                            "u": 0.02,
+                            "v": 0
+                          },
+                          {
+                            "u": 0.04,
+                            "v": 0
+                          },
+                          {
+                            "u": 0.04,
+                            "v": 1
+                          },
+                          {
+                            "u": 0.02,
+                            "v": 1
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      }
+    ],
+    "retain": {
+      "roundDishIds": {
+        "step": "dish",
+        "path": "/compositionIds"
+      },
+      "microIds": {
+        "step": "details",
+        "path": "/compositionIds"
+      },
+      "microSource": {
+        "step": "details",
+        "source": "input",
+        "path": "/draft"
+      },
+      "microTargets": {
+        "step": "details",
+        "path": "/createdTargets"
+      }
+    },
+    "delivery": {
+      "fields": {
+        "dish": {
+          "step": "dish",
+          "path": "/compositionIds"
+        },
+        "detail": {
+          "step": "details",
+          "path": "/compositionIds"
+        }
+      }
+    }
+  },
+  "details": {
+    "inspection": "defer",
+    "operations": [
+      {
+        "id": "dish",
+        "name": "design_workflow.prepare_and_apply_design",
+        "arguments": {
+          "parentId": "design-0fced505-09d6-44da-8f19-2a2713648c52-0",
+          "inspection": "defer",
+          "message": "修正塔尖圓形金屬托盤",
+          "repair": {
+            "draftId": "46a4d191-4a0b-458a-9d90-f7c6afa37057",
+            "replacements": [
+              {
+                "path": "/children/0/vertices",
+                "value": [
+                  {
+                    "x": 226,
+                    "y": -226,
+                    "z": 46000
+                  },
+                  {
+                    "x": 320,
+                    "y": 0,
+                    "z": 46000
+                  },
+                  {
+                    "x": 670,
+                    "y": 0,
+                    "z": 46500
+                  },
+                  {
+                    "x": 473.1875,
+                    "y": -473.1875,
+                    "z": 46500
+                  }
+                ]
+              },
+              {
+                "path": "/children/1/vertices",
+                "value": [
+                  {
+                    "x": 320,
+                    "y": 0,
+                    "z": 46000
+                  },
+                  {
+                    "x": 226,
+                    "y": 226,
+                    "z": 46000
+                  },
+                  {
+                    "x": 473.1875,
+                    "y": 473.1875,
+                    "z": 46500
+                  },
+                  {
+                    "x": 670,
+                    "y": 0,
+                    "z": 46500
+                  }
+                ]
+              },
+              {
+                "path": "/children/2/vertices",
+                "value": [
+                  {
+                    "x": 226,
+                    "y": 226,
+                    "z": 46000
+                  },
+                  {
+                    "x": 0,
+                    "y": 320,
+                    "z": 46000
+                  },
+                  {
+                    "x": 0,
+                    "y": 670,
+                    "z": 46500
+                  },
+                  {
+                    "x": 473.1875,
+                    "y": 473.1875,
+                    "z": 46500
+                  }
+                ]
+              },
+              {
+                "path": "/children/3/vertices",
+                "value": [
+                  {
+                    "x": 0,
+                    "y": 320,
+                    "z": 46000
+                  },
+                  {
+                    "x": -226,
+                    "y": 226,
+                    "z": 46000
+                  },
+                  {
+                    "x": -473.1875,
+                    "y": 473.1875,
+                    "z": 46500
+                  },
+                  {
+                    "x": 0,
+                    "y": 670,
+                    "z": 46500
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "name": "api_hierarchy_moveElementsRelative",
+        "arguments": {
+          "request": {
+            "elementIds": {
+              "kind": "step",
+              "step": "dish",
+              "path": "/compositionIds"
+            },
+            "anchorId": "design-5f73682c-b176-41f2-b9c5-733df429fdc7-0",
+            "placement": "before"
+          }
+        }
+      },
+      {
+        "id": "details",
+        "name": "design_workflow.prepare_and_apply_design",
+        "arguments": {
+          "parentId": {
+            "kind": "named",
+            "name": "taipeiRoot",
+            "path": ""
+          },
+          "inspection": "defer",
+          "includeTargets": true,
+          "message": "主塔雙窗細框、退台接縫與遮蔭細節",
+          "draft": {
+            "type": "group",
+            "name": "帷幕牆微細構造與退台陰影",
+            "projection": {
+              "azimuth": 35,
+              "elevation": 28,
+              "scale": 1,
+              "originX": 8000,
+              "originY": 45000
+            },
+            "children": [
+              {
+                "type": "pattern",
+                "key": "micro",
+                "name": "八節細部",
+                "origin": {
+                  "x": 0,
+                  "y": 0,
+                  "z": 11200
+                },
+                "axes": [
+                  {
+                    "count": 8,
+                    "step": {
+                      "x": 0,
+                      "y": 0,
+                      "z": 3500
+                    }
+                  }
+                ],
+                "members": [
+                  {
+                    "type": "surface-grid",
+                    "key": "ym",
+                    "name": "亮側雙窗中梃",
+                    "boundary": [
+                      {
+                        "x": -1892,
+                        "y": 2150,
+                        "z": 100
+                      },
+                      {
+                        "x": 1892,
+                        "y": 2150,
+                        "z": 100
+                      },
+                      {
+                        "x": 2200,
+                        "y": 2500,
+                        "z": 3380
+                      },
+                      {
+                        "x": -2200,
+                        "y": 2500,
+                        "z": 3380
+                      }
+                    ],
+                    "rows": 8,
+                    "columns": 20,
+                    "order": "cell-major",
+                    "motifs": [
+                      {
+                        "key": "frame",
+                        "name": "中梃亮邊",
+                        "fill": "#91B2AB",
+                        "vertices": [
+                          {
+                            "u": 0.488,
+                            "v": 0.265
+                          },
+                          {
+                            "u": 0.505,
+                            "v": 0.265
+                          },
+                          {
+                            "u": 0.505,
+                            "v": 0.955
+                          },
+                          {
+                            "u": 0.488,
+                            "v": 0.955
+                          }
+                        ]
+                      },
+                      {
+                        "key": "seal",
+                        "name": "中梃膠縫",
+                        "fill": "#376367",
+                        "vertices": [
+                          {
+                            "u": 0.505,
+                            "v": 0.265
+                          },
+                          {
+                            "u": 0.515,
+                            "v": 0.265
+                          },
+                          {
+                            "u": 0.515,
+                            "v": 0.955
+                          },
+                          {
+                            "u": 0.505,
+                            "v": 0.955
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "surface-grid",
+                    "key": "xm",
+                    "name": "陰側雙窗中梃",
+                    "boundary": [
+                      {
+                        "x": 2150,
+                        "y": 1892,
+                        "z": 100
+                      },
+                      {
+                        "x": 2150,
+                        "y": -1892,
+                        "z": 100
+                      },
+                      {
+                        "x": 2500,
+                        "y": -2200,
+                        "z": 3380
+                      },
+                      {
+                        "x": 2500,
+                        "y": 2200,
+                        "z": 3380
+                      }
+                    ],
+                    "rows": 8,
+                    "columns": 20,
+                    "order": "cell-major",
+                    "motifs": [
+                      {
+                        "key": "frame",
+                        "name": "中梃亮邊",
+                        "fill": "#6A9291",
+                        "vertices": [
+                          {
+                            "u": 0.488,
+                            "v": 0.265
+                          },
+                          {
+                            "u": 0.505,
+                            "v": 0.265
+                          },
+                          {
+                            "u": 0.505,
+                            "v": 0.955
+                          },
+                          {
+                            "u": 0.488,
+                            "v": 0.955
+                          }
+                        ]
+                      },
+                      {
+                        "key": "seal",
+                        "name": "中梃膠縫",
+                        "fill": "#244D59",
+                        "vertices": [
+                          {
+                            "u": 0.505,
+                            "v": 0.265
+                          },
+                          {
+                            "u": 0.515,
+                            "v": 0.265
+                          },
+                          {
+                            "u": 0.515,
+                            "v": 0.955
+                          },
+                          {
+                            "u": 0.505,
+                            "v": 0.955
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "projected-face",
+                    "key": "roof-shadow-y",
+                    "name": "退台亮側接觸陰影",
+                    "fill": "#668B86",
+                    "vertices": [
+                      {
+                        "x": -2150,
+                        "y": 2150,
+                        "z": 3502
+                      },
+                      {
+                        "x": 2150,
+                        "y": 2150,
+                        "z": 3502
+                      },
+                      {
+                        "x": 2250,
+                        "y": 2260,
+                        "z": 3502
+                      },
+                      {
+                        "x": -2050,
+                        "y": 2260,
+                        "z": 3502
+                      }
+                    ]
+                  },
+                  {
+                    "type": "projected-face",
+                    "key": "roof-shadow-x",
+                    "name": "退台陰側投影",
+                    "fill": "#527571",
+                    "vertices": [
+                      {
+                        "x": 2150,
+                        "y": -2150,
+                        "z": 3503
+                      },
+                      {
+                        "x": 2150,
+                        "y": 2150,
+                        "z": 3503
+                      },
+                      {
+                        "x": 2420,
+                        "y": 2390,
+                        "z": 3503
+                      },
+                      {
+                        "x": 2420,
+                        "y": -1910,
+                        "z": 3503
+                      }
+                    ]
+                  },
+                  {
+                    "type": "surface-grid",
+                    "key": "terrace-seams-y",
+                    "name": "退台亮側金屬拼縫",
+                    "boundary": [
+                      {
+                        "x": -2490,
+                        "y": 2320,
+                        "z": 3504
+                      },
+                      {
+                        "x": 2490,
+                        "y": 2320,
+                        "z": 3504
+                      },
+                      {
+                        "x": 2490,
+                        "y": 2480,
+                        "z": 3504
+                      },
+                      {
+                        "x": -2490,
+                        "y": 2480,
+                        "z": 3504
+                      }
+                    ],
+                    "rows": 1,
+                    "columns": 24,
+                    "order": "cell-major",
+                    "motifs": [
+                      {
+                        "key": "seam",
+                        "name": "金屬板拼縫",
+                        "fill": "#718E85",
+                        "vertices": [
+                          {
+                            "u": 0.02,
+                            "v": 0
+                          },
+                          {
+                            "u": 0.04,
+                            "v": 0
+                          },
+                          {
+                            "u": 0.04,
+                            "v": 1
+                          },
+                          {
+                            "u": 0.02,
+                            "v": 1
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "surface-grid",
+                    "key": "terrace-seams-x",
+                    "name": "退台陰側金屬拼縫",
+                    "boundary": [
+                      {
+                        "x": 2320,
+                        "y": -2490,
+                        "z": 3504
+                      },
+                      {
+                        "x": 2320,
+                        "y": 2490,
+                        "z": 3504
+                      },
+                      {
+                        "x": 2480,
+                        "y": 2490,
+                        "z": 3504
+                      },
+                      {
+                        "x": 2480,
+                        "y": -2490,
+                        "z": 3504
+                      }
+                    ],
+                    "rows": 1,
+                    "columns": 24,
+                    "order": "cell-major",
+                    "motifs": [
+                      {
+                        "key": "seam",
+                        "name": "金屬板拼縫",
+                        "fill": "#67867F",
+                        "vertices": [
+                          {
+                            "u": 0.02,
+                            "v": 0
+                          },
+                          {
+                            "u": 0.04,
+                            "v": 0
+                          },
+                          {
+                            "u": 0.04,
+                            "v": 1
+                          },
+                          {
+                            "u": 0.02,
+                            "v": 1
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      }
+    ],
+    "retain": {
+      "roundDishIds": {
+        "step": "dish",
+        "path": "/compositionIds"
+      },
+      "microIds": {
+        "step": "details",
+        "path": "/compositionIds"
+      },
+      "microSource": {
+        "step": "details",
+        "source": "input",
+        "path": "/draft"
+      },
+      "microTargets": {
+        "step": "details",
+        "path": "/createdTargets"
+      }
+    },
+    "delivery": {
+      "fields": {
+        "dish": {
+          "step": "dish",
+          "path": "/compositionIds"
+        },
+        "detail": {
+          "step": "details",
+          "path": "/compositionIds"
+        }
+      }
+    }
+  },
+  "review": {
+    "operations": [
+      {
+        "id": "visual",
+        "name": "design_operations.review_drawing",
+        "arguments": {
+          "phase": "visual",
+          "final": false,
+          "inspections": [
+            {
+              "elementId": "design-0fced505-09d6-44da-8f19-2a2713648c52-0",
+              "view": "overview",
+              "checks": [
+                {
+                  "criterionId": "whole",
+                  "referenceUses": [
+                    {
+                      "requestId": "bba3e59e-51eb-4df1-8594-95fa1b447b48",
+                      "referenceId": "reference:a533706b71fa39e2e12f1aa23b0c658af0e60df9f7fefec8ea244fe9670b40d2",
+                      "useId": "form-photo",
+                      "revision": 1,
+                      "requirementRevision": 1
+                    }
+                  ]
+                },
+                {
+                  "criterionId": "materials"
+                },
+                {
+                  "criterionId": "detail",
+                  "unitId": "base"
+                },
+                {
+                  "criterionId": "detail",
+                  "unitId": "tiers",
+                  "supersedes": {
+                    "revision": 1,
+                    "reason": "擴充到含新增微細窗框、退台與獨立裝飾圖層的完整塔身。"
+                  }
+                },
+                {
+                  "criterionId": "detail",
+                  "unitId": "crown",
+                  "supersedes": {
+                    "revision": 1,
+                    "reason": "擴充到含新圓形托盤的完整冠頂。"
+                  }
+                }
+              ]
+            },
+            {
+              "elementId": "design-0fced505-09d6-44da-8f19-2a2713648c52-0",
+              "view": "detail",
+              "region": {
+                "x": 6100,
+                "y": 36100,
+                "width": 1024,
+                "height": 1024
+              },
+              "checks": [
+                {
+                  "criterionId": "detail",
+                  "unitId": "base"
+                }
+              ]
+            },
+            {
+              "elementId": "design-0fced505-09d6-44da-8f19-2a2713648c52-0",
+              "view": "detail",
+              "region": {
+                "x": 5800,
+                "y": 45400,
+                "width": 1024,
+                "height": 1024
+              },
+              "checks": [
+                {
+                  "criterionId": "detail",
+                  "unitId": "base"
+                }
+              ]
+            },
+            {
+              "elementId": "design-0fced505-09d6-44da-8f19-2a2713648c52-0",
+              "view": "detail",
+              "region": {
+                "x": 6000,
+                "y": 23300,
+                "width": 1024,
+                "height": 1024
+              },
+              "checks": [
+                {
+                  "criterionId": "detail",
+                  "unitId": "tiers"
+                }
+              ]
+            },
+            {
+              "elementId": "design-0fced505-09d6-44da-8f19-2a2713648c52-0",
+              "view": "detail",
+              "region": {
+                "x": 8000,
+                "y": 24000,
+                "width": 1024,
+                "height": 1024
+              },
+              "checks": [
+                {
+                  "criterionId": "detail",
+                  "unitId": "tiers"
+                }
+              ]
+            },
+            {
+              "elementId": "design-0fced505-09d6-44da-8f19-2a2713648c52-0",
+              "view": "detail",
+              "region": {
+                "x": 6900,
+                "y": 7000,
+                "width": 1024,
+                "height": 1024
+              },
+              "checks": [
+                {
+                  "criterionId": "detail",
+                  "unitId": "crown"
+                }
+              ]
+            },
+            {
+              "elementId": "design-0fced505-09d6-44da-8f19-2a2713648c52-0",
+              "view": "detail",
+              "region": {
+                "x": 7500,
+                "y": 3500,
+                "width": 1024,
+                "height": 1024
+              },
+              "checks": [
+                {
+                  "criterionId": "detail",
+                  "unitId": "crown"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "id": "data",
+        "name": "design_operations.review_drawing",
+        "arguments": {
+          "phase": "visual",
+          "final": false,
+          "dataQueries": [
+            {
+              "criterionId": "scale",
+              "elementIds": [
+                "design-0fced505-09d6-44da-8f19-2a2713648c52-0",
+                "design-2418db44-94fb-480a-b61b-109bae3d885a-0",
+                "design-5f73682c-b176-41f2-b9c5-733df429fdc7-0"
+              ],
+              "fields": [
+                "x",
+                "y",
+                "width",
+                "height"
+              ]
+            },
+            {
+              "criterionId": "editable",
+              "query": {
+                "scope": "region",
+                "bounds": {
+                  "x": 6000,
+                  "y": 23300,
+                  "width": 400,
+                  "height": 400
+                },
+                "filter": {
+                  "type": "Vector"
+                }
+              },
+              "fields": []
+            }
+          ]
+        }
+      }
+    ],
+    "delivery": {
+      "fields": {
+        "visual": {
+          "step": "visual",
+          "path": ""
+        },
+        "data": {
+          "step": "data",
+          "path": ""
+        }
+      }
+    }
+  },
+  "replacementOutput": {
+    "saved": [],
+    "completed": [
+      "step-1"
+    ],
+    "stopped": [
+      "dish"
+    ],
+    "issues": [
+      "Projected face bowl-one.vertices: Invalid design construction: nonplanar face. Maximum deviation 0.8921115509057245 exceeds tolerance 0.000007058413419459079 in world units. Keep every vertex on the intended plane; split genuinely different planes into separate faces. Reuse the shared camera."
+    ],
+    "toolOutcome": {
+      "status": "failed",
+      "settlement": "partial",
+      "issues": []
+    },
+    "failure": {
+      "execution": {
+        "status": "failed",
+        "settlement": "partial",
+        "calls": [
+          {
+            "callId": "0d6e7bbd-1315-47d0-8379-bd21c8e010e4",
+            "stepId": "step-1",
+            "name": "host_operations.execute_design",
+            "revision": 3,
+            "status": "success",
+            "settlement": "completed"
+          },
+          {
+            "callId": "4113ebac-f564-4cf3-8e32-360c380f8bfc",
+            "stepId": "dish",
+            "name": "design_workflow.prepare_and_apply_design",
+            "revision": 7,
+            "status": "failed",
+            "settlement": "not-started"
+          },
+          {
+            "callId": "a2420188-932f-45ec-a8ae-35c099af8d76",
+            "name": "design-sequence",
+            "revision": 1,
+            "status": "failed",
+            "settlement": "partial"
+          }
+        ],
+        "recovery": [
+          {
+            "callId": "0d6e7bbd-1315-47d0-8379-bd21c8e010e4",
+            "name": "host_operations.execute_design",
+            "revision": 3,
+            "status": "success",
+            "settlement": "completed",
+            "value": {
+              "actionResults": [
+                {
+                  "actionId": "1f5b75a7-d838-4aab-ab49-a1c70600b098",
+                  "actionName": "api_element_deleteElements",
+                  "result": {
+                    "status": "complete",
+                    "value": {
+                      "count": 3
+                    },
+                    "mutationScope": {
+                      "complete": true,
+                      "elementCount": 1,
+                      "removedElementCount": 3
+                    },
+                    "retained": {
+                      "snapshotId": "1ad9216e-e720-446d-b532-fd951aba3201",
+                      "leaseId": "7be89894-e17b-4e65-91a0-b09d82e4ad74",
+                      "total": 0
+                    },
+                    "toolOutcome": {
+                      "status": "success",
+                      "settlement": "completed"
+                    }
+                  }
+                },
+                {
+                  "actionId": "e0a7b3ca-c9b6-4e96-aeaa-e94ffa806657",
+                  "actionName": "inspect_drawing",
+                  "result": {
+                    "available": true,
+                    "image": {
+                      "dataUrl": "[redacted]",
+                      "width": 177,
+                      "height": 1024
+                    },
+                    "toolOutcome": {
+                      "status": "success",
+                      "settlement": "completed"
+                    },
+                    "inspectionId": "0dfac2af-7b3d-42a4-bd18-3df6b6cbb1a5",
+                    "revision": 5
+                  }
+                }
+              ],
+              "inspectionDeferred": false,
+              "measurementDeferred": false,
+              "checks": {
+                "countsScope": "selected-checks",
+                "counts": {
+                  "pass": 1,
+                  "fail": 0,
+                  "unverified": 0,
+                  "stale": 0
+                }
+              },
+              "batchSummary": {
+                "operationCount": 1,
+                "actionCount": 1,
+                "followupActionCount": 1
+              },
+              "toolOutcome": {
+                "status": "success",
+                "settlement": "completed",
+                "issues": []
+              }
+            }
+          },
+          {
+            "callId": "4113ebac-f564-4cf3-8e32-360c380f8bfc",
+            "name": "design_workflow.prepare_and_apply_design",
+            "revision": 7,
+            "status": "failed",
+            "settlement": "not-started",
+            "value": {
+              "available": false,
+              "settlement": "not-started",
+              "recovery": "correct_input",
+              "draftId": "46a4d191-4a0b-458a-9d90-f7c6afa37057",
+              "retainedDraft": {
+                "draftId": "46a4d191-4a0b-458a-9d90-f7c6afa37057",
+                "revision": "46a4d191-4a0b-458a-9d90-f7c6afa37057",
+                "sourceBytes": 1367
+              },
+              "geometryIssue": {
+                "code": "NONPLANAR_FACE",
+                "key": "bowl-one",
+                "path": "/children/0/vertices",
+                "deviation": 0.8921115509057245,
+                "tolerance": 7.058413419459079e-06,
+                "unit": "world"
+              },
+              "repairGuide": {
+                "tool": "prepare_and_apply_design",
+                "arguments": {
+                  "parentId": "design-0fced505-09d6-44da-8f19-2a2713648c52-0",
+                  "inspection": "defer",
+                  "message": "修正塔尖圓形金屬托盤",
+                  "repair": {
+                    "draftId": "46a4d191-4a0b-458a-9d90-f7c6afa37057",
+                    "replacements": [
+                      {
+                        "path": "/children/0/vertices"
+                      }
+                    ]
+                  }
+                },
+                "instructions": "[redacted]"
+              },
+              "message": "Projected face bowl-one.vertices: Invalid design construction: nonplanar face. Maximum deviation 0.8921115509057245 exceeds tolerance 0.000007058413419459079 in world units. Keep every vertex on the intended plane; split genuinely different planes into separate faces. Reuse the shared camera.",
+              "toolOutcome": {
+                "status": "failed",
+                "settlement": "not-started",
+                "issues": [
+                  {
+                    "code": "RESULT_UNAVAILABLE",
+                    "message": "Projected face bowl-one.vertices: Invalid design construction: nonplanar face. Maximum deviation 0.8921115509057245 exceeds tolerance 0.000007058413419459079 in world units. Keep every vertex on the intended plane; split genuinely different planes into separate faces. Reuse the shared camera."
+                  }
+                ]
+              },
+              "completedSteps": [],
+              "failedStep": "prepare_design"
+            }
+          }
+        ],
+        "issues": [
+          "Projected face bowl-one.vertices: Invalid design construction: nonplanar face. Maximum deviation 0.8921115509057245 exceeds tolerance 0.000007058413419459079 in world units. Keep every vertex on the intended plane; split genuinely different planes into separate faces. Reuse the shared camera."
+        ]
+      }
+    }
+  },
+  "reviewOwner": {
+    "status": "failed",
+    "settlement": "not-started",
+    "value": {
+      "available": false,
+      "code": "PREPARATION_REJECTED",
+      "stage": "admission",
+      "settlement": "not-started",
+      "recovery": "correct_input",
+      "executionResult": {
+        "batches": []
+      },
+      "recoverable": true,
+      "message": "Conflicting source uses or supersession for one capture check.",
+      "toolOutcome": {
+        "status": "failed",
+        "settlement": "not-started",
+        "issues": [
+          {
+            "code": "PREPARATION_REJECTED",
+            "message": "Conflicting source uses or supersession for one capture check."
+          }
+        ]
+      }
+    },
+    "calls": [],
+    "issues": [
+      "Conflicting source uses or supersession for one capture check."
+    ]
+  }
+}

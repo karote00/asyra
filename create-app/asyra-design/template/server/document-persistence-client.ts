@@ -46,14 +46,17 @@ export const createHttpDocumentPersistenceClient = ({
   fetchImplementation
 }: HttpDocumentPersistenceClientOptions): HttpDocumentPersistenceClient => {
   const base = new URL(baseURL)
+
   if (base.protocol !== 'http:' && base.protocol !== 'https:') {
     throw new Error(
       '[document-persistence-client] backend URL must use http or https'
     )
   }
+
   const send =
     fetchImplementation ??
     (globalThis as unknown as { readonly fetch: PersistenceFetch }).fetch
+
   if (typeof send !== 'function') {
     throw new Error(
       '[document-persistence-client] runtime fetch implementation is required'
@@ -71,6 +74,7 @@ export const createHttpDocumentPersistenceClient = ({
         headers: { accept: 'application/json' },
         ...(signal ? { signal } : {})
       })
+
       if (response.status === 404) {
         return Object.freeze({
           checkpoint: null,
@@ -78,12 +82,15 @@ export const createHttpDocumentPersistenceClient = ({
           documentGeneration: 0
         })
       }
+
       if (!response.ok) {
         throw new Error(
           `[document-persistence-client] backend rejected checkpoint read (${response.status})`
         )
       }
+
       const checkpoint = await response.json()
+
       if (
         !isRecord(checkpoint) ||
         !Object.prototype.hasOwnProperty.call(checkpoint, 'checkpoint') ||
@@ -100,12 +107,14 @@ export const createHttpDocumentPersistenceClient = ({
           '[document-persistence-client] backend checkpoint is invalid'
         )
       }
+
       return Object.freeze({
         checkpoint: checkpoint.checkpoint,
         durableSequence: Number(checkpoint.durableSequence),
         documentGeneration: Number(checkpoint.documentGeneration ?? 0)
       })
     },
+
     async resetCheckpoint(documentId) {
       const endpoint = new URL(
         `/api/documents/${encodeURIComponent(documentId)}`,
@@ -115,12 +124,15 @@ export const createHttpDocumentPersistenceClient = ({
         method: 'DELETE',
         headers: { accept: 'application/json' }
       })
+
       if (!response.ok) {
         throw new Error(
           `[document-persistence-client] backend rejected document Reset (${response.status})`
         )
       }
+
       const reset = await response.json()
+
       if (
         !isRecord(reset) ||
         !Number.isSafeInteger(reset.documentGeneration) ||
@@ -130,8 +142,10 @@ export const createHttpDocumentPersistenceClient = ({
           '[document-persistence-client] backend Reset generation is invalid'
         )
       }
+
       return Number(reset.documentGeneration)
     },
+
     async sendBatch(batch) {
       const endpoint = new URL(
         `/api/documents/${encodeURIComponent(batch.documentId)}/persistence-batches`,
@@ -145,17 +159,21 @@ export const createHttpDocumentPersistenceClient = ({
         },
         body: JSON.stringify(batch)
       })
+
       if (!response.ok) {
         const rejection = await response.json().catch(() => undefined)
         const detail =
           isRecord(rejection) && typeof rejection.error === 'string'
             ? `: ${rejection.error}`
             : ''
+
         throw new Error(
           `[document-persistence-client] backend rejected persistence batch (${response.status})${detail}`
         )
       }
+
       const acknowledgement = await response.json()
+
       if (
         !isRecord(acknowledgement) ||
         !Number.isSafeInteger(acknowledgement.durableSequence) ||
@@ -165,6 +183,7 @@ export const createHttpDocumentPersistenceClient = ({
           '[document-persistence-client] backend durable acknowledgement is invalid'
         )
       }
+
       return Object.freeze({
         durableSequence: Number(acknowledgement.durableSequence)
       })

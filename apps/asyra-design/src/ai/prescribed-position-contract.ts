@@ -36,6 +36,14 @@ export const prescribedPositionsSchema = {
   }
 }
 export const prescribedPositionInputSchema = {
+  'x-design-discovery': {
+    purpose:
+      'Apply mechanically prescribed positions from inspected attachment evidence.',
+    boundaries: [
+      'Requires current inspection evidence and attachment evidence for each target.',
+      'Coordinates must be nonnegative and no greater than 100000; not an unrestricted position setter.'
+    ]
+  },
   type: 'object',
   additionalProperties: false,
   required: ['evidence', 'positions'],

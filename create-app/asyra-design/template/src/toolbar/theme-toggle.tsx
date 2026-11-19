@@ -4,6 +4,7 @@ import { Button } from '@asyra/design-system'
 const ThemeToggle: React.FC = () => {
   const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
     const theme = localStorage.getItem('theme')
+
     if (!theme) {
       return true
     }

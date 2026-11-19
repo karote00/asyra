@@ -117,6 +117,7 @@ describe('Group command eligibility and intent', () => {
       flattenedIds,
       elementDataMap
     )
+
     expect(createGroupCommandRequest('ungroup', ungroupState)).toEqual({
       command: 'ungroup',
       elementIds: ['group-1']

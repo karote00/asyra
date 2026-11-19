@@ -87,12 +87,14 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('@asyra/core', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@asyra/core')>()),
+
   defineFeature: (
     name: string,
     _event: unknown,
     definition: CapturedSessionDefinition
   ) => {
     mocks.definitions.set(name, definition)
+
     return { api: {}, dispose: vi.fn() }
   }
 }))
@@ -319,6 +321,7 @@ describe('Pen Tool transient preview cancellation', () => {
       hasAppliedCurveFrame: false,
       runtimeBefore
     }
+
     mocks.getSystemContextSnapshot
       .mockReturnValueOnce({ mousePosition: { x: 80, y: 90 } })
       .mockReturnValueOnce({ mousePosition: { x: 90, y: 100 } })

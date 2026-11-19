@@ -1,4 +1,4 @@
-import type { Page } from '@playwright/test'
+import { expect, type Page } from '@playwright/test'
 
 /** Test-local continuity and phase evidence; never changes product state. */
 interface Participant {
@@ -297,46 +297,67 @@ export async function createExecutionEvidence(options: {
   }
 }
 
-/**
- * Perform an Undo operation
- */
-export async function undo(page: Page, assertContinuous?: () => Promise<void>) {
+/** Observe canonical replay settlement; elapsed time is not completion. */
+const readHistoryState = (page: Page) =>
+  page.evaluate(async () => {
+    const { core } = await import('../src/testing/runtime-access')
+
+    return {
+      depth: core.getUndoHistoryDepth(),
+      replaying: core.isInUndoRedo()
+    }
+  })
+
+/** Dispatch real input; held-replay tests own its subsequent settlement. */
+export async function dispatchHistoryShortcut(
+  page: Page,
+  direction: 'undo' | 'redo',
+  assertContinuous?: () => Promise<void>
+) {
   await assertContinuous?.()
-  // Click on the toolbar area (neutral zone) to gain focus without triggering tools
-  const toolbar = page.getByTestId('toolbar')
-
-  await toolbar.click({ position: { x: 5, y: 5 } })
-
+  // A real user activates the target tab before a keyboard interaction.
+  // Focus emulation does not guarantee that background painting is scheduled.
+  await page.bringToFront()
+  // The toolbar padding blurs editable fields without invoking a tool.
+  await page.getByTestId('toolbar').click({ position: { x: 5, y: 5 } })
   await assertContinuous?.()
+  const before = await readHistoryState(page)
 
-  // Press the shortcut
-  await page.keyboard.down('Meta')
-  await page.keyboard.press('Z')
-  await page.keyboard.up('Meta')
-  await page.waitForTimeout(500)
+  await page.keyboard.press(
+    direction === 'undo' ? 'ControlOrMeta+z' : 'ControlOrMeta+Shift+z'
+  )
+
+  return before
+}
+
+/** Perform one history shortcut through the real UI and await its result. */
+async function replayHistory(
+  page: Page,
+  direction: 'undo' | 'redo',
+  assertContinuous?: () => Promise<void>
+) {
+  const before = await dispatchHistoryShortcut(
+    page,
+    direction,
+    assertContinuous
+  )
+
+  await expect
+    .poll(() => readHistoryState(page))
+    .toEqual({
+      depth:
+        direction === 'undo' ? Math.max(0, before.depth - 1) : before.depth + 1,
+      replaying: false
+    })
   await assertContinuous?.()
 }
 
-/**
- * Perform a Redo operation
- */
+export async function undo(page: Page, assertContinuous?: () => Promise<void>) {
+  await replayHistory(page, 'undo', assertContinuous)
+}
+
 export async function redo(page: Page, assertContinuous?: () => Promise<void>) {
-  await assertContinuous?.()
-  // Click on the toolbar area (neutral zone) to gain focus without triggering tools
-  const toolbar = page.getByTestId('toolbar')
-
-  await toolbar.click({ position: { x: 5, y: 5 } })
-
-  await assertContinuous?.()
-
-  // Press the shortcut
-  await page.keyboard.down('Meta')
-  await page.keyboard.down('Shift')
-  await page.keyboard.press('Z')
-  await page.keyboard.up('Shift')
-  await page.keyboard.up('Meta')
-  await page.waitForTimeout(1000) // Extra time for redo to process
-  await assertContinuous?.()
+  await replayHistory(page, 'redo', assertContinuous)
 }
 
 /** Observe a live document through public APIs without changing its history. */

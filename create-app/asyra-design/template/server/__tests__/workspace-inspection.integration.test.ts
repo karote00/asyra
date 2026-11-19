@@ -36,6 +36,7 @@ it('uses actual inspection owners through native review and retries only failed 
   let changed: (() => void) | undefined
   const evidence = createInspectionEvidence((listener) => {
     changed = listener
+
     return () => undefined
   })
   const targets = new Map([
@@ -57,9 +58,11 @@ it('uses actual inspection owners through native review and retries only failed 
       { id: 'part-b', type: 'group', parentId: 'sheet-a', children: [] }
     ]
   ])
+
   core.getElementData = vi.fn((id) => targets.get(id) as never)
   core.getElementMetadata = vi.fn((id) => {
     const target = targets.get(id)
+
     return target
       ? {
           id: target.id,
@@ -74,8 +77,12 @@ it('uses actual inspection owners through native review and retries only failed 
   })
   core.getCurrentWorkspaceId = () => 'sheet-a'
   let failure = 'part-b'
+
   core.captureElementSnapshot = vi.fn((id) => {
-    if (id === failure) throw new Error('Injected renderer failure')
+    if (id === failure) {
+      throw new Error('Injected renderer failure')
+    }
+
     return {
       type: 'snapshot',
       width: 2,
@@ -92,14 +99,22 @@ it('uses actual inspection owners through native review and retries only failed 
   const dispatched: string[] = []
   const tools = createLocalOperationTools(
     actions,
-    { modelActions: (value) => value, resolveBatch: (value) => value },
+    {
+      modelActions: (value) => value,
+
+      resolveBatch: (value) => value
+    },
     async (batch) => ({
       context: {},
       actionResults: await Promise.all(
         batch.actions.map(async (action) => {
           dispatched.push(action.name)
           const definition = actions.find((entry) => entry.name === action.name)
-          if (!definition) throw new Error('Unexpected action: ' + action.name)
+
+          if (!definition) {
+            throw new Error('Unexpected action: ' + action.name)
+          }
+
           return {
             actionId: action.id,
             actionName: action.name,
@@ -118,22 +133,34 @@ it('uses actual inspection owners through native review and retries only failed 
         }))
     }
   )
+
   const call = async (name: string, input: unknown) => {
     const definition = tools.definitions.find((entry) => entry.name === name)
-    if (!definition) throw new Error('Missing tool ' + name)
+
+    if (!definition) {
+      throw new Error('Missing tool ' + name)
+    }
+
     const reply = await invokeLocalTool(tools, definition, input, signal)
+
     return JSON.parse(reply.text)
   }
+
   try {
     const guide = tools.definitions.find(
       (entry) => entry.name === 'review_drawing'
     )
-    if (!guide) throw new Error('Missing review tool')
+
+    if (!guide) {
+      throw new Error('Missing review tool')
+    }
+
     expect(guide.description).toMatch(/workspace.*overview/i)
     const delivered = await call('describe_design_apis', {
       names: ['review_drawing'],
       schemaPaths: ['/properties/inspections/items/properties/elementId']
     })
+
     expect(JSON.stringify(delivered)).toContain('actual current workspace ID')
     await call('define_design_criteria', {
       method: 'Inspect independent roots',
@@ -156,8 +183,10 @@ it('uses actual inspection owners through native review and retries only failed 
       }
     })
     const input = structuredClone(fixture.input)
+
     input.inspections[0].elementId = 'sheet-a'
     const overview = await call('review_drawing', input)
+
     expect(overview).toMatchObject({
       accepted: false,
       reviewOperation: 'capture',
@@ -172,6 +201,7 @@ it('uses actual inspection owners through native review and retries only failed 
         { elementId: 'part-b', checks: [{ criterionId: 'overall' }] }
       ]
     })
+
     expect(failed).toMatchObject({
       available: false,
       accepted: false,
@@ -187,6 +217,7 @@ it('uses actual inspection owners through native review and retries only failed 
         (entry: { inspection: unknown }) => entry.inspection
       )
     })
+
     expect(mixed.toolOutcome).toMatchObject({
       status: 'partial',
       settlement: 'completed'
@@ -201,6 +232,7 @@ it('uses actual inspection owners through native review and retries only failed 
         (entry: { inspection: unknown }) => entry.inspection
       )
     })
+
     expect(recovered.toolOutcome).toMatchObject({
       status: 'success',
       settlement: 'completed'
@@ -217,6 +249,7 @@ it('uses actual inspection owners through native review and retries only failed 
       )
     ).toBe(true)
     const standalone = actions[0]
+
     expect(
       await standalone.execute({ elementId: 'missing' }, { signal } as never)
     ).toMatchObject({
@@ -233,6 +266,7 @@ it('uses actual inspection owners through native review and retries only failed 
         final: false,
         inspections: [{ ...inspection, checks: [{ criterionId: 'overall' }] }]
       })
+
       expect(unavailable).toMatchObject({
         available: false,
         accepted: false,
@@ -241,12 +275,16 @@ it('uses actual inspection owners through native review and retries only failed 
       expect(unavailable.failedInspections[0].code).toBeTruthy()
       expect(unavailable.inspectionIds).toEqual([])
     }
+
     const prior = overview.actionResults[0].result.evidence
+
     changed?.()
     expect(evidence.validate(prior).current).toBe(false)
     const controller = new AbortController()
+
     controller.abort()
     const before = vi.mocked(core.captureElementSnapshot).mock.calls.length
+
     await expect(
       standalone.execute({ elementId: 'sheet-a' }, {
         signal: controller.signal
@@ -299,6 +337,7 @@ it.each([2, 2310, 6163])(
         })),
         rootId
       )
+
       return { rootId, childIds }
     })
     const document = await core.save()
@@ -336,8 +375,10 @@ it.each([2, 2310, 6163])(
       { elementId: 'workspace', view: 'overview' as const },
       { elementId: childIds[0] }
     ]
+
     try {
       const action = createAiInspectionAction()
+
       for (const args of attempts) {
         saved.mockClear()
         full.mockClear()
@@ -347,6 +388,7 @@ it.each([2, 2310, 6163])(
         const result = await action.execute(args, {
           signal: new AbortController().signal
         } as never)
+
         expect(result).toMatchObject({
           available: true,
           settlement: 'completed',
@@ -365,6 +407,7 @@ it.each([2, 2310, 6163])(
             (Array.isArray(value?.children) ? value.children.length : 0),
           0
         )
+
         measurements.push({
           fullReads: full.mock.calls.length,
           groupSaves: saved.mock.calls.length,
@@ -384,12 +427,14 @@ it.each([2, 2310, 6163])(
       saved.mockRestore()
       stop()
     }
+
     expect(await core.save()).toEqual(document)
     expect(core.getUndoHistoryDepth()).toBe(history)
     expect(core.getSelectedElementIds()).toEqual(selected)
     expect(published).not.toHaveBeenCalled()
     // Complete independent reads remain ordered and detached after inspection.
     const complete = core.getElementData(rootId) as { children: string[] }
+
     expect(complete.children).toEqual(childIds)
     complete.children.reverse()
     expect(core.getElementChildren(rootId, 0, childCount).elementIds).toEqual(
@@ -424,6 +469,7 @@ it.each([false, true])(
     const { createDesignReviewAction } =
       await import('../../src/ai/review-action')
     const { transactionApis } = await import('../../src/common-apis')
+
     factory.transact.reset()
     core.load({
       version: '1.0.0',
@@ -453,6 +499,7 @@ it.each([false, true])(
         'scene'
       )
     )
+
     expect(core.getElementComputedData('scene')).toEqual({})
     const computed = core.getElementComputedData.bind(core)
     const geometry = vi
@@ -488,29 +535,45 @@ it.each([false, true])(
     const dispatched: string[] = []
     const owner = createLocalOperationTools(
       actions,
-      { modelActions: (a) => a, resolveBatch: (a) => a },
+      {
+        modelActions: (a) => a,
+
+        resolveBatch: (a) => a
+      },
       async (batch) => {
         const actionResults = []
+
         for (const request of batch.actions) {
           dispatched.push(request.name)
           const action = actions.find((a) => a.name === request.name)
-          if (!action) throw new Error('Unexpected action')
+
+          if (!action) {
+            throw new Error('Unexpected action')
+          }
+
           actionResults.push({
             actionId: request.id,
             actionName: request.name,
             result: await action.execute(request.arguments, { signal } as never)
           })
         }
+
         return { context: {}, actionResults } as never
       }
     )
+
     const call = async (name: string, input: unknown) => {
       const definition = owner.definitions.find((a) => a.name === name)
-      if (!definition) throw new Error('Missing tool')
+
+      if (!definition) {
+        throw new Error('Missing tool')
+      }
+
       return JSON.parse(
         (await invokeLocalTool(owner, definition, input, signal)).text
       )
     }
+
     try {
       await call('define_design_criteria', {
         method: 'Check complete scene',
@@ -533,6 +596,7 @@ it.each([false, true])(
           { elementId: 'scene', checks: [{ criterionId: 'overall' }] }
         ]
       })
+
       expect(capture, JSON.stringify(capture)).toHaveProperty('next')
       expect(capture.next.arguments.checks).toHaveLength(1)
       const record = {
@@ -545,6 +609,7 @@ it.each([false, true])(
         }))
       }
       const result = await call('review_drawing', record)
+
       if (unavailable) {
         expect(result).toMatchObject({
           accepted: false,
@@ -555,15 +620,18 @@ it.each([false, true])(
           }
         })
         const pending = await call(result.next.tool, result.next.arguments)
+
         expect(pending.items).toHaveLength(1)
         expect(JSON.parse(pending.items[0].evidence).findings).toEqual([
           { kind: 'geometry-unavailable', elementId: children[0] }
         ])
-      } else
+      } else {
         expect(result).toMatchObject({
           accepted: true,
           coverage: { required: 1, passed: 1 }
         })
+      }
+
       expect(
         dispatched.filter((name) => name === 'review_design')
       ).toHaveLength(1)
@@ -573,6 +641,7 @@ it.each([false, true])(
         const retry = await call('review_design', {
           arguments: { elementId: retained.items[0].scope[0] }
         })
+
         expect(retry.actionResults[0].result.verification.status).toBe('pass')
         expect(await call('review_drawing', record)).toMatchObject({
           accepted: true
@@ -581,8 +650,9 @@ it.each([false, true])(
           dispatched.filter((name) => name === 'review_design')
         ).toHaveLength(2)
       }
+
       expect(snapshot).toHaveBeenCalledTimes(1)
-      if (!unavailable)
+      if (!unavailable) {
         expect(
           (
             await call('read_design_checks', {
@@ -595,11 +665,17 @@ it.each([false, true])(
             expect.objectContaining({ id: 'measurement:scene', status: 'pass' })
           ])
         )
+      }
+
       expect(await core.save()).toEqual(document)
       expect(core.getUndoHistoryDepth()).toBe(history)
       expect(published).not.toHaveBeenCalled()
       const stamp = (await reviewer.capture('scene')).evidence
-      if (!stamp) throw new Error('Missing workspace receipt')
+
+      if (!stamp) {
+        throw new Error('Missing workspace receipt')
+      }
+
       core.load(document)
       expect((await reviewer.validate(stamp)).current).toBe(false)
       expect(await core.save()).toEqual(document)

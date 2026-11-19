@@ -1,3 +1,4 @@
+import { admitsConversationContext } from '../src/ai/conversation-context'
 import {
   createExecutionRecordSink,
   createRecordCollector,
@@ -71,6 +72,43 @@ export class ActionBatchServerError extends Error {
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
 
+const modelFailureDescriptions = new Map<
+  string,
+  [ActionBatchServerError['code'], string]
+>([
+  [
+    'AI_MODEL_BACKEND_TIMEOUT',
+    ['ACTION_BATCH_MODEL_TIMEOUT', 'The AI request timed out.']
+  ],
+  [
+    'AI_MODEL_BACKEND_IMAGE_CONVERSION_FAILED',
+    ['ACTION_BATCH_IMAGE_CONVERSION_FAILED', 'The image conversion failed.']
+  ],
+  [
+    'AI_MODEL_BACKEND_INVALID_RESPONSE',
+    ['ACTION_BATCH_MODEL_INVALID_RESPONSE', 'The AI response was invalid.']
+  ],
+  [
+    'AI_MODEL_BACKEND_ABORTED',
+    ['ACTION_BATCH_ABORTED', 'The action-batch request was aborted.']
+  ],
+  [
+    'AI_MODEL_BACKEND_INVALID_CONFIGURATION',
+    [
+      'ACTION_BATCH_MODEL_CONFIGURATION_REQUIRED',
+      'The action-batch model backend is not fully configured.'
+    ]
+  ],
+  [
+    'AI_MODEL_BACKEND_HTTP_STATUS',
+    ['ACTION_BATCH_MODEL_FAILED', 'The action-batch model backend failed.']
+  ],
+  [
+    'AI_MODEL_BACKEND_TRANSPORT_FAILED',
+    ['ACTION_BATCH_MODEL_FAILED', 'The action-batch model backend failed.']
+  ]
+])
+
 const unsupportedSample = (): never => {
   throw new ActionBatchServerError(
     'ACTION_BATCH_UNSUPPORTED_SAMPLE',
@@ -81,7 +119,10 @@ const unsupportedSample = (): never => {
 const matchesSampleImageAttachment = (
   metadata: AiJsonValue | undefined
 ): boolean => {
-  if (!sampleImage || !sampleImageDigest) return false
+  if (!sampleImage || !sampleImageDigest) {
+    return false
+  }
+
   if (
     !isRecord(metadata) ||
     !Array.isArray(metadata.imageAttachments) ||
@@ -89,7 +130,9 @@ const matchesSampleImageAttachment = (
   ) {
     return false
   }
+
   const attachment = metadata.imageAttachments[0]
+
   if (
     !isRecord(attachment) ||
     attachment.mediaType !== 'image/png' ||
@@ -104,6 +147,7 @@ const matchesSampleImageAttachment = (
 
   const encoded = attachment.dataUrl.slice('data:image/png;base64,'.length)
   const bytes = Buffer.from(encoded, 'base64')
+
   return (
     bytes.byteLength === attachment.size &&
     bytes.byteLength === sampleImage.byteLength &&
@@ -113,12 +157,14 @@ const matchesSampleImageAttachment = (
 
 const assertRequestId = (value: string): string => {
   const requestId = value.trim()
+
   if (!/^[a-z0-9][a-z0-9-]{0,79}$/i.test(requestId)) {
     throw new ActionBatchServerError(
       'ACTION_BATCH_INVALID_INPUT',
       'The action-batch request id is invalid.'
     )
   }
+
   return requestId
 }
 
@@ -126,6 +172,7 @@ const readSampleActionBatch = (): Promise<AiActionBatch> => {
   sampleActionBatchPromise ??= readFile(sampleActionBatchUrl, 'utf8').then(
     (source) => JSON.parse(source) as AiActionBatch
   )
+
   return sampleActionBatchPromise
 }
 
@@ -143,6 +190,7 @@ const requestDefaultModelActionBatch: RequestModelActionBatch = async (
   options
 ) => {
   const { requestConfiguredAiActionBatch } = await import('./ai-model-provider')
+
   return requestConfiguredAiActionBatch(input, options)
 }
 
@@ -165,27 +213,37 @@ export const resolveActionBatchRequest = async (
       'The action-batch request was aborted.'
     )
   }
-  if (!isRecord(input) || typeof input.intent !== 'string') {
+
+  if (
+    !isRecord(input) ||
+    typeof input.intent !== 'string' ||
+    !admitsConversationContext(input.intent, input.metadata)
+  ) {
     throw new ActionBatchServerError(
       'ACTION_BATCH_INVALID_INPUT',
       'The action-batch input is invalid.'
     )
   }
+
   const matchesSampleInstruction =
     sampleInstruction !== undefined && input.intent.trim() === sampleInstruction
   const matchesSampleImage = matchesSampleImageAttachment(input.metadata)
+
   assertRequestId(options.requestId ?? randomUUID())
 
   if (matchesSampleInstruction && matchesSampleImage) {
     const batch = await readSampleActionBatch()
+
     if (options.signal?.aborted) {
       throw new ActionBatchServerError(
         'ACTION_BATCH_ABORTED',
         'The action-batch request was aborted.'
       )
     }
+
     return batch
   }
+
   if (matchesSampleInstruction || matchesSampleImage) {
     return unsupportedSample()
   }
@@ -193,6 +251,7 @@ export const resolveActionBatchRequest = async (
   const requestModelActionBatch =
     options.requestModelActionBatch ?? requestDefaultModelActionBatch
   let batch: AiActionBatch
+
   try {
     batch = await requestModelActionBatch(input, {
       signal: options.signal,
@@ -201,50 +260,24 @@ export const resolveActionBatchRequest = async (
     })
   } catch (error) {
     const code = readErrorCode(error)
-    if (code === 'AI_MODEL_BACKEND_TIMEOUT')
-      throw new ActionBatchServerError(
-        'ACTION_BATCH_MODEL_TIMEOUT',
-        'The AI request timed out.'
-      )
-    if (code === 'AI_MODEL_BACKEND_IMAGE_CONVERSION_FAILED')
-      throw new ActionBatchServerError(
-        'ACTION_BATCH_IMAGE_CONVERSION_FAILED',
-        'The image conversion failed.'
-      )
-    if (code === 'AI_MODEL_BACKEND_INVALID_RESPONSE')
-      throw new ActionBatchServerError(
-        'ACTION_BATCH_MODEL_INVALID_RESPONSE',
-        'The AI response was invalid.'
-      )
-    if (code === 'AI_MODEL_BACKEND_ABORTED') {
-      throw new ActionBatchServerError(
-        'ACTION_BATCH_ABORTED',
-        'The action-batch request was aborted.'
-      )
+
+    const description =
+      code === undefined ? undefined : modelFailureDescriptions.get(code)
+
+    if (description) {
+      throw new ActionBatchServerError(...description)
     }
-    if (code === 'AI_MODEL_BACKEND_INVALID_CONFIGURATION') {
-      throw new ActionBatchServerError(
-        'ACTION_BATCH_MODEL_CONFIGURATION_REQUIRED',
-        'The action-batch model backend is not fully configured.'
-      )
-    }
-    if (
-      code === 'AI_MODEL_BACKEND_HTTP_STATUS' ||
-      code === 'AI_MODEL_BACKEND_TRANSPORT_FAILED'
-    ) {
-      throw new ActionBatchServerError(
-        'ACTION_BATCH_MODEL_FAILED',
-        'The action-batch model backend failed.'
-      )
-    }
+
     throw error
   }
+
   if (options.signal?.aborted) {
     throw new ActionBatchServerError(
       'ACTION_BATCH_ABORTED',
       'The action-batch request was aborted.'
     )
   }
+
   return batch
 }
 
@@ -253,7 +286,10 @@ const sendJson = (
   statusCode: number,
   value: unknown
 ): void => {
-  if (response.writableEnded || response.destroyed) return
+  if (response.writableEnded || response.destroyed) {
+    return
+  }
+
   if (response.headersSent) {
     response.end(
       JSON.stringify(
@@ -265,10 +301,14 @@ const sendJson = (
             }
       ) + '\n'
     )
+
     return
   }
-  if (isRecord(value) && typeof value.code === 'string')
+
+  if (isRecord(value) && typeof value.code === 'string') {
     response.setHeader('x-ai-error-code', value.code)
+  }
+
   response.statusCode = statusCode
   response.setHeader('content-type', 'application/json; charset=utf-8')
   response.end(JSON.stringify(value))
@@ -280,6 +320,7 @@ const readJsonBody = async (
 ): Promise<unknown> => {
   const chunks: Buffer[] = []
   let size = 0
+
   for await (const chunk of request) {
     if (signal.aborted) {
       throw new ActionBatchServerError(
@@ -287,8 +328,10 @@ const readJsonBody = async (
         'The action-batch request was aborted.'
       )
     }
+
     const bytes =
       typeof chunk === 'string' ? Buffer.from(chunk) : Buffer.from(chunk)
+
     size += bytes.byteLength
     if (size > AI_BATCH_MAXIMUM_REQUEST_BYTES) {
       throw new ActionBatchServerError(
@@ -296,8 +339,10 @@ const readJsonBody = async (
         'The action-batch request is too large.'
       )
     }
+
     chunks.push(bytes)
   }
+
   try {
     return JSON.parse(Buffer.concat(chunks).toString('utf8'))
   } catch {
@@ -330,16 +375,20 @@ export const createActionBatchMiddleware = (
     next: MiddlewareNext
   ): Promise<void> => {
     const url = new URL(request.url ?? '/', 'http://app.local')
+
     if (url.pathname === AI_EXECUTION_RECORD_ENDPOINT) {
       if (request.method !== 'POST' || !admitsLocalProviderRequest(request)) {
         sendJson(response, 403, { code: 'AI_RECORD_DELIVERY_FORBIDDEN' })
+
         return
       }
+
       try {
         const records = await readJsonBody(
           request,
           new AbortController().signal
         )
+
         sendJson(response, 200, await collector.accept(records))
       } catch (error) {
         sendJson(response, 400, {
@@ -349,14 +398,19 @@ export const createActionBatchMiddleware = (
               : 'AI_RECORD_DELIVERY_INCOMPLETE'
         })
       }
+
       return
     }
+
     if (url.pathname !== ACTION_BATCH_ENDPOINT) {
       next()
+
       return
     }
+
     if (request.method !== 'POST') {
       sendJson(response, 405, { code: 'ACTION_BATCH_METHOD_NOT_ALLOWED' })
+
       return
     }
 
@@ -365,36 +419,49 @@ export const createActionBatchMiddleware = (
       !admitsLocalProviderRequest(request)
     ) {
       sendJson(response, 403, { code: 'ACTION_BATCH_LOCAL_PROVIDER_FORBIDDEN' })
+
       return
     }
 
     const controller = new AbortController()
+
     const abort = () => controller.abort('request closed')
+
     request.once('aborted', abort)
     response.once('close', () => {
-      if (!response.writableEnded) abort()
+      if (!response.writableEnded) {
+        abort()
+      }
     })
     try {
       const input = await readJsonBody(request, controller.signal)
+
       if (!isRecord(input)) {
         throw new ActionBatchServerError(
           'ACTION_BATCH_INVALID_INPUT',
           'The action-batch request body is invalid.'
         )
       }
+
       const receiptToken = request.headers[AI_BATCH_RECEIPT_HEADER]
+
       if (receiptToken !== undefined) {
         if (
           !admitsLocalProviderRequest(request) ||
           typeof receiptToken !== 'string'
         ) {
           sendJson(response, 403, { code: 'ACTION_BATCH_RECEIPT_FORBIDDEN' })
+
           return
         }
+
         const accepted = exchange.accept(receiptToken, input)
+
         sendJson(response, accepted ? 200 : 409, { accepted })
+
         return
       }
+
       const canExecute =
         request.headers[AI_BATCH_EXECUTION_HEADER] === '1' &&
         request.headers.accept?.includes('application/x-ndjson') &&
@@ -406,24 +473,33 @@ export const createActionBatchMiddleware = (
             ? {
                 executeBatch: (prepared) =>
                   exchange.execute(prepared, controller.signal, (frame) => {
-                    if (response.destroyed || response.writableEnded)
+                    if (response.destroyed || response.writableEnded) {
                       throw new Error('Request closed')
-                    if (!response.headersSent)
+                    }
+
+                    if (!response.headersSent) {
                       response.setHeader('content-type', 'application/x-ndjson')
+                    }
+
                     response.write(JSON.stringify(frame) + '\n')
                   })
               }
             : {}),
+
           onProgress: (event) => {
             if (
               !request.headers.accept?.includes('application/x-ndjson') ||
               controller.signal.aborted ||
               response.writableEnded ||
               response.destroyed
-            )
+            ) {
               return
-            if (!response.headersSent)
+            }
+
+            if (!response.headersSent) {
               response.setHeader('content-type', 'application/x-ndjson')
+            }
+
             response.write(
               JSON.stringify({
                 type: 'activity',
@@ -434,11 +510,13 @@ export const createActionBatchMiddleware = (
               }) + '\n'
             )
           },
+
           requestId: randomUUID(),
           requestModelActionBatch: options.requestModelActionBatch,
           signal: controller.signal
         }
       )
+
       sendJson(response, 200, batch)
     } catch (error) {
       if (
@@ -479,5 +557,6 @@ export const createActionBatchMiddleware = (
       request.removeListener('aborted', abort)
     }
   }
+
   return Object.assign(middleware, { dispose: () => collector.dispose() })
 }

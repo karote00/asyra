@@ -11,11 +11,7 @@ import {
   admitPreparedDesign,
   admitPreparedDesignDelivery
 } from '../../src/ai/prepared-design-admission'
-import { createLocalDesignTools as createOwner } from '../local-design-tools'
-import { withToolContractAssertions } from './tool-contract-assertions'
-
-const createLocalDesignTools = (...args: Parameters<typeof createOwner>) =>
-  withToolContractAssertions(createOwner(...args))
+import { createLocalDesignTools } from '../local-design-tools'
 
 import {
   createDesignPreparationSession,
@@ -76,6 +72,34 @@ const request = (artifactId: string) => ({
 })
 
 describe('local semantic design tools', () => {
+  it('preserves the existing-parent document reference in model-facing application inputs', () => {
+    const tools = createLocalDesignTools(actions)
+    const [apply] = tools.modelActions(actions)
+
+    expect(apply.inputSchema).toMatchObject({
+      properties: {
+        artifactId: { 'x-runtime-value': 'request-artifact' },
+        parentId: {
+          type: 'string',
+          minLength: 1,
+          'x-runtime-value': 'document'
+        }
+      }
+    })
+    expect(
+      operationInputIssue(
+        { artifactId: 'prepared', parentId: '' },
+        apply.inputSchema
+      )
+    ).toBeDefined()
+    expect(
+      operationInputIssue(
+        { artifactId: 'prepared', parentId: 'existing' },
+        apply.inputSchema
+      )
+    ).toBeUndefined()
+  })
+
   it('declares composable preparation with exact request reference lifetimes', () => {
     const tools = createLocalDesignTools(actions)
     const prepare = tools.definitions.find(
@@ -173,7 +197,7 @@ describe('local semantic design tools', () => {
 
     expect(invalid).toMatchObject({
       available: false,
-      recovery: 'correct_input'
+      code: 'TOOL_INPUT_INVALID'
     })
     expect(source.children[1].key).toBe('same')
   })
@@ -216,7 +240,8 @@ describe('local semantic design tools', () => {
     expect(tools.definitions.map((t) => t.name)).toEqual([
       'prepare_design',
       'retain_design_targets',
-      'release_design_artifacts'
+      'release_design_artifacts',
+      'read_design_templates'
     ])
     const schema = tools.modelActions(actions)[0].inputSchema
 
@@ -389,14 +414,14 @@ describe('local semantic design tools', () => {
       },
       signal()
     )
-    expect(execute).toHaveBeenCalledTimes(3)
+    expect(execute).toHaveBeenCalledTimes(2)
     expect(execute.mock.calls[0][0].actions[0].arguments).toMatchObject({
       design: { version: 3, entries: expect.any(Array) }
     })
     expect(execute.mock.calls[1][0].actions[0].name).toBe(
-      AiActionNames.REVIEW_DESIGN
+      AiActionNames.INSPECT_DRAWING
     )
-    expect(execute.mock.calls[2][0].actions[0].arguments).toEqual({
+    expect(execute.mock.calls[1][0].actions[0].arguments).toEqual({
       elementId: 'actual-root'
     })
   })
@@ -422,8 +447,10 @@ it('returns brief measurements and blocks an unmet requirement before canvas exe
   )
 
   expect(reply).toMatchObject({
-    available: true,
+    available: false,
     applicable: false,
+    settlement: 'not-started',
+    code: 'TOOL_INPUT_INVALID',
     review: { checks: [{ actual: 360, expected: 400, passed: false }] }
   })
   expect(() => tools.resolveBatch(request(reply.artifactId))).toThrow(
@@ -640,7 +667,7 @@ it('reports all independent input mistakes with paths before compiling geometry'
     expect(result.message).toContain(path)
   }
 
-  expect(result.recovery).toBe('correct_input')
+  expect(result.code).toBe('TOOL_INPUT_INVALID')
   expect(compile).not.toHaveBeenCalled()
 })
 
@@ -678,7 +705,7 @@ it('identifies missing shared projection as a local input repair, not a referenc
   )
 
   expect(result.message).toContain('draft.projection')
-  expect(result.recovery).toBe('correct_input')
+  expect(result.code).toBe('TOOL_INPUT_INVALID')
   expect(compile).not.toHaveBeenCalled()
 })
 
@@ -704,7 +731,7 @@ it('reports malformed repeated geometry as input recovery even while structure i
     )
   )
 
-  expect(result.recovery).toBe('correct_input')
+  expect(result.code).toBe('TOOL_INPUT_INVALID')
   expect(result.message).toContain('draft.children[0]')
   expect(compile).not.toHaveBeenCalled()
 })
@@ -759,7 +786,7 @@ it('reports only the selected construction type when repairing a malformed proje
     )
   )
 
-  expect(result.recovery).toBe('correct_input')
+  expect(result.code).toBe('TOOL_INPUT_INVALID')
   expect(result.message).toContain('gradientStops[0].opacity')
   expect(result.message).toContain('gradientStops[1].opacity')
   expect(result.message).not.toMatch(/width|height|rings|unexpected constant/)
@@ -810,6 +837,7 @@ it('keeps representation examples on their actual geometry and layout owners', a
     const example = designPreparationExamples.find(
       (example) =>
         (type !== 'projected-face' || example.draft.children.length === 1) &&
+        (type !== 'rect' || example.draft.children.length === 2) &&
         example.draft.children.some((child) => child.type === type)
     )
 
@@ -891,7 +919,7 @@ it('repairs representative live input failures without research, compilation ret
 
     expect(failure).toMatchObject({
       available: false,
-      recovery: 'correct_input'
+      code: 'TOOL_INPUT_INVALID'
     })
     expect(compile).not.toHaveBeenCalled()
     const repaired = JSON.parse(
@@ -955,7 +983,7 @@ it('uses retained semantic identities for repeated edits without rebuilding or a
 
   for (const x of [10, 20]) {
     await operations.call(
-      'execute_design_batch',
+      'execute_design',
       {
         inspection: 'defer',
         operations: [
@@ -987,20 +1015,18 @@ it('uses retained semantic identities for repeated edits without rebuilding or a
   }
 })
 
-it('defaults application to compact receipts while retaining all prepared identity references', async () => {
+it('rejects retired application selectors while retaining all prepared identity references', async () => {
   const tools = createLocalDesignTools(actions)
   const prepared = JSON.parse(
     await tools.call('prepare_design', { draft: draft() }, signal())
   )
   const compact = tools.resolveBatch(request(prepared.artifactId))
 
-  expect(compact.actions[0].arguments).toMatchObject({ response: 'compact' })
+  expect(compact.actions[0].arguments).not.toHaveProperty('response')
   const fullRequest = request(prepared.artifactId)
 
   Object.assign(fullRequest.actions[0].arguments, { response: 'full' })
-  const full = tools.resolveBatch(fullRequest)
-
-  expect(full.actions[0].arguments).toMatchObject({ response: 'full' })
+  expect(() => tools.resolveBatch(fullRequest)).toThrow()
   const design = (
     compact.actions[0].arguments as { design: PreparedDesignDelivery }
   ).design
@@ -1167,7 +1193,7 @@ it('retains expanded geometry ceilings before compiling and rejects indivisible 
 
   expect(result).toMatchObject({
     available: false,
-    code: 'DESIGN_BUDGET_EXCEEDED'
+    code: 'TOOL_INPUT_INVALID'
   })
   expect(result.message).toContain('sourceNodes=10001 > 10000')
   expect(compile).not.toHaveBeenCalled()
@@ -1187,7 +1213,7 @@ it('retains expanded geometry ceilings before compiling and rejects indivisible 
   }
 
   expect(inspectDesignBudget(primitive)).toMatchObject({
-    code: 'DESIGN_BUDGET_EXCEEDED'
+    code: 'TOOL_INPUT_INVALID'
   })
 })
 
@@ -1429,7 +1455,7 @@ it('admits a declarative surface grid through native and public schemas without 
 
   expect(JSON.parse(rejected.text)).toMatchObject({
     available: false,
-    code: 'DESIGN_BUDGET_EXCEEDED'
+    code: 'TOOL_INPUT_INVALID'
   })
   for (const issue of ['nonplanar', 'crossed', 'degenerate', 'uv'] as const) {
     const invalid = structuredClone(input)
@@ -1563,23 +1589,6 @@ it('blocks a contradicted reviewed artifact through both native and batch apply 
   const operations = createLocalOperationTools(registered, tools, execute)
   const signal = new AbortController().signal
 
-  await operations.call(
-    'define_design_criteria',
-    {
-      method: 'Create the requested journal',
-      detailRequired: false,
-      references: [],
-      criteria: {
-        subject: {
-          requirement: 'Only a journal title',
-          description: 'Only a journal title',
-          verification: 'visual',
-          requiredUnits: []
-        }
-      }
-    },
-    signal
-  )
   const reviewed = JSON.parse(
     await operations.call(
       'review_prepared_design',
@@ -1598,7 +1607,7 @@ it('blocks a contradicted reviewed artifact through both native and batch apply 
   ).rejects.toThrow(/correction/i)
   await expect(
     operations.call(
-      'execute_design_batch',
+      'execute_design',
       {
         operations: [
           {
@@ -1799,48 +1808,6 @@ it('hands a material revision to its material-only consumer and reuses the same 
   const first = JSON.parse(
     await owner.call('prepare_design', { draft: source }, signal())
   )
-  const { createLocalDesignReview } = await import('../local-design-review')
-  const review = createLocalDesignReview()
-
-  review.record({
-    phase: 'plan',
-    method: 'Review the selected surface',
-    references: [],
-    criteria: {
-      surface: {
-        requirement: 'Requested surface',
-        description: 'Inspect its material',
-        verification: 'visual',
-        requiredUnits: []
-      }
-    },
-    structureCriteria: [],
-    detailRequired: false
-  })
-  const image = review.inspect('original-surface', true, true)
-
-  if (!image) {
-    throw new Error('Missing image')
-  }
-
-  const bound = review.bindReview('visual', [
-    { criterionId: 'surface', inspectionIds: [image.inspectionId] }
-  ])
-
-  review.recordBoundReview({
-    ...bound,
-    checks: bound.checks.map((check) => ({
-      ...check,
-      status: 'fail',
-      evidence: 'The chosen field needs a new palette'
-    }))
-  })
-  const guidance = review.correctionContext().discovery
-
-  if (!guidance) {
-    throw new Error('Missing discovery handoff')
-  }
-
   const query = createLocalOperationTools(
     actions,
     owner,
@@ -1857,18 +1824,22 @@ it('hands a material revision to its material-only consumer and reuses the same 
   )
   const found = JSON.parse(
     await query.call(
-      guidance.tool,
-      { ...guidance.arguments, query: materialDefinition.name },
+      'read_design_contracts',
+      { names: [materialDefinition.name], view: 'full' },
       signal()
     )
   )
 
   expect(found.tools).toHaveLength(1)
   expect(found.tools[0].inputSchema).toEqual(materialDefinition.inputSchema)
-  expect(found.tools[0].execution.kind).toBe('native-tool')
+  expect(found.tools[0].execution).toMatchObject({
+    kind: 'host-operation',
+    tool: 'execute_design',
+    operation: 'design.prepare_material_revision'
+  })
   const revision = JSON.parse(
     await owner.call(
-      found.tools[0].execution.tool,
+      found.tools[0].name,
       {
         artifactId: first.artifactId,
         field: 'glass',
@@ -1935,7 +1906,7 @@ it.each([10000, 2000])(
       undefined,
       limit
     )
-    const tools = createOwner(actions, session)
+    const tools = createLocalDesignTools(actions, session)
     const definition = tools.definitions.find(
       (tool) => tool.name === 'prepare_design'
     )
@@ -1957,9 +1928,10 @@ it.each([10000, 2000])(
     const value = JSON.parse(reply.text)
 
     expect(reply.success).toBe(true)
-    expect(value).toMatchObject({
-      available: true,
-      toolOutcome: { status: 'success', settlement: 'completed' }
+    expect(value).toMatchObject({ available: true })
+    expect(reply.outcome).toMatchObject({
+      status: 'success',
+      settlement: 'completed'
     })
     expect(value.artifactId).toBeUndefined()
     expect(value.applicable).toBeUndefined()
@@ -1971,7 +1943,7 @@ it.each([10000, 2000])(
       value.retainedDraft
     )
     expect(compile).not.toHaveBeenCalled()
-    const forged = createOwner(actions)
+    const forged = createLocalDesignTools(actions)
 
     expect(forged.resultIssue('prepare_design', value)).toMatch(
       /unavailable|owned/i
@@ -1982,7 +1954,7 @@ it.each([10000, 2000])(
 it('keeps exhausted source retention a genuine no-write failure', async () => {
   const compile = vi.fn(prepareDesignAsync)
   const session = createDesignPreparationSession(prepareDesign, compile)
-  const tools = createOwner(actions, session)
+  const tools = createLocalDesignTools(actions, session)
   const definition = tools.definitions.find(
     (tool) => tool.name === 'prepare_design'
   )
@@ -2006,26 +1978,73 @@ it('keeps exhausted source retention a genuine no-write failure', async () => {
     expect(plan.success).toBe(true)
   }
 
-  const rejected = JSON.parse(
-    (
-      await invokeLocalTool(
-        {
-          ...tools,
+  const rejectedReply = await invokeLocalTool(
+    {
+      ...tools,
 
-          call: (name, args, signal) => tools.call(name, args, signal, true)
-        },
-        { ...definition, outputSchema: tools.capacityOutputSchema },
-        { draft: capacityFixture.input.draft },
-        signal()
-      )
-    ).text
+      call: (name, args, signal) => tools.call(name, args, signal, true)
+    },
+    { ...definition, outputSchema: tools.capacityOutputSchema },
+    { draft: capacityFixture.input.draft },
+    signal()
   )
+  const rejected = JSON.parse(rejectedReply.text)
 
-  expect(rejected).toMatchObject({
-    available: false,
-    retention: 'unavailable',
-    toolOutcome: { status: 'failed', settlement: 'not-started' }
+  expect(rejectedReply.outcome).toMatchObject({
+    status: 'failed',
+    settlement: 'not-started'
   })
+  expect(rejected).toMatchObject({ available: false, retention: 'unavailable' })
   expect(rejected.draftId).toBeUndefined()
   expect(compile).not.toHaveBeenCalled()
+})
+
+it('exports public template definitions and rejects released source handles', async () => {
+  const tools = createLocalDesignTools(actions)
+  const source = {
+    ...draft(),
+    fillTemplates: { metal: '#123456' },
+    linearFields: {
+      glass: {
+        frame: 'world',
+        start: { x: 0, y: 0, z: 0 },
+        end: { x: 0, y: 0, z: 20 },
+        gradientStops: [
+          { position: 0, color: '#123456', opacity: 1 },
+          { position: 1, color: '#abcdef', opacity: 1 }
+        ]
+      }
+    }
+  }
+  const prepared = JSON.parse(
+    await tools.call('prepare_design', { draft: source }, signal())
+  )
+
+  expect(prepared.available).toBe(true)
+  const result = JSON.parse(
+    await tools.call(
+      'read_design_templates',
+      { artifactId: prepared.artifactId },
+      signal()
+    )
+  )
+
+  expect(result).toEqual({
+    motifTemplates: {},
+    fillTemplates: source.fillTemplates,
+    linearFields: source.linearFields,
+    sharedFills: {}
+  })
+  await tools.call(
+    'release_design_artifacts',
+    { artifactIds: [prepared.artifactId] },
+    signal()
+  )
+  await expect(
+    tools.call(
+      'read_design_templates',
+      { artifactId: prepared.artifactId },
+      signal()
+    )
+  ).rejects.toThrow(/unavailable|reference/i)
 })

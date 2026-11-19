@@ -1,0 +1,105 @@
+{
+  "source": "taipei-101-fixed-1794041419090",
+  "input": {
+    "phase": "visual",
+    "final": false,
+    "dataQueries": [
+      {
+        "criterionId": "scale",
+        "elementIds": [
+          "grp-actor-5ed791b6-afdf-4062-8848-3a30b0ec2a52-5",
+          "design-8a564048-0614-4ff1-8091-5d053b843665-0",
+          "design-7c1d75f3-638a-4934-b768-2596bf813155-0"
+        ],
+        "fields": [
+          "x",
+          "y",
+          "width",
+          "height"
+        ]
+      },
+      {
+        "criterionId": "scale",
+        "query": {
+          "scope": "region",
+          "bounds": {
+            "x": 9500,
+            "y": 1200,
+            "width": 1000,
+            "height": 1000
+          },
+          "filter": {
+            "name": {
+              "equals": "508公尺尖頂"
+            }
+          },
+          "expectedCount": 1
+        },
+        "fields": [
+          "x",
+          "y",
+          "width",
+          "height"
+        ]
+      }
+    ]
+  },
+  "values": [
+    {
+      "workspaceId": "workspace",
+      "coordinateSpace": "parent-local",
+      "elements": [
+        {
+          "id": "grp-actor-5ed791b6-afdf-4062-8848-3a30b0ec2a52-5",
+          "type": "group",
+          "parentId": "workspace",
+          "properties": {
+            "x": -857.4033089699587,
+            "y": 1341.262448002315,
+            "width": 15349.154441553575,
+            "height": 47627.7916470795
+          }
+        },
+        {
+          "id": "design-8a564048-0614-4ff1-8091-5d053b843665-0",
+          "type": "group",
+          "parentId": "grp-actor-5ed791b6-afdf-4062-8848-3a30b0ec2a52-5",
+          "properties": {
+            "x": 6365.652176386342,
+            "y": 8901.307295274972,
+            "width": 8983.502265167233,
+            "height": 38726.48435180453
+          }
+        },
+        {
+          "id": "design-7c1d75f3-638a-4934-b768-2596bf813155-0",
+          "type": "group",
+          "parentId": "grp-actor-5ed791b6-afdf-4062-8848-3a30b0ec2a52-5",
+          "properties": {
+            "x": 6378.407819719646,
+            "y": 0,
+            "width": 8057.597162282814,
+            "height": 47622.19994108345
+          }
+        }
+      ]
+    },
+    {
+      "workspaceId": "workspace",
+      "coordinateSpace": "parent-local",
+      "elements": [
+        {
+          "id": "design-7c1d75f3-638a-4934-b768-2596bf813155-749",
+          "type": "vector",
+          "parentId": "design-7c1d75f3-638a-4934-b768-2596bf813155-0",
+          "properties": {
+            "x": 4401.793516659031,
+            "y": 0,
+            "width": 86.68118289674021,
+            "height": 303.48133114896336
+          }
+        }
+      ]
+    }
+  ]
+}

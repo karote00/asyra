@@ -21,16 +21,21 @@ test('loads the preserved full document through ordinary socket bootstrap', asyn
   baseURL
 }, info) => {
   const { identity, manifest } = await prepareLargeNavigationDocument(baseURL)
+
   await page.setViewportSize({ width: 1728, height: 1000 })
   const errors: string[] = []
   const navigation: { url: string; at: number }[] = []
+
   page.on('framenavigated', (frame) => {
-    if (frame === page.mainFrame())
+    if (frame === page.mainFrame()) {
       navigation.push({ url: frame.url(), at: Date.now() })
+    }
   })
   page.on('pageerror', (error) => errors.push(error.message))
   page.on('console', (message) => {
-    if (message.type() === 'error') errors.push(message.text())
+    if (message.type() === 'error') {
+      errors.push(message.text())
+    }
   })
   await page.addInitScript(() => {
     const observation: LoadObservation = {
@@ -39,41 +44,53 @@ test('loads the preserved full document through ordinary socket bootstrap', asyn
       rasters: [],
       longTasks: []
     }
+
     window.documentLoadObservation = observation
     new PerformanceObserver((list) => {
-      for (const entry of list.getEntries())
+      for (const entry of list.getEntries()) {
         observation.longTasks.push({
           start: entry.startTime,
           duration: entry.duration
         })
+      }
     }).observe({ type: 'longtask', buffered: true })
     const original = OffscreenCanvasRenderingContext2D.prototype.createImageData
+
     OffscreenCanvasRenderingContext2D.prototype.createImageData = function (
       ...args: Parameters<typeof original>
     ) {
       const image = Reflect.apply(original, this, args) as ImageData
+
       observation.rasters.push({ width: image.width, height: image.height })
+
       return image
     } as typeof original
     const NativeWorker = window.Worker
+
     window.Worker = class extends NativeWorker {
       constructor(url: string | URL, options?: WorkerOptions) {
         super(url, options)
         this.addEventListener('message', (event) => {
           const data = event.data
-          if (data?.type === 'connected' && data.bootstrap)
+
+          if (data?.type === 'connected' && data.bootstrap) {
             observation.connectedAtMs = performance.now()
-          if (data?.type === 'timing')
+          }
+
+          if (data?.type === 'timing') {
             observation.workerTimings.push({
               atMs: performance.now(),
               phase: data.phase,
               durationMs: data.durationMs
             })
-          if (data?.type === 'diagnostic-counter')
+          }
+
+          if (data?.type === 'diagnostic-counter') {
             observation.workerCounters.push({
               name: data.name,
               value: data.value
             })
+          }
         })
       }
     }
@@ -82,19 +99,25 @@ test('loads the preserved full document through ordinary socket bootstrap', asyn
   const cdp = profileEnabled
     ? await page.context().newCDPSession(page)
     : undefined
+
   if (cdp) {
     await cdp.send('Profiler.enable')
     await cdp.send('Profiler.start')
   }
+
   try {
     await page.goto(identity.url, { waitUntil: 'commit', timeout: 240_000 })
     await waitForAppReady(page)
     await expect
       .poll(
         () => {
-          if (errors.length) throw new Error(errors[0])
+          if (errors.length) {
+            throw new Error(errors[0])
+          }
+
           return page.evaluate(async () => {
             const { core } = await import('../src/testing/runtime-access')
+
             return {
               canonical: core.getCanonicalElementCount(),
               projected: core.getProjectedElementCount()
@@ -108,6 +131,7 @@ test('loads the preserved full document through ordinary socket bootstrap', asyn
       await new Promise<void>((resolve) =>
         requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
       )
+
       return {
         ...window.documentLoadObservation,
         readyMs: performance.now(),
@@ -115,6 +139,7 @@ test('loads the preserved full document through ordinary socket bootstrap', asyn
         dpr: devicePixelRatio
       }
     })
+
     await writeFile(
       info.outputPath('load.json'),
       JSON.stringify({ ...report, errors, manifest, profileEnabled }, null, 2)
@@ -125,6 +150,7 @@ test('loads the preserved full document through ordinary socket bootstrap', asyn
       const saved = await core.save()
       const bytes = new TextEncoder().encode(JSON.stringify(saved))
       const digest = await crypto.subtle.digest('SHA-256', bytes)
+
       return {
         properties: Object.keys(saved.props).length,
         elements: Object.keys(saved.sceneTree.elements).length - 1,
@@ -133,6 +159,7 @@ test('loads the preserved full document through ordinary socket bootstrap', asyn
         ).join('')
       }
     })
+
     await writeFile(
       info.outputPath('canonical.json'),
       JSON.stringify(state, null, 2)
@@ -146,35 +173,49 @@ test('loads the preserved full document through ordinary socket bootstrap', asyn
     const hits = await page.evaluate(async () => {
       const { core } = await import('../src/testing/runtime-access')
       const bounds = core.getAllElementsBounds()
-      if (!bounds) throw new Error('Document bounds missing')
+
+      if (!bounds) {
+        throw new Error('Document bounds missing')
+      }
+
       const samples = []
+
       for (const y of [0.25, 0.5, 0.75]) {
         for (const x of [0.4, 0.5, 0.6]) {
           const point = core.workspaceToCanvas({
             x: bounds.minX + (bounds.maxX - bounds.minX) * x,
             y: bounds.minY + (bounds.maxY - bounds.minY) * y
           })
+
           samples.push({ point, hit: core.getElementIdAtClientPos(point) })
         }
       }
+
       return samples
     })
+
     await writeFile(
       info.outputPath('selection.json'),
       JSON.stringify(hits, null, 2)
     )
     const target = hits.find((sample) => sample.hit)
+
     expect(
       target,
       'visible tower must expose a selectable target'
     ).toBeDefined()
     const canvas = await page.locator('canvas').first().boundingBox()
-    if (!canvas || !target) throw new Error('Missing selectable canvas target')
+
+    if (!canvas || !target) {
+      throw new Error('Missing selectable canvas target')
+    }
+
     await page.mouse.click(canvas.x + target.point.x, canvas.y + target.point.y)
     await expect
       .poll(() =>
         page.evaluate(async () => {
           const { core } = await import('../src/testing/runtime-access')
+
           return core.getSelectedElementIds().length
         })
       )
@@ -186,7 +227,11 @@ test('loads the preserved full document through ordinary socket bootstrap', asyn
         const { core } = await import('../src/testing/runtime-access')
         const { viewportApis } = await import('../src/common-apis/viewport')
         const bounds = core.getAllElementsBounds()
-        if (!bounds) throw new Error('Document bounds missing')
+
+        if (!bounds) {
+          throw new Error('Document bounds missing')
+        }
+
         viewportApis.zoomToCenter(1, 800, 500)
         viewportApis.panTo(
           800 - (bounds.minX + bounds.maxX) / 2,
@@ -198,6 +243,7 @@ test('loads the preserved full document through ordinary socket bootstrap', asyn
       }, fraction)
       await page.screenshot({ path: info.outputPath(`detail-${fraction}.png`) })
     }
+
     expect(errors).toEqual([])
   } finally {
     await writeFile(
@@ -206,6 +252,7 @@ test('loads the preserved full document through ordinary socket bootstrap', asyn
     )
     if (cdp) {
       const { profile } = await cdp.send('Profiler.stop')
+
       await writeFile(
         info.outputPath('load.cpuprofile'),
         JSON.stringify(profile)

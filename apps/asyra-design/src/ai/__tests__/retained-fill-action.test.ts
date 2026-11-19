@@ -1,3 +1,6 @@
+import { requiredString } from '../../__tests__/assert-result'
+import { createAiToolContract } from '@asyra/ai-agent-runtime'
+import { operationInputIssue } from '../tool-schema'
 import { expect, it, vi } from 'vitest'
 import {
   createAiActionRegistry,
@@ -81,7 +84,7 @@ it('maps retained positions to one plural new-value fill call inside mutation ad
     { elementId: 'b', fillId: 'fill-b', patch: { color: '#808080' } },
     { elementId: 'c', fillId: 'fill-c', patch: { color: '#ffffff' } }
   ])
-  expect(action.revision).toBe(7)
+  expect(action.revision).toBe(8)
   expect(result).toMatchObject({ appliedCount: 3 })
 })
 it('rejects a reference invalidated while queued and performs no write', async () => {
@@ -193,8 +196,8 @@ it('discovers the mapping by operation and admits the advertised input through t
   try {
     const result = JSON.parse(
       await tools.call(
-        'describe_design_apis',
-        { operations: [action.name] },
+        'read_design_contracts',
+        { names: [action.name] },
         new AbortController().signal
       )
     )
@@ -203,7 +206,7 @@ it('discovers the mapping by operation and admits the advertised input through t
     expect(result.apis[0]).toMatchObject({
       name: action.name,
       operation: action.name,
-      execution: { kind: 'batch-action', tool: 'execute_design_batch' }
+      execution: { kind: 'batch-action', tool: 'execute_design' }
     })
     expect(result.apis[0].inputSchema).toEqual(action.inputSchema)
     const operations = prepareOperationBatch(
@@ -340,7 +343,7 @@ it('rejects foreign retained inputs before writing and preserves the owning requ
         mappings: [
           {
             ...input.mappings[0],
-            snapshotId: receipt.snapshotId,
+            snapshotId: requiredString(receipt.snapshotId),
             leaseId: receipt.leaseId
           }
         ]
@@ -354,7 +357,8 @@ it('rejects foreign retained inputs before writing and preserves the owning requ
   ).rejects.toThrow('request')
   expect(update).not.toHaveBeenCalled()
   expect(
-    queries.get(receipt.snapshotId, receipt.leaseId, owner).orderedIds
+    queries.get(requiredString(receipt.snapshotId), receipt.leaseId, owner)
+      .orderedIds
   ).toEqual(['a'])
   queries.dispose()
 })
@@ -440,7 +444,7 @@ it('refines retained candidates into one canonical plural edit', async () => {
     const selected = queries.read(
       {
         scope: 'snapshot',
-        snapshotId: candidate.snapshotId,
+        snapshotId: requiredString(candidate.snapshotId),
         filter: { name: { equals: 'crown-roof' } },
         expectedCount: 24,
         delivery: 'reference'
@@ -470,7 +474,7 @@ it('refines retained candidates into one canonical plural edit', async () => {
     const args = {
       mappings: [
         {
-          snapshotId: selected.snapshotId,
+          snapshotId: requiredString(selected.snapshotId),
           leaseId: selected.leaseId,
           coordinateSpace: 'parent-local' as const,
           axis: 'x' as const,
@@ -500,11 +504,12 @@ it('refines retained candidates into one canonical plural edit', async () => {
     expect(spatial).toHaveBeenCalledTimes(1)
     expect(computed).toHaveBeenCalledTimes(2736)
     expect(
-      queries.get(selected.snapshotId, selected.leaseId, signal).orderedIds
+      queries.get(requiredString(selected.snapshotId), selected.leaseId, signal)
+        .orderedIds
     ).toHaveLength(24)
     changed()
     expect(() =>
-      queries.get(selected.snapshotId, selected.leaseId, signal)
+      queries.get(requiredString(selected.snapshotId), selected.leaseId, signal)
     ).toThrow(/stale/)
     await expect(
       edit.execute(args, {
@@ -620,7 +625,7 @@ it.each([3584, 1600])(
       expect(JSON.stringify(result.modelResult).length).toBeLessThan(1000)
       expect(result.modelResult.mutationScope).toBeUndefined()
       const tools = createLocalOperationTools(
-        [action],
+        [action].map(createAiToolContract),
         {
           modelActions: (actions) => actions,
 
@@ -660,7 +665,7 @@ it.each([3584, 1600])(
 
       expect(reply.actionResults[0].result.mutationScope).toBeUndefined()
       expect(reply.actionResults[0].result.appliedCount).toBe(count)
-      expect(reply.checks.counts.unverified).toBe(count)
+      expect(reply.checks).toBeUndefined()
       expect(JSON.stringify(reply).length).toBeLessThan(2500)
 
       const chunks: string[] = []
@@ -670,7 +675,7 @@ it.each([3584, 1600])(
         const page = queries.read(
           {
             scope: 'snapshot',
-            snapshotId: result.retained.snapshotId,
+            snapshotId: requiredString(result.retained.snapshotId),
             delivery: 'receipt',
             offset
           },
@@ -751,7 +756,11 @@ it.each(['capacity', 'cancel'] as const)(
     expect(result).not.toHaveProperty('retained')
     const { projectToolDelivery, designActionOutcome } =
       await import('../tool-contract')
-    const external = projectToolDelivery(action, result)
+    const external = projectToolDelivery(
+      action,
+      result,
+      designActionOutcome(result)
+    ).value
 
     expect(external).not.toHaveProperty('retained')
     expect(external).not.toHaveProperty('mutationScope')
@@ -833,21 +842,31 @@ it.each(['complete', 'locked', 'write-failure'])(
       expect(update).toHaveBeenCalledTimes(outcome === 'locked' ? 0 : 1)
       expect(computed).toHaveBeenCalledTimes(1)
       expect(
-        queries.get(held.snapshotId, held.leaseId, controller.signal).orderedIds
+        queries.get(
+          requiredString(held.snapshotId),
+          held.leaseId,
+          controller.signal
+        ).orderedIds
       ).toEqual(['a'])
       expect(released).toHaveBeenCalledTimes(1)
       const consumed = released.mock.calls[0][0]
 
       expect(consumed).not.toBe(held.leaseId)
       expect(() =>
-        queries.get(held.snapshotId, consumed, controller.signal)
+        queries.get(
+          requiredString(held.snapshotId),
+          consumed,
+          controller.signal
+        )
       ).toThrow(/lease/)
       const reused = queries.read(
         { ...query, fields: ['x'], delivery: 'reference' },
         controller.signal
       )
 
-      expect(reused.snapshotId).toBe(held.snapshotId)
+      expect(requiredString(reused.snapshotId)).toBe(
+        requiredString(held.snapshotId)
+      )
       expect(reused.leaseId).toBe(held.leaseId)
       expect(reused.observation).toMatchObject({
         reused: true,
@@ -855,7 +874,9 @@ it.each(['complete', 'locked', 'write-failure'])(
         computedReadCount: 0
       })
       controller.abort()
-      expect(() => queries.get(held.snapshotId, held.leaseId)).toThrow(/lease/)
+      expect(() =>
+        queries.get(requiredString(held.snapshotId), held.leaseId)
+      ).toThrow(/lease/)
     } finally {
       queries.dispose()
     }
@@ -870,7 +891,7 @@ it('reuses a rejected mapping query through another local-edit consumer, then re
   ])
   const computed = vi.fn(() => ({ x: 10 }))
 
-  let changed = () => {
+  let changed: () => void = () => {
     throw new Error('Missing observer')
   }
 
@@ -947,7 +968,7 @@ it('reuses a rejected mapping query through another local-edit consumer, then re
 
   const { snapshotId: _snapshotId, ...mapping } = input.mappings[0]
   const reference = {
-    snapshotId: held.snapshotId,
+    snapshotId: requiredString(held.snapshotId),
     leaseId: held.leaseId,
     total: held.total
   }
@@ -966,7 +987,7 @@ it('reuses a rejected mapping query through another local-edit consumer, then re
     expect(
       prepareOperationBatch(
         [{ name: action.name, arguments: args }],
-        [action]
+        [action].map(createAiToolContract)
       )[0].arguments
     ).toEqual(args)
     await action.execute(args, context)
@@ -981,12 +1002,14 @@ it('reuses a rejected mapping query through another local-edit consumer, then re
       signal
     )
 
-    expect(fresh.snapshotId).not.toBe(held.snapshotId)
+    expect(requiredString(fresh.snapshotId)).not.toBe(
+      requiredString(held.snapshotId)
+    )
     await action.execute(
       {
         ...args,
         elementIds: {
-          snapshotId: fresh.snapshotId,
+          snapshotId: requiredString(fresh.snapshotId),
           leaseId: fresh.leaseId,
           total: fresh.total
         }
@@ -1001,7 +1024,7 @@ it('reuses a rejected mapping query through another local-edit consumer, then re
         {
           ...args,
           elementIds: {
-            snapshotId: fresh.snapshotId,
+            snapshotId: requiredString(fresh.snapshotId),
             leaseId: fresh.leaseId,
             total: fresh.total
           }
@@ -1153,4 +1176,42 @@ it('preserves transaction settlement and the original rejection without replay',
   }
 
   expect(update).not.toHaveBeenCalled()
+})
+
+it('converts a requested solid mapping in the same plural color write', async () => {
+  const update = vi.fn(changedReceipt)
+  const action = createRetainedFillAction({ get: () => snapshot } as never, {
+    targets,
+
+    metadata: () => ({ lock: false }),
+
+    update
+  })
+  const request = {
+    mappings: [{ ...input.mappings[0], kind: 'solid' as const }]
+  }
+
+  expect(operationInputIssue(request, action.inputSchema)).toBeUndefined()
+  await action.execute(request, {
+    signal: new AbortController().signal,
+
+    runMutation: async (write) => write()
+  })
+  expect(update).toHaveBeenCalledExactlyOnceWith([
+    {
+      elementId: 'a',
+      fillId: 'fill-a',
+      patch: { color: '#000000', kind: 'solid', gradient: null }
+    },
+    {
+      elementId: 'b',
+      fillId: 'fill-b',
+      patch: { color: '#808080', kind: 'solid', gradient: null }
+    },
+    {
+      elementId: 'c',
+      fillId: 'fill-c',
+      patch: { color: '#ffffff', kind: 'solid', gradient: null }
+    }
+  ])
 })

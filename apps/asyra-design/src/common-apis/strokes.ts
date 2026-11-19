@@ -1,23 +1,15 @@
+import { CommonApiInputError } from './common-api-input-error'
 import {
-  type DataTypes,
   PropertyTypes,
   createDefaultStroke,
   id,
-  isFiniteNumber,
   isRecord,
   type EVENT_OPTIONS,
   type StrokeAttrs
 } from '@asyra/utils'
-import type {
-  ElementPropertyPatchUpdate,
-  VectorNetwork,
-  VectorPointNode,
-  VectorSegment,
-  VectorTopology
-} from '@asyra/core'
+import type { ElementPropertyPatchUpdate } from '@asyra/core'
 import { STROKE_PATCH_KEYS, type StrokeWritableKey } from '../constants'
 import core from '../contexts'
-import { calculateVectorBounds } from './element/vector-geometry'
 import { transactionApis } from './transaction'
 import { mutationReceipt, type MutationReceipt } from './mutation-receipt'
 
@@ -34,14 +26,10 @@ export interface PrimaryStrokeColorUpdate {
   readonly elementId: string
 }
 
-const hasGeometryAffectingStrokePatch = (patch: StrokePatch) =>
-  STROKE_PATCH_KEYS.some((key) => key !== 'fill' && key in patch)
-
 const createStrokeRecordPatch = (
   elementId: string,
   strokeId: string,
-  fields: Readonly<Record<string, unknown>>,
-  values?: Readonly<Record<string, unknown>>
+  fields: Readonly<Record<string, unknown>>
 ): ElementPropertyPatchUpdate => {
   const recordFields: Record<string, unknown> = {}
 
@@ -55,7 +43,6 @@ const createStrokeRecordPatch = (
 
   return {
     elementId,
-    ...(values === undefined ? {} : { values }),
     records: [
       {
         key: PropertyTypes.STROKES,
@@ -65,66 +52,6 @@ const createStrokeRecordPatch = (
       }
     ]
   }
-}
-
-const nearlyEqual = (left: unknown, right: number) =>
-  isFiniteNumber(left) && Math.abs(left - right) <= 1e-6
-
-const getVectorBoundsRepairPatch = (
-  elementId: string
-): Record<string, DataTypes> | null => {
-  if (core.getElementData(elementId)?.type !== 'vector') {
-    return null
-  }
-
-  const computed = core.getElementComputedData(elementId) as
-    | {
-        x?: unknown
-        y?: unknown
-        width?: unknown
-        height?: unknown
-        pointCoordinateSpace?: unknown
-        points?: unknown
-        segments?: unknown
-        networks?: unknown
-      }
-    | undefined
-
-  if (
-    !computed ||
-    computed.pointCoordinateSpace !== 'workspace' ||
-    !isRecord(computed.points) ||
-    !isRecord(computed.segments) ||
-    !isRecord(computed.networks)
-  ) {
-    return null
-  }
-
-  const topology: VectorTopology = {
-    points: computed.points as Record<string, VectorPointNode>,
-    segments: computed.segments as Record<string, VectorSegment>,
-    networks: computed.networks as Record<string, VectorNetwork>
-  }
-  const bounds = calculateVectorBounds(topology)
-  const patch: Record<string, DataTypes> = {}
-
-  if (!nearlyEqual(computed.x, bounds.x)) {
-    patch.x = bounds.x
-  }
-
-  if (!nearlyEqual(computed.y, bounds.y)) {
-    patch.y = bounds.y
-  }
-
-  if (!nearlyEqual(computed.width, bounds.width)) {
-    patch.width = bounds.width
-  }
-
-  if (!nearlyEqual(computed.height, bounds.height)) {
-    patch.height = bounds.height
-  }
-
-  return Object.keys(patch).length > 0 ? patch : null
 }
 
 const getPrimaryStroke = (elementId: string): StrokeAttrs | null => {
@@ -289,7 +216,6 @@ export const strokeApis = {
     options?: EVENT_OPTIONS
   ): MutationReceipt<null> => {
     const targets = new Map<string, Set<string>>()
-    const bounds = new Map<string, Record<string, DataTypes> | null>()
     const patches: ElementPropertyPatchUpdate[] = []
 
     for (const { elementId, strokeId, patch } of updates) {
@@ -299,7 +225,11 @@ export const strokeApis = {
           (key) => !(STROKE_PATCH_KEYS as readonly string[]).includes(key)
         )
       ) {
-        throw new Error('Invalid Stroke patch field')
+        throw new CommonApiInputError('Invalid Stroke patch field', {
+          field: 'patch',
+          elementId,
+          strokeId
+        })
       }
 
       if (!targets.has(elementId)) {
@@ -316,23 +246,17 @@ export const strokeApis = {
       }
 
       if (!strokeId || !targets.get(elementId)?.has(strokeId)) {
-        throw new Error(`Missing Stroke ${strokeId} on ${elementId}`)
+        throw new CommonApiInputError(
+          `Missing Stroke ${strokeId} on ${elementId}`,
+          { field: 'strokeId', elementId, strokeId }
+        )
       }
 
       if (!Object.values(patch).some((value) => value !== undefined)) {
         continue
       }
 
-      let values: Record<string, DataTypes> | undefined
-
-      if (hasGeometryAffectingStrokePatch(patch) && !bounds.has(elementId)) {
-        const repair = getVectorBoundsRepairPatch(elementId)
-
-        bounds.set(elementId, repair)
-        values = repair ?? undefined
-      }
-
-      patches.push(createStrokeRecordPatch(elementId, strokeId, patch, values))
+      patches.push(createStrokeRecordPatch(elementId, strokeId, patch))
     }
 
     if (!patches.length) {

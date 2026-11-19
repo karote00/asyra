@@ -37,7 +37,9 @@ export const executeGroupCommandRequest = (
     if (request.command === GroupCommandIds.GROUP) {
       const result = hierarchyApis.groupElements(request.elementIds)
       const selectedIds = [result.groupId]
+
       selectionApis.selectElements(selectedIds)
+
       return {
         command: request.command,
         groupId: result.groupId,
@@ -47,7 +49,9 @@ export const executeGroupCommandRequest = (
 
     const result = hierarchyApis.ungroupElement(request.elementIds[0])
     const selectedIds = [...result.elementIds]
+
     selectionApis.selectElements(selectedIds)
+
     return {
       command: request.command,
       groupId: result.groupId,
@@ -58,6 +62,7 @@ export const executeGroupCommandRequest = (
 const api: GroupCommandFeatureAPI = {
   execute: (command) => {
     const request = createCurrentGroupCommandRequest(command)
+
     return request ? executeGroupCommandRequest(request) : null
   }
 }
@@ -66,6 +71,7 @@ export const groupCommandFeatureDefinition = {
   priority: 100,
   exclusive: true,
   api,
+
   execution: (snapshot: SystemContextSnapshotWithDetail) => {
     if (
       snapshot.detail?.groupShortcut !== true ||

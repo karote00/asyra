@@ -11,21 +11,27 @@ import {
 const directories: string[] = []
 const stores: Awaited<ReturnType<typeof createLocalToolStore>>[] = []
 const limits = { capacity: 4, recordBytes: 1024, totalBytes: 4096 }
+
 const create = async (directory?: string, overrides = {}) => {
   if (!directory) {
     const parent = resolve('tmp/tool-store-tests')
+
     await mkdir(parent, { recursive: true })
     directory = await mkdtemp(resolve(parent, 'case-'))
     directories.push(directory)
   }
+
   const store = await createLocalToolStore({
     directory,
     ...limits,
     ...overrides
   })
+
   stores.push(store)
+
   return { store, directory }
 }
+
 afterEach(async () => {
   stores.splice(0).forEach((store) => store.close())
   await Promise.all(
@@ -39,6 +45,7 @@ it('acknowledges exact durable bytes and reloads through a fresh host connection
   const { store, directory } = await create()
   const record = { name: 'reusable-operation', fields: ['fresh-input'] }
   const entry = await store.write({ key: '["operation",1]', record })
+
   record.fields.push('not-persisted')
   expect(entry.record).toEqual({
     name: 'reusable-operation',
@@ -47,6 +54,7 @@ it('acknowledges exact durable bytes and reloads through a fresh host connection
   store.close()
   store.close()
   const reopened = (await create(directory)).store
+
   expect(await reopened.read(entry.key)).toEqual(entry)
   expect(await reopened.list(1)).toEqual([entry])
   expect(await reopened.read('missing')).toBeUndefined()
@@ -57,6 +65,7 @@ it('compares versions atomically across independent connections', async () => {
   const { store, directory } = await create()
   const other = (await create(directory)).store
   const first = await store.write({ key: 'same', record: { count: 1 } })
+
   await expect(
     other.write({ key: 'same', record: { count: 2 } })
   ).rejects.toThrow('version')
@@ -72,6 +81,7 @@ it('compares versions atomically across independent connections', async () => {
       record: { count: 3 }
     })
   ])
+
   expect(
     results.filter((result) => result.status === 'fulfilled')
   ).toHaveLength(1)
@@ -91,6 +101,7 @@ it('compares versions atomically across independent connections', async () => {
 it('returns lock contention without overwriting and allows a save-only retry', async () => {
   const { store, directory } = await create()
   const blocker = new DatabaseSync(resolve(directory, 'library.sqlite'))
+
   try {
     blocker.exec('BEGIN IMMEDIATE')
     await expect(
@@ -98,6 +109,7 @@ it('returns lock contention without overwriting and allows a save-only retry', a
     ).rejects.toThrow(/locked|busy/iu)
     blocker.exec('ROLLBACK')
     const saved = await store.write({ key: 'new', record: { value: 1 } })
+
     expect(await store.read('new')).toEqual(saved)
   } finally {
     blocker.close()
@@ -107,6 +119,7 @@ it('returns lock contention without overwriting and allows a save-only retry', a
 it('recovers an interrupted transaction without losing the last acknowledged record', async () => {
   const { store, directory } = await create()
   const entry = await store.write({ key: 'keep', record: { value: 'durable' } })
+
   store.close()
   const crash = spawnSync(
     process.execPath,
@@ -123,6 +136,7 @@ it('recovers an interrupted transaction without losing the last acknowledged rec
     ],
     { encoding: 'utf8', timeout: 10000 }
   )
+
   expect(crash.status, crash.stderr).toBe(0)
   expect(await (await create(directory)).store.read('keep')).toEqual(entry)
 })
@@ -134,6 +148,7 @@ it('bounds record count and bytes without losing an existing entry', async () =>
     totalBytes: 64
   })
   const first = await store.write({ key: 'keep', record: 'ok' })
+
   await expect(store.write({ key: 'extra', record: 'ok' })).rejects.toThrow(
     'capacity'
   )
@@ -158,6 +173,7 @@ it('bounds record count and bytes without losing an existing entry', async () =>
 
 it('checks total bytes and validates inventory limits', async () => {
   const { store } = await create(undefined, { recordBytes: 64, totalBytes: 64 })
+
   await store.write({ key: 'first', record: 'a'.repeat(40) })
   await expect(
     store.write({ key: 'second', record: 'b'.repeat(40) })
@@ -170,12 +186,15 @@ it('checks total bytes and validates inventory limits', async () => {
 it('refuses unknown storage versions without resetting the database', async () => {
   const { store, directory } = await create()
   const entry = await store.write({ key: 'keep', record: 1 })
+
   store.close()
   const db = new DatabaseSync(resolve(directory, 'library.sqlite'))
+
   db.exec('PRAGMA user_version=99')
   db.close()
   await expect(create(directory)).rejects.toThrow('version')
   const inspect = new DatabaseSync(resolve(directory, 'library.sqlite'))
+
   expect(
     inspect.prepare('SELECT version FROM tool_library WHERE key=?').get('keep')
       ?.version
@@ -185,13 +204,16 @@ it('refuses unknown storage versions without resetting the database', async () =
 
 it('does not reset unreadable bytes or silently skip a malformed inventory row', async () => {
   const { store, directory } = await create()
+
   store.close()
   const db = new DatabaseSync(resolve(directory, 'library.sqlite'))
+
   db.prepare(
     'INSERT INTO tool_library (key,version,record,bytes) VALUES (?,?,?,?)'
   ).run('broken', '', '{}', 2)
   db.close()
   const reopened = (await create(directory)).store
+
   await expect(reopened.list(5)).rejects.toThrow('record')
   reopened.close()
   await writeFile(resolve(directory, 'library.sqlite'), 'not a database')
@@ -202,6 +224,7 @@ it('uses bound keys and rejects non-JSON values before saving', async () => {
   const { store } = await create()
   const key = "../' OR 1=1; --"
   const saved = await store.write({ key, record: { literal: 'value' } })
+
   expect(await store.read(key)).toEqual(saved)
   await expect(
     store.write({ key: 'bad', record: { value: undefined } as never })
@@ -212,11 +235,13 @@ it('uses bound keys and rejects non-JSON values before saving', async () => {
 
 it('retries a failed lazy connection without resetting persistent entries', async () => {
   const { store } = await create()
+
   await store.write({ key: 'preserved', record: { version: 1 } })
   const connect = vi
     .fn(async () => store)
     .mockRejectedValueOnce(new Error('Unavailable'))
   const session = createLocalToolStoreSession(connect)
+
   await expect(session.list(2)).rejects.toThrow('Unavailable')
   expect((await session.read('preserved'))?.record).toEqual({ version: 1 })
   await Promise.all([session.list(2), session.read('preserved')])
@@ -237,6 +262,7 @@ it('closes a pending lazy connection without reopening after shutdown', async ()
   const session = createLocalToolStoreSession(connect)
   const read = session.read('missing')
   const close = session.close()
+
   await Promise.resolve()
   resolveConnection(store)
   await Promise.all([read, close])

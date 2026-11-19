@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test'
 import { prepareDesign } from '../server/design-preparation'
+import { deliverPreparedDesign } from '../src/ai/prepared-design'
 import {
   createTestDocumentIdentity,
   waitForAppReady,
@@ -67,6 +68,7 @@ for (const rootType of ['group', 'frame'] as const) {
         }
       ]
     })
+
     await page.route('**/api/ai/status', (route) =>
       route.fulfill({ json: { state: 'ready' } })
     )
@@ -78,7 +80,7 @@ for (const rootType of ['group', 'frame'] as const) {
             {
               id: 'apply',
               name: 'apply_prepared_design',
-              arguments: { design },
+              arguments: { design: deliverPreparedDesign(design) },
               summary: 'Create the design'
             }
           ]
@@ -89,6 +91,7 @@ for (const rootType of ['group', 'frame'] as const) {
     await waitForAppReady(page)
     const before = await getCoreDocumentDigest(page)
     const depth = await getUndoHistoryDepth(page)
+
     await page.getByRole('button', { name: 'Open Agent' }).click()
     await page
       .getByLabel('Message Agent')
@@ -99,10 +102,12 @@ for (const rootType of ['group', 'frame'] as const) {
       'success'
     )
     expect(await getUndoHistoryDepth(page)).toBe(depth + 1)
+
     const verify = async () => {
       const actual = await page.evaluate(
         async (ids) => {
           const { core } = await import('../src/testing/runtime-access')
+
           return ids.map((id) => {
             const d = core.getElementData(id)
             const computed = core.getElementComputedData(id, [
@@ -111,11 +116,13 @@ for (const rootType of ['group', 'frame'] as const) {
               'width',
               'height'
             ])
+
             return { id, type: d?.type, ...computed }
           })
         },
         design.entries.map((e) => e.descriptor.id)
       )
+
       expect(actual).toEqual(
         design.entries.map(({ descriptor: d }) => ({
           id: d.id,
@@ -127,10 +134,12 @@ for (const rootType of ['group', 'frame'] as const) {
         }))
       )
     }
+
     await verify()
     const toggle = page.getByTestId(
       `layers-group-toggle-${design.keyToId.parts}`
     )
+
     await toggle.click()
     await expect(
       page.getByTestId(`element-item-${design.keyToId.shape}`)
@@ -141,6 +150,7 @@ for (const rootType of ['group', 'frame'] as const) {
     ).toBeVisible()
     await page.getByRole('button', { name: 'Close Agent panel' }).click()
     const after = await getCoreDocumentDigest(page)
+
     await undo(page)
     expect(await getCoreDocumentDigest(page)).toEqual(before)
     await redo(page)

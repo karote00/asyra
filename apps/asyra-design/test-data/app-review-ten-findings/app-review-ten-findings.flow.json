@@ -1,0 +1,228 @@
+{
+  "schemaVersion": 1,
+  "projectId": "asyra-design",
+  "flowId": "app-review-ten-findings",
+  "revision": 14,
+  "definition": {
+    "title": "App Review Ten Findings",
+    "purpose": "Close exactly R1-R10 with focused evidence; no whole-App acceptance claim.",
+    "nodes": [
+      {
+        "id": "verification",
+        "title": "Test selection and typed observations",
+        "objective": "Reject missing selectors and invalid types; preserve acknowledged results and real rendered observations.",
+        "owner": "Asyra Design",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [],
+        "criteria": [
+          {
+            "id": "reviewed",
+            "title": "Failing regression, focused checks and direct handoff review completed",
+            "kind": "manual"
+          }
+        ],
+        "specRefs": [
+          "docs/ai/apps/asyra-design/plans/completed/app-review-ten-findings-plan.md"
+        ],
+        "implementationRefs": [
+          "apps/asyra-design/__tests__",
+          "apps/asyra-design/src/testing",
+          "apps/asyra-design/e2e/properties.spec.ts"
+        ],
+        "actions": []
+      },
+      {
+        "id": "pen-evidence",
+        "title": "Independent Pen evidence",
+        "objective": "Hold display frames while canonical intent continues; preserve geometry and independent expected values.",
+        "owner": "Asyra Design",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [
+          {
+            "flowId": "app-review-ten-findings",
+            "nodeId": "verification"
+          }
+        ],
+        "criteria": [
+          {
+            "id": "reviewed",
+            "title": "Failing regression, focused checks and direct handoff review completed",
+            "kind": "manual"
+          }
+        ],
+        "specRefs": [
+          "docs/ai/apps/asyra-design/plans/completed/app-review-ten-findings-plan.md"
+        ],
+        "implementationRefs": [
+          "apps/asyra-design/e2e/pen-tool.spec.ts",
+          "apps/asyra-design/src/testing"
+        ],
+        "actions": []
+      },
+      {
+        "id": "hover",
+        "title": "Eligible hover after deletion",
+        "objective": "Apply the same hierarchy, editing and eligibility policy after successful deletion.",
+        "owner": "Asyra Design",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [
+          {
+            "flowId": "app-review-ten-findings",
+            "nodeId": "pen-evidence"
+          }
+        ],
+        "criteria": [
+          {
+            "id": "reviewed",
+            "title": "Failing regression, focused checks and direct handoff review completed",
+            "kind": "manual"
+          }
+        ],
+        "specRefs": [
+          "docs/ai/apps/asyra-design/plans/completed/app-review-ten-findings-plan.md"
+        ],
+        "implementationRefs": [
+          "apps/asyra-design/src/features/delete-element",
+          "apps/asyra-design/src/features/hover-element",
+          "apps/asyra-design/src/controllers"
+        ],
+        "actions": []
+      },
+      {
+        "id": "marquee",
+        "title": "Viewport-aware marquee",
+        "objective": "Project workspace endpoints before deciding whether screen-space output can be reused.",
+        "owner": "Asyra Design",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [
+          {
+            "flowId": "app-review-ten-findings",
+            "nodeId": "hover"
+          }
+        ],
+        "criteria": [
+          {
+            "id": "reviewed",
+            "title": "Failing regression, focused checks and direct handoff review completed",
+            "kind": "manual"
+          }
+        ],
+        "specRefs": [
+          "docs/ai/apps/asyra-design/plans/completed/app-review-ten-findings-plan.md"
+        ],
+        "implementationRefs": [
+          "apps/asyra-design/src/render-layers"
+        ],
+        "actions": []
+      },
+      {
+        "id": "hierarchy",
+        "title": "Hierarchy admission reuse",
+        "objective": "Admit authoritative projections once per valid lifetime; reject malformed or stale inputs.",
+        "owner": "Asyra Design",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [
+          {
+            "flowId": "app-review-ten-findings",
+            "nodeId": "marquee"
+          }
+        ],
+        "criteria": [
+          {
+            "id": "reviewed",
+            "title": "Failing regression, focused checks and direct handoff review completed",
+            "kind": "manual"
+          }
+        ],
+        "specRefs": [
+          "docs/ai/apps/asyra-design/plans/completed/app-review-ten-findings-plan.md"
+        ],
+        "implementationRefs": [
+          "apps/asyra-design/src/controllers/canvas-hierarchy-target.ts",
+          "apps/asyra-design/src/common-apis/hierarchy.ts"
+        ],
+        "actions": []
+      }
+    ],
+    "criteria": [
+      {
+        "id": "integrated",
+        "title": "All ten findings closed without compatibility or relaxed validation",
+        "kind": "manual"
+      }
+    ]
+  },
+  "current": {
+    "observations": [
+      {
+        "nodeId": "verification",
+        "criterionId": "reviewed",
+        "kind": "manual",
+        "status": "accepted",
+        "binding": "c18482e18e237dfd7bc47de7270659e9e3cf52ed875a1d26bdacc284206c3ce1",
+        "actor": "Codex",
+        "summary": "Red selector/inclusion/global and compiler evidence; 15 node tests, both strict compilers, identity receipt and 20 real browser property cases passed. Direct assertion review preserved render/undo behavior. See tmp/ten-step1-*. Closeout revalidation: only the canonical plan reference moved; owner definitions and implementation are unchanged.",
+        "at": "2026-11-15T15:17:26.778Z"
+      },
+      {
+        "nodeId": "pen-evidence",
+        "criterionId": "reviewed",
+        "kind": "manual",
+        "status": "accepted",
+        "binding": "d9665393fae67082d9b203d77bf499116abf5714b5346a798e51493157ccd625",
+        "actor": "Codex",
+        "summary": "Independent coordinate-corruption red proof; real clock barrier asserts zero frames and stale display across canonical successor clicks, then catch-up. 26 Pen browser and 12 owner cases, strict compiler and document guards passed. See tmp/ten-step2-*. Closeout revalidation: only the canonical plan reference moved; owner definitions and implementation are unchanged.",
+        "at": "2026-11-15T15:17:26.781Z"
+      },
+      {
+        "nodeId": "hover",
+        "criterionId": "reviewed",
+        "kind": "manual",
+        "status": "accepted",
+        "binding": "22cffeb5308fcb18e6ea7e8658c62cfce695c53e02629116e5e8e3d7421e9d70",
+        "actor": "Codex",
+        "summary": "Five owner red cases and locked-target real browser red. Shared policy passes nine owner cases, 14 browser deletion/history/reload cases, 14 doc/entry cases, types and naming. See tmp/ten-step3-*. Closeout revalidation: only the canonical plan reference moved; owner definitions and implementation are unchanged.",
+        "at": "2026-11-15T15:17:26.783Z"
+      },
+      {
+        "nodeId": "marquee",
+        "criterionId": "reviewed",
+        "kind": "manual",
+        "status": "accepted",
+        "binding": "1cc3d55cfafc038425b8ca0ef01e3746b41352380d5db9dba04a3f4f6119e6d6",
+        "actor": "Codex",
+        "summary": "Real overlay registration rejects old scale/pan reuse; actual draw calls now match projected endpoints and empty/repeated states. Six focused cases and 20 selection/viewport browser cases passed. See tmp/ten-step4-*. Closeout revalidation: only the canonical plan reference moved; owner definitions and implementation are unchanged.",
+        "at": "2026-11-15T15:17:26.784Z"
+      },
+      {
+        "nodeId": "hierarchy",
+        "criterionId": "reviewed",
+        "kind": "manual",
+        "status": "accepted",
+        "binding": "65318d6b33f7c66890c39e41150bfacfd0e1604c94a9fc00143f9a403f207e37",
+        "actor": "Codex",
+        "summary": "Reviewed authoritative replacement/lifetime contract, malformed inputs, order/workspace invalidation and live selection/modifiers. 54 consumer cases, final 30 owner cases, 7 hierarchy browser cases and strict compilers passed. Combined browser acceptance remains separate and open; see plan. Closeout revalidation: only the canonical plan reference moved; owner definitions and implementation are unchanged.",
+        "at": "2026-11-15T15:17:26.785Z"
+      },
+      {
+        "nodeId": "integration",
+        "criterionId": "integrated",
+        "kind": "manual",
+        "status": "accepted",
+        "binding": "2c99dc6c8ef5d07cea0c29a2e104ecf3b1e737622ce0da8ac6c6cc98b7b7da54",
+        "actor": "Codex",
+        "summary": "Prior bounded R1-R10 and rectangle acceptance is retained. Additional O/P/V/T proof: 8 new real browser cases plus 8 related R/Pen/text cases pass (16/16), exact discovery 3 checks and compiler inclusion/declaration 7 checks pass; focused types, lint and naming pass. Initial fixture observation errors are preserved and corrected without product edits or weaker assertions. No full local run or 101. See plan O P V T focused acceptance and tmp/tool-handoff-final.log; historical untraced failure limits remain unchanged. Closeout revalidation: only the canonical plan reference moved; owner definitions and implementation are unchanged.",
+        "at": "2026-11-15T15:17:26.787Z"
+      }
+    ],
+    "notes": [],
+    "progress": [],
+    "sources": [],
+    "warnings": []
+  }
+}

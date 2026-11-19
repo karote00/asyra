@@ -35,7 +35,7 @@
   default HTTP backend also requires `AI_PROVIDER_ENDPOINT` and
   `AI_PROVIDER_API_KEY`. The explicit `local-codex` backend uses the user's
   installed native executable and subscription login, with loopback/origin
-  admission and one tool-free ephemeral process per request. Credentials stay
+  admission and App-native tool delivery in an isolated provider thread. Credentials stay
   with Codex; no account identity or server configuration enters the browser.
   See [Local AI provider](specs/local-ai-provider.md) for lifecycle, failure,
   and capability contracts. Neither backend changes canonical runtime owners.
@@ -64,7 +64,8 @@
   `window.__CanvasPipelineDebugger__` handle for human DevTools use; HMR disposes the prior
   handle, while production bypasses the import and runtime entirely
 - diagnostics: `initLoadDiagnostics()`
-- derived-state sync: `initSelectionCompatibility()`, `initPathEditingContinuation()`
+- derived-state sync: `initPathEditingContinuation()`; Preset derives selected
+  Vector point/segment views from canonical selection channels
 - capability init: `initAreaSelection()`, `initGradientFillEditing()`, `initVectorIconData()`
 - foundation: `initInputSystem()`, `initFeatures()`
 
@@ -80,13 +81,12 @@
 - Core prepares the checkpoint/tail handshake, loads the returned read-only
   checkpoint source, initializes Features, applies the pending tail, activates
   live transport, and only then publishes ready
-- every required `fileId`, including `crdt-7076-sample`, receives its initial
+- with a configured endpoint, every `fileId`, including `crdt-7076-sample`, receives its initial
   checkpoint from the same socket document session. The prepared 7,076-element
   sample enters only through Actor A's request-time HTTP action-batch after
   Send; the checked-in compressed document is a regression asset, not a
   RenderApp load source
-- currently has no IndexedDB publication recovery outbox; the accepted
-  socket-authoritative target adds one App-owned IndexedDB outbox containing
+- the configured socket session owns an IndexedDB recovery outbox containing
   only unaccepted `SharedPublication` values, never a materialized document,
   compatibility format, or second canonical persistence route
 - starts framework via `core.start(...)` using Core's default `RenderAdapter`;
@@ -98,7 +98,7 @@
   collaboration session before the renderer and owns idempotent runtime cleanup.
   Teardown does not reopen composition, and an unmount during pending startup
   cannot activate collaboration afterward
-- collaboration setup is mandatory for every required `fileId`. Session
+- collaboration setup is required when an endpoint is configured. Session
   failure uses provisional local state, durable publication retention, and
   continued editing without selecting a second RenderApp composition
 - imports no Pixi SDK or concrete render-engine package
@@ -172,7 +172,7 @@ The implemented document-session contract replaces the former split
 browser-database save plus optional live Collaboration composition:
 
 ```text
-mandatory socket handshake
+configured endpoint -> socket handshake
 -> backend checkpoint + exact socket pending tail
 -> Core canonical checkpoint load
 -> App remote apply through handshake head sequence

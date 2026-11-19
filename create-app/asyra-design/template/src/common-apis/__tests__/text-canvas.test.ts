@@ -14,6 +14,7 @@ const mocks = vi.hoisted(() => ({
   switchPrimaryTool: vi.fn(),
   runTransaction: vi.fn((fn: () => unknown) => fn())
 }))
+
 vi.mock('../../contexts', () => ({ default: mocks }))
 vi.mock('../selection', () => ({ selectionApis: mocks }))
 vi.mock('../system-context', () => ({ systemContextApis: mocks }))
@@ -182,8 +183,10 @@ it('publishes a shared draft without replacing the session or committing canonic
   const session = textCanvasApis.getSnapshot()
   const listener = vi.fn()
   const unsubscribe = textCanvasApis.subscribe(listener)
+
   textCanvasApis.updateDraft('Live draft')
   const draft = textCanvasApis.getDraftSnapshot()
+
   expect(textCanvasApis.getSnapshot()).toBe(session)
   expect(textCanvasApis.getDraftSnapshot()?.text).toBe('Live draft')
   expect(listener).toHaveBeenCalledTimes(1)
@@ -202,6 +205,7 @@ it('retains a shared draft when stale-target admission rejects its commit', () =
   textCanvasApis.beginEdit('text-1')
   textCanvasApis.updateDraft('Local draft')
   const draft = textCanvasApis.getDraftSnapshot()
+
   mocks.getElementComputedData.mockReturnValue({
     ...DEFAULT_TEXT_DATA,
     text: 'Remote'

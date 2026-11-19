@@ -25,6 +25,7 @@ const rgbToHsl = ({
   const delta = max - min
 
   let h = 0
+
   if (delta !== 0) {
     if (max === r1) {
       h = ((g1 - b1) / delta) % 6
@@ -33,6 +34,7 @@ const rgbToHsl = ({
     } else {
       h = (r1 - g1) / delta + 4
     }
+
     h *= 60
   }
 
@@ -58,8 +60,10 @@ const rgbaToFormat = (color: RGBAColor, format: FillColorFormat): string => {
       return `rgb(${Math.round(color.r)} ${Math.round(color.g)} ${Math.round(color.b)})`
     case FillColorFormats.HSL: {
       const hsl = rgbToHsl(color)
+
       return `hsl(${hsl.h} ${hsl.s}% ${hsl.l}%)`
     }
+
     case FillColorFormats.CSS:
       return rgbaToCssColor(color)
     case FillColorFormats.HWB:
@@ -74,6 +78,7 @@ export const convertStoredColorToFormat = (
   format: FillColorFormat
 ): string => {
   const parsed = parseColor(color, { allowBrowser: true })
+
   if (!parsed) {
     return color
   }
@@ -87,6 +92,7 @@ export const convertUserColorToDefault = (
   defaultColorValue: string
 ): string => {
   const parsed = parseColor(value, { allowBrowser: true })
+
   if (!parsed) {
     return defaultColorValue
   }
@@ -100,6 +106,7 @@ export const toCssColorWithOpacity = (
   defaultColorValue = 'rgba(0, 0, 0, 1)'
 ): string => {
   const parsed = parseColor(value, { allowBrowser: true })
+
   if (!parsed) {
     return defaultColorValue
   }
@@ -109,6 +116,7 @@ export const toCssColorWithOpacity = (
 
 export const toColorPickerHex = (value: string): string => {
   const parsed = parseColor(value, { allowBrowser: true })
+
   if (!parsed) {
     return '#000000'
   }
@@ -118,6 +126,7 @@ export const toColorPickerHex = (value: string): string => {
 
 export const convertToHexUpper = (color: string): string => {
   const parsed = parseColor(color, { allowBrowser: true })
+
   if (!parsed) {
     return color.replace('#', '').toUpperCase()
   }

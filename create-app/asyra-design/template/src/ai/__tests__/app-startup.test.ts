@@ -15,6 +15,7 @@ describe('outer startup', () => {
     })
     const initializeApp = vi.fn(() => {
       calls.push('init')
+
       return initialization as never
     })
 
@@ -24,6 +25,7 @@ describe('outer startup', () => {
         {
           getRequiredFileId: vi.fn(() => {
             calls.push('fileId')
+
             return 'crdt-7076-sample'
           }),
           initializeApp

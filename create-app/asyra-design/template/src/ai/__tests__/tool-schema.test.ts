@@ -12,6 +12,7 @@ it('enforces negative constraints together with ordinary sibling constraints', (
     additionalProperties: false,
     not: { required: ['draft', 'repair'] }
   }
+
   expect(operationInputIssue({ draft: {}, repair: {} }, schema)).toBeDefined()
   expect(operationInputIssue({ draft: {} }, schema)).toBeUndefined()
   expect(operationInputIssue({ repair: {} }, schema)).toBeUndefined()
@@ -27,6 +28,7 @@ it('validates dynamic property names through the same local reference root', () 
     additionalProperties: { type: 'number', minimum: 0 },
     $defs: { key: { type: 'string', minLength: 1, maxLength: 3 } }
   }
+
   expect(operationInputIssue({ '': 1 }, schema)).toBeDefined()
   expect(operationInputIssue({ long: 1 }, schema)).toBeDefined()
   expect(operationInputIssue({ key: -1 }, schema)).toBeDefined()
@@ -54,7 +56,11 @@ it('reports escaped missing-field pointers from the selected branch and preserve
     }
   }
   const issues = operationInputIssues({ items: [{ kind: 'first' }] }, schema)
-  if (!issues) throw new Error('Expected required-field issues')
+
+  if (!issues) {
+    throw new Error('Expected required-field issues')
+  }
+
   expect(
     issues
       .filter((issue) => issue.keyword === 'required')
@@ -66,7 +72,11 @@ it('reports escaped missing-field pointers from the selected branch and preserve
     schema,
     'output'
   )
-  if (!outputIssues) throw new Error('Expected output issues')
+
+  if (!outputIssues) {
+    throw new Error('Expected output issues')
+  }
+
   expect(formatOperationInputIssues(outputIssues)).toContain('output.items[0]')
   expect(
     operationInputIssues({ items: [{ kind: 'first', 'a/b~c': 1 }] }, schema)
@@ -76,6 +86,7 @@ it('reports escaped missing-field pointers from the selected branch and preserve
     $ref: '#/$defs/number',
     minimum: 3
   }
+
   expect(operationInputIssue(2, bounded)).toBeDefined()
   expect(operationInputIssue(3, bounded)).toBeUndefined()
 })
@@ -88,7 +99,11 @@ it('retains ambiguous union failures and bounds repeated diagnostics without cla
     Array.from({ length: 50 }, () => ({})),
     { type: 'array', items: { type: 'object', required: ['value'] } }
   )
-  if (!issues) throw new Error('Expected bounded issues')
+
+  if (!issues) {
+    throw new Error('Expected bounded issues')
+  }
+
   expect(issues.some((issue) => issue.keyword === 'diagnosticLimit')).toBe(true)
   expect(issues.length).toBeLessThan(50)
   expect(formatOperationInputIssues(issues).length).toBeLessThanOrEqual(3000)
@@ -107,6 +122,7 @@ it.each(['constructor', '__proto__', 'toString'])(
     }
     const invalid = Object.fromEntries([[key, []]])
     const issues = operationInputIssues(invalid, schema)
+
     expect(issues).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ instancePath: '/' + key })
@@ -126,6 +142,7 @@ it.each(['constructor', '__proto__', 'toString'])(
       properties: Object.fromEntries([[key, { type: 'string' }]]),
       additionalProperties: false
     }
+
     expect(
       operationInputIssue(Object.fromEntries([[key, 'valid']]), explicit)
     ).toBeUndefined()

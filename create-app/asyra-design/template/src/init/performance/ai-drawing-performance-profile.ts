@@ -160,7 +160,9 @@ const readBoundedOwnString = (
   if (typeof value !== 'object' || value === null || Array.isArray(value)) {
     return null
   }
+
   const descriptor = Object.getOwnPropertyDescriptor(value, key)
+
   return descriptor?.enumerable &&
     'value' in descriptor &&
     typeof descriptor.value === 'string'
@@ -181,6 +183,7 @@ const captureTurnSettlement = (
 
 class BoundedEvidenceBuffer<T> {
   private readonly entries: T[] = []
+
   private nextWriteIndex = 0
 
   constructor(private readonly capacity: number) {}
@@ -188,6 +191,7 @@ class BoundedEvidenceBuffer<T> {
   append(value: T): void {
     if (this.entries.length < this.capacity) {
       this.entries.push(value)
+
       return
     }
 
@@ -205,10 +209,14 @@ class BoundedEvidenceBuffer<T> {
   }
 
   latest(): T | undefined {
-    if (this.entries.length === 0) return
+    if (this.entries.length === 0) {
+      return
+    }
+
     if (this.entries.length < this.capacity) {
       return this.entries.at(-1)
     }
+
     return this.entries[
       (this.nextWriteIndex + this.capacity - 1) % this.capacity
     ]
@@ -218,6 +226,7 @@ class BoundedEvidenceBuffer<T> {
     if (this.entries.length < this.capacity || this.nextWriteIndex === 0) {
       return [...this.entries]
     }
+
     return [
       ...this.entries.slice(this.nextWriteIndex),
       ...this.entries.slice(0, this.nextWriteIndex)
@@ -245,7 +254,10 @@ export const getActiveAiDrawingPerformanceProfile =
 const serializeDiagnosticValue = (
   value: unknown
 ): AiDrawingPerformanceDiagnosticValue | undefined => {
-  if (value === undefined) return
+  if (value === undefined) {
+    return
+  }
+
   if (
     typeof value === 'string' ||
     typeof value === 'number' ||
@@ -254,6 +266,7 @@ const serializeDiagnosticValue = (
   ) {
     return String(value).slice(0, 300)
   }
+
   const readOwnDiagnosticString = (
     target: object,
     key: string,
@@ -261,6 +274,7 @@ const serializeDiagnosticValue = (
   ): string | undefined => {
     try {
       const descriptor = Object.getOwnPropertyDescriptor(target, key)
+
       return descriptor &&
         'value' in descriptor &&
         typeof descriptor.value === 'string'
@@ -270,12 +284,15 @@ const serializeDiagnosticValue = (
       return
     }
   }
+
   const candidate = value as object
   const message = readOwnDiagnosticString(candidate, 'message', 300)
   let name = readOwnDiagnosticString(candidate, 'name', 80)
+
   if (!name && message) {
     try {
       const prototype = Object.getPrototypeOf(candidate)
+
       if (prototype) {
         name = readOwnDiagnosticString(prototype, 'name', 80)
       }
@@ -283,12 +300,14 @@ const serializeDiagnosticValue = (
       // Hostile diagnostic objects retain bounded fallback evidence.
     }
   }
+
   if (message || name) {
     return Object.freeze({
       message: message ?? 'Diagnostic value unavailable',
       name: name ?? 'Error'
     })
   }
+
   return 'Diagnostic value unavailable'
 }
 
@@ -297,6 +316,7 @@ const captureFactoryTransactionStatus = (
 ): AiDrawingPerformanceFactoryTransactionStatusEvidence => {
   const cause = serializeDiagnosticValue(status.failure?.cause)
   const error = serializeDiagnosticValue(status.error)
+
   return Object.freeze({
     capturedAtMs: status.timestamp,
     changeCount: status.changeCount,
@@ -348,6 +368,7 @@ export const isAiDrawingPerformanceProfileRequested = (
   search: string
 ): boolean => {
   const values = new URLSearchParams(search).getAll('aiPerformance')
+
   return values.length === 1 && values[0] === 'profile'
 }
 
@@ -420,6 +441,7 @@ export const installAiDrawingPerformanceProfile = ({
     null
 
   const elapsed = () => Math.max(0, now() - baselineMs)
+
   const recordPhaseAt = (name: string, durationMs: number, atMs: number) => {
     if (
       disposed ||
@@ -428,6 +450,7 @@ export const installAiDrawingPerformanceProfile = ({
     ) {
       return
     }
+
     phases.append(
       Object.freeze({
         atMs: Math.max(0, atMs),
@@ -441,13 +464,16 @@ export const installAiDrawingPerformanceProfile = ({
     ) {
       phaseCounts.set(name, (phaseCounts.get(name) ?? 0) + 1)
     }
+
     if (name === 'ai-turn:accepted-to-settled') {
       hasAcceptedToSettledEvidence = true
     }
   }
+
   const recordPhase = (name: string, durationMs: number) => {
     recordPhaseAt(name, durationMs, elapsed())
   }
+
   const recordCounterAt = (name: string, value: number, atMs: number) => {
     if (
       disposed ||
@@ -458,24 +484,30 @@ export const installAiDrawingPerformanceProfile = ({
     ) {
       return
     }
+
     counters.append(Object.freeze({ atMs: Math.max(0, atMs), name, value }))
     counterTotals.set(name, (counterTotals.get(name) ?? 0) + value)
     if (name === 'ai-turn:accepted') {
       hasAcceptedTurnEvidence = true
     }
+
     if (name.startsWith('ai-turn:outcome:')) {
       hasSettledOutcomeEvidence = true
     }
   }
+
   const recordCounter = (name: string, value: number) => {
     recordCounterAt(name, value, elapsed())
   }
+
   const phaseSink: BrowserDragPhaseSink = (name, durationMs) => {
     recordPhase(name, durationMs)
   }
+
   const counterSink: DiagnosticCounterSink = (name, value) => {
     recordCounter(name, value)
   }
+
   const detachPhaseSink = subscribeToBrowserDragPhases(phaseSink)
   const detachCounterSink = subscribeToDiagnosticCounters(counterSink)
 
@@ -490,12 +522,19 @@ export const installAiDrawingPerformanceProfile = ({
     }
 
     let detachTransactionStatus: (() => void) | undefined
+
     try {
       detachTransactionStatus = source.subscribeToTransactionStatus(
         (status) => {
-          if (disposed || !Number.isFinite(status.timestamp)) return
+          if (disposed || !Number.isFinite(status.timestamp)) {
+            return
+          }
+
           factoryStatuses.append(captureFactoryTransactionStatus(status))
-          if (status.status !== 'committed') return
+          if (status.status !== 'committed') {
+            return
+          }
+
           factoryCommits.append(
             Object.freeze({
               capturedAtMs: status.timestamp,
@@ -508,13 +547,18 @@ export const installAiDrawingPerformanceProfile = ({
       )
     } catch {
       callDetached(detachTransactionStatus)
+
       return () => undefined
     }
 
     runtimeEvidenceSource = source
     let detached = false
+
     const detachRuntimeEvidence = () => {
-      if (detached) return
+      if (detached) {
+        return
+      }
+
       detached = true
       callDetached(detachTransactionStatus)
       if (runtimeEvidenceDisposer === detachRuntimeEvidence) {
@@ -522,7 +566,9 @@ export const installAiDrawingPerformanceProfile = ({
         runtimeEvidenceSource = null
       }
     }
+
     runtimeEvidenceDisposer = detachRuntimeEvidence
+
     return detachRuntimeEvidence
   }
 
@@ -531,7 +577,11 @@ export const installAiDrawingPerformanceProfile = ({
     readonly publicationId: string
   }): void => {
     const capturedAtMs = epochNow()
-    if (disposed || !Number.isFinite(capturedAtMs)) return
+
+    if (disposed || !Number.isFinite(capturedAtMs)) {
+      return
+    }
+
     factoryPublications.append(
       Object.freeze({
         capturedAtMs,
@@ -552,19 +602,23 @@ export const installAiDrawingPerformanceProfile = ({
       if (!conversation || disposed) {
         return () => undefined
       }
+
       const unsubscribe = conversation.subscribe((snapshot) => {
         const previous = previousConversationSnapshot
         const observedAtMs = now()
         const observedElapsedMs = Math.max(0, observedAtMs - baselineMs)
+
         if (!previous?.activeTurn && snapshot.activeTurn) {
           recordCounterAt('ai-turn:accepted', 1, observedElapsedMs)
           observedRuntimeProgressCount = 0
           runtimeProgressClock = null
         }
+
         if (snapshot.activeTurn) {
           const nextProgress = snapshot.activeTurn.progress.slice(
             observedRuntimeProgressCount
           )
+
           for (const update of nextProgress) {
             if (
               runtimeProgressClock &&
@@ -577,6 +631,7 @@ export const installAiDrawingPerformanceProfile = ({
                 observedElapsedMs
               )
             }
+
             if (
               !runtimeProgressClock ||
               runtimeProgressClock.phase !== update.phase
@@ -587,6 +642,7 @@ export const installAiDrawingPerformanceProfile = ({
               }
             }
           }
+
           observedRuntimeProgressCount = snapshot.activeTurn.progress.length
         } else if (previous?.activeTurn) {
           if (
@@ -599,13 +655,16 @@ export const installAiDrawingPerformanceProfile = ({
               observedElapsedMs
             )
           }
+
           observedRuntimeProgressCount = 0
           runtimeProgressClock = null
         }
+
         if (
           snapshot.settledTurns.length > (previous?.settledTurns.length ?? 0)
         ) {
           const settled = snapshot.settledTurns.at(-1)
+
           if (settled) {
             latestTurnSettlement = captureTurnSettlement(settled)
             recordPhaseAt(
@@ -620,8 +679,10 @@ export const installAiDrawingPerformanceProfile = ({
             )
           }
         }
+
         previousConversationSnapshot = snapshot
       })
+
       conversationDisposer = () => {
         unsubscribe()
         observedRuntimeProgressCount = 0
@@ -630,10 +691,15 @@ export const installAiDrawingPerformanceProfile = ({
           conversationDisposer = null
         }
       }
+
       return conversationDisposer
     },
+
     dispose: () => {
-      if (disposed) return
+      if (disposed) {
+        return
+      }
+
       disposed = true
       conversationDisposer?.()
       conversationDisposer = null
@@ -650,11 +716,14 @@ export const installAiDrawingPerformanceProfile = ({
       ) {
         delete window.__AiDrawingPerformance__
       }
+
       if (activePerformanceProfile === profile) {
         activePerformanceProfile = null
       }
+
       runtimeEvidenceOwners.delete(profile)
     },
+
     getRuntimeEvidence: () =>
       (() => {
         const detached = structuredClone({
@@ -662,6 +731,7 @@ export const installAiDrawingPerformanceProfile = ({
           factoryPublications: factoryPublications.toArray(),
           factoryStatuses: factoryStatuses.toArray()
         })
+
         return Object.freeze({
           factoryCommits: Object.freeze(
             detached.factoryCommits.map((evidence) => Object.freeze(evidence))
@@ -676,113 +746,151 @@ export const installAiDrawingPerformanceProfile = ({
           )
         })
       })(),
+
     readConversationSnapshot: () =>
       previousConversationSnapshot
         ? structuredClone(previousConversationSnapshot)
         : null,
+
     readCounterTotal: (name: string) => counterTotals.get(name) ?? 0,
+
     readPhaseCount: (name: string) => phaseCounts.get(name) ?? 0,
+
     readCanonicalElementCount: () => {
       if (!runtimeEvidenceSource || disposed) {
         throw new Error(
           'AI drawing performance runtime evidence is unavailable'
         )
       }
+
       const count = runtimeEvidenceSource.readCanonicalElementCount()
+
       if (!Number.isSafeInteger(count) || count < 0) {
         throw new Error(
           'AI drawing performance canonical element count is invalid'
         )
       }
+
       return count
     },
+
     readCanonicalElements: () => {
       if (!runtimeEvidenceSource || disposed) {
         throw new Error(
           'AI drawing performance runtime evidence is unavailable'
         )
       }
+
       return structuredClone(runtimeEvidenceSource.readCanonicalElements())
     },
+
     readCanonicalOwnerSnapshot: () => {
       if (!runtimeEvidenceSource || disposed) {
         throw new Error(
           'AI drawing performance runtime evidence is unavailable'
         )
       }
+
       return structuredClone(runtimeEvidenceSource.readCanonicalOwnerSnapshot())
     },
+
     readFactoryPublicationCount: () => {
       if (disposed) {
         throw new Error(
           'AI drawing performance runtime evidence is unavailable'
         )
       }
+
       return factoryPublications.length
     },
+
     readHistoryDepth: () => {
       if (!runtimeEvidenceSource || disposed) {
         throw new Error(
           'AI drawing performance runtime evidence is unavailable'
         )
       }
+
       const depth = runtimeEvidenceSource.readHistoryDepth()
+
       if (!Number.isSafeInteger(depth) || depth < 0) {
         throw new Error('AI drawing performance history depth is invalid')
       }
+
       return depth
     },
+
     readLatestFactoryTransactionStatus: () => factoryStatuses.latest() ?? null,
+
     readLatestPhaseSample: () => {
       if (disposed) {
         throw new Error(
           'AI drawing performance runtime evidence is unavailable'
         )
       }
+
       const latest = phases.latest()
+
       return latest ? Object.freeze({ ...latest }) : null
     },
+
     readLatestTurnSettlement: () => latestTurnSettlement,
+
     readRenderProjectionElementCount: () => {
       if (!runtimeEvidenceSource || disposed) {
         throw new Error(
           'AI drawing performance runtime evidence is unavailable'
         )
       }
+
       const count = runtimeEvidenceSource.readRenderProjectionElementCount()
+
       if (!Number.isSafeInteger(count) || count < 0) {
         throw new Error(
           'AI drawing performance Render projection element count is invalid'
         )
       }
+
       return count
     },
+
     readViewportPosition: () => {
       if (!runtimeEvidenceSource || disposed) {
         throw new Error(
           'AI drawing performance runtime evidence is unavailable'
         )
       }
+
       const position = runtimeEvidenceSource.readViewportPosition()
+
       if (!Number.isFinite(position.x) || !Number.isFinite(position.y)) {
         throw new Error('AI drawing performance viewport position is invalid')
       }
+
       return Object.freeze({ x: position.x, y: position.y })
     },
+
     readZoom: () => {
       if (!runtimeEvidenceSource || disposed) {
         throw new Error(
           'AI drawing performance runtime evidence is unavailable'
         )
       }
+
       const zoom = runtimeEvidenceSource.readZoom()
+
       if (!Number.isFinite(zoom) || zoom <= 0) {
         throw new Error('AI drawing performance zoom is invalid')
       }
+
       return zoom
     },
+
     reset: () => {
-      if (disposed) return
+      if (disposed) {
+        return
+      }
+
       counters.clear()
       counterTotals.clear()
       factoryCommits.clear()
@@ -798,6 +906,7 @@ export const installAiDrawingPerformanceProfile = ({
       latestTurnSettlement = null
       baselineMs = now()
     },
+
     snapshot: () =>
       freezeSnapshot(
         counters.toArray(),
@@ -818,5 +927,6 @@ export const installAiDrawingPerformanceProfile = ({
   if (typeof window !== 'undefined') {
     window.__AiDrawingPerformance__ = profile
   }
+
   return profile
 }

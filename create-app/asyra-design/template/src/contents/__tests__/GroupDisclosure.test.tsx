@@ -23,6 +23,7 @@ describe('Layers Group disclosure', () => {
     expect(button.classList.contains('w-6')).toBe(true)
     const icon = button.querySelector('svg')
     const iconContainer = icon?.parentElement
+
     expect(icon).not.toBeNull()
     expect(button.textContent).toBe('')
     expect(iconContainer?.classList.contains('h-3')).toBe(true)

@@ -31,7 +31,7 @@ describe('@asyra/render-engine-pixi package boundary', () => {
 
     expect(packageJson.dependencies).toEqual({
       '@asyra/render-engine': 'workspace:*',
-      'pixi.js': '^8.20.1'
+      'pixi.js': '^8.22.0'
     })
     expect(sources).not.toMatch(/from ['"]@asyra\/render(?:['"/])/)
   })

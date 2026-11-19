@@ -1,3 +1,8 @@
+import {
+  EMPTY_CONVERSATION_DRAFT,
+  type ConversationDraft,
+  type ConversationDrafts
+} from '../ai/conversation-drafts'
 import { AiToolLibraryPanel } from './ai-tool-library-panel'
 import { projectEvaluationReport } from '../ai/evaluation-window'
 import { AiConversationNavigation } from './ai-conversation-navigation'
@@ -8,6 +13,9 @@ import {
   useLayoutEffect,
   useRef,
   useState,
+  useSyncExternalStore,
+  type Dispatch,
+  type SetStateAction,
   type ChangeEvent,
   type DragEvent,
   type FormEvent,
@@ -20,6 +28,7 @@ import type {
 } from '../ai/confirmation'
 import type {
   AiActiveTurn,
+  AiSettledTurn,
   AiConversationController,
   AiConversationSnapshot,
   AiImageAttachment,
@@ -187,6 +196,7 @@ const DrawingDetailChoiceCard = ({
 }
 
 export interface AiConversationPanelProps {
+  readonly drafts: ConversationDrafts
   readonly confirmation: AiConfirmationBroker
   readonly conversation: AiConversationController
   readonly onClose: () => void
@@ -194,6 +204,7 @@ export interface AiConversationPanelProps {
 
 const AiConversationPanelLayout = ({
   conversation,
+  drafts,
   onClose,
   children
 }: AiConversationPanelProps & {
@@ -201,21 +212,40 @@ const AiConversationPanelLayout = ({
 }) => {
   const imageInputRef = useRef<HTMLInputElement>(null)
   const promptRef = useRef<HTMLTextAreaElement>(null)
-  const [draft, setDraft] = useState('')
   const [aiAvailable, setAiAvailable] = useState(true)
-  const drafts = useRef(
-    new Map<
-      string,
-      { text: string; attachments: readonly AiImageAttachment[] }
-    >()
-  )
-  const [draftAttachments, setDraftAttachments] = useState<
-    readonly AiImageAttachment[]
-  >([])
-  const [attachmentError, setAttachmentError] = useState<string | null>(null)
+  const mounted = useRef(true)
+
+  useEffect(() => {
+    mounted.current = true
+
+    return () => {
+      mounted.current = false
+    }
+  }, [])
   const [draggingImages, setDraggingImages] = useState(false)
   const [conversationSnapshot, setConversationSnapshot] =
     useState<AiConversationSnapshot>(() => conversation.getSnapshot())
+
+  const conversationId = conversationSnapshot.conversationId
+  const currentDraft = useSyncExternalStore(
+    drafts.subscribe,
+    useCallback(() => drafts.get(conversationId), [drafts, conversationId])
+  )
+  const {
+    text: draft,
+    attachments: draftAttachments,
+    error: attachmentError
+  } = currentDraft
+  const updateDraft = useCallback(
+    (id: string, update: (current: ConversationDraft) => ConversationDraft) => {
+      if (!mounted.current) {
+        return
+      }
+
+      drafts.update(id, update)
+    },
+    [drafts]
+  )
 
   useEffect(
     () => conversation.subscribe(setConversationSnapshot),
@@ -234,16 +264,22 @@ const AiConversationPanelLayout = ({
         return
       }
 
+      const sourceId = conversation.getSnapshot().conversationId
+      const generation = drafts.get(sourceId).generation
+
       const selectedFiles = Array.from(files)
       const acceptedFiles = selectedFiles.filter((file) =>
         ACCEPTED_IMAGE_TYPES.has(file.type as AiImageMediaType)
       )
 
-      setAttachmentError(
-        acceptedFiles.length === selectedFiles.length
-          ? null
-          : 'Choose PNG, JPEG, or WebP images.'
-      )
+      updateDraft(sourceId, (current) => ({
+        ...current,
+        error:
+          acceptedFiles.length === selectedFiles.length
+            ? null
+            : 'Choose PNG, JPEG, or WebP images.'
+      }))
+
       if (acceptedFiles.length === 0) {
         return
       }
@@ -251,28 +287,26 @@ const AiConversationPanelLayout = ({
       const results = await Promise.allSettled(
         acceptedFiles.map(readImageAttachment)
       )
-
-      if (conversation.getSnapshot().activeTurn) {
-        return
-      }
-
       const attachments = results.flatMap((result) =>
         result.status === 'fulfilled' ? [result.value] : []
       )
 
-      if (attachments.length > 0) {
-        setDraftAttachments((current) =>
-          Object.freeze([...current, ...attachments])
-        )
-      }
-
-      if (results.some((result) => result.status === 'rejected')) {
-        setAttachmentError(
-          'Could not read one or more images. Try adding them again.'
-        )
-      }
+      updateDraft(sourceId, (current) =>
+        current.generation !== generation
+          ? current
+          : {
+              ...current,
+              attachments: Object.freeze([
+                ...current.attachments,
+                ...attachments
+              ]),
+              error: results.some((result) => result.status === 'rejected')
+                ? 'Could not read one or more images. Try adding them again.'
+                : current.error
+            }
+      )
     },
-    [conversation]
+    [conversation, drafts, updateDraft]
   )
 
   const chooseImages = useCallback(
@@ -314,34 +348,31 @@ const AiConversationPanelLayout = ({
       })
 
       if (conversation.getSnapshot().activeTurn?.intent === intent) {
-        setDraft('')
-        setDraftAttachments([])
-        setAttachmentError(null)
+        updateDraft(conversationId, (current) => ({
+          ...EMPTY_CONVERSATION_DRAFT,
+          generation: current.generation + 1
+        }))
       }
 
       void settlement.catch(() => undefined)
     },
-    [conversation, draft, draftAttachments, aiAvailable]
+    [
+      conversation,
+      conversationId,
+      draft,
+      draftAttachments,
+      aiAvailable,
+      updateDraft
+    ]
   )
 
   const navigateConversation = (id: string | null) => {
-    drafts.current.set(conversation.getSnapshot().conversationId, {
-      text: draft,
-      attachments: draftAttachments
-    })
     if (id === null) {
       conversation.newConversation()
     } else {
       conversation.selectConversation(id)
     }
 
-    const restored = drafts.current.get(
-      conversation.getSnapshot().conversationId
-    )
-
-    setDraft(restored?.text ?? '')
-    setDraftAttachments(restored?.attachments ?? [])
-    setAttachmentError(null)
     promptRef.current?.focus({ preventScroll: true })
   }
 
@@ -452,15 +483,16 @@ const AiConversationPanelLayout = ({
               attachments={draftAttachments}
               onRemove={(index) => {
                 if (!active) {
-                  setDraftAttachments((current) =>
-                    Object.freeze(
-                      current.filter(
+                  updateDraft(conversationId, (current) => ({
+                    ...current,
+                    attachments: Object.freeze(
+                      current.attachments.filter(
                         (_attachment, attachmentIndex) =>
                           attachmentIndex !== index
                       )
-                    )
-                  )
-                  setAttachmentError(null)
+                    ),
+                    error: null
+                  }))
                 }
               }}
             />
@@ -483,7 +515,11 @@ const AiConversationPanelLayout = ({
             className="block min-h-[72px] w-full resize-none rounded-t-lg border-0 bg-transparent px-3 py-2 text-[12px] leading-5 text-white outline-none placeholder:text-[#777982]"
             data-ai-agent-prompt="true"
             id="ai-agent-input"
-            onChange={(event) => setDraft(event.target.value)}
+            onChange={(event) => {
+              const text = event.target.value
+
+              updateDraft(conversationId, (current) => ({ ...current, text }))
+            }}
             onKeyDown={(event) => event.stopPropagation()}
             onKeyUp={(event) => event.stopPropagation()}
             placeholder="Describe a drawing or refinement…"
@@ -541,6 +577,283 @@ const AiConversationPanelLayout = ({
   )
 }
 
+const AiConversationMessage = ({
+  source,
+  conversation,
+  confirmationSnapshot,
+  active,
+  latest,
+  answer,
+  expandedHistory,
+  setExpandedHistory,
+  submitDrawingDetailChoice,
+  followProgress
+}: {
+  readonly source: AiActiveTurn | AiSettledTurn
+  readonly conversation: AiConversationController
+  readonly confirmationSnapshot: AiConfirmationSnapshot
+  readonly active: boolean
+  readonly latest: boolean
+  readonly answer?: AiActiveTurn | AiSettledTurn
+  readonly expandedHistory: ReadonlySet<string>
+  readonly setExpandedHistory: Dispatch<SetStateAction<ReadonlySet<string>>>
+  readonly submitDrawingDetailChoice: (
+    turnId: string,
+    optionId: AiDrawingDetailOptionId
+  ) => void
+  readonly followProgress: () => void
+}) => {
+  const [current, setCurrent] = useState(source)
+
+  useEffect(() => {
+    if ('outcome' in source) {
+      return
+    }
+
+    return conversation.subscribe((snapshot) => {
+      if (snapshot.activeTurn?.turnId === source.turnId) {
+        setCurrent(snapshot.activeTurn)
+      }
+    })
+  }, [conversation, source])
+  const turn = 'outcome' in source ? source : current
+  const pendingConfirmation = confirmationSnapshot.pending
+
+  useLayoutEffect(followProgress, [turn, followProgress])
+  const settled = 'outcome' in turn ? turn : null
+  const summary = settled ? summarizeAiTurn(settled) : null
+  const evaluationReport = settled
+    ? projectEvaluationReport(settled)
+    : undefined
+  const question = settled ? projectAiQuestion(settled) : null
+  const canAnswer = question && !answer && !active && latest
+  let questionStatus = 'Superseded'
+
+  if (answer) {
+    questionStatus = 'Answered'
+  }
+
+  if (canAnswer) {
+    questionStatus = 'Waiting for your answer'
+  }
+
+  const stopping = 'stopping' in turn && turn.stopping
+  const activity = conversation.getActivity(turn.turnId, {
+    purpose: turn.originalIntent ?? turn.intent,
+    outcome: settled?.outcome,
+    awaitingAnswer: Boolean(question),
+    stopping: Boolean(stopping),
+    awaitingApproval: !settled && Boolean(pendingConfirmation)
+  })
+
+  return (
+    <article
+      className="flex min-w-0 flex-col gap-3"
+      data-testid="ai-agent-message"
+      data-outcome={settled?.outcome ?? 'active'}
+      data-turn-id={turn.turnId}
+      data-evaluation-report={
+        evaluationReport ? JSON.stringify(evaluationReport) : undefined
+      }
+      key={turn.turnId}
+    >
+      <div
+        aria-label="Your message"
+        data-message-role="user"
+        className="flex max-w-[88%] min-w-0 self-end flex-col gap-2 rounded-2xl rounded-tr-sm bg-[#34353b] px-3 py-2.5"
+      >
+        {turn.attachments.length > 0 ? (
+          <ImageAttachmentStrip attachments={turn.attachments} />
+        ) : null}
+        <p className="m-0 whitespace-pre-wrap break-words text-[12px] leading-5 text-[#f1f1f3]">
+          {turn.intent}
+        </p>
+      </div>
+      <div
+        aria-label="Agent response"
+        data-message-role="assistant"
+        className="min-w-0 self-stretch py-1 pr-3 text-[12px] leading-5 text-[#e1dff0]"
+      >
+        <details
+          onToggle={(event) => {
+            const open = event.currentTarget.open
+
+            setExpandedHistory((previous) => {
+              const next = new Set(previous)
+
+              if (open) {
+                next.add(turn.turnId)
+              } else {
+                next.delete(turn.turnId)
+              }
+
+              return next
+            })
+          }}
+          className="mt-2 text-[12px] text-[#96939f]"
+        >
+          <summary
+            aria-label="Work history"
+            className="cursor-pointer border-b border-[#393a40] pb-2"
+          >
+            {settled ? (
+              <>Worked for {summary?.durationLabel}</>
+            ) : (
+              <>
+                Working for{' '}
+                <span aria-label="Elapsed time">
+                  <ActiveDuration turn={'outcome' in turn ? undefined : turn} />
+                </span>
+              </>
+            )}
+          </summary>
+          <ol
+            aria-label="Operational progress"
+            className="my-1 list-none space-y-1 pl-3"
+          >
+            {expandedHistory.has(turn.turnId)
+              ? activity.entries.flatMap((entry, index) => {
+                  const lines =
+                    entry.message && entry.message !== entry.label
+                      ? [entry.label, entry.message]
+                      : [entry.label]
+
+                  return lines.map((line, lineIndex) => (
+                    <li
+                      key={`${turn.turnId}:${index}:${lineIndex}`}
+                      aria-current={
+                        !settled &&
+                        entry === activity.current &&
+                        lineIndex === lines.length - 1
+                          ? 'step'
+                          : undefined
+                      }
+                      className="whitespace-pre-wrap break-words py-1"
+                    >
+                      {line}
+                    </li>
+                  ))
+                })
+              : null}
+          </ol>
+        </details>
+        {!settled ? (
+          <div
+            role="status"
+            aria-label="Current activity"
+            data-activity-mode={activity.mode}
+            className="mt-3 whitespace-pre-wrap break-words text-[#b9b2d4]"
+          >
+            {activity.current.message ? (
+              <span className="line-clamp-3" title={activity.current.message}>
+                {activity.current.message}
+              </span>
+            ) : null}
+            {activity.current.label ? (
+              <span>
+                {activity.mode === 'context' &&
+                activity.current.label === 'Current task' &&
+                activity.current.message
+                  ? 'Task context - no App operation executing'
+                  : activity.current.label}
+              </span>
+            ) : null}
+          </div>
+        ) : null}
+        {confirmationSnapshot.decisions
+          ?.filter((decision) => decision.turnId === turn.turnId)
+          .map((decision) => (
+            <p
+              className="my-2 text-[12px] text-[#aaa6b3]"
+              key={decision.confirmationId}
+            >
+              {decision.accepted ? 'Approved' : 'Declined'}:{' '}
+              {decision.summary.message}
+            </p>
+          ))}
+        {question ? (
+          <section
+            aria-label="Question"
+            className="mt-4 border-l-2 border-[#8d7bff] pl-3"
+          >
+            <p className="m-0 whitespace-pre-wrap break-words">
+              {question.message}
+            </p>
+            <p className="mb-0 mt-1 text-[12px] text-[#aaa6b3]">
+              {questionStatus}
+            </p>
+            {answer ? (
+              <p className="my-1 text-[12px] text-[#c7bfff]">
+                Selected: {answer.intent}
+              </p>
+            ) : null}
+            {canAnswer ? (
+              <ul
+                aria-label="Drawing detail options"
+                className="mb-0 mt-2 flex list-none flex-col gap-2 p-0"
+              >
+                {question.choices.map((choice) => (
+                  <DrawingDetailChoiceCard
+                    choice={choice}
+                    key={choice.id}
+                    onChoose={() =>
+                      submitDrawingDetailChoice(turn.turnId, choice.id)
+                    }
+                  />
+                ))}
+              </ul>
+            ) : null}
+          </section>
+        ) : null}
+        {settled && !question ? (
+          <p
+            data-testid="ai-agent-result"
+            className="mb-0 mt-2 whitespace-pre-wrap break-words"
+          >
+            {summary?.message}
+          </p>
+        ) : null}
+        {summary?.storageNotice ? (
+          <p
+            role="note"
+            aria-label="Document storage"
+            className="mb-0 mt-2 text-[12px] text-[#aaa6b3]"
+          >
+            {summary.storageNotice}
+          </p>
+        ) : null}
+        {settled && latest && !active && canRetryAiTurn(settled) ? (
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button
+              className="rounded-md border border-[#625586] px-3 py-1.5 text-[12px] hover:bg-[#302b3e]"
+              type="button"
+              onClick={() =>
+                void conversation.retry(turn.turnId).catch(() => undefined)
+              }
+            >
+              Try again
+            </button>
+          </div>
+        ) : null}
+        {settled && !question && settled.completedAtMs !== undefined ? (
+          <div className="mt-3 flex justify-start text-[12px] text-[#96939f]">
+            <time
+              aria-label="Completed at"
+              dateTime={new Date(settled.completedAtMs).toISOString()}
+              title={new Date(settled.completedAtMs).toLocaleString()}
+            >
+              {new Date(settled.completedAtMs).toLocaleTimeString(undefined, {
+                hour: 'numeric',
+                minute: '2-digit'
+              })}
+            </time>
+          </div>
+        ) : null}
+      </div>
+    </article>
+  )
+}
+
 const AiConversationFeed = ({
   conversation,
   confirmation
@@ -558,7 +871,17 @@ const AiConversationFeed = ({
     useState<AiConfirmationSnapshot>(() => confirmation.getSnapshot())
 
   useEffect(
-    () => conversation.subscribe(setConversationSnapshot),
+    () =>
+      conversation.subscribe((next) =>
+        setConversationSnapshot((previous) =>
+          previous.conversationId === next.conversationId &&
+          previous.settledTurns === next.settledTurns &&
+          previous.activeTurn?.turnId === next.activeTurn?.turnId &&
+          previous.disposed === next.disposed
+            ? previous
+            : next
+        )
+      ),
     [conversation]
   )
   useEffect(
@@ -579,16 +902,20 @@ const AiConversationFeed = ({
   }, [])
   const active = conversationSnapshot.activeTurn !== null
 
-  // Follow before paint can emit scroll events for the newly grown content.
-  // Otherwise those events can mistake layout growth for reading older messages.
-  useLayoutEffect(() => {
+  const followProgress = useCallback(() => {
     const body = conversationBodyRef.current
 
     if (body && followLatestRef.current) {
       body.scrollTop = body.scrollHeight
       setShowJump(false)
     }
-  }, [confirmationSnapshot, conversationSnapshot])
+  }, [])
+
+  useLayoutEffect(followProgress, [
+    confirmationSnapshot,
+    conversationSnapshot,
+    followProgress
+  ])
   // Initial following must run before measuring an already overflowing feed.
   useLayoutEffect(syncScrollPosition, [expandedHistory, syncScrollPosition])
 
@@ -627,6 +954,12 @@ const AiConversationFeed = ({
     ? [...turns, conversationSnapshot.activeTurn]
     : turns
 
+  const answers = new Map(
+    timeline
+      .filter((turn) => turn.replyToTurnId)
+      .map((turn) => [turn.replyToTurnId, turn])
+  )
+
   return (
     <>
       <section
@@ -642,249 +975,21 @@ const AiConversationFeed = ({
           </div>
         ) : null}
 
-        {timeline.map((turn) => {
-          const settled = 'outcome' in turn ? turn : null
-          const summary = settled ? summarizeAiTurn(settled) : null
-          const evaluationReport = settled
-            ? projectEvaluationReport(settled)
-            : undefined
-          const question = settled ? projectAiQuestion(settled) : null
-          const answer = timeline.find(
-            (entry) => entry.replyToTurnId === turn.turnId
-          )
-          const canAnswer =
-            question &&
-            !answer &&
-            !active &&
-            turns.at(-1)?.turnId === turn.turnId
-          let questionStatus = 'Superseded'
-
-          if (answer) {
-            questionStatus = 'Answered'
-          }
-
-          if (canAnswer) {
-            questionStatus = 'Waiting for your answer'
-          }
-
-          const latest = timeline.at(-1)?.turnId === turn.turnId
-          const stopping = !settled && conversationSnapshot.activeTurn?.stopping
-          const activity = conversation.getActivity(turn.turnId, {
-            purpose: turn.originalIntent ?? turn.intent,
-            outcome: settled?.outcome,
-            awaitingAnswer: Boolean(question),
-            stopping: Boolean(stopping),
-            awaitingApproval: !settled && Boolean(pendingConfirmation)
-          })
-
-          return (
-            <article
-              className="flex min-w-0 flex-col gap-3"
-              data-testid="ai-agent-message"
-              data-outcome={settled?.outcome ?? 'active'}
-              data-turn-id={turn.turnId}
-              data-evaluation-report={
-                evaluationReport ? JSON.stringify(evaluationReport) : undefined
-              }
-              key={turn.turnId}
-            >
-              <div
-                aria-label="Your message"
-                data-message-role="user"
-                className="flex max-w-[88%] min-w-0 self-end flex-col gap-2 rounded-2xl rounded-tr-sm bg-[#34353b] px-3 py-2.5"
-              >
-                {turn.attachments.length > 0 ? (
-                  <ImageAttachmentStrip attachments={turn.attachments} />
-                ) : null}
-                <p className="m-0 whitespace-pre-wrap break-words text-[12px] leading-5 text-[#f1f1f3]">
-                  {turn.intent}
-                </p>
-              </div>
-              <div
-                aria-label="Agent response"
-                data-message-role="assistant"
-                className="min-w-0 self-stretch py-1 pr-3 text-[12px] leading-5 text-[#e1dff0]"
-              >
-                <details
-                  onToggle={(event) => {
-                    const open = event.currentTarget.open
-
-                    setExpandedHistory((previous) => {
-                      const next = new Set(previous)
-
-                      if (open) {
-                        next.add(turn.turnId)
-                      } else {
-                        next.delete(turn.turnId)
-                      }
-
-                      return next
-                    })
-                  }}
-                  className="mt-2 text-[12px] text-[#96939f]"
-                >
-                  <summary
-                    aria-label="Work history"
-                    className="cursor-pointer border-b border-[#393a40] pb-2"
-                  >
-                    {settled ? (
-                      <>Worked for {summary?.durationLabel}</>
-                    ) : (
-                      <>
-                        Working for{' '}
-                        <span aria-label="Elapsed time">
-                          <ActiveDuration
-                            turn={conversationSnapshot.activeTurn ?? undefined}
-                          />
-                        </span>
-                      </>
-                    )}
-                  </summary>
-                  <ol
-                    aria-label="Operational progress"
-                    className="my-1 list-none space-y-1 pl-3"
-                  >
-                    {expandedHistory.has(turn.turnId)
-                      ? activity.entries.flatMap((entry, index) => {
-                          const lines =
-                            entry.message && entry.message !== entry.label
-                              ? [entry.label, entry.message]
-                              : [entry.label]
-
-                          return lines.map((line, lineIndex) => (
-                            <li
-                              key={`${turn.turnId}:${index}:${lineIndex}`}
-                              aria-current={
-                                !settled &&
-                                entry === activity.current &&
-                                lineIndex === lines.length - 1
-                                  ? 'step'
-                                  : undefined
-                              }
-                              className="whitespace-pre-wrap break-words py-1"
-                            >
-                              {line}
-                            </li>
-                          ))
-                        })
-                      : null}
-                  </ol>
-                </details>
-                {!settled ? (
-                  <div
-                    role="status"
-                    aria-label="Current activity"
-                    data-activity-mode={activity.mode}
-                    className="mt-3 whitespace-pre-wrap break-words text-[#b9b2d4]"
-                  >
-                    {activity.current.message ? (
-                      <span
-                        className="line-clamp-3"
-                        title={activity.current.message}
-                      >
-                        {activity.current.message}
-                      </span>
-                    ) : null}
-                    {activity.current.label ? (
-                      <span>
-                        {activity.mode === 'context' &&
-                        activity.current.label === 'Current task' &&
-                        activity.current.message
-                          ? 'Task context - no App operation executing'
-                          : activity.current.label}
-                      </span>
-                    ) : null}
-                  </div>
-                ) : null}
-                {confirmationSnapshot.decisions
-                  ?.filter((decision) => decision.turnId === turn.turnId)
-                  .map((decision) => (
-                    <p
-                      className="my-2 text-[12px] text-[#aaa6b3]"
-                      key={decision.confirmationId}
-                    >
-                      {decision.accepted ? 'Approved' : 'Declined'}:{' '}
-                      {decision.summary.message}
-                    </p>
-                  ))}
-                {question ? (
-                  <section
-                    aria-label="Question"
-                    className="mt-4 border-l-2 border-[#8d7bff] pl-3"
-                  >
-                    <p className="m-0 whitespace-pre-wrap break-words">
-                      {question.message}
-                    </p>
-                    <p className="mb-0 mt-1 text-[12px] text-[#aaa6b3]">
-                      {questionStatus}
-                    </p>
-                    {answer ? (
-                      <p className="my-1 text-[12px] text-[#c7bfff]">
-                        Selected: {answer.intent}
-                      </p>
-                    ) : null}
-                    {canAnswer ? (
-                      <ul
-                        aria-label="Drawing detail options"
-                        className="mb-0 mt-2 flex list-none flex-col gap-2 p-0"
-                      >
-                        {question.choices.map((choice) => (
-                          <DrawingDetailChoiceCard
-                            choice={choice}
-                            key={choice.id}
-                            onChoose={() =>
-                              submitDrawingDetailChoice(turn.turnId, choice.id)
-                            }
-                          />
-                        ))}
-                      </ul>
-                    ) : null}
-                  </section>
-                ) : null}
-                {settled && !question ? (
-                  <p
-                    data-testid="ai-agent-result"
-                    className="mb-0 mt-2 whitespace-pre-wrap break-words"
-                  >
-                    {summary?.message}
-                  </p>
-                ) : null}
-                {settled && latest && !active && canRetryAiTurn(settled) ? (
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    <button
-                      className="rounded-md border border-[#625586] px-3 py-1.5 text-[12px] hover:bg-[#302b3e]"
-                      type="button"
-                      onClick={() =>
-                        void conversation
-                          .retry(turn.turnId)
-                          .catch(() => undefined)
-                      }
-                    >
-                      Try again
-                    </button>
-                  </div>
-                ) : null}
-                {settled && !question && settled.completedAtMs !== undefined ? (
-                  <div className="mt-3 flex justify-start text-[12px] text-[#96939f]">
-                    <time
-                      aria-label="Completed at"
-                      dateTime={new Date(settled.completedAtMs).toISOString()}
-                      title={new Date(settled.completedAtMs).toLocaleString()}
-                    >
-                      {new Date(settled.completedAtMs).toLocaleTimeString(
-                        undefined,
-                        {
-                          hour: 'numeric',
-                          minute: '2-digit'
-                        }
-                      )}
-                    </time>
-                  </div>
-                ) : null}
-              </div>
-            </article>
-          )
-        })}
+        {timeline.map((turn) => (
+          <AiConversationMessage
+            key={turn.turnId}
+            source={turn}
+            conversation={conversation}
+            confirmationSnapshot={confirmationSnapshot}
+            active={active}
+            latest={timeline.at(-1)?.turnId === turn.turnId}
+            answer={answers.get(turn.turnId)}
+            expandedHistory={expandedHistory}
+            setExpandedHistory={setExpandedHistory}
+            submitDrawingDetailChoice={submitDrawingDetailChoice}
+            followProgress={followProgress}
+          />
+        ))}
 
         {pendingConfirmation ? (
           <div

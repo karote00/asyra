@@ -58,6 +58,7 @@ const inferLegacyDocumentGeneration = (
     // file and remains generation zero.
     return 1
   }
+
   return 0
 }
 
@@ -86,8 +87,10 @@ const parseStoredRecord = (
       `[document-backend-store] stored document "${documentId}" is invalid`
     )
   }
+
   const record =
     input.record as unknown as MaterializedDocumentRecord<AppDocumentData>
+
   return {
     ...record,
     document: migrateTextFills(record.document) as unknown as AppDocumentData,
@@ -111,9 +114,14 @@ export const createFileDocumentMaterializationStore = (
     documentId: string
   ): Promise<MaterializedDocumentRecord<AppDocumentData>> => {
     const cached = cache.get(documentId)
-    if (cached) return cached
+
+    if (cached) {
+      return cached
+    }
+
     const filePath = resolve(directory, documentFileName(documentId))
     let record: MaterializedDocumentRecord<AppDocumentData>
+
     try {
       record = parseStoredRecord(
         JSON.parse(await readFile(filePath, 'utf8')) as unknown,
@@ -130,7 +138,9 @@ export const createFileDocumentMaterializationStore = (
         throw error
       }
     }
+
     cache.set(documentId, record)
+
     return record
   }
 
@@ -154,16 +164,19 @@ export const createFileDocumentMaterializationStore = (
       'checkpoint-serialization'
     )
     let serialized: string
+
     try {
       serialized = JSON.stringify(stored)
     } finally {
       endSerialize()
     }
+
     persistenceDetail(observation, {
       bytes: Buffer.byteLength(serialized),
       durableSequence: record.durableSequence
     })
     const endWrite = persistenceSpan(observation, 'checkpoint-write')
+
     try {
       await writeFile(temporaryPath, serialized, {
         encoding: 'utf8',
@@ -172,7 +185,9 @@ export const createFileDocumentMaterializationStore = (
     } finally {
       endWrite()
     }
+
     const endRename = persistenceSpan(observation, 'checkpoint-rename')
+
     try {
       await rename(temporaryPath, filePath)
     } finally {
@@ -182,13 +197,17 @@ export const createFileDocumentMaterializationStore = (
 
   const store: FileDocumentMaterializationStore = {
     readCheckpoint: load,
+
     resetCheckpoint: async (documentId) => {
       return store.transact(documentId, async (current, commit) => {
         const documentGeneration = (current.documentGeneration ?? 0) + 1
+
         commit(createInitialRecord(documentGeneration))
+
         return documentGeneration
       })
     },
+
     async transact<Result>(
       documentId: string,
       execute: (
@@ -203,21 +222,26 @@ export const createFileDocumentMaterializationStore = (
         releaseTransaction = resolveTransaction
       })
       const tail = previous.then(() => transactionDone)
+
       transactionTails.set(documentId, tail)
       const endQueue = persistenceSpan(observation, 'checkpoint-admission-wait')
+
       try {
         await previous
       } finally {
         endQueue()
       }
+
       try {
         const endLoad = persistenceSpan(observation, 'checkpoint-read')
         let current: MaterializedDocumentRecord<AppDocumentData>
+
         try {
           current = await load(documentId)
         } finally {
           endLoad()
         }
+
         let committed: MaterializedDocumentRecord<AppDocumentData> | undefined
         const result = await execute(current, (next) => {
           if (committed) {
@@ -225,12 +249,15 @@ export const createFileDocumentMaterializationStore = (
               '[document-backend-store] one transaction may commit only once'
             )
           }
+
           committed = next
         })
+
         if (committed) {
           await persist(documentId, committed, observation)
           cache.set(documentId, committed)
         }
+
         return result
       } finally {
         releaseTransaction?.()
@@ -240,5 +267,6 @@ export const createFileDocumentMaterializationStore = (
       }
     }
   }
+
   return store
 }

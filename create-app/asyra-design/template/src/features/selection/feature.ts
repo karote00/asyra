@@ -49,9 +49,11 @@ type SelectionSessionState = SelectionClickState | SelectionAreaState
 
 const api: SelectionAPI = {
   getSelectedIds: () => selectionApis.getSelectedIds(),
+
   clearSelection: () => {
     selectionApis.clearSelection()
   },
+
   toggleSelection: (elementId: string) => {
     selectionApis.toggleSelection(elementId)
   }
@@ -59,17 +61,21 @@ const api: SelectionAPI = {
 
 const clearPathEditingIfSelectionChanged = () => {
   const pathEditingMode = systemContextApis.getPathEditingMode()
+
   if (!pathEditingMode) {
     return
   }
 
   const pathEditingVectorId = systemContextApis.getPathEditingVectorId()
+
   if (!pathEditingVectorId) {
     systemContextApis.exitPathEditingMode()
+
     return
   }
 
   const selectedIds = selectionApis.getSelectedIds()
+
   if (selectedIds.length === 1 && selectedIds[0] === pathEditingVectorId) {
     return
   }
@@ -88,12 +94,14 @@ const resolveSelectionIds = (
       (id) =>
         !elementApis.isElementLocked(id) && elementApis.isElementVisible(id)
     )
+
   if (mode === 'replace' || baseSelectionIds.length === 0) {
     return areaSelectionIds
   }
 
   const baseSet = new Set(baseSelectionIds)
   const result = new Set(baseSelectionIds)
+
   areaSelectionIds.forEach((id) => {
     if (baseSet.has(id)) {
       result.delete(id)
@@ -101,6 +109,7 @@ const resolveSelectionIds = (
       result.add(id)
     }
   })
+
   return Array.from(result)
 }
 
@@ -141,6 +150,7 @@ export const selectionFeature = defineFeature<
         ) {
           return null
         }
+
         transactionApis.runTransaction(() => {
           if (snapshot.keyShift) {
             api.toggleSelection(hoveredElementId)
@@ -157,6 +167,7 @@ export const selectionFeature = defineFeature<
       const dragStartWorkspacePos = elementApis.getMousePosInWorkspace(
         mouse.position
       )
+
       if (!dragStartWorkspacePos) {
         return null
       }
@@ -172,6 +183,7 @@ export const selectionFeature = defineFeature<
         hasMoved: false
       }
     },
+
     onUpdate: (
       snapshot: SystemContextSnapshot,
       state: SelectionSessionState
@@ -191,6 +203,7 @@ export const selectionFeature = defineFeature<
           snapshot.mousePosition,
           FEATURE_MOVEMENT_THRESHOLD.areaSelection
         )
+
       if (!hasMoved) {
         return
       }
@@ -198,6 +211,7 @@ export const selectionFeature = defineFeature<
       const currentWorkspacePos = elementApis.getMousePosInWorkspace(
         snapshot.mousePosition
       )
+
       if (!currentWorkspacePos) {
         return
       }
@@ -225,6 +239,7 @@ export const selectionFeature = defineFeature<
         additive: state.additive
       })
     },
+
     onEnd: (snapshot: SystemContextSnapshot, state: SelectionSessionState) => {
       if (state.mode !== 'area') {
         return
@@ -241,12 +256,14 @@ export const selectionFeature = defineFeature<
           selectionApis.selectElements([])
           clearPathEditingIfSelectionChanged()
         })
+
         return
       }
 
       const currentWorkspacePos = elementApis.getMousePosInWorkspace(
         snapshot.mousePosition
       )
+
       if (!currentWorkspacePos) {
         return
       }
@@ -266,6 +283,7 @@ export const selectionFeature = defineFeature<
         clearPathEditingIfSelectionChanged()
       })
     },
+
     onCancel: (): undefined => {
       systemContextApis.clearAreaSelection()
     }
@@ -280,6 +298,7 @@ export const selectContainerChildFeature = defineFeature(
   {
     priority: 100,
     exclusive: true,
+
     execution: (snapshot: SystemContextSnapshot) => {
       if (
         snapshot.primaryTool !== PrimaryToolType.SELECT ||
@@ -288,23 +307,36 @@ export const selectContainerChildFeature = defineFeature(
         snapshot.keyCtrl ||
         snapshot.keyAlt ||
         systemContextApis.getPathEditingMode()
-      )
+      ) {
         return null
+      }
 
       const selectedIds = selectionApis.getSelectedIds()
-      if (selectedIds.length !== 1) return null
+
+      if (selectedIds.length !== 1) {
+        return null
+      }
+
       const containerId = selectedIds[0]
       const type = elementApis.getElementType(containerId)
-      if (!type || !elementApis.isContainerType(type)) return null
+
+      if (!type || !elementApis.isContainerType(type)) {
+        return null
+      }
 
       const childId = resolveContainerChildAtClientPos(
         containerId,
         snapshot.mousePosition
       )
-      if (!childId) return null
+
+      if (!childId) {
+        return null
+      }
+
       selectionApis.selectElements([childId])
       // The pointer can stay still after entering a new parent scope.
       systemContextApis.updateHoveredElementId(childId)
+
       // Consume this gesture; vector editing belongs to a later double-click.
       return { selectedElementId: childId }
     }

@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "projectId": "design-knowledge-evaluation",
   "flowId": "design-knowledge-evaluation",
-  "revision": 184,
+  "revision": 185,
   "definition": {
     "title": "Design knowledge behavior evaluation",
     "purpose": "Evaluate canonical Design behavior and evidence-bound offline attribution. Model execution requires explicit authorization; no automatic Knowledge updates.",
@@ -561,8 +561,6 @@
           "apps/asyra-design/test-data/knowledge-evaluation/assessment.mjs",
           "apps/asyra-design/test-data/knowledge-evaluation/__tests__",
           "apps/asyra-design/package.json",
-          "apps/asyra-design/test-data/knowledge-evaluation/native-delivery.mjs",
-          "apps/asyra-design/test-data/knowledge-evaluation/__tests__/native-delivery.test.mjs",
           "apps/asyra-design/test-data/knowledge-evaluation/fixtures/native-delivery",
           "apps/asyra-design/server/__tests__/information-delivery.integration.test.ts",
           "apps/asyra-design/server/local-information-delivery.ts",
@@ -1580,8 +1578,7 @@
           "purpose": "Validate evidence identity and publish descriptive attribution with explicit lesson eligibility.",
           "inputs": [
             "captured run.json and parsed provider streams",
-            "optional analyst assessment",
-            "explicit offline scripted executions and permanent saved-reply fixtures"
+            "optional analyst assessment"
           ],
           "outputs": [
             "artifact:change-assessment"
@@ -1590,7 +1587,6 @@
             "Exact run digest and contained evidence references with SHA-256 and locators.",
             "Single-run and historical helped/hurt claims remain confounded.",
             "Retained report lessons require support, limits and explicit analyst review.",
-            "Native delivery evidence uses actual pinned native execution with fixed loopback Responses events, existing payload sink and deadline. Never override output limits, call a real model or claim historical causality from a scripted result.",
             "Cross-execution native proofs preserve each actual successor request and scripted identity, reject incomplete or mixed-revision assembly, and distinguish retained content from printed output and unavailable public internals."
           ],
           "bypasses": [
@@ -1599,8 +1595,7 @@
           ],
           "allowedContributors": [
             "existing capture and execution parser",
-            "analyst self-review or human review",
-            "existing isolated native handoff adapter and Runtime evidence sink"
+            "analyst self-review or human review"
           ],
           "forbiddenContributors": [
             "model invocation",
@@ -1614,8 +1609,6 @@
             "apps/asyra-design/test-data/knowledge-evaluation/assessment.mjs",
             "apps/asyra-design/test-data/knowledge-evaluation/__tests__",
             "apps/asyra-design/package.json",
-            "apps/asyra-design/test-data/knowledge-evaluation/native-delivery.mjs",
-            "apps/asyra-design/test-data/knowledge-evaluation/__tests__/native-delivery.test.mjs",
             "apps/asyra-design/test-data/knowledge-evaluation/fixtures/native-delivery"
           ],
           "specRefs": [

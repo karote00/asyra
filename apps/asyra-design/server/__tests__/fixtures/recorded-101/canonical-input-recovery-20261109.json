@@ -1,0 +1,71 @@
+{
+  "sourceRun": "taipei-101-fixed-1794226962133",
+  "sourcePayload": "320-input.json",
+  "rename": {
+    "name": "api_core_updateElementProperties",
+    "arguments": {
+      "updates": [
+        {
+          "elementId": {
+            "kind": "step",
+            "step": "assembled",
+            "path": "/actionResults/0/result/value/groupId"
+          },
+          "values": {
+            "name": "台北101｜完整建築插畫｜公分原尺度"
+          }
+        }
+      ]
+    }
+  },
+  "captures": [
+    {
+      "id": "finalView",
+      "name": "design_operations.inspect_drawing",
+      "arguments": {
+        "arguments": {
+          "elementId": "workspace",
+          "view": "overview"
+        },
+        "message": "檢查完整建築與透明背景"
+      }
+    },
+    {
+      "id": "finalDetail",
+      "name": "design_operations.inspect_drawing",
+      "arguments": {
+        "arguments": {
+          "elementId": {
+            "kind": "step",
+            "step": "assembled",
+            "path": "/actionResults/0/result/value/groupId"
+          },
+          "view": "detail",
+          "region": {
+            "x": 4079,
+            "y": 11835,
+            "width": 1000,
+            "height": 1000
+          }
+        },
+        "message": "檢查修補後挑簷轉角與如意細節"
+      }
+    }
+  ],
+  "delivery": {
+    "fields": {
+      "assembly": {
+        "step": "assembled",
+        "path": "/actionResults"
+      },
+      "overview": {
+        "step": "finalView",
+        "path": "/actionResults"
+      },
+      "detail": {
+        "step": "finalDetail",
+        "path": "/actionResults"
+      }
+    }
+  }
+}

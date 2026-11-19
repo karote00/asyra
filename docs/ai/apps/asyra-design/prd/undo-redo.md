@@ -21,8 +21,8 @@ Users must be able to recover from mistakes through reliable undo and redo behav
 7. Each successful or partially successful mutating Agent turn creates one
    intended action accessible through ordinary history controls. Completion
    messages remain in the AI conversation without a duplicate canvas toast.
-8. Failed, cancelled, denied, unavailable, unsupported, and zero-mutation AI
-   turns do not expose a new enabled Undo control.
+8. AI turns without committed mutations expose no new enabled Undo control.
+   Failure or cancellation preserves the Undo entry of acknowledged finite members.
 9. Undo and Redo default to visible progressive replay. Exact recorded
    progressive boundaries remain visible boundaries; ordered immediate source
    publications may be coalesced into bounded render slices. Each operation

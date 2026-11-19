@@ -26,6 +26,7 @@ describe('canonical action observation', () => {
     description: `Contract for ${action.name}`,
     inputSchema: { type: 'object' }
   }))
+
   it('preserves completed actions and reports failed actions without discarding completed receipts', async () => {
     const receipt: AiBatchReceipt = {
       context: {},
@@ -44,6 +45,7 @@ describe('canonical action observation', () => {
       }
     }
     const events: { stage: string; value: unknown }[] = []
+
     await expect(
       observeActionBatch(
         batch,
@@ -70,6 +72,7 @@ describe('canonical action observation', () => {
     }
     const events: { stage: string; value: unknown }[] = []
     const execute = vi.fn(async () => receipt)
+
     expect(
       await observeActionBatch(
         batch,
@@ -115,6 +118,7 @@ describe('canonical action observation', () => {
       'native',
       (_, value) => events.push(value)
     )
+
     expect(events[2]).toMatchObject({ callId: 'action:batch:a', result })
     expect(output.actionResults[0].result).toEqual({ status: 'complete' })
     expect(result.actionObservation.handlerMs).toBe(19)
@@ -125,6 +129,7 @@ describe('canonical action observation', () => {
       throw error
     })
     const events: unknown[] = []
+
     await expect(
       observeActionBatch(batch, execute, definitions, 'native', (_, value) =>
         events.push(value)
@@ -139,6 +144,7 @@ describe('canonical action observation', () => {
   })
   it('marks missing acknowledgements unknown without inventing failure or replaying', async () => {
     const events: unknown[] = []
+
     await observeActionBatch(
       batch,
       async () => ({ context: {}, actionResults: [] }),
@@ -152,6 +158,7 @@ describe('canonical action observation', () => {
   })
   it('cannot fail canonical execution when a diagnostic observer throws', async () => {
     const receipt = { context: {}, actionResults: [] }
+
     expect(
       await observeActionBatch(
         batch,
@@ -183,6 +190,7 @@ it('records a reported browser rejection with measured time and does not invent 
     executionMs: 20
   })
   const events: Record<string, unknown>[] = []
+
   await expect(
     observeActionBatch(
       batch,

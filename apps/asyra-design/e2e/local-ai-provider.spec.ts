@@ -1429,7 +1429,7 @@ test('ready design parts continue in an existing container with one undo entry',
         async (runMutation) => {
           const context = { signal: new AbortController().signal, runMutation }
           const receipt = await action.execute(
-            { design: deliverPreparedDesign(first), response: 'compact' },
+            { design: deliverPreparedDesign(first) },
             context as never
           )
 
@@ -1442,8 +1442,7 @@ test('ready design parts continue in an existing container with one undo entry',
           await action.execute(
             {
               design: deliverPreparedDesign(second),
-              parentId: receipt.compositionId,
-              response: 'compact'
+              parentId: receipt.compositionId
             },
             context as never
           )

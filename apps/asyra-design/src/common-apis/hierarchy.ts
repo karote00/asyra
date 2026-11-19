@@ -1,3 +1,4 @@
+import { CommonApiInputError } from './common-api-input-error'
 import { runTransaction } from '@asyra/core'
 import {
   groupElements,
@@ -58,15 +59,19 @@ export const hierarchyApis = {
       !['before', 'after'].includes(request.placement) ||
       request.elementIds.includes(request.anchorId)
     ) {
-      throw new Error(
-        'Relative move requires targets and a separate before/after anchor'
+      throw new CommonApiInputError(
+        'Relative move requires targets and a separate before/after anchor',
+        { field: 'request' }
       )
     }
 
     const anchor = core.getElementMetadata(request.anchorId)
 
     if (!anchor?.parentId) {
-      throw new Error('Relative move anchor is unavailable')
+      throw new CommonApiInputError('Relative move anchor is unavailable', {
+        field: 'anchorId',
+        elementId: request.anchorId
+      })
     }
 
     const parent = core.getElementMetadata(anchor.parentId)

@@ -33,7 +33,10 @@ const updateKeyState = (raw: RawInputEvent) => {
 
 const updateHistoryShortcutState = (raw: RawInputEvent) => {
   updateKeyState(raw)
-  if (core.isInUndoRedo()) return false
+  if (core.isInUndoRedo()) {
+    return false
+  }
+
   raw.detail = {
     ...raw.detail,
     historyDirection: raw.modifiers.shift ? 'redo' : 'undo'
@@ -46,6 +49,7 @@ export const isEditableShortcutTarget = (target: Element | null): boolean => {
   }
 
   const tagName = target.tagName.toLowerCase()
+
   return (
     tagName === 'input' ||
     tagName === 'textarea' ||
@@ -55,7 +59,10 @@ export const isEditableShortcutTarget = (target: Element | null): boolean => {
 }
 
 const updateToolShortcutState = (raw: RawInputEvent) => {
-  if (isEditableShortcutTarget(document.activeElement)) return false
+  if (isEditableShortcutTarget(document.activeElement)) {
+    return false
+  }
+
   updateKeyState(raw)
 }
 
@@ -131,8 +138,10 @@ export const keyCombinations = {
     {
       type: InputType.POINTER,
       keys: [PointerKey.LEFT_MOUSE_DOWN],
+
       callback: (raw: RawInputEvent) => {
         const { clientX, clientY, button } = raw.pointer
+
         updateMouseState({
           dragStart: { x: clientX, y: clientY },
           position: { x: clientX, y: clientY },
@@ -149,6 +158,7 @@ export const keyCombinations = {
     {
       type: InputType.POINTER,
       keys: [PointerKey.LEFT_MOUSE_DOWN, PointerKey.LEFT_MOUSE_MOVE],
+
       callback: (raw: RawInputEvent) => {
         const { clientX, clientY, button } = raw.pointer
         const currentMouse = getCurrentMouseState()
@@ -173,6 +183,7 @@ export const keyCombinations = {
     {
       type: InputType.POINTER,
       keys: [PointerKey.LEFT_MOUSE_UP],
+
       callback: (raw: RawInputEvent) => {
         const { clientX, clientY, button } = raw.pointer
         const currentMouse = getCurrentMouseState()
@@ -197,8 +208,10 @@ export const keyCombinations = {
     {
       type: InputType.POINTER,
       keys: [PointerKey.MOUSE_DOUBLE_CLICK],
+
       callback: (raw: RawInputEvent) => {
         const { clientX, clientY, button } = raw.pointer
+
         updateMouseState({
           position: { x: clientX, y: clientY },
           delta: { x: 0, y: 0 },
@@ -214,8 +227,10 @@ export const keyCombinations = {
     {
       type: InputType.POINTER,
       keys: [PointerKey.LEFT_MOUSE_MOVE],
+
       callback: (raw: RawInputEvent) => {
         const { clientX, clientY, button } = raw.pointer
+
         updateMouseState({
           position: { x: clientX, y: clientY },
           delta: { x: 0, y: 0 },
@@ -231,8 +246,10 @@ export const keyCombinations = {
     {
       type: InputType.WHEEL,
       keys: [PointerKey.WHEEL],
+
       callback: (raw: RawInputEvent) => {
         const { clientX, clientY, deltaX, deltaY } = raw.pointer
+
         updateMouseState({
           position: { x: clientX, y: clientY },
           delta: { x: deltaX, y: deltaY },

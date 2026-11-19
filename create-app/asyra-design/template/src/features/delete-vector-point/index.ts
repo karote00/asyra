@@ -14,12 +14,14 @@ export const deleteVectorPointFeature = defineFeature(
   {
     priority: 110,
     exclusive: true,
+
     execution: (_snapshot: SystemContextSnapshot) => {
       if (!systemContextApis.getPathEditingMode()) {
         return null
       }
 
       const pathEditingVectorId = systemContextApis.getPathEditingVectorId()
+
       if (!pathEditingVectorId) {
         return null
       }
@@ -28,6 +30,7 @@ export const deleteVectorPointFeature = defineFeature(
         const selectedPoint = selectionApis
           .getSelectedVectorPoints()
           .find((selection) => selection.elementId === pathEditingVectorId)
+
         if (
           !selectedPoint ||
           selectedPoint.target !== VECTOR_TOKENS.POINT.TARGET.ANCHOR
@@ -43,6 +46,7 @@ export const deleteVectorPointFeature = defineFeature(
             changedRecords: ['point:remove', 'segment:remove'],
             undoable: true
           })
+
         if (!structuralOperationIntent) {
           return null
         }
@@ -54,6 +58,7 @@ export const deleteVectorPointFeature = defineFeature(
             structuralOperationIntent
           }
         ).value
+
         if (!deleted) {
           return null
         }

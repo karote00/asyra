@@ -112,17 +112,33 @@ it('owns one shared inspection lifetime and disposes canonical subscriptions wit
   }))
   const stop = vi.fn()
   const stopComputed = vi.fn()
+  const subscribe = coreEvents.subscribeToEventBatches
   const observeComputed = vi
     .spyOn(coreEvents, 'subscribeToEventBatches')
-    .mockReturnValue({ unsubscribe: stopComputed } as ReturnType<
-      typeof coreEvents.subscribeToEventBatches
-    >)
+    .mockImplementation((...args) => {
+      const subscription = subscribe(...args)
+
+      subscription.add(stopComputed)
+
+      return subscription
+    })
 
   core.observeSharedDataChannel = vi.fn(() => stop)
-  inspectionApis.inspect = vi.fn(() => ({
+  inspectionApis.inspect = vi.fn<typeof originalInspect>((elementId) => ({
     available: true,
-    image: { dataUrl: 'png' }
-  })) as typeof originalInspect
+    settlement: 'completed',
+    elementId,
+    partial: false,
+    imageScope: 'overview',
+    background: '#ffffff',
+    image: {
+      type: 'snapshot',
+      dataUrl: 'png',
+      width: 1,
+      height: 1,
+      bounds: { x: 0, y: 0, width: 1, height: 1 }
+    }
+  }))
   const customDispose = vi.fn()
   const input = createAiRuntimeInput({
     provider: { requestActionBatch: vi.fn() },
@@ -307,7 +323,7 @@ it('advertises one complete contract for every browser tool without exposing exe
         true
       )
       if (action.name === AiActionNames.VALIDATE_INSPECTION_EVIDENCE) {
-        expect(action.revision).toBe(5)
+        expect(action.revision).toBe(6)
       }
 
       expect(action.lifecycle.retry).not.toBe('read-only')

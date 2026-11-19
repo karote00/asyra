@@ -54,6 +54,8 @@ export function captureSources(root, destination) {
     }
   }
 
+  walk(path.join(root, 'apps/asyra-design/dist'))
+
   const packages = path.join(root, 'packages')
 
   if (fs.existsSync(packages)) {

@@ -1,3 +1,21 @@
+import {
+  readArray,
+  readBoolean,
+  readBounds,
+  readElementData,
+  readElementMetadata,
+  readId,
+  readIds,
+  readNullable,
+  readNumber,
+  readObject,
+  readPosition,
+  readRect,
+  readRegisteredValue,
+  readRegistration,
+  readRegistrationRelation,
+  readString
+} from './basic-api-read-schemas'
 import { ComputedFieldSelectionLimits } from '@asyra/core/contracts'
 import {
   defineBasicApi,
@@ -39,6 +57,7 @@ const getCurrentWorkspaceIdApi = defineBasicApi({
   owner: 'core',
   method: 'getCurrentWorkspaceId',
   effect: 'read',
+  resultValueSchema: readString,
   parameters: []
 })
 
@@ -48,6 +67,7 @@ const getCanonicalElementCountApi = defineBasicApi({
   owner: 'core',
   method: 'getCanonicalElementCount',
   effect: 'read',
+  resultValueSchema: readNumber,
   parameters: []
 })
 
@@ -57,6 +77,7 @@ const getAllElementsBoundsApi = defineBasicApi({
   owner: 'core',
   method: 'getAllElementsBounds',
   effect: 'read',
+  resultValueSchema: readNullable(readBounds),
   parameters: []
 })
 
@@ -65,6 +86,7 @@ const getViewportPositionApi = defineBasicApi({
   owner: 'core',
   method: 'getViewportPosition',
   effect: 'read',
+  resultValueSchema: readPosition,
   parameters: []
 })
 
@@ -73,6 +95,7 @@ const getViewportScaleApi = defineBasicApi({
   owner: 'core',
   method: 'getViewportScale',
   effect: 'read',
+  resultValueSchema: readNumber,
   parameters: []
 })
 
@@ -81,6 +104,7 @@ const getSelectedElementIdsApi = defineBasicApi({
   owner: 'core',
   method: 'getSelectedElementIds',
   effect: 'read',
+  resultValueSchema: readIds,
   parameters: []
 })
 
@@ -90,6 +114,7 @@ const getUndoHistoryDepthApi = defineBasicApi({
   owner: 'core',
   method: 'getUndoHistoryDepth',
   effect: 'read',
+  resultValueSchema: readNumber,
   parameters: []
 })
 
@@ -99,6 +124,7 @@ const getRegistrationsApi = defineBasicApi({
   owner: 'core',
   method: 'getRegistrations',
   effect: 'read',
+  resultValueSchema: readArray(readRegistration),
   parameters: []
 })
 
@@ -108,6 +134,7 @@ const getRegistrationRelationsApi = defineBasicApi({
   owner: 'core',
   method: 'getRegistrationRelations',
   effect: 'read',
+  resultValueSchema: readArray(readRegistrationRelation),
   parameters: []
 })
 
@@ -117,6 +144,7 @@ const getProjectedElementCountApi = defineBasicApi({
   owner: 'core',
   method: 'getProjectedElementCount',
   effect: 'read',
+  resultValueSchema: readNumber,
   parameters: []
 })
 
@@ -126,6 +154,7 @@ const hasRenderEngineProviderApi = defineBasicApi({
   owner: 'core',
   method: 'hasRenderEngineProvider',
   effect: 'read',
+  resultValueSchema: readBoolean,
   parameters: []
 })
 
@@ -135,6 +164,7 @@ const isCompositionOpenApi = defineBasicApi({
   owner: 'core',
   method: 'isCompositionOpen',
   effect: 'read',
+  resultValueSchema: readBoolean,
   parameters: []
 })
 
@@ -144,6 +174,9 @@ const getRuntimeStateApi = defineBasicApi({
   owner: 'core',
   method: 'getRuntimeState',
   effect: 'read',
+  resultValueSchema: {
+    enum: ['active', 'quiescing', 'retiring', 'retired', 'failed']
+  },
   parameters: []
 })
 
@@ -151,15 +184,29 @@ const getElementMetadataApi = defineBasicApi({
   owner: 'core',
   method: 'getElementMetadata',
   effect: 'read',
+  resultValueSchema: readNullable(readElementMetadata),
   parameters: [{ name: 'elementId', schema: apiElementId }],
   description:
     'Read canonical identity, name, type, parent, visibility, lock and childCount without copying property data or children. Prefer read_design_context for multiple IDs.'
 })
 
 const getElementChildrenApi = defineBasicApi({
+  discovery: {
+    purpose: 'Read a page of direct child element IDs.',
+    terms: ['pagination', 'offset', 'limit'],
+    boundaries: [
+      'Offset is a pagination index; this tool never moves elements.'
+    ]
+  },
   owner: 'core',
   method: 'getElementChildren',
   effect: 'read',
+  resultValueSchema: readObject({
+    available: readBoolean,
+    elementIds: readIds,
+    total: readNumber,
+    nextOffset: readNullable(readNumber)
+  }),
   parameters: [
     { name: 'elementId', schema: apiElementId },
     { name: 'offset', schema: { type: 'integer', minimum: 0 }, optional: true },
@@ -173,6 +220,7 @@ const getElementDataApi = defineBasicApi({
   owner: 'core',
   method: 'getElementData',
   effect: 'read',
+  resultValueSchema: readNullable(readElementData),
   parameters: [{ name: 'elementId', schema: apiElementId }],
   description:
     'Returns detached canonical element data; property references are not resolved geometry.'
@@ -182,6 +230,7 @@ const getElementComputedDataApi = defineBasicApi({
   owner: 'core',
   method: 'getElementComputedData',
   effect: 'read',
+  resultValueSchema: readNullable(readObject()),
   parameters: [
     { name: 'elementId', schema: apiElementId },
     {
@@ -204,6 +253,13 @@ const getAllElementDataApi = defineBasicApi({
   owner: 'core',
   method: 'getAllElementData',
   effect: 'read',
+  resultValueSchema: readArray(
+    readObject({
+      elementId: readId,
+      data: readElementData,
+      computed: readObject()
+    })
+  ),
   parameters: [],
   description:
     'Full document read. Prefer getElementData/getElementComputedData for known IDs to avoid resending unchanged data.'
@@ -213,6 +269,10 @@ const getCanonicalOwnerSnapshotApi = defineBasicApi({
   owner: 'core',
   method: 'getCanonicalOwnerSnapshot',
   effect: 'read',
+  resultValueSchema: readObject({
+    props: readObject(),
+    sceneTree: readObject()
+  }),
   parameters: [],
   description:
     'Full canonical owner snapshot; prefer scoped reads for ordinary edits.'
@@ -220,10 +280,18 @@ const getCanonicalOwnerSnapshotApi = defineBasicApi({
 
 const getSystemContextSnapshotApi = defineBasicApi({
   description:
-    'Read interaction system context; this is not canonical element data.',
+    'Read currently registered interaction system properties; unregistered properties are absent. This is not canonical element data.',
   owner: 'core',
   method: 'getSystemContextSnapshot',
   effect: 'read',
+  resultValueSchema: readObject(
+    {
+      selectedElementIds: readIds,
+      hoveredElementId: readNullable(readId),
+      mousePosition: readPosition
+    },
+    []
+  ),
   parameters: []
 })
 
@@ -231,6 +299,7 @@ const isContainerTypeApi = defineBasicApi({
   owner: 'core',
   method: 'isContainerType',
   effect: 'read',
+  resultValueSchema: readBoolean,
   parameters: [{ name: 'type', schema: apiString }],
   description: 'Uses registered capabilities, including custom container types.'
 })
@@ -241,6 +310,7 @@ const hasProjectedElementApi = defineBasicApi({
   owner: 'core',
   method: 'hasProjectedElement',
   effect: 'read',
+  resultValueSchema: readBoolean,
   parameters: [{ name: 'elementId', schema: apiElementId }]
 })
 
@@ -250,6 +320,7 @@ const getElementIdAtClientPosApi = defineBasicApi({
   owner: 'core',
   method: 'getElementIdAtClientPos',
   effect: 'read',
+  resultValueSchema: readNullable(readId),
   parameters: [{ name: 'clientPos', schema: apiPosition }]
 })
 
@@ -259,6 +330,7 @@ const getMousePosInWorkspaceApi = defineBasicApi({
   owner: 'core',
   method: 'getMousePosInWorkspace',
   effect: 'read',
+  resultValueSchema: readPosition,
   parameters: [
     {
       name: 'mousePos',
@@ -273,15 +345,25 @@ const workspaceToCanvasApi = defineBasicApi({
   owner: 'core',
   method: 'workspaceToCanvas',
   effect: 'read',
+  resultValueSchema: readPosition,
   parameters: [{ name: 'workspacePosition', schema: apiPosition }]
 })
 
 const workspaceToElementLocalApi = defineBasicApi({
+  resultPaths: ['/value/x', '/value/y'],
+  discovery: {
+    purpose: 'Convert a workspace point to element-local coordinates.',
+    terms: ['transform', 'position', 'parent'],
+    boundaries: [
+      'Read-only conversion; returns null when the transform is unavailable.'
+    ]
+  },
   description:
     'Convert a workspace position into a known element local coordinate space; returns null if the transform is unavailable.',
   owner: 'core',
   method: 'workspaceToElementLocal',
   effect: 'read',
+  resultValueSchema: readNullable(readPosition),
   parameters: [
     { name: 'elementId', schema: apiElementId },
     { name: 'workspacePosition', schema: apiPosition }
@@ -294,6 +376,7 @@ const elementLocalToWorkspaceApi = defineBasicApi({
   owner: 'core',
   method: 'elementLocalToWorkspace',
   effect: 'read',
+  resultValueSchema: readNullable(readPosition),
   parameters: [
     { name: 'elementId', schema: apiElementId },
     { name: 'localPosition', schema: apiPosition }
@@ -306,6 +389,7 @@ const elementSourceToWorkspaceApi = defineBasicApi({
   owner: 'core',
   method: 'elementSourceToWorkspace',
   effect: 'read',
+  resultValueSchema: readNullable(readPosition),
   parameters: [
     { name: 'elementId', schema: apiElementId },
     { name: 'sourcePosition', schema: apiPosition }
@@ -318,6 +402,7 @@ const workspaceToElementSourceApi = defineBasicApi({
   owner: 'core',
   method: 'workspaceToElementSource',
   effect: 'read',
+  resultValueSchema: readNullable(readPosition),
   parameters: [
     { name: 'elementId', schema: apiElementId },
     { name: 'workspacePosition', schema: apiPosition }
@@ -328,6 +413,7 @@ const getUIPropertyApi = defineBasicApi({
   owner: 'core',
   method: 'getUIProperty',
   effect: 'read',
+  resultValueSchema: readRegisteredValue,
   parameters: [{ name: 'key', schema: apiString }],
   description: 'Read a registered UI property value, not its observable.'
 })
@@ -338,6 +424,7 @@ const getSystemPropertyApi = defineBasicApi({
   owner: 'core',
   method: 'getSystemProperty',
   effect: 'read',
+  resultValueSchema: readRegisteredValue,
   parameters: [{ name: 'key', schema: apiString }]
 })
 
@@ -347,6 +434,7 @@ const hasSystemPropertyApi = defineBasicApi({
   owner: 'core',
   method: 'hasSystemProperty',
   effect: 'read',
+  resultValueSchema: readBoolean,
   parameters: [{ name: 'key', schema: apiString }]
 })
 
@@ -356,6 +444,14 @@ const getComponentPropertyRelationsApi = defineBasicApi({
   owner: 'core',
   method: 'getComponentPropertyRelations',
   effect: 'read',
+  resultValueSchema: readArray(
+    readObject({
+      ...readRegistrationRelation.properties,
+      componentType: readString,
+      propertyName: readString,
+      property: readObject()
+    })
+  ),
   parameters: [{ name: 'componentType', schema: apiString }]
 })
 
@@ -365,6 +461,12 @@ const getPropertyChildRelationsApi = defineBasicApi({
   owner: 'core',
   method: 'getPropertyChildRelations',
   effect: 'read',
+  resultValueSchema: readArray(
+    readObject({
+      ...readRegistrationRelation.properties,
+      parentPropertyType: readString
+    })
+  ),
   parameters: [{ name: 'parentPropertyType', schema: apiString }]
 })
 
@@ -382,6 +484,14 @@ const createElementsInParentApi = defineBasicApi({
 })
 
 const updateElementPropertiesApi = defineBasicApi({
+  discovery: {
+    purpose: 'Update registered element component properties.',
+    terms: ['property', 'values'],
+    boundaries: [
+      'Only registered properties and aliases; arbitrary open-record keys are not supported.',
+      'Element metadata name, visible and lock require the element data operation.'
+    ]
+  },
   owner: 'core',
   method: 'updateElementProperties',
   resultKind: 'property-mutation',
@@ -389,7 +499,7 @@ const updateElementPropertiesApi = defineBasicApi({
   effect: 'write',
   parameters: [{ name: 'updates', schema: elementPropertyUpdatesSchema }],
   description:
-    'Plural canonical property value updates. Relationship lists such as fills/strokes contain reference IDs, not expanded computed objects. To edit linked records, use patchElementProperties records (one plural call for all targets), or the App fill/stroke APIs. Use App vector APIs for anchor/handle editing so coordinate and geometry invariants are preserved.'
+    'Update registered component properties and their declared aliases (for example x/y). Element metadata name/visible/lock belongs to core.updateElementData, not values here. Unsupported keys reject before property writes and return an input diagnostic. Plural canonical property value updates. Relationship lists such as fills/strokes contain reference IDs, not expanded computed objects. To edit linked records, use patchElementProperties records (one plural call for all targets), or the App fill/stroke APIs. Use App vector APIs for anchor/handle editing so coordinate and geometry invariants are preserved.'
 })
 
 const patchElementPropertiesApi = defineBasicApi({
@@ -479,6 +589,17 @@ const getCanvasBoundsApi = defineBasicApi({
   owner: 'core',
   method: 'getCanvasBounds',
   effect: 'read',
+  resultValueFields: [
+    'x',
+    'y',
+    'width',
+    'height',
+    'left',
+    'right',
+    'top',
+    'bottom'
+  ],
+  resultValueSchema: readNullable(readRect),
   parameters: []
 })
 
@@ -488,6 +609,9 @@ const measureElementContentBoundsApi = defineBasicApi({
   owner: 'core',
   method: 'measureElementContentBounds',
   effect: 'read',
+  resultValueSchema: readArray(
+    readObject({ elementId: readId, bounds: readNullable(readRect) })
+  ),
   parameters: [{ name: 'elementIds', schema: apiElementIds }]
 })
 
@@ -497,6 +621,7 @@ const getRegistrationApi = defineBasicApi({
   owner: 'core',
   method: 'getRegistration',
   effect: 'read',
+  resultValueSchema: readNullable(readRegistration),
   parameters: [
     { name: 'ref', schema: apiObject({ kind: apiString, key: apiString }) }
   ]
@@ -508,6 +633,7 @@ const hasSharedDataChannelApi = defineBasicApi({
   owner: 'core',
   method: 'hasSharedDataChannel',
   effect: 'read',
+  resultValueSchema: readBoolean,
   parameters: [{ name: 'name', schema: apiString }]
 })
 
@@ -527,7 +653,7 @@ const moveElementsApi = defineBasicApi({
     }
   ],
   description:
-    'Prefer hierarchy.moveElements in this app to maintain automatic group bounds.'
+    'Move elements to a parent and insertion index. Prefer hierarchy.moveElements in this app to maintain automatic container bounds.'
 })
 
 const propertyTargetSchema = apiObject(
@@ -546,6 +672,17 @@ const readElementPropertyTargetsApi = defineBasicApi({
   owner: 'core',
   method: 'readElementPropertyTargets',
   effect: 'read',
+  resultValueSchema: readArray(
+    readObject({
+      target: readObject(),
+      propertyId: readId,
+      type: readString,
+      mode: { enum: ['independent', 'source', 'source-backed'] },
+      overrides: readObject(),
+      effective: readObject(),
+      children: readArray(readObject())
+    })
+  ),
   parameters: [{ name: 'targets', schema: apiArray(propertyTargetSchema) }],
   description:
     'Read property mode, effective values, sparse overrides and independent sourceId. Use an empty path to read the root and its children; children expose logical childId and effective propertyId. Build subsequent paths from those logical slots, not row indices or guessed IDs. Optional expected identities reject stale targets.'

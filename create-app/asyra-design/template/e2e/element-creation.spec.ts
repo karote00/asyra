@@ -29,6 +29,7 @@ const getCreateProjectionSnapshot = async (
   page.evaluate(async () => {
     const core = (await import('../src/testing/runtime-access')).core
     const elements = core?.deps?.sceneTree?.getAllElements?.()
+
     if (!(elements instanceof Map)) {
       return null
     }
@@ -36,6 +37,7 @@ const getCreateProjectionSnapshot = async (
     const entry = Array.from(elements.entries()).find(
       ([, element]) => element?.get?.('type') !== 'workspace'
     )
+
     if (!entry) {
       return null
     }
@@ -89,6 +91,7 @@ test.describe('Element Creation', () => {
       await page.evaluate(async () => {
         const { startSharedPublicationCapture } =
           await import('../src/testing/runtime-access')
+
         startSharedPublicationCapture('create-preview-publications')
       })
       await page.mouse.move(start.x, start.y)
@@ -98,6 +101,7 @@ test.describe('Element Creation', () => {
         const createdRow = getContentsPanel(page).locator(
           '[data-layer-element="true"]'
         )
+
         await expect
           .poll(() => getElementCount(page), { timeout: 2_000 })
           .toBe(initialCount + 1)
@@ -114,6 +118,7 @@ test.describe('Element Creation', () => {
           .toBe(true)
 
         const pointerDownSnapshot = await getCreateProjectionSnapshot(page)
+
         expect(pointerDownSnapshot).toMatchObject({ type })
         expect(pointerDownSnapshot?.modelWidth).toBe(0.1)
         expect(pointerDownSnapshot?.modelHeight).toBe(0.1)
@@ -125,6 +130,7 @@ test.describe('Element Creation', () => {
         await page.evaluate(async () => {
           const { clearTestCapture } =
             await import('../src/testing/runtime-access')
+
           clearTestCapture('create-preview-publications')
         })
 
@@ -152,6 +158,7 @@ test.describe('Element Creation', () => {
             page.evaluate(async () => {
               const { readTestCapture } =
                 await import('../src/testing/runtime-access')
+
               return readTestCapture('create-preview-publications').length
             })
           )
@@ -159,8 +166,10 @@ test.describe('Element Creation', () => {
         const previewPublications = await page.evaluate(async () => {
           const { readTestCapture } =
             await import('../src/testing/runtime-access')
+
           return readTestCapture('create-preview-publications')
         })
+
         expect(previewPublications).toContainEqual(
           expect.objectContaining({
             slices: expect.arrayContaining([
@@ -196,6 +205,7 @@ test.describe('Element Creation', () => {
         await page.evaluate(async () => {
           const { stopTestCapture } =
             await import('../src/testing/runtime-access')
+
           stopTestCapture('create-preview-publications')
         })
       }
@@ -226,13 +236,16 @@ test.describe('Element Creation', () => {
 
     // Verify a new element was created
     const newCount = await getElementCount(page)
+
     expect(newCount).toBe(initialCount + 1)
 
     // Verify the new element is selected (Properties Panel shows properties)
     const isSelected = await hasSelectedElement(page)
+
     expect(isSelected).toBe(true)
 
     const completedSnapshot = await getCreateProjectionSnapshot(page)
+
     expect(completedSnapshot?.modelWidth).toBe(100)
     expect(completedSnapshot?.modelHeight).toBe(100)
     expect(completedSnapshot?.renderWidth).toBeCloseTo(100)
@@ -241,6 +254,7 @@ test.describe('Element Creation', () => {
     // Verify the Contents Panel shows the new rectangle
     const contentsPanel = page.locator('[style*="grid-area: left-sidebar"]')
     const rectangleElement = contentsPanel.locator('text=Rectangle').first()
+
     await expect(rectangleElement).toBeVisible()
   })
 
@@ -271,10 +285,12 @@ test.describe('Element Creation', () => {
 
     // Verify a new element was created
     const newCount = await getElementCount(page)
+
     expect(newCount).toBe(initialCount + 1)
 
     // Verify the new element is selected
     const isSelected = await hasSelectedElement(page)
+
     expect(isSelected).toBe(true)
 
     // Check the dimensions in the Properties Panel
@@ -297,6 +313,7 @@ test.describe('Element Creation', () => {
     page
   }) => {
     const initialCount = await getElementCount(page)
+
     await page.evaluate(async () => {
       const core = (await import('../src/testing/runtime-access')).core
       const { testRuntimeState } = await import('../src/testing/runtime-access')
@@ -304,12 +321,14 @@ test.describe('Element Creation', () => {
         'create-transaction-statuses',
         []
       )
+
       core?.deps?.factory?.subscribeToTransactionStatus?.((status) =>
         statuses.push(status)
       )
     })
     const initialUndoCount = await page.evaluate(async () => {
       const core = (await import('../src/testing/runtime-access')).core
+
       return core?.deps?.factory?.transact?.undoStack?.length ?? 0
     })
     const start = await getCanvasPosition(page, 0.25, 0.25)
@@ -321,6 +340,7 @@ test.describe('Element Creation', () => {
     await page.mouse.move(current.x, current.y, { steps: 5 })
     await expect.poll(() => getElementCount(page)).toBe(initialCount + 1)
     const interruptedSnapshot = await getCreateProjectionSnapshot(page)
+
     expect(interruptedSnapshot).not.toBeNull()
     if (!interruptedSnapshot) {
       return
@@ -334,6 +354,7 @@ test.describe('Element Creation', () => {
         page.evaluate(async () => {
           const { testRuntimeState } =
             await import('../src/testing/runtime-access')
+
           return (
             testRuntimeState.get<unknown[]>('create-transaction-statuses') ?? []
           ).map(
@@ -355,6 +376,7 @@ test.describe('Element Creation', () => {
     await expect
       .poll(async () => {
         const committed = await getCreateProjectionSnapshot(page)
+
         return committed
           ? {
               type: committed.type,
@@ -372,8 +394,10 @@ test.describe('Element Creation', () => {
       })
     const finalUndoCount = await page.evaluate(async () => {
       const core = (await import('../src/testing/runtime-access')).core
+
       return core?.deps?.factory?.transact?.undoStack?.length ?? 0
     })
+
     expect(finalUndoCount).toBe(initialUndoCount + 1)
 
     await undo(page)
@@ -417,6 +441,7 @@ test.describe('Element Creation', () => {
           }[]
         }
         const history = transact?.undoStack?.at(-1)
+
         return {
           history: {
             entries: (history?.entries ?? []).map((entry) => ({
@@ -446,11 +471,13 @@ test.describe('Element Creation', () => {
           undoDepth: transact?.undoStack?.length ?? 0
         }
       })
+
       throw new Error(
         `Interrupted create Undo failed: ${JSON.stringify(diagnostics)}`,
         { cause: error }
       )
     }
+
     await expect.poll(() => getCreateProjectionSnapshot(page)).toBeNull()
   })
 
@@ -471,6 +498,7 @@ test.describe('Element Creation', () => {
 
     // Verify two elements were created
     const count = await getElementCount(page)
+
     expect(count).toBeGreaterThanOrEqual(2)
   })
 
@@ -484,6 +512,7 @@ test.describe('Element Creation', () => {
     // Check Contents Panel for the rectangle entry
     const contentsPanel = page.locator('[style*="grid-area: left-sidebar"]')
     const rectangleEntry = contentsPanel.locator('text=Rectangle')
+
     await expect(rectangleEntry.first()).toBeVisible()
   })
 })

@@ -538,6 +538,7 @@ describe('document persistence queue', () => {
       status: 200,
       json: vi.fn().mockResolvedValue({
         checkpoint: { elements: [{ id: 'element-a' }] },
+        documentGeneration: 3,
         durableSequence: 7
       })
     })
@@ -548,7 +549,7 @@ describe('document persistence queue', () => {
 
     await expect(client.readCheckpoint('file/a')).resolves.toEqual({
       checkpoint: { elements: [{ id: 'element-a' }] },
-      documentGeneration: 0,
+      documentGeneration: 3,
       durableSequence: 7
     })
     expect(fetchImplementation).toHaveBeenCalledWith(

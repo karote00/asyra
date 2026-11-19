@@ -65,7 +65,9 @@ const isPlainObject = (value: unknown): value is Record<string, unknown> => {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) {
     return false
   }
+
   const prototype = Object.getPrototypeOf(value)
+
   return prototype === Object.prototype || prototype === null
 }
 
@@ -73,10 +75,12 @@ const countForAction = (summary: unknown): number | null => {
   if (!isPlainObject(summary)) {
     return null
   }
+
   const affectedCount = Object.getOwnPropertyDescriptor(
     summary,
     'affectedCount'
   )
+
   if (
     !affectedCount?.enumerable ||
     !('value' in affectedCount) ||
@@ -86,6 +90,7 @@ const countForAction = (summary: unknown): number | null => {
   ) {
     return null
   }
+
   return affectedCount.value
 }
 
@@ -114,6 +119,7 @@ const messageForSummary = (
   affectedCount: number | null
 ): string => {
   const count = affectedCount ?? 'the selected'
+
   switch (actionKind) {
     case 'replace':
       return 'Replace the current drawing on the canvas. This request creates one Undo step. Previous steps remain available through Undo.'
@@ -149,6 +155,7 @@ export const createAiConfirmationSummary = (
     : null
   const actionKind =
     kinds.size === 1 ? (kinds.values().next().value ?? 'modify') : 'mixed'
+
   return Object.freeze({
     actionKind,
     affectedCount,
@@ -188,6 +195,7 @@ export const createAiConfirmationBroker = () => {
 
   const notify = () => {
     const snapshot = getSnapshot()
+
     observers.forEach((observer) => {
       observeSafely(observer, snapshot)
     })
@@ -195,14 +203,17 @@ export const createAiConfirmationBroker = () => {
 
   const settle = (accepted: boolean): boolean => {
     const current = pending
+
     if (!current) {
       return false
     }
+
     pending = null
     decisions.push(Object.freeze({ ...current.publicValue, accepted }))
     current.signal.removeEventListener('abort', current.abort)
     current.resolve(accepted)
     notify()
+
     return true
   }
 
@@ -212,16 +223,21 @@ export const createAiConfirmationBroker = () => {
       activeTurnId = turnId
       notify()
     },
+
     cancel: (_reason?: unknown): boolean => settle(false),
+
     endTurn: (turnId: string): void => {
       if (activeTurnId !== turnId) {
         return
       }
+
       settle(false)
       activeTurnId = null
       notify()
     },
+
     getSnapshot,
+
     requestConfirmation: (
       preview: AiActionBatchPreview,
       options: { signal: AbortSignal }
@@ -229,11 +245,14 @@ export const createAiConfirmationBroker = () => {
       if (disposed || options.signal.aborted || activeTurnId === null) {
         return Promise.resolve(false)
       }
+
       settle(false)
+
       return new Promise<boolean>((resolve) => {
         const abort = () => {
           settle(false)
         }
+
         pending = {
           abort,
           publicValue: Object.freeze({
@@ -249,23 +268,29 @@ export const createAiConfirmationBroker = () => {
         notify()
       })
     },
+
     resolve: (accepted: boolean): boolean => settle(accepted),
+
     subscribe: (
       observer: (snapshot: AiConfirmationSnapshot) => void
     ): (() => void) => {
       if (disposed) {
         return () => undefined
       }
+
       observers.add(observer)
       observeSafely(observer, getSnapshot())
+
       return () => {
         observers.delete(observer)
       }
     },
+
     dispose: async (): Promise<void> => {
       if (disposed) {
         return
       }
+
       disposed = true
       settle(false)
       activeTurnId = null

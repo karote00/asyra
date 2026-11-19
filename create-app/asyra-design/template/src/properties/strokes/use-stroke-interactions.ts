@@ -82,8 +82,10 @@ const createPickerPatch = (
   )
 
   const patch = createColorPatch(sourceStroke, nextColor)
+
   if (!isEqual(sourceStroke.fill.opacity, opacity)) {
     const nextFill = patch.fill ?? sourceStroke.fill
+
     return createFillPatch(
       {
         ...sourceStroke,
@@ -129,6 +131,7 @@ export const useStrokeInteractions = ({
     sourceStroke?: StrokeAttrs | null
   ) => {
     const currentStroke = sourceStroke ?? stroke
+
     if (!currentStroke || !ownerElementId || !hasStrokePatch(patch)) {
       return
     }
@@ -151,11 +154,13 @@ export const useStrokeInteractions = ({
       ownerElementId,
       patch
     })
+
     if (!intent) {
       return false
     }
 
     commitStrokeInteractionPatch(intent.patch)
+
     return true
   }
 
@@ -167,19 +172,23 @@ export const useStrokeInteractions = ({
     const sourceStroke = colorPickerTransactionRef.current
       ? (pickerLatestStrokeRef.current ?? pickerStrokeRef.current)
       : pickerStrokeRef.current
+
     if (!sourceStroke) {
       return null
     }
 
     const patch = createPickerPatch(sourceStroke, color, opacity)
     const nextStroke = applyStrokePatch(sourceStroke, patch)
+
     pickerLatestStrokeRef.current = nextStroke
     commitStrokePatch(patch, options, sourceStroke)
+
     return nextStroke
   }
 
   const startStrokeInteractionTransaction = () => {
     const wasActive = colorPickerTransactionRef.current
+
     startInteractionTransaction(
       colorPickerTransactionRef,
       pickerStrokeRef.current !== null
@@ -209,11 +218,13 @@ export const useStrokeInteractions = ({
 
   const handleOpacityChange = (value: string): boolean => {
     const parsed = Number.parseFloat(value)
+
     if (!Number.isFinite(parsed)) {
       return false
     }
 
     const nextOpacity = Math.max(0, Math.min(100, parsed)) / 100
+
     if (!stroke || isEqual(stroke.fill.opacity, nextOpacity)) {
       return false
     }
@@ -221,6 +232,7 @@ export const useStrokeInteractions = ({
     commitStrokeInteractionPatch(
       createFillPatch(stroke, { opacity: nextOpacity })
     )
+
     return true
   }
 
@@ -252,11 +264,13 @@ export const useStrokeInteractions = ({
     )
 
     const patch = createColorPatch(stroke, nextColor)
+
     if (!hasStrokePatch(patch)) {
       return false
     }
 
     commitStrokeInteractionPatch(patch)
+
     return true
   }
 
@@ -270,6 +284,7 @@ export const useStrokeInteractions = ({
         next.opacity,
         STROKE_COLOR_PICKER_DRAG_OPTIONS
       )
+
       return
     }
 
@@ -278,6 +293,7 @@ export const useStrokeInteractions = ({
 
   const handleColorPickerChangeStart = () => {
     const currentStroke = pickerStrokeRef.current
+
     if (!currentStroke) {
       return
     }
@@ -313,11 +329,13 @@ export const useStrokeInteractions = ({
 
   const handleWidthChange = (value: string): boolean => {
     const parsed = parseFiniteInputNumber(value)
+
     if (parsed === null) {
       return false
     }
 
     const nextWidth = Math.max(0, parsed)
+
     return commitStrokeStyleIntent({ width: nextWidth })
   }
 
@@ -327,6 +345,7 @@ export const useStrokeInteractions = ({
     }
 
     const parsed = parseFiniteInputNumber(value)
+
     if (parsed === null || parsed <= 0) {
       return false
     }
@@ -340,6 +359,7 @@ export const useStrokeInteractions = ({
     }
 
     const parsed = parseFiniteInputNumber(value)
+
     if (parsed === null || parsed <= 0) {
       return false
     }
@@ -357,11 +377,13 @@ export const useStrokeInteractions = ({
 
   const handleMiterAngleChange = (value: string): boolean => {
     const parsed = parseFiniteInputNumber(value)
+
     if (parsed === null) {
       return false
     }
 
     const nextAngle = Math.max(0, Math.min(180, parsed))
+
     return commitStrokeStyleIntent({ miterAngle: nextAngle })
   }
 

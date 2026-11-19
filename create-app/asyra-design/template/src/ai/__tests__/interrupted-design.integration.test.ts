@@ -42,17 +42,22 @@ const persistPublications = async (
   publications: readonly SharedPublication[]
 ): Promise<AppDocumentData> => {
   const parent = resolve(import.meta.dirname, '../../../../../tmp')
+
   await mkdir(parent, { recursive: true })
   const directory = await mkdtemp(resolve(parent, 'interrupted-document-'))
+
   try {
     const documentId = 'interrupted-drawing'
     const store = createFileDocumentMaterializationStore(directory)
+
     await store.transact(documentId, async (current, commit) => {
       commit({ ...current, document: initial })
     })
     const materializer = createDocumentMaterializationService({
       store,
+
       authorize: async () => undefined,
+
       applyCanonicalChanges: applyCanonicalChangesToDocument
     })
     const batch = {
@@ -74,6 +79,7 @@ const persistPublications = async (
         }).map((frame) => Buffer.from(frame).toString('base64'))
       }))
     }
+
     await expect(materializer.materialize(batch)).resolves.toEqual({
       durableSequence: publications.length
     })
@@ -85,10 +91,12 @@ const persistPublications = async (
       await createFileDocumentMaterializationStore(directory).readCheckpoint(
         documentId
       )
+
     expect(reloaded.durableSequence).toBe(publications.length)
     expect(Object.keys(reloaded.publicationSequences)).toHaveLength(
       publications.length
     )
+
     return reloaded.document
   } finally {
     await rm(directory, { recursive: true, force: true })
@@ -98,12 +106,15 @@ const persistPublications = async (
 const projectedSnapshot = () => {
   const tree = scene.save()
   const ids: string[] = []
+
   const visit = (id: string) => {
     ids.push(id)
     const children =
       (tree.elements[id] as { children?: string[] }).children ?? []
+
     children.forEach(visit)
   }
+
   ;(tree.elements[tree.workspace] as { children: string[] }).children.forEach(
     visit
   )
@@ -112,11 +123,16 @@ const projectedSnapshot = () => {
     core.getUIProperty<
       Record<string, { parentId?: string; children?: string[] }>
     >('elementDataMap')
+
   for (const id of ids) {
     expect(rows?.[id].parentId).toBe(tree.elements[id].parentId)
     const children = (tree.elements[id] as { children?: string[] }).children
-    if (children) expect(rows?.[id].children).toEqual(children)
+
+    if (children) {
+      expect(rows?.[id].children).toEqual(children)
+    }
   }
+
   return { version: '1.0.0', props: props.save(), sceneTree: tree }
 }
 
@@ -157,6 +173,7 @@ it.each(['admission', 'member-rollback', 'abort'] as const)(
         }
       }
     }
+
     core.load(initial)
     const snapshot = projectedSnapshot
     const design = prepareDesign(
@@ -194,7 +211,10 @@ it.each(['admission', 'member-rollback', 'abort'] as const)(
     const publications: SharedPublication[] = []
     const stop = core.subscribeToSharedPublication((p) => {
       const document = prepareCollaborationPublication(p)
-      if (document) publications.push(document)
+
+      if (document) {
+        publications.push(document)
+      }
     })
     const action = observeAiAction(
       createPreparedDesignAction(undefined, async () => {
@@ -202,7 +222,9 @@ it.each(['admission', 'member-rollback', 'abort'] as const)(
         yields++
         if (yields === 2) {
           clock = 2
-          if (interruption === 'abort') controller.abort()
+          if (interruption === 'abort') {
+            controller.abort()
+          }
         }
       })
     )
@@ -225,6 +247,7 @@ it.each(['admission', 'member-rollback', 'abort'] as const)(
               }
             ]
           })
+
           return {
             batchId: 'report',
             actions: [
@@ -248,6 +271,7 @@ it.each(['admission', 'member-rollback', 'abort'] as const)(
             retry: 'never',
             output: 'value'
           },
+
           execute: async () => ({ reported: true })
         }
       ],
@@ -260,11 +284,17 @@ it.each(['admission', 'member-rollback', 'abort'] as const)(
             label,
             (mutate) =>
               execute(async (write, settled) => {
-                if (!mutate) throw new Error('Missing grouped executor')
+                if (!mutate) {
+                  throw new Error('Missing grouped executor')
+                }
+
                 return mutate(() => {
                   const value = write()
-                  if (clock >= 2 && interruption === 'member-rollback')
+
+                  if (clock >= 2 && interruption === 'member-rollback') {
                     throw new Error('Member failed after writing')
+                  }
+
                   return value
                 }, settled)
               }),
@@ -272,12 +302,14 @@ it.each(['admission', 'member-rollback', 'abort'] as const)(
           )
       }
     })
+
     try {
       const result = await runtime.run({
         intent: 'Build facade',
         signal: controller.signal
       })
       const evidence = interruption === 'abort' ? result : receipt
+
       if (interruption === 'abort') {
         expect(receipt).toBeUndefined()
         expect(result).toMatchObject({
@@ -289,6 +321,7 @@ it.each(['admission', 'member-rollback', 'abort'] as const)(
           failure: { settlement: 'partial', actionId: 'apply' }
         })
       }
+
       expect(evidence).toMatchObject({
         actionResults: [
           {
@@ -303,6 +336,7 @@ it.each(['admission', 'member-rollback', 'abort'] as const)(
       })
       expect(yields).toBe(2)
       const retained = snapshot()
+
       expect(Object.keys(retained.sceneTree.elements).sort()).toEqual(
         [
           'workspace',
@@ -331,11 +365,13 @@ it.each(['admission', 'member-rollback', 'abort'] as const)(
         confirmationHandler: { confirm: async () => true },
         transactionRunner: createAiTransactionRunner()
       })
+
       try {
         const rejected = await retry.run({
           intent: 'Retry',
           signal: new AbortController().signal
         })
+
         expect(rejected.status).toBe('failed')
         expect(snapshot()).toEqual(retained)
         expect(factory.getUndoHistoryDepth()).toBe(1)
@@ -343,6 +379,7 @@ it.each(['admission', 'member-rollback', 'abort'] as const)(
       } finally {
         await retry.dispose()
       }
+
       await factory.undo()
       expect(snapshot()).toEqual(initial)
       await factory.redo()
@@ -351,13 +388,15 @@ it.each(['admission', 'member-rollback', 'abort'] as const)(
       stop()
       expect(publications.length).toBeGreaterThan(0)
       const persisted = await persistPublications(initial, publications)
+
       expect(persisted).toEqual(retained)
       core.load(initial)
       factory.transact.reset()
       let echoes = 0
       const unlisten = core.subscribeToSharedPublication(() => echoes++)
+
       try {
-        for (const p of publications)
+        for (const p of publications) {
           await core.applyRemoteCanonicalChangeSlices({
             origin: p.origin,
             // Same validated App-wire to Core boundary as the collaboration adapter.
@@ -365,6 +404,8 @@ it.each(['admission', 'member-rollback', 'abort'] as const)(
               typeof core.applyRemoteCanonicalChangeSlices
             >[0]['slices']
           })
+        }
+
         await Promise.resolve()
         expect(snapshot()).toEqual(retained)
         expect(factory.getUndoHistoryDepth()).toBe(0)
@@ -372,6 +413,7 @@ it.each(['admission', 'member-rollback', 'abort'] as const)(
       } finally {
         unlisten()
       }
+
       core.load(persisted)
       expect(snapshot()).toEqual(retained)
     } finally {
@@ -404,6 +446,7 @@ it.each(['vertices', 'ellipse'])(
         }
       }
     }
+
     core.load(initial)
     const snapshot = projectedSnapshot
     // The existing test budget makes two retained partitions cheaply; this tests
@@ -454,8 +497,13 @@ it.each(['vertices', 'ellipse'])(
         fill: index % 2 ? '#246080' : '#80a0b0'
       }))
     })
-    if (!draftId) throw new Error('Missing retained source')
+
+    if (!draftId) {
+      throw new Error('Missing retained source')
+    }
+
     const freshSignal = () => new AbortController().signal
+
     const firstRepair = { draftId, partition: 0 }
     const first = await session.prepareAsync(
       session.repairDraft(firstRepair),
@@ -463,6 +511,7 @@ it.each(['vertices', 'ellipse'])(
       firstRepair
     )
     const firstDesign = session.resolve(first.artifactId)
+
     expect(first.review).toMatchObject({
       intent: 'Repeat facade panels',
       checks: []
@@ -472,7 +521,10 @@ it.each(['vertices', 'ellipse'])(
     const publications: SharedPublication[] = []
     const stop = core.subscribeToSharedPublication((p) => {
       const document = prepareCollaborationPublication(p)
-      if (document) publications.push(document)
+
+      if (document) {
+        publications.push(document)
+      }
     })
     const action = observeAiAction(
       createPreparedDesignAction(undefined, async () => {
@@ -482,10 +534,12 @@ it.each(['vertices', 'ellipse'])(
           firstDesign.entries.every((entry) =>
             core.getElementMetadata(entry.descriptor.id)
           )
-        )
+        ) {
           controller.abort()
+        }
       })
     )
+
     const execute = async (design: typeof firstDesign, signal: AbortSignal) => {
       const runtime = createAiAgentRuntime({
         provider: {
@@ -510,14 +564,17 @@ it.each(['vertices', 'ellipse'])(
         confirmationHandler: { confirm: async () => true },
         transactionRunner: createAiTransactionRunner()
       })
+
       try {
         return await runtime.run({ intent: 'Apply retained part', signal })
       } finally {
         await runtime.dispose()
       }
     }
+
     try {
       const cancelled = await execute(firstDesign, controller.signal)
+
       expect(cancelled).toMatchObject({
         status: 'cancelled',
         transaction: { status: 'committed' },
@@ -536,6 +593,7 @@ it.each(['vertices', 'ellipse'])(
       const acknowledgedIds = create.mock.calls.flatMap(([entries]) =>
         entries.map((entry) => entry.id)
       )
+
       expect(acknowledgedIds).toEqual(
         firstDesign.entries.map((entry) => entry.descriptor.id)
       )
@@ -554,15 +612,18 @@ it.each(['vertices', 'ellipse'])(
         repair
       )
       const remaining = session.resolve(next.artifactId)
+
       expect(next.review).toEqual(first.review)
       const callsBeforeRecovery = create.mock.calls.length
       const recovered = await execute(remaining, freshSignal())
+
       expect(recovered, JSON.stringify(recovered)).toMatchObject({
         status: 'executed'
       })
       const createdOnRecovery = create.mock.calls
         .slice(callsBeforeRecovery)
         .flatMap(([entries]) => entries.map((entry) => entry.id))
+
       expect(createdOnRecovery).toEqual(
         remaining.entries.slice(1).map((entry) => entry.descriptor.id)
       )
@@ -572,6 +633,7 @@ it.each(['vertices', 'ellipse'])(
       const complete = snapshot()
       const callsAfterRecovery = create.mock.calls.length
       const duplicate = await execute(remaining, freshSignal())
+
       expect(duplicate.status).toBe('failed')
       expect(create).toHaveBeenCalledTimes(callsAfterRecovery)
       expect(snapshot()).toEqual(complete)
@@ -592,19 +654,23 @@ it.each(['vertices', 'ellipse'])(
       stop()
 
       const persisted = await persistPublications(initial, publications)
+
       expect(persisted).toEqual(complete)
       core.load(initial)
       factory.transact.reset()
       let echoes = 0
       const unlisten = core.subscribeToSharedPublication(() => echoes++)
+
       try {
-        for (const publication of publications)
+        for (const publication of publications) {
           await core.applyRemoteCanonicalChangeSlices({
             origin: publication.origin,
             slices: readDocumentPublicationSlices(publication) as Parameters<
               typeof core.applyRemoteCanonicalChangeSlices
             >[0]['slices']
           })
+        }
+
         await Promise.resolve()
         expect(snapshot()).toEqual(complete)
         expect(factory.getUndoHistoryDepth()).toBe(0)
@@ -612,6 +678,7 @@ it.each(['vertices', 'ellipse'])(
       } finally {
         unlisten()
       }
+
       core.load(persisted)
       expect(snapshot()).toEqual(complete)
 
@@ -678,12 +745,15 @@ it('applies descriptive brief capacity through the main dispatcher into one real
         confirmationHandler: { confirm: async () => true },
         transactionRunner: createAiTransactionRunner()
       })
+
       try {
         const receipt = await runtime.run({
           intent: 'Apply independent panels',
           signal: new AbortController().signal
         })
+
         expect(receipt.status).toBe('executed')
+
         return { context: {}, actionResults: receipt.actionResults ?? [] }
       } finally {
         await runtime.dispose()
@@ -742,6 +812,7 @@ it('applies descriptive brief capacity through the main dispatcher into one real
     new AbortController().signal
   )
   const result = JSON.parse(reply.text)
+
   // The headless Core fixture has no App inspection-evidence session. Both
   // writes complete; retain the real unverified follow-up instead of inventing it.
   expect(
@@ -759,9 +830,11 @@ it('applies descriptive brief capacity through the main dispatcher into one real
   expect(batches.flat().filter((name) => name === action.name)).toHaveLength(2)
   expect(batches.flat().filter((name) => name === review.name)).toHaveLength(1)
   const saved = projectedSnapshot()
+
   expect(Object.keys(saved.sceneTree.elements)).toHaveLength(2002)
   expect(saved.sceneTree.elements.workspace.children).toHaveLength(1)
   const rootId = saved.sceneTree.elements.workspace.children[0]
+
   expect(saved.sceneTree.elements[rootId].children).toHaveLength(2000)
   expect(new Set(saved.sceneTree.elements[rootId].children).size).toBe(2000)
   expect(factory.getUndoHistoryDepth()).toBe(2)

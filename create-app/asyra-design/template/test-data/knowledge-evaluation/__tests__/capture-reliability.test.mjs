@@ -9,10 +9,12 @@ import { fileURLToPath, URL } from 'node:url'
 import { captureCheckpoint } from '../checkpoint.mjs'
 
 const root = fileURLToPath(new URL('../../../../../', import.meta.url))
+
 fs.mkdirSync(path.join(root, 'tmp'), { recursive: true })
 test('checkpoint deadline covers streaming and preserves partial evidence', async () => {
   const folder = fs.mkdtempSync(path.join(root, 'tmp/checkpoint-timeout-'))
   let end
+
   try {
     const filename = path.join(folder, 'checkpoint.json')
     const body = {
@@ -20,12 +22,14 @@ test('checkpoint deadline covers streaming and preserves partial evidence', asyn
       durableSequence: 1,
       checkpoint: { version: '1', sceneTree: {}, props: {} }
     }
+
     await assert.rejects(
       captureCheckpoint({
         url: 'http://fixture/checkpoint',
         filename,
         receipt: { sequence: 1, durableSequence: 1, documentGeneration: 0 },
         timeoutMs: 20,
+
         request: async () =>
           new Response(
             new ReadableStream({
@@ -35,6 +39,7 @@ test('checkpoint deadline covers streaming and preserves partial evidence', asyn
                 )
                 end = setTimeout(() => controller.close(), 150)
               },
+
               cancel() {
                 clearTimeout(end)
               }
@@ -63,25 +68,33 @@ test('session capture rejects missing/replaced handles and bounds idle and confi
   const receipt = { sequence: 2, durableSequence: 2, documentGeneration: 0 }
   const handle = {
     getStatus: () => 'connected',
+
     whenIdle: async () => undefined,
+
     confirmPersistence: async () => receipt
   }
   let current = handle,
     rootsRead = 0
+
   const read = (timeoutMs = 100) =>
     captureSession({
       getHandle: () => current,
+
       readRoots: () => {
         rootsRead++
+
         return ['root']
       },
+
       timeoutMs
     })
+
   assert.deepEqual(await read(), { roots: ['root'], receipt })
   current = undefined
   await assert.rejects(read(), /unavailable/)
   current = {
     ...handle,
+
     whenIdle: async () => {
       current = handle
     }
@@ -89,19 +102,28 @@ test('session capture rejects missing/replaced handles and bounds idle and confi
   await assert.rejects(read(), /replaced/)
   current = {
     ...handle,
+
     confirmPersistence: async () => {
       current = handle
+
       return receipt
     }
   }
   await assert.rejects(read(), /replaced/)
-  current = { ...handle, whenIdle: () => new Promise(() => undefined) }
-  await assert.rejects(read(20), /deadline/)
-  let observedSignal
   current = {
     ...handle,
+
+    whenIdle: () => new Promise(() => undefined)
+  }
+  await assert.rejects(read(20), /deadline/)
+  let observedSignal
+
+  current = {
+    ...handle,
+
     confirmPersistence: (signal) => {
       observedSignal = signal
+
       return new Promise(() => undefined)
     }
   }
@@ -115,13 +137,16 @@ test('session capture rejects missing/replaced handles and bounds idle and confi
 test('failed original capture and bounded read-only recovery retain independent outcomes', async () => {
   const meta = {},
     saved = []
+
   const save = () => saved.push(structuredClone(meta))
+
   const original = await collectEvidenceStage(
     meta,
     'original',
     () => boundedCapture('RPC', () => new Promise(() => undefined), 10),
     save
   )
+
   assert.equal(original, undefined)
   await collectEvidenceStage(
     meta,
@@ -136,10 +161,12 @@ test('failed original capture and bounded read-only recovery retain independent 
 
 test('source freeze includes dirty/untracked execution owners and builds but excludes secrets and output', () => {
   const folder = fs.mkdtempSync(path.join(root, 'tmp/source-freeze-'))
+
   const write = (name, value) => {
     fs.mkdirSync(path.dirname(path.join(folder, name)), { recursive: true })
     fs.writeFileSync(path.join(folder, name), value)
   }
+
   try {
     execFileSync('git', ['init', '-q', folder])
     write('apps/asyra-design/src/owner.ts', 'original')
@@ -153,6 +180,7 @@ test('source freeze includes dirty/untracked execution owners and builds but exc
     const archive = path.join(folder, 'source.gz')
     const first = captureSources(folder, archive)
     const stored = JSON.parse(gunzipSync(fs.readFileSync(archive)))
+
     assert.equal(
       Buffer.from(
         stored['apps/asyra-design/src/owner.ts'],
@@ -185,8 +213,10 @@ test('late capture completion cannot replace the stored failure', async () => {
     () => boundedCapture('read', () => delayed, 10),
     () => undefined
   )
+
   assert.equal(value, undefined)
   const failure = structuredClone(meta)
+
   resolveRead({ receipt: 'too late' })
   await new Promise((resolve) => setTimeout(resolve, 10))
   assert.deepEqual(meta, failure)
@@ -195,7 +225,9 @@ test('late capture completion cannot replace the stored failure', async () => {
 test('cleanup failure does not hide the original capture failure or prevent another cleanup', async () => {
   const meta = {},
     saves = []
+
   const save = () => saves.push(structuredClone(meta))
+
   await collectEvidenceStage(
     meta,
     'capture',
@@ -231,16 +263,20 @@ test('a late checkpoint response cannot create evidence after capture timed out'
   const folder = fs.mkdtempSync(path.join(root, 'tmp/checkpoint-late-'))
   const filename = path.join(folder, 'checkpoint.json')
   let completeRequest
+
   try {
     const response = new Promise((resolve) => {
       completeRequest = resolve
     })
+
     await assert.rejects(
       captureCheckpoint({
         url: 'http://fixture/checkpoint',
         filename,
         receipt: { sequence: 0, durableSequence: 0, documentGeneration: 0 },
+
         request: () => response,
+
         timeoutMs: 10
       }),
       /deadline/
@@ -260,24 +296,37 @@ test('request attribution uses the canonical same-origin endpoint and rejects mi
   let reads = 0
   const request = {
     url: () => 'http://fixture' + ACTION_BATCH_ENDPOINT,
+
     method: () => 'POST',
+
     headers: () => ({}),
+
     postDataJSON: () => {
       reads++
+
       return { metadata: { sourceRequestId: 'request-1' } }
     }
   }
+
   assert.equal(captureRequestIdentity(request, 'http://fixture'), 'request-1')
   assert.equal(
     captureRequestIdentity(
-      { ...request, url: () => 'http://unrelated' + ACTION_BATCH_ENDPOINT },
+      {
+        ...request,
+
+        url: () => 'http://unrelated' + ACTION_BATCH_ENDPOINT
+      },
       'http://fixture'
     ),
     undefined
   )
   assert.equal(
     captureRequestIdentity(
-      { ...request, url: () => 'http://fixture/health' },
+      {
+        ...request,
+
+        url: () => 'http://fixture/health'
+      },
       'http://fixture'
     ),
     undefined
@@ -287,9 +336,11 @@ test('request attribution uses the canonical same-origin endpoint and rejects mi
     captureRequestIdentity(
       {
         ...request,
+
         headers: () => ({
           [AI_BATCH_RECEIPT_HEADER]: 'existing-exchange-token'
         }),
+
         postDataJSON: () => {
           throw new Error('Receipt is not a model request')
         }
@@ -301,7 +352,11 @@ test('request attribution uses the canonical same-origin endpoint and rejects mi
   assert.throws(
     () =>
       captureRequestIdentity(
-        { ...request, postDataJSON: () => ({}) },
+        {
+          ...request,
+
+          postDataJSON: () => ({})
+        },
         'http://fixture'
       ),
     /source identity/
@@ -310,6 +365,7 @@ test('request attribution uses the canonical same-origin endpoint and rejects mi
 
 test('timed-out reload stops late navigation and closes a late-created context without publishing evidence', async () => {
   const { captureReload } = await import('../capture-lifecycle.mjs')
+
   for (const lateStep of ['context', 'navigation']) {
     let release
     const pending = new Promise((resolve) => {
@@ -321,12 +377,18 @@ test('timed-out reload stops late navigation and closes a late-created context w
       closed = 0
     const page = {
       goto: async () => {
-        if (lateStep === 'navigation') await pending
+        if (lateStep === 'navigation') {
+          await pending
+        }
       },
+
       evaluate: async () =>
         assert.fail('Timed-out reload must not begin readiness'),
+
       waitForTimeout: async () => assert.fail('Timed-out reload must not poll'),
+
       keyboard: { press: async () => undefined },
+
       screenshot: async () => {
         screenshots++
       }
@@ -334,28 +396,38 @@ test('timed-out reload stops late navigation and closes a late-created context w
     const context = {
       newPage: async () => {
         pages++
+
         return page
       },
+
       close: async () => {
         closed++
       }
     }
+
     await assert.rejects(
       captureReload({
         browser: {
           newContext: async () => {
-            if (lateStep === 'context') await pending
+            if (lateStep === 'context') {
+              await pending
+            }
+
             return context
           }
         },
         viewport: {},
         url: 'http://fixture',
         screenshotPath: 'not-written',
+
         capturePage: async () => {
           captures++
+
           return { roots: [], receipt: {} }
         },
+
         recordCleanup: (task) => task(),
+
         timeoutMs: 15
       }),
       /deadline/
@@ -379,22 +451,27 @@ test('captures attributed report text before screenshot and never upgrades missi
     attribution: 'model-self-report',
     text: 'No first frame; cause uncertain.'
   }
+
   assert.equal(report.attribution, 'model-self-report')
   const events = [],
     meta = {}
   const captured = await captureEvaluationReport({
     meta,
     report,
+
     writeText: async (value) => {
       events.push('text')
       assert.equal(value, report.text)
     },
+
     captureImage: async () => {
       events.push('image')
       throw new Error('Screenshot unavailable')
     },
+
     save: () => events.push('save')
   })
+
   assert.equal(captured, undefined)
   assert.deepEqual(events.slice(0, 2), ['text', 'image'])
   assert.equal(meta.evidence['self-report'].status, 'failed')
@@ -402,11 +479,15 @@ test('captures attributed report text before screenshot and never upgrades missi
   assert.equal(meta.selfReport.textSaved, true)
   assert.equal(meta.selfReport.imageSaved, false)
   const missing = {}
+
   await captureEvaluationReport({
     meta: missing,
     report: undefined,
+
     writeText: async () => assert.fail('No invented report'),
+
     captureImage: async () => assert.fail('No invented report'),
+
     save: () => undefined
   })
   assert.equal(missing.evidence['self-report'].status, 'failed')
@@ -416,24 +497,32 @@ test('report capture succeeds in order and rejects missing text without fabricat
   const { captureEvaluationReport } = await import('../capture-lifecycle.mjs')
   const events = [],
     meta = {}
+
   await captureEvaluationReport({
     meta,
     report: { attribution: 'model-self-report', text: 'Unconfirmed cause.' },
+
     writeText: async () => events.push('text'),
+
     captureImage: async () => events.push('image'),
+
     save: () => undefined
   })
   assert.deepEqual(events, ['text', 'image'])
   assert.equal(meta.evidence['self-report'].status, 'complete')
   assert.equal(meta.selfReport.imageSaved, true)
   const failed = {}
+
   await captureEvaluationReport({
     meta: failed,
     report: { text: 'Report' },
+
     writeText: async () => {
       throw new Error('Disk unavailable')
     },
+
     captureImage: async () => assert.fail('Text was not saved'),
+
     save: () => undefined
   })
   assert.equal(failed.evidence['self-report'].status, 'failed')
@@ -450,15 +539,20 @@ test('late screenshot completion cannot upgrade timed-out report evidence', asyn
   const pending = captureEvaluationReport({
     meta,
     report: { text: 'Report' },
+
     writeText: async () => undefined,
+
     captureImage: () => image,
+
     save: () => undefined,
+
     timeoutMs: 10
   })
   const state = await Promise.race([
     pending.then(() => 'settled'),
     new Promise((resolve) => setTimeout(() => resolve('still-waiting'), 30))
   ])
+
   release()
   await pending
   assert.equal(state, 'settled')
@@ -480,11 +574,16 @@ test('report image captures the rendered report and rejects a different terminal
   const target = {
     getByTestId: (id) => {
       assert.equal(id, 'ai-agent-result')
+
       return target
     },
+
     waitFor: async () => events.push('visible'),
+
     scrollIntoViewIfNeeded: async () => events.push('scroll'),
+
     textContent: async () => visibleText,
+
     getAttribute: async (name) =>
       name === 'data-turn-id'
         ? 'turn'
@@ -494,14 +593,17 @@ test('report image captures the rendered report and rejects a different terminal
             sourceRequestId: report.sourceRequestId,
             turnId: report.turnId
           }),
+
     screenshot: async ({ path }) => events.push(path)
   }
   const page = {
     getByTestId: (id) => {
       assert.equal(id, 'ai-agent-message')
+
       return { nth: () => target }
     }
   }
+
   await captureReportImage(page, report, 'report.png')
   assert.deepEqual(events, ['visible', 'scroll', 'report.png'])
   visibleText = 'Connection failed'
@@ -531,6 +633,7 @@ test('reads one matching settled report without network body access and rejects 
   ]
   const page = { getByTestId: () => ({ evaluateAll: async () => entries }) }
   const captured = await readEvaluationReport(page, ['request'])
+
   assert.equal(captured.text, report.text)
   assert.equal(captured.sourceRequestId, 'request')
   await assert.rejects(readEvaluationReport(page, ['foreign']), /matching/)
@@ -555,6 +658,7 @@ test('reads one matching settled report without network body access and rejects 
     ]
     await assert.rejects(readEvaluationReport(page, ['request']))
   }
+
   const valid = {
     value: JSON.stringify(report),
     turnId: 'turn',
@@ -562,6 +666,7 @@ test('reads one matching settled report without network body access and rejects 
     text: report.text,
     messageIndex: 0
   }
+
   entries = [valid, { ...valid, messageIndex: 1 }]
   await assert.rejects(readEvaluationReport(page, ['request']), /matching/)
   entries = []

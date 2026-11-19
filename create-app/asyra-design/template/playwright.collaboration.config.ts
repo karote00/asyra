@@ -10,6 +10,7 @@ const collaborationWebSocketURL = new URL(
   '/collaboration',
   appEnvironment.collaborationHealthURL
 )
+
 collaborationWebSocketURL.protocol = 'ws:'
 
 export default defineConfig({

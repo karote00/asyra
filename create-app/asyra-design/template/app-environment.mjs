@@ -12,14 +12,17 @@ const isNonEmptyString = (value) =>
 
 const resolvePort = (value, name) => {
   const port = Number(value)
+
   if (!Number.isInteger(port) || port < 1 || port > 65535) {
     throw new Error(`${name} must be a valid port`)
   }
+
   return port
 }
 
 const normalizeEnvValue = (value) => {
   const trimmed = value.trim()
+
   if (
     trimmed.length >= 2 &&
     ((trimmed.startsWith('"') && trimmed.endsWith('"')) ||
@@ -27,6 +30,7 @@ const normalizeEnvValue = (value) => {
   ) {
     return trimmed.slice(1, -1)
   }
+
   return trimmed
 }
 
@@ -34,17 +38,29 @@ export const loadEnvironment = (
   environment = process.env,
   environmentPath = defaultEnvironmentPath
 ) => {
-  if (!existsSync(environmentPath)) return environment
+  if (!existsSync(environmentPath)) {
+    return environment
+  }
 
   for (const rawLine of readFileSync(environmentPath, 'utf8').split(/\r?\n/)) {
     const line = rawLine.trim()
-    if (!line || line.startsWith('#')) continue
+
+    if (!line || line.startsWith('#')) {
+      continue
+    }
 
     const separatorIndex = line.indexOf('=')
-    if (separatorIndex <= 0) continue
+
+    if (separatorIndex <= 0) {
+      continue
+    }
 
     const key = line.slice(0, separatorIndex).trim()
-    if (!/^[A-Z_][A-Z0-9_]*$/.test(key)) continue
+
+    if (!/^[A-Z_][A-Z0-9_]*$/.test(key)) {
+      continue
+    }
+
     environment[key] ??= normalizeEnvValue(line.slice(separatorIndex + 1))
   }
 
@@ -58,6 +74,7 @@ export const resolveEnvironment = (environment = process.env) => {
     : defaultAppURL
 
   let appURL
+
   try {
     appURL = new URL(appURLValue)
   } catch {
@@ -67,6 +84,7 @@ export const resolveEnvironment = (environment = process.env) => {
   if (appURL.protocol !== 'http:' && appURL.protocol !== 'https:') {
     throw new Error('APP_URL must use http or https')
   }
+
   if (
     appURL.username ||
     appURL.password ||

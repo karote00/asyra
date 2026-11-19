@@ -20,6 +20,7 @@ export const getChangedFillPatch = (
 ): FillPatch =>
   FILL_PATCH_KEYS.reduce<FillPatch>((patch, key) => {
     const nextValue = nextFill[key]
+
     if (!isEqual(sourceFill[key], nextValue)) {
       Object.assign(patch, { [key]: nextValue })
     }

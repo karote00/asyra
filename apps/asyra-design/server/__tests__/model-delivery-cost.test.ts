@@ -1,3 +1,4 @@
+import { contractReadFixture } from './contract-read-fixture'
 import { expect, it, vi } from 'vitest'
 import { writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
@@ -17,6 +18,7 @@ it('compares complete model result contracts against the same owner declarations
 
   complete.source =
     'Deterministic complete owner schemas before model field selection; internal fields included. No model execution.'
+  delete complete.sources['server/local-design-review.ts']
   for (const source of Object.keys(complete.sources)) {
     complete.sources[source] = createHash('sha256')
       .update(readFileSync(resolve(source)))
@@ -24,7 +26,11 @@ it('compares complete model result contracts against the same owner declarations
   }
 
   const cases = {
-    ...prior.entries,
+    draft: prior.entries.draft,
+    capture: {
+      ...prior.entries.capture,
+      query: { names: ['inspect_drawing'], view: 'usage' }
+    },
     vector: {
       ...prior.entries.draft,
       query: {
@@ -47,12 +53,11 @@ it('compares complete model result contracts against the same owner declarations
       const project = vi.spyOn(contracts, 'modelToolResultSchemas')
 
       if (baseline) {
-        project.mockImplementation((contract, stage) =>
+        project.mockImplementation((contract) =>
           original(
             JSON.parse(JSON.stringify(contract), (key, value) =>
               key === 'x-model-visibility' ? undefined : value
-            ),
-            stage
+            )
           )
         )
       }
@@ -79,19 +84,26 @@ it('compares complete model result contracts against the same owner declarations
         let wire = 0
         let pages = 0
         let input = 0
-        const text = await readCompleteInformation(async (args) => {
-          input += Buffer.byteLength(JSON.stringify(args))
-          const reply = await operations.call(
-            'describe_design_apis',
-            args,
-            new AbortController().signal
-          )
+        const text = await readCompleteInformation(
+          async (args, requestedTool) => {
+            input += Buffer.byteLength(JSON.stringify(args))
+            const reply = await operations.call(
+              requestedTool,
+              args,
+              new AbortController().signal
+            )
 
-          wire += Buffer.byteLength(reply)
-          pages++
+            wire += Buffer.byteLength(reply)
+            pages++
 
-          return reply
-        }, entry.query)
+            return reply
+          },
+          contractReadFixture(entry.query.names, {
+            ...entry.query,
+            includeResultSchema: true
+          }),
+          'read_design_contracts'
+        )
 
         acquisition.push({ body: Buffer.byteLength(text), wire, pages, input })
         const body = JSON.parse(text)

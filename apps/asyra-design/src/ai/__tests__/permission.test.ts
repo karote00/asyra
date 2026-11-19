@@ -1,23 +1,18 @@
 import { describe, expect, it } from 'vitest'
 import type {
   AiPermissionDecision,
-  AiPreparedAction
+  AiPermissionAction
 } from '@asyra/ai-agent-runtime'
 import {
   AiPermissionConfigurationError,
   createAiPermissionPolicy
 } from '../permission'
 
-const action = (name: string): AiPreparedAction =>
+const action = (name: string): AiPermissionAction =>
   Object.freeze({
     id: `${name}-1`,
     name,
-    arguments: Object.freeze({}),
-    summary: Object.freeze({
-      affectedCount: 0
-    }),
-
-    execute: async () => null
+    arguments: Object.freeze({})
   })
 
 describe('Asyra Design AI permission policy', () => {

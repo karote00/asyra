@@ -1,7 +1,7 @@
 # Local affected validation
 
 Created: 2026-10-03. Status: completed locally; no remote operation. Independent tooling plan coordinated by
-the [AI execution improvement plan](../../../apps/asyra-design/plans/ai-execution-improvement-plan.md).
+the [AI execution improvement plan](../../../apps/asyra-design/plans/completed/ai-execution-improvement-plan.md).
 
 ## Outcome
 

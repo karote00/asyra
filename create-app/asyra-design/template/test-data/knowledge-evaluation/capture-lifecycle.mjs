@@ -1,16 +1,20 @@
 /* global AbortController, setTimeout, clearTimeout, requestAnimationFrame */
 /** Evaluation-only bounds. Late reads cannot become successful evidence. */
 export async function boundedCapture(label, task, timeoutMs = 30000) {
-  if (!Number.isSafeInteger(timeoutMs) || timeoutMs <= 0)
+  if (!Number.isSafeInteger(timeoutMs) || timeoutMs <= 0) {
     throw new Error('Invalid capture deadline')
+  }
+
   const controller = new AbortController()
   let timer
+
   try {
     return await Promise.race([
       Promise.resolve().then(() => task(controller.signal)),
       new Promise((_, reject) => {
         timer = setTimeout(() => {
           const error = new Error(`${label} capture deadline exceeded`)
+
           controller.abort(error)
           reject(error)
         }, timeoutMs)
@@ -31,26 +35,33 @@ export async function captureSession({
     'session',
     async (signal) => {
       const handle = getHandle()
+
       const assertCurrent = () => {
         signal.throwIfAborted()
         if (
           !handle ||
           getHandle() !== handle ||
           handle.getStatus() !== 'connected'
-        )
+        ) {
           throw new Error(
             'Capture session unavailable, disconnected or replaced'
           )
+        }
       }
+
       assertCurrent()
       await handle.whenIdle()
       assertCurrent()
       const receipt = await handle.confirmPersistence(signal)
+
       assertCurrent()
       const roots = readRoots()
+
       assertCurrent()
-      if (receipt.sequence !== receipt.durableSequence)
+      if (receipt.sequence !== receipt.durableSequence) {
         throw new Error('Capture persistence is not settled')
+      }
+
       return { roots, receipt }
     },
     timeoutMs
@@ -60,15 +71,18 @@ export async function captureSession({
 /** Independent failure records: recovery never overwrites the original outcome. */
 export async function collectEvidenceStage(meta, name, task, save) {
   const startedAt = Date.now()
+
   meta.evidence ??= {}
   try {
     const value = await task()
+
     meta.evidence[name] = {
       status: 'complete',
       startedAt,
       finishedAt: Date.now(),
       value
     }
+
     return value
   } catch (error) {
     meta.evidence[name] = {
@@ -77,6 +91,7 @@ export async function collectEvidenceStage(meta, name, task, save) {
       finishedAt: Date.now(),
       error: String(error?.message ?? error)
     }
+
     return undefined
   } finally {
     save()
@@ -90,6 +105,7 @@ export async function readEvaluationReport(page, sourceRequestIds) {
     .evaluateAll((messages) =>
       messages.flatMap((message, messageIndex) => {
         const value = message.getAttribute('data-evaluation-report')
+
         return value
           ? [
               {
@@ -105,8 +121,10 @@ export async function readEvaluationReport(page, sourceRequestIds) {
       })
     )
   const matches = []
+
   for (const entry of entries) {
     const report = JSON.parse(entry.value)
+
     if (
       !report ||
       report.attribution !== 'model-self-report' ||
@@ -117,49 +135,66 @@ export async function readEvaluationReport(page, sourceRequestIds) {
       typeof report.text !== 'string' ||
       !report.text.trim() ||
       report.text.length > 1000
-    )
+    ) {
       throw new Error('Malformed evaluation self-report')
-    if (!sourceRequestIds.includes(report.sourceRequestId)) continue
+    }
+
+    if (!sourceRequestIds.includes(report.sourceRequestId)) {
+      continue
+    }
+
     if (
       entry.turnId !== report.turnId ||
       !['partial', 'success', 'no-change'].includes(entry.outcome) ||
       !entry.text?.includes(report.text)
-    )
+    ) {
       throw new Error('Evaluation report identity or rendered text mismatch')
+    }
+
     matches.push({
       ...report,
       messageIndex: entry.messageIndex,
       receivedAt: new Date().toISOString()
     })
   }
-  if (matches.length !== 1)
+
+  if (matches.length !== 1) {
     throw new Error('Expected exactly one matching settled evaluation report')
+  }
+
   return matches[0]
 }
 
 /** Verify the same settled message before and after saving its entire rendered image. */
 export async function captureReportImage(page, report, path) {
   const target = page.getByTestId('ai-agent-message').nth(report.messageIndex)
+
   await target.waitFor({ state: 'visible', timeout: 5000 })
   await target.scrollIntoViewIfNeeded()
   const rendered = target.getByTestId('ai-agent-result')
+
   const verify = async () => {
     const current = JSON.parse(
       (await target.getAttribute('data-evaluation-report')) ?? 'null'
     )
+
     if (
       !current ||
       current.sourceRequestId !== report.sourceRequestId ||
       current.turnId !== report.turnId ||
       current.text !== report.text ||
       (await target.getAttribute('data-turn-id')) !== report.turnId
-    )
+    ) {
       throw new Error('Evaluation report identity changed before capture')
-    if (!(await rendered.textContent())?.includes(report.text))
+    }
+
+    if (!(await rendered.textContent())?.includes(report.text)) {
       throw new Error(
         'The rendered report does not match the retained model output'
       )
+    }
   }
+
   await verify()
   await rendered.screenshot({ path })
   await verify()
@@ -181,8 +216,10 @@ export function captureEvaluationReport({
       boundedCapture(
         'self-report',
         async (signal) => {
-          if (!report)
+          if (!report) {
             throw new Error('No host-admitted evaluation self-report received')
+          }
+
           meta.selfReport = { ...report, textSaved: false, imageSaved: false }
           await writeText(report.text)
           signal.throwIfAborted()
@@ -190,6 +227,7 @@ export function captureEvaluationReport({
           await captureImage()
           signal.throwIfAborted()
           meta.selfReport.imageSaved = true
+
           return meta.selfReport
         },
         timeoutMs
@@ -206,14 +244,19 @@ export async function waitForCaptureReady(page, signal) {
       const { core, getActiveCollaborationHandle } =
         await import('/src/testing/runtime-access.ts')
       const workspaceId = core.getCurrentWorkspaceId()
+
       return Boolean(
         getActiveCollaborationHandle()?.getStatus() === 'connected' &&
         workspaceId &&
         core.getElementData(workspaceId)
       )
     })
+
     signal.throwIfAborted()
-    if (ready) return
+    if (ready) {
+      return
+    }
+
     await page.waitForTimeout(100)
   }
 }
@@ -228,10 +271,13 @@ export const captureSessionOnPage = (page) =>
           await import('/src/testing/runtime-access.ts')
         const { captureSession } =
           await import('/test-data/knowledge-evaluation/capture-lifecycle.mjs')
+
         return captureSession({
           getHandle: getActiveCollaborationHandle,
+
           readRoots: () =>
             core.getElementData(core.getCurrentWorkspaceId())?.children ?? [],
+
           timeoutMs: 30000
         })
       }),
@@ -256,6 +302,7 @@ export async function captureReload({
         viewport: viewport
       })
       let closing
+
       const close = () =>
         (closing ??= recordCleanup(() =>
           boundedCapture(
@@ -264,21 +311,25 @@ export async function captureReload({
             5000
           )
         ))
+
       const abort = () => {
         // The same promise is awaited in finally; observing it here prevents
         // an unhandled rejection while the interrupted RPC unwinds.
         void close().catch(() => undefined)
       }
+
       signal.addEventListener('abort', abort, { once: true })
       try {
         signal.throwIfAborted()
         const reloaded = await reloadContext.newPage()
+
         signal.throwIfAborted()
         await reloaded.goto(url, { timeout: 30000 })
         signal.throwIfAborted()
         await waitForCaptureReady(reloaded, signal)
         signal.throwIfAborted()
         const result = await capturePage(reloaded)
+
         signal.throwIfAborted()
         if (
           captured &&
@@ -287,8 +338,10 @@ export async function captureReload({
               captured.receipt.durableSequence ||
             result.receipt.documentGeneration !==
               captured.receipt.documentGeneration)
-        )
+        ) {
           throw new Error('Reload root/order or durable receipt mismatch')
+        }
+
         await reloaded.keyboard.press('Meta+1')
         signal.throwIfAborted()
         await reloaded.evaluate(
@@ -302,6 +355,7 @@ export async function captureReload({
           path: screenshotPath
         })
         signal.throwIfAborted()
+
         return {
           ...result,
           comparison: captured

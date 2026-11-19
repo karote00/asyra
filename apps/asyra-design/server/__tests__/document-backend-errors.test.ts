@@ -34,6 +34,7 @@ const committed = vi.fn()
 beforeEach(() => {
   committed.mockClear()
   record = {
+    documentGeneration: 0,
     document: createFormalInitialDocument(),
     durableSequence: 0,
     publicationSequences: {},

@@ -31,9 +31,11 @@ describe('Asyra Design AI document interaction integration', () => {
       if (key === PresetSystemPropertyKeys.ZOOM) {
         return 2
       }
+
       if (key === PresetSystemPropertyKeys.VIEWPORT_POSITION) {
         return { x: 10, y: 20 }
       }
+
       return undefined
     })
   })
@@ -45,24 +47,30 @@ describe('Asyra Design AI document interaction integration', () => {
 
   it('keeps ordinary document input, pan and zoom live during AI preparation', async () => {
     const viewport = document.createElement('div')
+
     viewport.setAttribute(
       AI_DOCUMENT_INTERACTION_TARGET_ATTRIBUTE,
       AiDocumentInteractionTargets.VIEWPORT_NAVIGATION
     )
     const canvas = document.createElement('canvas')
+
     viewport.append(canvas)
     const documentControl = document.createElement('button')
+
     document.body.append(viewport, documentControl)
 
     const attemptedDocumentMutation = vi.fn()
+
     documentControl.addEventListener('click', attemptedDocumentMutation)
     documentControl.addEventListener('input', attemptedDocumentMutation)
     documentControl.addEventListener('keydown', attemptedDocumentMutation)
     canvas.addEventListener('wheel', (event) => {
       if (event.metaKey || event.ctrlKey) {
         zoomFeature.api.zoom(event.deltaY, event.clientX, event.clientY)
+
         return
       }
+
       panFeature.api.pan(-event.deltaX, -event.deltaY)
     })
 
@@ -126,15 +134,18 @@ describe('Asyra Design AI document interaction integration', () => {
 
   it('lets the real InputSystem observe Command and Control changes required by viewport zoom', () => {
     const viewport = document.createElement('div')
+
     viewport.setAttribute(
       AI_DOCUMENT_INTERACTION_TARGET_ATTRIBUTE,
       AiDocumentInteractionTargets.VIEWPORT_NAVIGATION
     )
     const canvas = document.createElement('canvas')
+
     viewport.append(canvas)
     document.body.append(viewport)
 
     const receivedWheel = vi.fn()
+
     inputSystem.switchWatchedElement(canvas)
     inputSystem.registry.register(TEST_WHEEL_INPUT, [
       {

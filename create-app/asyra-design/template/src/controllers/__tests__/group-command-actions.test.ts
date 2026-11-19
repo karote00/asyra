@@ -25,6 +25,7 @@ describe('Group command controller handoff', () => {
       groupId: 'group-created',
       selectedIds: ['group-created']
     }
+
     mocks.execute.mockReturnValue(result)
     mocks.getFeature.mockReturnValue({ execute: mocks.execute })
 

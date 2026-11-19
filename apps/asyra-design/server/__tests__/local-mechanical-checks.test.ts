@@ -162,9 +162,18 @@ it('keeps findings without current receipts unresolved and rejects repairs befor
     verification: { status: 'decision-required' }
   })
   expect(result.unresolved[0].capability).toBeUndefined()
-  await expect(f.owner.repairSelection(input, f.signal)).rejects.toBeInstanceOf(
-    LocalToolInputError
-  )
+  const failure = await f.owner
+    .repairSelection(input, f.signal)
+    .catch((error: unknown) => error)
+
+  expect(failure).toBeInstanceOf(Error)
+  expect(failure).not.toBeInstanceOf(LocalToolInputError)
+  expect(failure).toMatchObject({
+    message: 'Mechanical evidence is unavailable before repair.'
+  })
+  expect(f.findings.get('a')).toEqual([
+    { kind: 'container-overflow', elementId: 'child', parentId: 'a' }
+  ])
 })
 
 it('classifies a revision changed during repair admission as a prewrite rejection', async () => {

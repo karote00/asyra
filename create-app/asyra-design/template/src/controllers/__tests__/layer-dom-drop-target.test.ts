@@ -6,6 +6,7 @@ const pointResolver = (element: Element | null) => () => element
 describe('Layers DOM drop target projection', () => {
   it('derives before, inside, and after zones from one stable Group row', () => {
     const row = document.createElement('div')
+
     row.dataset.layerElementId = 'group-1'
     row.dataset.layerIsGroup = 'true'
     row.getBoundingClientRect = () =>
@@ -34,6 +35,7 @@ describe('Layers DOM drop target projection', () => {
 
   it('uses before or after only for non-Group rows', () => {
     const row = document.createElement('div')
+
     row.dataset.layerElementId = 'shape'
     row.dataset.layerIsGroup = 'false'
     row.getBoundingClientRect = () =>
@@ -53,6 +55,7 @@ describe('Layers DOM drop target projection', () => {
 
   it('returns workspace only for the explicit empty-area target', () => {
     const emptyArea = document.createElement('div')
+
     emptyArea.dataset.layerDropWorkspace = 'true'
     const outside = document.createElement('div')
 

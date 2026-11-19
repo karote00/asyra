@@ -1,3 +1,4 @@
+import { AiInspectionLimits } from '../constants'
 import core from '../contexts'
 
 export const inspectionApis = {
@@ -47,10 +48,14 @@ export const inspectionApis = {
     }
 
     try {
-      const image = core.captureElementSnapshot(elementId, 1024, {
-        nativeResolution: !!region || view === 'detail',
-        ...(region ? { region } : {})
-      })
+      const image = core.captureElementSnapshot(
+        elementId,
+        AiInspectionLimits.maxEdge,
+        {
+          nativeResolution: !!region || view === 'detail',
+          ...(region ? { region } : {})
+        }
+      )
 
       return {
         available: true,
@@ -67,8 +72,7 @@ export const inspectionApis = {
         elementId,
         code: 'CAPTURE_UNAVAILABLE',
         settlement: 'completed' as const,
-        message:
-          'Capture is unavailable; no image or judgment was produced. Retry only this failed capture, preserving valid images and completed edits. For native detail exceeding 1024 pixels per side, inspect a smaller child or specify a target-local region within that limit. Use view=overview for composition framing; an overview does not prove native detail. Do not claim verification from an unavailable image.'
+        message: `Capture is unavailable; no image or judgment was produced. Retry only this failed capture, preserving valid images and completed edits. For native detail exceeding ${AiInspectionLimits.maxEdge} pixels per side, inspect a smaller child or specify a target-local region within that limit. Use view=overview for composition framing; an overview does not prove native detail. Do not claim verification from an unavailable image.`
       }
     }
   }

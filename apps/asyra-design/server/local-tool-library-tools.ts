@@ -1,12 +1,20 @@
 import {
+  invocationRecoverySchema,
+  localToolFailureSchema,
+  localToolRecoveryModelContract
+} from './local-tool-invocation'
+import {
   aiRecipeInputSchema,
   embedAiToolSchema,
   type AiInvocation,
   type AiJsonValue,
-  type AiToolOutcome
+  type AiToolOutcome,
+  type AiToolContract
 } from '@asyra/ai-agent-runtime'
 import { AiDesignToolIds } from '../src/constants/ai-design'
 import {
+  modelToolResultSchemas,
+  modelToolDeliveryFailureSchema,
   toolResultObject,
   toolResultString,
   toolSemantics
@@ -44,9 +52,22 @@ const saved = {
       availability: { enum: ['candidate', 'eligible', 'suspended', 'retired'] },
       version: toolResultString
     }),
-    toolResultObject({ status: { const: 'unsaved' }, issue: toolResultString })
+    toolResultObject({
+      status: { const: 'unsaved' },
+      code: { enum: ['input-invalid', 'storage-failed'] },
+      issue: toolResultString
+    })
   ]
 }
+
+const libraryControlResult = (result: unknown): string => {
+  if (record(result) && result.code === 'input-invalid') {
+    throw new LocalToolInputError(String(result.message ?? result.issue))
+  }
+
+  return JSON.stringify(result)
+}
+
 const submitted = {
   oneOf: [
     toolResultObject(
@@ -63,7 +84,8 @@ const submitted = {
         ok: { const: false },
         code: toolResultString,
         message: toolResultString,
-        issues: { type: 'array' }
+        issues: { type: 'array' },
+        omittedIssues: { type: 'integer', minimum: 0 }
       },
       ['ok', 'code', 'message']
     )
@@ -74,6 +96,12 @@ const execution = toolResultObject(
     status: { enum: ['success', 'partial', 'failed', 'unknown'] },
     settlement: { enum: ['not-started', 'completed', 'partial', 'unknown'] },
     calls: { type: 'array' },
+    failure: toolResultObject({
+      stage: {
+        enum: ['registration', 'input', 'output', 'execution', 'cleanup']
+      },
+      message: toolResultString
+    }),
     issues: { type: 'array', items: { type: 'string' } },
     recovery: { type: 'array' }
   },
@@ -92,10 +120,22 @@ export const registeredToolInvocationSchemas = (
     recoveryOutputSchema?: unknown
   },
   pinned?: { name: string; revision: number },
-  recovery?: unknown
+  recovery?: unknown,
+  deliveryFailure?: unknown
 ) => {
-  const output = (schema: unknown, requiredValue: boolean) =>
-    toolResultObject(
+  const delivered = (schema: unknown) =>
+    deliveryFailure === undefined
+      ? schema
+      : invocationRecoverySchema(schema, deliveryFailure)
+
+  const output = (
+    schema: unknown,
+    requiredValue: boolean,
+    statuses?: AiToolOutcome['status'][],
+    outcomes = statuses ?? (requiredValue ? ['success'] : ['partial']),
+    deliveries = statuses ?? (requiredValue ? ['success'] : ['partial'])
+  ) => ({
+    ...toolResultObject(
       {
         execution: {
           ...execution,
@@ -103,14 +143,16 @@ export const registeredToolInvocationSchemas = (
             ...execution.properties,
             status: pinned
               ? {
-                  enum: requiredValue
-                    ? ['success']
-                    : [
-                        'failed',
-                        'partial',
-                        'unknown',
-                        ...(schema === undefined ? [] : ['success'])
-                      ]
+                  enum:
+                    statuses ??
+                    (requiredValue
+                      ? ['success']
+                      : [
+                          'failed',
+                          'partial',
+                          'unknown',
+                          ...(schema === undefined ? [] : ['success'])
+                        ])
                 }
               : execution.properties.status,
             ...(schema === undefined
@@ -147,19 +189,62 @@ export const registeredToolInvocationSchemas = (
           ? {
               toolOutcome: toolResultObject({
                 status: {
-                  enum: requiredValue
-                    ? ['success']
-                    : ['partial', 'failed', 'unknown']
+                  enum: outcomes
                 },
                 settlement: execution.properties.settlement
               })
             }
           : {}),
+        ...(deliveryFailure === undefined
+          ? {}
+          : {
+              deliveryOutcome: toolResultObject({
+                status: { enum: deliveries },
+                settlement: execution.properties.settlement
+              })
+            }),
         storage: saved,
-        receiptId: toolResultString
+        receiptId: { ...toolResultString, 'x-runtime-value': 'request' }
       },
       ['execution']
-    )
+    ),
+    // Correlate the receipt layers without copying their potentially large schemas.
+    allOf: [
+      ...(deliveryFailure === undefined
+        ? []
+        : [
+            {
+              anyOf: [
+                { properties: { execution: { not: { required: ['value'] } } } },
+                { required: ['deliveryOutcome'] }
+              ]
+            }
+          ]),
+      {
+        anyOf: ['not-started', 'completed', 'partial', 'unknown'].map(
+          (settlement) => ({
+            properties: {
+              execution: {
+                properties: {
+                  settlement: { const: settlement }
+                }
+              },
+              toolOutcome: {
+                properties: { settlement: { const: settlement } }
+              },
+              ...(deliveryFailure === undefined
+                ? {}
+                : {
+                    deliveryOutcome: {
+                      properties: { settlement: { const: settlement } }
+                    }
+                  })
+            }
+          })
+        )
+      }
+    ]
+  })
 
   return {
     inputSchema: object(
@@ -175,11 +260,61 @@ export const registeredToolInvocationSchemas = (
       ['name', 'revision', 'input']
     ),
     outputSchema: output(selected.outputSchema, true),
-    partialOutputSchema: output(
-      selected.partialOutputSchema ?? selected.outputSchema,
-      false
-    ),
-    recoveryOutputSchema: output(selected.recoveryOutputSchema, false)
+    partialOutputSchema:
+      selected.partialOutputSchema === undefined
+        ? output(
+            delivered(selected.outputSchema),
+            false,
+            ['success', 'partial'],
+            ['partial']
+          )
+        : {
+            anyOf: [
+              output(
+                selected.outputSchema,
+                true,
+                ['success'],
+                ['partial'],
+                ['success']
+              ),
+              output(
+                selected.partialOutputSchema,
+                false,
+                deliveryFailure === undefined
+                  ? ['partial']
+                  : ['success', 'partial'],
+                ['partial'],
+                ['partial']
+              )
+            ].map((schema, index) =>
+              embedAiToolSchema(schema as AiJsonValue, `#/anyOf/${index}`)
+            )
+          },
+    recoveryOutputSchema: output(
+      invocationRecoverySchema(delivered(selected.recoveryOutputSchema), {
+        allOf: [
+          embedAiToolSchema(localToolFailureSchema as AiJsonValue, '#/allOf/0'),
+          {
+            anyOf: ['not-started', 'unknown'].map((settlement) => ({
+              properties: {
+                settlement: { const: settlement },
+                toolOutcome: {
+                  properties: { settlement: { const: settlement } }
+                }
+              }
+            }))
+          }
+        ]
+      }),
+      false,
+      ['failed', 'unknown'],
+      ['failed', 'unknown'],
+      [
+        'failed',
+        'unknown',
+        ...(deliveryFailure === undefined ? [] : ['partial' as const])
+      ]
+    )
   }
 }
 
@@ -190,17 +325,35 @@ export const createLocalToolLibraryTools = (
     AiInvocation,
     'parentCallId' | 'actor' | 'purpose' | 'purposeSource'
   > = () => ({}),
-  project: (name: string, input: unknown, value: unknown) => unknown = (
+  project: (
+    name: string,
+    input: unknown,
+    value: unknown,
+    outcome: AiToolOutcome,
+    revision?: number
+  ) => { value: unknown; outcome: AiToolOutcome } = (
     _name,
     _input,
-    value
-  ) => value
+    value,
+    outcome
+  ) => ({ value, outcome }),
+  selectContract: (
+    name: string,
+    contract: AiToolContract
+  ) => {
+    inputSchema?: unknown
+    outputSchema?: unknown
+    partialOutputSchema?: unknown
+    recoveryOutputSchema?: unknown
+  } = (_name, contract) => contract
 ) => {
   // Keep canonical local references rooted at the native tool schema after nesting.
   const { $defs, ...proposal } = aiRecipeInputSchema as Record<
     string,
     AiJsonValue
   >
+
+  const executes = (name: string) => name === AiDesignToolIds.INVOKE_TOOL
 
   const definition = (
     name: string,
@@ -214,11 +367,13 @@ export const createLocalToolLibraryTools = (
     inputSchema,
     ...toolSemantics(
       outputSchema,
-      name === AiDesignToolIds.INVOKE_TOOL ? 'mutation' : 'prepare',
-      name === AiDesignToolIds.INVOKE_TOOL
-        ? ['tool-library', 'document']
-        : ['tool-library']
+      executes(name) ? 'mutation' : 'prepare',
+      executes(name) ? ['tool-library', 'document'] : ['tool-library']
     ),
+    ...(executes(name) || name === AiDesignToolIds.SAVE_TOOL
+      ? { revision: 3 }
+      : {}),
+    recoveryOutputSchema: outputSchema,
     composition: 'control-plane' as const,
     executionAccess: LocalToolAccess.COORDINATOR
   })
@@ -229,7 +384,7 @@ export const createLocalToolLibraryTools = (
   })[] = [
     definition(
       AiDesignToolIds.SUBMIT_TOOL,
-      'Submit a reusable finite recipe when existing tools do not provide the needed higher-level operation. Optional iteration declares typed state, one registered verification check, repair steps and a finite round budget; use only mechanically decidable repairs. First get exact dependency contracts through describe_design_apis and use each registeredName and revision as the recipe dependency identity; bind fresh inputs and earlier successful outputs. The proposal schema is the canonical Runtime format. Admission checks every field and dependency revision without executing. Repair returned issues with a new submissionId; never send JavaScript, callbacks, permissions or captured request IDs. Registration is private until a genuine successful invocation and durable save. Storage failure does not undo admission; retry save_tool without replay.',
+      'Submit a reusable finite recipe when orchestrating available operations would reduce repeated manual work and no existing direct tool already fits. Composition connects registered capabilities; it cannot invent missing primitives or decide visual intent. Keep task-specific choices in fresh inputs rather than captured document identities. Optional iteration declares typed state, one registered verification check, repair steps and a finite round budget; use only mechanically decidable repairs. First get exact dependency contracts through read_design_contracts and use each registeredName and revision as the recipe dependency identity; bind fresh inputs and earlier successful outputs. The proposal schema is the canonical Runtime format. Admission checks every field and dependency revision without executing. Repair returned issues with a new submissionId; never send JavaScript, callbacks, permissions or captured request IDs. Registration is private until a genuine successful invocation and durable save. Storage failure does not undo admission; retry save_tool without replay.',
       {
         ...object(
           {
@@ -252,10 +407,13 @@ export const createLocalToolLibraryTools = (
     definition(
       AiDesignToolIds.SAVE_TOOL,
       'Retry storage only, without executing product work. Supply a receiptId returned by invoke_tool to promote that exact successful revision. Without receiptId, save candidate metadata only; this does not prove usability. Invented, foreign or mismatched receipts are rejected.',
-      object({ ...identity, receiptId: toolResultString }, [
-        'name',
-        'revision'
-      ]),
+      object(
+        {
+          ...identity,
+          receiptId: { ...toolResultString, 'x-runtime-value': 'request' }
+        },
+        ['name', 'revision']
+      ),
       saved
     ),
     definition(
@@ -271,12 +429,12 @@ export const createLocalToolLibraryTools = (
 
   return {
     definitions,
+    projectedResultPaths: ['/execution/value', '/execution/recovery/*/value'],
 
     projectModelResult(name: string, input: unknown, value: unknown) {
       if (
-        name !== AiDesignToolIds.INVOKE_TOOL ||
+        !executes(name) ||
         !record(input) ||
-        typeof input.name !== 'string' ||
         !record(value) ||
         !record(value.execution)
       ) {
@@ -289,16 +447,25 @@ export const createLocalToolLibraryTools = (
             status: value.execution.status,
             settlement: value.execution.settlement
           }
-      const projected = Object.hasOwn(value.execution, 'value')
-        ? project(input.name, input.input, value.execution.value)
-        : undefined
+      let projected: { value: unknown; outcome: AiToolOutcome } | undefined
+
+      if (Object.hasOwn(value.execution, 'value')) {
+        projected = project(
+          String(input.name),
+          input.input,
+          value.execution.value,
+          value.execution as unknown as AiToolOutcome,
+          input.revision as number
+        )
+      }
 
       return {
         ...value,
+        ...(projected ? { deliveryOutcome: projected.outcome } : {}),
         execution: {
           ...value.execution,
           ...(Object.hasOwn(value.execution, 'value')
-            ? { value: projected }
+            ? { value: projected?.value }
             : {}),
           ...(Array.isArray(value.execution.recovery)
             ? {
@@ -308,22 +475,26 @@ export const createLocalToolLibraryTools = (
                   Object.hasOwn(entry, 'value')
                     ? {
                         ...entry,
-                        value: project(entry.name, undefined, entry.value)
+                        value: project(
+                          entry.name,
+                          undefined,
+                          entry.value,
+                          entry as unknown as AiToolOutcome,
+                          entry.revision as number
+                        ).value
                       }
                     : entry
                 )
               }
             : {})
         },
-        ...(record(projected) &&
-        record(projected.toolOutcome) &&
-        projected.toolOutcome.status !== 'success'
+        ...(projected && projected.outcome.status !== 'success'
           ? {
               toolOutcome: {
                 ...originalOutcome,
                 status:
                   originalOutcome.status === 'success'
-                    ? projected.toolOutcome.status
+                    ? projected.outcome.status
                     : originalOutcome.status,
                 settlement: value.execution.settlement
               }
@@ -332,7 +503,11 @@ export const createLocalToolLibraryTools = (
       }
     },
 
-    invocationSchemas(name: string, input: unknown) {
+    invocationSchemas(
+      name: string,
+      input: unknown,
+      stage: 'owner' | 'model' = 'owner'
+    ) {
       if (
         name !== AiDesignToolIds.INVOKE_TOOL ||
         !record(input) ||
@@ -349,9 +524,28 @@ export const createLocalToolLibraryTools = (
       }
 
       return registeredToolInvocationSchemas(
-        selected,
+        stage === 'model'
+          ? {
+              ...selectContract(input.name, selected),
+              ...modelToolResultSchemas(selectContract(input.name, selected))
+            }
+          : selectContract(input.name, selected),
         { name: input.name, revision: input.revision },
-        resolve().describeRecovery(input.name, input.revision)
+        resolve().describeRecovery(
+          input.name,
+          input.revision,
+          undefined,
+          stage === 'model'
+            ? (contract) =>
+                localToolRecoveryModelContract({
+                  ...contract,
+                  ...selectContract(contract.name, contract)
+                } as AiToolContract)
+            : undefined
+        ),
+        stage === 'model'
+          ? modelToolDeliveryFailureSchema(selectContract(input.name, selected))
+          : undefined
       )
     },
 
@@ -366,8 +560,22 @@ export const createLocalToolLibraryTools = (
       }
 
       if (record(value.execution)) {
+        if (record(value.toolOutcome)) {
+          return {
+            ...value.toolOutcome,
+            issues: []
+          } as unknown as AiToolOutcome & {
+            issues: { code: string; message: string }[]
+          }
+        }
+
         return {
-          status: value.execution.status as AiToolOutcome['status'],
+          status:
+            value.execution.status === 'success' &&
+            record(value.storage) &&
+            value.storage.status === 'unsaved'
+              ? 'partial'
+              : (value.execution.status as AiToolOutcome['status']),
           settlement: value.execution.settlement as AiToolOutcome['settlement'],
           issues: []
         }
@@ -398,7 +606,7 @@ export const createLocalToolLibraryTools = (
       const selected = definitions.find((item) => item.name === name)
 
       if (!selected) {
-        throw new LocalToolInputError('Unknown library control')
+        throw new Error('Unknown library control')
       }
 
       const issue = operationInputIssue(input, selected.inputSchema)
@@ -412,16 +620,26 @@ export const createLocalToolLibraryTools = (
       const library = resolve()
 
       switch (name) {
-        case AiDesignToolIds.SUBMIT_TOOL:
-          return JSON.stringify(
-            await library.submit({
-              submissionId: input.submissionId as string,
-              proposal: input.proposal,
-              ...(input.expectedRevision === undefined
-                ? {}
-                : { expectedRevision: input.expectedRevision as number })
-            })
-          )
+        case AiDesignToolIds.SUBMIT_TOOL: {
+          const result = await library.submit({
+            submissionId: input.submissionId as string,
+            proposal: input.proposal,
+            ...(input.expectedRevision === undefined
+              ? {}
+              : { expectedRevision: input.expectedRevision as number })
+          })
+
+          if (!result.ok) {
+            throw new LocalToolInputError(
+              result.message,
+              undefined,
+              'issues' in result ? result.issues : undefined
+            )
+          }
+
+          return JSON.stringify(result)
+        }
+
         case AiDesignToolIds.INVOKE_TOOL:
           return JSON.stringify(
             await library.invoke({
@@ -436,7 +654,7 @@ export const createLocalToolLibraryTools = (
             })
           )
         case AiDesignToolIds.SAVE_TOOL:
-          return JSON.stringify(
+          return libraryControlResult(
             await library.save({
               name: input.name as string,
               revision: input.revision as number,
@@ -446,7 +664,7 @@ export const createLocalToolLibraryTools = (
             })
           )
         case AiDesignToolIds.MANAGE_TOOL:
-          return JSON.stringify(
+          return libraryControlResult(
             input.operation === 'resume'
               ? await library.resume(
                   input.name as string,
@@ -459,7 +677,7 @@ export const createLocalToolLibraryTools = (
                 )
           )
         default:
-          throw new LocalToolInputError('Unknown library control')
+          throw new Error('Unknown library control')
       }
     }
   }

@@ -23,6 +23,7 @@ const toSentenceCase = (value: string) => {
   if (!value) {
     return ''
   }
+
   return value.charAt(0).toUpperCase() + value.slice(1).toLowerCase()
 }
 
@@ -31,8 +32,10 @@ const getElementSelectionLabel = (
   elementDataMap: Record<string, { type?: string }>
 ) => {
   const types = new Set<string>()
+
   elementSelection.forEach((elementId) => {
     const type = elementDataMap[elementId]?.type
+
     if (type) {
       types.add(type)
     }
@@ -41,6 +44,7 @@ const getElementSelectionLabel = (
   if (types.size === 1) {
     const type = types.values().next().value as string
     const rawLabel = ELEMENT_TYPE_LABELS[type] ?? type.replace(/[-_]/g, ' ')
+
     return toSentenceCase(rawLabel)
   }
 
@@ -70,9 +74,11 @@ const Properties: React.FC = () => {
       <span className="text-[11px] text-[#555]">No selection</span>
     </div>
   )
+
   if (elementSelection.size) {
     panelContent = <ElementPropertiesPanel title={title} />
   }
+
   if (showVectorPoint) {
     panelContent = <VectorPointPropertiesPanel title={title} />
   }

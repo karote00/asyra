@@ -4,17 +4,29 @@ Never record completed plans here.
 
 ## Current Status
 
+- Implemented with focused verification: [Pen handoff type diagnostics](plans/pen-handoff-type-diagnostics-plan.md).
+  Resolved the 152 scoped review diagnostics without casts or weakened checks;
+  all 27 focused Pen/property browser scenarios pass.
+
+- Implemented with focused verification: [App review - five handoff fixes](plans/app-review-five-handoff-fixes-plan.md).
+  Bounded follow-up for Pen continuation, obsolete renderer exports, test entry
+  coverage, conflicting current docs and native test admission. No 101 or full suite.
+
+- Implemented with scoped verification: [App contract cleanup - fourteen findings](plans/app-contract-cleanup-fourteen-findings-plan.md).
+  Independent scope limited to the fourteen November 15 App review findings;
+  follow-up consumer and test-entry corrections are recorded in the five-fix plan. Full App
+  acceptance and unrelated inherited type diagnostics remain outside this scope.
+
+- Full-building Taipei 101 testing uses the
+  [fixed user-approved prompt](modules/ai-development-and-debugging.md#fixed-full-building-taipei-101-test-prompt).
+  Only an explicit user request may change that baseline input.
+
 - Active - final validation: [Large document navigation performance](plans/large-document-navigation-performance-plan.md) -
   user accepted the candidate's navigation speed; retained navigation, shared
   native materials, bounded GPU batches and input scheduling corrections are
   implemented. Continuous timing measurements stay local-only. Full local CI
   resumes before the authorized feature-branch push; AI workflow work is deferred.
 
-- Active: [AI execution improvement](plans/ai-execution-improvement-plan.md) -
-  recording first, then evaluation, retrieval, efficiency and local validation.
-- Active: [Editable Design Agent](plans/ai-design-agent-plan.md), including the
-  accepted [AI Conversation Experience](plans/ai-conversation-experience-plan.md) contracts.
-  Implementation is in progress under the plan’s bounded owner stages.
 - Most recently completed canonical App plan:
   `plans/completed/trusted-publication-and-crdt-7076-flow-realignment-plan.md`.
 - The completed plan retains the accepted one-time canonical data admission,

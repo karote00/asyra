@@ -76,6 +76,7 @@ const startSnapshot = {
 const selectionSession = mocks.defineFeature.mock.calls.find(
   ([featureName]) => featureName === FeatureNames.SELECTION
 )?.[2].session
+
 if (!selectionSession) {
   throw new Error('Missing selection feature session')
 }

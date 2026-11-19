@@ -48,11 +48,14 @@ it('keeps dependency-local schema references resolvable in a typed recovery enve
       value: { handle: 'retained' }
     }
   ]
+
   expect(operationInputIssue(result, schema)).toBeUndefined()
   expect(localToolReferences(result, schema)).toEqual(['retained'])
 })
+
 const setup = (capacity = 8) =>
   createLocalToolLeases({ requestId: 'r', capacity })
+
 const open = (
   host: ReturnType<typeof setup>,
   callId: string,
@@ -67,6 +70,7 @@ const open = (
     input,
     inputSchema: inputSchema as never
   })
+
 const retain = (
   host: ReturnType<typeof setup>,
   fromCallId: string,
@@ -84,6 +88,7 @@ const retain = (
 it('borrows cached ancestor products but refuses private siblings and pins active users', async () => {
   const host = setup(),
     release = vi.fn()
+
   await open(host, 'parent')
   host.publish({ handle: 'source', callId: 'parent', release })
   await open(host, 'child', 'parent')
@@ -104,6 +109,7 @@ it('borrows cached ancestor products but refuses private siblings and pins activ
 it('transfers a child artifact through its parent to the request before cleanup', async () => {
   const host = setup(),
     release = vi.fn()
+
   await open(host, 'outer')
   await open(host, 'child', 'outer')
   host.publish({ handle: 'fresh', callId: 'child', release })
@@ -126,6 +132,7 @@ it('cleans unreturned local work without deleting borrowed or sibling artifacts'
     borrowed = vi.fn(),
     own = vi.fn(),
     sibling = vi.fn()
+
   host.publish({ handle: 'borrowed', release: borrowed })
   await open(host, 'a', undefined, 'borrowed', reference)
   await open(host, 'b')
@@ -147,6 +154,7 @@ it('cleans unreturned local work without deleting borrowed or sibling artifacts'
 it('validates every export before transferring any ownership', async () => {
   const host = setup(),
     release = vi.fn()
+
   await open(host, 'a')
   host.publish({ handle: 'local', callId: 'a', release })
   await expect(
@@ -164,6 +172,7 @@ it('validates every export before transferring any ownership', async () => {
 it('rejects foreign requests and capacity without evicting live dependencies', async () => {
   const host = setup(1),
     release = vi.fn()
+
   host.publish({ handle: 'one', release })
   expect(() => host.publish({ handle: 'two', release: vi.fn() })).toThrow(
     'capacity'
@@ -189,6 +198,7 @@ it('keeps failed cleanup retryable and rejects use while cleanup is incomplete',
       .fn()
       .mockRejectedValueOnce(new Error('temporary IO'))
       .mockResolvedValue(undefined)
+
   await open(host, 'a')
   host.publish({ handle: 'local', callId: 'a', release })
   await expect(host.release({ requestId: 'r', callId: 'a' })).rejects.toThrow(
@@ -207,6 +217,7 @@ it('retention never overrides canonical freshness and parent cannot close over a
   const host = setup(),
     release = vi.fn(),
     validate = vi.fn()
+
   await open(host, 'parent')
   host.publish({ handle: 'value', callId: 'parent', release, validate })
   await open(host, 'child', 'parent', 'value', reference)
@@ -240,6 +251,7 @@ it('uses schema annotations, references, unions and positional receipts instead 
       document: { type: 'string', 'x-runtime-value': 'document' }
     }
   }
+
   expect(
     localToolReferences(
       {
@@ -264,6 +276,7 @@ it('waits for the same asynchronous cleanup on concurrent releases', async () =>
     finish = resolve
   })
   const release = vi.fn(() => pending)
+
   await open(host, 'a')
   host.publish({ handle: 'owned', callId: 'a', release })
   const first = host.release({ requestId: 'r', callId: 'a' })
@@ -271,6 +284,7 @@ it('waits for the same asynchronous cleanup on concurrent releases', async () =>
   const second = host.release({ requestId: 'r', callId: 'a' }).then(() => {
     settled = true
   })
+
   await Promise.resolve()
   await Promise.resolve()
   expect(settled).toBe(false)
@@ -282,6 +296,7 @@ it('waits for the same asynchronous cleanup on concurrent releases', async () =>
 it('does not export resources into an unrelated sibling scope', async () => {
   const host = setup(),
     release = vi.fn()
+
   await open(host, 'a')
   await open(host, 'b')
   host.publish({ handle: 'owned', callId: 'a', release })
@@ -312,6 +327,7 @@ it('finds references in schema-declared dictionaries without scanning opaque val
 it('pins aliases through the actual owner and blocks explicit release while another call borrows', async () => {
   const host = setup(),
     release = vi.fn()
+
   host.publish({ handle: 'artifact', release })
   host.alias('target-set', 'artifact')
   await open(host, 'consumer', undefined, 'target-set', reference)
@@ -328,6 +344,7 @@ it('pins aliases through the actual owner and blocks explicit release while anot
 
 it('admits all artifact aliases before publishing any of them', async () => {
   const host = setup(2)
+
   host.publish({ handle: 'root', release: vi.fn() })
   expect(() =>
     host.publishAliases([
@@ -357,6 +374,7 @@ it('passes request data through real leases while retaining explicitly nested ar
     required: ['requestId', 'revision']
   }
   const data = { requestId: 'r', revision: 2 }
+
   await open(host, 'data', undefined, data, schema)
   await host.retain({
     requestId: 'r',
@@ -365,6 +383,7 @@ it('passes request data through real leases while retaining explicitly nested ar
     outputSchema: schema
   })
   const release = vi.fn()
+
   host.publish({ handle: 'live', callId: 'data', release })
   await host.retain({
     requestId: 'r',

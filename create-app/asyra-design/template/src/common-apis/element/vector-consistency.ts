@@ -49,6 +49,7 @@ const getAnchorHandleSnapshot = (
   pointId: string
 ): AnchorHandleSnapshot | null => {
   const anchor = topology.points[pointId]
+
   if (!isAnchorNode(anchor)) {
     return null
   }
@@ -73,6 +74,7 @@ const getAnchorHandleSnapshot = (
 
 const throwTopologyError = (message: string, label?: string): never => {
   const prefix = label ? `vector-topology:${label}` : 'vector-topology'
+
   throw new Error(`[${prefix}] ${message}`)
 }
 
@@ -101,6 +103,7 @@ export const assertVectorTopologyConsistency = (
         label
       )
     }
+
     if (!anchorIds.has(segment.endId)) {
       throwTopologyError(
         `Segment ${segmentId} endId ${segment.endId} is not an anchor.`,
@@ -110,6 +113,7 @@ export const assertVectorTopologyConsistency = (
 
     if (segment.outControlId) {
       const outControl = topology.points[segment.outControlId]
+
       if (
         !isControlNode(outControl) ||
         outControl.controlForId !== segment.startId ||
@@ -124,6 +128,7 @@ export const assertVectorTopologyConsistency = (
 
     if (segment.inControlId) {
       const inControl = topology.points[segment.inControlId]
+
       if (
         !isControlNode(inControl) ||
         inControl.controlForId !== segment.endId ||
@@ -145,6 +150,7 @@ export const assertVectorTopologyConsistency = (
           label
         )
       }
+
       return
     }
 
@@ -158,12 +164,14 @@ export const assertVectorTopologyConsistency = (
     })
 
     const expectedPairs: { startId: string; endId: string }[] = []
+
     for (let i = 1; i < network.pointIds.length; i += 1) {
       expectedPairs.push({
         startId: network.pointIds[i - 1],
         endId: network.pointIds[i]
       })
     }
+
     if (network.closed && network.pointIds.length > 1) {
       expectedPairs.push({
         startId: network.pointIds[network.pointIds.length - 1],
@@ -181,19 +189,23 @@ export const assertVectorTopologyConsistency = (
     expectedPairs.forEach((pair, index) => {
       const segmentId = network.segmentIds[index]
       const segment = segmentId ? topology.segments[segmentId] : undefined
+
       if (!segment) {
         throwTopologyError(
           `Network ${networkId} missing segment for index ${index}.`,
           label
         )
+
         return
       }
+
       if (segment.startId !== pair.startId || segment.endId !== pair.endId) {
         throwTopologyError(
           `Network ${networkId} segment ${segmentId} does not match point order.`,
           label
         )
       }
+
       referencedSegmentIds.add(segmentId)
     })
   })
@@ -224,6 +236,7 @@ export const scaleVectorTopologyAroundCenter = (
   ) {
     return null
   }
+
   assertVectorTopologyConsistency(topology, 'scale-around-center:input')
   const bounds = calculateVectorBounds(topology)
   const centerX = bounds.x + bounds.width / 2
@@ -243,7 +256,9 @@ export const scaleVectorTopologyAroundCenter = (
     points,
     segments: topology.segments
   }
+
   assertVectorTopologyConsistency(scaled, 'scale-around-center:output')
+
   return scaled
 }
 
@@ -267,6 +282,7 @@ export const updateHandleWithMode = (
   mode: VectorHandleMode
 ): VectorTopology | null => {
   const snapshot = getAnchorHandleSnapshot(topology, pointId)
+
   if (!snapshot) {
     return null
   }
@@ -281,6 +297,7 @@ export const updateHandleWithMode = (
   })
 
   let nextTopology = setAnchorTypeInTopology(topology, pointId, 'smooth')
+
   if (handleUpdates.nextIn !== undefined) {
     nextTopology = setAnchorHandleInTopology(
       nextTopology,
@@ -289,6 +306,7 @@ export const updateHandleWithMode = (
       handleUpdates.nextIn
     )
   }
+
   if (handleUpdates.nextOut !== undefined) {
     nextTopology = setAnchorHandleInTopology(
       nextTopology,
@@ -307,6 +325,7 @@ export const setHandleModeAndRepair = (
   mode: VectorHandleMode
 ): VectorTopology | null => {
   const snapshot = getAnchorHandleSnapshot(topology, pointId)
+
   if (!snapshot) {
     return null
   }
@@ -341,6 +360,7 @@ export const setHandleModeAndRepair = (
     VECTOR_TOKENS.CONTROL.ROLE.OUT,
     nextHandles.outHandle
   )
+
   return nextTopology
 }
 
@@ -422,9 +442,11 @@ export const updatePoint = (
       pointId,
       update.position
     )
+
     if (!moved) {
       return null
     }
+
     nextTopology = moved
   }
 
@@ -438,9 +460,11 @@ export const updatePoint = (
       pointId,
       update.handleMode
     )
+
     if (!repaired) {
       return null
     }
+
     nextTopology = repaired
   }
 
@@ -452,9 +476,11 @@ export const updatePoint = (
       update.handle.position,
       update.handle.mode
     )
+
     if (!repaired) {
       return null
     }
+
     nextTopology = repaired
   }
 

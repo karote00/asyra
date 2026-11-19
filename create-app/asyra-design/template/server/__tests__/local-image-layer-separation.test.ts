@@ -4,6 +4,7 @@ import { createLocalImageTools } from '../local-image-tools'
 import { separateImageBackground } from '../local-image-layer-separation'
 
 const signal = () => new AbortController().signal
+
 const options = {
   attachmentIndex: 0,
   background: {
@@ -14,15 +15,26 @@ const options = {
   colorTolerance: 0,
   clipToBackground: false
 }
+
 const fixture = async () => {
   const pixels = Buffer.alloc(12 * 12 * 4)
+
   const set = (x: number, y: number, color: number[]) =>
     pixels.set(color, (y * 12 + x) * 4)
-  for (let y = 2; y < 10; y++)
-    for (let x = 2; x < 10; x++) set(x, y, [0, 136, 0, 255])
+
+  for (let y = 2; y < 10; y++) {
+    for (let x = 2; x < 10; x++) {
+      set(x, y, [0, 136, 0, 255])
+    }
+  }
+
   // White foreground, green interior detail, and same-color exterior mark.
-  for (let y = 4; y < 8; y++)
-    for (let x = 4; x < 8; x++) set(x, y, [255, 255, 255, 255])
+  for (let y = 4; y < 8; y++) {
+    for (let x = 4; x < 8; x++) {
+      set(x, y, [255, 255, 255, 255])
+    }
+  }
+
   set(5, 5, [0, 136, 0, 255])
   set(0, 0, [0, 136, 0, 255])
   const bytes = await sharp(pixels, {
@@ -30,12 +42,14 @@ const fixture = async () => {
   })
     .png()
     .toBuffer()
+
   return {
     dataUrl: `data:image/png;base64,${bytes.toString('base64')}`,
     mediaType: 'image/png',
     size: bytes.length
   }
 }
+
 const batch = (imageArtifactId: string) => ({
   actions: [
     {
@@ -60,6 +74,7 @@ describe('pre-trace image layer separation', () => {
       { metadata: { imageAttachments: [await fixture()] } },
       convert
     )
+
     await expect(
       tools.call('vtracer', { attachmentIndex: 0 }, signal())
     ).rejects.toThrow(/plan/i)
@@ -90,6 +105,7 @@ describe('pre-trace image layer separation', () => {
         { metadata: { imageAttachments: [await fixture()] } },
         convert
       )
+
       await expect(
         tools.call('vtracer', { attachmentIndex: 0, plan }, signal())
       ).rejects.toThrow()
@@ -111,6 +127,7 @@ describe('pre-trace image layer separation', () => {
     const result = JSON.parse(
       await tools.call('vtracer', { attachmentIndex, plan }, signal())
     )
+
     expect(result.representationPlan).toEqual(plan)
     expect(result.separation.removedPixelCount).toBe(49)
     const descriptors = tools
@@ -118,6 +135,7 @@ describe('pre-trace image layer separation', () => {
       .actions[0].arguments.slices.flatMap(
         (s: { descriptors: { type: string }[] }) => s.descriptors
       )
+
     expect(descriptors[0].type).toBe('rect')
     expect(
       descriptors.slice(1).every((d: { type: string }) => d.type === 'vector')
@@ -130,13 +148,16 @@ describe('pre-trace image layer separation', () => {
         .ensureAlpha()
         .raw()
         .toBuffer({ resolveWithObject: true })
+
       const pixel = (x: number, y: number) => [
         ...data.subarray((y * 12 + x) * 4, (y * 12 + x) * 4 + 4)
       ]
+
       expect(pixel(3, 3)[3]).toBe(0)
       expect(pixel(5, 5)[3]).toBe(0) // Underlay supplies this green interior.
       expect(pixel(4, 4)).toEqual([255, 255, 255, 255])
       expect(pixel(0, 0)).toEqual([0, 136, 0, 255]) // Not global color deletion.
+
       return '<svg width="12" height="12"><path d="M4,4L8,4L8,8L4,8Z" fill="#FFFFFF"/></svg>'
     })
     const tools = createLocalImageTools(
@@ -146,6 +167,7 @@ describe('pre-trace image layer separation', () => {
     const result = JSON.parse(
       await tools.call('vectorize_image_layers', options, signal())
     )
+
     expect(result.background).toEqual(options.background)
     expect(result.separation.removedPixelCount).toBe(49)
     const drawing = tools.resolveBatch(batch(result.imageArtifactId)).actions[0]
@@ -153,6 +175,7 @@ describe('pre-trace image layer separation', () => {
     const descriptors = drawing.slices.flatMap(
       (slice: { descriptors: { type: string }[] }) => slice.descriptors
     )
+
     expect(descriptors.map((d: { type: string }) => d.type)).toEqual([
       'rect',
       'vector'
@@ -188,6 +211,7 @@ describe('pre-trace image layer separation', () => {
     const descriptors = drawing.slices.flatMap(
       (slice: { descriptors: { type: string }[] }) => slice.descriptors
     )
+
     expect(descriptors[0]).toMatchObject({
       type: 'rect',
       x: 0,
@@ -237,6 +261,7 @@ describe('pre-trace image layer separation', () => {
       { metadata: { imageAttachments: [await fixture()] } },
       convert
     )
+
     await expect(
       tools.call('vectorize_image_layers', args, signal())
     ).rejects.toThrow()
@@ -277,11 +302,13 @@ it('keeps an oval native-only result and never invokes the tracer for an empty f
   const result = JSON.parse(
     await tools.call('vectorize_image_layers', args, signal())
   )
+
   expect(result.paths).toEqual([])
   expect(result.separation.clippedPixelCount).toBeGreaterThan(0)
   expect(convert).not.toHaveBeenCalled()
   const drawing = tools.resolveBatch(batch(result.imageArtifactId)).actions[0]
     .arguments
+
   expect(drawing.elementCount).toBe(1)
   expect(drawing.slices[0].descriptors[0]).toMatchObject({
     type: 'oval',
@@ -292,6 +319,7 @@ it('keeps an oval native-only result and never invokes the tracer for an empty f
     { metadata: { imageAttachments: [await fixture()] } },
     convert
   )
+
   expect(() => other.resolveBatch(batch(result.imageArtifactId))).toThrow(
     'Unknown image reference'
   )
@@ -305,13 +333,21 @@ it('observes cancellation before and during pixel work without converting or pub
       { metadata: { imageAttachments: [await fixture()] } },
       convert
     )
-    if (cancelBefore) controller.abort()
+
+    if (cancelBefore) {
+      controller.abort()
+    }
+
     const pending = tools.call(
       'vectorize_image_layers',
       options,
       controller.signal
     )
-    if (!cancelBefore) controller.abort()
+
+    if (!cancelBefore) {
+      controller.abort()
+    }
+
     await expect(pending).rejects.toThrow()
     expect(convert).not.toHaveBeenCalled()
   }
@@ -340,6 +376,7 @@ it('rejects forged media and oversized encoded inputs before tracing', async () 
       },
       convert
     )
+
     await expect(
       tools.call('vectorize_image_layers', options, signal())
     ).rejects.toThrow()
@@ -356,6 +393,7 @@ it('continues beyond four decompositions and reuses artifacts during multiple pr
     { metadata: { imageAttachments: [await fixture()] } },
     convert
   )
+
   for (let colorTolerance = 0; colorTolerance < 4; colorTolerance++) {
     const result = JSON.parse(
       await tools.call(
@@ -364,12 +402,15 @@ it('continues beyond four decompositions and reuses artifacts during multiple pr
         signal()
       )
     )
+
     tools.resolveBatch(batch(result.imageArtifactId))
     tools.resolveBatch(batch(result.imageArtifactId))
   }
+
   const fifth = JSON.parse(
     await tools.call('vectorize_image_layers', options, signal())
   )
+
   expect(fifth.imageArtifactId).toBeTruthy()
   expect(convert).toHaveBeenCalledTimes(5)
 })
@@ -386,9 +427,11 @@ it('uses an explicitly selected flat foreground palette to separate antialiased 
   const convert = vi.fn(
     async ({ bytes: foreground }: { bytes: Uint8Array }) => {
       const data = await sharp(foreground).ensureAlpha().raw().toBuffer()
+
       expect(data[3]).toBe(0)
       expect(data[7]).toBe(0)
       expect([...data.subarray(8, 11)]).toEqual([255, 255, 255])
+
       return '<svg width="2" height="2"><path d="M0,1L2,1L2,2L0,2Z" fill="#FFFFFF"/></svg>'
     }
   )
@@ -421,6 +464,7 @@ it('uses an explicitly selected flat foreground palette to separate antialiased 
       signal()
     )
   )
+
   expect(summary.separation.removedPixelCount).toBe(2)
   expect(summary.separation.foregroundPixelCount).toBe(2)
   expect(convert).toHaveBeenCalledOnce()
@@ -463,6 +507,7 @@ it('uses displayed JPEG orientation for native and foreground coordinates', asyn
       signal()
     )
   )
+
   expect(result).toMatchObject({ width: 4, height: 8, paths: [] })
   expect(convert).not.toHaveBeenCalled()
 })
@@ -486,6 +531,7 @@ it.each(['image/png', 'image/webp'])(
         ]
       }
     })
+
     expect(
       tools.definitions.some((tool) => tool.name === 'vectorize_image_layers')
     ).toBe(true)
@@ -504,6 +550,7 @@ it.each(['image/png', 'image/webp'])(
         signal()
       )
     )
+
     expect(result.paths).toEqual([])
   }
 )
@@ -532,6 +579,7 @@ it('classifies flat-palette coverage without turning transparent matte fringes i
     signal()
   )
   const output = await sharp(result.foreground).raw().toBuffer()
+
   // The visible color of a barely covered matte pixel belongs to the base.
   expect(output[7]).toBe(0)
   // Emit a binary flat-color mask: the converter treats nonzero alpha as solid.
@@ -542,13 +590,23 @@ it('classifies flat-palette coverage without turning transparent matte fringes i
 
 it('real tracing keeps an admitted foreground contact and emits no faint fringe islands', async () => {
   const pixels = Buffer.alloc(12 * 12 * 4)
-  for (let i = 0; i < pixels.length; i += 4) pixels.set([0, 100, 60, 255], i)
-  for (let y = 4; y < 8; y++)
-    for (let x = 0; x < 6; x++)
+
+  for (let i = 0; i < pixels.length; i += 4) {
+    pixels.set([0, 100, 60, 255], i)
+  }
+
+  for (let y = 4; y < 8; y++) {
+    for (let x = 0; x < 6; x++) {
       pixels.set([255, 255, 255, x === 0 ? 210 : 255], (y * 12 + x) * 4)
-  for (let y = 0; y < 3; y++)
-    for (let x = 10; x < 12; x++)
+    }
+  }
+
+  for (let y = 0; y < 3; y++) {
+    for (let x = 10; x < 12; x++) {
       pixels.set([160, 200, 185, 20], (y * 12 + x) * 4)
+    }
+  }
+
   const bytes = await sharp(pixels, {
     raw: { width: 12, height: 12, channels: 4 }
   })
@@ -581,6 +639,7 @@ it('real tracing keeps an admitted foreground contact and emits no faint fringe 
       signal()
     )
   )
+
   expect(result.paths).toHaveLength(1)
   expect(result.paths[0]).toMatchObject({
     fill: '#FFFFFF',
@@ -607,6 +666,7 @@ it('separates an original reference above four megapixels without resizing', asy
     },
     signal()
   )
+
   expect(await sharp(result.foreground).metadata()).toMatchObject({
     width: 2001,
     height: 2000

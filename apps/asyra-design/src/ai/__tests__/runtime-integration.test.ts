@@ -530,3 +530,162 @@ describe('Asyra Design server action-batch runtime integration', () => {
     }
   })
 })
+
+describe('conversation cancellation recovery through the Runtime', () => {
+  afterEach(() => vi.restoreAllMocks())
+
+  it('offers retry for actual pre-execution cancellation without a fabricated stage', async () => {
+    prepareCommonApis()
+    const { createAiConversationController } = await import('../conversation')
+    const { canRetryAiTurn } = await import('../presentation')
+    let abort = new AbortController()
+    let calls = 0
+    const runtime = createAiAgentRuntime(
+      createAiRuntimeInput({
+        provider: {
+          requestActionBatch: async () => {
+            if (++calls === 1) {
+              abort.abort()
+            }
+
+            return {
+              batchId: 'advice',
+              actions: [
+                {
+                  id: 'advice',
+                  name: AiActionNames.REPORT_OUTCOME,
+                  summary: { affectedCount: 0 },
+                  arguments: {
+                    outcome: 'completed',
+                    message: 'Use a clear hierarchy.'
+                  }
+                }
+              ]
+            }
+          }
+        },
+        permissionRules: { [AiActionNames.REPORT_OUTCOME]: 'allow' }
+      })
+    )
+    const conversation = createAiConversationController({
+      feature: {
+        execute: (request) => {
+          abort = new AbortController()
+
+          return runtime.run({ ...request, signal: abort.signal })
+        },
+
+        cancel: () => false
+      },
+
+      getElementType: () => undefined
+    })
+
+    try {
+      const stopped = await conversation.submit('Draw a card.')
+
+      expect(stopped.result).toMatchObject({
+        status: 'cancelled',
+        reason: 'aborted',
+        audit: { outcome: 'cancelled', actions: [] }
+      })
+      expect(stopped.result).not.toHaveProperty('transaction')
+      expect(stopped.result).not.toHaveProperty('stage')
+      expect(canRetryAiTurn(stopped)).toBe(true)
+      const retried = await conversation.retry(stopped.turnId)
+
+      expect(retried.outcome, JSON.stringify(retried.result)).toBe('no-change')
+      expect(retried.retryOfTurnId).toBe(stopped.turnId)
+      expect(calls).toBe(2)
+    } finally {
+      await conversation.dispose()
+      await runtime.dispose()
+    }
+  })
+})
+
+it('hands a real terminal question after a streamed mutation through controller and next request', async () => {
+  prepareCommonApis()
+  const { createAiConversationController } = await import('../conversation')
+  const { projectAiQuestion } = await import('../presentation')
+  let calls = 0
+
+  const requestActionBatch: AiProvider['requestActionBatch'] = async (
+    input,
+    options
+  ) => {
+    calls++
+    if (calls > 1) {
+      expect(input.metadata).toMatchObject({
+        conversationContext: {
+          turns: [{ question: { message: 'Which color?', choices: [] } }]
+        }
+      })
+    } else {
+      if (!options.executeBatch) {
+        throw Error('Missing actual batch execution')
+      }
+
+      await options.executeBatch({
+        ...referenceBatch(),
+        actions: referenceBatch().actions.slice(0, 1)
+      })
+    }
+
+    return {
+      batchId: `question-${calls}`,
+      actions: [
+        {
+          id: 'question',
+          name: AiActionNames.REQUEST_CLARIFICATION,
+          summary: { affectedCount: 0 },
+          arguments: { question: 'Which color?' }
+        }
+      ]
+    }
+  }
+
+  const runtime = createAiAgentRuntime(
+    createAiRuntimeInput({
+      provider: { requestActionBatch },
+      permissionRules: {
+        [AiActionNames.SET_ELEMENT_VISIBILITY]: 'allow',
+        [AiActionNames.REQUEST_CLARIFICATION]: 'allow'
+      }
+    })
+  )
+  const conversation = createAiConversationController({
+    feature: {
+      execute: (request) =>
+        runtime.run({ ...request, signal: new AbortController().signal }),
+
+      cancel: () => false
+    },
+
+    getElementType: () => 'rect'
+  })
+
+  try {
+    const turn = await conversation.submit('Refine the card.')
+
+    expect(turn.result, JSON.stringify(turn.result)).toMatchObject({
+      status: 'executed',
+      actionResults: [
+        { actionName: AiActionNames.SET_ELEMENT_VISIBILITY },
+        { actionName: AiActionNames.REQUEST_CLARIFICATION }
+      ]
+    })
+    expect(projectAiQuestion(turn)).toEqual({
+      message: 'Which color?',
+      choices: []
+    })
+    const answer = await conversation.submit('Blue.')
+
+    expect(answer.replyToTurnId).toBe(turn.turnId)
+    expect(calls).toBe(2)
+  } finally {
+    await conversation.dispose()
+    await runtime.dispose()
+    vi.restoreAllMocks()
+  }
+})

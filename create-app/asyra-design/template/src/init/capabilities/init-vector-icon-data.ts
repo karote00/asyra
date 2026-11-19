@@ -34,10 +34,13 @@ const getComputedProjection = (
   ) {
     return null
   }
+
   const payload = event.payload as unknown as Record<string, unknown>
+
   if (typeof payload.key === 'string') {
     return { id: event.payload.id, keys: [payload.key] }
   }
+
   if (Array.isArray(payload.changes)) {
     return {
       id: event.payload.id,
@@ -51,6 +54,7 @@ const getComputedProjection = (
       )
     }
   }
+
   const patch =
     typeof payload.patch === 'object' && payload.patch !== null
       ? (payload.patch as Record<string, unknown>)
@@ -63,6 +67,7 @@ const getComputedProjection = (
     typeof patch?.records === 'object' && patch.records !== null
       ? Object.keys(patch.records)
       : []
+
   return { id: event.payload.id, keys: [...values, ...records] }
 }
 
@@ -96,6 +101,7 @@ const scheduleFlush = () => {
     if (isPathEditingActive()) {
       pendingElementIds.clear()
       pendingRebuildAfterEdit = true
+
       return
     }
 
@@ -105,6 +111,7 @@ const scheduleFlush = () => {
 
     let changed = false
     const nextMap = { ...iconPathMap }
+
     pendingElementIds.forEach((elementId) => {
       pendingElementIds.delete(elementId)
       if (!isVectorElement(elementId)) {
@@ -113,16 +120,19 @@ const scheduleFlush = () => {
           delete nextMap[elementId]
           changed = true
         }
+
         return
       }
 
       const path = buildVectorIconPath(elementApis.getVectorTopology(elementId))
+
       if (path === null) {
         if (elementId in nextMap) {
           // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
           delete nextMap[elementId]
           changed = true
         }
+
         return
       }
 
@@ -146,6 +156,7 @@ const setIconPathMap = (next: VectorIconPathMap) => {
 const enqueueElementIconPathUpdate = (elementId: string) => {
   if (isPathEditingActive()) {
     pendingRebuildAfterEdit = true
+
     return
   }
 
@@ -157,6 +168,7 @@ const enqueueElementIconPathUpdateFromEvent = (
   event: VectorIconInvalidationEvent
 ): void => {
   const elementId = event.payload.data.id
+
   if (typeof elementId === 'string' && elementId.length > 0) {
     enqueueElementIconPathUpdate(elementId)
   }
@@ -171,6 +183,7 @@ const rebuildIconPathMap = () => {
     }
 
     const path = buildVectorIconPath(elementApis.getVectorTopology(elementId))
+
     if (path !== null) {
       nextMap[elementId] = path
     }
@@ -198,10 +211,13 @@ export const initVectorIconData = (): void => {
   const pathEditingObservable = core.getSystemPropertyObservable<boolean>(
     PresetSystemPropertyKeys.PATH_EDITING_MODE
   )
+
   if (pathEditingObservable) {
     let previous = pathEditingObservable.getValue()
+
     pathEditingObservable.subscribe((next) => {
       const wasEditing = previous === true
+
       previous = next
       if (wasEditing && next === false) {
         if (pendingRebuildAfterEdit) {
@@ -219,6 +235,7 @@ export const initVectorIconData = (): void => {
   subscribeToEventBatches((events) => {
     events.forEach((event) => {
       const projection = getComputedProjection(event)
+
       if (
         projection &&
         projection.keys.some((key) => VECTOR_ICON_KEYS.has(key))

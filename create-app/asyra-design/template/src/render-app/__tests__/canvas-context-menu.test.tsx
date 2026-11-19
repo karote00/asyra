@@ -19,20 +19,29 @@ const collaborationHandle = {
     documentId: 'canvas-context-menu',
     roomId: 'canvas-context-menu'
   }),
+
   getStatus: () => 'connected' as const,
+
   onStatusChange: (_subscriber: (status: ProviderStatus) => void) => () =>
     undefined,
+
   getSessionState: () => ({
     connection: 'connected' as const,
     sync: 'synced' as const,
     pendingCount: 0,
     disconnectedEpoch: 0
   }),
+
   onSessionStateChange: () => () => undefined,
+
   disconnect: async () => undefined,
+
   reconnect: async () => undefined,
+
   whenIdle: async () => undefined,
+
   observePublicationOutcomes: () => () => undefined,
+
   dispose: async () => undefined
 } satisfies CollaborationDebugHandle
 const coreCollaborationSession = {
@@ -87,6 +96,7 @@ describe('Render canvas context-menu intake', () => {
   it('accepts a canvas context event once with exact client coordinates', async () => {
     const invocations: CanvasContextMenuInvocation[] = []
     const rootHost = document.createElement('div')
+
     document.body.append(rootHost)
     const root = createRoot(rootHost)
 
@@ -101,11 +111,13 @@ describe('Render canvas context-menu intake', () => {
     await vi.waitFor(() => expect(core.start).toHaveBeenCalledTimes(1))
 
     const canvasHost = rootHost.querySelector('[data-testid="canvas-host"]')
+
     expect(canvasHost).toBeInstanceOf(HTMLDivElement)
     expect(
       canvasHost?.getAttribute(AI_DOCUMENT_INTERACTION_TARGET_ATTRIBUTE)
     ).toBe(AiDocumentInteractionTargets.VIEWPORT_NAVIGATION)
     const canvas = document.createElement('canvas')
+
     canvasHost?.append(canvas)
     const event = new MouseEvent('contextmenu', {
       bubbles: true,
@@ -131,6 +143,7 @@ describe('Render canvas context-menu intake', () => {
   it('bypasses non-canvas targets and an unhandled canvas invocation', async () => {
     const onContextMenuRequest = vi.fn()
     const rootHost = document.createElement('div')
+
     document.body.append(rootHost)
     const root = createRoot(rootHost)
 
@@ -142,11 +155,13 @@ describe('Render canvas context-menu intake', () => {
 
     const canvasHost = rootHost.querySelector('[data-testid="canvas-host"]')
     const editable = document.createElement('input')
+
     canvasHost?.append(editable)
     const editableEvent = new MouseEvent('contextmenu', {
       bubbles: true,
       cancelable: true
     })
+
     editable.dispatchEvent(editableEvent)
 
     expect(editableEvent.defaultPrevented).toBe(false)
@@ -157,11 +172,13 @@ describe('Render canvas context-menu intake', () => {
       await Promise.resolve()
     })
     const canvas = document.createElement('canvas')
+
     canvasHost?.append(canvas)
     const unhandledEvent = new MouseEvent('contextmenu', {
       bubbles: true,
       cancelable: true
     })
+
     canvas.dispatchEvent(unhandledEvent)
 
     expect(unhandledEvent.defaultPrevented).toBe(false)
@@ -173,6 +190,7 @@ describe('Render canvas context-menu intake', () => {
   it('announces canvas-host teardown exactly once on unmount', async () => {
     const onCanvasHostTeardown = vi.fn()
     const rootHost = document.createElement('div')
+
     document.body.append(rootHost)
     const root = createRoot(rootHost)
 

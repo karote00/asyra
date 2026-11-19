@@ -28,39 +28,55 @@ export const createToolLibraryManagementMiddleware =
       ToolLibraryManagement.endpoint
     ) {
       next()
+
       return
     }
+
     const send = (status: number, value: unknown) => {
       response.statusCode = status
       response.setHeader('content-type', 'application/json')
       response.setHeader('cache-control', 'no-store')
       response.end(JSON.stringify(value))
     }
+
     if (request.method !== 'POST' || !admitsLocalProviderRequest(request)) {
       send(403, { issue: 'Saved tools require a local same-origin request.' })
+
       return
     }
+
     let value: unknown
+
     try {
       const chunks: Buffer[] = []
       let size = 0
+
       for await (const chunk of request) {
         const bytes = Buffer.from(chunk)
+
         size += bytes.byteLength
-        if (size > ToolLibraryManagement.requestBytes)
+        if (size > ToolLibraryManagement.requestBytes) {
           throw new Error('Oversized request')
+        }
+
         chunks.push(bytes)
       }
+
       value = JSON.parse(Buffer.concat(chunks).toString('utf8'))
     } catch {
       send(400, { issue: 'Invalid saved tool request.' })
+
       return
     }
+
     if (!isToolLibraryRequest(value)) {
       send(400, { issue: 'Invalid saved tool request.' })
+
       return
     }
+
     let store: Awaited<ReturnType<typeof createLocalToolStore>> | undefined
+
     try {
       store = await (
         options.open ??
@@ -78,14 +94,17 @@ export const createToolLibraryManagementMiddleware =
         store,
         capacity: LocalToolLibraryLimits.entries
       })
-      if (value.operation === 'list') send(200, await management.list())
-      else {
+
+      if (value.operation === 'list') {
+        send(200, await management.list())
+      } else {
         const result = await management.setState({
           name: value.name,
           revision: value.revision,
           expectedVersion: value.expectedVersion,
           availability: value.operation === 'remove' ? 'retired' : 'suspended'
         })
+
         send(result.status === 'saved' ? 200 : 409, result)
       }
     } catch {

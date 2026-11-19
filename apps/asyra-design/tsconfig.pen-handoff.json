@@ -1,0 +1,19 @@
+{
+  "extends": "./tsconfig.json",
+  "include": [
+    "src/types.d.ts",
+    "src/init/derived-state/init-path-editing-continuation.ts",
+    "src/features/pen-tool/feature.ts",
+    "src/init/__tests__/local-computed-derived-state.test.ts",
+    "e2e/pen-tool.spec.ts",
+    "src/controllers/app.ts",
+    "src/controllers/__tests__/app.test.ts",
+    "server/__tests__/native-provider-fixture.ts",
+    "server/__tests__/native-provider-handoff.integration.test.ts",
+    "server/__tests__/native-output-observation.integration.test.ts",
+    "src/testing/__tests__/pen-observation.test.ts",
+    "e2e/properties.spec.ts",
+    "e2e/rectangle-handoff.spec.ts",
+    "e2e/tool-shortcut-handoff.spec.ts"
+  ]
+}

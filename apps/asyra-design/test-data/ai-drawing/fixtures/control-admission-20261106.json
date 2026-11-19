@@ -1,0 +1,95 @@
+{
+  "source": "tmp/conversation-improvements/live/taipei-101-fixed-1793968797184",
+  "input": {
+    "operations": [
+      {
+        "name": "design_operations.select_design_references",
+        "arguments": {
+          "referenceImageIndexes": [
+            1,
+            0
+          ],
+          "requirementRevision": 1,
+          "referenceDecisions": [
+            {
+              "referenceId": "reference:2f602e2ecff6ce4d4ffd1b8531575d4bcc809cc9fbb113384c23d2b7eb219295",
+              "status": "restricted",
+              "reason": "完整塔身外觀可用；照片仰視、底部遭遮蔽，不作俯視或基座尺寸依據。",
+              "uses": [
+                {
+                  "id": "silhouette",
+                  "criterionId": "whole",
+                  "purpose": "visual",
+                  "region": "whole",
+                  "limitations": [
+                    "只比對竹節數量、冠部及全塔外觀；不比對原照視點或遮蔽物。"
+                  ]
+                },
+                {
+                  "id": "facade",
+                  "criterionId": "detail",
+                  "unitId": "tiers",
+                  "purpose": "visual",
+                  "region": "whole",
+                  "limitations": [
+                    "立面、金屬構件配置參考；照片不足以量測細部尺寸。"
+                  ]
+                },
+                {
+                  "id": "crown",
+                  "criterionId": "detail",
+                  "unitId": "crown",
+                  "purpose": "visual",
+                  "region": "whole",
+                  "limitations": [
+                    "僅冠部與塔尖配置；自行建立俯角投影。"
+                  ]
+                }
+              ]
+            },
+            {
+              "referenceId": "reference:d4b293abf4e0d0571846b398fda42aed0e7ca6dae611ac32abe288ae63753bdd",
+              "status": "restricted",
+              "reason": "如意細節可辨識；不用其相機或光線取代新構圖。",
+              "uses": [
+                {
+                  "id": "ruyi",
+                  "criterionId": "detail",
+                  "unitId": "tiers",
+                  "purpose": "visual",
+                  "region": "whole",
+                  "limitations": [
+                    "形狀與金屬層次參考；實際大小採比例估計。"
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ],
+    "delivery": "status"
+  },
+  "output": {
+    "available": false,
+    "code": "PREPARATION_REJECTED",
+    "stage": "admission",
+    "settlement": "not-started",
+    "recovery": "Inspect the failure and current state, then choose a corrected or alternate operation. Do not automatically replay mutations.",
+    "executionResult": {
+      "batches": []
+    },
+    "recoverable": true,
+    "message": "Missing, ambiguous or ineligible operation: design_operations.select_design_references",
+    "toolOutcome": {
+      "status": "failed",
+      "settlement": "not-started",
+      "issues": [
+        {
+          "code": "PREPARATION_REJECTED",
+          "message": "Missing, ambiguous or ineligible operation: design_operations.select_design_references"
+        }
+      ]
+    }
+  }
+}

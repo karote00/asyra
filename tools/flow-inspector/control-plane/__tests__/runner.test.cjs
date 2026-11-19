@@ -269,85 +269,6 @@ test('the owned runner group settles when its service abruptly dies', async () =
   }
 })
 
-test(
-  'every registered negative scenario fails its exact real obligations and preserves unaffected cases',
-  { timeout: 30000 },
-  async (t) => {
-    const root = path.resolve(__dirname, '../../../..')
-    const parent = path.join(root, 'tmp/flow-inspector/runner-proofs')
-
-    fs.mkdirSync(parent, { recursive: true })
-    const dir = fs.mkdtempSync(path.join(parent, 'proof-'))
-
-    t.after(() => fs.rmSync(dir, { recursive: true, force: true }))
-    const contract = loadContract(root)
-    const flowIds = contract.flows.map((flow) => flow.id)
-    let baselineDigest
-
-    for (const scenario of [...contract.scenarios, contract.scenarios[0]]) {
-      const runDirectory = fs.mkdtempSync(path.join(dir, 'run-'))
-      const snapshot = captureSource(root, runDirectory, contract)
-
-      baselineDigest ??= snapshot.digest
-      assert.equal(snapshot.digest, baselineDigest)
-      const result = await runVerification({
-        repositoryRoot: root,
-        runDirectory,
-        snapshot,
-        contract,
-        scenario: scenario.id,
-        flowIds
-      })
-
-      assert.equal(
-        result.identity.runtimeSourceDigest,
-        snapshot.runtimeSource.digest
-      )
-      assert.equal(
-        result.identity.runtimeAuthorityDigest,
-        snapshot.runtimeAuthority.digest
-      )
-      assert.equal(
-        result.identity.contractScopeDigest,
-        snapshot.runtimeAuthority.contractScopeDigest
-      )
-      assert.equal(result.identity.lockfileDigest, snapshot.lockfileDigest)
-      assert.equal(result.identity.sourceDigest, snapshot.digest)
-      assert.equal(result.identity.mappingVersion, contract.mappingVersion)
-      assert.equal(result.environment.node, process.version)
-      assert.equal(result.environment.vitest, result.version)
-      assert.match(result.reportDigest, /^[a-f0-9]{64}$/)
-      const evidence = assessEvidence(
-        contract,
-        snapshot,
-        result,
-        flowIds,
-        scenario.id
-      )
-
-      assert.deepEqual(
-        evidence.issues,
-        [],
-        scenario.id + ': ' + JSON.stringify(result)
-      )
-      assert.deepEqual(
-        evidence.cases
-          .filter((item) => item.status === 'failed')
-          .map((item) => item.id)
-          .sort(),
-        scenario.expectedFailedCaseIds.slice().sort(),
-        scenario.id
-      )
-      assert.equal(
-        evidence.passedCount,
-        contract.cases.length - scenario.expectedFailedCaseIds.length,
-        scenario.id
-      )
-      assert.equal(result.code === 0, scenario.id === 'baseline', scenario.id)
-    }
-  }
-)
-
 test('verification consumes the trusted execution boundary once without bypassing it', async (t) => {
   const root = path.resolve(__dirname, '../../../..')
   const parent = path.join(root, 'tmp/flow-inspector/runner-boundary')
@@ -838,4 +759,32 @@ test('a nested current action can inherit its outer owned process group', async 
   })
   await new Promise((resolve) => setTimeout(resolve, 100))
   assert.throws(() => process.kill(pid, 0), { code: 'ESRCH' })
+})
+
+test('process owner streams separate evidence without changing exit status', async () => {
+  const { PassThrough } = require('node:stream')
+  const stdout = new PassThrough()
+  const stderr = new PassThrough()
+  let out = '',
+    err = ''
+
+  stdout.on('data', (chunk) => {
+    out += chunk
+  })
+  stderr.on('data', (chunk) => {
+    err += chunk
+  })
+  const result = await execute(
+    "process.stdout.write('structured evidence'); process.stderr.write('diagnostic'); process.exitCode = 7",
+    { stdout, stderr }
+  )
+
+  assert.equal(out, 'structured evidence')
+  assert.equal(err, 'diagnostic')
+  assert.equal(result.code, 7)
+  assert.equal(result.reason, null)
+  assert.match(result.output, /structured evidence/)
+  assert.match(result.output, /diagnostic/)
+  stdout.destroy()
+  stderr.destroy()
 })

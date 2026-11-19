@@ -1,3 +1,5 @@
+import { createLocalToolHost } from '../server/local-tool-host'
+import { createDesignPreparationSession } from '../server/design-preparation'
 import { admitPreparedDesignDelivery } from '../src/ai/prepared-design-admission'
 import { expect, test, type Page } from '@playwright/test'
 import type { AiActionBatch } from '@asyra/ai-agent-runtime'
@@ -186,7 +188,7 @@ test('retained anchor reaches real hierarchy, rejects ambiguity, and preserves p
     invalid.target[1].keys = ['anchor', 'unrelated']
     await expect(
       ops.call(
-        'execute_design_batch',
+        'execute_design',
         { inspection: 'defer', operations: [invalid] },
         signal
       )
@@ -197,7 +199,7 @@ test('retained anchor reaches real hierarchy, rejects ambiguity, and preserves p
     aborted.abort()
     await expect(
       ops.call(
-        'execute_design_batch',
+        'execute_design',
         { inspection: 'defer', operations: [operation] },
         aborted.signal
       )
@@ -205,7 +207,7 @@ test('retained anchor reaches real hierarchy, rejects ambiguity, and preserves p
     expect(await getCoreDocumentDigest(page)).toEqual(initial)
     const receipt = JSON.parse(
       await ops.call(
-        'execute_design_batch',
+        'execute_design',
         { inspection: 'defer', operations: [operation] },
         signal
       )
@@ -238,5 +240,180 @@ test('retained anchor reaches real hierarchy, rejects ambiguity, and preserves p
     expect(await readOrder(page)).toEqual(expectedOrder)
   } finally {
     await peer.close()
+  }
+})
+
+test('staged host shows the first application while independent preparation continues', async ({
+  page
+}, testInfo) => {
+  const document = createTestDocumentIdentity()
+
+  await page.goto(document.url)
+  await waitForAppReady(page)
+  await connected(page)
+  const { actions, execute } = await anchorHarness(page)
+  const events: string[] = []
+  let release!: () => void
+  const gate = new Promise<void>((resolve) => {
+    release = resolve
+  })
+  let preparations = 0
+  let applications = 0
+  const host = createLocalToolHost({
+    requestId: 'staged-visibility',
+    signal: new AbortController().signal,
+    capacity: 16,
+    receiptCapacity: 8,
+    artifactCapacity: 16,
+    limits: {
+      steps: 64,
+      bindings: 240,
+      bindingDepth: 32,
+      bytes: 100000,
+      issues: 8
+    },
+    store: {
+      read: async () => undefined,
+
+      list: async () => [],
+
+      write: async () => {
+        throw Error('No saved tool required')
+      }
+    },
+
+    createGroups: (ownership) => {
+      const designs = createLocalDesignTools(
+        actions,
+        createDesignPreparationSession(undefined, undefined, ownership)
+      )
+      const original = designs.call.bind(designs)
+
+      designs.call = async (name, args, signal) => {
+        const result = await original(name, args, signal)
+
+        if (name === 'prepare_design') {
+          events.push('prepared-' + ++preparations)
+        }
+
+        return result
+      }
+
+      const operations = createLocalOperationTools(
+        actions,
+        designs,
+        async (batch) => {
+          const result = await execute(batch)
+
+          events.push('applied-' + ++applications)
+          if (applications === 1) {
+            await gate
+          }
+
+          return result
+        }
+      )
+
+      return [
+        { name: 'design_preparation', description: 'Prepare', owner: designs },
+        { name: 'design_operations', description: 'Apply', owner: operations }
+      ]
+    }
+  })
+  const running = host.invoke({
+    name: 'design_operations.execute_design',
+    input: {
+      inspection: 'defer',
+      stages: ['a', 'b'].map((id, index) => ({
+        id,
+        operations: [
+          {
+            id: id + '-prepare',
+            name: 'prepare_design',
+            arguments: {
+              draft: {
+                type: 'group',
+                name: 'Stage ' + id,
+                children: [
+                  {
+                    type: 'rect',
+                    name: 'Stage face ' + id,
+                    key: 'face',
+                    x: index * 140,
+                    y: 0,
+                    width: 100,
+                    height: 100,
+                    fill: index ? '#287dc4' : '#d75542'
+                  }
+                ]
+              }
+            }
+          }
+        ],
+        apply: [
+          {
+            id: id + '-apply',
+            name: 'apply_prepared_design',
+            arguments: {
+              artifactId: {
+                kind: 'step',
+                step: id + '-prepare',
+                path: '/artifactId'
+              }
+            }
+          }
+        ]
+      }))
+    }
+  })
+
+  try {
+    await expect
+      .poll(() => events.includes('applied-1') && events.includes('prepared-2'))
+      .toBe(true)
+    expect(applications).toBe(1)
+
+    const roots = () =>
+      page.evaluate(async () => {
+        const { core } = await import('../src/testing/runtime-access')
+
+        return core.getElementChildren(core.getCurrentWorkspaceId(), 0, 20)
+          .elementIds.length
+      })
+
+    expect(await roots()).toBe(1)
+    await page.evaluate(async () => {
+      const { viewportApis } = await import('../src/common-apis/viewport')
+
+      viewportApis.zoomToCenter(1, 120, 50)
+      await new Promise<void>((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+      )
+    })
+    await page.screenshot({
+      path: testInfo.outputPath('first-stage-visible.png')
+    })
+    release()
+    const result = JSON.parse((await running).text)
+
+    expect(result, JSON.stringify(result)).toMatchObject({
+      toolOutcome: { status: 'success' },
+      stages: [
+        { id: 'a', status: 'applied' },
+        { id: 'b', status: 'applied' }
+      ]
+    })
+    expect(await roots()).toBe(2)
+    await page.screenshot({
+      path: testInfo.outputPath('both-stages-visible.png')
+    })
+    await undo(page)
+    expect(await roots()).toBe(1)
+    await redo(page)
+    expect(await roots()).toBe(2)
+  } finally {
+    release()
+    await running.catch(() => undefined)
+    await host.dispose()
   }
 })

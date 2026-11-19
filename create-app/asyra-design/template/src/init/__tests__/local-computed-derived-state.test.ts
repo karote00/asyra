@@ -57,21 +57,28 @@ vi.mock('@asyra/reactive-events', () => ({
     UPDATE_COMPUTED_DATA: 'updateComputedData',
     UPDATE_COMPUTED_DATA_PATCH: 'updateComputedDataPatch'
   },
+
   subscribeToEventBatches: (subscriber: OrdinaryBatchSubscriber) => {
     mocks.subscribeToEventBatches(subscriber)
     mocks.ordinaryBatchSubscribers.push(subscriber)
+
     return { unsubscribe: vi.fn() }
   },
+
   subscribeToUpdateComputedData: (subscriber: OrdinaryEventSubscriber) => {
     mocks.subscribeToUpdateComputedData(subscriber)
     mocks.updateComputedSubscribers.push(subscriber)
+
     return { unsubscribe: vi.fn() }
   },
+
   subscribeToUpdateComputedDataPatch: (subscriber: OrdinaryEventSubscriber) => {
     mocks.subscribeToUpdateComputedDataPatch(subscriber)
     mocks.updateComputedPatchSubscribers.push(subscriber)
+
     return { unsubscribe: vi.fn() }
   },
+
   subscribeToChangeComputedData: mocks.subscribeToChangeComputedData,
   subscribeToAddElement: mocks.subscribeToAddElement,
   subscribeToRemoveElement: mocks.subscribeToRemoveElement,
@@ -195,6 +202,7 @@ const dispatchOrdinaryEvents = (
     if (event.type === 'updateComputedData') {
       mocks.updateComputedSubscribers.forEach((subscriber) => subscriber(event))
     }
+
     if (event.type === 'updateComputedDataPatch') {
       mocks.updateComputedPatchSubscribers.forEach((subscriber) =>
         subscriber(event)
@@ -271,10 +279,12 @@ describe('local computed derived-state initialization', () => {
 
   it('enqueues each affected vector once for each ordinary scalar, batch, and patch event', () => {
     const frameCallbacks: FrameRequestCallback[] = []
+
     vi.stubGlobal(
       'requestAnimationFrame',
       vi.fn((callback: FrameRequestCallback) => {
         frameCallbacks.push(callback)
+
         return frameCallbacks.length
       })
     )
@@ -287,6 +297,7 @@ describe('local computed derived-state initialization', () => {
     const dispatchAndFlush = (event: OrdinaryComputedEvent): void => {
       dispatchOrdinaryEvents([event])
       const callback = frameCallbacks.shift()
+
       expect(callback).toBeTypeOf('function')
       callback?.(0)
     }

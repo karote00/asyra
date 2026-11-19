@@ -30,11 +30,18 @@ export const prepareCollaborationPublication = (
     const batches = slice.batches.filter(({ channel }) =>
       documentChannels.has(channel)
     )
+
     if (batches.length !== slice.batches.length) {
       publicationIsDocumentOnly = false
     }
-    if (batches.length === 0) return []
-    if (batches.length === slice.batches.length) return [slice]
+
+    if (batches.length === 0) {
+      return []
+    }
+
+    if (batches.length === slice.batches.length) {
+      return [slice]
+    }
 
     const retainedIds = new Set(
       batches.flatMap(({ deliveries }) =>
@@ -44,6 +51,7 @@ export const prepareCollaborationPublication = (
         ])
       )
     )
+
     return [
       Object.freeze({
         sliceId: slice.sliceId,
@@ -57,9 +65,17 @@ export const prepareCollaborationPublication = (
   const deliveries = slices.flatMap(({ batches }) =>
     batches.flatMap(({ deliveries: batchDeliveries }) => batchDeliveries)
   )
-  if (deliveries.length === 0) return
+
+  if (deliveries.length === 0) {
+    return
+  }
+
   const firstSlice = slices[0]
-  if (!firstSlice) return
+
+  if (!firstSlice) {
+    return
+  }
+
   const requiresAtomicCollapse =
     publication.mode === 'atomic' && slices.length > 1
   const transportSlices: readonly SharedPublicationSlice[] =
@@ -74,6 +90,7 @@ export const prepareCollaborationPublication = (
           })
         ])
       : Object.freeze(slices)
+
   if (
     deliveries.some(
       ({ eventName }) =>
@@ -85,7 +102,9 @@ export const prepareCollaborationPublication = (
       '[collaboration] local-only computed projection cannot enter a shared publication'
     )
   }
+
   const performanceProfile = getActiveAiDrawingPerformanceProfile()
+
   if (performanceProfile) {
     try {
       recordAiDrawingPerformancePublication(performanceProfile, {
@@ -96,6 +115,7 @@ export const prepareCollaborationPublication = (
       // Detached profiling cannot alter the canonical transport route.
     }
   }
+
   return prepareDocumentPublication(
     publicationIsDocumentOnly && !requiresAtomicCollapse
       ? publication
@@ -113,6 +133,7 @@ export const createDocumentCollaborationPublicationSource = (
   subscribe: (subscriber) =>
     source.subscribeToSharedPublication((publication) => {
       let prepared: SharedPublication | undefined
+
       try {
         prepared = prepareCollaborationPublication(publication)
       } catch (error) {
@@ -120,8 +141,12 @@ export const createDocumentCollaborationPublicationSource = (
           publication,
           error instanceof Error ? error : new Error(String(error))
         )
+
         return
       }
-      if (prepared) subscriber(prepared)
+
+      if (prepared) {
+        subscriber(prepared)
+      }
     })
 })

@@ -13,13 +13,19 @@ import {
 
 const record = (v: unknown): v is Record<string, unknown> =>
   typeof v === 'object' && v !== null && !Array.isArray(v)
+
 function check(value: unknown): asserts value {
-  if (!value) throw new AiActionExecutionError('Prepared design is invalid.')
+  if (!value) {
+    throw new AiActionExecutionError('Prepared design is invalid.')
+  }
 }
+
 const finite = (v: unknown, maximum = limits.dimension * (limits.depth + 2)) =>
   typeof v === 'number' && Number.isFinite(v) && Math.abs(v) <= maximum
+
 const keysOnly = (v: Record<string, unknown>, keys: readonly string[]) =>
   Object.keys(v).every((k) => keys.includes(k))
+
 const vectorFields = [
   'points',
   'segments',
@@ -37,10 +43,12 @@ function validateVector(d: Record<string, unknown>): number {
       d.fillRule === 'nonzero'
   )
   const { points, segments, networks } = d
+
   check(record(points) && record(segments) && record(networks))
   const pointKeys = Object.keys(points),
     segmentKeys = Object.keys(segments),
     networkKeys = Object.keys(networks)
+
   check(pointKeys.length > 0 && pointKeys.length <= limits.pathCommands)
   check(
     segmentKeys.length <= pointKeys.length &&
@@ -49,6 +57,7 @@ function validateVector(d: Record<string, unknown>): number {
   )
   const usedPoints = new Set<string>(),
     usedSegments = new Set<string>()
+
   for (const [id, p] of Object.entries(points)) {
     check(
       record(p) &&
@@ -74,6 +83,7 @@ function validateVector(d: Record<string, unknown>): number {
       )
     }
   }
+
   for (const [id, n] of Object.entries(networks)) {
     check(
       record(n) &&
@@ -92,6 +102,7 @@ function validateVector(d: Record<string, unknown>): number {
       const startId = n.pointIds[i],
         endId = n.pointIds[(i + 1) % n.pointIds.length],
         segmentId = n.segmentIds[i]
+
       check(
         typeof startId === 'string' &&
           typeof endId === 'string' &&
@@ -99,6 +110,7 @@ function validateVector(d: Record<string, unknown>): number {
       )
       const p = points[startId],
         s = segments[segmentId]
+
       check(record(p) && p.kind === 'anchor' && !usedPoints.has(startId))
       check(
         record(s) &&
@@ -124,9 +136,13 @@ function validateVector(d: Record<string, unknown>): number {
         [s.outControlId, startId, 'out'],
         [s.inControlId, endId, 'in']
       ]) {
-        if (controlId === null) continue
+        if (controlId === null) {
+          continue
+        }
+
         check(typeof controlId === 'string')
         const c = points[controlId]
+
         check(
           record(c) &&
             c.kind === 'control' &&
@@ -138,10 +154,12 @@ function validateVector(d: Record<string, unknown>): number {
       }
     }
   }
+
   check(
     usedPoints.size === pointKeys.length &&
       usedSegments.size === segmentKeys.length
   )
+
   return pointKeys.length
 }
 
@@ -171,8 +189,10 @@ export function admitPreparedDesignDelivery(input: unknown): PreparedDesign {
         record(entry.descriptor)
     )
     const descriptor = entry.descriptor
+
     check(typeof entry.key === 'string' && typeof descriptor.id === 'string')
     const names = descriptor.props
+
     check(
       Array.isArray(names) &&
         names.every((name) => typeof name === 'string') &&
@@ -186,20 +206,25 @@ export function admitPreparedDesignDelivery(input: unknown): PreparedDesign {
         names.map((name) => [name, `${descriptor.id}-${name}`])
       )
     }
+
     if (descriptor.type === 'vector') {
       for (const field of PreparedVectorRecordFields) {
         const records = descriptor[field]
+
         check(record(records))
         restored[field] = Object.fromEntries(
           Object.entries(records).map(([key, value]) => {
             check(record(value) && !Object.hasOwn(value, 'id'))
+
             return [key, { ...value, id: key }]
           })
         )
       }
     }
+
     return { ...entry, descriptor: restored }
   })
+
   return admitPreparedDesign({
     ...input,
     version: PREPARED_DESIGN_VERSION,
@@ -240,12 +265,14 @@ export function admitPreparedDesign(input: unknown): PreparedDesign {
   )
   if (input.continuation !== undefined) {
     const continuation = input.continuation
+
     check(
       record(continuation) &&
         keysOnly(continuation, ['anchor']) &&
         record(continuation.anchor)
     )
     const anchor = continuation.anchor
+
     check(
       keysOnly(anchor, ['id', 'x', 'y', 'rotation']) &&
         typeof anchor.id === 'string' &&
@@ -267,12 +294,14 @@ export function admitPreparedDesign(input: unknown): PreparedDesign {
         )
     )
   }
+
   const parents = new Map<string, { type: string; depth: number }>(),
     semanticKeys = new Set<string>(),
     identities = new Set<string>(),
     fillIds = new Set<string>()
   let pointCount = 0,
     textCount = 0
+
   const claim = (id: unknown) => {
     check(
       typeof id === 'string' &&
@@ -282,14 +311,17 @@ export function admitPreparedDesign(input: unknown): PreparedDesign {
     )
     identities.add(id)
   }
+
   for (let index = 0; index < input.entries.length; index++) {
     const entry = input.entries[index]
+
     check(
       record(entry) &&
         keysOnly(entry, ['key', 'parentId', 'descriptor']) &&
         record(entry.descriptor)
     )
     const d = entry.descriptor
+
     check(
       typeof entry.key === 'string' &&
         entry.key.length > 0 &&
@@ -319,15 +351,17 @@ export function admitPreparedDesign(input: unknown): PreparedDesign {
         (d.type === 'group' ? Number(d.height) >= 0 : Number(d.height) > 0)
     )
     let depth = 1
-    if (index === 0)
+
+    if (index === 0) {
       check(
         entry.parentId === null &&
           isDesignContainerType(d.type) &&
           d.id === input.rootId
       )
-    else {
+    } else {
       check(typeof entry.parentId === 'string')
       const parent = parents.get(entry.parentId)
+
       check(
         parent &&
           isDesignContainerType(parent.type) &&
@@ -335,6 +369,7 @@ export function admitPreparedDesign(input: unknown): PreparedDesign {
       )
       depth = parent.depth + 1
     }
+
     const props = ['position', 'dimension']
     const fields = [
       'id',
@@ -348,21 +383,30 @@ export function admitPreparedDesign(input: unknown): PreparedDesign {
       'lock',
       'props'
     ]
+
     if (d.type === 'oval') {
       fields.push('rotation')
       check(d.rotation === undefined || finite(d.rotation, limits.dimension))
     }
+
     if (d.type === 'text') {
       props.push('typography')
       fields.push(...textFields)
-      for (const f of TEXT_PROPERTY_SCHEMA.fields) check(f.validate?.(d[f.key]))
+      for (const f of TEXT_PROPERTY_SCHEMA.fields) {
+        check(f.validate?.(d[f.key]))
+      }
+
       textCount += String(d.text).length
       check(textCount <= limits.textCharacters)
     }
+
     props.push('fills')
     fields.push('fills')
     check(Array.isArray(d.fills) && d.fills.length <= 1)
-    if (d.type === 'group') check(d.fills.length === 0)
+    if (d.type === 'group') {
+      check(d.fills.length === 0)
+    }
+
     for (const f of d.fills) {
       if (typeof f === 'string') {
         // Only prior definitions in this artifact may be shared. This admits
@@ -370,6 +414,7 @@ export function admitPreparedDesign(input: unknown): PreparedDesign {
         check(fillIds.has(f))
         continue
       }
+
       check(
         record(f) &&
           keysOnly(f, [
@@ -403,26 +448,32 @@ export function admitPreparedDesign(input: unknown): PreparedDesign {
       claim(f.id)
       fillIds.add(f.id)
     }
+
     if (isDesignContainerType(d.type)) {
       fields.push('children')
       check(Array.isArray(d.children) && d.children.length === 0)
     }
+
     if (d.type !== 'frame' && d.type !== 'text') {
       props.push('strokes')
       fields.push('strokes')
       check(Array.isArray(d.strokes) && d.strokes.length === 0)
     }
+
     if (d.type === 'vector') {
       props.push(...vectorFields)
       fields.push(...vectorFields)
       pointCount += validateVector(d)
       for (const field of ['points', 'segments', 'networks']) {
         const nodes = d[field]
+
         check(record(nodes))
         Object.keys(nodes).forEach(claim)
       }
+
       check(pointCount <= limits.expandedPathCommands)
     }
+
     check(
       keysOnly(d, fields) &&
         record(d.props) &&
@@ -432,19 +483,24 @@ export function admitPreparedDesign(input: unknown): PreparedDesign {
       check(d.props[p] === `${d.id}-${p}`)
       claim(d.props[p])
     }
+
     parents.set(String(d.id), { type: d.type, depth })
   }
+
   for (const f of input.findings) {
     check(record(f) && typeof f.key === 'string' && semanticKeys.has(f.key))
-    if (f.kind === 'text-metrics-required') check(keysOnly(f, ['kind', 'key']))
-    else {
+    if (f.kind === 'text-metrics-required') {
+      check(keysOnly(f, ['kind', 'key']))
+    } else {
       check(
         f.kind === 'overflow' &&
           keysOnly(f, ['kind', 'key', 'left', 'top', 'right', 'bottom'])
       )
-      for (const k of ['left', 'top', 'right', 'bottom'])
+      for (const k of ['left', 'top', 'right', 'bottom']) {
         check(finite(f[k]) && Number(f[k]) >= 0)
+      }
     }
   }
+
   return structuredClone(input) as unknown as PreparedDesign
 }

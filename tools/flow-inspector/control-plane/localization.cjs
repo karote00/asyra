@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
+const { reportCountIssues } = require('./runner-report.cjs')
 const fs = require('node:fs')
 const path = require('node:path')
 const { execFileSync } = require('node:child_process')
@@ -245,6 +246,8 @@ function localizeReport(root, context, report, options = {}) {
   if (!report || !Array.isArray(report.testResults)) {
     issues.push('Missing or malformed test report')
   }
+
+  issues.push(...reportCountIssues(report))
 
   const executionFailureDetails = options.executionFailureDetails
 

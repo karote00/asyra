@@ -55,6 +55,7 @@ test.describe('Pen Tool - Editing Flow', () => {
         return page.evaluate(async () => {
           const core = (await import('../src/testing/runtime-access')).core
           const selected = core?.getSystemProperty?.('selectedVectorPoint')
+
           if (!selected) {
             return null
           }
@@ -75,6 +76,7 @@ test.describe('Pen Tool - Editing Flow', () => {
     page
   }) => {
     const browserErrors: string[] = []
+
     page.on('pageerror', (error) => browserErrors.push(error.message))
     page.on('console', (message) => {
       if (message.type() === 'error') {
@@ -104,11 +106,13 @@ test.describe('Pen Tool - Editing Flow', () => {
       const core = (await import('../src/testing/runtime-access')).core
       const selected = core?.getSystemProperty?.('selectedVectorPoint')
       const vectorId = core?.getSystemProperty?.('pathEditingVectorId') ?? null
+
       return {
         vectorId,
         firstPointId: selected?.pointId ?? null
       }
     })
+
     expect(firstPointRuntime.vectorId).not.toBeNull()
     expect(firstPointRuntime.firstPointId).not.toBeNull()
     if (!firstPointRuntime.vectorId || !firstPointRuntime.firstPointId) {
@@ -117,6 +121,7 @@ test.describe('Pen Tool - Editing Flow', () => {
 
     const beforeSecondPointUndoCount = await page.evaluate(async () => {
       const core = (await import('../src/testing/runtime-access')).core
+
       return core?.deps?.factory?.transact?.undoStack?.length ?? 0
     })
 
@@ -206,6 +211,7 @@ test.describe('Pen Tool - Editing Flow', () => {
     await page.mouse.down()
     await page.mouse.move(midDragClientPos.x, midDragClientPos.y, { steps: 6 })
     const midDragState = await readFirstSegmentState()
+
     expect(browserErrors).toEqual([])
     expect(midDragState).toMatchObject({
       networkPointCount: 2,
@@ -221,6 +227,7 @@ test.describe('Pen Tool - Editing Flow', () => {
     if (!midDragState.firstAnchor || !midDragState.firstOut) {
       return
     }
+
     expect(
       Math.abs(midDragState.firstOut.x - midDragState.firstAnchor.x)
     ).toBeGreaterThan(1)
@@ -231,20 +238,24 @@ test.describe('Pen Tool - Editing Flow', () => {
     await expect
       .poll(async () => {
         const state = await readFirstSegmentState()
+
         if (!midDragState.currentSegmentEndOut || !state.currentSegmentEndOut) {
           return 0
         }
+
         return Math.abs(
           state.currentSegmentEndOut.y - midDragState.currentSegmentEndOut.y
         )
       })
       .toBeGreaterThan(1)
     const lateDragState = await readFirstSegmentState()
+
     expect(lateDragState.firstOut).not.toBeNull()
     expect(lateDragState.currentSegmentEndOut).not.toBeNull()
     if (!lateDragState.firstOut || !lateDragState.currentSegmentEndOut) {
       return
     }
+
     expect(
       Math.abs(lateDragState.firstOut.x - midDragState.firstOut.x)
     ).toBeLessThan(0.001)
@@ -262,6 +273,7 @@ test.describe('Pen Tool - Editing Flow', () => {
         secondPointId: selected?.pointId ?? null
       }
     })
+
     expect(runtime.secondPointId).not.toBeNull()
     if (!runtime.secondPointId) {
       return
@@ -271,16 +283,19 @@ test.describe('Pen Tool - Editing Flow', () => {
       const core = (await import('../src/testing/runtime-access')).core
       const stack = core?.deps?.factory?.transact?.undoStack ?? []
       const last = stack[stack.length - 1]
+
       return {
         undoCount: stack.length,
         changeCount: last?.entries?.length ?? 0
       }
     })
+
     expect(dragHistory.undoCount).toBe(beforeSecondPointUndoCount + 1)
     expect(dragHistory.changeCount).toBeGreaterThan(0)
     expect(dragHistory.changeCount).toBeLessThan(30)
 
     const finalState = await readFirstSegmentState(runtime.secondPointId)
+
     expect(finalState).toMatchObject({
       selectedTarget: 'anchor',
       segmentStartId: firstPointRuntime.firstPointId,
@@ -300,6 +315,7 @@ test.describe('Pen Tool - Editing Flow', () => {
         return page.evaluate(async () => {
           const core = (await import('../src/testing/runtime-access')).core
           const selected = core?.getSystemProperty?.('selectedVectorPoint')
+
           return selected?.target ?? null
         })
       })
@@ -331,6 +347,7 @@ test.describe('Pen Tool - Editing Flow', () => {
       .poll(async () =>
         page.evaluate(async () => {
           const core = (await import('../src/testing/runtime-access')).core
+
           return {
             pathEditingVectorId:
               core?.getSystemProperty?.('pathEditingVectorId') ?? null,
@@ -349,6 +366,7 @@ test.describe('Pen Tool - Editing Flow', () => {
       .poll(async () =>
         page.evaluate(async () => {
           const core = (await import('../src/testing/runtime-access')).core
+
           return core?.getSystemProperty?.('pathEditingVectorId') ?? null
         })
       )
@@ -357,6 +375,7 @@ test.describe('Pen Tool - Editing Flow', () => {
     const exitedEditingState = await readFirstSegmentState(
       runtime.secondPointId
     )
+
     expect(exitedEditingState).toMatchObject({
       segmentStartId: firstPointRuntime.firstPointId,
       segmentEndId: runtime.secondPointId,
@@ -435,6 +454,7 @@ test.describe('Pen Tool - Editing Flow', () => {
         return page.evaluate(async () => {
           const core = (await import('../src/testing/runtime-access')).core
           const hovered = core?.getSystemProperty?.('hoveredVectorPoint')
+
           return hovered?.target ?? null
         })
       })
@@ -456,16 +476,20 @@ test.describe('Pen Tool - Editing Flow', () => {
     await page.keyboard.press('Escape')
     await page.waitForTimeout(80)
     const firstPointPos = await getCanvasPosition(page, 0.3, 0.3)
+
     await page.mouse.click(firstPointPos.x, firstPointPos.y)
 
     const dragEndPos = await getCanvasPosition(page, 0.1, 0.25)
+
     await dragOnCanvas(page, 0.18, 0.32, 0.1, 0.25, 8)
 
     const selectedPointId = await page.evaluate(async () => {
       const core = (await import('../src/testing/runtime-access')).core
       const selected = core?.getSystemProperty?.('selectedVectorPoint')
+
       return selected?.pointId ?? null
     })
+
     expect(selectedPointId).not.toBeNull()
     if (!selectedPointId) {
       return
@@ -477,6 +501,7 @@ test.describe('Pen Tool - Editing Flow', () => {
         const value = await page.evaluate(async () => {
           const core = (await import('../src/testing/runtime-access')).core
           const selected = core?.getSystemProperty?.('selectedVectorPoint')
+
           return {
             selectedPointId: selected?.pointId ?? null,
             selectedTarget: selected?.target ?? null
@@ -486,6 +511,7 @@ test.describe('Pen Tool - Editing Flow', () => {
         if (!value || value.selectedPointId !== selectedPointId) {
           return false
         }
+
         return value.selectedTarget === 'anchor'
       })
       .toBe(true)
@@ -506,6 +532,7 @@ test.describe('Pen Tool - Editing Flow', () => {
         return page.evaluate(async () => {
           const core = (await import('../src/testing/runtime-access')).core
           const selected = core?.getSystemProperty?.('selectedVectorPoint')
+
           return selected?.target ?? null
         })
       })
@@ -541,6 +568,7 @@ test.describe('Pen Tool - Editing Flow', () => {
         return page.evaluate(async () => {
           const core = (await import('../src/testing/runtime-access')).core
           const selected = core?.getSystemProperty?.('selectedVectorPoint')
+
           return selected?.target ?? null
         })
       })
@@ -575,6 +603,7 @@ test.describe('Pen Tool - Editing Flow', () => {
         x: 0,
         y: 0
       }
+
       if (!pathEditingVectorId || !selected?.pointId) {
         return null
       }
@@ -633,6 +662,7 @@ test.describe('Pen Tool - Editing Flow', () => {
             const core = (await import('../src/testing/runtime-access')).core
             const pathEditingVectorId =
               core?.getSystemProperty?.('pathEditingVectorId') ?? null
+
             if (!pathEditingVectorId) {
               return null
             }
@@ -643,6 +673,7 @@ test.describe('Pen Tool - Editing Flow', () => {
             const anchorAfter = computed.points?.[pointId]
             const inHandleAfter = computed.points?.[`${pointId}:in`]
             const outHandleAfter = computed.points?.[`${pointId}:out`]
+
             if (!anchorAfter || anchorAfter.kind !== 'anchor') {
               return null
             }
@@ -710,6 +741,7 @@ test.describe('Pen Tool - Editing Flow', () => {
         x: 0,
         y: 0
       }
+
       if (!pathEditingVectorId || !selected?.pointId) {
         return null
       }
@@ -720,6 +752,7 @@ test.describe('Pen Tool - Editing Flow', () => {
       const pointId = selected.pointId as string
       const anchor = computed.points?.[pointId]
       const outHandle = computed.points?.[`${pointId}:out`]
+
       if (!anchor || anchor.kind !== 'anchor') {
         return null
       }
@@ -757,12 +790,14 @@ test.describe('Pen Tool - Editing Flow', () => {
         return page.evaluate(async () => {
           const core = (await import('../src/testing/runtime-access')).core
           const selected = core?.getSystemProperty?.('selectedVectorPoint')
+
           return selected?.target ?? null
         })
       })
       .toBe('outHandle')
 
     const delta = { x: 30, y: -20 }
+
     await page.mouse.move(handleClient.x, handleClient.y)
     await page.mouse.down()
     await page.mouse.move(handleClient.x + delta.x, handleClient.y + delta.y, {
@@ -785,6 +820,7 @@ test.describe('Pen Tool - Editing Flow', () => {
             const pathEditingVectorId =
               core?.getSystemProperty?.('pathEditingVectorId') ?? null
             const selected = core?.getSystemProperty?.('selectedVectorPoint')
+
             if (!pathEditingVectorId) {
               return null
             }
@@ -794,6 +830,7 @@ test.describe('Pen Tool - Editing Flow', () => {
             const computed = element?.getAllComputedData?.() ?? {}
             const anchorAfter = computed.points?.[pointId]
             const outHandleAfter = computed.points?.[`${pointId}:out`]
+
             if (!anchorAfter || anchorAfter.kind !== 'anchor') {
               return null
             }
@@ -851,6 +888,7 @@ test.describe('Pen Tool - Editing Flow', () => {
     await expect.poll(async () => getElementCount(page)).toBe(initialCount + 1)
 
     const anchorClientPos = await getCanvasPosition(page, 0.3, 0.3)
+
     await page.mouse.move(anchorClientPos.x, anchorClientPos.y)
     await expect
       .poll(async () => {
@@ -860,6 +898,7 @@ test.describe('Pen Tool - Editing Flow', () => {
           const hoveredSegment = core?.getSystemProperty?.(
             'hoveredVectorSegment'
           )
+
           return {
             hoveredPointTarget: hoveredPoint?.target ?? null,
             hoveredSegmentId: hoveredSegment?.segmentId ?? null
@@ -872,6 +911,7 @@ test.describe('Pen Tool - Editing Flow', () => {
       })
 
     const segmentClientPos = await getCanvasPosition(page, 0.375, 0.35)
+
     await page.mouse.move(segmentClientPos.x, segmentClientPos.y)
     await expect
       .poll(async () => {
@@ -924,6 +964,7 @@ test.describe('Pen Tool - Editing Flow', () => {
           )
           const pathEditingVectorId =
             core?.getSystemProperty?.('pathEditingVectorId') ?? null
+
           return {
             hoveredPointTarget: hoveredPoint?.target ?? null,
             hoveredSegmentId: hoveredSegment?.segmentId ?? null,
@@ -954,6 +995,7 @@ test.describe('Pen Tool - Editing Flow', () => {
         segmentIds?: string[]
       }[]
       const primaryNetwork = networks[0]
+
       return {
         pathEditingVectorId,
         networkCount: networks.length,
@@ -992,15 +1034,18 @@ test.describe('Pen Tool - Editing Flow', () => {
           const segmentIds = primaryNetwork?.segmentIds ?? []
           const pointIds = primaryNetwork?.pointIds ?? []
           const segments = computed.segments ?? {}
+
           const getSegmentDegree = (pointId: string | null) =>
             segmentIds.filter((segmentId) => {
               const segment = segments[segmentId] as
                 { startId?: string; endId?: string } | undefined
+
               return (
                 !!pointId &&
                 (segment?.startId === pointId || segment?.endId === pointId)
               )
             }).length
+
           const selectedPointSegmentDegree = getSegmentDegree(selectedPointId)
 
           return {
@@ -1067,6 +1112,7 @@ test.describe('Pen Tool - Editing Flow', () => {
         segmentIds?: string[]
       }[]
       const primaryNetwork = networks[0]
+
       return {
         vectorId,
         pointIds: primaryNetwork?.pointIds ?? [],
@@ -1079,6 +1125,7 @@ test.describe('Pen Tool - Editing Flow', () => {
           core?.getSystemProperty?.('pathEditingStartNewSubpath') ?? null
       }
     })
+
     expect(before.vectorId).not.toBeNull()
     expect(before.pointIds.length).toBe(3)
     expect(before).toMatchObject({
@@ -1088,12 +1135,14 @@ test.describe('Pen Tool - Editing Flow', () => {
     })
 
     const middleAnchorPos = await getCanvasPosition(page, 0.45, 0.4)
+
     await page.mouse.move(middleAnchorPos.x, middleAnchorPos.y)
     await expect
       .poll(async () => {
         return page.evaluate(async () => {
           const core = (await import('../src/testing/runtime-access')).core
           const hovered = core?.getSystemProperty?.('hoveredVectorPoint')
+
           return {
             pointId: hovered?.pointId ?? null,
             target: hovered?.target ?? null
@@ -1119,6 +1168,7 @@ test.describe('Pen Tool - Editing Flow', () => {
             pointIds?: string[]
             segmentIds?: string[]
           }[]
+
           return {
             selectedPointId: selected?.pointId ?? null,
             selectedTarget: selected?.target ?? null,
@@ -1192,6 +1242,7 @@ test.describe('Pen Tool - Editing Flow', () => {
     })
 
     const firstEndpointPos = await getCanvasPosition(page, 0.3, 0.3)
+
     await page.mouse.click(firstEndpointPos.x, firstEndpointPos.y)
 
     await expect
@@ -1258,6 +1309,7 @@ test.describe('Pen Tool - Editing Flow', () => {
     await expect.poll(async () => getElementCount(page)).toBe(initialCount + 1)
 
     const segmentClientPos = await getCanvasPosition(page, 0.375, 0.35)
+
     await page.mouse.move(segmentClientPos.x, segmentClientPos.y)
 
     await expect
@@ -1267,6 +1319,7 @@ test.describe('Pen Tool - Editing Flow', () => {
           const hoveredInsertPoint = core?.getSystemProperty?.(
             'hoveredVectorSegmentInsertPoint'
           )
+
           return hoveredInsertPoint?.segmentId ?? null
         })
       })
@@ -1283,6 +1336,7 @@ test.describe('Pen Tool - Editing Flow', () => {
           const hoveredInsertPoint = core?.getSystemProperty?.(
             'hoveredVectorSegmentInsertPoint'
           )
+
           return hoveredInsertPoint?.segmentId ?? null
         })
       })
@@ -1304,6 +1358,7 @@ test.describe('Pen Tool - Editing Flow', () => {
     await expect.poll(() => getActiveTool(page)).toBe('select')
 
     const segmentClientPos = await getCanvasPosition(page, 0.375, 0.35)
+
     await page.mouse.move(segmentClientPos.x, segmentClientPos.y)
 
     await expect
@@ -1341,6 +1396,7 @@ test.describe('Pen Tool - Editing Flow', () => {
     const hoveredSegmentId = await page.evaluate(async () => {
       const core = (await import('../src/testing/runtime-access')).core
       const hoveredSegment = core?.getSystemProperty?.('hoveredVectorSegment')
+
       return hoveredSegment?.segmentId ?? null
     })
 
@@ -1395,6 +1451,7 @@ test.describe('Pen Tool - Editing Flow', () => {
     await expect.poll(() => getActiveTool(page)).toBe('select')
 
     const rectanglePos = await getCanvasPosition(page, 0.72, 0.28)
+
     await page.mouse.move(rectanglePos.x, rectanglePos.y)
     await page.mouse.click(rectanglePos.x, rectanglePos.y)
 
@@ -1441,6 +1498,7 @@ test.describe('Pen Tool - Editing Flow', () => {
     page
   }) => {
     const initialCount = await getElementCount(page)
+
     await createRectangle(page, 0.2, 0.2)
     await expect.poll(async () => getElementCount(page)).toBe(initialCount + 1)
 
@@ -1476,6 +1534,7 @@ test.describe('Pen Tool - Editing Flow', () => {
     await expect.poll(() => getActiveTool(page)).toBe('select')
 
     const pos = await getCanvasPosition(page, 0.3, 0.3)
+
     await page.mouse.dblclick(pos.x, pos.y, { delay: 100 })
     await page.waitForTimeout(150)
 
@@ -1483,6 +1542,7 @@ test.describe('Pen Tool - Editing Flow', () => {
       .poll(async () => {
         return page.evaluate(async () => {
           const core = (await import('../src/testing/runtime-access')).core
+
           return core?.getSystemProperty?.('pathEditingVectorId') ?? null
         })
       })
@@ -1506,8 +1566,10 @@ test.describe('Pen Tool - Editing Flow', () => {
     const firstPointId = await page.evaluate(async () => {
       const core = (await import('../src/testing/runtime-access')).core
       const selected = core?.getSystemProperty?.('selectedVectorPoint')
+
       return selected?.pointId ?? null
     })
+
     expect(firstPointId).not.toBeNull()
     if (!firstPointId) {
       return
@@ -1521,6 +1583,7 @@ test.describe('Pen Tool - Editing Flow', () => {
     await page.waitForTimeout(80)
 
     const firstPointPos = await getCanvasPosition(page, 0.3, 0.3)
+
     await page.mouse.click(firstPointPos.x, firstPointPos.y)
 
     // Click-on-anchor should only select anchor, not create a new point.
@@ -1531,6 +1594,7 @@ test.describe('Pen Tool - Editing Flow', () => {
           const core = (await import('../src/testing/runtime-access')).core
           const selected = core?.getSystemProperty?.('selectedVectorPoint')
           const split = core?.getSystemProperty?.('pathEditingStartNewSubpath')
+
           return {
             pointId: selected?.pointId ?? null,
             target: selected?.target ?? null,
@@ -1602,6 +1666,7 @@ test.describe('Pen Tool - Editing Flow', () => {
       })
 
     const firstEndpointPos = await getCanvasPosition(page, 0.3, 0.3)
+
     await page.mouse.move(firstEndpointPos.x, firstEndpointPos.y)
     await expect
       .poll(async () => {
@@ -1682,6 +1747,7 @@ test.describe('Pen Tool - Editing Flow', () => {
     await expect.poll(async () => getElementCount(page)).toBe(initialCount + 1)
 
     const firstEndpointPos = await getCanvasPosition(page, 0.3, 0.3)
+
     await page.mouse.move(firstEndpointPos.x, firstEndpointPos.y)
     await expect
       .poll(async () => {
@@ -1771,6 +1837,7 @@ test.describe('Pen Tool - Editing Flow', () => {
       .poll(async () => {
         return page.evaluate(async () => {
           const core = (await import('../src/testing/runtime-access')).core
+
           return {
             activeTool: core?.getSystemProperty?.('primaryTool') ?? null,
             pathEditingVectorId:
@@ -1799,6 +1866,7 @@ test.describe('Pen Tool - Editing Flow', () => {
       .poll(async () => {
         return page.evaluate(async () => {
           const core = (await import('../src/testing/runtime-access')).core
+
           return core?.getSystemProperty?.('pathEditingVectorId') ?? null
         })
       })
@@ -1828,6 +1896,7 @@ test.describe('Pen Tool - Editing Flow', () => {
       .poll(async () => {
         return page.evaluate(async () => {
           const core = (await import('../src/testing/runtime-access')).core
+
           return {
             pathEditingVectorId:
               core?.getSystemProperty?.('pathEditingVectorId') ?? null,
@@ -1939,6 +2008,7 @@ test.describe('Pen Tool - Editing Flow', () => {
       const core = (await import('../src/testing/runtime-access')).core
       const elements = core?.deps?.sceneTree?.getAllElements?.()
       let vectorId: string | null = null
+
       elements?.forEach?.(
         (
           element: { get?: (key: string) => unknown } | undefined,
@@ -1952,21 +2022,27 @@ test.describe('Pen Tool - Editing Flow', () => {
 
       const root = core?.deps?.render?.viewport?.view as
         { label?: string; children?: unknown[] } | undefined
+
       if (!vectorId || !root) {
         return null
       }
 
       let renderItemCount = 0
       const stack: { label?: string; children?: unknown[] }[] = [root]
+
       while (stack.length > 0) {
         const current = stack.pop()
+
         if (!current) {
           continue
         }
+
         if (current.label === vectorId) {
           renderItemCount += 1
         }
+
         const children = current.children ?? []
+
         children.forEach((child: unknown) =>
           stack.push(child as { label?: string; children?: unknown[] })
         )
@@ -1986,6 +2062,7 @@ test.describe('Pen Tool - Editing Flow', () => {
     }
 
     const finalDocumentDigest = await getCoreDocumentDigest(page)
+
     await expect
       .poll(() => getPersistedDocumentDigest(getCurrentDocumentFileId(page)))
       .toEqual(finalDocumentDigest)
@@ -2003,15 +2080,20 @@ test.describe('Pen Tool - Editing Flow', () => {
           const stack: { label?: string; children?: unknown[] }[] = root
             ? [root]
             : []
+
           while (stack.length > 0) {
             const current = stack.pop()
+
             if (!current) {
               continue
             }
+
             if (current.label === previousVectorId) {
               renderItemCount += 1
             }
+
             const children = current.children ?? []
+
             children.forEach((child: unknown) =>
               stack.push(child as { label?: string; children?: unknown[] })
             )

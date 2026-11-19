@@ -34,6 +34,9 @@ This file defines app-level state keys, owners, and primary consumers.
   - writers: selection feature (empty-canvas drag)
   - readers: area selection render layer
   - value contract: `{ dragStart, dragCurrent, additive } | null`
+  - the overlay retains screen-space drawing only while the projected endpoints
+    are unchanged; viewport pan/zoom invalidates that output even when these
+    workspace endpoints are unchanged. Ending selection clears the layer.
 
 - `pathEditingVectorId`
 
@@ -60,10 +63,11 @@ This file defines app-level state keys, owners, and primary consumers.
 - `selectedVectorPoint`
 
   - owner: system-context
-  - writers: selection compatibility init bridge (`init/derived-state/init-selection-compatibility`)
-  - readers: vector-point property panel
+  - writers: Preset vector-selection projection (`packages/preset/src/subscriptions/vector-selection.ts`)
+  - readers: vector-point property panel; frame-aligned after geometry changes
+  - Pen intent reads canonical Selection references, not this display projection
   - state shape includes target type: `anchor` | `inHandle` | `outHandle`
-  - source-of-truth: derived compatibility mirror from `vectorPointSelection` selection channel
+  - source-of-truth: read-only derived view of the canonical `vectorPointSelection` selection channel
 
 - `hoveredVectorPoint`
 
@@ -78,9 +82,9 @@ This file defines app-level state keys, owners, and primary consumers.
 - `selectedVectorSegment`
 
   - owner: system-context
-  - writers: selection compatibility init bridge (`init/derived-state/init-selection-compatibility`)
+  - writers: Preset vector-selection projection (`packages/preset/src/subscriptions/vector-selection.ts`)
   - readers: vector path-editing render layer
-  - source-of-truth: derived compatibility mirror from `vectorSegmentSelection` selection channel
+  - source-of-truth: read-only derived view of the canonical `vectorSegmentSelection` selection channel
 
 - `hoveredVectorSegment`
 

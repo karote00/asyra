@@ -1,9 +1,8 @@
 import {
   toolResultCount,
-  toolResultIds,
+  toolDocumentReference,
   toolResultObject,
   toolResultStatus,
-  toolResultString,
   actionToolSemantics
 } from './tool-contract'
 import {
@@ -30,7 +29,10 @@ import {
   preparedAttachmentEvidenceSchema,
   type PreparedAttachmentEvidence
 } from './inspection-evidence'
-import type { PreparedDesignDelivery } from './prepared-design'
+import {
+  DesignPreparationLimits,
+  type PreparedDesignDelivery
+} from './prepared-design'
 import type { createPreparedMaterialApplication } from './prepared-material-action'
 import {
   PREPARED_DRAWING_SLICE_ELEMENT_BUDGET,
@@ -52,6 +54,15 @@ export interface PreparedDesignApis {
   ): readonly string[] | null
   select(ids: string[]): void
 }
+const preparedElementReference = {
+  ...toolDocumentReference,
+  maxLength: DesignPreparationLimits.identityLength
+}
+const preparedElementReferences = {
+  type: 'array',
+  items: preparedElementReference
+}
+
 const mutationOptions = Object.freeze({
   sharedDelivery: 'immediate',
   undoable: true
@@ -96,16 +107,16 @@ export const createPreparedDesignAction = (
 ): AiActionDefinition<{
   design: PreparedDesignDelivery
   parentId?: string
-  response?: 'compact' | 'full'
   attachmentEvidence?: PreparedAttachmentEvidence
   materialElementIds?: string[]
 }> => ({
+  composition: 'allowed',
   ...actionToolSemantics(AiActionNames.APPLY_PREPARED_DESIGN, {
     allOf: [
       toolResultObject(
         {
           status: toolResultStatus,
-          compositionId: toolResultString,
+          compositionId: preparedElementReference,
           timing: { type: 'object' },
           materialProvenance: {
             type: 'object',
@@ -119,29 +130,30 @@ export const createPreparedDesignAction = (
         ['status', 'compositionId', 'timing']
       ),
       {
+        required: ['appliedElementCount', 'appliedElementIds'],
+        properties: {
+          appliedElementCount: toolResultCount,
+          appliedElementIds: preparedElementReferences,
+          keyToId: {
+            type: 'object',
+            additionalProperties: preparedElementReference
+          },
+          roleToElementIds: {
+            type: 'object',
+            additionalProperties: preparedElementReferences
+          }
+        },
         anyOf: [
           {
-            required: ['appliedElementCount'],
-            properties: { appliedElementCount: toolResultCount }
+            properties: { status: { const: 'complete' } },
+            required: ['keyToId', 'roleToElementIds']
           },
-          {
-            required: ['appliedElementIds', 'keyToId', 'roleToElementIds'],
-            properties: {
-              appliedElementIds: toolResultIds,
-              keyToId: {
-                type: 'object',
-                additionalProperties: toolResultString
-              },
-              roleToElementIds: {
-                type: 'object',
-                additionalProperties: toolResultIds
-              }
-            }
-          }
+          { properties: { status: { const: 'partial' } } }
         ]
       }
     ]
   }),
+  revision: 3,
   name: AiActionNames.APPLY_PREPARED_DESIGN,
   description:
     'Apply a server-prepared editable design with native text, shapes and illustration paths. Use the backend preparation receipt; never invent canonical descriptors.',
@@ -157,21 +169,12 @@ export const createPreparedDesignAction = (
         items: { type: 'string', minLength: 1 }
       },
       attachmentEvidence: preparedAttachmentEvidenceSchema,
-      parentId: { type: 'string', minLength: 1 },
-      response: { type: 'string', enum: ['compact', 'full'] }
+      parentId: toolDocumentReference
     }
   },
 
   execute: async (args, context) => {
     const { signal } = context
-
-    if (
-      args.response !== undefined &&
-      args.response !== 'compact' &&
-      args.response !== 'full'
-    ) {
-      throw new Error('Invalid design response mode.')
-    }
 
     if (
       args.parentId !== undefined &&
@@ -341,6 +344,34 @@ export const createPreparedDesignAction = (
     let appliedElementCount = 0
     let offset = firstEntry
 
+    const timingSnapshot = () => {
+      const totalMs = now() - startedAt
+      const orchestrationMs = Math.max(
+        0,
+        totalMs -
+          admissionMs -
+          createMs -
+          cooperativeYieldMs -
+          transactionMs -
+          selectionMs -
+          validationMs
+      )
+
+      return {
+        canonicalWork,
+        admissionMs,
+        createMs,
+        transactionMs,
+        selectionMs,
+        validationMs,
+        orchestrationMs,
+        cooperativeYieldMs,
+        totalMs,
+        sliceCount,
+        elementCount: appliedElementCount
+      }
+    }
+
     try {
       while (offset < design.entries.length) {
         const parentId = design.entries[offset].parentId ?? targetParentId
@@ -380,98 +411,104 @@ export const createPreparedDesignAction = (
         const transactionStartedAt = now()
         let callbackMs = 0
 
-        await runAiMutation(
-          context,
-          () => {
-            const callbackStartedAt = now()
+        try {
+          await runAiMutation(
+            context,
+            () => {
+              const callbackStartedAt = now()
 
-            checkCurrent(parentId)
-            if (appliedElementCount === 0 && args.attachmentEvidence) {
-              const attachment = args.attachmentEvidence
+              checkCurrent(parentId)
+              if (appliedElementCount === 0 && args.attachmentEvidence) {
+                const attachment = args.attachmentEvidence
 
-              if (
-                attachment.workspaceId !== workspaceId ||
-                attachment.parentId !== targetParentId
-              ) {
-                throw new Error(
-                  'Reviewed attachment parent or workspace changed before application.'
-                )
-              }
-
-              if (!evidence?.isCurrent(attachment.evidence)) {
-                throw new Error(
-                  'Reviewed attachment evidence expired before application; review current dependencies.'
-                )
-              }
-            }
-
-            if (
-              descriptors.some(
-                (descriptor) => apis.getElementType(descriptor.id) !== undefined
-              )
-            ) {
-              throw new Error('A design object already exists.')
-            }
-
-            const createStartedAt = now()
-
-            validationMs += createStartedAt - callbackStartedAt
-            const stopPhases = subscribeToBrowserDragPhases(
-              (name, durationMs) => {
-                const entry = canonicalWork.phases[name] ?? {
-                  count: 0,
-                  totalMs: 0
+                if (
+                  attachment.workspaceId !== workspaceId ||
+                  attachment.parentId !== targetParentId
+                ) {
+                  throw new Error(
+                    'Reviewed attachment parent or workspace changed before application.'
+                  )
                 }
 
-                entry.count++
-                entry.totalMs += durationMs
-                canonicalWork.phases[name] = entry
+                if (!evidence?.isCurrent(attachment.evidence)) {
+                  throw new Error(
+                    'Reviewed attachment evidence expired before application; review current dependencies.'
+                  )
+                }
               }
-            )
-            const stopCounters = subscribeToDiagnosticCounters(
-              (name, value) => {
-                canonicalWork.counters[name] =
-                  (canonicalWork.counters[name] ?? 0) + value
+
+              if (
+                descriptors.some(
+                  (descriptor) =>
+                    apis.getElementType(descriptor.id) !== undefined
+                )
+              ) {
+                throw new Error('A design object already exists.')
               }
-            )
 
-            try {
-              const shift = continuationOffset()
-              const values =
-                design.continuation && parentId === design.rootId
-                  ? descriptors.map((d) => ({
-                      ...d,
-                      x: Number(d.x) + shift.x,
-                      y: Number(d.y) + shift.y
-                    }))
-                  : descriptors
+              const createStartedAt = now()
 
-              return apis.create(values, parentId)
-            } finally {
-              stopPhases()
-              stopCounters()
-              createMs += now() - createStartedAt
-              callbackMs = now() - callbackStartedAt
-            }
-          },
-          (ids) => {
-            if (
-              !ids ||
-              ids.length !== descriptors.length ||
-              ids.some((id, i) => id !== descriptors[i].id)
-            ) {
-              throw new Error(
-                'Design creation did not preserve its object identities.'
+              validationMs += createStartedAt - callbackStartedAt
+              const stopPhases = subscribeToBrowserDragPhases(
+                (name, durationMs) => {
+                  const entry = canonicalWork.phases[name] ?? {
+                    count: 0,
+                    totalMs: 0
+                  }
+
+                  entry.count++
+                  entry.totalMs += durationMs
+                  canonicalWork.phases[name] = entry
+                }
               )
-            }
+              const stopCounters = subscribeToDiagnosticCounters(
+                (name, value) => {
+                  canonicalWork.counters[name] =
+                    (canonicalWork.counters[name] ?? 0) + value
+                }
+              )
 
-            appliedElementCount += ids.length
-            if (args.response !== 'compact') {
+              try {
+                const shift = continuationOffset()
+                const values =
+                  design.continuation && parentId === design.rootId
+                    ? descriptors.map((d) => ({
+                        ...d,
+                        x: Number(d.x) + shift.x,
+                        y: Number(d.y) + shift.y
+                      }))
+                    : descriptors
+
+                return apis.create(values, parentId)
+              } finally {
+                stopPhases()
+                stopCounters()
+                createMs += now() - createStartedAt
+                callbackMs = now() - callbackStartedAt
+              }
+            },
+            (ids) => {
+              if (
+                !ids ||
+                ids.length !== descriptors.length ||
+                ids.some((id, i) => id !== descriptors[i].id)
+              ) {
+                throw new Error(
+                  'Design creation did not preserve its object identities.'
+                )
+              }
+
+              appliedElementCount += ids.length
               appliedElementIds.push(...ids)
             }
-          }
-        )
-        transactionMs += Math.max(0, now() - transactionStartedAt - callbackMs)
+          )
+        } finally {
+          transactionMs += Math.max(
+            0,
+            now() - transactionStartedAt - callbackMs
+          )
+        }
+
         sliceCount++
         const yieldStartedAt = now()
 
@@ -485,82 +522,64 @@ export const createPreparedDesignAction = (
       let materialProvenance:
         { status: 'available' | 'unavailable'; message?: string } | undefined
 
-      await runAiMutation(context, () => {
-        const callbackStartedAt = now()
+      try {
+        await runAiMutation(context, () => {
+          const callbackStartedAt = now()
 
-        checkCurrent(workspaceId)
-        const selectStartedAt = now()
+          checkCurrent(workspaceId)
+          const selectStartedAt = now()
 
-        validationMs += selectStartedAt - callbackStartedAt
-        apis.select([design.rootId])
-        if (materialIds.length || (design.continuation && material)) {
+          validationMs += selectStartedAt - callbackStartedAt
           try {
-            if (!material) {
-              throw new Error('Material provenance consumer is unavailable.')
-            }
+            apis.select([design.rootId])
+            if (materialIds.length || (design.continuation && material)) {
+              try {
+                if (!material) {
+                  throw new Error(
+                    'Material provenance consumer is unavailable.'
+                  )
+                }
 
-            material.capture(
-              design.rootId,
-              materialIds,
-              signal,
-              !!design.continuation
-            )
-            if (materialIds.length) {
-              materialProvenance = { status: 'available' }
+                material.capture(
+                  design.rootId,
+                  materialIds,
+                  signal,
+                  !!design.continuation
+                )
+                if (materialIds.length) {
+                  materialProvenance = { status: 'available' }
+                }
+              } catch (error) {
+                materialProvenance = {
+                  status: 'unavailable',
+                  message:
+                    error instanceof Error ? error.message : String(error)
+                }
+              }
             }
-          } catch (error) {
-            materialProvenance = {
-              status: 'unavailable',
-              message: error instanceof Error ? error.message : String(error)
-            }
+          } finally {
+            selectionMs += now() - selectStartedAt
+            selectionCallbackMs = now() - callbackStartedAt
           }
-        }
-
-        selectionMs += now() - selectStartedAt
-        selectionCallbackMs = now() - callbackStartedAt
-      })
-      transactionMs += Math.max(
-        0,
-        now() - selectionStartedAt - selectionCallbackMs
-      )
-      const totalMs = now() - startedAt
-      const orchestrationMs = Math.max(
-        0,
-        totalMs -
-          admissionMs -
-          createMs -
-          cooperativeYieldMs -
-          transactionMs -
-          selectionMs -
-          validationMs
-      )
+        })
+      } finally {
+        transactionMs += Math.max(
+          0,
+          now() - selectionStartedAt - selectionCallbackMs
+        )
+      }
 
       return {
         status: 'complete',
         ...(materialProvenance ? { materialProvenance } : {}),
-        timing: {
-          canonicalWork,
-          admissionMs,
-          createMs,
-          transactionMs,
-          selectionMs,
-          validationMs,
-          orchestrationMs,
-          cooperativeYieldMs,
-          totalMs,
-          sliceCount,
-          elementCount: appliedElementCount
-        },
+        timing: timingSnapshot(),
         compositionId: design.rootId,
-        ...(args.response === 'compact'
-          ? { appliedElementCount }
-          : {
-              appliedElementIds,
-              keyToId: design.keyToId,
-              roleToElementIds: Object.fromEntries(
-                Object.entries(design.keyToId).map(([key, id]) => [key, [id]])
-              )
-            })
+        appliedElementCount,
+        appliedElementIds,
+        keyToId: design.keyToId,
+        roleToElementIds: Object.fromEntries(
+          Object.entries(design.keyToId).map(([key, id]) => [key, [id]])
+        )
       }
     } catch (error) {
       if (!appliedElementCount) {
@@ -585,6 +604,7 @@ export const createPreparedDesignAction = (
           settlement,
           result: {
             status: 'partial',
+            timing: timingSnapshot(),
             compositionId: design.rootId,
             appliedElementCount,
             plannedElementCount: design.entries.length - firstEntry,
@@ -592,7 +612,7 @@ export const createPreparedDesignAction = (
               start: firstEntry,
               end: firstEntry + appliedElementCount
             },
-            ...(args.response === 'compact' ? {} : { appliedElementIds }),
+            appliedElementIds,
             recovery:
               'Do not replay this artifact or acknowledged mutations. Inspect the current state and retained source before choosing confirmed remaining work.'
           }

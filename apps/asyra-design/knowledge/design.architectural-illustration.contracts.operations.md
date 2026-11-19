@@ -18,14 +18,14 @@
 ### Retrieve the contract for the chosen method
 
 Use compact category/query menus when the capability is unknown. For known
-operations use `operations`; for known native tools use `names`. `view: usage`
+operations and native tools use `names`. `view: usage`
 returns purpose, the actual invocation route, a validated illustrative owner example
 when available, and canonical nested field/definition paths. Examples do not replace
 executable validation schemas or supply live credentials.
 A canonical action's `recipeDependency` identifies its qualified composition
 route; foreign tools with similar names are separate choices. Select that route
-before obtaining the full recipe contract. The semantic `operations` selector
-(such as `fill.updateFillsAtIndex`) is for discovery; batch `operations[].name`
+before obtaining the full recipe contract. A semantic name
+(such as `fill.updateFillsAtIndex`) belongs in discovery `names`; execution `operations[].name`
 uses the returned registered action `name`. Follow its `execution.tool` and
 argument envelope. Do not invent an action name by copying the search term. Use the following ordinary selectors,
 not a second registry. Choose the smallest missing information for the next action:
@@ -33,7 +33,7 @@ not a second registry. Choose the smallest missing information for the next acti
 | Current state | Retrieval/action | Keep for the next handoff |
 | ------------------------------------------------------------------- | ------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
 | Capability is unknown | Compact category/query menu; follow its pagination if needed | Returned operation, exact selector and execution route |
-| Route is chosen; a few argument fields are unknown | Exact `operations` or qualified `names` with `schemaPaths` | Field fragments plus included local references; other required inputs still apply |
+| Route is chosen; a few argument fields are unknown | Exact `names` with per-name `scopes[name].schemaPaths` | Field fragments plus included local references; other required inputs still apply |
 | Current complete contract is already available | Invoke directly with the required values | Result identities, settlement and scoped dependencies |
 | A finite recipe needs a dependency contract | Exact full definition for the returned `recipeDependency` or native route | Complete input/output, partial outcome, effects and lifecycle; a usage menu/fragment is insufficient |
 | Delivered content is absent from effective context | Returned scoped recovery or explicit full refresh when necessary | Current recovered content/revision; do not retry the drawing write |
@@ -50,17 +50,17 @@ Examples use current public selectors:
 
 ```json
 {
-  "tool": "describe_design_apis",
-  "arguments": { "operations": ["fill.updateFillsAtIndex"], "view": "usage" }
+  "tool": "read_design_contracts",
+  "arguments": { "names": ["fill.updateFillsAtIndex"], "view": "usage" }
 }
 ```
 
 ```json
 {
-  "tool": "describe_design_apis",
+  "tool": "read_design_contracts",
   "arguments": {
     "names": ["design_workflow.prepare_and_apply_design"],
-    "schemaPaths": ["/properties/draft"]
+    "scopes": { "design_workflow.prepare_and_apply_design": { "schemaPaths": ["/properties/draft"] } }
   }
 }
 ```
@@ -82,7 +82,7 @@ run IDs. Use a ready known edit without a Knowledge-read prerequisite.
 
 ```json
 {
-  "tool": "execute_design_batch",
+  "tool": "execute_design",
   "arguments": {
     "operations": [
       {
@@ -97,7 +97,7 @@ run IDs. Use a ready known edit without a Knowledge-read prerequisite.
 
 ```json
 {
-  "tool": "execute_design_batch",
+  "tool": "execute_design",
   "arguments": {
     "operations": [
       {
@@ -122,16 +122,11 @@ role after its generated prefix). A zero-match receipt is zero edits, not permis
 to broaden the region or predicate. Inspect the naming rule/available metadata and
 choose corrected criteria; the tool must not infer the intended target for you.
 
-Review revisions belong to returned checks, not the capture counter or document
-sequence. Before explicitly superseding a visual unit, use `read_design_checks`
-with its exact ID and `view: details`, then carry that unit's current revision.
-When recording visual decisions, select the materials.review child for the capture/bind/record example and its final-record instruction. Reuse good images through `bindChecks`.
-Do not copy a revision from an earlier decision. A concurrent edit can still make
-that read stale: re-read/rebind only the affected unit, preserving unrelated passes.
-Keep successful images if another capture or binding failed; do not repeat a
-settled edit to recover a review receipt. Never attach a new revision to an old
-judgment. The final `report_outcome` action belongs to the final response actions,
-not native invocation or an edit batch; its proposal does not acknowledge saving.
+Use current captures for visual decisions and canonical data reads for exact values.
+Preserve successful observations if another capture fails; retry only the missing
+observation, never the settled edit. Source identity and coordinate bounds still
+apply when an image is used by a tool. The final `report_outcome` action belongs
+to the final response, not an edit batch; its proposal does not acknowledge saving.
 
 ### Relevant capability handoffs
 

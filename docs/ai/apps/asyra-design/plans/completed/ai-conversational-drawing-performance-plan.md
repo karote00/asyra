@@ -1248,6 +1248,15 @@ tests and guarded 16-item proof without another high-detail invocation. A
 benchmark failure caused by its own obsolete assertion or harness overhead is a
 benchmark defect, not evidence against a production endpoint.
 
+Current interaction evidence records keyboard and pointer tool activation while
+creation is still active and canonical progress is partial. Loading, pan, zoom,
+progress milestones and completion observations survive authenticated report
+admission as `localInteraction`. The guard rejects missing or obsolete lock-based
+reports. Event default prevention is not evidence of blocked document input.
+Independent user creation and Undo during an AI wait, followed by Stop and grouped
+AI Undo/Redo, are proved by the streamed conversation browser case. Empty Delete
+or Undo commands in a creation benchmark cannot substitute for that proof.
+
 ### Host Resource Guard
 
 Production build commands are a separate setup step and never run inside the
@@ -1568,9 +1577,9 @@ shared-data boundaries.
   one fixed 2,048-point budget and a 32-element work-unit cap so thousands of
   zero-point primitives cannot collapse into one blocking call. One indivisible
   element may exceed only the point budget.
-- Cooperative batch calls remain inside one outer App transaction. They are
-  separate canonical batch boundaries for cooperative local visibility, not
-  separate App actions, transactions, or history actions.
+- Cooperative batch calls use finite synchronous members of one lazy request
+  history group. They publish at ordinary canonical boundaries and allow other
+  user transactions between members, without creating one AI Undo entry per slice.
 - Publication slicing may further frame already-recorded evidence for transport;
   it does not repeat a completed canonical mutation.
 - Every single-item public API becomes a batch-of-one convenience over the same
@@ -1872,8 +1881,8 @@ intended transaction or history boundary.
   first successful batch, the fill clears and the outline plus actual
   element-count progress remain without obscuring the drawing.
 - Success, failure, cancellation, and teardown clear the runtime-only state.
-  Failure and cancellation retain the ordinary outer-transaction rollback and
-  any required visible compensation.
+  Failure rolls back only the affected synchronous member; cancellation stops
+  pending members while preserving acknowledged work in the request history group.
 
 ### Cooperative Progressive Composition
 
@@ -1896,34 +1905,28 @@ intended transaction or history boundary.
   independently scheduled and never overlap. A pure microtask and one timeout
   scheduled per range are not valid yields. After every awaited boundary the
   action checks its Feature-owned `AbortSignal`.
-- Group and every batch remain in one outer transaction and create one intended
-  Undo. Fatal failure or cancellation rolls back the complete composition;
-  already-visible immediate evidence uses the same Factory compensation path.
+- Group and successful batches are finite synchronous members in one lazy history
+  group and create one intended Undo. A failed member uses ordinary rollback and
+  compensation; cancellation prevents later members without replaying or discarding
+  acknowledged work. No physical transaction spans cooperative or model waits.
 - Full detail, canonical IDs, ordering, topology, relationships, and history
   remain exact. The cooperative route does not use a bitmap, AI-only renderer,
   fake canonical background, estimated time progress, or final-only reveal.
 
-### Document Interaction Lock
+### Document Interaction and Member Admission
 
-- The App acquires one runtime-only document interaction lock before opening
-  the outer AI action transaction. The lock is App policy, not canonical data,
-  shared data, a new framework event-bus mode, or a parameter passed into Core,
-  Props Manager, Scene Tree, Factory, Preset, or Render.
-- While the lock is active, the ordinary viewport pan and zoom routes remain
-  available and continue repainting the same live loading frame and ordinary
-  Vector output. Navigation continues through ordinary Feature execution and
-  may cross its existing transaction wrapper, but produces no canonical
-  mutation or History and does not alter the AI action transaction evidence or
-  the accepted composition bounds.
-- Every other tool interaction and document mutation is unavailable during the
-  active drawing turn. In particular, selection changes, element creation or
-  editing, property changes, deletion, Undo, Redo, and another mutating Agent
-  turn cannot enter the document or become part of the AI action.
-- AI cancellation remains available. The App releases the lock in the same
-  terminal cleanup boundary after success, failure, cancellation, or teardown.
-  A second `reactive-events` bus is not used as a scheduling or admission-lock
-  substitute; the existing viewport input path and an explicit App-owned
-  interaction policy keep the responsibilities separate.
+- Each AI mutation enters the current canonical idle boundary synchronously.
+  The request holds no document interaction lock or physical transaction across
+  model/network waits or cooperative yields.
+- Ordinary navigation remains available without canonical mutation or history.
+  Independent user edits retain their own transactions and Undo entries. The next
+  AI member waits for an active user interaction to settle; it cannot adopt that
+  interaction or merge its history into the AI group.
+- Stop prevents pending AI members and preserves already acknowledged work. Final
+  settlement closes the request history group once. Failed member rollback and
+  unknown settlement retain their canonical owners.
+- Composer input, panel controls and conversation scrolling remain isolated from
+  canvas shortcuts. No second event bus or alternative mutation path is introduced.
 
 ### Socket-Authoritative 7076 Sample
 
@@ -2190,7 +2193,7 @@ Every optimized route preserves:
   and ordinary editable Vector behavior;
 - one Group before its ordered children;
 - the 1,672-by-941 pure-white background;
-- one outer transaction and one intended history action per mutating turn;
+- finite synchronous members and one intended AI history action per mutating turn;
 - exact Undo, Redo, recoverable partial-result, fatal rollback, compensation,
   cancellation, and teardown semantics;
 - the fixed cooperative plural-batch route and exact peer-visible ordered
@@ -2208,10 +2211,10 @@ The App creates one Group through
 `Core.createElementsInParent(...)`, crosses a browser paint
 opportunity after the Group, then submits deterministic ordered flat child-batch
 ranges through the same plural route. The complete composition remains one
-App action, one outer transaction, and one intended Undo entry in the existing
-Factory history. It creates no AI/bulk-specific history artifact. A later fatal
-child failure rolls back the complete action; single-item calls retain the same
-batch-of-one canonical implementation.
+App action with finite synchronous members and one intended Undo entry in existing
+Factory history. It creates no AI/bulk-specific history artifact. A later child
+failure rolls back its active member and retains acknowledged earlier members;
+single-item calls retain the same batch-of-one canonical implementation.
 
 ### Local Drawing Progress
 

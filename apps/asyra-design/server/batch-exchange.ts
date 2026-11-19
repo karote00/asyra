@@ -74,7 +74,7 @@ const admitFailure = (
       batch.actions.some((action) => action.name === failure.actionName)) &&
     typeof failure.message === 'string' &&
     failure.message.length > 0 &&
-    failure.message.length <= 1000 &&
+    Array.from(failure.message).length <= 1000 &&
     (failure.handlerMs === null || duration(failure.handlerMs)) &&
     duration(failure.executionMs)
   )

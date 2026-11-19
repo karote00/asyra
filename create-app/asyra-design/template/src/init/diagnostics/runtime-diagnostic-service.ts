@@ -56,6 +56,7 @@ export const installRuntimeDiagnosticService = (): (() => void) => {
     localSent: 0,
     remoteProcessed: 0
   }
+
   const resetCollaborationDiagnostics = (): void => {
     collaborationDisposer?.()
     collaborationDisposer = null
@@ -66,20 +67,24 @@ export const installRuntimeDiagnosticService = (): (() => void) => {
       remoteProcessed: 0
     }
     const collaboration = getActiveCollaborationHandle()
+
     collaborationDisposer =
       collaboration?.observePublicationOutcomes((outcome) => {
         if (outcome.direction === 'local' && outcome.status === 'sent') {
           collaborationDiagnostics.localSent += 1
         }
+
         if (outcome.direction === 'remote' && outcome.status === 'processed') {
           collaborationDiagnostics.remoteProcessed += 1
         }
+
         if (
           outcome.status !== 'send-failed' &&
           outcome.status !== 'process-failed'
         ) {
           return
         }
+
         collaborationDiagnostics.failed += 1
         const error =
           outcome.error instanceof Error
@@ -92,6 +97,7 @@ export const installRuntimeDiagnosticService = (): (() => void) => {
                 name: error.cause.name.slice(0, 80)
               }
             : null
+
         collaborationDiagnostics.lastPublicationFailure = {
           cause,
           direction: outcome.direction.slice(0, 40),
@@ -102,29 +108,42 @@ export const installRuntimeDiagnosticService = (): (() => void) => {
         }
       }) ?? null
   }
+
   const handleRequest = (event: Event): void => {
     const request = (event as CustomEvent<RuntimeDiagnosticRequest>).detail
-    if (!request || typeof request.operation !== 'string') return
+
+    if (!request || typeof request.operation !== 'string') {
+      return
+    }
+
     try {
       if (request.operation === 'collaboration:get-status') {
         request.response =
           getActiveCollaborationHandle()?.getStatus() ?? 'missing'
+
         return
       }
+
       if (request.operation === 'collaboration:reset-outcomes') {
         resetCollaborationDiagnostics()
         request.response = null
+
         return
       }
+
       if (request.operation === 'collaboration:read-outcomes') {
         request.response = cloneResponse(collaborationDiagnostics)
+
         return
       }
+
       if (request.operation === 'profile:read-actor-sample') {
         const profile = getActiveAiDrawingPerformanceProfile()
+
         if (!profile) {
           throw new Error('AI drawing performance profile is unavailable')
         }
+
         request.response = cloneResponse({
           canonicalElements: profile.readCanonicalElementCount(),
           factoryPublications: profile.readFactoryPublicationCount(),
@@ -148,9 +167,12 @@ export const installRuntimeDiagnosticService = (): (() => void) => {
             'ai-turn:outcome:success'
           )
         })
+
         return
       }
+
       const operation = request.operation.replace(/^profile:/u, '')
+
       if (
         operation === request.operation ||
         !profileOperations.has(operation)
@@ -159,16 +181,21 @@ export const installRuntimeDiagnosticService = (): (() => void) => {
           `Unsupported runtime diagnostic operation: ${request.operation}`
         )
       }
+
       const profile = getActiveAiDrawingPerformanceProfile()
+
       if (!profile) {
         throw new Error('AI drawing performance profile is unavailable')
       }
+
       const method = profile[operation as keyof typeof profile]
+
       if (typeof method !== 'function') {
         throw new Error(
           `Runtime diagnostic operation is not callable: ${request.operation}`
         )
       }
+
       request.response = cloneResponse(
         Reflect.apply(method, profile, request.args ?? [])
       )
@@ -176,7 +203,9 @@ export const installRuntimeDiagnosticService = (): (() => void) => {
       request.error = error instanceof Error ? error.message : String(error)
     }
   }
+
   document.addEventListener(RUNTIME_DIAGNOSTIC_REQUEST_EVENT, handleRequest)
+
   return () => {
     collaborationDisposer?.()
     document.removeEventListener(

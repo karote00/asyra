@@ -1,4 +1,7 @@
-import type { ComponentDefinition, RenderStrategy } from '@asyra/core'
+import type {
+  ComponentDefinition,
+  EngineNeutralRenderStrategy
+} from '@asyra/core'
 import { PropertyTypes, setElementGeometryLocalBounds } from '@asyra/utils'
 import {
   applyRenderableFill,
@@ -38,7 +41,10 @@ export const RECTANGLE_COMPONENT_DEFINITION: ComponentDefinition = {
   ]
 }
 
-export const RECTANGLE_RENDER_STRATEGY: RenderStrategy = (graphic, data) => {
+export const RECTANGLE_RENDER_STRATEGY: EngineNeutralRenderStrategy = (
+  graphic,
+  data
+) => {
   graphic.clear()
   setElementGeometryLocalBounds(
     graphic as Parameters<typeof setElementGeometryLocalBounds>[0],
@@ -65,4 +71,5 @@ export const RECTANGLE_RENDER_STRATEGY: RenderStrategy = (graphic, data) => {
 
   graphic.x = data.x
   graphic.y = data.y
+  graphic.rotation = data.rotation ?? 0
 }

@@ -12,15 +12,21 @@ describe('request tool scheduling', () => {
       })
       events.push('complete')
     })
-    for (let index = 0; index < 12; index++) await Promise.resolve()
+
+    for (let index = 0; index < 12; index++) {
+      await Promise.resolve()
+    }
+
     expect(events).toEqual(['parent', 'leaf', 'complete'])
     await parent
   })
 
   it('does not start a coordinator after cancellation', async () => {
     const controller = new AbortController()
+
     controller.abort()
     let started = false
+
     await expect(
       createLocalToolScheduler(controller.signal)('coordinator', async () => {
         started = true
@@ -47,6 +53,7 @@ describe('request tool scheduling', () => {
     const after = schedule('independent', async () => {
       events.push('after')
     })
+
     await Promise.resolve()
     await Promise.resolve()
     expect(events).toEqual(['read'])
@@ -79,6 +86,7 @@ describe('request tool scheduling', () => {
     const after = schedule('independent', async () => {
       events.push('after')
     })
+
     await Promise.resolve()
     await Promise.resolve()
     expect(events).toEqual(['read1', 'read2'])
@@ -102,6 +110,7 @@ describe('request tool scheduling', () => {
       writes++
     })
     const rejected = expect(next).rejects.toThrow()
+
     await Promise.resolve()
     await Promise.resolve()
     controller.abort()

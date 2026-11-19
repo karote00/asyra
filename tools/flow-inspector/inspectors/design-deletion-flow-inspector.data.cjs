@@ -48,7 +48,7 @@ const data = {
       outputs: ['artifact:deletion-outcome'],
       conditions: [
         'For exactly one selected element outside path-editing mode, clear selection and invoke element deletion within the transaction.',
-        'After successful deletion, reevaluate the hovered element at the current pointer position.'
+        'After successful deletion, reevaluate the current render hit through the shared hierarchy, editing-scope and lock/visibility hover policy; rejected deletion preserves selection and hover.'
       ],
       bypasses: [
         'Path editing or selection count other than one leaves element deletion unchanged.',
@@ -66,6 +66,7 @@ const data = {
       cacheDimensions: [],
       implementationBoundary: [
         'apps/asyra-design/src/features/delete-element/index.ts',
+        'apps/asyra-design/src/controllers/hover-target.ts',
         'apps/asyra-design/src/common-apis/element/apis.ts',
         'apps/asyra-design/src/common-apis/selection.ts',
         'apps/asyra-design/src/common-apis/system-context.ts',
@@ -98,4 +99,6 @@ const data = {
 }
 
 globalThis.FLOW_INSPECTOR_DATA = data
-if (typeof module !== 'undefined') {module.exports = data}
+if (typeof module !== 'undefined') {
+  module.exports = data
+}

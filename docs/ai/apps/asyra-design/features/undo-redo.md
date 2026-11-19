@@ -46,9 +46,9 @@ When refactoring features/common APIs, keep intended undo granularity stable.
 
 The AI projection observes canonical action/undo/redo events and invokes only
 `historyApis`. It does not own or copy Factory's history stack, inverse events,
-canonical snapshots, or replay patches. Failed, cancelled, denied,
-provider-disabled, unsupported, and zero-mutation AI turns create no new
-actionable history control. While a requested replay is pending, the projection
+canonical snapshots, or replay patches. AI turns with no committed mutations
+create no new actionable history control. Failure or cancellation after
+acknowledged finite members preserves their request-owned Undo entry. While a requested replay is pending, the projection
 rejects a second request; its Undo/Redo direction changes only after the
 canonical completion event. The App shell does not subscribe through a toast.
 

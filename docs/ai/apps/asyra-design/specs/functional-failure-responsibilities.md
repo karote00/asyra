@@ -224,6 +224,9 @@ Implementation entry points:
 
 Apply pan, zoom and fit through App viewport APIs. Use wheel modifiers and current visible viewport bounds to preserve canonical camera semantics. Empty fit content or invalid input does not invent bounds.
 
+Recording framing uses the same viewport APIs to resume fitting later geometry
+after navigation without editing document content.
+
 Authority: [Navigate the viewport](../features/viewport.md).
 
 Implementation entry points:
@@ -253,6 +256,9 @@ Implementation entry points:
 Route a prepared request through App permission, action and transaction owners. Keep dependent actions in the intended History group and expose actual completion or partial failure. Denied, cancelled, unsupported or failed execution does not report completed drawing.
 
 Explicit exports keep immutable downloadable document bytes outside ordinary tool receipts, survive request completion, and do not add history. Final drawing completion reports durable, local-only and unavailable storage separately.
+
+A staged host sequence exposes each completed application while independent
+preparation continues; application and transaction outcomes remain authoritative.
 
 Authority: [Execute an Agent request](ai-execution-flow.md).
 
@@ -336,6 +342,14 @@ Implementation entry points:
 
 Render canonical mesh and gradient material commands through the concrete engine. Preserve ordered colors, stops, alpha and geometry across batching and camera changes. Empty or invalid material inputs do not become unrelated fallback imagery.
 
+Ordinary batch shaders with identical source/capacity reuse SDK-owned programs
+while retaining separate Shader bindings. Group/camera/target uniforms still
+update normally. Batcher destruction and context restoration must preserve other
+live owners; program reuse must not change hierarchy or query/extraction work.
+Final native instruction-owner destruction releases its registered batchers
+through the SDK lifecycle. Pool reset/reuse, live reparent, capture and canonical
+SceneTree restore state retain their respective ownership and valid lifetime.
+
 For a linear gradient, evaluate the signed projection of each local point onto
 its start-to-end axis, then interpolate the ordered stops and clamp outside the
 stop range. Reversed and outside-shape handles retain this definition. Moving a
@@ -351,9 +365,17 @@ Implementation entry points:
 - `packages/render-engine-pixi/src/mesh-material-batch.ts`
 - `packages/render-engine-pixi/src/mesh-material-shader.ts`
 
+GPU measurement helpers are evidence producers for this boundary. Their browser
+contract verifies actual program/uniform state and forwards every original WebGL
+call unchanged; they do not substitute measured state for rendering behavior.
+
 ## retain-navigation
 
 Reuse camera-independent geometry while applying current navigation and local changes. Camera changes preserve canonical document identity and reuse unchanged geometry; edits invalidate affected projections. Missing renderer state remains unavailable rather than a valid profile.
+
+Accepted hierarchy and coordinate batches must reach retained projections before
+an immediate read barrier. Reparenting retains unchanged child drawing data while
+real child edits, order, visibility, history and remote replay update normally.
 
 Authority: [Retain navigation projections](../../../framework/packages/render.md).
 

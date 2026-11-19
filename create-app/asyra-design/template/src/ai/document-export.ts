@@ -8,6 +8,7 @@ import { toolResultObject, actionToolSemantics } from './tool-contract'
 
 // Separate output-artifact budget; this never enlarges the HTTP receipt limit.
 const exportByteBudget = 256 * 1024 * 1024
+
 interface ExportSource {
   save(): Promise<unknown>
   identity(): unknown
@@ -23,20 +24,28 @@ interface ExportDelivery {
 }
 const source: ExportSource = {
   save: () => core.save(),
+
   identity: getActiveCollaborationHandle,
+
   documentId: () => getActiveCollaborationHandle()?.identity.documentId ?? null,
+
   workspaceId: () => core.getCurrentWorkspaceId() ?? null,
+
   observe: observeDesignChanges
 }
 const delivery: ExportDelivery = {
   create: (blob) => URL.createObjectURL(blob),
+
   release: (url) => URL.revokeObjectURL(url),
+
   download: (url, filename) => {
     const anchor = document.createElement('a')
+
     anchor.href = url
     anchor.download = filename
     anchor.click()
   },
+
   digest: async (bytes) =>
     Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', bytes)))
       .map((byte) => byte.toString(16).padStart(2, '0'))
@@ -83,19 +92,26 @@ export const createDocumentExport = (
   let busy = false
   let disposed = false
   let unsubscribe: (() => void) | undefined
+
   const assertOpen = (signal: AbortSignal) => {
     signal.throwIfAborted()
-    if (disposed)
+    if (disposed) {
       throw new AiActionExecutionError('The export owner is disposed.')
+    }
   }
+
   const find = (id: string) => {
     const artifact = artifacts.get(id)
-    if (!artifact)
+
+    if (!artifact) {
       throw new AiActionExecutionError(
         'The document export is unavailable. Create a new export explicitly if needed.'
       )
+    }
+
     return artifact
   }
+
   const actions: AiActionDefinition[] = [
     {
       ...actionToolSemantics(
@@ -114,12 +130,15 @@ export const createDocumentExport = (
         additionalProperties: false,
         properties: {}
       },
+
       execute: async (_input, context) => {
         assertOpen(context.signal)
-        if (busy)
+        if (busy) {
           throw new AiActionExecutionError(
             'A document export is already being prepared. No second snapshot was started.'
           )
+        }
+
         unsubscribe ??= apis.observe(() => {
           revision++
         })
@@ -130,25 +149,33 @@ export const createDocumentExport = (
           workspaceId: apis.workspaceId(),
           revision
         }
+
         try {
           const snapshot = await apis.save()
+
           assertOpen(context.signal)
           const bytes = new TextEncoder().encode(JSON.stringify(snapshot))
-          if (bytes.byteLength > maximumBytes - retainedBytes)
+
+          if (bytes.byteLength > maximumBytes - retainedBytes) {
             throw new AiActionExecutionError(
               'Document export capacity is unavailable. Release retained exports before explicitly retrying. Existing exports remain available.'
             )
+          }
+
           const sha256 = await output.digest(bytes)
+
           assertOpen(context.signal)
           if (
             captured.identity !== apis.identity() ||
             captured.revision !== revision ||
             captured.documentId !== apis.documentId() ||
             captured.workspaceId !== apis.workspaceId()
-          )
+          ) {
             throw new AiActionExecutionError(
               'The document changed during export. No artifact was published; explicitly request a new snapshot.'
             )
+          }
+
           const artifactId = crypto.randomUUID()
           const metadata: Metadata = Object.freeze({
             artifactId,
@@ -164,8 +191,10 @@ export const createDocumentExport = (
           const url = output.create(
             new Blob([bytes], { type: metadata.format })
           )
+
           artifacts.set(artifactId, { url, metadata })
           retainedBytes += bytes.byteLength
+
           return { status: 'no-change', artifact: metadata }
         } finally {
           busy = false
@@ -186,10 +215,13 @@ export const createDocumentExport = (
       description:
         'Request a browser download of the exact retained document export. Does not serialize again or confirm a disk write. The immutable artifact remains available for explicit retry or release.',
       inputSchema: artifactInput,
+
       execute: async (input, context) => {
         assertOpen(context.signal)
         const artifact = find((input as { artifactId: string }).artifactId)
+
         output.download(artifact.url, artifact.metadata.filename)
+
         return {
           status: 'no-change',
           artifact: artifact.metadata,
@@ -210,29 +242,39 @@ export const createDocumentExport = (
       description:
         'Release an immutable browser document export after download or abandonment. Already released IDs are harmless; they never re-export current document data.',
       inputSchema: artifactInput,
+
       execute: async (input, context) => {
         assertOpen(context.signal)
         const id = (input as { artifactId: string }).artifactId
         const artifact = artifacts.get(id)
-        if (!artifact) return { status: 'no-change', released: false }
+
+        if (!artifact) {
+          return { status: 'no-change', released: false }
+        }
+
         output.release(artifact.url)
         artifacts.delete(id)
         retainedBytes -= artifact.metadata.bytes
+
         return { status: 'no-change', released: true }
       }
     }
   ]
+
   return {
     actions,
+
     dispose() {
       disposed = true
       const failures: unknown[] = []
+
       try {
         unsubscribe?.()
         unsubscribe = undefined
       } catch (error) {
         failures.push(error)
       }
+
       for (const [id, artifact] of artifacts) {
         try {
           output.release(artifact.url)
@@ -242,8 +284,10 @@ export const createDocumentExport = (
           failures.push(error)
         }
       }
-      if (failures.length)
+
+      if (failures.length) {
         throw new AggregateError(failures, 'Document export release failed')
+      }
     }
   }
 }

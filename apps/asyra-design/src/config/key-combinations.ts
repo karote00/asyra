@@ -58,7 +58,19 @@ export const isEditableShortcutTarget = (target: Element | null): boolean => {
   )
 }
 
-const updateToolShortcutState = (raw: RawInputEvent) => {
+const updateToolShortcutState = (raw: RawInputEvent, key: string) => {
+  const keyboard = raw.keyboard
+
+  if (
+    !keyboard ||
+    keyboard.phase !== 'down' ||
+    keyboard.changedKey !== key ||
+    keyboard.repeat ||
+    keyboard.isComposing
+  ) {
+    return false
+  }
+
   if (isEditableShortcutTarget(document.activeElement)) {
     return false
   }
@@ -265,32 +277,42 @@ export const keyCombinations = {
     {
       type: InputType.KEYBOARD,
       keys: [keyMap.keys.KeyT],
+      keyboardMode: 'held',
       detail: { primaryTool: PrimaryToolType.TEXT },
-      callback: updateToolShortcutState
+
+      callback: (raw) => updateToolShortcutState(raw, keyMap.keys.KeyT)
     },
     {
       type: InputType.KEYBOARD,
       keys: [keyMap.keys.KeyR],
+      keyboardMode: 'held',
       detail: { primaryTool: PrimaryToolType.RECTANGLE },
-      callback: updateToolShortcutState
+
+      callback: (raw) => updateToolShortcutState(raw, keyMap.keys.KeyR)
     },
     {
       type: InputType.KEYBOARD,
       keys: [keyMap.keys.KeyV],
+      keyboardMode: 'held',
       detail: { primaryTool: PrimaryToolType.SELECT },
-      callback: updateToolShortcutState
+
+      callback: (raw) => updateToolShortcutState(raw, keyMap.keys.KeyV)
     },
     {
       type: InputType.KEYBOARD,
       keys: [keyMap.keys.KeyO],
+      keyboardMode: 'held',
       detail: { primaryTool: PrimaryToolType.OVAL },
-      callback: updateToolShortcutState
+
+      callback: (raw) => updateToolShortcutState(raw, keyMap.keys.KeyO)
     },
     {
       type: InputType.KEYBOARD,
       keys: [keyMap.keys.KeyP],
+      keyboardMode: 'held',
       detail: { primaryTool: PrimaryToolType.PEN },
-      callback: updateToolShortcutState
+
+      callback: (raw) => updateToolShortcutState(raw, keyMap.keys.KeyP)
     }
   ],
   [InputSystemEvents.INPUT_SHORTCUT_CANCEL]: [
@@ -378,4 +400,4 @@ export const keyCombinations = {
       callback: updateKeyState
     }
   ]
-}
+} satisfies Parameters<typeof core.registerInputKeyCombinations>[0]

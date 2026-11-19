@@ -906,7 +906,7 @@ test('endpoint performance discovery is isolated, guarded, and resource-bounded'
   )
   assert.match(
     twoActorActivitySource,
-    /let requestedItems\s*=\s*16[\s\S]*endpointAttributionCase\s*===\s*['"]1280-two-actor-attribution['"][\s\S]{0,80}requestedItems\s*=\s*1280[\s\S]*expectedTotal\s*=\s*requestedItems\s*\+\s*1/
+    /let requestedItems: ServerResponseItemCount\s*=\s*16[\s\S]*endpointAttributionCase\s*===\s*['"]1280-two-actor-attribution['"][\s\S]{0,80}requestedItems\s*=\s*1280[\s\S]*expectedTotal\s*=\s*requestedItems\s*\+\s*1/
   )
   assert.match(
     twoActorActivitySource,
@@ -1029,17 +1029,29 @@ test('endpoint performance discovery is isolated, guarded, and resource-bounded'
   assert.match(highDetailSource, /sourceBounds/)
   assert.match(highDetailSource, /documentEventAttempts/)
   assert.match(highDetailSource, /documentEventDeliveries/)
-  assert.match(highDetailSource, /documentEventPreventions/)
+  assert.doesNotMatch(
+    highDetailSource,
+    /documentEventPreventions|blockedActionAttempts/
+  )
   const interactionAttemptObserverSource = specSource.slice(
     specSource.indexOf('const recordAttempt ='),
     specSource.indexOf('const rectangleControl')
   )
 
-  assert.match(interactionAttemptObserverSource, /requestAnimationFrame/)
-  assert.doesNotMatch(interactionAttemptObserverSource, /queueMicrotask/)
-  assert.match(highDetailSource, /deleteKeyBlocked/)
-  assert.match(highDetailSource, /historyShortcutBlocked/)
-  assert.match(highDetailSource, /rectangleShortcutBlocked/)
+  assert.match(
+    interactionAttemptObserverSource,
+    /documentEventAttempts\[action\] \+= 1/
+  )
+  assert.doesNotMatch(interactionAttemptObserverSource, /defaultPrevented/)
+  assert.match(highDetailSource, /duringCreation/)
+  assert.match(
+    highDetailSource,
+    /keyboard: toolSwitchEvidence\(keyboardActiveState\)/
+  )
+  assert.match(
+    highDetailSource,
+    /pointer: toolSwitchEvidence\(pointerActiveState\)/
+  )
   assert.match(highDetailSource, /ordinaryKeyboardToolSwitchAccepted/)
   assert.match(highDetailSource, /focusLocalInteractionKeyboardTarget/)
   assert.match(highDetailSource, /loadingConnected\)\.toBe\(true\)/)
@@ -1103,11 +1115,11 @@ test('endpoint performance discovery is isolated, guarded, and resource-bounded'
   assert.match(specSource, /AI turn settled before/)
   assert.match(
     highDetailSource,
-    /blockedState\.turnAccepted\)\.toBe\(true\)[\s\S]*blockedState\.turnOutcome\)\.toBeNull\(/
+    /pointerActiveState\.turnAccepted\)\.toBe\(true\)[\s\S]*pointerActiveState\.turnOutcome\)\.toBeNull\(/
   )
   assert.match(
     highDetailSource,
-    /blockedState\.documentEventPreventions[\s\S]*rectangleShortcut:\s*1[\s\S]*keyboardReleasedState\.documentEventPreventions\.rectangleShortcut[\s\S]*toBe\(2\)/
+    /pointerActiveState\.documentEventDeliveries[\s\S]*rectangleShortcut:\s*1[\s\S]*keyboardReleasedState\.documentEventDeliveries\.rectangleShortcut[\s\S]*toBe\(2\)/
   )
   assert.match(highDetailSource, /readLocalInteractionProbe/)
   assert.match(highDetailSource, /settleFailureEvidenceWithin/)
@@ -1217,8 +1229,8 @@ test('endpoint performance discovery is isolated, guarded, and resource-bounded'
   const rectangleShortcutIndex = highDetailSource.indexOf(
     "actorA.keyboard.press('r')"
   )
-  const deleteInputIndex = highDetailSource.indexOf(
-    "actorA.keyboard.press('Delete')"
+  const pointerActivationIndex = highDetailSource.indexOf(
+    'const pointerActiveState ='
   )
 
   assert.ok(firstVisibleHandoffIndex > creationMarkIndex)
@@ -1228,7 +1240,7 @@ test('endpoint performance discovery is isolated, guarded, and resource-bounded'
   assert.ok(halfProgressIndex > zoomInputIndex)
   assert.ok(rectangleShortcutIndex > halfProgressIndex)
   assert.ok(threeQuarterProgressIndex > rectangleShortcutIndex)
-  assert.ok(deleteInputIndex > threeQuarterProgressIndex)
+  assert.ok(pointerActivationIndex > threeQuarterProgressIndex)
   assert.match(
     highDetailSource,
     /firstVisibleState\.canonicalElements\)\.toBeGreaterThan\(0\)[\s\S]*firstVisibleState\.canonicalElements\)\.toBeLessThan\(7076\)[\s\S]*firstVisibleState\.loadingConnected\)\.toBe\(true\)/
@@ -1536,4 +1548,25 @@ test('personal automation and duplicate document bytes remain outside Git', () =
     1,
     'The user-approved original ZIP must remain uploadable'
   )
+})
+
+test('high-detail endpoint observes active tool switching without destructive history probes', async () => {
+  const source = await readFile(
+    new URL('../e2e/crdt-endpoint-performance.spec.ts', import.meta.url),
+    'utf8'
+  )
+  const body = source.slice(
+    source.indexOf("test('creation-only high-detail endpoint proof'")
+  )
+
+  assert.equal(
+    /blockedActionAttempts|deleteKeyBlocked|historyShortcutBlocked|documentEventPreventions/.test(
+      source
+    ),
+    false
+  )
+  assert.equal(/keyboard\.press\('(?:Delete|Meta\+z)'\)/.test(body), false)
+  assert.match(body, /duringCreation/)
+  assert.match(body, /keyboardActiveState/)
+  assert.match(body, /pointerActiveState/)
 })

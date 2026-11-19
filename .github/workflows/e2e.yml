@@ -3,9 +3,6 @@ name: E2E Tests
 on:
   workflow_call:
     inputs:
-      run_balanced_ai_correctness:
-        type: boolean
-        default: false
       selected_suites:
         type: string
         default: '["collaboration","flow-inspector-board","functional","render-contracts"]'
@@ -24,11 +21,6 @@ on:
         value: ${{ jobs.render-contracts.result }}
   workflow_dispatch:
     inputs:
-      run_balanced_ai_correctness:
-        description: Run the 7,112-element balanced AI correctness gate
-        required: false
-        type: boolean
-        default: false
       selected_suites:
         description: JSON array of E2E suites to run
         required: false
@@ -115,6 +107,7 @@ jobs:
     outputs:
       evidence: ${{ steps.flow-results.outputs.evidence }}
     env:
+      PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/tmp/playwright-runtime
       FLOW_RESULT_REPOSITORY: ${{ github.repository }}
       FLOW_RESULT_BASE: ${{ github.event.pull_request.base.sha || github.sha }}
       FLOW_RESULT_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
@@ -146,19 +139,23 @@ jobs:
       - name: Install dependencies
         run: yarn install --immutable
 
-      - name: Resolve balanced AI correctness scope
-        id: balanced_ai_scope
+      - name: Install declared Playwright recording runtime
+        run: yarn workspace @asyra/asyra-design exec playwright install ffmpeg
+
+      - name: Prepare offline native test client
         env:
-          E2E_BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          E2E_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-          E2E_MANUAL_BALANCED_AI_CORRECTNESS: ${{ inputs.run_balanced_ai_correctness }}
-        run: node scripts/balanced-ai-correctness-scope.mjs >> "$GITHUB_OUTPUT"
+          npm_config_cache: ${{ github.workspace }}/tmp/npm-cache
+        run: |
+          native_version="$(node --input-type=module -e "import { nativeTestClientVersion } from './apps/asyra-design/scripts/native-client-admission.mjs'; process.stdout.write(nativeTestClientVersion.replace('codex-cli ', ''))")"
+          npm install --prefix "$GITHUB_WORKSPACE/tmp/native-test-client" --no-save --package-lock=false "@openai/codex@$native_version"
+          export NATIVE_DELIVERY_CODEX="$GITHUB_WORKSPACE/tmp/native-test-client/node_modules/.bin/codex"
+          node --input-type=module -e "import { resolveNativeTestExecutable } from './apps/asyra-design/scripts/native-client-admission.mjs'; resolveNativeTestExecutable()"
+          printf 'NATIVE_DELIVERY_CODEX=%s\n' "$NATIVE_DELIVERY_CODEX" >> "$GITHUB_ENV"
 
       - name: Run E2E Tests
         env:
           E2E_SUITE: functional
           FLOW_CI_REPORT: ${{ github.workspace }}/tmp/flow-ci/design.json
-          RUN_BALANCED_AI_CORRECTNESS: ${{ steps.balanced_ai_scope.outputs.run_balanced_ai_correctness }}
         run: bash scripts/run-e2e.sh
 
       - name: Export complete design observation bundle

@@ -28,6 +28,7 @@ const createDelivery = (
   orderedIds: readonly string[]
 ) => {
   let payload: unknown = { id: orderedIds[0] }
+
   if (eventName === EventTypes.UPDATE_ELEMENT_DATA) {
     payload = {
       id: orderedIds[0],
@@ -59,6 +60,7 @@ const createDelivery = (
       options: { undoable: true }
     }
   }
+
   return { deliveryId, eventName, orderedIds, payload }
 }
 
@@ -68,6 +70,7 @@ describe('Asyra Design collaboration composition', () => {
     const owner = {
       subscribeToSharedPublication: vi.fn((subscriber) => {
         publicationSubscriber = subscriber
+
         return () => undefined
       })
     }
@@ -124,6 +127,7 @@ describe('Asyra Design collaboration composition', () => {
     const owner = {
       subscribeToSharedPublication: vi.fn((subscriber) => {
         publicationSubscriber = subscriber
+
         return () => undefined
       })
     }
@@ -229,6 +233,7 @@ describe('Asyra Design collaboration composition', () => {
     const owner = {
       subscribeToSharedPublication: vi.fn((subscriber) => {
         publicationSubscriber = subscriber
+
         return () => undefined
       })
     }
@@ -294,6 +299,7 @@ describe('Asyra Design collaboration composition', () => {
 
     expect(received).toHaveBeenCalledOnce()
     const publication = received.mock.calls[0]?.[0]
+
     expect(readDocumentPublicationSlices(publication)).toHaveLength(1)
     expect(isSharedPublication(publication)).toBe(true)
     expect(publication).toEqual(
@@ -326,10 +332,12 @@ describe('Asyra Design collaboration composition', () => {
     const owner = {
       subscribeToSharedPublication: vi.fn((subscriber) => {
         publicationSubscriber = subscriber
+
         return () => undefined
       })
     }
     const profile = {} as aiDrawingPerformance.AiDrawingPerformanceProfile
+
     vi.spyOn(
       aiDrawingPerformance,
       'getActiveAiDrawingPerformanceProfile'
@@ -405,6 +413,7 @@ describe('Asyra Design collaboration composition', () => {
         ]
       }
     ])
+
     publicationSubscriber?.(mixedPublication)
 
     expect(owner.subscribeToSharedPublication).toHaveBeenCalledOnce()
@@ -414,7 +423,11 @@ describe('Asyra Design collaboration composition', () => {
       publicationId: 'document-action'
     })
     const propsSlice = mixedPublication.slices[1]
-    if (!propsSlice) throw new Error('Expected retained Props slice')
+
+    if (!propsSlice) {
+      throw new Error('Expected retained Props slice')
+    }
+
     expect(received).toHaveBeenCalledOnce()
     expect(received).toHaveBeenCalledWith(
       prepareDocumentPublication(
@@ -429,6 +442,7 @@ describe('Asyra Design collaboration composition', () => {
     const owner = {
       subscribeToSharedPublication: vi.fn((subscriber) => {
         publicationSubscriber = subscriber
+
         return () => undefined
       })
     }
@@ -450,6 +464,7 @@ describe('Asyra Design collaboration composition', () => {
         eventName,
         ['element-a']
       )
+
       expect(() =>
         publicationSubscriber?.(
           createPublication(`computed-${eventName}`, [
@@ -486,6 +501,7 @@ it('does not misclassify a document consumer exception as preparation failure', 
     {
       subscribeToSharedPublication: (subscriber) => {
         publish = subscriber
+
         return () => {
           publish = undefined
         }
@@ -494,6 +510,7 @@ it('does not misclassify a document consumer exception as preparation failure', 
     failed
   )
   const consumerError = new Error('consumer rejected the handoff')
+
   source.subscribe(() => {
     throw consumerError
   })
@@ -513,6 +530,7 @@ it('does not misclassify a document consumer exception as preparation failure', 
       ]
     }
   ])
+
   expect(() => publish?.(publication)).toThrow(consumerError)
   expect(failed).not.toHaveBeenCalled()
 })
@@ -524,11 +542,13 @@ it('keeps the source identity and actual preparation error in browser diagnostic
     .spyOn(runtime.core, 'subscribeToSharedPublication')
     .mockImplementation((subscriber) => {
       publish = subscriber
+
       return () => {
         publish = undefined
       }
     })
   const key = 'preparation-failure-diagnostic'
+
   try {
     runtime.startDocumentPublicationCapture(key)
     publish?.(

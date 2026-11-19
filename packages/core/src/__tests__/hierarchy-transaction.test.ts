@@ -159,6 +159,52 @@ describe('Factory and Scene Tree hierarchy transaction integration', () => {
     sceneTree.cleanChanges()
   })
 
+  it('moves known roots without reading unrelated descendants during apply or replay', () => {
+    const factory = new Factory()
+    const core = createCoreFacade(factory)
+    const root = sceneTree.currentWorkspace as GroupInstanceTypes
+    const source = add(
+      'local-source',
+      CONTAINER_TYPE,
+      root
+    ) as GroupInstanceTypes
+    const target = add(
+      'local-target',
+      CONTAINER_TYPE,
+      root
+    ) as GroupInstanceTypes
+    const child = add('local-child', LEAF_TYPE, source)
+    const other = add(
+      'unrelated-container',
+      CONTAINER_TYPE,
+      root
+    ) as GroupInstanceTypes
+    const unrelated = add('unrelated-leaf', LEAF_TYPE, other)
+    const reads = vi.spyOn(unrelated, 'get')
+
+    try {
+      runWithTransactionOwner(factory.getTransactionOwner(), () =>
+        runTransaction(() =>
+          core.moveElements({
+            elementIds: [child.get('id')],
+            targetParentId: target.get('id'),
+            targetIndex: 0
+          })
+        )
+      )
+      expect(reads).not.toHaveBeenCalled()
+      expect(childrenOf('local-target')).toEqual(['local-child'])
+      factory.undo()
+      expect(childrenOf('local-source')).toEqual(['local-child'])
+      factory.redo()
+      expect(childrenOf('local-target')).toEqual(['local-child'])
+      expect(reads).not.toHaveBeenCalled()
+    } finally {
+      reads.mockRestore()
+      factory.transact.reset()
+    }
+  })
+
   it('appends equal batches without traversing prior sibling snapshots and preserves public snapshots', () => {
     const factory = new Factory()
     const core = createCoreFacade(factory)

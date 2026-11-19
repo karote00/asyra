@@ -2,8 +2,10 @@ import { cleanup, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({ type: 'text' }))
+
 vi.mock('../../providers', () => ({
   useElementSelection: () => new Set(['selected']),
+
   useElementData: () => ({ type: mocks.type })
 }))
 vi.mock('../text', () => ({ default: () => <div>Typography</div> }))

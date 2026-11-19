@@ -1,3 +1,4 @@
+import { DesignInputError } from './design-input-error'
 import {
   partitionDesignBudget,
   selectDesignSource,
@@ -99,7 +100,7 @@ export const createDesignDraftRepairStore = (
         )
 
       if (!hasValidRepairEnvelope || typeof value.draftId !== 'string') {
-        throw new Error(
+        throw new DesignInputError(
           'Provide repair.draftId and exactly one partition or replacements array.'
         )
       }
@@ -108,7 +109,7 @@ export const createDesignDraftRepairStore = (
         'partition' in value !== 'replacements' in value
 
       if (!hasExactlyOneRepairSource) {
-        throw new Error(
+        throw new DesignInputError(
           'Provide repair.draftId and exactly one partition or replacements array.'
         )
       }
@@ -116,7 +117,7 @@ export const createDesignDraftRepairStore = (
       const draft = drafts.get(value.draftId)
 
       if (!draft) {
-        throw new Error(
+        throw new DesignInputError(
           'Rejected draft is unavailable in this request; resend the source draft.'
         )
       }
@@ -131,13 +132,13 @@ export const createDesignDraftRepairStore = (
             (typeof value.continueFromArtifact !== 'string' ||
               !value.continueFromArtifact))
         ) {
-          throw new Error('Invalid retained partition reference.')
+          throw new DesignInputError('Invalid retained partition reference.')
         }
 
         const partition = draft.plan.partitions?.[Number(value.partition)]
 
         if (!partition) {
-          throw new Error('Retained partition is unavailable.')
+          throw new DesignInputError('Retained partition is unavailable.')
         }
 
         return selectDesignSource(result, partition.selections)
@@ -147,11 +148,11 @@ export const createDesignDraftRepairStore = (
         value.continueFromArtifact !== undefined ||
         !Array.isArray(value.replacements)
       ) {
-        throw new Error('Provide a replacements array.')
+        throw new DesignInputError('Provide a replacements array.')
       }
 
       if (!value.replacements.length && !admitMissing?.(result)) {
-        throw new Error(
+        throw new DesignInputError(
           'Unchanged retained source requires complete owner admission.'
         )
       }
@@ -171,7 +172,7 @@ export const createDesignDraftRepairStore = (
           !Object.hasOwn(replacement, 'value') ||
           paths.has(replacement.path)
         ) {
-          throw new Error(
+          throw new DesignInputError(
             'Each replacement requires one unique JSON Pointer path and a value.'
           )
         }
@@ -183,7 +184,9 @@ export const createDesignDraftRepairStore = (
           .map((part) => part.replace(/~1/g, '/').replace(/~0/g, '~'))
 
         if (parts.some(isReservedDraftRepairKey)) {
-          throw new Error(`Reserved repair path: ${replacement.path}`)
+          throw new DesignInputError(
+            `Reserved repair path: ${replacement.path}`
+          )
         }
 
         let parent = result
@@ -194,7 +197,9 @@ export const createDesignDraftRepairStore = (
             typeof parent !== 'object' ||
             !Object.hasOwn(parent, part)
           ) {
-            throw new Error(`Repair path does not exist: ${replacement.path}`)
+            throw new DesignInputError(
+              `Repair path does not exist: ${replacement.path}`
+            )
           }
 
           parent = parent[part]
@@ -218,7 +223,9 @@ export const createDesignDraftRepairStore = (
           isMissingFieldDisallowed ||
           hasInvalidArrayIndex
         ) {
-          throw new Error(`Repair path does not exist: ${replacement.path}`)
+          throw new DesignInputError(
+            `Repair path does not exist: ${replacement.path}`
+          )
         }
 
         if (!Object.hasOwn(parent, key)) {
@@ -234,7 +241,7 @@ export const createDesignDraftRepairStore = (
       }
 
       if (addedField && !admitMissing?.(result)) {
-        throw new Error(
+        throw new DesignInputError(
           'Missing-field repair does not satisfy the complete owner input contract.'
         )
       }

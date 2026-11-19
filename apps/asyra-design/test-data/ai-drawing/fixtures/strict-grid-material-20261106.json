@@ -1,0 +1,308 @@
+{
+  "sourceRun": "1793953206847",
+  "sourceInput": "141-input.json",
+  "draft": {
+    "type": "group",
+    "name": "台北101｜基座與裙樓｜公分原尺寸",
+    "projection": {
+      "azimuth": 35,
+      "elevation": 25,
+      "scale": 1,
+      "originX": 14000,
+      "originY": 48000
+    },
+    "fillTemplates": {
+      "frame": {
+        "gradientType": "linear",
+        "gradientHandles": [
+          {
+            "x": 0,
+            "y": 0
+          },
+          {
+            "x": 1,
+            "y": 0.2
+          }
+        ],
+        "gradientStops": [
+          {
+            "position": 0,
+            "color": "#a0b7b5",
+            "opacity": 1
+          },
+          {
+            "position": 0.5,
+            "color": "#577b7e",
+            "opacity": 1
+          },
+          {
+            "position": 1,
+            "color": "#c6d4cf",
+            "opacity": 1
+          }
+        ]
+      },
+      "glass": {
+        "gradientType": "linear",
+        "gradientHandles": [
+          {
+            "x": 0,
+            "y": 0
+          },
+          {
+            "x": 0.8,
+            "y": 1
+          }
+        ],
+        "gradientStops": [
+          {
+            "position": 0,
+            "color": "#8db9ba",
+            "opacity": 1
+          },
+          {
+            "position": 0.45,
+            "color": "#568f99",
+            "opacity": 1
+          },
+          {
+            "position": 0.52,
+            "color": "#71a4aa",
+            "opacity": 1
+          },
+          {
+            "position": 1,
+            "color": "#2d626f",
+            "opacity": 1
+          }
+        ]
+      },
+      "darkglass": {
+        "gradientType": "linear",
+        "gradientHandles": [
+          {
+            "x": 0,
+            "y": 0
+          },
+          {
+            "x": 1,
+            "y": 1
+          }
+        ],
+        "gradientStops": [
+          {
+            "position": 0,
+            "color": "#547d85",
+            "opacity": 1
+          },
+          {
+            "position": 0.4,
+            "color": "#305d6b",
+            "opacity": 1
+          },
+          {
+            "position": 1,
+            "color": "#193e50",
+            "opacity": 1
+          }
+        ]
+      },
+      "stone": {
+        "gradientType": "linear",
+        "gradientHandles": [
+          {
+            "x": 0,
+            "y": 0
+          },
+          {
+            "x": 1,
+            "y": 1
+          }
+        ],
+        "gradientStops": [
+          {
+            "position": 0,
+            "color": "#d4d1bd",
+            "opacity": 1
+          },
+          {
+            "position": 1,
+            "color": "#8c9d98",
+            "opacity": 1
+          }
+        ]
+      }
+    },
+    "motifTemplates": {
+      "window": [
+        {
+          "key": "glass",
+          "name": "獨立青綠玻璃",
+          "fill": {
+            "template": "glass"
+          },
+          "vertices": [
+            {
+              "u": 0.055,
+              "v": 0.14
+            },
+            {
+              "u": 0.945,
+              "v": 0.14
+            },
+            {
+              "u": 0.945,
+              "v": 0.95
+            },
+            {
+              "u": 0.055,
+              "v": 0.95
+            }
+          ]
+        },
+        {
+          "key": "spandrel",
+          "name": "樓板深色背板",
+          "fill": "#3c656c",
+          "vertices": [
+            {
+              "u": 0.055,
+              "v": 0.02
+            },
+            {
+              "u": 0.945,
+              "v": 0.02
+            },
+            {
+              "u": 0.945,
+              "v": 0.12
+            },
+            {
+              "u": 0.055,
+              "v": 0.12
+            }
+          ]
+        },
+        {
+          "key": "transom",
+          "name": "窗框水平亮邊",
+          "fill": "#b5cbc8",
+          "vertices": [
+            {
+              "u": 0.055,
+              "v": 0.56
+            },
+            {
+              "u": 0.945,
+              "v": 0.56
+            },
+            {
+              "u": 0.945,
+              "v": 0.575
+            },
+            {
+              "u": 0.055,
+              "v": 0.575
+            }
+          ]
+        }
+      ],
+      "mall": [
+        {
+          "key": "pane",
+          "name": "裙樓玻璃",
+          "fill": {
+            "template": "darkglass"
+          },
+          "vertices": [
+            {
+              "u": 0.12,
+              "v": 0.1
+            },
+            {
+              "u": 0.88,
+              "v": 0.1
+            },
+            {
+              "u": 0.88,
+              "v": 0.86
+            },
+            {
+              "u": 0.12,
+              "v": 0.86
+            }
+          ]
+        },
+        {
+          "key": "light",
+          "name": "裙樓窗框反光",
+          "fill": "#bcc9c1",
+          "vertices": [
+            {
+              "u": 0.1,
+              "v": 0.08
+            },
+            {
+              "u": 0.13,
+              "v": 0.08
+            },
+            {
+              "u": 0.13,
+              "v": 0.9
+            },
+            {
+              "u": 0.1,
+              "v": 0.9
+            }
+          ]
+        }
+      ]
+    },
+    "children": [
+      {
+        "type": "projected-face",
+        "key": "base-y",
+        "name": "塔樓錐台明面",
+        "fill": {
+          "template": "frame"
+        },
+        "vertices": [
+          {
+            "x": -4000,
+            "y": 4000,
+            "z": 0
+          },
+          {
+            "x": 4000,
+            "y": 4000,
+            "z": 0
+          },
+          {
+            "x": 2550,
+            "y": 2550,
+            "z": 11200
+          },
+          {
+            "x": -2550,
+            "y": 2550,
+            "z": 11200
+          }
+        ]
+      },
+      {
+        "type": "surface-grid",
+        "key": "base-y-grid",
+        "name": "基座26層獨立窗格",
+        "boundary": {
+          "face": "base-y"
+        },
+        "rows": 26,
+        "columns": 30,
+        "order": "cell-major",
+        "motifs": {
+          "template": "window"
+        }
+      }
+    ]
+  }
+}

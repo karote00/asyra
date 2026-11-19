@@ -23,6 +23,7 @@ import {
   runtimeOperationSchema
 } from '../local-operation-batch'
 import { describeBasicApiResult } from '../../src/ai/basic-api-results'
+
 const reviewCriteria = (names: readonly string[]) =>
   Object.fromEntries(
     names.map((id) => [
@@ -35,6 +36,7 @@ const reviewCriteria = (names: readonly string[]) =>
       }
     ])
   )
+
 import { basicApiContracts } from '../../src/ai/basic-api-catalog'
 import { createLocalDesignReview } from '../local-design-review'
 import { createDesignCheckResults } from '../design-check-results'
@@ -54,8 +56,10 @@ import {
   withToolContractAssertions,
   readCompleteInformation
 } from './tool-contract-assertions'
+
 const createLocalOperationTools = (...args: Parameters<typeof createOwner>) =>
   withReviewBindingActor(withToolContractAssertions(createOwner(...args)))
+
 import { createLocalImageTools } from '../local-image-tools'
 import { AiActionNames } from '../../src/constants/ai-actions'
 import { toolSemantics } from '../../src/ai/tool-contract'
@@ -66,10 +70,19 @@ it('refreshes discovery after recipe registration, revision and removal without 
   const getNativeTools = vi.fn(() => tools)
   const owner = createLocalOperationTools(
     basicApiContracts,
-    { modelActions: (a) => a, resolveBatch: (v) => v },
+    {
+      modelActions: (a) => a,
+
+      resolveBatch: (v) => v
+    },
     vi.fn(),
-    { getNativeTools, getNativeToolsRevision: () => generation }
+    {
+      getNativeTools,
+
+      getNativeToolsRevision: () => generation
+    }
   )
+
   const lookup = async () =>
     JSON.parse(
       await owner.call(
@@ -78,6 +91,7 @@ it('refreshes discovery after recipe registration, revision and removal without 
         new AbortController().signal
       )
     )
+
   expect((await lookup()).missingNames).toEqual(['repeat-fill'])
   tools.push({
     name: 'repeat-fill',
@@ -94,6 +108,7 @@ it('refreshes discovery after recipe registration, revision and removal without 
   })
   generation++
   const first = (await lookup()).tools[0]
+
   expect(first.execution).toEqual(tools[0].execution)
   expect(first.outputSchema).toEqual({ type: 'number' })
   expect((await lookup()).tools[0].definition.state).toBe('included')
@@ -122,10 +137,15 @@ it('discovers reusable tools without knowing their names through the existing bo
   }))
   const owner = createLocalOperationTools(
     basicApiContracts,
-    { modelActions: (a) => a, resolveBatch: (v) => v },
+    {
+      modelActions: (a) => a,
+
+      resolveBatch: (v) => v
+    },
     vi.fn(),
     { getNativeTools: () => native }
   )
+
   const call = async (args: unknown) =>
     JSON.parse(
       await owner.call(
@@ -134,11 +154,13 @@ it('discovers reusable tools without knowing their names through the existing bo
         new AbortController().signal
       )
     )
+
   expect((await call({})).categories).toContainEqual({
     category: 'tools',
     count: 19
   })
   const first = await call({ category: 'tools' })
+
   expect(first.tools).toHaveLength(16)
   expect(first.complete).toBe(false)
   expect(first.tools[0]).toMatchObject({
@@ -147,6 +169,7 @@ it('discovers reusable tools without knowing their names through the existing bo
   })
   expect(first.tools[0].inputSchema).toBeUndefined()
   const rest = await call(first.next.arguments)
+
   expect(rest.tools).toHaveLength(3)
   expect(rest.complete).toBe(true)
   expect((await call({ names: ['saved-18'] })).tools[0].inputSchema).toEqual({
@@ -156,7 +179,11 @@ it('discovers reusable tools without knowing their names through the existing bo
 
 const basicActionName = (method: string) => {
   const contract = basicApiContracts.find((api) => api.method === method)
-  if (!contract) throw new Error(`Missing registered API: ${method}`)
+
+  if (!contract) {
+    throw new Error(`Missing registered API: ${method}`)
+  }
+
   return contract.name
 }
 
@@ -189,13 +216,21 @@ it.each(['success', 'partial', 'failed'] as const)(
     }
     const owner = createOwner(
       [action],
-      { modelActions: (actions) => actions, resolveBatch: (value) => value },
+      {
+        modelActions: (actions) => actions,
+
+        resolveBatch: (value) => value
+      },
       vi.fn()
     )
     const definition = owner.definitions.find(
       (tool) => tool.name === action.name
     )
-    if (!definition) throw new Error('Missing canonical wrapper')
+
+    if (!definition) {
+      throw new Error('Missing canonical wrapper')
+    }
+
     const schemas = {
       success: definition.outputSchema,
       partial: definition.partialOutputSchema,
@@ -211,6 +246,7 @@ it.each(['success', 'partial', 'failed'] as const)(
         }
       ]
     }
+
     expect(operationInputIssue(value, schema)).toBeUndefined()
     expect(localToolReferences(value, schema)).toEqual(['retained'])
     expect(operationInputIssue({ handle: 'retained' }, schema)).toBeDefined()
@@ -271,14 +307,23 @@ it('binds the native single-action receipt to the canonical browser success cont
   }))
   const owner = createOwner(
     [action],
-    { modelActions: (a) => a, resolveBatch: (v) => v },
+    {
+      modelActions: (a) => a,
+
+      resolveBatch: (v) => v
+    },
     execute
   )
   const definition = owner.definitions.find((tool) => tool.name === action.name)
-  if (!definition) throw new Error('Missing native wrapper')
+
+  if (!definition) {
+    throw new Error('Missing native wrapper')
+  }
+
   const { operationInputIssue } = await import('../operation-input-schema')
   const { invokeLocalTool } = await import('../local-tool-invocation')
   const args = { arguments: { elementIds: ['a', 'b'] } }
+
   expect(
     (
       await invokeLocalTool(
@@ -297,6 +342,7 @@ it('binds the native single-action receipt to the canonical browser success cont
       }
     }
   }
+
   expect(
     operationInputIssue(
       {
@@ -346,7 +392,11 @@ it('resolves multiple semantic operations and semantic names from the admitted r
   const execute = vi.fn()
   const tools = createLocalOperationTools(
     basicApiContracts,
-    { modelActions: (a) => a, resolveBatch: (v) => v },
+    {
+      modelActions: (a) => a,
+
+      resolveBatch: (v) => v
+    },
     execute
   )
   const selected = basicApiContracts.filter((api) =>
@@ -354,7 +404,9 @@ it('resolves multiple semantic operations and semantic names from the admitted r
       api.operation
     )
   )
+
   expect(selected).toHaveLength(2)
+
   const call = async (args: unknown) =>
     JSON.parse(
       await readCompleteInformation(
@@ -367,10 +419,12 @@ it('resolves multiple semantic operations and semantic names from the admitted r
         args
       )
     )
+
   const result = await call({
     operations: [...selected.map((api) => api.operation), 'missing.operation'],
     view: 'usage'
   })
+
   expect(result.apis.map((api: { name: string }) => api.name)).toEqual(
     selected.map((api) => api.name)
   )
@@ -379,17 +433,22 @@ it('resolves multiple semantic operations and semantic names from the admitted r
     result.apis.every((api: { inputSchema?: unknown }) => !api.inputSchema)
   ).toBe(true)
   const byName = await call({ names: selected.map((api) => api.operation) })
+
   for (const api of selected) {
     const byQuery = await call({ query: api.operation, view: 'full' })
+
     expect(byQuery.apis).toHaveLength(1)
     expect(byQuery.apis[0].inputSchema).toEqual(api.inputSchema)
   }
+
   expect(byName.missingNames).toEqual([])
   expect(byName.apis.map((api: { name: string }) => api.name)).toEqual(
     selected.map((api) => api.name)
   )
-  for (let i = 0; i < selected.length; i++)
+  for (let i = 0; i < selected.length; i++) {
     expect(byName.apis[i].inputSchema).toEqual(selected[i].inputSchema)
+  }
+
   expect(execute).not.toHaveBeenCalled()
 })
 
@@ -404,7 +463,11 @@ it.each(['names', 'query'])(
     }))
     const tools = createLocalOperationTools(
       basicApiContracts,
-      { modelActions: (a) => a, resolveBatch: (v) => v },
+      {
+        modelActions: (a) => a,
+
+        resolveBatch: (v) => v
+      },
       vi.fn(),
       { getNativeTools: () => native }
     )
@@ -415,6 +478,7 @@ it.each(['names', 'query'])(
         new AbortController().signal
       )
     )
+
     expect(result.tools).toEqual([])
     expect(result.ambiguousNames).toEqual([
       { name: 'build', candidates: ['first.build', 'second.build'] }
@@ -424,13 +488,18 @@ it.each(['names', 'query'])(
     const definition = tools.definitions.find(
       (d) => d.name === 'describe_design_apis'
     )
-    if (!definition) throw new Error('Missing discovery definition')
+
+    if (!definition) {
+      throw new Error('Missing discovery definition')
+    }
+
     const reply = await invokeLocalTool(
       tools,
       definition,
       selector === 'names' ? { names: ['build'] } : { query: 'build' },
       new AbortController().signal
     )
+
     expect(reply.success).toBe(false)
     expect(JSON.parse(reply.text).toolOutcome).toMatchObject({
       status: 'failed',
@@ -445,6 +514,7 @@ it.each(['names', 'query'])(
         new AbortController().signal
       )
     )
+
     expect(exact.tools[0].execution).toEqual({
       kind: 'native-tool',
       namespace: 'first',
@@ -470,10 +540,15 @@ it('uses the advertised overview default for any inspection target and preserves
         inputSchema: {}
       }
     ],
-    { modelActions: (actions) => actions, resolveBatch: (value) => value },
+    {
+      modelActions: (actions) => actions,
+
+      resolveBatch: (value) => value
+    },
     execute,
     { reviewTargetId: 'root' }
   )
+
   for (const extra of [
     {},
     { view: 'detail' },
@@ -485,7 +560,9 @@ it('uses the advertised overview default for any inspection target and preserves
       new AbortController().signal
     )
   }
+
   const inputs = execute.mock.calls.map(([batch]) => batch.actions[0].arguments)
+
   expect(inputs[0]).toMatchObject({ view: 'overview' })
   expect(inputs[1]).toMatchObject({ view: 'detail' })
   expect(inputs[2]).toMatchObject({
@@ -523,10 +600,15 @@ describe('backend operation tools', () => {
         AiActionNames.REVIEW_DESIGN,
         AiActionNames.INSPECT_DRAWING
       ].map((name) => ({ name, description: name, inputSchema: {} })),
-      { modelActions: (a) => a, resolveBatch: (v) => v },
+      {
+        modelActions: (a) => a,
+
+        resolveBatch: (v) => v
+      },
       executeBatch
     )
     const signal = new AbortController().signal
+
     await operations.call(
       AiActionNames.UPDATE_DESIGN_ELEMENT,
       { arguments: { elementId: 't' } },
@@ -547,6 +629,7 @@ describe('backend operation tools', () => {
         }
       ]
     }
+
     expect(
       operations.settleOutcome(outcome).actions[0].arguments
     ).toMatchObject({ outcome: 'unsupported' })
@@ -610,16 +693,23 @@ describe('backend operation tools', () => {
         AiActionNames.REVIEW_DESIGN,
         AiActionNames.INSPECT_DRAWING
       ].map((name) => ({ name, description: name, inputSchema: {} })),
-      { modelActions: (a) => a, resolveBatch: (v) => v },
+      {
+        modelActions: (a) => a,
+
+        resolveBatch: (v) => v
+      },
       executeBatch
     )
     const signal = new AbortController().signal
-    for (let i = 0; i < 9; i++)
+
+    for (let i = 0; i < 9; i++) {
       await operations.call(
         AiActionNames.UPDATE_DESIGN_ELEMENT,
         { arguments: { elementId: 't' } },
         signal
       )
+    }
+
     expect(
       executeBatch.mock.calls.filter(
         ([b]) => b.actions[0].name === AiActionNames.UPDATE_DESIGN_ELEMENT
@@ -648,9 +738,14 @@ describe('backend operation tools', () => {
           description: name,
           inputSchema: {}
         })),
-        { modelActions: (actions) => actions, resolveBatch: (value) => value },
+        {
+          modelActions: (actions) => actions,
+
+          resolveBatch: (value) => value
+        },
         executeBatch
       )
+
       await operations.call(
         readAction,
         { arguments: { scope: 'selection' } },
@@ -667,6 +762,7 @@ describe('backend operation tools', () => {
           }
         ]
       }
+
       expect(operations.settleOutcome(batch)).toBe(batch)
     }
   )
@@ -686,16 +782,23 @@ describe('backend operation tools', () => {
       [AiActionNames.READ_DESIGN_CONTEXT, AiActionNames.INSPECT_DRAWING].map(
         (name) => ({ name, description: name, inputSchema: {} })
       ),
-      { modelActions: (actions) => actions, resolveBatch: (value) => value },
+      {
+        modelActions: (actions) => actions,
+
+        resolveBatch: (value) => value
+      },
       executeBatch
     )
     const signal = new AbortController().signal
-    for (let i = 0; i < 6; i++)
+
+    for (let i = 0; i < 6; i++) {
       await operations.call(
         AiActionNames.INSPECT_DRAWING,
         { arguments: { elementId: 'drawing' } },
         signal
       )
+    }
+
     await operations.call(
       AiActionNames.READ_DESIGN_CONTEXT,
       { arguments: { scope: 'selection' } },
@@ -715,7 +818,11 @@ describe('backend operation tools', () => {
         description: name,
         inputSchema: {}
       })),
-      { modelActions: (actions) => actions, resolveBatch: (value) => value },
+      {
+        modelActions: (actions) => actions,
+
+        resolveBatch: (value) => value
+      },
       executeBatch
     )
     const result = await operations.call(
@@ -723,6 +830,7 @@ describe('backend operation tools', () => {
       { arguments: { operation: 'group', elementIds: ['a', 'b'] } },
       new AbortController().signal
     )
+
     expect(JSON.parse(result)).toMatchObject({
       actionResults: [],
       context: {},
@@ -739,6 +847,7 @@ describe('backend operation tools', () => {
         }
       ]
     }
+
     expect(
       operations.settleOutcome(batch).actions.at(-1)?.arguments.outcome
     ).toBe('unsupported')
@@ -808,10 +917,15 @@ describe('backend operation tools', () => {
       },
       signal
     )
+
     expect(JSON.parse(result).context.selectedIds).toEqual(['actual-id'])
     expect(executeBatch).toHaveBeenCalledOnce()
     const prepared = executeBatch.mock.calls[0]?.[0]
-    if (!prepared) throw new Error('Missing prepared batch')
+
+    if (!prepared) {
+      throw new Error('Missing prepared batch')
+    }
+
     expect(JSON.stringify(prepared)).not.toContain('imageArtifactId')
     expect(prepared.actions[0].summary).toBe(
       'Tracing is complete. I am adding the editable drawing.'
@@ -837,6 +951,7 @@ describe('backend operation tools', () => {
       createLocalImageTools({}),
       executeBatch
     )
+
     expect(
       operations.definitions.find(
         (d) => d.name === AiActionNames.SELECT_ELEMENTS
@@ -871,6 +986,7 @@ describe('backend operation tools', () => {
         createLocalImageTools({}),
         executeBatch
       )
+
       await expect(
         operations.call(
           AiActionNames.SELECT_ELEMENTS,
@@ -889,6 +1005,7 @@ describe('backend operation tools', () => {
       createLocalImageTools({}),
       executeBatch
     )
+
     expect(operations.definitions).toEqual([])
     await expect(
       operations.call(
@@ -917,6 +1034,7 @@ it('returns native image content without placing image bytes in text', async () 
     ]
   }
   const content = await localToolContent(JSON.stringify(receipt))
+
   expect(content).toContainEqual({ type: 'inputImage', imageUrl: png })
   expect(
     JSON.stringify(content.filter((item) => item.type === 'inputText'))
@@ -945,7 +1063,7 @@ it('returns native image content without placing image bytes in text', async () 
 it('captures fresh evidence after each mutation using the acknowledged composition ID', async () => {
   const execute = vi.fn(async (batch: AiActionBatch) => ({
     actionResults: batch.actions.map((action) => {
-      if (action.name === AiActionNames.REVIEW_DESIGN)
+      if (action.name === AiActionNames.REVIEW_DESIGN) {
         return {
           actionId: action.id,
           actionName: action.name,
@@ -955,6 +1073,8 @@ it('captures fresh evidence after each mutation using the acknowledged compositi
             evidence: { sessionId: 'capture', revision: 1 }
           }
         }
+      }
+
       return {
         actionId: action.id,
         actionName: action.name,
@@ -975,6 +1095,7 @@ it('captures fresh evidence after each mutation using the acknowledged compositi
     createLocalImageTools({}),
     execute
   )
+
   for (const visible of [true, false]) {
     const receipt = await tools.call(
       AiActionNames.SET_ELEMENT_VISIBILITY,
@@ -984,11 +1105,13 @@ it('captures fresh evidence after each mutation using the acknowledged compositi
       },
       new AbortController().signal
     )
+
     expect(await localToolContent(receipt)).toContainEqual({
       type: 'inputImage',
       imageUrl: png
     })
   }
+
   expect(execute).toHaveBeenCalledTimes(6)
   expect(execute.mock.calls[2][0].actions[0]).toMatchObject({
     name: AiActionNames.INSPECT_DRAWING,
@@ -1000,7 +1123,7 @@ it('continues mutations beyond six reviews and never certifies unavailable evide
   let available = false
   const execute = vi.fn(async (batch: AiActionBatch) => ({
     actionResults: batch.actions.map((action) => {
-      if (action.name === AiActionNames.REVIEW_DESIGN)
+      if (action.name === AiActionNames.REVIEW_DESIGN) {
         return {
           actionId: action.id,
           actionName: action.name,
@@ -1010,6 +1133,8 @@ it('continues mutations beyond six reviews and never certifies unavailable evide
             evidence: { sessionId: 'capture', revision: 1 }
           }
         }
+      }
+
       return {
         actionId: action.id,
         actionName: action.name,
@@ -1041,6 +1166,7 @@ it('continues mutations beyond six reviews and never certifies unavailable evide
       }
     ]
   }
+
   const change = () =>
     tools.call(
       AiActionNames.SET_ELEMENT_VISIBILITY,
@@ -1050,6 +1176,7 @@ it('continues mutations beyond six reviews and never certifies unavailable evide
       },
       new AbortController().signal
     )
+
   await change()
   expect(tools.settleOutcome(completed).actions[0].arguments).toMatchObject({
     outcome: 'unsupported',
@@ -1060,7 +1187,10 @@ it('continues mutations beyond six reviews and never certifies unavailable evide
   expect(tools.settleOutcome(completed).actions[0].arguments).toMatchObject({
     outcome: 'unsupported'
   })
-  for (let index = 2; index < 6; index++) await change()
+  for (let index = 2; index < 6; index++) {
+    await change()
+  }
+
   expect(execute).toHaveBeenCalledTimes(18)
   await change()
   expect(execute).toHaveBeenCalledTimes(21)
@@ -1075,6 +1205,7 @@ it('does not admit unreviewed mutations in the final response', () => {
     createLocalImageTools({}),
     execute
   )
+
   expect(() =>
     tools.settleOutcome({
       batchId: 'late',
@@ -1104,9 +1235,14 @@ it('does not classify a canonical execution failure as a preparation retry', asy
         inputSchema: {}
       }
     ],
-    { modelActions: (actions) => actions, resolveBatch: (value) => value },
+    {
+      modelActions: (actions) => actions,
+
+      resolveBatch: (value) => value
+    },
     executeBatch
   )
+
   await expect(
     operations.call(
       AiActionNames.SELECT_ELEMENTS,
@@ -1122,7 +1258,11 @@ it('does not equate an available screenshot with an accepted design review', asy
     [AiActionNames.INSPECT_DRAWING, AiActionNames.SET_ELEMENT_VISIBILITY].map(
       (name) => ({ name, description: name, inputSchema: {} })
     ),
-    { modelActions: (a) => a, resolveBatch: (b) => b },
+    {
+      modelActions: (a) => a,
+
+      resolveBatch: (b) => b
+    },
     async (batch) => ({
       context: {},
       actionResults: batch.actions.map((action) => ({
@@ -1136,6 +1276,7 @@ it('does not equate an available screenshot with an accepted design review', asy
       }))
     })
   )
+
   await tools.call(
     AiActionNames.SET_ELEMENT_VISIBILITY,
     { arguments: { elementIds: ['shape'], visible: true } },
@@ -1152,6 +1293,7 @@ it('does not equate an available screenshot with an accepted design review', asy
       }
     ]
   })
+
   expect(result.actions[0].arguments).toMatchObject({ outcome: 'unsupported' })
   expect(
     tools.settleOutcome({ batchId: 'silent', actions: [] }).actions
@@ -1197,12 +1339,18 @@ it('requires a frozen plan, current overview and detail evidence, and all criter
       AiActionNames.VALIDATE_INSPECTION_EVIDENCE,
       AiActionNames.SET_ELEMENT_VISIBILITY
     ].map((name) => ({ name, description: name, inputSchema: {} })),
-    { modelActions: (a) => a, resolveBatch: (b) => b },
+    {
+      modelActions: (a) => a,
+
+      resolveBatch: (b) => b
+    },
     execute
   )
   const signal = new AbortController().signal
+
   const call = (name: string, args: unknown) =>
     tools.call(name, args, signal).then(JSON.parse)
+
   const plan = {
     phase: 'plan',
     method: 'Trace a verified reference, preserve native background geometry',
@@ -1214,18 +1362,23 @@ it('requires a frozen plan, current overview and detail evidence, and all criter
     structureCriteria: ['Silhouette and proportions match'],
     detailRequired: true
   }
+
   await call(AiDesignToolIds.DEFINE_DESIGN_CRITERIA, plan)
+
   const change = () =>
     call(AiActionNames.SET_ELEMENT_VISIBILITY, {
       arguments: { elementIds: ['shape'], visible: true }
     })
+
   const getId = (receipt: {
     actionResults: { result: { inspectionId?: string } }[]
   }) =>
     receipt.actionResults.find((entry) => entry.result.inspectionId)?.result
       .inspectionId
+
   const overviewReceipt = await change()
   const overviewId = getId(overviewReceipt)
+
   expect(
     await localToolContent(JSON.stringify(overviewReceipt))
   ).toContainEqual({
@@ -1246,6 +1399,7 @@ it('requires a frozen plan, current overview and detail evidence, and all criter
       }))
     )
   }
+
   await expect(
     call(AiDesignToolIds.REVIEW_DRAWING, report)
   ).resolves.toMatchObject({ accepted: false })
@@ -1255,6 +1409,7 @@ it('requires a frozen plan, current overview and detail evidence, and all criter
       arguments: { elementId: 'windows', view: 'detail' }
     })
   )
+
   report.inspectionIds.push(detailId)
   await expect(
     call(AiDesignToolIds.REVIEW_DRAWING, {
@@ -1281,6 +1436,7 @@ it('requires a frozen plan, current overview and detail evidence, and all criter
       evidence: 'Windows are missing.'
     }))
   }
+
   await call(AiDesignToolIds.REVIEW_DRAWING, failed)
   expect(tools.settleOutcome(completed).actions[0].arguments).toMatchObject({
     outcome: 'unsupported',
@@ -1297,6 +1453,7 @@ it('requires a frozen plan, current overview and detail evidence, and all criter
       }
     ]
   })
+
   expect(rebound).toMatchObject({
     reviewOperation: 'bind',
     recordedChecks: [],
@@ -1313,6 +1470,7 @@ it('requires a frozen plan, current overview and detail evidence, and all criter
       }
     ])
   }
+
   await expect(
     call(AiDesignToolIds.REVIEW_DRAWING, structureFailure)
   ).resolves.toMatchObject({ accepted: false, structureAccepted: false })
@@ -1353,6 +1511,7 @@ it('accepts intentionally ugly low-detail work against user criteria with only a
   const review = createLocalDesignReview()
   const criterionId =
     'An intentionally ugly, rough, asymmetric face with three crude shapes'
+
   review.record({
     phase: 'plan',
     method: 'Use three deliberately uneven native shapes',
@@ -1362,8 +1521,12 @@ it('accepts intentionally ugly low-detail work against user criteria with only a
   })
   review.mutate()
   const evidence = review.inspect('face', true, true)
+
   expect(evidence).toBeDefined()
-  if (!evidence) throw new Error('Missing inspection receipt')
+  if (!evidence) {
+    throw new Error('Missing inspection receipt')
+  }
+
   const result = review.record({
     phase: 'visual',
     ...wholeViewJudgments(
@@ -1378,6 +1541,7 @@ it('accepts intentionally ugly low-detail work against user criteria with only a
       ]
     )
   })
+
   expect(result.accepted).toBe(true)
   expect(review.getIssue()).toBeUndefined()
 })
@@ -1416,6 +1580,7 @@ it('issues detail receipts for native regions without certifying the whole drawi
       new AbortController().signal
     )
   )
+
   expect(execute.mock.calls[0][0].actions[0].arguments).toEqual({
     elementId: 'drawing',
     region,
@@ -1429,6 +1594,7 @@ it('issues detail receipts for native regions without certifying the whole drawi
 it('keeps same-revision receipts valid across repeated captures and distinguishes regional detail', () => {
   const review = createLocalDesignReview()
   const criterion = 'The requested composition and local details are present'
+
   review.record({
     phase: 'plan',
     method: 'Inspect actual output',
@@ -1439,7 +1605,11 @@ it('keeps same-revision receipts valid across repeated captures and distinguishe
   review.mutate()
   const overview = review.inspect('drawing', true, true)
   const detail = review.inspect('window', true, false)
-  if (!overview || !detail) throw new Error('Missing inspection receipts')
+
+  if (!overview || !detail) {
+    throw new Error('Missing inspection receipts')
+  }
+
   expect(review.inspect('drawing', true, true)).toEqual(overview)
   expect(review.inspect('window', true, false)).toEqual(detail)
   const report = {
@@ -1455,6 +1625,7 @@ it('keeps same-revision receipts valid across repeated captures and distinguishe
       ]
     )
   }
+
   expect(review.record(report).accepted).toBe(true)
   review.mutate()
   expect(() => review.record(report)).toThrow('current inspection IDs')
@@ -1462,6 +1633,7 @@ it('keeps same-revision receipts valid across repeated captures and distinguishe
 
 it('accepts regional detail on the composition but never promotes it to overview evidence', () => {
   const review = createLocalDesignReview()
+
   review.record({
     phase: 'plan',
     method: 'Compare overview and native detail',
@@ -1473,7 +1645,11 @@ it('accepts regional detail on the composition but never promotes it to overview
   const overview = review.inspect('drawing', true, true)
   const region = { x: 10, y: 20, width: 100, height: 100 }
   const detail = review.inspect('drawing', true, false, region)
-  if (!overview || !detail) throw new Error('Missing inspection receipts')
+
+  if (!overview || !detail) {
+    throw new Error('Missing inspection receipts')
+  }
+
   expect(detail.inspectionId).not.toBe(overview.inspectionId)
   expect(review.inspect('drawing', true, false, { ...region })).toEqual(detail)
   const checks = [
@@ -1483,6 +1659,7 @@ it('accepts regional detail on the composition but never promotes it to overview
       evidence: 'Whole silhouette and native window detail match.'
     }
   ]
+
   expect(
     review.record({
       phase: 'visual',
@@ -1545,10 +1722,15 @@ it('follows a new group containing the current review target without switching t
       AiActionNames.ORGANIZE_DESIGN,
       AiActionNames.INSPECT_DRAWING
     ].map((name) => ({ name, description: name, inputSchema: {} })),
-    { modelActions: (a) => a, resolveBatch: (v) => v },
+    {
+      modelActions: (a) => a,
+
+      resolveBatch: (v) => v
+    },
     executeBatch,
     { reviewTargetId: 'original' }
   )
+
   await operations.call(
     AiActionNames.ORGANIZE_DESIGN,
     { arguments: { operation: 'group', elementIds: ['unrelated'] } },
@@ -1575,6 +1757,7 @@ it('accepts the whole drawing after a late detail group is ungrouped and reparen
     context: {},
     actionResults: batch.actions.map((action) => {
       let result: Record<string, unknown> = {}
+
       if (action.name === AiActionNames.ORGANIZE_DESIGN) {
         result = {
           status: 'complete',
@@ -1598,6 +1781,7 @@ it('accepts the whole drawing after a late detail group is ungrouped and reparen
       } else if (action.name === AiActionNames.VALIDATE_INSPECTION_EVIDENCE) {
         const scope = action.arguments.scope as
           { overviewIds?: string[] } | undefined
+
         result = {
           current: true,
           validatedAt: { sessionId: 'validation-fixture', revision: 1 },
@@ -1626,6 +1810,7 @@ it('accepts the whole drawing after a late detail group is ungrouped and reparen
           measuredTextIds: []
         }
       }
+
       return { actionId: action.id, actionName: action.name, result }
     })
   }))
@@ -1638,12 +1823,18 @@ it('accepts the whole drawing after a late detail group is ungrouped and reparen
       AiActionNames.VALIDATE_INSPECTION_EVIDENCE,
       moveName
     ].map((name) => ({ name, description: name, inputSchema: {} })),
-    { modelActions: (a) => a, resolveBatch: (b) => b },
+    {
+      modelActions: (a) => a,
+
+      resolveBatch: (b) => b
+    },
     execute,
     { reviewTargetId: 'body' }
   )
+
   const call = (name: string, args: unknown) =>
     tools.call(name, args, new AbortController().signal).then(JSON.parse)
+
   await call(AiDesignToolIds.DEFINE_DESIGN_CRITERIA, {
     phase: 'plan',
     method: 'Draw and refine',
@@ -1676,6 +1867,7 @@ it('accepts the whole drawing after a late detail group is ungrouped and reparen
   const unrelated = await call(AiActionNames.INSPECT_DRAWING, {
     arguments: { elementId: 'other', view: 'overview' }
   })
+
   await expect(
     call(AiDesignToolIds.REVIEW_DRAWING, {
       phase: 'visual',
@@ -1692,6 +1884,7 @@ it('accepts the whole drawing after a late detail group is ungrouped and reparen
   const inspected = await call(AiActionNames.INSPECT_DRAWING, {
     arguments: { elementId: 'tower', view: 'overview' }
   })
+
   await expect(
     call(AiDesignToolIds.REVIEW_DRAWING, {
       phase: 'visual',
@@ -1712,6 +1905,7 @@ it('accepts the whole drawing after a late detail group is ungrouped and reparen
       batch.actions[0].name === AiActionNames.VALIDATE_INSPECTION_EVIDENCE &&
       'scope' in batch.actions[0].arguments
   )?.[0]
+
   expect(validation?.actions[0].arguments).toMatchObject({
     scope: { requiredIds: ['tower', 'collar-face'], overviewIds: ['tower'] }
   })
@@ -1735,6 +1929,7 @@ it('accepts the whole drawing after a late detail group is ungrouped and reparen
       }
     ]
   })
+
   expect(final.actions[0].arguments.outcome).toBe('unsupported')
 })
 
@@ -1776,15 +1971,23 @@ it.each([
     context: {},
     actionResults: batch.actions.map((action) => {
       let result: unknown = {}
-      if (action.name === removal.name) result = removal.result
-      if (action.name === AiActionNames.APPLY_PREPARED_DESIGN)
+
+      if (action.name === removal.name) {
+        result = removal.result
+      }
+
+      if (action.name === AiActionNames.APPLY_PREPARED_DESIGN) {
         result = { compositionId: 'successor' }
-      if (action.name === AiActionNames.INSPECT_DRAWING)
+      }
+
+      if (action.name === AiActionNames.INSPECT_DRAWING) {
         result = {
           available: true,
           image: { dataUrl: png },
           evidence: { sessionId: 'doc', revision: 1 }
         }
+      }
+
       if (action.name === AiActionNames.VALIDATE_INSPECTION_EVIDENCE) {
         capturedScope = action.arguments.scope
         result = {
@@ -1793,6 +1996,7 @@ it.each([
           coverage: { complete: true }
         }
       }
+
       return { actionId: action.id, actionName: action.name, result }
     })
   }))
@@ -1803,12 +2007,18 @@ it.each([
       AiActionNames.INSPECT_DRAWING,
       AiActionNames.VALIDATE_INSPECTION_EVIDENCE
     ].map((name) => ({ name, description: name, inputSchema: {} })),
-    { modelActions: (a) => a, resolveBatch: (b) => b },
+    {
+      modelActions: (a) => a,
+
+      resolveBatch: (b) => b
+    },
     execute,
     { reviewTargetId: 'original' }
   )
+
   const call = (name: string, args: unknown) =>
     tools.call(name, args, new AbortController().signal).then(JSON.parse)
+
   await call(AiDesignToolIds.DEFINE_DESIGN_CRITERIA, {
     phase: 'plan',
     method: 'Refine',
@@ -1827,6 +2037,7 @@ it.each([
   const image = await call(AiActionNames.INSPECT_DRAWING, {
     arguments: { elementId: 'successor' }
   })
+
   await call(AiDesignToolIds.REVIEW_DRAWING, {
     phase: 'visual',
     ...wholeViewJudgments(
@@ -1867,18 +2078,25 @@ it('checks each deferred mutation and reuses current measurements for capture an
   let revision = 1
   const executeBatch = vi.fn(async (batch: AiActionBatch) => {
     const action = batch.actions[0]
-    if (action.name === AiActionNames.APPLY_PREPARED_DESIGN) revision++
+
+    if (action.name === AiActionNames.APPLY_PREPARED_DESIGN) {
+      revision++
+    }
+
     const value = results[action.name] as Record<string, unknown>
     let result = value
-    if (action.name === AiActionNames.VALIDATE_INSPECTION_EVIDENCE)
+
+    if (action.name === AiActionNames.VALIDATE_INSPECTION_EVIDENCE) {
       result = {
         ...value,
         current:
           (action.arguments.evidence as { revision: number }).revision ===
           revision
       }
-    else if (value && 'evidence' in value)
+    } else if (value && 'evidence' in value) {
       result = { ...value, evidence: { sessionId: 'app-session', revision } }
+    }
+
     return {
       context: {},
       actionResults: [
@@ -1897,10 +2115,15 @@ it('checks each deferred mutation and reuses current measurements for capture an
       AiActionNames.INSPECT_DRAWING,
       AiActionNames.VALIDATE_INSPECTION_EVIDENCE
     ].map((name) => ({ name, description: name, inputSchema: {} })),
-    { modelActions: (a) => a, resolveBatch: (v) => v },
+    {
+      modelActions: (a) => a,
+
+      resolveBatch: (v) => v
+    },
     executeBatch
   )
   const signal = new AbortController().signal
+
   await operations.call(
     AiDesignToolIds.DEFINE_DESIGN_CRITERIA,
     {
@@ -1923,11 +2146,14 @@ it('checks each deferred mutation and reuses current measurements for capture an
         signal
       )
     )
+
     expect(result.actionResults[0].result).toMatchObject({ applied: true })
     expect(result.inspectionDeferred).toBe(true)
   }
+
   const names = () =>
     executeBatch.mock.calls.map(([batch]) => batch.actions[0].name)
+
   expect(
     names().filter((name) => name === AiActionNames.APPLY_PREPARED_DESIGN)
   ).toHaveLength(3)
@@ -1948,6 +2174,7 @@ it('checks each deferred mutation and reuses current measurements for capture an
       }
     ]
   }
+
   expect(operations.settleOutcome(outcome).actions[0].arguments.outcome).toBe(
     'unsupported'
   )
@@ -1960,10 +2187,12 @@ it('checks each deferred mutation and reuses current measurements for capture an
       signal
     )
   )
+
   expect(
     names().filter((name) => name === AiActionNames.INSPECT_DRAWING)
   ).toHaveLength(1)
   const inspectionId = capture.actionResults[0].result.inspectionId
+
   expect(
     names().filter((name) => name === AiActionNames.REVIEW_DESIGN)
   ).toHaveLength(3)
@@ -2023,6 +2252,7 @@ it('checks each deferred mutation and reuses current measurements for capture an
       signal
     )
   )
+
   expect(
     names().filter((name) => name === AiActionNames.REVIEW_DESIGN)
   ).toHaveLength(4)
@@ -2062,9 +2292,14 @@ it('rejects unsupported inspection scheduling values before mutation', async () 
         inputSchema: {}
       }
     ],
-    { modelActions: (a) => a, resolveBatch: (v) => v },
+    {
+      modelActions: (a) => a,
+
+      resolveBatch: (v) => v
+    },
     executeBatch
   )
+
   await expect(
     operations.call(
       AiActionNames.APPLY_PREPARED_DESIGN,
@@ -2096,10 +2331,15 @@ it('rejects misplaced action fields from the registered schema before dispatch a
         }
       }
     ],
-    { modelActions: (a) => a, resolveBatch: (v) => v },
+    {
+      modelActions: (a) => a,
+
+      resolveBatch: (v) => v
+    },
     executeBatch
   )
   const signal = new AbortController().signal
+
   await expect(
     operations.call(
       AiActionNames.UPDATE_DESIGN_ELEMENT,
@@ -2166,10 +2406,15 @@ it('validates nested batch items and union choices before any canonical dispatch
         inputSchema: schema
       }
     ],
-    { modelActions: (a) => a, resolveBatch: (v) => v },
+    {
+      modelActions: (a) => a,
+
+      resolveBatch: (v) => v
+    },
     execute
   )
   const valid = { elementId: 'pane', style: { fillColor: '#112233' } }
+
   for (const bad of [
     { elementId: 'pane', fillColor: '#112233' },
     { elementId: 'pane' },
@@ -2184,6 +2429,7 @@ it('validates nested batch items and union choices before any canonical dispatch
       )
     ).rejects.toThrow(LocalOperationPreparationError)
   }
+
   expect(execute).not.toHaveBeenCalled()
   await tools.call(
     AiActionNames.UPDATE_COMPOSITION_ELEMENTS,
@@ -2196,7 +2442,8 @@ it('validates nested batch items and union choices before any canonical dispatch
 it('retains the whole drawing review target after a child refinement', async () => {
   const executeBatch = vi.fn(async (batch: AiActionBatch) => {
     const action = batch.actions[0]
-    if (action.name === AiActionNames.VALIDATE_INSPECTION_EVIDENCE)
+
+    if (action.name === AiActionNames.VALIDATE_INSPECTION_EVIDENCE) {
       return {
         context: {},
         actionResults: [
@@ -2211,7 +2458,9 @@ it('retains the whole drawing review target after a child refinement', async () 
           }
         ]
       }
-    if (action.name === AiActionNames.REVIEW_DESIGN)
+    }
+
+    if (action.name === AiActionNames.REVIEW_DESIGN) {
       return {
         context: {},
         actionResults: [
@@ -2226,6 +2475,8 @@ it('retains the whole drawing review target after a child refinement', async () 
           }
         ]
       }
+    }
+
     return {
       context: {},
       actionResults: [
@@ -2254,11 +2505,16 @@ it('retains the whole drawing review target after a child refinement', async () 
       AiActionNames.INSPECT_DRAWING,
       AiActionNames.VALIDATE_INSPECTION_EVIDENCE
     ].map((name) => ({ name, description: name, inputSchema: {} })),
-    { modelActions: (a) => a, resolveBatch: (v) => v },
+    {
+      modelActions: (a) => a,
+
+      resolveBatch: (v) => v
+    },
     executeBatch,
     { reviewTargetId: 'whole' }
   )
   const signal = new AbortController().signal
+
   await operations.call(
     AiDesignToolIds.DEFINE_DESIGN_CRITERIA,
     {
@@ -2278,6 +2534,7 @@ it('retains the whole drawing review target after a child refinement', async () 
     },
     signal
   )
+
   const capture = async (elementId: string, view: string) =>
     JSON.parse(
       await operations.call(
@@ -2286,6 +2543,7 @@ it('retains the whole drawing review target after a child refinement', async () 
         signal
       )
     ).actionResults[0].result.inspectionId
+
   const overview = await capture('whole', 'overview')
   const detail = await capture('child', 'detail')
   const review = JSON.parse(
@@ -2307,6 +2565,7 @@ it('retains the whole drawing review target after a child refinement', async () 
       signal
     )
   )
+
   expect(review.accepted).toBe(true)
   await operations.call(
     AiActionNames.UPDATE_DESIGN_ELEMENT,
@@ -2344,6 +2603,7 @@ it('does not reuse layout results across edits without canonical revision eviden
   }
   const execute = vi.fn(async (batch: AiActionBatch) => {
     const a = batch.actions[0]
+
     return {
       context: {},
       actionResults: [
@@ -2351,10 +2611,14 @@ it('does not reuse layout results across edits without canonical revision eviden
           actionId: a.id,
           actionName: a.name,
           result: (() => {
-            if (a.name === AiActionNames.REVIEW_DESIGN)
+            if (a.name === AiActionNames.REVIEW_DESIGN) {
               return { complete: true, findings: [], measuredTextIds: [] }
-            if (a.name === AiActionNames.INSPECT_DRAWING)
+            }
+
+            if (a.name === AiActionNames.INSPECT_DRAWING) {
               return { available: true, image: { dataUrl: png } }
+            }
+
             return {
               compositionId:
                 a.name === AiActionNames.UPDATE_DESIGN_ELEMENT
@@ -2376,10 +2640,15 @@ it('does not reuse layout results across edits without canonical revision eviden
   ]
   const tools = createLocalOperationTools(
     names.map((name) => ({ name, description: name, inputSchema: {} })),
-    { modelActions: (a) => a, resolveBatch: (v) => v },
+    {
+      modelActions: (a) => a,
+
+      resolveBatch: (v) => v
+    },
     execute
   )
   const signal = new AbortController().signal
+
   await tools.call(
     AiActionNames.APPLY_PREPARED_DESIGN,
     { arguments: {} },
@@ -2396,10 +2665,12 @@ it('does not reuse layout results across edits without canonical revision eviden
     { arguments: { elementId: 'root' } },
     signal
   )
+
   const reviews = () =>
     execute.mock.calls
       .filter(([b]) => b.actions[0].name === AiActionNames.REVIEW_DESIGN)
       .map(([b]) => b.actions[0].arguments)
+
   expect(reviews()).toMatchObject([
     { elementId: 'text', measurementTargets: 'descendants' }
   ])
@@ -2559,15 +2830,18 @@ it('dispatches many registered edits once and reviews the completed batch once',
     context: {},
     actionResults: batch.actions.map((a) => {
       let result: unknown = { available: true }
-      if (a.name === AiActionNames.REVIEW_DESIGN)
+
+      if (a.name === AiActionNames.REVIEW_DESIGN) {
         result = {
           complete: true,
           evidence: { sessionId: 'doc', revision: 1 },
           findings: [],
           measuredTextIds: []
         }
-      else if (a.name === AiActionNames.SET_ELEMENT_VISIBILITY)
+      } else if (a.name === AiActionNames.SET_ELEMENT_VISIBILITY) {
         result = { changed: true, elementId: a.arguments.elementId }
+      }
+
       return { actionId: a.id, actionName: a.name, result }
     })
   }))
@@ -2598,10 +2872,15 @@ it('dispatches many registered edits once and reviews the completed batch once',
         inputSchema: {}
       }
     ],
-    { modelActions: (a) => a, resolveBatch: (v) => v },
+    {
+      modelActions: (a) => a,
+
+      resolveBatch: (v) => v
+    },
     execute,
     { reviewTargetId: 'root' }
   )
+
   await tools.call(
     'execute_design_batch',
     {
@@ -2660,7 +2939,13 @@ it('resolves identity families into one exchange with a compact batch summary an
         }
       }
     ],
-    { modelActions: (a) => a, resolveBatch: (v) => v, resolveTargets },
+    {
+      modelActions: (a) => a,
+
+      resolveBatch: (v) => v,
+
+      resolveTargets
+    },
     execute
   )
   const input = {
@@ -2683,6 +2968,7 @@ it('resolves identity families into one exchange with a compact batch summary an
       new AbortController().signal
     )
   )
+
   expect(resolveTargets).toHaveBeenCalledExactlyOnceWith({
     artifactId: 'saved',
     keyPrefix: 'reflection-'
@@ -2691,6 +2977,7 @@ it('resolves identity families into one exchange with a compact batch summary an
   expect(result.batchSummary).toEqual({ operationCount: 1, actionCount: 3 })
   expect(result.context).toBeUndefined()
   const aborted = new AbortController()
+
   aborted.abort()
   execute.mockClear()
   await expect(
@@ -2705,6 +2992,7 @@ it('resolves identity families into one exchange with a compact batch summary an
       new AbortController().signal
     )
   )
+
   expect(rejected).toMatchObject({
     message: 'Target removed or locked',
     recoverable: false,
@@ -2716,9 +3004,14 @@ it('resolves identity families into one exchange with a compact batch summary an
 it('discovers every basic API without publishing hundreds of native tools', async () => {
   const operations = createLocalOperationTools(
     basicApiContracts,
-    { modelActions: (a) => a, resolveBatch: (v) => v },
+    {
+      modelActions: (a) => a,
+
+      resolveBatch: (v) => v
+    },
     async () => ({ actionResults: [], context: {} })
   )
+
   expect(operations.definitions.map((tool) => tool.name)).not.toEqual(
     expect.arrayContaining(basicApiContracts.map(({ name }) => name))
   )
@@ -2726,6 +3019,7 @@ it('discovers every basic API without publishing hundreds of native tools', asyn
   const index = JSON.parse(
     await operations.call('describe_design_apis', {}, signal)
   )
+
   expect(index.catalogSize).toBe(basicApiContracts.length)
   expect(
     index.categories.reduce(
@@ -2740,6 +3034,7 @@ it('discovers every basic API without publishing hundreds of native tools', asyn
   const details = JSON.parse(
     await operations.call('describe_design_apis', { names: requested }, signal)
   )
+
   expect(details.apis.map((entry: { name: string }) => entry.name)).toEqual(
     requested
   )
@@ -2760,16 +3055,23 @@ it('searches current API descriptions and names without loading every schema or 
   const execute = vi.fn()
   const tools = createLocalOperationTools(
     actions,
-    { modelActions: (value) => value, resolveBatch: (value) => value },
+    {
+      modelActions: (value) => value,
+
+      resolveBatch: (value) => value
+    },
     execute
   )
   const signal = new AbortController().signal
+
   const call = async (args: unknown) =>
     JSON.parse(
       await tools.call(AiDesignToolIds.DESCRIBE_DESIGN_APIS, args, signal)
     )
+
   const full = await call({})
   const found = await call({ query: 'Quasar HANDLES' })
+
   expect(found).toMatchObject({
     complete: true,
     count: 1,
@@ -2790,6 +3092,7 @@ it('searches current API descriptions and names without loading every schema or 
     ])
   )
   const empty = await call({ query: 'unmatched-quasar-blueprint' })
+
   expect(empty).toMatchObject({
     complete: true,
     count: 0,
@@ -2816,10 +3119,15 @@ it('executes discovered APIs in a batch and identifies unknown lookup names', as
   }))
   const operations = createLocalOperationTools(
     basicApiContracts,
-    { modelActions: (a) => a, resolveBatch: (v) => v },
+    {
+      modelActions: (a) => a,
+
+      resolveBatch: (v) => v
+    },
     execute
   )
   const signal = new AbortController().signal
+
   await operations.call(
     AiDesignToolIds.EXECUTE_DESIGN_BATCH,
     {
@@ -2860,9 +3168,14 @@ it('reports exact review input fields before stateful evidence validation', asyn
         inputSchema: {}
       }
     ],
-    { modelActions: (a) => a, resolveBatch: (b) => b },
+    {
+      modelActions: (a) => a,
+
+      resolveBatch: (b) => b
+    },
     async () => ({ actionResults: [], context: {} })
   )
+
   await expect(
     tools.call(
       AiDesignToolIds.REVIEW_DRAWING,
@@ -2908,11 +3221,16 @@ it.each(['assessment', 'completion'])(
         description: name,
         inputSchema: {}
       })),
-      { modelActions: (actions) => actions, resolveBatch: (value) => value },
+      {
+        modelActions: (actions) => actions,
+
+        resolveBatch: (value) => value
+      },
       execute,
       { reviewTargetId: 'drawing' }
     )
     const signal = new AbortController().signal
+
     await operations.call(
       AiDesignToolIds.DEFINE_DESIGN_CRITERIA,
       {
@@ -2940,6 +3258,7 @@ it.each(['assessment', 'completion'])(
         [{ criterionId: 'Appearance', status: 'pass', evidence: 'Matches' }]
       )
     }
+
     expect(
       JSON.parse(
         await operations.call(
@@ -2977,10 +3296,12 @@ it.each(['assessment', 'completion'])(
           }
         ]
       })
+
       expect(settled.actions[0].arguments).toMatchObject({
         outcome: 'unsupported'
       })
     }
+
     expect(
       execute.mock.calls.filter(
         ([batch]) => batch.actions[0].name === validateName
@@ -2994,10 +3315,12 @@ it('captures a changed canonical generation without implicitly repeating determi
   let changeDuringCapture = true
   const execute = vi.fn(async (batch: AiActionBatch) => {
     const action = batch.actions[0]
+
     if (action.name === AiActionNames.INSPECT_DRAWING && changeDuringCapture) {
       revision++
       changeDuringCapture = false
     }
+
     const evidence = { sessionId: 'document', revision }
     const results: Record<string, unknown> = {
       [AiActionNames.REVIEW_DESIGN]: {
@@ -3016,6 +3339,7 @@ it('captures a changed canonical generation without implicitly repeating determi
         compositionId: 'drawing'
       }
     }
+
     return {
       context: {},
       actionResults: [
@@ -3033,28 +3357,38 @@ it('captures a changed canonical generation without implicitly repeating determi
       AiActionNames.REVIEW_DESIGN,
       AiActionNames.INSPECT_DRAWING
     ].map((name) => ({ name, description: name, inputSchema: {} })),
-    { modelActions: (a) => a, resolveBatch: (v) => v },
+    {
+      modelActions: (a) => a,
+
+      resolveBatch: (v) => v
+    },
     execute,
     { reviewTargetId: 'drawing' }
   )
   const signal = new AbortController().signal
+
   await operations.call(
     AiActionNames.UPDATE_DESIGN_ELEMENT,
     { arguments: { elementId: 'drawing' }, inspection: 'defer' },
     signal
   )
+
   const inspect = () =>
     operations.call(
       AiActionNames.INSPECT_DRAWING,
       { arguments: { elementId: 'drawing' } },
       signal
     )
+
   const captured = JSON.parse(await inspect())
+
   expect(captured.actionResults[0].result.evidence.revision).toBe(2)
+
   const measurements = () =>
     execute.mock.calls.filter(
       ([batch]) => batch.actions[0].name === AiActionNames.REVIEW_DESIGN
     ).length
+
   expect(measurements()).toBe(1)
   await operations.call(
     AiActionNames.REVIEW_DESIGN,
@@ -3091,19 +3425,27 @@ it.each(['missing stamp', 'missing validation action'])(
       description: name,
       inputSchema: {}
     }))
-    if (missing === 'missing stamp')
+
+    if (missing === 'missing stamp') {
       actions.push({
         name: AiActionNames.VALIDATE_INSPECTION_EVIDENCE,
         description: 'Validate',
         inputSchema: {}
       })
+    }
+
     const tools = createLocalOperationTools(
       actions,
-      { modelActions: (a) => a, resolveBatch: (v) => v },
+      {
+        modelActions: (a) => a,
+
+        resolveBatch: (v) => v
+      },
       execute,
       { reviewTargetId: 'drawing' }
     )
     const signal = new AbortController().signal
+
     await tools.call(
       AiDesignToolIds.DEFINE_DESIGN_CRITERIA,
       {
@@ -3122,6 +3464,7 @@ it.each(['missing stamp', 'missing validation action'])(
         signal
       )
     )
+
     await expect(
       tools.call(
         AiDesignToolIds.REVIEW_DRAWING,
@@ -3181,7 +3524,11 @@ it('does not infer model delivery from a tool name when its declaration is absen
   }))
   const tools = createLocalOperationTools(
     [{ name, description: name, inputSchema: {} }],
-    { modelActions: (a) => a, resolveBatch: (v) => v },
+    {
+      modelActions: (a) => a,
+
+      resolveBatch: (v) => v
+    },
     execute
   )
   const args = {
@@ -3194,6 +3541,7 @@ it('does not infer model delivery from a tool name when its declaration is absen
   const compact = JSON.parse(
     await tools.call('execute_design_batch', args, new AbortController().signal)
   )
+
   expect(
     compact.actionResults.map((entry: { result: unknown }) => entry.result)
   ).toEqual(values)
@@ -3204,6 +3552,7 @@ it('does not infer model delivery from a tool name when its declaration is absen
       new AbortController().signal
     )
   )
+
   expect(
     full.actionResults.map((entry: { result: unknown }) => entry.result)
   ).toEqual(values)
@@ -3255,9 +3604,14 @@ it('retains valueless owner receipts instead of replacing their evidence with su
   }))
   const tools = createLocalOperationTools(
     [write, read].map((name) => ({ name, description: name, inputSchema: {} })),
-    { modelActions: (a) => a, resolveBatch: (v) => v },
+    {
+      modelActions: (a) => a,
+
+      resolveBatch: (v) => v
+    },
     execute
   )
+
   expect(
     JSON.stringify(
       tools.definitions.find((tool) => tool.name === 'execute_design_batch')
@@ -3273,6 +3627,7 @@ it('retains valueless owner receipts instead of replacing their evidence with su
   const compact = JSON.parse(
     await tools.call('execute_design_batch', args, new AbortController().signal)
   )
+
   expect(compact.batchSummary).toEqual({
     operationCount: count + values.length,
     actionCount: count + values.length
@@ -3294,6 +3649,7 @@ it('retains valueless owner receipts instead of replacing their evidence with su
       new AbortController().signal
     )
   )
+
   expect(full.actionResults).toHaveLength(count + values.length)
   expect(execute).toHaveBeenCalledTimes(2)
 })
@@ -3306,7 +3662,11 @@ it('retrieves retained source facts without canvas reads, captures or repeated v
       description: name,
       inputSchema: {}
     })),
-    { modelActions: (actions) => actions, resolveBatch: (batch) => batch },
+    {
+      modelActions: (actions) => actions,
+
+      resolveBatch: (batch) => batch
+    },
     executeBatch
   )
   const signal = new AbortController().signal
@@ -3323,6 +3683,7 @@ it('retrieves retained source facts without canvas reads, captures or repeated v
     { phase: 'facts', facts: [fact] },
     signal
   )
+
   for (let i = 0; i < 5; i++) {
     expect(
       await operations.call(
@@ -3332,6 +3693,7 @@ it('retrieves retained source facts without canvas reads, captures or repeated v
       )
     ).toEqual(saved)
   }
+
   expect(executeBatch).not.toHaveBeenCalled()
 })
 
@@ -3367,12 +3729,18 @@ it('includes bound fact targets in one canonical coverage check before visual ac
       AiActionNames.INSPECT_DRAWING,
       AiActionNames.VALIDATE_INSPECTION_EVIDENCE
     ].map((name) => ({ name, description: name, inputSchema: {} })),
-    { modelActions: (actions) => actions, resolveBatch: (batch) => batch },
+    {
+      modelActions: (actions) => actions,
+
+      resolveBatch: (batch) => batch
+    },
     execute,
     { reviewTargetId: 'root' }
   )
+
   const call = (name: string, args: unknown) =>
     tools.call(name, args, new AbortController().signal).then(JSON.parse)
+
   await call(AiDesignToolIds.DEFINE_DESIGN_CRITERIA, {
     phase: 'plan',
     method: 'Edit',
@@ -3410,6 +3778,7 @@ it('includes bound fact targets in one canonical coverage check before visual ac
       ]
     )
   }
+
   await expect(
     call(AiDesignToolIds.REVIEW_DRAWING, visual)
   ).resolves.toMatchObject({
@@ -3418,7 +3787,11 @@ it('includes bound fact targets in one canonical coverage check before visual ac
     evidenceValidation: { coverage: { complete: false } }
   })
   const coverageCall = execute.mock.calls.at(-1)
-  if (!coverageCall) throw new Error('Missing coverage validation call')
+
+  if (!coverageCall) {
+    throw new Error('Missing coverage validation call')
+  }
+
   expect(coverageCall[0].actions[0].arguments).toMatchObject({
     scope: { requiredIds: ['root', 'crown', 'shaft'], overviewIds: ['root'] }
   })
@@ -3470,10 +3843,17 @@ it('resolves a nested plural target through the registered schema in one canonic
         }
       }
     ],
-    { modelActions: (a) => a, resolveBatch: (v) => v, resolveTargets },
+    {
+      modelActions: (a) => a,
+
+      resolveBatch: (v) => v,
+
+      resolveTargets
+    },
     execute
   )
   const args = { request: { targetParentId: 'parent' } }
+
   const call = (argumentsValue: unknown) =>
     tools.call(
       'execute_design_batch',
@@ -3493,6 +3873,7 @@ it('resolves a nested plural target through the registered schema in one canonic
       },
       new AbortController().signal
     )
+
   await call(args)
   expect(execute).toHaveBeenCalledTimes(1)
   expect(execute.mock.calls[0][0].actions).toHaveLength(1)
@@ -3511,6 +3892,7 @@ it('resolves a nested plural target through the registered schema in one canonic
 
 it('rejects ambiguous identity paths before reading identities', () => {
   const resolve = vi.fn(() => ['a'])
+
   expect(() =>
     prepareOperationBatch(
       [
@@ -3566,7 +3948,11 @@ it.each(['visual', 'data', 'reference-change', 'uncovered'] as const)(
         AiActionNames.INSPECT_DRAWING,
         AiActionNames.VALIDATE_INSPECTION_EVIDENCE
       ].map((name) => ({ name, description: name, inputSchema: {} })),
-      { modelActions: (actions) => actions, resolveBatch: (batch) => batch },
+      {
+        modelActions: (actions) => actions,
+
+        resolveBatch: (batch) => batch
+      },
       async (batch) => ({
         context: {},
         actionResults: batch.actions.map((action) => ({
@@ -3589,6 +3975,7 @@ it.each(['visual', 'data', 'reference-change', 'uncovered'] as const)(
       }),
       {
         reviewTargetId: 'root',
+
         validateReferences: (indexes) =>
           indexes.map((attachmentIndex) => ({
             attachmentIndex,
@@ -3598,8 +3985,10 @@ it.each(['visual', 'data', 'reference-change', 'uncovered'] as const)(
       }
     )
     const signal = new AbortController().signal
+
     const call = (name: string, args: unknown) =>
       tools.call(name, args, signal).then(JSON.parse)
+
     await call(AiDesignToolIds.DEFINE_DESIGN_CRITERIA, {
       phase: 'plan',
       method: 'I am correct',
@@ -3669,6 +4058,7 @@ it.each(['visual', 'data', 'reference-change', 'uncovered'] as const)(
       view: 'details',
       includePassed: true
     })
+
     expect(saved.items).toContainEqual(
       expect.objectContaining({ origin: 'main-agent', status: 'pass' })
     )
@@ -3692,8 +4082,9 @@ it.each(['visual', 'data', 'reference-change', 'uncovered'] as const)(
         expect.objectContaining({ id: 'visual:view', status: 'stale' })
       )
     } else {
-      if (verification === 'uncovered') completeCoverage = false
-      else {
+      if (verification === 'uncovered') {
+        completeCoverage = false
+      } else {
         current = false
         expect(
           (await call(AiDesignToolIds.READ_DESIGN_CHECKS, { view: 'details' }))
@@ -3702,6 +4093,7 @@ it.each(['visual', 'data', 'reference-change', 'uncovered'] as const)(
           expect.objectContaining({ id: 'visual:view', status: 'stale' })
         )
       }
+
       expect(await call(AiDesignToolIds.REVIEW_DRAWING, review)).toMatchObject({
         accepted: false,
         status: 'partial'
@@ -3723,7 +4115,11 @@ it('resolves an exact semantic operation using the admitted schema without a can
   )
   const tools = createLocalOperationTools(
     admitted,
-    { modelActions: (a) => a, resolveBatch: (v) => v },
+    {
+      modelActions: (a) => a,
+
+      resolveBatch: (v) => v
+    },
     execute
   )
   const result = JSON.parse(
@@ -3733,6 +4129,7 @@ it('resolves an exact semantic operation using the admitted schema without a can
       new AbortController().signal
     )
   )
+
   expect(result.apis).toHaveLength(1)
   expect(result.apis[0]).toMatchObject({
     name: 'api_fill_updateFillsAtIndex',
@@ -3745,12 +4142,17 @@ it('resolves an exact semantic operation using the admitted schema without a can
 it('publishes categories instead of the full API catalog for an empty lookup', async () => {
   const tools = createLocalOperationTools(
     basicApiContracts,
-    { modelActions: (a) => a, resolveBatch: (v) => v },
+    {
+      modelActions: (a) => a,
+
+      resolveBatch: (v) => v
+    },
     async () => ({ actionResults: [], context: {} })
   )
   const index = JSON.parse(
     await tools.call('describe_design_apis', {}, new AbortController().signal)
   )
+
   expect(index.apis).toBeUndefined()
   expect(index.categories).toEqual(
     expect.arrayContaining([
@@ -3767,15 +4169,21 @@ it('exposes single-object conveniences only inside the batch schema', () => {
   ]
   const tools = createLocalOperationTools(
     names.map((name) => ({ name, description: name, inputSchema: {} })),
-    { modelActions: (a) => a, resolveBatch: (v) => v },
+    {
+      modelActions: (a) => a,
+
+      resolveBatch: (v) => v
+    },
     async () => ({ actionResults: [], context: {} })
   )
+
   expect(tools.definitions.map((tool) => tool.name)).not.toEqual(
     expect.arrayContaining(names)
   )
   const batch = tools.definitions.find(
     (tool) => tool.name === AiDesignToolIds.EXECUTE_DESIGN_BATCH
   )
+
   expect(JSON.stringify(batch?.inputSchema)).toContain(
     AiActionNames.UPDATE_DESIGN_ELEMENT
   )
@@ -3792,7 +4200,11 @@ it('discovers batch-only composite schemas without exposing a scalar native tool
   }
   const tools = createLocalOperationTools(
     [action],
-    { modelActions: (a) => a, resolveBatch: (v) => v },
+    {
+      modelActions: (a) => a,
+
+      resolveBatch: (v) => v
+    },
     async () => ({ actionResults: [], context: {} })
   )
   const result = JSON.parse(
@@ -3802,6 +4214,7 @@ it('discovers batch-only composite schemas without exposing a scalar native tool
       new AbortController().signal
     )
   )
+
   expect(result.apis[0].inputSchema).toEqual(action.inputSchema)
   expect(result.apis[0].category).toBe('design')
   expect(tools.definitions.some((tool) => tool.name === action.name)).toBe(
@@ -3835,7 +4248,11 @@ it.each([
   'uses canonical identities from wrapped $method receipts for the next inspection',
   async ({ method, args, result, previous, expected }) => {
     const contract = basicApiContracts.find((api) => api.method === method)
-    if (!contract) throw new Error('Missing contract')
+
+    if (!contract) {
+      throw new Error('Missing contract')
+    }
+
     const execute = vi.fn(async (batch: AiActionBatch) => ({
       context: {},
       actionResults: batch.actions.map((action) => ({
@@ -3873,10 +4290,15 @@ it.each([
           inputSchema: {}
         }
       ],
-      { modelActions: (a) => a, resolveBatch: (v) => v },
+      {
+        modelActions: (a) => a,
+
+        resolveBatch: (v) => v
+      },
       execute,
       { reviewTargetId: previous }
     )
+
     await tools.call(
       'execute_design_batch',
       { operations: [{ name: contract.name, arguments: args }] },
@@ -3894,12 +4316,17 @@ it('advertises admitted categories and includes their choices in invalid lookup 
   const admitted = basicApiContracts.filter((api) => api.owner === 'fill')
   const tools = createLocalOperationTools(
     admitted,
-    { modelActions: (a) => a, resolveBatch: (v) => v },
+    {
+      modelActions: (a) => a,
+
+      resolveBatch: (v) => v
+    },
     execute
   )
   const definition = tools.definitions.find(
     (tool) => tool.name === 'describe_design_apis'
   )
+
   expect(JSON.stringify(definition?.inputSchema)).toContain('"enum":["fill"]')
   expect(
     JSON.parse(
@@ -3930,6 +4357,7 @@ it('advertises admitted categories and includes their choices in invalid lookup 
       tools.call('describe_design_apis', selector, new AbortController().signal)
     ).rejects.toThrow('Available categories: fill')
   }
+
   expect(execute).not.toHaveBeenCalled()
 })
 
@@ -3957,11 +4385,14 @@ it('keeps prepared targets and different Fill patches in one plural operation wi
     basicApiContracts,
     {
       modelActions: (a) => a,
+
       resolveBatch: (v) => v,
+
       resolveTargets
     },
     execute
   )
+
   for (const [name, args] of [
     ['api_fill_updateFillsAtIndex', { index: 0, patch: patches }],
     ['api_element_setElementsVisible', { visible: false }]
@@ -3985,11 +4416,13 @@ it('keeps prepared targets and different Fill patches in one plural operation wi
       new AbortController().signal
     )
   }
+
   expect(execute).toHaveBeenCalledTimes(2)
   for (const [batch] of execute.mock.calls) {
     expect(batch.actions).toHaveLength(1)
     expect(batch.actions[0].arguments).toMatchObject({ elementIds: ids })
   }
+
   expect(execute.mock.calls[0][0].actions[0].arguments).toMatchObject({
     patch: patches
   })
@@ -4027,12 +4460,17 @@ it.each([
     const contract = basicApiContracts.find(
       (api) => api.method === 'setElementsVisible'
     )
-    if (!contract) throw new Error('Missing visibility contract')
+
+    if (!contract) {
+      throw new Error('Missing visibility contract')
+    }
+
     const execute = vi.fn(async (batch: AiActionBatch) => ({
       context: {},
       actionResults: batch.actions.map((action) => {
         const args = action.arguments as Record<string, unknown>
         let result: unknown
+
         if (action.name === contract.name) {
           result = {
             ...describeBasicApiResult(contract, statuses, args.elementIds),
@@ -4065,6 +4503,7 @@ it.each([
             requiredIds: string[]
             overviewIds: string[]
           }
+
           result = {
             current: true,
             validatedAt: { sessionId: 'validation-fixture', revision: 1 },
@@ -4076,6 +4515,7 @@ it.each([
             }
           }
         }
+
         return {
           actionId: action.id,
           actionName: action.name,
@@ -4092,11 +4532,17 @@ it.each([
           AiActionNames.VALIDATE_INSPECTION_EVIDENCE
         ].map((name) => ({ name, description: name, inputSchema: {} }))
       ],
-      { modelActions: (a) => a, resolveBatch: (b) => b },
+      {
+        modelActions: (a) => a,
+
+        resolveBatch: (b) => b
+      },
       execute
     )
+
     const call = (name: string, args: unknown) =>
       tools.call(name, args, new AbortController().signal).then(JSON.parse)
+
     await call(AiDesignToolIds.DEFINE_DESIGN_CRITERIA, {
       phase: 'plan',
       method: 'Change visibility',
@@ -4110,6 +4556,7 @@ it.each([
       ],
       ...(defer ? { inspection: 'defer', response: 'full' } : {})
     })
+
     expect(receipt.actionResults[0].result).toMatchObject({
       status,
       value: statuses,
@@ -4123,9 +4570,12 @@ it.each([
     if (status === 'no-change') {
       expect(execute).toHaveBeenCalledTimes(1)
       expect(receipt).not.toHaveProperty('measurementDeferred')
+
       return
     }
+
     let inspected = receipt
+
     if (defer) {
       expect(execute).toHaveBeenCalledTimes(2)
       expect(receipt.inspectionDeferred).toBe(true)
@@ -4139,10 +4589,12 @@ it.each([
         arguments: { elementId: 'a' }
       })
     }
+
     const firstImage = inspected.actionResults.find(
       (entry: { actionName: string }) =>
         entry.actionName === AiActionNames.INSPECT_DRAWING
     ).result.inspectionId
+
     const review = (inspectionIds: string[]) =>
       call(AiDesignToolIds.REVIEW_DRAWING, {
         phase: 'visual',
@@ -4154,6 +4606,7 @@ it.each([
           }
         ])
       })
+
     expect(await review([firstImage])).toMatchObject({ accepted: false })
     expect(execute.mock.calls.at(-1)?.[0].actions[0].arguments).toMatchObject({
       scope: { requiredIds: ['a', 'b'], overviewIds: ['a'] }
@@ -4161,6 +4614,7 @@ it.each([
     const second = await call(AiActionNames.INSPECT_DRAWING, {
       arguments: { elementId: 'b' }
     })
+
     expect(
       await review([firstImage, second.actionResults[0].result.inspectionId])
     ).toMatchObject({ accepted: true })
@@ -4180,6 +4634,7 @@ it.each([
           }
         ]
       }
+
       expect(tools.settleOutcome(final)).toEqual(final)
     }
   }
@@ -4190,9 +4645,14 @@ it('retrieves exact admitted category schemas through bounded read-only discover
   const admitted = basicApiContracts.filter((api) => api.owner === 'fill')
   const tools = createLocalOperationTools(
     admitted,
-    { modelActions: (actions) => actions, resolveBatch: (batch) => batch },
+    {
+      modelActions: (actions) => actions,
+
+      resolveBatch: (batch) => batch
+    },
     execute
   )
+
   const call = async (args: unknown) =>
     JSON.parse(
       await readCompleteInformation(
@@ -4205,21 +4665,33 @@ it('retrieves exact admitted category schemas through bounded read-only discover
         args
       )
     )
+
   const expanded = await call({ category: 'fill', includeSchemas: true })
   const exact = await call({
     names: expanded.apis.map((api: { name: string }) => api.name)
   })
+
   expect(expanded.apis.length).toBeGreaterThan(0)
   expect(exact.apis.map((api: { name: string }) => api.name)).toEqual(
     expanded.apis.map((api: { name: string }) => api.name)
   )
-  for (const api of exact.apis) expect(api.inputSchema).toBeDefined()
-  for (const api of expanded.apis) expect(api.inputSchema).toBeDefined()
+  for (const api of exact.apis) {
+    expect(api.inputSchema).toBeDefined()
+  }
+
+  for (const api of expanded.apis) {
+    expect(api.inputSchema).toBeDefined()
+  }
+
   const compact = await call({ category: 'fill' })
+
   expect(compact.apis.map((api: { name: string }) => api.name)).toEqual(
     expanded.apis.map((api: { name: string }) => api.name)
   )
-  for (const api of compact.apis) expect(api.inputSchema).toBeUndefined()
+  for (const api of compact.apis) {
+    expect(api.inputSchema).toBeUndefined()
+  }
+
   expect(await call({ category: 'fill', includeSchemas: false })).toEqual(
     compact
   )
@@ -4229,8 +4701,10 @@ it('retrieves exact admitted category schemas through bounded read-only discover
     { category: 'fill', includeSchemas: 'true' },
     { category: 'fill', query: 'fill', includeSchemas: true },
     { category: 'unavailable', includeSchemas: true }
-  ])
+  ]) {
     await expect(call(args)).rejects.toThrow()
+  }
+
   expect(execute).not.toHaveBeenCalled()
 })
 
@@ -4263,10 +4737,15 @@ it('resolves mixed action and native names without discarding known matches or d
   const execute = vi.fn()
   const tools = createLocalOperationTools(
     [action],
-    { modelActions: (a) => a, resolveBatch: (v) => v },
+    {
+      modelActions: (a) => a,
+
+      resolveBatch: (v) => v
+    },
     execute,
     { getNativeTools }
   )
+
   const lookup = async (names: string[]) =>
     JSON.parse(
       await tools.call(
@@ -4275,12 +4754,14 @@ it('resolves mixed action and native names without discarding known matches or d
         new AbortController().signal
       )
     )
+
   const result = await lookup([
     action.name,
     AiDesignToolIds.EXECUTE_DESIGN_BATCH,
     'prepare_new_capability',
     'unregistered'
   ])
+
   expect(result.apis).toEqual([
     expect.objectContaining({
       ...action,
@@ -4314,13 +4795,16 @@ it('resolves mixed action and native names without discarding known matches or d
     const source = native.find(
       (entry) => entry.namespace === tool.namespace && entry.name === tool.name
     )
+
     expect(tool.inputSchema).toEqual(source?.inputSchema)
     expect(tool.description).toEqual(source?.description)
     expect(tool.definition.state).toBe('included')
   }
+
   const repeated = (
     await lookup(['registered_preparation.prepare_new_capability'])
   ).tools[0]
+
   expect(repeated.inputSchema).toBeDefined()
   expect(repeated.definition.state).toBe('included')
   const refreshed = JSON.parse(
@@ -4330,6 +4814,7 @@ it('resolves mixed action and native names without discarding known matches or d
       new AbortController().signal
     )
   ).tools[0]
+
   expect(refreshed.inputSchema).toEqual(native[1].inputSchema)
   expect(refreshed.definition.state).toBe('included')
   expect(getNativeTools).toHaveBeenCalledOnce()
@@ -4373,7 +4858,11 @@ it('delivers both same-name route schemas in one lookup and invokes each without
   }))
   const owner = createOwner(
     [action],
-    { modelActions: (a) => a, resolveBatch: (v) => v },
+    {
+      modelActions: (a) => a,
+
+      resolveBatch: (v) => v
+    },
     execute,
     {
       getNativeTools: () =>
@@ -4384,10 +4873,13 @@ it('delivers both same-name route schemas in one lookup and invokes each without
     }
   )
   const signal = new AbortController().signal
+
   const read = async (args: unknown) =>
     JSON.parse(await owner.call('describe_design_apis', args, signal))
+
   const lookup = await read({ names: [action.name] })
   const queryLookup = await read({ query: action.name, view: 'full' })
+
   expect(queryLookup.apis).toEqual(lookup.apis)
   expect(queryLookup.tools).toEqual(lookup.tools)
   const native = lookup.tools[0]
@@ -4395,6 +4887,7 @@ it('delivers both same-name route schemas in one lookup and invokes each without
   const { operationInputIssue } = await import('../operation-input-schema')
   const { invokeLocalTool } = await import('../local-tool-invocation')
   const values = { elementIds: ['a', 'b'] }
+
   expect(batchAction.inputSchema).toEqual(action.inputSchema)
   expect(native.inputSchema).toEqual(
     owner.definitions.find((tool) => tool.name === action.name)?.inputSchema
@@ -4411,6 +4904,7 @@ it('delivers both same-name route schemas in one lookup and invokes each without
     { arguments: values },
     signal
   )
+
   expect(result.success).toBe(true)
   await owner.call(
     batchAction.execution.tool,
@@ -4418,12 +4912,15 @@ it('delivers both same-name route schemas in one lookup and invokes each without
     signal
   )
   expect(execute).toHaveBeenCalledTimes(2)
-  for (const [batch] of execute.mock.calls)
+  for (const [batch] of execute.mock.calls) {
     expect(batch.actions[0]).toMatchObject({
       name: action.name,
       arguments: values
     })
+  }
+
   const repeated = await read({ names: [action.name] })
+
   expect(repeated.apis[0].definition.state).toBe('included')
   expect(repeated.tools[0].definition.state).toBe('included')
   expect(repeated.apis[0].definition.refresh.arguments.operations).toEqual([
@@ -4433,6 +4930,7 @@ it('delivers both same-name route schemas in one lookup and invokes each without
     `registered_operations.${action.name}`
   ])
   const restored = await read(repeated.tools[0].definition.refresh.arguments)
+
   expect(restored.tools[0].inputSchema).toEqual(native.inputSchema)
 })
 
@@ -4459,16 +4957,23 @@ it('retrieves usage and exact schema fragments without consuming full definition
   const execute = vi.fn()
   const tools = createLocalOperationTools(
     [action],
-    { modelActions: (a) => a, resolveBatch: (b) => b },
+    {
+      modelActions: (a) => a,
+
+      resolveBatch: (b) => b
+    },
     execute
   )
+
   const read = (args: unknown) =>
     tools
       .call('describe_design_apis', args, new AbortController().signal)
       .then(JSON.parse)
+
   const usage = (
     await read({ query: 'Arrange supplied elements', view: 'usage' })
   ).apis[0]
+
   expect(usage.description).toBe(action.description)
   expect(usage.usageGuide).toBeUndefined()
   expect(usage.definition.nextAction).toBe('select-exact-tool')
@@ -4481,6 +4986,7 @@ it('retrieves usage and exact schema fragments without consuming full definition
       schemaPaths: ['/properties/rows/items']
     })
   ).apis[0]
+
   expect(partial.schemaFragments).toEqual([
     { path: '/properties/rows/items', schema: { $ref: '#/$defs/row' } }
   ])
@@ -4490,6 +4996,7 @@ it('retrieves usage and exact schema fragments without consuming full definition
   expect(partial.definition.coverage).toBe('partial')
   expect(partial.inputSchema).toBeUndefined()
   const full = (await read({ names: [action.name] })).apis[0]
+
   expect(full.inputSchema).toEqual(action.inputSchema)
   expect(full.definition).toMatchObject({
     state: 'included',
@@ -4497,6 +5004,7 @@ it('retrieves usage and exact schema fragments without consuming full definition
     availableInResponse: true
   })
   const repeated = (await read({ names: [action.name] })).apis[0]
+
   expect(repeated.definition).toMatchObject({
     state: 'included',
     coverage: 'full',
@@ -4533,8 +5041,10 @@ it('retrieves usage and exact schema fragments without consuming full definition
       refresh: true,
       refreshReason: 'invalid'
     }
-  ])
+  ]) {
     await expect(read(query)).rejects.toThrow()
+  }
+
   expect(execute).not.toHaveBeenCalled()
 })
 
@@ -4557,20 +5067,27 @@ it('uses exact native schema paths with escaped names and keeps unknown paths re
         inputSchema: {}
       }
     ],
-    { modelActions: (a) => a, resolveBatch: (b) => b },
+    {
+      modelActions: (a) => a,
+
+      resolveBatch: (b) => b
+    },
     vi.fn(),
     { getNativeTools }
   )
+
   const read = (args: unknown) =>
     tools
       .call('describe_design_apis', args, new AbortController().signal)
       .then(JSON.parse)
+
   const partial = (
     await read({
       names: ['custom.inspect_custom'],
       schemaPaths: ['/properties/a~1b~0c', '/properties/blocked']
     })
   ).tools[0]
+
   expect(partial.schemaFragments).toEqual([
     { path: '/properties/a~1b~0c', schema: { type: 'boolean' } },
     { path: '/properties/blocked', schema: false }
@@ -4589,6 +5106,7 @@ it('uses exact native schema paths with escaped names and keeps unknown paths re
     ).tools[0].schemaResolution
   ).toMatchObject({ status: 'unavailable', issues: [{ path: '/__proto__' }] })
   const full = (await read(partial.definition.refresh.arguments)).tools[0]
+
   expect(full.inputSchema).toEqual(native.inputSchema)
   expect(full.definition.state).toBe('included')
   expect(
@@ -4604,28 +5122,39 @@ it('returns requested action definitions on repeated reads with explicit context
     description: 'An admitted operation',
     inputSchema: { type: 'object', required: ['value'] }
   }
+
   const create = () =>
     createLocalOperationTools(
       [action],
-      { modelActions: (a) => a, resolveBatch: (b) => b },
+      {
+        modelActions: (a) => a,
+
+        resolveBatch: (b) => b
+      },
       vi.fn()
     )
+
   const tools = create()
+
   const read = (args: unknown, owner = tools) =>
     owner
       .call('describe_design_apis', args, new AbortController().signal)
       .then(JSON.parse)
+
   await read({ category: 'design' })
   const first = (await read({ names: [action.name] })).apis[0]
+
   expect(first.inputSchema).toEqual(action.inputSchema)
   expect(first.definition.state).toBe('included')
   const repeated = (await read({ operation: action.name })).apis[0]
+
   expect(repeated.inputSchema).toBeDefined()
   expect(repeated.definition).toMatchObject({
     revision: first.definition.revision,
     state: 'included'
   })
   const recovered = (await read(repeated.definition.refresh.arguments)).apis[0]
+
   expect(recovered.inputSchema).toEqual(action.inputSchema)
   expect(recovered.definition.revision).toBe(first.definition.revision)
   expect(
@@ -4633,6 +5162,7 @@ it('returns requested action definitions on repeated reads with explicit context
   ).toEqual(action.inputSchema)
   action.inputSchema.required = ['different']
   const changed = (await read({ names: [action.name] }, create())).apis[0]
+
   expect(changed.definition.revision).not.toBe(first.definition.revision)
   expect(changed.inputSchema.required).toEqual(['different'])
 })
@@ -4650,6 +5180,7 @@ it('projects direct image, multi-image and text-only results without leaking ima
     }
     const content = await localToolContent(JSON.stringify(receipt))
     const texts = content.filter((item) => item.type === 'inputText')
+
     expect(texts).toHaveLength(1)
     expect(JSON.stringify(texts)).not.toContain('base64')
     expect(content.filter((item) => item.type === 'inputImage')).toEqual(
@@ -4673,6 +5204,7 @@ it('retains the exact preparation rejection so the next call can correct it with
     ],
     {
       modelActions: (actions) => actions,
+
       resolveBatch: () => {
         throw new Error(
           'Prepared artifact expired: prepare a new artifact for this request'
@@ -4681,6 +5213,7 @@ it('retains the exact preparation rejection so the next call can correct it with
     },
     execute
   )
+
   await expect(
     tools.call(
       'execute_design_batch',
@@ -4712,9 +5245,14 @@ it('rejects scalar region references inside target arrays before reading', async
       },
       ...basicApiContracts
     ],
-    { modelActions: (actions) => actions, resolveBatch: (batch) => batch },
+    {
+      modelActions: (actions) => actions,
+
+      resolveBatch: (batch) => batch
+    },
     execute
   )
+
   await expect(
     tools.call(
       'execute_design_batch',
@@ -4769,9 +5307,14 @@ it.each(['invalid-bounds', 'snapshot', 'ambiguous'])(
         { ...read, inputSchema },
         ...basicApiContracts.filter((api) => api.name === name)
       ],
-      { modelActions: (actions) => actions, resolveBatch: (batch) => batch },
+      {
+        modelActions: (actions) => actions,
+
+        resolveBatch: (batch) => batch
+      },
       execute
     )
+
     await expect(
       tools.call(
         'execute_design_batch',
@@ -4833,7 +5376,11 @@ it('resolves a region target once internally and supplies all IDs to one plural 
   }))
   const tools = createLocalOperationTools(
     [read, ...basicApiContracts.filter((api) => api.name === name)],
-    { modelActions: (a) => a, resolveBatch: (v) => v },
+    {
+      modelActions: (a) => a,
+
+      resolveBatch: (v) => v
+    },
     execute
   )
   const result = JSON.parse(
@@ -4860,6 +5407,7 @@ it('resolves a region target once internally and supplies all IDs to one plural 
       new AbortController().signal
     )
   )
+
   expect(execute).toHaveBeenCalledTimes(2)
   expect(execute.mock.calls[0][0].actions[0].arguments).toMatchObject({
     filter: { name: { prefix: 'roof-' } },
@@ -4899,7 +5447,10 @@ it.each([
     }
   }
   const execute = vi.fn(async (batch: AiActionBatch) => {
-    if (failure === 'cancelled') controller.abort()
+    if (failure === 'cancelled') {
+      controller.abort()
+    }
+
     return {
       context: {},
       actionResults: batch.actions.map((action) => ({
@@ -4929,9 +5480,14 @@ it.each([
   })
   const tools = createLocalOperationTools(
     [read, ...basicApiContracts.filter((api) => api.name === name)],
-    { modelActions: (a) => a, resolveBatch: (v) => v },
+    {
+      modelActions: (a) => a,
+
+      resolveBatch: (v) => v
+    },
     execute
   )
+
   await expect(
     tools.call(
       'execute_design_batch',
@@ -4979,9 +5535,14 @@ it('recovers only missing definition fields with explicit provenance and a reusa
   const execute = vi.fn()
   const tools = createLocalOperationTools(
     [action],
-    { modelActions: (a) => a, resolveBatch: (b) => b },
+    {
+      modelActions: (a) => a,
+
+      resolveBatch: (b) => b
+    },
     execute
   )
+
   const read = async (args: unknown) =>
     JSON.parse(
       await readCompleteInformation(
@@ -4994,7 +5555,9 @@ it('recovers only missing definition fields with explicit provenance and a reusa
         args
       )
     )
+
   const full = (await read({ names: [action.name] })).apis[0]
+
   expect(full.definition.deliveryReason).toBe('requested')
   const paths = ['/properties/elementIds']
   const partial = (
@@ -5005,6 +5568,7 @@ it('recovers only missing definition fields with explicit provenance and a reusa
       refreshReason: 'missing-fields'
     })
   ).apis[0]
+
   expect(partial.definition).toMatchObject({
     revision: full.definition.revision,
     coverage: 'partial',
@@ -5022,16 +5586,19 @@ it('recovers only missing definition fields with explicit provenance and a reusa
     refreshReason: 'delivery-failure'
   })
   const recovered = (await read(partial.definition.recover.arguments)).apis[0]
+
   expect(recovered.schemaFragments).toEqual(partial.schemaFragments)
   expect(recovered.inputSchema).toBeUndefined()
   expect(
     (await read({ names: [action.name] })).apis[0].definition.deliveryReason
   ).toBe('requested')
   const restored = (await read(partial.definition.refresh.arguments)).apis[0]
+
   expect(restored.inputSchema).toEqual(action.inputSchema)
   expect(restored.definition.recoveryReason).toBe('context-loss')
   const unspecified = (await read({ names: [action.name], refresh: true }))
     .apis[0]
+
   expect(unspecified.definition.recoveryReason).toBe('unknown')
   await expect(
     read({ names: [action.name], refreshReason: 'context-loss' })
@@ -5058,12 +5625,17 @@ it('advertises distinct evidence responsibilities and rejects facts sent to draw
       description: name,
       inputSchema: {}
     })),
-    { modelActions: (a) => a, resolveBatch: (b) => b },
+    {
+      modelActions: (a) => a,
+
+      resolveBatch: (b) => b
+    },
     vi.fn()
   )
   const definitions = new Map(
     tools.definitions.map((tool) => [tool.name, tool])
   )
+
   for (const name of [
     'define_design_criteria',
     'record_design_facts',
@@ -5073,6 +5645,7 @@ it('advertises distinct evidence responsibilities and rejects facts sent to draw
   ]) {
     expect(definitions.has(name)).toBe(true)
   }
+
   expect(definitions.has('record_design_review')).toBe(false)
   await expect(
     tools.call(
@@ -5090,6 +5663,7 @@ it('advertises distinct evidence responsibilities and rejects facts sent to draw
       new AbortController().signal
     )
   )
+
   expect(result.recorded).toBe(true)
 })
 
@@ -5103,11 +5677,17 @@ it('returns a reference-selection receipt without retransmitting retained source
         inputSchema: {}
       }
     ],
-    { modelActions: (a) => a, resolveBatch: (b) => b },
+    {
+      modelActions: (a) => a,
+
+      resolveBatch: (b) => b
+    },
     execute
   )
+
   const call = async (name: string, args: unknown) =>
     JSON.parse(await tools.call(name, args, new AbortController().signal))
+
   await expect(
     call(AiDesignToolIds.SELECT_DESIGN_REFERENCES, {
       referenceImageIndexes: [0]
@@ -5136,6 +5716,7 @@ it('returns a reference-selection receipt without retransmitting retained source
       }
     ]
   })
+
   expect(calculations).toMatchObject({
     diagnosticOnly: true,
     calculations: [{ id: 'scaled-height', value: 80, status: 'valid' }]
@@ -5143,6 +5724,7 @@ it('returns a reference-selection receipt without retransmitting retained source
   const selected = await call(AiDesignToolIds.SELECT_DESIGN_REFERENCES, {
     referenceImageIndexes: [0]
   })
+
   expect(selected).toMatchObject({
     referenceImageIndexes: [0],
     changed: true,
@@ -5202,7 +5784,8 @@ describe('capture-to-review handoff', () => {
       context: {},
       actionResults: batch.actions.map((action) => {
         const base = { actionId: action.id, actionName: action.name }
-        if (action.name !== AiActionNames.INSPECT_DRAWING)
+
+        if (action.name !== AiActionNames.INSPECT_DRAWING) {
           return {
             ...base,
             result: {
@@ -5211,7 +5794,9 @@ describe('capture-to-review handoff', () => {
               coverage: { complete: true }
             }
           }
-        if (unavailable.has(String(action.arguments.elementId)))
+        }
+
+        if (unavailable.has(String(action.arguments.elementId))) {
           return {
             ...base,
             result: {
@@ -5220,6 +5805,8 @@ describe('capture-to-review handoff', () => {
                 'Native detail exceeds 1024 pixels; choose a smaller target-local region.'
             }
           }
+        }
+
         return {
           ...base,
           result: {
@@ -5238,13 +5825,19 @@ describe('capture-to-review handoff', () => {
         AiActionNames.INSPECT_DRAWING,
         AiActionNames.VALIDATE_INSPECTION_EVIDENCE
       ].map((name) => ({ name, description: name, inputSchema: {} })),
-      { modelActions: (actions) => actions, resolveBatch: (batch) => batch },
+      {
+        modelActions: (actions) => actions,
+
+        resolveBatch: (batch) => batch
+      },
       execute,
       { reviewTargetId: 'drawing' }
     )
     const signal = new AbortController().signal
+
     const call = (name: string, args: unknown) =>
       tools.call(name, args, signal).then(JSON.parse)
+
     await call(AiDesignToolIds.DEFINE_DESIGN_CRITERIA, {
       phase: 'plan',
       method: 'Compare the drawing',
@@ -5273,6 +5866,7 @@ describe('capture-to-review handoff', () => {
         region: { x: 0, y: 0, width: 100, height: 100 }
       }
     ]
+
     return {
       tools,
       call,
@@ -5286,6 +5880,7 @@ describe('capture-to-review handoff', () => {
 
   it('projects saved representative meaning without mistaking it for visual approval', async () => {
     const f = await setup()
+
     await f.call(
       AiDesignToolIds.DEFINE_DESIGN_CRITERIA,
       recordedAcceptance.input
@@ -5300,6 +5895,7 @@ describe('capture-to-review handoff', () => {
         }
       ]
     })
+
     expect(capture.acceptanceContext).toEqual({
       method: recordedAcceptance.input.method,
       requirementRevision:
@@ -5328,6 +5924,7 @@ describe('capture-to-review handoff', () => {
         checks: [{ criterionId: 'view', unitId }]
       }))
     })
+
     expect(capture.acceptanceContext).toEqual({
       method: 'Compare the drawing',
       requirementRevision:
@@ -5347,6 +5944,7 @@ describe('capture-to-review handoff', () => {
         ({ binding: _binding, ...check }: Record<string, unknown>) => check
       )
     })
+
     expect(rebound.acceptanceContext).toEqual(capture.acceptanceContext)
     const recorded = await f.call(AiDesignToolIds.REVIEW_DRAWING, {
       ...rebound.next.arguments,
@@ -5356,6 +5954,7 @@ describe('capture-to-review handoff', () => {
         evidence: 'Observed the requested local appearance.'
       }))
     })
+
     expect(recorded.recordedChecks).toHaveLength(2)
     expect(recorded.accepted).toBe(false)
     expect(recorded.coverage.passed).toBe(2)
@@ -5373,6 +5972,7 @@ describe('capture-to-review handoff', () => {
       final: false,
       inspections: targets
     })
+
     await f.call(AiDesignToolIds.REVIEW_DRAWING, {
       ...initial.next.arguments,
       checks: initial.next.arguments.checks.map((check: object) => ({
@@ -5401,6 +6001,7 @@ describe('capture-to-review handoff', () => {
     const stale = savedInput.inspections
       .flatMap((item) => item.checks)
       .find((check) => check.unitId === 'tiers')?.supersedes
+
     expect(stale?.revision).toBeLessThan(before.items[0].revision)
     const result = await f.call(AiDesignToolIds.REVIEW_DRAWING, {
       phase: 'visual',
@@ -5413,6 +6014,7 @@ describe('capture-to-review handoff', () => {
         }
       ]
     })
+
     expect(result).toMatchObject({
       status: 'partial',
       accepted: false,
@@ -5430,12 +6032,15 @@ describe('capture-to-review handoff', () => {
         includePassed: true
       })
     ).toEqual(before)
+
     const captureCount = () =>
       f.execute.mock.calls
         .flatMap(([batch]) => batch.actions)
         .filter((action) => action.name === AiActionNames.INSPECT_DRAWING)
         .length
+
     const count = captureCount()
+
     expect(result.next.arguments.bindChecks[0]).toEqual({
       criterionId: 'view',
       unitId: 'tiers',
@@ -5443,8 +6048,10 @@ describe('capture-to-review handoff', () => {
       supersedes: { revision: before.items[0].revision }
     })
     const retry = structuredClone(result.next.arguments)
+
     retry.bindChecks[0].supersedes.reason = 'Use the current requested crop'
     const rebound = await f.call(result.next.tool, retry)
+
     expect(captureCount()).toBe(count)
     await f.call(AiDesignToolIds.REVIEW_DRAWING, {
       ...rebound.next.arguments,
@@ -5459,6 +6066,7 @@ describe('capture-to-review handoff', () => {
       ids,
       includePassed: true
     })
+
     expect(
       after.items.find((item: { unitId: string }) => item.unitId === 'base')
     ).toEqual(
@@ -5476,17 +6084,23 @@ describe('capture-to-review handoff', () => {
       phase: f.review.phase,
       inspections: f.targets
     })
+
     expect(result.accepted).toBe(false)
     const { designEvidenceDefinitions } = await import('../local-design-review')
     const { operationInputIssue } = await import('../operation-input-schema')
     const declaration = designEvidenceDefinitions.find(
       (tool) => tool.name === AiDesignToolIds.REVIEW_DRAWING
     )
-    if (!declaration) throw new Error('Missing review contract')
+
+    if (!declaration) {
+      throw new Error('Missing review contract')
+    }
+
     expect(
       operationInputIssue(result, declaration.outputSchema)
     ).toBeUndefined()
     const incomplete = structuredClone(result)
+
     delete incomplete.next.arguments.checks[0].binding.dependencies
     expect(
       operationInputIssue(incomplete, declaration.outputSchema)
@@ -5546,13 +6160,19 @@ describe('capture-to-review handoff', () => {
     })
     const draft = capture.next.arguments
     const execution = f.execute.getMockImplementation()
-    if (!execution) throw new Error('Missing execution fixture')
+
+    if (!execution) {
+      throw new Error('Missing execution fixture')
+    }
+
     let release: () => void = () => {
       throw new Error('Validation has not started')
     }
+
     let entered: () => void = () => {
       throw new Error('Validation gate unavailable')
     }
+
     const started = new Promise<void>((resolve) => {
       entered = resolve
     })
@@ -5560,8 +6180,10 @@ describe('capture-to-review handoff', () => {
       release = resolve
     })
     let hold = true
+
     f.execute.mockImplementation(async (batch) => {
       const receipt = await execution(batch)
+
       if (
         hold &&
         batch.actions.some(
@@ -5572,8 +6194,10 @@ describe('capture-to-review handoff', () => {
         entered()
         await blocked
       }
+
       return receipt
     })
+
     const verdict = (status: string) => ({
       ...draft,
       checks: draft.checks.map((check: Record<string, unknown>) => ({
@@ -5582,21 +6206,25 @@ describe('capture-to-review handoff', () => {
         evidence: `Observed ${status}`
       }))
     })
+
     const older = f.call(AiDesignToolIds.REVIEW_DRAWING, verdict('pass')).then(
       () => 'accepted',
       (error: Error) => error.message
     )
+
     await started
     try {
       await f.call(AiDesignToolIds.REVIEW_DRAWING, verdict('fail'))
     } finally {
       release()
     }
+
     expect(await older).toContain('stale')
     const stored = await f.call(AiDesignToolIds.READ_DESIGN_CHECKS, {
       view: 'details',
       includePassed: true
     })
+
     expect(
       stored.items.find(
         (item: { criterionId?: string }) => item.criterionId === 'view'
@@ -5606,11 +6234,13 @@ describe('capture-to-review handoff', () => {
 
   it('returns missing captures without assessment and reuses successful IDs on corrected retry', async () => {
     const f = await setup()
+
     f.unavailable.add('window')
     const failed = await f.call(AiDesignToolIds.REVIEW_DRAWING, {
       phase: f.review.phase,
       inspections: f.targets
     })
+
     expect(failed).toMatchObject({
       available: false,
       accepted: false,
@@ -5630,6 +6260,7 @@ describe('capture-to-review handoff', () => {
       inspectionIds: failed.inspectionIds,
       inspections: [f.targets[1]]
     })
+
     expect(result.accepted).toBe(false)
     expect(
       await f.call(AiDesignToolIds.REVIEW_DRAWING, {
@@ -5640,6 +6271,7 @@ describe('capture-to-review handoff', () => {
     const captures = f.execute.mock.calls
       .flatMap(([batch]) => batch.actions)
       .filter((action) => action.name === AiActionNames.INSPECT_DRAWING)
+
     expect(
       captures.filter((action) => action.arguments.elementId === 'drawing')
     ).toHaveLength(1)
@@ -5650,10 +6282,15 @@ describe('capture-to-review handoff', () => {
 
   it('returns every unavailable target without manufacturing evidence or mutating input', async () => {
     const f = await setup()
-    for (const target of f.targets) f.unavailable.add(target.elementId)
+
+    for (const target of f.targets) {
+      f.unavailable.add(target.elementId)
+    }
+
     const input = { phase: f.review.phase, inspections: f.targets }
     const original = structuredClone(input)
     const result = await f.call(AiDesignToolIds.REVIEW_DRAWING, input)
+
     expect(result).toMatchObject({
       available: false,
       accepted: false,
@@ -5669,18 +6306,25 @@ describe('capture-to-review handoff', () => {
   it('retains successful captures when a later capture throws', async () => {
     const f = await setup()
     const execute = f.execute.getMockImplementation()
-    if (!execute) throw new Error('Missing capture fixture')
+
+    if (!execute) {
+      throw new Error('Missing capture fixture')
+    }
+
     f.execute.mockImplementation(async (batch) => {
       if (
         batch.actions.some((action) => action.arguments.elementId === 'window')
-      )
+      ) {
         throw new Error('Capture transport failed')
+      }
+
       return execute(batch)
     })
     const result = await f.call(AiDesignToolIds.REVIEW_DRAWING, {
       phase: f.review.phase,
       inspections: f.targets
     })
+
     expect(result).toMatchObject({
       accepted: false,
       inspectionIds: [expect.any(String)],
@@ -5694,12 +6338,19 @@ describe('capture-to-review handoff', () => {
     const f = await setup()
     const controller = new AbortController()
     const execute = f.execute.getMockImplementation()
-    if (!execute) throw new Error('Missing capture fixture')
+
+    if (!execute) {
+      throw new Error('Missing capture fixture')
+    }
+
     let cancelledReceipt: Awaited<ReturnType<typeof execute>> | undefined
+
     f.execute.mockImplementation(async (batch) => {
       const result = await execute(batch)
+
       cancelledReceipt = result
       controller.abort()
+
       return result
     })
     await expect(
@@ -5710,22 +6361,26 @@ describe('capture-to-review handoff', () => {
       )
     ).rejects.toThrow()
     expect(f.execute).toHaveBeenCalledTimes(1)
-    for (const entry of cancelledReceipt?.actionResults ?? [])
+    for (const entry of cancelledReceipt?.actionResults ?? []) {
       expect(entry.result).not.toHaveProperty('inspectionId')
+    }
   })
 
   it('keeps stale evidence rejection after composed captures', async () => {
     const f = await setup()
+
     f.state.current = false
     const result = await f.call(AiDesignToolIds.REVIEW_DRAWING, {
       phase: f.review.phase,
       inspections: f.targets
     })
+
     expect(result.accepted).toBe(false)
   })
 
   it('validates capture targets and reusable IDs before any capture', async () => {
     const f = await setup()
+
     for (const input of [
       {
         inspections: [
@@ -5743,10 +6398,12 @@ describe('capture-to-review handoff', () => {
         inspections: Array.from({ length: 24 }, () => f.targets[0]),
         inspectionIds: ['unknown']
       }
-    ])
+    ]) {
       await expect(
         f.call(AiDesignToolIds.REVIEW_DRAWING, { ...f.review, ...input })
       ).rejects.toThrow()
+    }
+
     expect(
       await f.call(AiDesignToolIds.REVIEW_DRAWING, {
         phase: f.review.phase,
@@ -5760,6 +6417,7 @@ describe('capture-to-review handoff', () => {
   it('does not start captures when the request is cancelled', async () => {
     const f = await setup()
     const controller = new AbortController()
+
     controller.abort()
     await expect(
       f.tools.call(
@@ -5790,9 +6448,14 @@ it('reuses each exact partial definition scope and retains its parent constraint
   }
   const tools = createLocalOperationTools(
     [action],
-    { modelActions: (a) => a, resolveBatch: (b) => b },
+    {
+      modelActions: (a) => a,
+
+      resolveBatch: (b) => b
+    },
     vi.fn()
   )
+
   const read = async (args: unknown) =>
     JSON.parse(
       await readCompleteInformation(
@@ -5805,8 +6468,10 @@ it('reuses each exact partial definition scope and retains its parent constraint
         args
       )
     ).apis[0]
+
   const selector = { names: [action.name], schemaPaths: ['/properties/x'] }
   const first = await read(selector)
+
   expect(first.schemaContext).toContainEqual(
     expect.objectContaining({
       path: '',
@@ -5817,6 +6482,7 @@ it('reuses each exact partial definition scope and retains its parent constraint
     })
   )
   const again = await read(selector)
+
   expect(again.definition).toMatchObject({
     state: 'included',
     availableInResponse: true,
@@ -5827,20 +6493,28 @@ it('reuses each exact partial definition scope and retains its parent constraint
     names: [action.name],
     schemaPaths: ['/properties/y']
   })
+
   expect(other.definition.availableInResponse).toBe(true)
   const recovered = await read(again.definition.recover.arguments)
+
   expect(recovered.schemaFragments).toEqual(first.schemaFragments)
   expect(recovered.schemaContext).toEqual(first.schemaContext)
   const full = await read({ names: [action.name] })
+
   expect(full.inputSchema).toEqual(action.inputSchema)
 })
 
 it('pages broad category discovery and gives registry candidates for an unknown operation', async () => {
   const tools = createLocalOperationTools(
     basicApiContracts,
-    { modelActions: (a) => a, resolveBatch: (b) => b },
+    {
+      modelActions: (a) => a,
+
+      resolveBatch: (b) => b
+    },
     vi.fn()
   )
+
   const read = async (args: unknown) =>
     JSON.parse(
       await readCompleteInformation(
@@ -5853,29 +6527,38 @@ it('pages broad category discovery and gives registry candidates for an unknown 
         args
       )
     )
+
   const inventory = await read({})
   const category = [...inventory.categories].sort(
     (a, b) => b.count - a.count
   )[0]
   let page = await read({ category: category.category })
+
   expect(page.apis.length).toBeLessThanOrEqual(16)
   const names: string[] = []
+
   while (true) {
     names.push(...page.apis.map((api) => api.name))
-    if (page.complete) break
+    if (page.complete) {
+      break
+    }
+
     expect(page.next.arguments.offset).toBe(names.length)
     page = await read(page.next.arguments)
   }
+
   expect(new Set(names).size).toBe(category.count)
   const missing = await read({ operation: 'fill.updateUnknownField' })
+
   expect(missing.apis).toEqual([])
   expect(missing.missingOperations).toEqual(['fill.updateUnknownField'])
   expect(missing.candidates.length).toBeGreaterThan(0)
   expect(missing.candidates.length).toBeLessThanOrEqual(6)
-  for (const candidate of missing.candidates)
+  for (const candidate of missing.candidates) {
     expect(
       basicApiContracts.some((api) => api.operation === candidate.operation)
     ).toBe(true)
+  }
 })
 
 describe('registered union target admission', () => {
@@ -5893,6 +6576,7 @@ describe('registered union target admission', () => {
       [definition],
       resolve
     )
+
     expect(actions[0].arguments).toEqual({
       scope: 'ids',
       fields: ['x'],
@@ -5904,6 +6588,7 @@ describe('registered union target admission', () => {
   it('rejects a target in an incompatible retained snapshot branch before resolution', () => {
     const definition = createDocumentContextAction()
     const resolve = vi.fn(() => ['window-a'])
+
     expect(() =>
       prepareOperationBatch(
         [
@@ -5985,6 +6670,7 @@ it('binds multiple retained target sets to exact nested mapping query slots befo
     }
   ]
   const prepared = prepareOperationBatch(operations, registered, resolve)
+
   expect(prepared[0].arguments).toEqual({
     mappings: [
       { query: { scope: 'ids', elementIds: ['one'] } },
@@ -6045,7 +6731,9 @@ it('carries canonical attachment evidence from prepared review to the exact brow
     ].map((name) => ({ name, description: name, inputSchema: {} })),
     {
       modelActions: (a) => a,
+
       resolveBatch: (b) => b,
+
       resolveRecipe: () => ({
         recipe: { type: 'rect' },
         findings: [],
@@ -6056,6 +6744,7 @@ it('carries canonical attachment evidence from prepared review to the exact brow
     { assessPrepared: assess }
   )
   const signal = new AbortController().signal
+
   await tools.call(
     AiDesignToolIds.DEFINE_DESIGN_CRITERIA,
     {
@@ -6084,6 +6773,7 @@ it('carries canonical attachment evidence from prepared review to the exact brow
       signal
     )
   )
+
   expect(repeated).toMatchObject({ status: 'pass', reused: true })
   expect(assess).not.toHaveBeenCalled()
   await tools.call(
@@ -6102,6 +6792,7 @@ it('carries canonical attachment evidence from prepared review to the exact brow
     }
   })
   const calls = execute.mock.calls.length
+
   await expect(
     tools.call(
       AiActionNames.APPLY_PREPARED_DESIGN,
@@ -6129,7 +6820,9 @@ it('reports every target binding conflict before resolving or dispatching the re
     basicApiContracts,
     {
       modelActions: (actions) => actions,
+
       resolveBatch: (value) => value,
+
       resolveTargets
     },
     execute
@@ -6167,6 +6860,7 @@ it('reports every target binding conflict before resolving or dispatching the re
       },
       (failure: Error) => failure
     )
+
   expect(error).toBeInstanceOf(LocalOperationPreparationError)
   expect(error.message).toContain('operations[0].target[0]')
   expect(error.message).toContain('arguments ["request","elementIds"]')
@@ -6226,6 +6920,7 @@ it('preflights later binding paths before resolving earlier valid retained sourc
       }
     }
   ]
+
   expect(() =>
     prepareOperationBatch(
       [
@@ -6262,12 +6957,14 @@ it('reuses independent measurement receipts and rechecks only an affected final 
     actionResults: batch.actions.map((action) => {
       const target = String(action.arguments.elementId)
       let result: Record<string, unknown>
+
       if (action.name === AiActionNames.VALIDATE_INSPECTION_EVIDENCE) {
         const stamp = action.arguments.evidence as {
           receiptId: string
           revision: number
         }
         const owner = stamp.receiptId.split(':')[1]
+
         result = {
           current: stamp.revision === versions[owner],
           validatedAt: { sessionId: 'validation-fixture', revision: 1 },
@@ -6275,7 +6972,10 @@ it('reuses independent measurement receipts and rechecks only an affected final 
         }
       } else if (action.name === AiActionNames.REVIEW_DESIGN) {
         measured.push(target)
-        if (changeDuringMeasurement) versions[target]++
+        if (changeDuringMeasurement) {
+          versions[target]++
+        }
+
         result = {
           complete: true,
           findings: [],
@@ -6301,6 +7001,7 @@ it('reuses independent measurement receipts and rechecks only an affected final 
           }
         }
       }
+
       return { actionId: action.id, actionName: action.name, result }
     })
   }))
@@ -6312,12 +7013,18 @@ it('reuses independent measurement receipts and rechecks only an affected final 
   ]
   const owner = createLocalOperationTools(
     names.map((name) => ({ name, description: name, inputSchema: {} })),
-    { modelActions: (actions) => actions, resolveBatch: (batch) => batch },
+    {
+      modelActions: (actions) => actions,
+
+      resolveBatch: (batch) => batch
+    },
     execute,
     { reviewTargetId: 'a' }
   )
+
   const call = async (name: string, input: unknown) =>
     JSON.parse(await owner.call(name, input, new AbortController().signal))
+
   await call(AiDesignToolIds.DEFINE_DESIGN_CRITERIA, {
     phase: 'plan',
     method: 'Check independent targets',
@@ -6325,24 +7032,31 @@ it('reuses independent measurement receipts and rechecks only an affected final 
     criteria: reviewCriteria(['Appearance']),
     detailRequired: false
   })
-  for (const target of ['a', 'b'])
+  for (const target of ['a', 'b']) {
     await call(AiActionNames.REVIEW_DESIGN, {
       arguments: { elementId: target }
     })
+  }
+
   await call(AiActionNames.UPDATE_DESIGN_ELEMENT, {
     arguments: { elementId: 'a' },
     inspection: 'defer'
   })
+
   const capture = async () => {
     const ids: string[] = []
+
     for (const target of ['a', 'b']) {
       const result = await call(AiActionNames.INSPECT_DRAWING, {
         arguments: { elementId: target }
       })
+
       ids.push(result.actionResults[0].result.inspectionId)
     }
+
     return ids
   }
+
   const assess = (inspectionIds: string[], final = true) =>
     call(AiDesignToolIds.REVIEW_DRAWING, {
       phase: 'visual',
@@ -6355,7 +7069,9 @@ it('reuses independent measurement receipts and rechecks only an affected final 
         }
       ])
     })
+
   let ids = await capture()
+
   expect(measured).toEqual(['a', 'b', 'a'])
   await assess(ids, false)
   expect(measured).toEqual(['a', 'b', 'a'])
@@ -6405,6 +7121,7 @@ it('reads compiler source checks from the actual preparation owner without anoth
       new AbortController().signal
     )
   )
+
   expect(result.items).toContainEqual(
     expect.objectContaining({
       id: `prepared:${prepared.artifactId}:data`,
@@ -6483,23 +7200,31 @@ it.each([false, true])(
       },
       store: {
         read: async () => undefined,
+
         list: async () => [],
+
         write: async () => {
           throw new Error('Deliberate storage unavailability')
         }
       },
+
       createGroups: () => [
         {
           name: 'operations',
           description: 'Canonical browser operations',
           owner: createOwner(
             [createAiToolContract(review), createAiToolContract(select)],
-            { modelActions: (a) => a, resolveBatch: (v) => v },
+            {
+              modelActions: (a) => a,
+
+              resolveBatch: (v) => v
+            },
             async (batch) => ({
               context: {},
               actionResults: await Promise.all(
                 batch.actions.map(async (action) => {
                   dispatched.push(action.name)
+
                   return {
                     actionId: action.id,
                     actionName: action.name,
@@ -6519,10 +7244,12 @@ it.each([false, true])(
       ]
     })
     let serial = 0
+
     const invoke = async (name: string, input: unknown) =>
       JSON.parse(
         (await host.invoke({ name, input, callId: 'call-' + ++serial })).text
       )
+
     const selection = {
       kind: 'object',
       fields: {
@@ -6595,17 +7322,20 @@ it.each([false, true])(
       },
       output: { kind: 'step', step: 'verified', path: '/state' }
     }
+
     try {
       const admitted = await invoke('tool_library.submit_tool', {
         submissionId: 'verify',
         proposal
       })
+
       expect(admitted, JSON.stringify(admitted)).toMatchObject({ ok: true })
       const result = await invoke('tool_library.invoke_tool', {
         name: proposal.name,
         revision: 1,
         input: 'part'
       })
+
       expect(result.execution, JSON.stringify(result)).toMatchObject({
         status: unresolved ? 'failed' : 'success'
       })
@@ -6614,8 +7344,9 @@ it.each([false, true])(
           ? [select.name, review.name, select.name, review.name]
           : [select.name, review.name]
       )
-      if (!unresolved)
+      if (!unresolved) {
         expect(result.storage).toMatchObject({ status: 'unsaved' })
+      }
     } finally {
       await host.dispose()
     }
@@ -6641,6 +7372,7 @@ it('retains canonical target checks and invalidates only changed dependencies wi
         revision: revisions.get(target) ?? 0
       }
       const prior = action.arguments.evidence as typeof evidence
+
       return {
         actionId: action.id,
         actionName: action.name,
@@ -6662,16 +7394,22 @@ it('retains canonical target checks and invalidates only changed dependencies wi
       AiActionNames.REVIEW_DESIGN,
       AiActionNames.VALIDATE_INSPECTION_EVIDENCE
     ].map((name) => ({ name, description: name, inputSchema: {} })),
-    { modelActions: (a) => a, resolveBatch: (v) => v },
+    {
+      modelActions: (a) => a,
+
+      resolveBatch: (v) => v
+    },
     execute
   )
   const signal = new AbortController().signal
+
   const review = (elementId: string) =>
     owner.call(
       AiActionNames.REVIEW_DESIGN,
       { arguments: { elementId } },
       signal
     )
+
   const read = async (includePassed = false) =>
     JSON.parse(
       await owner.call(
@@ -6680,7 +7418,11 @@ it('retains canonical target checks and invalidates only changed dependencies wi
         signal
       )
     )
-  for (const target of revisions.keys()) await review(target)
+
+  for (const target of revisions.keys()) {
+    await review(target)
+  }
+
   expect((await read()).counts).toEqual({
     pass: 6,
     fail: 2,
@@ -6688,6 +7430,7 @@ it('retains canonical target checks and invalidates only changed dependencies wi
     stale: 0
   })
   const previous = await read(true)
+
   execute.mockClear()
   expect((await read(true)).items).toEqual(previous.items)
   expect(
@@ -6700,6 +7443,7 @@ it('retains canonical target checks and invalidates only changed dependencies wi
   revisions.set('section-2', 2)
   findings.delete('section-2') // The overflowing child was removed, so no measuredTextIds can clear it.
   const stale = await read()
+
   expect(stale.counts).toEqual({ pass: 6, fail: 1, unverified: 0, stale: 1 })
   expect(
     stale.items.find((item: { status: string }) => item.status === 'stale')
@@ -6724,6 +7468,7 @@ it('retains canonical target checks and invalidates only changed dependencies wi
       }
     ]
   }
+
   expect(owner.settleOutcome(outcome).actions[0].arguments.outcome).toBe(
     'unsupported'
   )
@@ -6761,11 +7506,18 @@ it.each([AiActionNames.REVIEW_DESIGN, AiActionNames.UPDATE_DESIGN_ELEMENT])(
         description: action,
         inputSchema: {}
       })),
-      { modelActions: (a) => a, resolveBatch: (v) => v },
+      {
+        modelActions: (a) => a,
+
+        resolveBatch: (v) => v
+      },
       async (batch) => ({
         context: {},
         actionResults: batch.actions.map((action) => {
-          if (action.name === AiActionNames.REVIEW_DESIGN) controller.abort()
+          if (action.name === AiActionNames.REVIEW_DESIGN) {
+            controller.abort()
+          }
+
           return {
             actionId: action.id,
             actionName: action.name,
@@ -6790,6 +7542,7 @@ it.each([AiActionNames.REVIEW_DESIGN, AiActionNames.UPDATE_DESIGN_ELEMENT])(
         })
       })
     )
+
     await expect(
       owner.call(name, { arguments: { elementId: 'part' } }, controller.signal)
     ).rejects.toThrow()
@@ -6800,6 +7553,7 @@ it.each([AiActionNames.REVIEW_DESIGN, AiActionNames.UPDATE_DESIGN_ELEMENT])(
         new AbortController().signal
       )
     )
+
     expect(checks.counts).toEqual({ pass: 0, fail: 0, stale: 0, unverified: 0 })
     expect(checks.items).toEqual([])
   }
@@ -6814,7 +7568,13 @@ it('refreshes upstream measurement currency when only a downstream check is requ
       AiActionNames.REVIEW_DESIGN,
       AiActionNames.VALIDATE_INSPECTION_EVIDENCE
     ].map((name) => ({ name, description: name, inputSchema: {} })),
-    { modelActions: (a) => a, resolveBatch: (v) => v, checkResults: checks },
+    {
+      modelActions: (a) => a,
+
+      resolveBatch: (v) => v,
+
+      checkResults: checks
+    },
     async (batch) => ({
       context: {},
       actionResults: batch.actions.map((action) => ({
@@ -6834,12 +7594,14 @@ it('refreshes upstream measurement currency when only a downstream check is requ
     })
   )
   const signal = new AbortController().signal
+
   await owner.call(
     AiActionNames.REVIEW_DESIGN,
     { arguments: { elementId: 'section' } },
     signal
   )
   const upstream = checks.read({ includePassed: true }).items[0]
+
   checks.record({
     id: 'dependent',
     origin: 'main-agent',
@@ -6855,6 +7617,7 @@ it('refreshes upstream measurement currency when only a downstream check is requ
       signal
     )
   )
+
   expect(result.items).toHaveLength(1)
   expect(result.items[0]).toMatchObject({ id: 'dependent', status: 'stale' })
 })
@@ -6870,12 +7633,17 @@ it('checks only surviving targets after creation and deletion in the same batch'
         inputSchema: {}
       }
     ],
-    { modelActions: (a) => a, resolveBatch: (v) => v },
+    {
+      modelActions: (a) => a,
+
+      resolveBatch: (v) => v
+    },
     async (batch) => ({
       context: {},
       actionResults: batch.actions.map((action) => {
         let result: AiJsonValue
-        if (action.name === basicActionName('createElements'))
+
+        if (action.name === basicActionName('createElements')) {
           result = {
             status: 'complete',
             value: ['temporary', 'keep'],
@@ -6886,7 +7654,7 @@ it('checks only surviving targets after creation and deletion in the same batch'
               removedElementIds: []
             }
           }
-        else if (action.name === basicActionName('deleteElements'))
+        } else if (action.name === basicActionName('deleteElements')) {
           result = {
             status: 'complete',
             value: { removed: [{ elementId: 'temporary' }] },
@@ -6896,7 +7664,7 @@ it('checks only surviving targets after creation and deletion in the same batch'
               removedElementIds: ['temporary']
             }
           }
-        else {
+        } else {
           checked.push(String(action.arguments.elementId))
           result = {
             complete: true,
@@ -6904,10 +7672,12 @@ it('checks only surviving targets after creation and deletion in the same batch'
             evidence: { sessionId: 'surviving-targets', revision: 1 }
           }
         }
+
         return { actionId: action.id, actionName: action.name, result }
       })
     })
   )
+
   await operations.call(
     'execute_design_batch',
     {
@@ -6944,12 +7714,17 @@ it.each([false, true])(
           inputSchema: {}
         }
       ],
-      { modelActions: (a) => a, resolveBatch: (v) => v },
+      {
+        modelActions: (a) => a,
+
+        resolveBatch: (v) => v
+      },
       async (batch) => ({
         context: {},
         actionResults: batch.actions.map((action) => {
           let result: AiJsonValue
-          if (action.name === basicActionName('createElements'))
+
+          if (action.name === basicActionName('createElements')) {
             result = {
               status: 'complete',
               value: ['temporary'],
@@ -6960,11 +7735,15 @@ it.each([false, true])(
                 removedElementIds: []
               }
             }
-          else if (action.name === basicActionName('ungroupElement')) {
+          } else if (action.name === basicActionName('ungroupElement')) {
             const contract = basicApiContracts.find(
               (entry) => entry.name === action.name
             )
-            if (!contract) throw new Error('Missing ungroup contract')
+
+            if (!contract) {
+              throw new Error('Missing ungroup contract')
+            }
+
             result = {
               ...describeBasicApiResult(contract, {
                 groupId: 'temporary',
@@ -6985,11 +7764,13 @@ it.each([false, true])(
               evidence: { sessionId: 'ungroup-target', revision: 1 }
             }
           }
+
           return { actionId: action.id, actionName: action.name, result }
         })
       })
     )
     const signal = new AbortController().signal
+
     await operations.call(
       'execute_design_batch',
       {
@@ -7008,8 +7789,10 @@ it.each([false, true])(
       signal,
       pending
     )
-    if (pending)
+    if (pending) {
       await operations.finishInspection(pending, undefined, true, signal)
+    }
+
     expect(checked).toEqual(['child'])
   }
 )
@@ -7025,12 +7808,17 @@ it.each(['complete', 'partial'])(
         AiActionNames.REPLACE_VECTOR_COMPOSITION,
         AiActionNames.REVIEW_DESIGN
       ].map((name) => ({ name, description: name, inputSchema: {} })),
-      { modelActions: (a) => a, resolveBatch: (v) => v },
+      {
+        modelActions: (a) => a,
+
+        resolveBatch: (v) => v
+      },
       async (batch) => ({
         context: {},
         actionResults: batch.actions.map((action) => {
           if (action.name === AiActionNames.REVIEW_DESIGN) {
             checked.push(String(action.arguments.elementId))
+
             return {
               actionId: action.id,
               actionName: action.name,
@@ -7041,6 +7829,7 @@ it.each(['complete', 'partial'])(
               }
             }
           }
+
           return {
             actionId: action.id,
             actionName: action.name,
@@ -7056,6 +7845,7 @@ it.each(['complete', 'partial'])(
       })
     )
     const signal = new AbortController().signal
+
     await operations.call(
       AiActionNames.APPLY_PREPARED_DESIGN,
       { arguments: {} },
@@ -7083,11 +7873,15 @@ it.each([AiActionNames.ARRANGE_DESIGN, AiActionNames.MAP_RETAINED_FILLS])(
         description: name,
         inputSchema: {}
       })),
-      { modelActions: (value) => value, resolveBatch: (value) => value },
+      {
+        modelActions: (value) => value,
+
+        resolveBatch: (value) => value
+      },
       async (batch) => ({
         context: {},
         actionResults: batch.actions.map((action) => {
-          if (action.name === name)
+          if (action.name === name) {
             return {
               actionId: action.id,
               actionName: name,
@@ -7104,7 +7898,10 @@ it.each([AiActionNames.ARRANGE_DESIGN, AiActionNames.MAP_RETAINED_FILLS])(
                     }
                   : { status: 'complete', appliedElementIds: ['a', 'b'] }
             }
+          }
+
           checked.push(String(action.arguments.elementId))
+
           return {
             actionId: action.id,
             actionName: action.name,
@@ -7118,6 +7915,7 @@ it.each([AiActionNames.ARRANGE_DESIGN, AiActionNames.MAP_RETAINED_FILLS])(
         })
       })
     )
+
     await tools.call(
       'execute_design_batch',
       { inspection: 'defer', operations: [{ name, arguments: {} }] },
@@ -7134,7 +7932,13 @@ it('keeps review replies and final settlement blocked by tool findings without r
       AiActionNames.INSPECT_DRAWING,
       AiActionNames.VALIDATE_INSPECTION_EVIDENCE
     ].map((name) => ({ name, description: name, inputSchema: {} })),
-    { modelActions: (a) => a, resolveBatch: (b) => b, checkResults },
+    {
+      modelActions: (a) => a,
+
+      resolveBatch: (b) => b,
+
+      checkResults
+    },
     async (batch) => ({
       context: {},
       actionResults: batch.actions.map((action) => ({
@@ -7162,8 +7966,10 @@ it('keeps review replies and final settlement blocked by tool findings without r
     { reviewTargetId: 'root' }
   )
   const signal = new AbortController().signal
+
   const call = async (name: string, args: unknown) =>
     JSON.parse(await tools.call(name, args, signal))
+
   await call(AiDesignToolIds.DEFINE_DESIGN_CRITERIA, {
     method: 'Match',
     references: [],
@@ -7180,6 +7986,7 @@ it('keeps review replies and final settlement blocked by tool findings without r
     evidence: 'Invalid polygon',
     dependencies: { source: '1' }
   }
+
   checkResults.record(failed)
   const result = await call(AiDesignToolIds.REVIEW_DRAWING, {
     phase: 'visual',
@@ -7194,6 +8001,7 @@ it('keeps review replies and final settlement blocked by tool findings without r
       ]
     )
   })
+
   expect(result.accepted).toBe(false)
   const final = {
     batchId: 'done',
@@ -7206,12 +8014,14 @@ it('keeps review replies and final settlement blocked by tool findings without r
       }
     ]
   }
+
   expect(tools.settleOutcome(final).actions[0].arguments).toMatchObject({
     outcome: 'unsupported'
   })
   const visual = checkResults
     .read({ includePassed: true })
     .items.filter((item) => item.origin === 'main-agent')
+
   checkResults.record({
     ...failed,
     status: 'pass',
@@ -7228,6 +8038,7 @@ it('keeps review replies and final settlement blocked by tool findings without r
 
 describe('deterministic regional image checks', () => {
   const region = { x: 10, y: 20, width: 4, height: 4 }
+
   const setup = async () => {
     const baseline = await sharp({
       create: { width: 8, height: 8, channels: 4, background: 'white' }
@@ -7242,7 +8053,9 @@ describe('deterministic regional image checks', () => {
     let current = true
     let revision = 1
     let validations = 0
+
     let validationHook: () => void = () => undefined
+
     const invalidReceipts = new Set<string>()
     const results = createDesignCheckResults()
     const images = createLocalImageTools({
@@ -7252,6 +8065,7 @@ describe('deterministic regional image checks', () => {
         ]
       }
     })
+
     await images.call(
       'validate_reference_images',
       { attachmentIndexes: [0] },
@@ -7262,7 +8076,13 @@ describe('deterministic regional image checks', () => {
         AiActionNames.INSPECT_DRAWING,
         AiActionNames.VALIDATE_INSPECTION_EVIDENCE
       ].map((name) => ({ name, description: name, inputSchema: {} })),
-      { modelActions: (a) => a, resolveBatch: (b) => b, checkResults: results },
+      {
+        modelActions: (a) => a,
+
+        resolveBatch: (b) => b,
+
+        checkResults: results
+      },
       async (batch) => ({
         context: {},
         actionResults: batch.actions.map((action) => ({
@@ -7306,11 +8126,13 @@ describe('deterministic regional image checks', () => {
         referenceImages: images.referenceImages
       }
     )
+
     const call = async (
       name: string,
       args: unknown,
       signal = new AbortController().signal
     ) => JSON.parse(await tools.call(name, args, signal))
+
     const capture = async (
       elementId = 'third-tier',
       captureRegion: typeof region | undefined = region
@@ -7320,6 +8142,7 @@ describe('deterministic regional image checks', () => {
           arguments: { elementId, region: captureRegion }
         })
       ).actionResults[0].result.inspectionId as string
+
     await call(AiDesignToolIds.DEFINE_DESIGN_CRITERIA, {
       phase: 'plan',
       method: 'Compare an explicitly aligned crop',
@@ -7363,24 +8186,31 @@ describe('deterministic regional image checks', () => {
       channelTolerance: 0,
       maxDifferentFraction: 0
     }
+
     return {
       tools,
       call,
       results,
       request,
       capture,
+
       setImage: (value: Buffer) => {
         image = value
         revision++
       },
+
       setCurrent: (value: boolean) => {
         current = value
       },
+
       validations: () => validations,
+
       nextRevision: () => {
         revision++
       },
+
       invalidate: (receipt: string) => invalidReceipts.add(receipt),
+
       onValidate: (hook: () => void) => {
         validationHook = hook
       }
@@ -7392,12 +8222,14 @@ describe('deterministic regional image checks', () => {
     const first = await f.call(AiDesignToolIds.CHECK_DRAWING_IMAGE, f.request)
     const before = f.results.read({ includePassed: true })
     const invalid = { ...f.request } as Partial<typeof f.request>
+
     delete invalid.referenceRegion
     await expect(
       f.call(AiDesignToolIds.CHECK_DRAWING_IMAGE, invalid)
     ).rejects.toThrow(/referenceRegion/)
     expect(f.results.read({ includePassed: true })).toEqual(before)
     const retry = await f.call(AiDesignToolIds.CHECK_DRAWING_IMAGE, f.request)
+
     expect(retry).toMatchObject({
       reused: true,
       resultId: first.resultId,
@@ -7407,11 +8239,13 @@ describe('deterministic regional image checks', () => {
 
   it('registers a strict check and reuses current evidence without repeating pixel work', async () => {
     const f = await setup()
+
     expect(
       f.tools.definitions.some((tool) => tool.name === 'check_drawing_image')
     ).toBe(true)
     const decode = vi.spyOn(sharp.prototype, 'toBuffer')
     const first = await f.call('check_drawing_image', f.request)
+
     expect(decode).toHaveBeenCalledTimes(2)
     expect(first).toMatchObject({
       status: 'pass',
@@ -7426,6 +8260,7 @@ describe('deterministic regional image checks', () => {
       ...f.request,
       checkId: first.checkId
     })
+
     expect(first.resultId).toBe('image:left-windows')
     expect(decode).toHaveBeenCalledTimes(2)
     decode.mockRestore()
@@ -7449,6 +8284,7 @@ describe('deterministic regional image checks', () => {
       ids: ['image:left-windows'],
       includePassed: true
     })
+
     expect(stale.items[0].status).toBe('stale')
     await expect(f.call('check_drawing_image', f.request)).rejects.toThrow(
       /inspection|evidence/i
@@ -7458,6 +8294,7 @@ describe('deterministic regional image checks', () => {
   it('keeps a local defect until corrected under the same frozen baseline and tolerance', async () => {
     const f = await setup()
     const raw = Buffer.alloc(4 * 4 * 4, 255)
+
     raw[4 * (1 + 2 * 4)] = 0
     raw[4 * (1 + 2 * 4) + 1] = 0
     raw[4 * (1 + 2 * 4) + 2] = 0
@@ -7498,6 +8335,7 @@ describe('deterministic regional image checks', () => {
 
   it('does not pass mismatched dimensions or publish a cancelled check', async () => {
     const f = await setup()
+
     f.setImage(
       await sharp({
         create: { width: 3, height: 4, channels: 4, background: 'white' }
@@ -7512,6 +8350,7 @@ describe('deterministic regional image checks', () => {
       pixelReads: 0
     })
     const abort = new AbortController()
+
     abort.abort()
     await expect(
       f.call(
@@ -7529,6 +8368,7 @@ describe('deterministic regional image checks', () => {
 
   it('invalidates only the changed image in default retained-check reads', async () => {
     const f = await setup()
+
     await f.call('check_drawing_image', f.request)
     f.nextRevision()
     const other = {
@@ -7536,12 +8376,14 @@ describe('deterministic regional image checks', () => {
       checkId: 'eighth-windows',
       inspectionId: await f.capture('eighth-tier')
     }
+
     await f.call('check_drawing_image', other)
     f.invalidate('region-1')
     const read = await f.call(AiDesignToolIds.READ_DESIGN_CHECKS, {
       view: 'details',
       includePassed: true
     })
+
     expect(
       read.items.map((item: { id: string; status: string }) => [
         item.id,
@@ -7564,10 +8406,14 @@ describe('deterministic regional image checks', () => {
     async (failure) => {
       const f = await setup()
       const abort = new AbortController()
+
       f.onValidate(() => {
         if (f.validations() === 2) {
-          if (failure === 'cancelled') abort.abort()
-          else f.setCurrent(false)
+          if (failure === 'cancelled') {
+            abort.abort()
+          } else {
+            f.setCurrent(false)
+          }
         }
       })
       await expect(
@@ -7590,6 +8436,7 @@ describe('deterministic regional image checks', () => {
       ...f.request,
       inspectionId: overview.actionResults[0].result.inspectionId
     }
+
     expect(await f.call('check_drawing_image', initial)).toMatchObject({
       status: 'unverified'
     })
@@ -7600,6 +8447,7 @@ describe('deterministic regional image checks', () => {
 
   it('handles transparent pixels on white and reports unsupported images without visual certification', async () => {
     const f = await setup()
+
     f.setImage(
       await sharp({
         create: {
@@ -7623,6 +8471,7 @@ describe('deterministic regional image checks', () => {
       checkId: 'broken-image',
       inspectionId: await f.capture()
     }
+
     expect(await f.call('check_drawing_image', corrupt)).toMatchObject({
       status: 'unverified',
       pixelReads: 0
@@ -7645,6 +8494,7 @@ it('checks a large exact mutation set in bounded exchanges and reuses independen
     actionResults: batch.actions.map((action) => {
       const id = String(action.arguments.elementId)
       let result: AiJsonValue
+
       if (action.name === AiActionNames.REVIEW_DESIGN) {
         measured.push(id)
         result = {
@@ -7655,8 +8505,10 @@ it('checks a large exact mutation set in bounded exchanges and reuses independen
         }
       } else {
         const stamp = action.arguments.evidence as { receiptId: string }
+
         result = { current: stamp.receiptId !== stale }
       }
+
       return { actionId: action.id, actionName: action.name, result }
     })
   }))
@@ -7665,9 +8517,14 @@ it('checks a large exact mutation set in bounded exchanges and reuses independen
       AiActionNames.REVIEW_DESIGN,
       AiActionNames.VALIDATE_INSPECTION_EVIDENCE
     ].map((name) => ({ name, description: name, inputSchema: {} })),
-    { modelActions: (a) => a, resolveBatch: (v) => v },
+    {
+      modelActions: (a) => a,
+
+      resolveBatch: (v) => v
+    },
     execute
   )
+
   const check = () =>
     owner.finishInspection(
       targets,
@@ -7675,7 +8532,9 @@ it('checks a large exact mutation set in bounded exchanges and reuses independen
       true,
       new AbortController().signal
     )
+
   const cold = await check()
+
   expect(cold.checks.counts).toEqual({
     pass: 7718,
     fail: 0,
@@ -7712,6 +8571,7 @@ it('preserves acknowledged checks before a failed chunk member without replaying
   const execute = vi.fn(async (batch: AiActionBatch) => {
     const failed = exchanges++ === 0
     const completed = failed ? batch.actions.slice(0, 3) : batch.actions
+
     return {
       context: {},
       ...(failed
@@ -7747,7 +8607,11 @@ it('preserves acknowledged checks before a failed chunk member without replaying
         inputSchema: {}
       }
     ],
-    { modelActions: (a) => a, resolveBatch: (v) => v },
+    {
+      modelActions: (a) => a,
+
+      resolveBatch: (v) => v
+    },
     execute
   )
   const result = await owner.finishInspection(
@@ -7756,6 +8620,7 @@ it('preserves acknowledged checks before a failed chunk member without replaying
     true,
     new AbortController().signal
   )
+
   expect(execute).toHaveBeenCalledTimes(4)
   expect(result.checks.counts).toEqual({
     pass: 129,
@@ -7778,6 +8643,7 @@ it('cancels a bulk check before admitting late results or dispatching the next c
   const results = createDesignCheckResults()
   const execute = vi.fn(async (batch: AiActionBatch) => {
     controller.abort(new Error('Cancelled'))
+
     return {
       context: {},
       actionResults: batch.actions.map((action) => ({
@@ -7799,10 +8665,15 @@ it('cancels a bulk check before admitting late results or dispatching the next c
         inputSchema: {}
       }
     ],
-    { modelActions: (a) => a, resolveBatch: (v) => v },
+    {
+      modelActions: (a) => a,
+
+      resolveBatch: (v) => v
+    },
     execute,
     { checkResults: results }
   )
+
   await expect(
     owner.finishInspection(
       new Set(Array.from({ length: 130 }, (_, n) => `item-${n}`)),
@@ -7832,7 +8703,11 @@ it('exposes mechanical inspection activity for the entire bounded read and alway
         inputSchema: {}
       }
     ],
-    { modelActions: (a) => a, resolveBatch: (v) => v },
+    {
+      modelActions: (a) => a,
+
+      resolveBatch: (v) => v
+    },
     execute,
     { onInspection }
   )
@@ -7842,6 +8717,7 @@ it('exposes mechanical inspection activity for the entire bounded read and alway
     true,
     new AbortController().signal
   )
+
   expect(result.checks.counts.unverified).toBe(1)
   expect(onInspection.mock.calls).toEqual([
     ['running', AiActionNames.REVIEW_DESIGN],
@@ -7853,29 +8729,36 @@ it('resolves sixteen region edits through the real query owner with all retained
   const signal = new AbortController().signal
   const source = {
     getCurrentWorkspaceId: () => 'workspace',
+
     getSelectedElementIds: () => [],
+
     getElementChildren: () => ({
       available: true,
       elementIds: [],
       total: 0,
       nextOffset: null
     }),
+
     getElementIdsInBounds: vi.fn((bounds: { x: number }) => [
       `part-${bounds.x}`
     ]),
+
     getElementMetadata: (id: string) => ({
       name: id,
       type: 'rectangle',
       parentId: 'workspace',
       lock: false
     }),
+
     getElementComputedData: () => ({})
   }
   const store = createRetainedDesignContext(source, () => () => undefined)
+
   const region = (x: number) => ({
     scope: 'region' as const,
     bounds: { x, y: 0, width: 1, height: 1 }
   })
+
   const pinned = Array.from({ length: 8 }, (_, x) =>
     store.read(
       { ...region(x), result: 'ids', allMatches: true, delivery: 'reference' },
@@ -7886,13 +8769,17 @@ it('resolves sixteen region edits through the real query owner with all retained
   const write = basicApiContracts.find(
     (api) => api.operation === 'fill.updateFillsAtIndex'
   )
-  if (!write) throw new Error('Missing canonical fill operation')
+
+  if (!write) {
+    throw new Error('Missing canonical fill operation')
+  }
+
   const writes: unknown[] = []
   const dispatch = vi.fn(async (batch: AiActionBatch) => ({
     context: {},
     actionResults: await Promise.all(
       batch.actions.map(async (action) => {
-        if (action.name === read.name)
+        if (action.name === read.name) {
           return {
             actionId: action.id,
             actionName: action.name,
@@ -7900,7 +8787,10 @@ it('resolves sixteen region edits through the real query owner with all retained
               signal
             })) as AiJsonValue
           }
+        }
+
         writes.push(action.arguments)
+
         return {
           actionId: action.id,
           actionName: action.name,
@@ -7920,9 +8810,14 @@ it('resolves sixteen region edits through the real query owner with all retained
   }))
   const tools = createLocalOperationTools(
     [read, write],
-    { modelActions: (a) => a, resolveBatch: (b) => b },
+    {
+      modelActions: (a) => a,
+
+      resolveBatch: (b) => b
+    },
     dispatch
   )
+
   try {
     await tools.call(
       'execute_design_batch',
@@ -7947,10 +8842,11 @@ it('resolves sixteen region edits through the real query owner with all retained
       writes.map((item) => (item as { elementIds: string[] }).elementIds)
     ).toEqual(Array.from({ length: 17 }, (_, x) => [`part-${Math.min(x, 15)}`]))
     expect(source.getElementIdsInBounds).toHaveBeenCalledTimes(16)
-    for (const snapshot of pinned)
+    for (const snapshot of pinned) {
       expect(
         store.get(snapshot.snapshotId, snapshot.leaseId, signal)
       ).toBeDefined()
+    }
   } finally {
     store.dispose()
   }
@@ -7999,7 +8895,11 @@ it.each([
     }))
     const tools = createLocalOperationTools(
       [{ name, description: name, inputSchema: {} }],
-      { modelActions: (a) => a, resolveBatch: (b) => b },
+      {
+        modelActions: (a) => a,
+
+        resolveBatch: (b) => b
+      },
       dispatch
     )
     const output = JSON.parse(
@@ -8009,6 +8909,7 @@ it.each([
         new AbortController().signal
       )
     )
+
     expect(output.actionResults[0].result).toEqual(result)
     expect(output.batchSummary.acknowledgedActions).toBeUndefined()
     expect(dispatch).toHaveBeenCalledTimes(1)
@@ -8033,7 +8934,11 @@ it('advertises only admitted batch routes and actual explicit inspection wrapper
   const execute = vi.fn(async () => ({ actionResults: [], context: {} }))
   const owner = createLocalOperationTools(
     actions,
-    { modelActions: (a) => a, resolveBatch: (v) => v },
+    {
+      modelActions: (a) => a,
+
+      resolveBatch: (v) => v
+    },
     execute,
     {
       getNativeTools: () =>
@@ -8044,8 +8949,10 @@ it('advertises only admitted batch routes and actual explicit inspection wrapper
     }
   )
   const signal = new AbortController().signal
+
   const read = async (input: unknown) =>
     JSON.parse(await owner.call('describe_design_apis', input, signal))
+
   for (const name of actions.map((a) => a.name)) {
     for (const selector of [
       { names: [name] },
@@ -8055,6 +8962,7 @@ it('advertises only admitted batch routes and actual explicit inspection wrapper
       { names: [name], refresh: true }
     ]) {
       const result = await read(selector)
+
       expect(result.apis[0].execution).toEqual({
         kind: 'native-tool',
         namespace: 'design_operations',
@@ -8062,14 +8970,17 @@ it('advertises only admitted batch routes and actual explicit inspection wrapper
         argumentField: 'arguments'
       })
     }
+
     await owner.call(name, { arguments: { elementId: 'target' } }, signal)
   }
+
   for (const selector of [
     { category: 'design' },
     { query: 'inspection' },
     { names: ['review_missing'] }
   ]) {
     const result = await read(selector)
+
     for (const entry of [
       ...(result.apis ?? []),
       ...(result.candidates ?? [])
@@ -8078,8 +8989,10 @@ it('advertises only admitted batch routes and actual explicit inspection wrapper
       expect(entry.execution.argumentField).toBe('arguments')
     }
   }
+
   expect(execute).toHaveBeenCalledTimes(2)
   const batch = owner.definitions.find((d) => d.name === 'execute_design_batch')
+
   expect(JSON.stringify(batch?.inputSchema)).not.toContain('review_design')
 })
 
@@ -8102,10 +9015,15 @@ it('delivers usage pages across native and action discovery without consuming fu
   const execute = vi.fn()
   const owner = createLocalOperationTools(
     [action],
-    { modelActions: (a) => a, resolveBatch: (v) => v },
+    {
+      modelActions: (a) => a,
+
+      resolveBatch: (v) => v
+    },
     execute,
     { getNativeTools: () => native }
   )
+
   const read = async (args: unknown) =>
     JSON.parse(
       await owner.call(
@@ -8114,33 +9032,40 @@ it('delivers usage pages across native and action discovery without consuming fu
         new AbortController().signal
       )
     )
+
   const page = await read({
     query: 'discovery representation probe',
     view: 'usage'
   })
+
   expect(page.apis[0].definition.coverage).toBe('usage')
   expect(page.tools[0].inputFields).toContain('/properties/target')
   expect(page.tools[0].inputSchema).toBeUndefined()
   expect(page.next.arguments.view).toBe('usage')
   expect(owner.resultIssue('describe_design_apis', page)).toBeUndefined()
   const last = await read(page.next.arguments)
+
   expect(last.complete).toBe(true)
   expect(last.tools.at(-1).definition.coverage).toBe('usage')
   const category = await read({ category: 'tools', view: 'usage' })
+
   expect(category.tools[0].definition.state).toBe('included')
   const full = await read({ names: ['saved_tools.probe-0'] })
+
   expect(full.tools[0].definition.state).toBe('included')
   expect(full.tools[0].inputSchema).toEqual(native[0].inputSchema)
   const repeated = await read({
     query: 'discovery representation probe',
     view: 'usage'
   })
+
   expect(repeated.tools[0].definition.state).toBe('included')
   const restored = await read({
     ...page.next.arguments,
     refresh: true,
     refreshReason: 'delivery-failure'
   })
+
   expect(restored.tools[0].inputFields).toContain('/properties/target')
   expect(execute).not.toHaveBeenCalled()
 })
@@ -8159,10 +9084,15 @@ it('searches compact native capability menus with pagination without consuming e
   }))
   const admitted = createLocalOperationTools(
     [basicApiContracts[0]],
-    { modelActions: (a) => a, resolveBatch: (v) => v },
+    {
+      modelActions: (a) => a,
+
+      resolveBatch: (v) => v
+    },
     vi.fn(),
     { getNativeTools: () => native }
   )
+
   const read = async (args: unknown) =>
     JSON.parse(
       await admitted.call(
@@ -8171,7 +9101,9 @@ it('searches compact native capability menus with pagination without consuming e
         new AbortController().signal
       )
     )
+
   const first = await read({ query: 'geometry measurements' })
+
   expect(first.tools).toHaveLength(16)
   expect(first.tools[0]).toMatchObject({
     name: 'inspect-0',
@@ -8181,9 +9113,11 @@ it('searches compact native capability menus with pagination without consuming e
   expect(first.tools[0].outputSchema).toBeUndefined()
   expect(first.complete).toBe(false)
   const second = await read(first.next.arguments)
+
   expect(second.tools).toHaveLength(3)
   expect(second.complete).toBe(true)
   const full = await read({ names: ['saved_tools.inspect-18'] })
+
   expect(full.tools[0].inputSchema).toEqual(native[18].inputSchema)
   expect(full.tools[0].definition.state).toBe('included')
 })
@@ -8192,7 +9126,11 @@ it('keeps subject research distinct from capability lookup without automatically
   const execute = vi.fn()
   const owner = createLocalOperationTools(
     basicApiContracts,
-    { modelActions: (a) => a, resolveBatch: (v) => v },
+    {
+      modelActions: (a) => a,
+
+      resolveBatch: (v) => v
+    },
     execute
   )
   const result = JSON.parse(
@@ -8202,6 +9140,7 @@ it('keeps subject research distinct from capability lookup without automatically
       new AbortController().signal
     )
   )
+
   expect(result.apis).toEqual([])
   expect(result.guidance.capabilities).toContain('operation')
   expect(result.guidance.references).toContain('native web research')
@@ -8219,7 +9158,11 @@ it('never substitutes a saved same-name tool for an unavailable explicit action 
         inputSchema: { type: 'object' }
       }
     ],
-    { modelActions: (a) => a, resolveBatch: (v) => v },
+    {
+      modelActions: (a) => a,
+
+      resolveBatch: (v) => v
+    },
     vi.fn(),
     {
       getNativeTools: () => [
@@ -8244,6 +9187,7 @@ it('never substitutes a saved same-name tool for an unavailable explicit action 
       new AbortController().signal
     )
   )
+
   expect(result.apis[0].execution.kind).toBe('unavailable')
 })
 
@@ -8263,14 +9207,22 @@ it('delivers API, native and mixed discovery pages through the actual invocation
   const execute = vi.fn()
   const owner = createOwner(
     actions,
-    { modelActions: (a) => a, resolveBatch: (v) => v },
+    {
+      modelActions: (a) => a,
+
+      resolveBatch: (v) => v
+    },
     execute,
     { getNativeTools: () => native }
   )
   const definition = owner.definitions.find(
     (tool) => tool.name === 'describe_design_apis'
   )
-  if (!definition) throw new Error('Missing discovery definition')
+
+  if (!definition) {
+    throw new Error('Missing discovery definition')
+  }
+
   const readPage = async (args: unknown) => {
     const reply = await invokeLocalTool(
       owner,
@@ -8278,11 +9230,15 @@ it('delivers API, native and mixed discovery pages through the actual invocation
       args,
       new AbortController().signal
     )
+
     expect(reply.success, reply.text).toBe(true)
+
     return reply.text
   }
+
   const read = async (args: unknown) =>
     JSON.parse(await readCompleteInformation(readPage, args))
+
   const menu = await read({})
   const selectors = [
     { query: 'pagination probe' },
@@ -8290,6 +9246,7 @@ it('delivers API, native and mixed discovery pages through the actual invocation
       category
     }))
   ]
+
   for (const selector of selectors.flatMap((selector) => [
     selector,
     { ...selector, view: 'usage' },
@@ -8299,20 +9256,26 @@ it('delivers API, native and mixed discovery pages through the actual invocation
     let delivered = 0
     const identities: string[] = []
     const count = page.count
+
     do {
       expect(page.offset).toBe(delivered)
       expect(page.count).toBe(count)
       const entries = [...page.apis, ...(page.tools ?? [])]
+
       expect(entries.length).toBeLessThanOrEqual(16)
       identities.push(
         ...entries.map((entry) => `${entry.namespace ?? 'api'}:${entry.name}`)
       )
       delivered += entries.length
       expect(page.complete).toBe(delivered === count)
-      if (page.complete) break
+      if (page.complete) {
+        break
+      }
+
       expect(page.next.arguments.offset).toBe(delivered)
       page = await read(page.next.arguments)
     } while (delivered < count)
+
     expect(page.next).toBeUndefined()
     expect(new Set(identities).size).toBe(count)
     expect(await read({ ...selector, offset: count })).toMatchObject({
@@ -8327,8 +9290,10 @@ it('delivers API, native and mixed discovery pages through the actual invocation
       { ...selector, offset: count + 1 },
       new AbortController().signal
     )
+
     expect(invalid.success).toBe(false)
   }
+
   expect(await read({ query: 'absent capability' })).toMatchObject({
     count: 0,
     offset: 0,
@@ -8376,17 +9341,26 @@ it.each([
   const { invokeLocalTool } = await import('../local-tool-invocation')
   const owner = createOwner(
     [basicApiContracts[0]],
-    { modelActions: (a) => a, resolveBatch: (v) => v },
+    {
+      modelActions: (a) => a,
+
+      resolveBatch: (v) => v
+    },
     vi.fn()
   )
   const definition = owner.definitions.find(
     (tool) => tool.name === 'describe_design_apis'
   )
-  if (!definition) throw new Error('Missing discovery definition')
+
+  if (!definition) {
+    throw new Error('Missing discovery definition')
+  }
+
   const reply = await invokeLocalTool(
     {
       ...owner,
       callInternal: undefined,
+
       call: async () =>
         JSON.stringify({
           apis: [],
@@ -8401,6 +9375,7 @@ it.each([
     {},
     new AbortController().signal
   )
+
   expect(reply.success, reply.text).toBe(false)
   expect(reply.text).toContain('TOOL_RESULT_INVALID')
 })
@@ -8413,27 +9388,44 @@ it('rejects a changed registry continuation before silently skipping a capabilit
     name: `paged-${index}`,
     namespace: 'saved_tools',
     description: 'Pagination capability',
+
     get inputSchema() {
       return schemaRead()
     },
+
     ...toolSemantics({ type: 'object' }, 'read', ['document'])
   }))
   const inventory = vi.fn(() => native)
   const owner = createOwner(
     basicApiContracts,
-    { modelActions: (a) => a, resolveBatch: (v) => v },
+    {
+      modelActions: (a) => a,
+
+      resolveBatch: (v) => v
+    },
     vi.fn(),
-    { getNativeTools: inventory, getNativeToolsRevision: () => revision }
+    {
+      getNativeTools: inventory,
+
+      getNativeToolsRevision: () => revision
+    }
   )
   const definition = owner.definitions.find(
     (d) => d.name === 'describe_design_apis'
   )
-  if (!definition) throw new Error('Missing discovery definition')
+
+  if (!definition) {
+    throw new Error('Missing discovery definition')
+  }
+
   const invoke = (args: unknown) =>
     invokeLocalTool(owner, definition, args, new AbortController().signal)
+
   const first = await invoke({ category: 'tools' })
+
   expect(first.success).toBe(true)
   const page = JSON.parse(first.text)
+
   expect((await invoke(page.next.arguments)).success).toBe(true)
   expect(inventory).toHaveBeenCalledTimes(1)
   expect(schemaRead).toHaveBeenCalledTimes(19)
@@ -8445,11 +9437,14 @@ it('rejects a changed registry continuation before silently skipping a capabilit
   native.shift()
   revision++
   const stale = await invoke(page.next.arguments)
+
   expect(stale.success).toBe(false)
   expect(stale.text).toContain('restart')
   const restarted = await invoke({ category: 'tools' })
+
   expect(restarted.success).toBe(true)
   const fresh = JSON.parse(restarted.text)
+
   expect(fresh.count).toBe(18)
   expect((await invoke(fresh.next.arguments)).success).toBe(true)
   expect(inventory).toHaveBeenCalledTimes(3)
@@ -8488,7 +9483,11 @@ it('validates aggregate verification and refuses repair of an already passed sel
       description: name,
       inputSchema: { type: 'object' }
     })),
-    { modelActions: (value) => value, resolveBatch: (value) => value },
+    {
+      modelActions: (value) => value,
+
+      resolveBatch: (value) => value
+    },
     dispatch
   )
   const signal = new AbortController().signal
@@ -8499,6 +9498,7 @@ it('validates aggregate verification and refuses repair of an already passed sel
       signal
     )
   )
+
   expect(
     JSON.parse(
       await owner.call(
@@ -8571,6 +9571,7 @@ it('validates aggregate verification and refuses repair of an already passed sel
       signal
     )
   )
+
   expect(repaired.requestId).toBe(pending.mechanicalSelection.requestId)
   expect(repaired.actionResults[0].result.appliedElementIds).toEqual(['child'])
   expect(repaired.checks).toHaveLength(1)
@@ -8581,7 +9582,11 @@ it('preserves successful mixed schema lookups and returns exact recovery for a u
   const dispatch = vi.fn()
   const tools = createLocalOperationTools(
     [action],
-    { modelActions: (a) => a, resolveBatch: (b) => b },
+    {
+      modelActions: (a) => a,
+
+      resolveBatch: (b) => b
+    },
     dispatch,
     {
       getNativeTools: () =>
@@ -8596,6 +9601,7 @@ it('preserves successful mixed schema lookups and returns exact recovery for a u
           }))
     }
   )
+
   const read = async (input: unknown) =>
     JSON.parse(
       await tools.call(
@@ -8604,6 +9610,7 @@ it('preserves successful mixed schema lookups and returns exact recovery for a u
         new AbortController().signal
       )
     )
+
   const input = {
     names: [
       AiActionNames.READ_DESIGN_CONTEXT,
@@ -8612,6 +9619,7 @@ it('preserves successful mixed schema lookups and returns exact recovery for a u
     schemaPaths: ['/properties']
   }
   const first = await read(input)
+
   expect(first.apis[0]).toMatchObject({
     name: AiActionNames.READ_DESIGN_CONTEXT,
     definition: { state: 'unavailable', availableInResponse: false },
@@ -8625,12 +9633,14 @@ it('preserves successful mixed schema lookups and returns exact recovery for a u
   expect(first.tools[0].definition.state).toBe('included')
   expect(first.tools[0].schemaFragments[0].path).toBe('/properties')
   const repeated = await read(input)
+
   expect(repeated.apis[0].definition.state).toBe('unavailable')
   expect(repeated.tools[0].definition.state).toBe('included')
   const corrected = await read({
     names: [AiActionNames.READ_DESIGN_CONTEXT],
     schemaPaths: ['/oneOf/0/properties']
   })
+
   expect(corrected.apis[0].definition.state).toBe('included')
   expect(corrected.apis[0].schemaFragments[0].path).toBe('/oneOf/0/properties')
   expect(
@@ -8645,16 +9655,28 @@ it('keeps recorded usage schema-free and groups only canonical basic wrapper rou
   const action = actions.find(
     (item) => item.name === 'api_fill_updateFillsAtIndex'
   )
-  if (!action) throw new Error('Missing canonical fill action')
+
+  if (!action) {
+    throw new Error('Missing canonical fill action')
+  }
+
   const wrapperOwner = createLocalOperationTools(
     actions,
-    { modelActions: (a) => a, resolveBatch: (b) => b },
+    {
+      modelActions: (a) => a,
+
+      resolveBatch: (b) => b
+    },
     vi.fn()
   )
   const definition = wrapperOwner.definitions.find(
     (item) => item.name === action.name
   )
-  if (!definition) throw new Error('Missing canonical wrapper')
+
+  if (!definition) {
+    throw new Error('Missing canonical wrapper')
+  }
+
   const native = {
     ...definition,
     namespace: 'design_operations',
@@ -8668,10 +9690,15 @@ it('keeps recorded usage schema-free and groups only canonical basic wrapper rou
   const execute = vi.fn()
   const tools = createLocalOperationTools(
     actions,
-    { modelActions: (a) => a, resolveBatch: (b) => b },
+    {
+      modelActions: (a) => a,
+
+      resolveBatch: (b) => b
+    },
     execute,
     { getNativeTools: () => [native, foreign] }
   )
+
   const read = async (args: unknown) =>
     JSON.parse(
       await readCompleteInformation(
@@ -8684,12 +9711,18 @@ it('keeps recorded usage schema-free and groups only canonical basic wrapper rou
         args
       )
     )
+
   const recorded = recordedDiscovery.calls.find((call) => 'query' in call.input)
-  if (!recorded) throw new Error('Missing recorded query')
+
+  if (!recorded) {
+    throw new Error('Missing recorded query')
+  }
+
   const menu = await read(recorded.input)
   const entry = menu.apis.find(
     (item: { name: string }) => item.name === action.name
   )
+
   expect(entry.inputFields).toContain('/properties/elementIds')
   expect(entry.execution.kind).toBe('batch-action')
   expect(entry.recipeDependency.definition.arguments.names).toEqual([
@@ -8710,7 +9743,9 @@ it('keeps recorded usage schema-free and groups only canonical basic wrapper rou
       /"(?:inputSchema|outputSchema|partialOutputSchema|recoveryOutputSchema)":/
     )
   }
+
   const exact = await read({ names: [native.registeredName] })
+
   expect(exact.tools[0].definition.coverage).toBe('full')
   expect(exact.tools[0].inputSchema).toEqual(definition.inputSchema)
   expect(exact.tools[0].outputSchema).toEqual(definition.outputSchema)
@@ -8718,11 +9753,14 @@ it('keeps recorded usage schema-free and groups only canonical basic wrapper rou
     definition.partialOutputSchema
   )
   const usage = await read({ names: [native.registeredName], view: 'usage' })
+
   expect(usage.tools[0].definition.availableInResponse).toBe(true)
   expect(usage.tools[0].inputFields).toContain('/properties/arguments')
   const reused = await read({ names: [native.registeredName], view: 'usage' })
+
   expect(reused.tools[0].definition.state).toBe('included')
   const restored = await read(reused.tools[0].definition.recover.arguments)
+
   expect(restored.tools[0].inputFields).toEqual(usage.tools[0].inputFields)
   expect(restored.tools[0].outputSchema).toBeUndefined()
   expect(execute).not.toHaveBeenCalled()
@@ -8744,50 +9782,73 @@ it('replays all recorded discovery selectors without losing exact contracts or d
     import('../local-operation-tools').NativeToolDescriptor
   >()
   const additional = new Map<string, (typeof actions)[number]>()
+
   for (const call of saved.calls) {
     for (const tool of call.output.tools ?? []) {
-      if (!tool.inputSchema) continue
+      if (!tool.inputSchema) {
+        continue
+      }
+
       const {
         definition: _receipt,
         schemaSource: _source,
         ...descriptor
       } = tool
+
       native.set(`${tool.namespace}.${tool.name}`, descriptor)
     }
+
     for (const api of call.output.apis ?? []) {
       if (
         api.inputSchema &&
         !actions.some((action) => action.name === api.name)
       ) {
         const { definition: _receipt, ...descriptor } = api
+
         additional.set(api.name, descriptor)
       }
     }
   }
+
   const registered = [...actions, ...additional.values()]
   const base = createLocalOperationTools(
     registered,
-    { modelActions: (a) => a, resolveBatch: (b) => b },
+    {
+      modelActions: (a) => a,
+
+      resolveBatch: (b) => b
+    },
     vi.fn()
   )
+
   for (const definition of base.definitions) {
-    if (!definition.name.startsWith('api_')) continue
+    if (!definition.name.startsWith('api_')) {
+      continue
+    }
+
     const registeredName = `design_operations.${definition.name}`
+
     native.set(registeredName, {
       ...definition,
       namespace: 'design_operations',
       registeredName
     })
   }
+
   const dispatch = vi.fn()
   const owner = createLocalOperationTools(
     registered,
-    { modelActions: (a) => a, resolveBatch: (b) => b },
+    {
+      modelActions: (a) => a,
+
+      resolveBatch: (b) => b
+    },
     dispatch,
     { getNativeTools: () => [...native.values()] }
   )
   let bytes = 0
   let usageBytes = 0
+
   for (const call of saved.calls) {
     const result = JSON.parse(
       await readCompleteInformation(
@@ -8800,23 +9861,28 @@ it('replays all recorded discovery selectors without losing exact contracts or d
         call.input
       )
     )
+
     bytes += Buffer.byteLength(JSON.stringify(result))
     expect(result.missingNames ?? result.missingOperations ?? []).toEqual([])
     for (const expected of call.output.apis ?? []) {
       const actual = result.apis.find(
         (item: { name: string }) => item.name === expected.name
       )
+
       expect(actual, expected.name).toBeDefined()
-      if (expected.inputSchema)
+      if (expected.inputSchema) {
         expect(
           runtimeOperationSchema({ ...actual.inputSchema, examples: undefined })
         ).toEqual({ ...expected.inputSchema, examples: undefined })
+      }
     }
+
     for (const expected of call.output.tools ?? []) {
       const actual = result.tools.find(
         (item: { name: string; namespace: string }) =>
           item.name === expected.name && item.namespace === expected.namespace
       )
+
       if (call.input.view === 'usage' && !actual) {
         expect(
           result.apis.some(
@@ -8826,24 +9892,31 @@ it('replays all recorded discovery selectors without losing exact contracts or d
         ).toBe(true)
       } else {
         expect(actual, expected.name).toBeDefined()
-        if (expected.inputSchema)
+        if (expected.inputSchema) {
           expect(runtimeOperationSchema(actual.inputSchema)).toEqual(
             expected.inputSchema
           )
-        if (expected.outputSchema)
+        }
+
+        if (expected.outputSchema) {
           expect(actual.outputSchema).toEqual(expected.outputSchema)
-        if (expected.partialOutputSchema)
+        }
+
+        if (expected.partialOutputSchema) {
           expect(actual.partialOutputSchema).toEqual(
             expected.partialOutputSchema
           )
+        }
       }
     }
+
     if (call.input.view === 'usage') {
       recordAcquisitionCost(call.input, JSON.stringify(result), [])
       usageBytes = Buffer.byteLength(JSON.stringify(result))
       expect(usageBytes).toBeLessThan(call.outputBytes / 3)
     }
   }
+
   expect(saved.calls).toHaveLength(13)
   expect(dispatch).not.toHaveBeenCalled()
   expect(bytes).toBeLessThan(
@@ -8865,7 +9938,11 @@ it('routes exact final-action discovery to the current final-response contract w
   const dispatch = vi.fn()
   const owner = createLocalOperationTools(
     [final],
-    { modelActions: (a) => a, resolveBatch: (b) => b },
+    {
+      modelActions: (a) => a,
+
+      resolveBatch: (b) => b
+    },
     dispatch
   )
   const signal = new AbortController().signal
@@ -8876,6 +9953,7 @@ it('routes exact final-action discovery to the current final-response contract w
       signal
     )
   )
+
   expect(result.missingNames).toEqual([])
   expect(result.apis[0]).toMatchObject({
     name: final.name,
@@ -8905,6 +9983,7 @@ it('routes exact final-action discovery to the current final-response contract w
       signal
     )
   )
+
   expect(query.apis[0]).toMatchObject({
     name: final.name,
     execution: { kind: 'final-response', action: final.name }
@@ -8916,6 +9995,7 @@ it('routes exact final-action discovery to the current final-response contract w
       signal
     )
   )
+
   expect(repeated.apis[0].definition.availableInResponse).toBe(true)
 })
 
@@ -8925,7 +10005,11 @@ it('declares the shared bounded result projection in visual review outcomes', as
   const definition = designEvidenceDefinitions.find(
     (tool) => tool.name === AiDesignToolIds.REVIEW_DRAWING
   )
-  if (!definition) throw new Error('Missing review definition')
+
+  if (!definition) {
+    throw new Error('Missing review definition')
+  }
+
   const base = {
     phase: 'visual',
     reviewOperation: 'record',
@@ -8934,6 +10018,7 @@ it('declares the shared bounded result projection in visual review outcomes', as
     inspectionIds: ['inspection']
   }
   const results = createDesignCheckResults().deliver()
+
   expect(operationInputIssue(base, definition.outputSchema)).toBeUndefined()
   expect(
     operationInputIssue({ ...base, results }, definition.outputSchema)
@@ -8956,8 +10041,11 @@ it('declares the shared bounded result projection in visual review outcomes', as
 it('replays recorded conflicting and corrected targets without reading or writing the rejected input', async () => {
   const rejected = recordedAcquisition.calls.find((call) => call.index === 31)
   const corrected = recordedAcquisition.calls.find((call) => call.index === 34)
-  if (!rejected || !corrected)
+
+  if (!rejected || !corrected) {
     throw new Error('Recorded target cases are missing')
+  }
+
   const read = createRegionTargetsAction(vi.fn())
   const ids = ['fresh-spire-a', 'fresh-spire-b', 'fresh-spire-c']
   const execute = vi.fn(async (batch: AiActionBatch) => ({
@@ -8980,16 +10068,25 @@ it('replays recorded conflicting and corrected targets without reading or writin
   }))
   const tools = createLocalOperationTools(
     [read, ...basicApiContracts],
-    { modelActions: (a) => a, resolveBatch: (v) => v },
+    {
+      modelActions: (a) => a,
+
+      resolveBatch: (v) => v
+    },
     execute
   )
+
   const restore = (input: unknown) => {
     const value = JSON.parse(JSON.stringify(input))
+
     value.operations[0].target.query.filter.ancestorId = 'fresh-spire-parent'
+
     return value
   }
+
   const bad = restore(rejected.input)
   const before = structuredClone(bad)
+
   await expect(
     tools.call(rejected.tool, bad, new AbortController().signal)
   ).rejects.toThrow(/conflicting target binding/)
@@ -9002,6 +10099,7 @@ it('replays recorded conflicting and corrected targets without reading or writin
       new AbortController().signal
     )
   )
+
   expect(execute).toHaveBeenCalledTimes(2)
   expect(execute.mock.calls[0][0].actions[0].arguments).toMatchObject({
     filter: { ancestorId: 'fresh-spire-parent', name: { prefix: '針尖' } }
@@ -9019,7 +10117,11 @@ it('binds a retained exact-one anchor and moving set through the canonical hiera
   const api = basicApiContracts.find(
     (item) => item.operation === 'hierarchy.moveElementsRelative'
   )
-  if (!api) throw new Error('Missing hierarchy contract')
+
+  if (!api) {
+    throw new Error('Missing hierarchy contract')
+  }
+
   const operation = {
     name: api.name,
     arguments: { request: { placement: 'before' } },
@@ -9031,6 +10133,7 @@ it('binds a retained exact-one anchor and moving set through the canonical hiera
   const resolve = vi.fn((ref: unknown) =>
     (ref as { artifactId: string }).artifactId === 'moving' ? ['a', 'b'] : ['c']
   )
+
   expect(
     prepareOperationBatch([operation], [api], resolve)[0].arguments
   ).toEqual({
@@ -9041,6 +10144,7 @@ it('binds a retained exact-one anchor and moving set through the canonical hiera
     /exactly one/
   )
   const misleading = structuredClone(operation)
+
   misleading.target[1].field = 'elementId'
   resolve.mockClear()
   expect(() => prepareOperationBatch([misleading], [api], resolve)).toThrow(
@@ -9068,6 +10172,7 @@ it('preserves schema validation and literal data when adapting App identity anno
   }
   const copy = structuredClone(source)
   const runtime = runtimeOperationSchema(source)
+
   expect(runtime.properties.elementId).toEqual({
     type: 'string',
     minLength: 3,
@@ -9084,10 +10189,12 @@ it('preserves schema validation and literal data when adapting App identity anno
     { elementId: 'xxx' },
     { elementId: 7 },
     {}
-  ])
+  ]) {
     expect(operationInputIssue(input, runtime)).toEqual(
       operationInputIssue(input, source)
     )
+  }
+
   expect(source).toEqual(copy)
 })
 
@@ -9106,6 +10213,7 @@ it('rejects generic document identity binding and multiple fan-outs before resol
       }
     }
   }
+
   expect(() =>
     prepareOperationBatch(
       [
@@ -9193,14 +10301,21 @@ it('delivers a validated usage invocation with canonical identity cardinality an
   const execute = vi.fn(async () => ({ actions: [] }))
   const tools = createLocalOperationTools(
     [action],
-    { modelActions: (a) => a, resolveBatch: (b) => b },
+    {
+      modelActions: (a) => a,
+
+      resolveBatch: (b) => b
+    },
     execute
   )
+
   const read = (args: unknown) =>
     tools
       .call('describe_design_apis', args, new AbortController().signal)
       .then(JSON.parse)
+
   const usage = (await read({ names: [action.name], view: 'usage' })).apis[0]
+
   expect(usage.inputFields).toContain('/properties/request')
   expect(usage.outputFields).toContain('/properties/applied')
   expect(usage.elementBindings).toContainEqual({
@@ -9233,6 +10348,7 @@ it('delivers a validated usage invocation with canonical identity cardinality an
       refreshReason: 'delivery-failure'
     })
   ).apis[0]
+
   expect(refreshed.invocationExample).toEqual(usage.invocationExample)
   expect((await read({ names: [action.name] })).apis[0].inputSchema).toEqual(
     action.inputSchema
@@ -9253,7 +10369,11 @@ it('does not invent usage arguments when owner examples are absent or invalid', 
     }
     const tools = createLocalOperationTools(
       [action],
-      { modelActions: (a) => a, resolveBatch: (b) => b },
+      {
+        modelActions: (a) => a,
+
+        resolveBatch: (b) => b
+      },
       vi.fn()
     )
     const usage = JSON.parse(
@@ -9263,6 +10383,7 @@ it('does not invent usage arguments when owner examples are absent or invalid', 
         new AbortController().signal
       )
     ).apis[0]
+
     expect(usage.invocationExample).toMatchObject({ available: false })
     expect(usage.invocationExample.invocation).toBeUndefined()
     expect(usage.definition.recover.arguments.operations).toEqual([action.name])
@@ -9274,26 +10395,34 @@ describe('context entry navigation and recovery', () => {
     const { default: saved } =
       await import('./fixtures/recorded-101/context-discovery-20261023.json')
     const signal = new AbortController().signal
+
     let invalidate: () => void = () => undefined
+
     const source = {
       getCurrentWorkspaceId: () => 'workspace',
+
       getSelectedElementIds: () => [],
+
       getElementChildren: () => ({
         available: true,
         elementIds: [],
         total: 0,
         nextOffset: null
       }),
+
       getElementIdsInBounds: () => [],
+
       getElementMetadata: (id: string) => ({
         name: id,
         type: 'group',
         parentId: 'workspace'
       }),
+
       getElementComputedData: () => ({ x: 6438, y: 27554 })
     }
     const store = createRetainedDesignContext(source, (listener) => {
       invalidate = listener
+
       return () => undefined
     })
     const action = createDocumentContextAction(store.read)
@@ -9302,6 +10431,7 @@ describe('context entry navigation and recovery', () => {
       actionResults: await Promise.all(
         batch.actions.map(async (item) => {
           expect(item.name).toBe(action.name)
+
           return {
             actionId: item.id,
             actionName: item.name,
@@ -9312,7 +10442,11 @@ describe('context entry navigation and recovery', () => {
     }))
     const owner = createOwner(
       [action],
-      { modelActions: (a) => a, resolveBatch: (b) => b },
+      {
+        modelActions: (a) => a,
+
+        resolveBatch: (b) => b
+      },
       execute,
       {
         getNativeTools: () =>
@@ -9326,6 +10460,7 @@ describe('context entry navigation and recovery', () => {
       }
     )
     const calls: { input: unknown; text: string }[] = []
+
     const read = async (input: unknown) =>
       JSON.parse(
         await readCompleteInformation(async (args) => {
@@ -9333,7 +10468,11 @@ describe('context entry navigation and recovery', () => {
           const definition = owner.definitions.find(
             (tool) => tool.name === 'describe_design_apis'
           )
-          if (!definition) throw new Error('Missing discovery definition')
+
+          if (!definition) {
+            throw new Error('Missing discovery definition')
+          }
+
           const reply = await invokeLocalTool(owner, definition, args, signal)
           const text = JSON.stringify(
             owner.projectModelResult(
@@ -9342,10 +10481,13 @@ describe('context entry navigation and recovery', () => {
               JSON.parse(reply.text)
             )
           )
+
           calls.push({ input: args, text })
+
           return text
         }, input)
       )
+
     return {
       saved,
       signal,
@@ -9355,6 +10497,7 @@ describe('context entry navigation and recovery', () => {
       execute,
       read,
       calls,
+
       invalidate: () => invalidate()
     }
   }
@@ -9363,16 +10506,19 @@ describe('context entry navigation and recovery', () => {
     'uses delivered %s union navigation through the real context owner without an extra read',
     async (route) => {
       const t = await setup()
+
       try {
         const usage = await t.read({
           query: 'structural retained output',
           view: 'usage'
         })
         const entry = route === 'action' ? usage.apis[0] : usage.tools[0]
+
         expect(entry.inputSchema).toBeUndefined()
         const branch = entry.inputFields.find((path: string) =>
           path.endsWith('/oneOf/0')
         )
+
         expect(
           branch,
           'usage must expose the selected union boundary'
@@ -9383,9 +10529,11 @@ describe('context entry navigation and recovery', () => {
           ...entry.fieldQuery.arguments,
           schemaPaths: [branch]
         })
+
         expect(queried.toolOutcome.status).toBe('success')
         expect([...queried.apis, ...(queried.tools ?? [])]).toHaveLength(1)
         const fragment = [...queried.apis, ...(queried.tools ?? [])][0]
+
         expect(fragment.schemaFragments[0]).toEqual({
           path: branch,
           schema: t.action.inputSchema.oneOf[0]
@@ -9394,6 +10542,7 @@ describe('context entry navigation and recovery', () => {
           route === 'action'
             ? ''
             : branch.slice(0, branch.lastIndexOf('/oneOf'))
+
         expect(fragment.schemaContext).toEqual(
           expect.arrayContaining([
             expect.objectContaining({
@@ -9404,7 +10553,7 @@ describe('context entry navigation and recovery', () => {
             })
           ])
         )
-        if (route === 'native')
+        if (route === 'native') {
           expect(fragment.schemaContext).toEqual(
             expect.arrayContaining([
               expect.objectContaining({
@@ -9416,6 +10565,8 @@ describe('context entry navigation and recovery', () => {
               })
             ])
           )
+        }
+
         expect(t.calls).toHaveLength(t.saved.baseline.lookupCalls)
         const outputBytes = t.calls.reduce(
           (n, call) => n + Buffer.byteLength(call.text),
@@ -9425,6 +10576,7 @@ describe('context entry navigation and recovery', () => {
           (n, call) => n + Buffer.byteLength(JSON.stringify(call.input)),
           0
         )
+
         expect(inputBytes + outputBytes).toBeLessThan(
           t.saved.baseline.inputBytes + t.saved.baseline.outputBytes
         )
@@ -9450,19 +10602,25 @@ describe('context entry navigation and recovery', () => {
         const executionDefinition = t.owner.definitions.find(
           (tool) => tool.name === entry.execution.tool
         )
-        if (!executionDefinition)
+
+        if (!executionDefinition) {
           throw new Error('Missing execution definition')
+        }
+
         const reply = await invokeLocalTool(
           t.owner,
           executionDefinition,
           input,
           t.signal
         )
+
         expect(reply.success, reply.text).toBe(true)
         const raw = JSON.parse(reply.text)
+
         expect(t.execute).toHaveBeenCalledTimes(1)
         expect(t.execute.mock.calls[0][0].actions[0].arguments).toEqual(values)
         const result = raw.actionResults[0].result
+
         expect(result.elements[0]).toMatchObject({
           id: values.elementIds[0],
           properties: { x: 6438, y: 27554 }
@@ -9470,6 +10628,7 @@ describe('context entry navigation and recovery', () => {
         expect(result.coordinateSpace).toBe('parent-local')
         // Recovery is informational, even after execution: it never repeats work.
         const restored = await t.read(fragment.definition.recover.arguments)
+
         expect(restored.toolOutcome.status).toBe('success')
         expect(t.execute).toHaveBeenCalledTimes(1)
         t.invalidate()
@@ -9488,6 +10647,7 @@ describe('context entry navigation and recovery', () => {
 
   it('rejects invalid input through both published routes before the context owner reads', async () => {
     const t = await setup()
+
     try {
       const usage = await t.read(t.saved.usageQuery)
       const { invokeLocalTool } = await import('../local-tool-invocation')
@@ -9497,12 +10657,17 @@ describe('context entry navigation and recovery', () => {
         { scope: 'children', elementIds: ['a'] },
         { ...t.saved.invocation.arguments, unexpected: true }
       ]
+
       for (const entry of [usage.apis[0], usage.tools[0]]) {
         const native = entry.execution.kind === 'native-tool'
         const definition = t.owner.definitions.find(
           (tool) => tool.name === entry.execution.tool
         )
-        if (!definition) throw new Error('Missing execution definition')
+
+        if (!definition) {
+          throw new Error('Missing execution definition')
+        }
+
         for (const values of invalidValues) {
           const input = native
             ? { arguments: values }
@@ -9513,12 +10678,14 @@ describe('context entry navigation and recovery', () => {
             input,
             t.signal
           )
+
           expect(reply.success).toBe(false)
           expect(JSON.parse(reply.text).toolOutcome.settlement).toBe(
             'not-started'
           )
         }
-        if (native)
+
+        if (native) {
           for (const input of [
             t.saved.invocation.arguments,
             { arguments: t.saved.invocation }
@@ -9528,7 +10695,9 @@ describe('context entry navigation and recovery', () => {
                 .success
             ).toBe(false)
           }
+        }
       }
+
       expect(t.execute).not.toHaveBeenCalled()
     } finally {
       t.store.dispose()
@@ -9537,8 +10706,10 @@ describe('context entry navigation and recovery', () => {
 
   it('executes published recovery after the saved mixed query instead of repeating the invalid path', async () => {
     const t = await setup()
+
     try {
       const mixed = await t.read(t.saved.fragmentQuery)
+
       expect(mixed.toolOutcome).toMatchObject({
         status: 'partial',
         settlement: 'completed'
@@ -9546,6 +10717,7 @@ describe('context entry navigation and recovery', () => {
       expect(mixed.apis[0].definition.coverage).toBe('partial')
       expect(mixed.tools[0].definition.coverage).toBe('none')
       const restored = await t.read(mixed.tools[0].definition.recover.arguments)
+
       expect(restored.toolOutcome.status).toBe('success')
       expect(restored.apis).toHaveLength(0)
       expect(restored.tools).toHaveLength(1)
@@ -9553,6 +10725,7 @@ describe('context entry navigation and recovery', () => {
       const path = entry.inputFields.find((value: string) =>
         value.endsWith('/oneOf/0')
       )
+
       expect(path).toBeDefined()
       expect(entry.fieldQuery).toBeDefined()
       expect(
@@ -9562,27 +10735,32 @@ describe('context entry navigation and recovery', () => {
         ...entry.fieldQuery.arguments,
         schemaPaths: [path]
       })
+
       expect(corrected.tools[0].definition.coverage).toBe('partial')
       const mixedPaths = await t.read({
         ...entry.fieldQuery.arguments,
         schemaPaths: [path, '/missing']
       })
+
       expect(mixedPaths.toolOutcome.status).toBe('failed')
       expect(mixedPaths.tools[0].definition.coverage).toBe('none')
       const narrower = await t.read(
         mixedPaths.tools[0].definition.recover.arguments
       )
+
       expect(narrower.toolOutcome.status).toBe('success')
       expect(narrower.tools[0].schemaFragments).toEqual(
         corrected.tools[0].schemaFragments
       )
       const full = await t.read({ names: t.saved.usageQuery.names })
+
       expect(full.apis[0].inputSchema).toEqual(t.action.inputSchema)
       expect(full.tools[0].inputSchema.properties.arguments).toEqual(
         t.action.inputSchema
       )
       expect(t.execute).not.toHaveBeenCalled()
       const controller = new AbortController()
+
       controller.abort()
       await expect(
         t.owner.call(
@@ -9620,9 +10798,14 @@ it('keeps union navigation compact while fragments preserve escaped references a
   const dispatch = vi.fn()
   const owner = createOwner(
     [action],
-    { modelActions: (a) => a, resolveBatch: (b) => b },
+    {
+      modelActions: (a) => a,
+
+      resolveBatch: (b) => b
+    },
     dispatch
   )
+
   const read = async (args: unknown) =>
     JSON.parse(
       await owner.call(
@@ -9631,9 +10814,11 @@ it('keeps union navigation compact while fragments preserve escaped references a
         new AbortController().signal
       )
     )
+
   const usage = (
     await read({ query: 'immutable original evidence', view: 'usage' })
   ).apis[0]
+
   expect(usage.inputFields).toEqual([
     '/oneOf/0',
     '/properties/token',
@@ -9642,11 +10827,13 @@ it('keeps union navigation compact while fragments preserve escaped references a
   expect(JSON.stringify(usage)).not.toContain('bounded-secret-detail')
   expect(usage.fieldQuery).toBeDefined()
   const example = (await read(usage.fieldQuery.arguments)).apis[0]
+
   expect(example.definition.coverage).toBe('partial')
   for (const path of usage.inputFields) {
     const fragment = (
       await read({ ...usage.fieldQuery.arguments, schemaPaths: [path] })
     ).apis[0]
+
     expect(fragment.definition.state).toBe('included')
     expect(fragment.schemaContext).toContainEqual({
       path: '',
@@ -9663,6 +10850,7 @@ it('keeps union navigation compact while fragments preserve escaped references a
     )
     expect(fragment.unresolvedSchemaReferences).toBeUndefined()
   }
+
   expect(dispatch).not.toHaveBeenCalled()
 })
 
@@ -9696,12 +10884,17 @@ it('prepares only explicit reference uses and preserves selection through failed
         inputSchema: {}
       }
     ],
-    { modelActions: (value) => value, resolveBatch: (value) => value },
+    {
+      modelActions: (value) => value,
+
+      resolveBatch: (value) => value
+    },
     dispatch,
     {
       validateReferences: images.validateReferences,
       prepareReferences: images.prepareReferences,
       resolveSources: images.resolveSources,
+
       getNativeTools: () =>
         tools.definitions.map((definition) => ({
           ...definition,
@@ -9710,11 +10903,17 @@ it('prepares only explicit reference uses and preserves selection through failed
     }
   )
   const signal = new AbortController().signal
+
   const call = async (name: string, args: unknown, current = signal) => {
     const definition = tools.definitions.find((item) => item.name === name)
-    if (!definition) throw new Error('Missing registered operation')
+
+    if (!definition) {
+      throw new Error('Missing registered operation')
+    }
+
     return invokeLocalTool(tools, definition, args, current)
   }
+
   const plan = await call('define_design_criteria', {
     phase: 'plan',
     method: 'Compare supplied evidence',
@@ -9729,6 +10928,7 @@ it('prepares only explicit reference uses and preserves selection through failed
     },
     detailRequired: false
   })
+
   expect(plan.success).toBe(true)
   const usage = JSON.parse(
     (
@@ -9738,9 +10938,11 @@ it('prepares only explicit reference uses and preserves selection through failed
       })
     ).text
   ).tools[0]
+
   expect(usage.usageGuide?.parameters).toBeDefined()
   expect(usage.description).toContain(AiDesignToolIds.DEFINE_DESIGN_CRITERIA)
   const delivered = usage.usageGuide.parameters
+
   expect(delivered.properties.referenceDecisions.items.required).toContain(
     'uses'
   )
@@ -9750,6 +10952,7 @@ it('prepares only explicit reference uses and preserves selection through failed
   const originalStats = sharp.prototype.stats
   const stats = vi.spyOn(sharp.prototype, 'stats')
   const timeout = vi.spyOn(sharp.prototype, 'timeout')
+
   const selection = (
     status: 'accepted' | 'pending' | 'rejected',
     indexes = [0, 1]
@@ -9774,6 +10977,7 @@ it('prepares only explicit reference uses and preserves selection through failed
           : []
     }))
   })
+
   try {
     const facts = await call('record_design_facts', {
       phase: 'facts',
@@ -9788,12 +10992,14 @@ it('prepares only explicit reference uses and preserves selection through failed
         }
       ]
     })
+
     expect(facts.success, facts.text).toBe(true)
     expect(JSON.parse(facts.text).facts[0].sources).toEqual([
       identities[0].referenceId
     ])
     expect(stats).not.toHaveBeenCalled()
     const stale = { ...selection('pending'), requirementRevision: 2 }
+
     expect((await call('select_design_references', stale)).success).toBe(false)
     expect(
       (
@@ -9804,16 +11010,21 @@ it('prepares only explicit reference uses and preserves selection through failed
       ).success
     ).toBe(false)
     const prior = await call('select_design_references', selection('pending'))
+
     expect(prior.success).toBe(true)
     expect(stats).not.toHaveBeenCalled()
     // Fail the blue attachment, independent of concurrent decoder arrival order.
     stats.mockImplementation(async function (this: sharp.Sharp) {
       const result = await originalStats.call(this)
-      if (result.channels[2].mean === 255)
+
+      if (result.channels[2].mean === 255) {
         throw new Error('Injected decoder timeout')
+      }
+
       return result
     })
     const failed = await call('select_design_references', selection('accepted'))
+
     stats.mockImplementation(originalStats)
     expect(failed.success).toBe(false)
     expect(failed.text).toContain('Retry failed attachmentIndexes')
@@ -9822,6 +11033,7 @@ it('prepares only explicit reference uses and preserves selection through failed
         /^Reference preparation failed: (.*?)\. Selection/
       )[1]
     )
+
     expect(
       failedSources.map(
         (source: { attachmentIndex: number }) => source.attachmentIndex
@@ -9841,6 +11053,7 @@ it('prepares only explicit reference uses and preserves selection through failed
         })
       ).text
     )
+
     expect(unchanged.changed).toBe(false)
     expect(
       unchanged.referenceDecisions.every(
@@ -9855,21 +11068,28 @@ it('prepares only explicit reference uses and preserves selection through failed
     const validationDefinition = images.definitions.find(
       (definition) => definition.name === 'validate_reference_images'
     )
-    if (!validationDefinition) throw new Error('Missing recovery tool')
+
+    if (!validationDefinition) {
+      throw new Error('Missing recovery tool')
+    }
+
     const recoveryReply = await invokeLocalTool(
       images,
       validationDefinition,
       recoveryArguments,
       signal
     )
+
     expect(recoveryReply.success, recoveryReply.text).toBe(true)
     const recovered = JSON.parse(recoveryReply.text)
+
     expect(recovered.references[0].validation.validity).toBe('decoded')
     expect(stats).toHaveBeenCalledTimes(3)
     const accepted = await call(
       'select_design_references',
       selection('accepted')
     )
+
     expect(accepted.success, accepted.text).toBe(true)
     expect(stats).toHaveBeenCalledTimes(3)
     const recoveryBytes = [
@@ -9880,6 +11100,7 @@ it('prepares only explicit reference uses and preserves selection through failed
       JSON.stringify(selection('accepted')),
       accepted.text
     ].reduce((bytes, text) => bytes + Buffer.byteLength(text), 0)
+
     process.stdout.write(
       'Attachment recovery bytes ' +
         JSON.stringify({
@@ -9891,6 +11112,7 @@ it('prepares only explicit reference uses and preserves selection through failed
     )
     const priorUses = JSON.parse(accepted.text).referenceDecisions
     const oversized = selection('accepted')
+
     oversized.referenceDecisions[0].uses[0].region = {
       x: 0,
       y: 0,
@@ -9907,13 +11129,16 @@ it('prepares only explicit reference uses and preserves selection through failed
         })
       ).text
     )
+
     expect(current.referenceDecisions).toEqual(priorUses)
     const cancelled = new AbortController()
+
     cancelled.abort()
     await expect(
       call('select_design_references', selection('rejected'), cancelled.signal)
     ).rejects.toThrow()
     const unknown = selection('accepted')
+
     unknown.referenceDecisions[0].referenceId = 'reference:foreign'
     expect((await call('select_design_references', unknown)).success).toBe(
       false
@@ -9929,16 +11154,20 @@ it('prepares only explicit reference uses and preserves selection through failed
       mediaType: 'image/png',
       size: extraBytes.length
     })
+
     identities.push(images.validateReferences([extra])[0])
     let release!: () => void
     const gate = new Promise<void>((resolve) => {
       release = resolve
     })
+
     stats.mockImplementationOnce(async function (
       this: ReturnType<typeof sharp>
     ) {
       const value = await originalStats.call(this)
+
       await gate
+
       return value
     })
     const interrupted = new AbortController()
@@ -9948,12 +11177,14 @@ it('prepares only explicit reference uses and preserves selection through failed
       interrupted.signal
     )
     const rejected = expect(selecting).rejects.toThrow()
+
     try {
       await vi.waitFor(() => expect(stats).toHaveBeenCalledTimes(4))
       interrupted.abort()
     } finally {
       release()
     }
+
     await rejected
     const afterCancel = JSON.parse(
       (
@@ -9962,11 +11193,13 @@ it('prepares only explicit reference uses and preserves selection through failed
         })
       ).text
     )
+
     expect(afterCancel.referenceDecisions).toEqual(priorUses)
     const resumed = await call(
       'select_design_references',
       selection('accepted', [extra])
     )
+
     expect(resumed.success, resumed.text).toBe(true)
     expect(stats).toHaveBeenCalledTimes(4)
     expect(dispatch).not.toHaveBeenCalled()

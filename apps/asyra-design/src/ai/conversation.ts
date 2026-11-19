@@ -1,9 +1,7 @@
-import {
-  canRetryAiTurn,
-  projectAiQuestion,
-  summarizeAiTurn,
-  createAiActivityProjection
-} from './presentation'
+import { readConversationQuestion } from './conversation-result'
+import { projectConversationContext } from './conversation-context-projection'
+import { ConversationContextError } from './conversation-context'
+import { canRetryAiTurn, createAiActivityProjection } from './presentation'
 import type { AiActivityProjectionState } from './activity-state'
 import { AiActionNames, AiDrawingDetailSelectionIntents } from '../constants'
 import type {
@@ -14,9 +12,6 @@ import type {
 
 export type AiConversationOutcome =
   'cancelled' | 'failed' | 'no-change' | 'partial' | 'success'
-
-// App history-delivery cost policy; complete messages are never sliced to fit.
-export const AI_CONVERSATION_HISTORY_MAXIMUM_BYTES = 32 * 1024
 
 export interface AiTargetHints {
   readonly compositionId: string | null
@@ -173,7 +168,7 @@ const EMPTY_TARGET_HINTS: AiTargetHints = Object.freeze({
 
 const EMPTY_IMAGE_ATTACHMENTS: readonly AiImageAttachment[] = Object.freeze([])
 
-const ACCEPTED_IMAGE_MEDIA_TYPES = new Set<AiImageMediaType>([
+const ACCEPTED_IMAGE_MEDIA_TYPES: ReadonlySet<string> = new Set([
   'image/jpeg',
   'image/png',
   'image/webp'
@@ -192,6 +187,29 @@ const isPlainObject = (value: unknown): value is Record<string, unknown> => {
   return prototype === Object.prototype || prototype === null
 }
 
+export const isAiImageAttachment = (
+  value: unknown
+): value is AiImageAttachment => {
+  if (!isPlainObject(value)) {
+    return false
+  }
+
+  const { dataUrl, mediaType, name, size } = value
+
+  return (
+    typeof mediaType === 'string' &&
+    ACCEPTED_IMAGE_MEDIA_TYPES.has(mediaType) &&
+    typeof dataUrl === 'string' &&
+    dataUrl.startsWith(`data:${mediaType};base64,`) &&
+    dataUrl.length > `data:${mediaType};base64,`.length &&
+    typeof name === 'string' &&
+    name.trim().length > 0 &&
+    typeof size === 'number' &&
+    Number.isSafeInteger(size) &&
+    size > 0
+  )
+}
+
 const normalizeImageAttachments = (
   value: unknown
 ): readonly AiImageAttachment[] => {
@@ -205,30 +223,15 @@ const normalizeImageAttachments = (
 
   return Object.freeze(
     value.map((attachment) => {
-      if (!isPlainObject(attachment)) {
+      if (!isAiImageAttachment(attachment)) {
         throw new AiConversationError('AI_CONVERSATION_INVALID_ATTACHMENT')
       }
 
       const { dataUrl, mediaType, name, size } = attachment
 
-      if (
-        typeof mediaType !== 'string' ||
-        !ACCEPTED_IMAGE_MEDIA_TYPES.has(mediaType as AiImageMediaType) ||
-        typeof dataUrl !== 'string' ||
-        !dataUrl.startsWith(`data:${mediaType};base64,`) ||
-        dataUrl.length <= `data:${mediaType};base64,`.length ||
-        typeof name !== 'string' ||
-        name.trim().length === 0 ||
-        typeof size !== 'number' ||
-        !Number.isSafeInteger(size) ||
-        size <= 0
-      ) {
-        throw new AiConversationError('AI_CONVERSATION_INVALID_ATTACHMENT')
-      }
-
       return Object.freeze({
         dataUrl,
-        mediaType: mediaType as AiImageMediaType,
+        mediaType,
         name: name.trim(),
         size
       })
@@ -298,51 +301,6 @@ const readActionResults = (
   }
 
   return value.actionResults.filter(isPlainObject)
-}
-
-const projectConversationHistory = (
-  settledTurns: readonly AiSettledTurn[]
-): AiJsonValue | undefined => {
-  if (!settledTurns.length) {
-    return
-  }
-
-  const encoder = new TextEncoder()
-  const turns: AiJsonValue[] = []
-  let pairBytes = 0
-  let omittedTurns = settledTurns.length
-
-  for (let index = settledTurns.length - 1; index >= 0; index -= 1) {
-    const turn = settledTurns[index]
-    const intent = turn.requestIntent ?? turn.intent
-    const pair = {
-      turnId: turn.turnId,
-      intent,
-      ...(turn.originalIntent && turn.originalIntent !== intent
-        ? { originalIntent: turn.originalIntent }
-        : {}),
-      message: summarizeAiTurn(turn).message,
-      outcome: turn.outcome
-    }
-    const bytes = encoder.encode(JSON.stringify(pair)).length
-    const envelopeBytes = encoder.encode(
-      JSON.stringify({ turns: [], omittedTurns: index })
-    ).length
-
-    // Each prior included pair adds one comma. Never skip an oversized gap.
-    if (
-      envelopeBytes + pairBytes + bytes + turns.length >
-      AI_CONVERSATION_HISTORY_MAXIMUM_BYTES
-    ) {
-      break
-    }
-
-    turns.push(pair)
-    pairBytes += bytes
-    omittedTurns = index
-  }
-
-  return { turns: turns.reverse(), omittedTurns }
 }
 
 const outcomeForResult = (
@@ -445,7 +403,7 @@ export const createAiConversationController = (
     throw new AiConversationError('AI_CONVERSATION_INVALID_INTENT')
   }
 
-  let settledTurns: AiSettledTurn[] = []
+  let settledTurns: readonly AiSettledTurn[] = Object.freeze([])
   const observers = new Set<(snapshot: AiConversationSnapshot) => void>()
   let activeTurn: MutableActiveTurn | null = null
   let activeSettlement: Promise<unknown> | null = null
@@ -454,18 +412,19 @@ export const createAiConversationController = (
   let turnIndex = 0
   const storedConversations = new Map<
     string,
-    { turns: AiSettledTurn[]; targets: AiTargetHints; turnIndex: number }
+    {
+      turns: readonly AiSettledTurn[]
+      targets: AiTargetHints
+      turnIndex: number
+    }
   >()
   const navigationObservers = new Set<() => void>()
   let navigationSnapshot: AiConversationNavigationSnapshot | undefined
   let publishedNavigation: AiConversationNavigationSnapshot | undefined
 
   const getNavigationSnapshot = (): AiConversationNavigationSnapshot => {
-    const title = (
-      settledTurns[0]?.intent ??
-      activeTurn?.intent ??
-      'New conversation'
-    ).slice(0, 100)
+    const title =
+      settledTurns[0]?.intent ?? activeTurn?.intent ?? 'New conversation'
     const busy = activeTurn !== null
 
     if (
@@ -481,7 +440,7 @@ export const createAiConversationController = (
       .map(([id, state]) =>
         Object.freeze({
           id,
-          title: (state.turns[0]?.intent ?? 'New conversation').slice(0, 100)
+          title: state.turns[0]?.intent ?? 'New conversation'
         })
       )
 
@@ -588,7 +547,7 @@ export const createAiConversationController = (
             }),
       conversationId,
       disposed,
-      settledTurns: Object.freeze([...settledTurns]),
+      settledTurns,
       targetHints
     })
   }
@@ -652,12 +611,11 @@ export const createAiConversationController = (
 
       if (
         typeof actionResult.compositionId === 'string' &&
-        actionResult.compositionId.length > 0 &&
-        roleToElementIds
+        actionResult.compositionId.length > 0
       ) {
         targetHints = freezeTargetHints(
           actionResult.compositionId,
-          roleToElementIds
+          roleToElementIds ?? {}
         )
       }
     }
@@ -702,7 +660,7 @@ export const createAiConversationController = (
 
       storeCurrent()
       conversationId = id
-      settledTurns = []
+      settledTurns = Object.freeze([])
       targetHints = EMPTY_TARGET_HINTS
       turnIndex = 0
       navigationSnapshot = undefined
@@ -764,7 +722,10 @@ export const createAiConversationController = (
       }
 
       const pendingQuestion =
-        latest && projectAiQuestion(latest) ? latest : undefined
+        latest &&
+        readConversationQuestion(latest.result, latest.outcome === 'cancelled')
+          ? latest
+          : undefined
       const replyToTurnId = submission?.replyToTurnId ?? pendingQuestion?.turnId
       const replyTo = replyToTurnId ? pendingQuestion : undefined
 
@@ -776,13 +737,8 @@ export const createAiConversationController = (
         throw new AiConversationError('AI_CONVERSATION_INVALID_REPLY')
       }
 
-      const referenceTurn = replyTo ?? retryOf
-      const requestAttachments =
-        attachments.length > 0
-          ? attachments
-          : (referenceTurn?.requestAttachments ??
-            referenceTurn?.attachments ??
-            EMPTY_IMAGE_ATTACHMENTS)
+      let requestAttachments = attachments
+
       let requestIntent = intent
 
       if (submission?.detailOption) {
@@ -858,9 +814,18 @@ export const createAiConversationController = (
       let result: unknown
 
       try {
-        const conversationHistory = projectConversationHistory(settledTurns)
+        const projection = projectConversationContext(
+          settledTurns,
+          requestIntent,
+          attachments
+        )
+
+        requestAttachments = projection.attachments
         const metadata: AiJsonValue = {
-          ...(conversationHistory ? { conversationHistory } : {}),
+          ...(settledTurns.length > 0
+            ? { conversationContext: projection.context }
+            : {}),
+
           ...(replyTo
             ? { replyTo: { turnId: replyTo.turnId, intent: originalIntent } }
             : {}),
@@ -904,11 +869,17 @@ export const createAiConversationController = (
       } catch (error) {
         result = Object.freeze({
           code:
-            isPlainObject(error) && typeof error.code === 'string'
+            (isPlainObject(error) ||
+              error instanceof ConversationContextError) &&
+            typeof error.code === 'string'
               ? error.code
               : 'AI_FEATURE_FAILED',
-          stage: 'feature',
-          status: 'failed'
+          stage:
+            error instanceof ConversationContextError ? 'context' : 'feature',
+          status: 'failed',
+          ...(error instanceof ConversationContextError
+            ? { message: error.message }
+            : {})
         })
       }
 
@@ -952,7 +923,7 @@ export const createAiConversationController = (
 
       activeSettlement = null
       if (!disposed) {
-        settledTurns.push(settled)
+        settledTurns = Object.freeze([...settledTurns, settled])
         notify()
         try {
           options.onPublished?.(settled)
@@ -973,7 +944,7 @@ export const createAiConversationController = (
 
       return controller.submit({
         intent: turn.intent,
-        attachments: turn.attachments,
+        attachments: [],
         retryOfTurnId: turnId
       })
     },
@@ -1025,7 +996,7 @@ export const createAiConversationController = (
       disposed = true
       activeTurn = null
       targetHints = EMPTY_TARGET_HINTS
-      settledTurns.length = 0
+      settledTurns = Object.freeze([])
       observers.clear()
       navigationObservers.clear()
       storedConversations.clear()

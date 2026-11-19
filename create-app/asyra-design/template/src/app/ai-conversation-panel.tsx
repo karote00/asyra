@@ -46,10 +46,13 @@ const ACCEPTED_IMAGE_TYPES = new Set<AiImageMediaType>([
 
 const ActiveDuration = ({ turn }: { readonly turn?: AiActiveTurn }) => {
   const [now, setNow] = useState(() => performance.now())
+
   useEffect(() => {
     const timer = setInterval(() => setNow(performance.now()), 1000)
+
     return () => clearInterval(timer)
   }, [])
+
   return (
     <span>
       {formatElapsedTime(
@@ -69,17 +72,21 @@ const readImageAttachment = (file: File): Promise<AiImageAttachment> =>
   new Promise((resolve, reject) => {
     const mediaType = file.type as AiImageMediaType
     const reader = new FileReader()
+
     reader.onerror = () => {
       reject(new Error('image-read-failed'))
     }
+
     reader.onload = () => {
       if (
         typeof reader.result !== 'string' ||
         !reader.result.startsWith(`data:${mediaType};base64,`)
       ) {
         reject(new Error('image-read-failed'))
+
         return
       }
+
       resolve(
         Object.freeze({
           dataUrl: reader.result,
@@ -89,6 +96,7 @@ const readImageAttachment = (file: File): Promise<AiImageAttachment> =>
         })
       )
     }
+
     reader.readAsDataURL(file)
   })
 
@@ -184,6 +192,20 @@ export interface AiConversationPanelProps {
   readonly onClose: () => void
 }
 
+interface ConversationDraft {
+  readonly text: string
+  readonly attachments: readonly AiImageAttachment[]
+  readonly error: string | null
+  readonly generation: number
+}
+
+const EMPTY_CONVERSATION_DRAFT: ConversationDraft = Object.freeze({
+  text: '',
+  attachments: Object.freeze([]),
+  error: null,
+  generation: 0
+})
+
 const AiConversationPanelLayout = ({
   conversation,
   onClose,
@@ -193,21 +215,53 @@ const AiConversationPanelLayout = ({
 }) => {
   const imageInputRef = useRef<HTMLInputElement>(null)
   const promptRef = useRef<HTMLTextAreaElement>(null)
-  const [draft, setDraft] = useState('')
   const [aiAvailable, setAiAvailable] = useState(true)
-  const drafts = useRef(
-    new Map<
-      string,
-      { text: string; attachments: readonly AiImageAttachment[] }
-    >()
+  const [drafts, setDrafts] = useState<ReadonlyMap<string, ConversationDraft>>(
+    () => new Map()
   )
-  const [draftAttachments, setDraftAttachments] = useState<
-    readonly AiImageAttachment[]
-  >([])
-  const [attachmentError, setAttachmentError] = useState<string | null>(null)
+  const mounted = useRef(true)
+
+  useEffect(() => {
+    mounted.current = true
+
+    return () => {
+      mounted.current = false
+    }
+  }, [])
   const [draggingImages, setDraggingImages] = useState(false)
   const [conversationSnapshot, setConversationSnapshot] =
     useState<AiConversationSnapshot>(() => conversation.getSnapshot())
+
+  const conversationId = conversationSnapshot.conversationId
+  const currentDraft = drafts.get(conversationId) ?? EMPTY_CONVERSATION_DRAFT
+  const {
+    text: draft,
+    attachments: draftAttachments,
+    error: attachmentError
+  } = currentDraft
+  const updateDraft = useCallback(
+    (id: string, update: (current: ConversationDraft) => ConversationDraft) => {
+      if (!mounted.current) {
+        return
+      }
+
+      setDrafts((current) => {
+        const previous = current.get(id) ?? EMPTY_CONVERSATION_DRAFT
+        const next = update(previous)
+
+        if (next === previous) {
+          return current
+        }
+
+        const result = new Map(current)
+
+        result.set(id, next)
+
+        return result
+      })
+    },
+    []
+  )
 
   useEffect(
     () => conversation.subscribe(setConversationSnapshot),
@@ -225,47 +279,61 @@ const AiConversationPanelLayout = ({
       if (conversation.getSnapshot().activeTurn) {
         return
       }
+
+      const sourceId = conversation.getSnapshot().conversationId
+      const generation = (drafts.get(sourceId) ?? EMPTY_CONVERSATION_DRAFT)
+        .generation
+
       const selectedFiles = Array.from(files)
       const acceptedFiles = selectedFiles.filter((file) =>
         ACCEPTED_IMAGE_TYPES.has(file.type as AiImageMediaType)
       )
-      setAttachmentError(
-        acceptedFiles.length === selectedFiles.length
-          ? null
-          : 'Choose PNG, JPEG, or WebP images.'
-      )
+
+      updateDraft(sourceId, (current) => ({
+        ...current,
+        error:
+          acceptedFiles.length === selectedFiles.length
+            ? null
+            : 'Choose PNG, JPEG, or WebP images.'
+      }))
+
       if (acceptedFiles.length === 0) {
         return
       }
+
       const results = await Promise.allSettled(
         acceptedFiles.map(readImageAttachment)
       )
-      if (conversation.getSnapshot().activeTurn) {
-        return
-      }
       const attachments = results.flatMap((result) =>
         result.status === 'fulfilled' ? [result.value] : []
       )
-      if (attachments.length > 0) {
-        setDraftAttachments((current) =>
-          Object.freeze([...current, ...attachments])
-        )
-      }
-      if (results.some((result) => result.status === 'rejected')) {
-        setAttachmentError(
-          'Could not read one or more images. Try adding them again.'
-        )
-      }
+
+      updateDraft(sourceId, (current) =>
+        current.generation !== generation
+          ? current
+          : {
+              ...current,
+              attachments: Object.freeze([
+                ...current.attachments,
+                ...attachments
+              ]),
+              error: results.some((result) => result.status === 'rejected')
+                ? 'Could not read one or more images. Try adding them again.'
+                : current.error
+            }
+      )
     },
-    [conversation]
+    [conversation, drafts, updateDraft]
   )
 
   const chooseImages = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
       const files = event.currentTarget.files
+
       if (files) {
         void addImageFiles(files)
       }
+
       event.currentTarget.value = ''
     },
     [addImageFiles]
@@ -286,36 +354,42 @@ const AiConversationPanelLayout = ({
     (event: FormEvent) => {
       event.preventDefault()
       const intent = draft.trim()
+
       if (!intent || !aiAvailable || conversation.getSnapshot().activeTurn) {
         return
       }
+
       const settlement = conversation.submit({
         attachments: draftAttachments,
         intent
       })
+
       if (conversation.getSnapshot().activeTurn?.intent === intent) {
-        setDraft('')
-        setDraftAttachments([])
-        setAttachmentError(null)
+        updateDraft(conversationId, (current) => ({
+          ...EMPTY_CONVERSATION_DRAFT,
+          generation: current.generation + 1
+        }))
       }
+
       void settlement.catch(() => undefined)
     },
-    [conversation, draft, draftAttachments, aiAvailable]
+    [
+      conversation,
+      conversationId,
+      draft,
+      draftAttachments,
+      aiAvailable,
+      updateDraft
+    ]
   )
 
   const navigateConversation = (id: string | null) => {
-    drafts.current.set(conversation.getSnapshot().conversationId, {
-      text: draft,
-      attachments: draftAttachments
-    })
-    if (id === null) conversation.newConversation()
-    else conversation.selectConversation(id)
-    const restored = drafts.current.get(
-      conversation.getSnapshot().conversationId
-    )
-    setDraft(restored?.text ?? '')
-    setDraftAttachments(restored?.attachments ?? [])
-    setAttachmentError(null)
+    if (id === null) {
+      conversation.newConversation()
+    } else {
+      conversation.selectConversation(id)
+    }
+
     promptRef.current?.focus({ preventScroll: true })
   }
 
@@ -426,15 +500,16 @@ const AiConversationPanelLayout = ({
               attachments={draftAttachments}
               onRemove={(index) => {
                 if (!active) {
-                  setDraftAttachments((current) =>
-                    Object.freeze(
-                      current.filter(
+                  updateDraft(conversationId, (current) => ({
+                    ...current,
+                    attachments: Object.freeze(
+                      current.attachments.filter(
                         (_attachment, attachmentIndex) =>
                           attachmentIndex !== index
                       )
-                    )
-                  )
-                  setAttachmentError(null)
+                    ),
+                    error: null
+                  }))
                 }
               }}
             />
@@ -457,7 +532,11 @@ const AiConversationPanelLayout = ({
             className="block min-h-[72px] w-full resize-none rounded-t-lg border-0 bg-transparent px-3 py-2 text-[12px] leading-5 text-white outline-none placeholder:text-[#777982]"
             data-ai-agent-prompt="true"
             id="ai-agent-input"
-            onChange={(event) => setDraft(event.target.value)}
+            onChange={(event) => {
+              const text = event.target.value
+
+              updateDraft(conversationId, (current) => ({ ...current, text }))
+            }}
             onKeyDown={(event) => event.stopPropagation()}
             onKeyUp={(event) => event.stopPropagation()}
             placeholder="Describe a drawing or refinement…"
@@ -530,6 +609,7 @@ const AiConversationFeed = ({
   )
   const [confirmationSnapshot, setConfirmationSnapshot] =
     useState<AiConfirmationSnapshot>(() => confirmation.getSnapshot())
+
   useEffect(
     () => conversation.subscribe(setConversationSnapshot),
     [conversation]
@@ -540,16 +620,23 @@ const AiConversationFeed = ({
   )
   const syncScrollPosition = useCallback(() => {
     const body = conversationBodyRef.current
-    if (!body) return
+
+    if (!body) {
+      return
+    }
+
     const atBottom = body.scrollHeight - body.scrollTop - body.clientHeight <= 1
+
     followLatestRef.current = atBottom
     setShowJump(!atBottom)
   }, [])
   const active = conversationSnapshot.activeTurn !== null
+
   // Follow before paint can emit scroll events for the newly grown content.
   // Otherwise those events can mistake layout growth for reading older messages.
   useLayoutEffect(() => {
     const body = conversationBodyRef.current
+
     if (body && followLatestRef.current) {
       body.scrollTop = body.scrollHeight
       setShowJump(false)
@@ -563,6 +650,7 @@ const AiConversationFeed = ({
       const snapshot = conversation.getSnapshot()
       const latestSettled =
         snapshot.settledTurns[snapshot.settledTurns.length - 1]
+
       if (
         snapshot.disposed ||
         snapshot.activeTurn ||
@@ -570,12 +658,14 @@ const AiConversationFeed = ({
       ) {
         return
       }
+
       try {
         const settlement = conversation.submit({
           intent: optionId === 'maximum' ? 'Maximum detail' : 'Balanced detail',
           detailOption: optionId,
           replyToTurnId: turnId
         })
+
         void settlement.catch(() => undefined)
       } catch {
         // The controller remains the authority for active/disposed rejection.
@@ -621,8 +711,15 @@ const AiConversationFeed = ({
             !active &&
             turns.at(-1)?.turnId === turn.turnId
           let questionStatus = 'Superseded'
-          if (answer) questionStatus = 'Answered'
-          if (canAnswer) questionStatus = 'Waiting for your answer'
+
+          if (answer) {
+            questionStatus = 'Answered'
+          }
+
+          if (canAnswer) {
+            questionStatus = 'Waiting for your answer'
+          }
+
           const latest = timeline.at(-1)?.turnId === turn.turnId
           const stopping = !settled && conversationSnapshot.activeTurn?.stopping
           const activity = conversation.getActivity(turn.turnId, {
@@ -632,6 +729,7 @@ const AiConversationFeed = ({
             stopping: Boolean(stopping),
             awaitingApproval: !settled && Boolean(pendingConfirmation)
           })
+
           return (
             <article
               className="flex min-w-0 flex-col gap-3"
@@ -663,10 +761,16 @@ const AiConversationFeed = ({
                 <details
                   onToggle={(event) => {
                     const open = event.currentTarget.open
+
                     setExpandedHistory((previous) => {
                       const next = new Set(previous)
-                      if (open) next.add(turn.turnId)
-                      else next.delete(turn.turnId)
+
+                      if (open) {
+                        next.add(turn.turnId)
+                      } else {
+                        next.delete(turn.turnId)
+                      }
+
                       return next
                     })
                   }}
@@ -699,6 +803,7 @@ const AiConversationFeed = ({
                             entry.message && entry.message !== entry.label
                               ? [entry.label, entry.message]
                               : [entry.label]
+
                           return lines.map((line, lineIndex) => (
                             <li
                               key={`${turn.turnId}:${index}:${lineIndex}`}
@@ -886,7 +991,10 @@ const AiConversationFeed = ({
             followLatestRef.current = true
             setShowJump(false)
             const body = conversationBodyRef.current
-            if (body) body.scrollTop = body.scrollHeight
+
+            if (body) {
+              body.scrollTop = body.scrollHeight
+            }
           }}
         >
           Jump to latest

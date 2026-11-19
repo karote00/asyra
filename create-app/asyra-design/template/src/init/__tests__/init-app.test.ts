@@ -24,10 +24,13 @@ const presetModuleState = vi.hoisted(() => ({
 
 vi.mock('@asyra/preset', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@asyra/preset')>()
+
   presetModuleState.actualApplyPreset = actual.applyPreset
   presetModuleState.applyPreset = actual.applyPreset
+
   return {
     ...actual,
+
     applyPreset: (...args: Parameters<typeof actual.applyPreset>) =>
       presetModuleState.applyPreset(...args)
   }
@@ -44,6 +47,7 @@ describe('initApp preset composition', () => {
     })
     presetModuleState.applyPreset = vi.fn(() => {
       calls.push('preset')
+
       return Object.freeze({
         profile: preset.PresetProfiles.CUSTOM,
         presetEngineId: null,
@@ -56,6 +60,7 @@ describe('initApp preset composition', () => {
       'initCanvasPipelineDebugger'
     ).mockImplementation(() => {
       calls.push('canvas-pipeline-debugger')
+
       return Promise.resolve(undefined)
     })
     vi.spyOn(loadDiagnostics, 'initLoadDiagnostics').mockImplementation(() => {
@@ -94,6 +99,7 @@ describe('initApp preset composition', () => {
     })
     vi.spyOn(features, 'initFeatures').mockImplementation(() => {
       calls.push('features')
+
       return {
         ai: {
           api: {
@@ -157,6 +163,7 @@ describe('initApp preset composition', () => {
 
   it('constructs the complete production Agent composition by default', async () => {
     const disposeFeature = vi.fn(() => true)
+
     vi.spyOn(features, 'initFeatures').mockImplementation(() => ({
       ai: {
         api: {
@@ -208,6 +215,7 @@ describe('initApp preset composition', () => {
     const disposeConfirmation = vi.fn(async () => undefined)
     const disposeHistory = vi.fn()
     const disposeRuntime = vi.fn(async () => undefined)
+
     vi.spyOn(aiStartup, 'createAiStartup').mockReturnValue({
       confirmation: {
         dispose: disposeConfirmation
@@ -234,6 +242,7 @@ describe('initApp preset composition', () => {
   it('attaches and disposes exact-profile runtime evidence through read-only owners', async () => {
     const detachRuntimeEvidence = vi.fn()
     const readCanonicalElementCount = vi.fn(() => 7_076)
+
     Object.defineProperty(core, 'getCanonicalElementCount', {
       configurable: true,
       value: readCanonicalElementCount
@@ -257,6 +266,7 @@ describe('initApp preset composition', () => {
       .spyOn(aiDrawingPerformance, 'attachAiDrawingPerformanceRuntimeEvidence')
       .mockReturnValue(detachRuntimeEvidence)
     const profile = {} as aiDrawingPerformance.AiDrawingPerformanceProfile
+
     vi.spyOn(
       aiDrawingPerformance,
       'getActiveAiDrawingPerformanceProfile'
@@ -276,6 +286,7 @@ describe('initApp preset composition', () => {
       subscribeToTransactionStatus: expect.any(Function)
     })
     const runtimeSource = attachRuntimeEvidence.mock.calls[0][1]
+
     expect(runtimeSource.readCanonicalElementCount()).toBe(7_076)
     expect(runtimeSource.readHistoryDepth()).toBe(3)
     expect(runtimeSource.readRenderProjectionElementCount()).toBe(7)

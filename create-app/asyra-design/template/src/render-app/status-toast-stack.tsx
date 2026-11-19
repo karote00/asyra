@@ -44,6 +44,7 @@ export const StatusToastStack: React.FC<StatusToastStackProps> = ({
 
   useEffect(() => {
     const activeIds = new Set(toasts.map(({ id }) => id))
+
     for (const dismissedId of dismissedWhileActiveRef.current) {
       if (!activeIds.has(dismissedId)) {
         dismissedWhileActiveRef.current.delete(dismissedId)
@@ -60,10 +61,12 @@ export const StatusToastStack: React.FC<StatusToastStackProps> = ({
 
       for (const toast of toasts) {
         const existing = entriesById.get(toast.id)
+
         if (!existing && !dismissedWhileActiveRef.current.has(toast.id)) {
           nextEntries.push(createToastEntry(toast))
         }
       }
+
       return nextEntries
     })
   }, [toasts])
@@ -77,6 +80,7 @@ export const StatusToastStack: React.FC<StatusToastStackProps> = ({
           Math.max(0, entry.autoDismissAt - Date.now())
         )
       )
+
     return () => timeouts.forEach((timeout) => window.clearTimeout(timeout))
   }, [dismiss, entries])
 
@@ -88,6 +92,7 @@ export const StatusToastStack: React.FC<StatusToastStackProps> = ({
           setEntries((current) => current.filter(({ id }) => id !== entry.id))
         }, STATUS_TOAST_EXIT_MS)
       )
+
     return () => timeouts.forEach((timeout) => window.clearTimeout(timeout))
   }, [entries])
 
@@ -102,6 +107,7 @@ export const StatusToastStack: React.FC<StatusToastStackProps> = ({
     >
       {entries.map((entry, index) => {
         const isClosing = entry.state === 'closing'
+
         return (
           <div
             data-state={entry.state}

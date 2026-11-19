@@ -75,8 +75,12 @@ export const createDesignEditAction = (
       { required: ['strokeColor'] }
     ]
   },
+
   execute: async (request, context) => {
-    if (context.signal.aborted) throw new Error('Design edit cancelled.')
+    if (context.signal.aborted) {
+      throw new Error('Design edit cancelled.')
+    }
+
     return runAiMutation(context, () => edit(request))
   }
 })

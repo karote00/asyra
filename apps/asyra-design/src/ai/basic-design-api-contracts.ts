@@ -1,4 +1,16 @@
 import {
+  readArray,
+  readBoolean,
+  readId,
+  readIds,
+  readNullable,
+  readNumber,
+  readObject,
+  readPosition,
+  readRect,
+  readString
+} from './basic-api-read-schemas'
+import {
   FillColorFormats,
   FillKinds,
   StrokeStyles,
@@ -69,6 +81,7 @@ const getElementTypeApi = defineBasicApi({
   owner: 'element',
   method: 'getElementType',
   effect: 'read',
+  resultValueSchema: readNullable(readString),
   parameters: [{ name: 'elementId', schema: apiElementId }]
 })
 
@@ -78,6 +91,7 @@ const isElementLockedApi = defineBasicApi({
   owner: 'element',
   method: 'isElementLocked',
   effect: 'read',
+  resultValueSchema: readBoolean,
   parameters: [{ name: 'elementId', schema: apiElementId }]
 })
 
@@ -87,6 +101,7 @@ const isElementVisibleApi = defineBasicApi({
   owner: 'element',
   method: 'isElementVisible',
   effect: 'read',
+  resultValueSchema: readBoolean,
   parameters: [{ name: 'elementId', schema: apiElementId }]
 })
 
@@ -96,6 +111,7 @@ const getElementBoundsApi = defineBasicApi({
   owner: 'element',
   method: 'getElementBounds',
   effect: 'read',
+  resultValueSchema: readNullable(readRect),
   parameters: [{ name: 'elementId', schema: apiElementId }]
 })
 
@@ -105,6 +121,7 @@ const getElementClientBoundsApi = defineBasicApi({
   owner: 'element',
   method: 'getElementClientBounds',
   effect: 'read',
+  resultValueSchema: readNullable(readRect),
   parameters: [{ name: 'elementId', schema: apiElementId }]
 })
 
@@ -114,6 +131,7 @@ const getElementPositionApi = defineBasicApi({
   owner: 'element',
   method: 'getElementPosition',
   effect: 'read',
+  resultValueSchema: readNullable(readPosition),
   parameters: [{ name: 'elementId', schema: apiElementId }]
 })
 
@@ -123,6 +141,7 @@ const getElementIdAtWorkspacePosApi = defineBasicApi({
   owner: 'element',
   method: 'getElementIdAtWorkspacePos',
   effect: 'read',
+  resultValueSchema: readNullable(readId),
   parameters: [{ name: 'workspacePos', schema: apiPosition }]
 })
 
@@ -132,6 +151,7 @@ const getElementIdAtClientPosApi = defineBasicApi({
   owner: 'element',
   method: 'getElementIdAtClientPos',
   effect: 'read',
+  resultValueSchema: readNullable(readId),
   parameters: [{ name: 'clientPos', schema: apiPosition }]
 })
 
@@ -141,6 +161,7 @@ const getRenderElementIdAtClientPosApi = defineBasicApi({
   owner: 'element',
   method: 'getRenderElementIdAtClientPos',
   effect: 'read',
+  resultValueSchema: readNullable(readId),
   parameters: [{ name: 'clientPos', schema: apiPosition }]
 })
 
@@ -150,6 +171,7 @@ const getMousePosInWorkspaceApi = defineBasicApi({
   owner: 'element',
   method: 'getMousePosInWorkspace',
   effect: 'read',
+  resultValueSchema: readPosition,
   parameters: [{ name: 'clientPos', schema: apiPosition }]
 })
 
@@ -159,6 +181,7 @@ const getElementIdsInBoundsApi = defineBasicApi({
   owner: 'element',
   method: 'getElementIdsInBounds',
   effect: 'read',
+  resultValueSchema: readIds,
   parameters: [{ name: 'bounds', schema: elementBoundsSchema }]
 })
 
@@ -168,6 +191,7 @@ const isPointInsideElementApi = defineBasicApi({
   owner: 'element',
   method: 'isPointInsideElement',
   effect: 'read',
+  resultValueSchema: readBoolean,
   parameters: [
     { name: 'elementId', schema: apiElementId },
     { name: 'point', schema: apiPosition }
@@ -180,6 +204,7 @@ const getPositionInParentApi = defineBasicApi({
   owner: 'element',
   method: 'getPositionInParent',
   effect: 'read',
+  resultValueSchema: readNullable(readPosition),
   parameters: [
     { name: 'parentId', schema: apiId },
     { name: 'workspacePosition', schema: apiPosition }
@@ -192,6 +217,7 @@ const setElementLockApi = defineBasicApi({
   owner: 'element',
   method: 'setElementLock',
   resultKind: 'mutation-receipt',
+  resultTargets: { parameter: 'elementId', kind: 'id' },
   effect: 'write',
   parameters: [
     { name: 'elementId', schema: apiElementId },
@@ -218,6 +244,7 @@ const toggleElementLockApi = defineBasicApi({
   owner: 'element',
   method: 'toggleElementLock',
   resultKind: 'mutation-receipt',
+  resultTargets: { parameter: 'elementId', kind: 'id' },
   effect: 'write',
   parameters: [{ name: 'elementId', schema: apiElementId }]
 })
@@ -228,6 +255,7 @@ const toggleElementVisibleApi = defineBasicApi({
   owner: 'element',
   method: 'toggleElementVisible',
   resultKind: 'mutation-receipt',
+  resultTargets: { parameter: 'elementId', kind: 'id' },
   effect: 'write',
   parameters: [{ name: 'elementId', schema: apiElementId }]
 })
@@ -238,6 +266,7 @@ const resetElementSizeApi = defineBasicApi({
   owner: 'element',
   method: 'resetElementSize',
   resultKind: 'mutation-receipt',
+  resultTargets: { parameter: 'elementId', kind: 'id' },
   effect: 'write',
   parameters: [{ name: 'elementId', schema: apiElementId }]
 })
@@ -248,6 +277,7 @@ const changeElementGeometryApi = defineBasicApi({
   owner: 'element',
   method: 'changeElementGeometry',
   resultKind: 'mutation-receipt',
+  resultTargets: { parameter: 'elementId', kind: 'id' },
   effect: 'write',
   parameters: [
     { name: 'elementId', schema: apiElementId },
@@ -256,11 +286,21 @@ const changeElementGeometryApi = defineBasicApi({
 })
 
 const setElementPositionsApi = defineBasicApi({
+  discovery: {
+    purpose:
+      'Set element position x/y in parent-local coordinates, including groups.',
+    terms: ['translate', 'move', 'offset', 'delta', 'update', 'properties'],
+    boundaries: [
+      'Absolute parent-local x/y coordinates; compute a new position before applying a delta.',
+      'Does not reparent, reorder layers, or edit vector anchors.'
+    ]
+  },
   description:
     'Apply per-element new positions keyed by element ID in one transaction; App group geometry is normalized.',
   owner: 'element',
   method: 'setElementPositions',
   resultKind: 'mutation-receipt',
+  resultTargets: { parameter: 'positionsById', kind: 'keys' },
   effect: 'write',
   parameters: [
     {
@@ -377,6 +417,7 @@ const deleteElementsApi = defineBasicApi({
   method: 'deleteElements',
   examples: [{ elementIds: ['example-element'] }],
   effect: 'delete',
+  resultPaths: ['/value/count', '/status'],
   resultKind: 'removed',
   parameters: [{ name: 'elementIds', schema: apiUniqueElementIds }]
 })
@@ -387,6 +428,7 @@ const getWorkspaceIdApi = defineBasicApi({
   owner: 'hierarchy',
   method: 'getWorkspaceId',
   effect: 'read',
+  resultValueSchema: readNullable(readId),
   parameters: []
 })
 
@@ -396,6 +438,7 @@ const getFlattenedElementIdsApi = defineBasicApi({
   owner: 'hierarchy',
   method: 'getFlattenedElementIds',
   effect: 'read',
+  resultValueSchema: readIds,
   parameters: []
 })
 
@@ -405,14 +448,16 @@ const getElementDataMapApi = defineBasicApi({
   owner: 'hierarchy',
   method: 'getElementDataMap',
   effect: 'read',
+  resultValueSchema: { type: 'object', additionalProperties: readObject() },
   parameters: []
 })
 
 const groupElementsApi = defineBasicApi({
   description:
-    'Group the supplied element IDs with App geometry preservation; returns grouping details.',
+    'Group existing elements into a new editable container and preserve their visible positions. Takes the supplied element IDs, preserves App geometry, and returns grouping details.',
   owner: 'hierarchy',
   method: 'groupElements',
+  resultPaths: ['/value/groupId'],
   resultKind: 'grouped',
   effect: 'write',
   parameters: [{ name: 'elementIds', schema: apiElementIds }]
@@ -435,7 +480,7 @@ const moveElementsApi = defineBasicApi({
   effect: 'write',
   parameters: [{ name: 'request', schema: elementMoveRequestSchema }],
   description:
-    'Preserves App group-geometry behavior. For before/after placement prefer hierarchy.moveElementsRelative with an anchor ID, without reading siblings. For indexed placement read children using core.getElementChildren. targetIndex is a zero-based insertion index from 0 through the target child count excluding the moved elements; use that count to append. All moved elements must share a source parent. An oversized index is rejected, not clamped.'
+    'Move existing elements to a parent and insertion index while preserving App group geometry. For before/after placement prefer hierarchy.moveElementsRelative with an anchor ID, without reading siblings. For indexed placement read children using core.getElementChildren. targetIndex is a zero-based insertion index from 0 through the target child count excluding the moved elements; use that count to append. All moved elements must share a source parent. An oversized index is rejected, not clamped.'
 })
 
 const moveElementsRelativeApi = defineBasicApi({
@@ -471,6 +516,7 @@ const getSelectedIdsApi = defineBasicApi({
   owner: 'selection',
   method: 'getSelectedIds',
   effect: 'read',
+  resultValueSchema: readIds,
   parameters: []
 })
 
@@ -480,6 +526,7 @@ const getVectorPointSelectionIdsApi = defineBasicApi({
   owner: 'selection',
   method: 'getVectorPointSelectionIds',
   effect: 'read',
+  resultValueSchema: readIds,
   parameters: []
 })
 
@@ -489,6 +536,7 @@ const getVectorSegmentSelectionIdsApi = defineBasicApi({
   owner: 'selection',
   method: 'getVectorSegmentSelectionIds',
   effect: 'read',
+  resultValueSchema: readIds,
   parameters: []
 })
 
@@ -498,6 +546,9 @@ const getSelectedVectorPointsApi = defineBasicApi({
   owner: 'selection',
   method: 'getSelectedVectorPoints',
   effect: 'read',
+  resultValueSchema: readArray(
+    readObject({ elementId: readId, pointId: readId, target: readString })
+  ),
   parameters: []
 })
 
@@ -507,6 +558,9 @@ const getSelectedVectorSegmentsApi = defineBasicApi({
   owner: 'selection',
   method: 'getSelectedVectorSegments',
   effect: 'read',
+  resultValueSchema: readArray(
+    readObject({ elementId: readId, segmentId: readId })
+  ),
   parameters: []
 })
 
@@ -583,6 +637,7 @@ const getScaleApi = defineBasicApi({
   owner: 'viewport',
   method: 'getScale',
   effect: 'read',
+  resultValueSchema: readNumber,
   parameters: []
 })
 
@@ -592,6 +647,7 @@ const getPositionApi = defineBasicApi({
   owner: 'viewport',
   method: 'getPosition',
   effect: 'read',
+  resultValueSchema: readPosition,
   parameters: []
 })
 
@@ -601,6 +657,7 @@ const getCanvasPositionFromWorkspaceApi = defineBasicApi({
   owner: 'viewport',
   method: 'getCanvasPositionFromWorkspace',
   effect: 'read',
+  resultValueSchema: readPosition,
   parameters: [{ name: 'workspacePos', schema: apiPosition }]
 })
 
@@ -644,6 +701,14 @@ const getFillByIdApi = defineBasicApi({
   owner: 'fill',
   method: 'getFillById',
   effect: 'read',
+  resultValueSchema: readNullable(
+    readObject({
+      id: readId,
+      color: readString,
+      opacity: readNumber,
+      visible: readBoolean
+    })
+  ),
   parameters: [
     { name: 'elementId', schema: apiElementId },
     { name: 'fillId', schema: apiId }
@@ -656,6 +721,7 @@ const getPrimaryFillColorApi = defineBasicApi({
   owner: 'fill',
   method: 'getPrimaryFillColor',
   effect: 'read',
+  resultValueSchema: readNullable(readString),
   parameters: [{ name: 'elementId', schema: apiElementId }]
 })
 
@@ -712,6 +778,7 @@ const getFillTargetsAtIndexApi = defineBasicApi({
   owner: 'fill',
   method: 'getFillTargetsAtIndex',
   effect: 'read',
+  resultValueSchema: apiArray(fillTargetSchema),
   parameters: [
     { name: 'elementIds', schema: apiElementIds },
     { name: 'index', schema: { type: 'integer', minimum: 0 } }
@@ -724,6 +791,7 @@ const addFillsApi = defineBasicApi({
   owner: 'fill',
   method: 'addFills',
   resultKind: 'mutation-receipt',
+  resultTargets: { parameter: 'elementIds', kind: 'ids' },
   effect: 'write',
   parameters: [{ name: 'elementIds', schema: apiElementIds }],
   description:
@@ -734,6 +802,11 @@ const removeFillsApi = defineBasicApi({
   owner: 'fill',
   method: 'removeFills',
   resultKind: 'mutation-receipt',
+  resultTargets: {
+    parameter: 'targets',
+    kind: 'records',
+    identityPath: ['elementId']
+  },
   effect: 'delete',
   parameters: [{ name: 'targets', schema: apiArray(fillTargetSchema) }],
   description: 'Remove the specified Fill records in one canonical batch.'
@@ -745,6 +818,7 @@ const updateFillsAtIndexApi = defineBasicApi({
   owner: 'fill',
   method: 'updateFillsAtIndex',
   resultKind: 'mutation-receipt',
+  resultTargets: { parameter: 'elementIds', kind: 'ids' },
   effect: 'write',
   parameters: [
     { name: 'elementIds', schema: fillRowTargetsSchema },
@@ -761,6 +835,11 @@ const shareFillAtIndexApi = defineBasicApi({
   owner: 'fill',
   method: 'shareFillAtIndex',
   resultKind: 'mutation-receipt',
+  resultTargets: {
+    parameter: 'elementIds',
+    kind: 'ids',
+    excludeParameter: 'sourceElementId'
+  },
   effect: 'write',
   parameters: [
     { name: 'sourceElementId', schema: apiId },
@@ -774,6 +853,7 @@ const detachFillsAtIndexApi = defineBasicApi({
   owner: 'fill',
   method: 'detachFillsAtIndex',
   resultKind: 'mutation-receipt',
+  resultTargets: { parameter: 'elementIds', kind: 'ids' },
   effect: 'write',
   parameters: [
     { name: 'elementIds', schema: fillRowTargetsSchema },
@@ -787,6 +867,11 @@ const updateFillFieldsBatchApi = defineBasicApi({
   owner: 'fill',
   method: 'updateFillFieldsBatch',
   resultKind: 'mutation-receipt',
+  resultTargets: {
+    parameter: 'updates',
+    kind: 'records',
+    identityPath: ['elementId']
+  },
   effect: 'write',
   parameters: [
     {
@@ -808,6 +893,9 @@ const getGradientHandleHitAtClientPosApi = defineBasicApi({
   owner: 'fill',
   method: 'getGradientHandleHitAtClientPos',
   effect: 'read',
+  resultValueSchema: readNullable(
+    readObject({ handleIndex: { enum: [0, 1] } })
+  ),
   parameters: [
     { name: 'elementId', schema: apiElementId },
     { name: 'fillId', schema: apiId },
@@ -822,6 +910,7 @@ const getGradientStopHitAtClientPosApi = defineBasicApi({
   owner: 'fill',
   method: 'getGradientStopHitAtClientPos',
   effect: 'read',
+  resultValueSchema: readNullable(readObject({ stopIndex: readNumber })),
   parameters: [
     { name: 'elementId', schema: apiElementId },
     { name: 'fillId', schema: apiId },
@@ -838,6 +927,17 @@ const getCanvasBoundsApi = defineBasicApi({
   owner: 'fill',
   method: 'getCanvasBounds',
   effect: 'read',
+  resultValueFields: [
+    'x',
+    'y',
+    'width',
+    'height',
+    'left',
+    'right',
+    'top',
+    'bottom'
+  ],
+  resultValueSchema: readNullable(readRect),
   parameters: []
 })
 
@@ -847,6 +947,7 @@ const getCanvasPositionFromClientApi = defineBasicApi({
   owner: 'fill',
   method: 'getCanvasPositionFromClient',
   effect: 'read',
+  resultValueSchema: readPosition,
   parameters: [{ name: 'clientPos', schema: apiPosition }]
 })
 
@@ -856,6 +957,16 @@ const getGradientHandleGeometryApi = defineBasicApi({
   owner: 'fill',
   method: 'getGradientHandleGeometry',
   effect: 'read',
+  resultValueSchema: readNullable(
+    readObject({
+      elementId: readId,
+      fillId: readId,
+      fill: readObject(),
+      width: readNumber,
+      height: readNumber,
+      canvasHandles: readArray(readPosition)
+    })
+  ),
   parameters: [
     { name: 'elementId', schema: apiElementId },
     { name: 'fillId', schema: apiId }
@@ -868,6 +979,13 @@ const getNextGradientForHandleAtClientPositionApi = defineBasicApi({
   owner: 'fill',
   method: 'getNextGradientForHandleAtClientPosition',
   effect: 'read',
+  resultValueSchema: readNullable(
+    readObject({
+      gradientHandles: readArray(readPosition),
+      gradientType: readString,
+      gradientStops: readArray(readObject())
+    })
+  ),
   parameters: [
     { name: 'elementId', schema: apiElementId },
     { name: 'fillId', schema: apiId },
@@ -882,6 +1000,7 @@ const updateGradientHandleAtClientPositionApi = defineBasicApi({
   owner: 'fill',
   method: 'updateGradientHandleAtClientPosition',
   resultKind: 'mutation-receipt',
+  resultTargets: { parameter: 'elementId', kind: 'id' },
   effect: 'write',
   parameters: [
     { name: 'elementId', schema: apiElementId },
@@ -897,6 +1016,7 @@ const addStrokeApi = defineBasicApi({
   owner: 'stroke',
   method: 'addStroke',
   resultKind: 'mutation-receipt',
+  resultTargets: { parameter: 'elementId', kind: 'id' },
   effect: 'write',
   parameters: [{ name: 'elementId', schema: apiElementId }]
 })
@@ -907,6 +1027,7 @@ const removeStrokeApi = defineBasicApi({
   owner: 'stroke',
   method: 'removeStroke',
   resultKind: 'mutation-receipt',
+  resultTargets: { parameter: 'elementId', kind: 'id' },
   effect: 'delete',
   parameters: [
     { name: 'elementId', schema: apiElementId },
@@ -920,6 +1041,7 @@ const getPrimaryStrokeColorApi = defineBasicApi({
   owner: 'stroke',
   method: 'getPrimaryStrokeColor',
   effect: 'read',
+  resultValueSchema: readNullable(readString),
   parameters: [{ name: 'elementId', schema: apiElementId }]
 })
 
@@ -954,6 +1076,11 @@ const updateStrokeFieldsBatchApi = defineBasicApi({
   owner: 'stroke',
   method: 'updateStrokeFieldsBatch',
   resultKind: 'mutation-receipt',
+  resultTargets: {
+    parameter: 'updates',
+    kind: 'records',
+    identityPath: ['elementId']
+  },
   effect: 'write',
   parameters: [
     {

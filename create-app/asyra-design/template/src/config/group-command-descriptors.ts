@@ -95,6 +95,7 @@ const getShortcutLabel = (platform: GroupCommandPlatform, shifted: boolean) => {
   if (platform === GroupCommandPlatforms.MACOS) {
     return shifted ? '⇧⌘G' : '⌘G'
   }
+
   return shifted ? 'Ctrl+Shift+G' : 'Ctrl+G'
 }
 
@@ -116,6 +117,7 @@ export const createGroupCommandDescriptors = ({
       shortcutLabel: getShortcutLabel(platform, definition.shifted),
       shortcut: getShortcut(platform, definition.shifted),
       enabled,
+
       execute: () => (enabled ? execute(definition.id) : null)
     }
   })

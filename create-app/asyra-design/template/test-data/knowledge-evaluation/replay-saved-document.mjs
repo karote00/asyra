@@ -18,13 +18,18 @@ const root = path.resolve(
   fileURLToPath(new URL('../../../../', import.meta.url))
 )
 const [input, output] = process.argv.slice(2)
-if (!input || !output)
+
+if (!input || !output) {
   throw new Error(
     'Expected saved run.json and a new project-local output directory'
   )
+}
+
 const source = fs.realpathSync(path.resolve(input))
 const directory = path.resolve(output)
+
 const withinProject = (value) => value.startsWith(root + path.sep)
+
 assert.ok(withinProject(source), 'Evidence must be project-local')
 assert.ok(withinProject(directory), 'Output must be project-local')
 assert.ok(
@@ -34,11 +39,13 @@ assert.ok(
 const original = fs.readFileSync(source)
 const run = JSON.parse(original)
 const captured = run.evidence?.persistence?.value
+
 assert.equal(run.evidence?.persistence?.status, 'complete')
 assert.ok(captured?.receipt && Array.isArray(captured.roots))
 assert.equal(captured.receipt.sequence, captured.receipt.durableSequence)
 const environment = resolveEnvironment(loadEnvironment())
 const url = new URL(environment.appURL)
+
 url.searchParams.set('fileId', run.id)
 assert.equal(captured.receipt.documentId, run.id)
 fs.mkdirSync(directory)
@@ -51,16 +58,20 @@ const meta = {
   pageErrors: [],
   startedAt: new Date().toISOString()
 }
+
 const save = () =>
   fs.writeFileSync(
     path.join(directory, 'replay.json'),
     JSON.stringify(meta, null, 2)
   )
+
 let ownedBrowser
+
 try {
   ownedBrowser = await launchCaptureBrowser({
     chromium,
     evidencePath: path.join(directory, 'cleanup-stop.json'),
+
     record: (event) => {
       ;(meta.browserLifecycle ??= []).push(event)
       save()
@@ -77,11 +88,14 @@ try {
               ...options,
               serviceWorkers: 'block'
             })
+
             await context.route('**/api/ai/**', (route) => {
               if (route.request().method() === 'POST') {
                 meta.modelRequestAttempts++
+
                 return route.abort()
               }
+
               return route.continue()
             })
             context.on('page', (page) =>
@@ -89,6 +103,7 @@ try {
                 meta.pageErrors.push(error.message)
               )
             )
+
             return context
           }
         },
@@ -97,6 +112,7 @@ try {
         captured,
         capturePage: captureSessionOnPage,
         screenshotPath: path.join(directory, 'reload.png'),
+
         recordCleanup: (task) =>
           collectEvidenceStage(meta, 'context-cleanup', task, save)
       }),
@@ -113,6 +129,7 @@ try {
   meta.finishedAt = new Date().toISOString()
   save()
 }
+
 assert.equal(
   meta.modelRequestAttempts,
   0,
@@ -120,5 +137,6 @@ assert.equal(
 )
 assert.equal(meta.sourceUnchanged, true, 'Original evidence was modified')
 assert.deepEqual(meta.pageErrors, [])
-for (const [stage, evidence] of Object.entries(meta.evidence))
+for (const [stage, evidence] of Object.entries(meta.evidence)) {
   assert.equal(evidence.status, 'complete', `${stage}: ${evidence.error}`)
+}

@@ -12,9 +12,15 @@ import {
 } from './basic-api-contracts'
 
 /** One interpretation for direct APIs and their composed consumers. */
-export const describeMutationReceipt = (value: unknown) => {
+export const describeMutationReceipt = (
+  value: unknown,
+  targets: readonly string[] | undefined
+) => {
+  const expected = new Set(targets)
   const raw = { value: value ?? null }
   const receipt = value as Record<string, unknown> | null
+  const acceptedIds = receipt?.acceptedIds
+  const unavailableIds = receipt?.unavailableIds
 
   const ids = (items: unknown): items is string[] =>
     Array.isArray(items) &&
@@ -22,13 +28,19 @@ export const describeMutationReceipt = (value: unknown) => {
     new Set(items).size === items.length
 
   if (
+    !targets ||
     !receipt ||
     Array.isArray(receipt) ||
     !Object.prototype.hasOwnProperty.call(receipt, 'value') ||
-    !ids(receipt.acceptedIds) ||
-    !ids(receipt.unavailableIds) ||
+    !ids(acceptedIds) ||
+    !ids(unavailableIds) ||
     typeof receipt.changed !== 'boolean' ||
-    (receipt.changed && !receipt.acceptedIds.length)
+    (receipt.changed && !acceptedIds.length) ||
+    targets.some((id) => typeof id !== 'string' || !id) ||
+    new Set([...acceptedIds, ...unavailableIds]).size !==
+      acceptedIds.length + unavailableIds.length ||
+    acceptedIds.length + unavailableIds.length !== expected.size ||
+    [...acceptedIds, ...unavailableIds].some((id) => !expected.has(id))
   ) {
     return {
       ...raw,
@@ -39,7 +51,7 @@ export const describeMutationReceipt = (value: unknown) => {
     }
   }
 
-  const { acceptedIds, unavailableIds, changed } = receipt
+  const { changed } = receipt
   let status = changed ? 'complete' : 'no-change'
 
   if (unavailableIds.length) {
@@ -72,18 +84,9 @@ export const requireMutationReceipt = (
   value: unknown,
   targets: readonly string[]
 ) => {
-  const result = describeMutationReceipt(value)
-  const expected = new Set(targets)
+  const result = describeMutationReceipt(value, targets)
 
-  if (
-    'code' in result ||
-    result.acceptedIds.some((id) => result.unavailableIds.includes(id)) ||
-    result.acceptedIds.length + result.unavailableIds.length !==
-      expected.size ||
-    [...result.acceptedIds, ...result.unavailableIds].some(
-      (id) => !expected.has(id)
-    )
-  ) {
+  if ('code' in result) {
     throw new AiToolContractError(
       'output',
       'The owner receipt does not cover the requested targets. Preserve settled evidence; do not replay the operation.',
@@ -100,14 +103,144 @@ export const requireMutationReceipt = (
   return result
 }
 
+const receiptTargets = (
+  contract: BasicApiContract,
+  args: Readonly<Record<string, unknown>>,
+  value: unknown
+): readonly string[] | undefined => {
+  const target = contract.result.targets
+
+  if (!target) {
+    return undefined
+  }
+
+  const input = args[target.parameter]
+  let ids: unknown
+
+  if (target.kind === 'created-id') {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) {
+      return undefined
+    }
+
+    const created = Reflect.get(value, 'value')
+    const changed = Reflect.get(value, 'changed')
+
+    if (typeof created === 'string' && created && changed === true) {
+      return [created]
+    }
+
+    if (
+      created !== null ||
+      changed !== false ||
+      !Array.isArray(Reflect.get(value, 'acceptedIds')) ||
+      Reflect.get(value, 'acceptedIds').length !== 0
+    ) {
+      return undefined
+    }
+
+    ids = [input]
+  } else if (target.kind === 'id') {
+    ids = [input]
+  } else if (target.kind === 'keys') {
+    if (!input || typeof input !== 'object' || Array.isArray(input)) {
+      return undefined
+    }
+
+    ids = Object.keys(input)
+  } else if (target.kind === 'records') {
+    if (!Array.isArray(input)) {
+      return undefined
+    }
+
+    ids = input.map((item: unknown) =>
+      target.identityPath.reduce<unknown>(
+        (entry, key) =>
+          entry && typeof entry === 'object'
+            ? Reflect.get(entry, key)
+            : undefined,
+        item
+      )
+    )
+  } else {
+    ids = input
+  }
+
+  if (
+    !Array.isArray(ids) ||
+    !ids.every((id): id is string => typeof id === 'string' && id.length > 0)
+  ) {
+    return undefined
+  }
+
+  if ('excludeParameter' in target && target.excludeParameter) {
+    const sourceId = args[target.excludeParameter]
+
+    return ids.filter((id) => id !== sourceId)
+  }
+
+  return ids
+}
+
+// JavaScript read owners may explicitly contain optional undefined properties.
+// JSON object omission preserves absence; array slots and non-JSON values remain
+// invalid and are never converted to fabricated nulls or string values.
+const readJsonValue = (
+  value: unknown,
+  ancestors = new Set<object>()
+): unknown => {
+  if (!value || typeof value !== 'object') {
+    return value
+  }
+
+  const prototype = Object.getPrototypeOf(value)
+
+  if (
+    !Array.isArray(value) &&
+    prototype !== Object.prototype &&
+    prototype !== null
+  ) {
+    return value
+  }
+
+  if (ancestors.has(value)) {
+    throw new TypeError('Read value must not contain cycles')
+  }
+
+  ancestors.add(value)
+  try {
+    return Array.isArray(value)
+      ? value.map((item) => readJsonValue(item, ancestors))
+      : Object.fromEntries(
+          Object.entries(value)
+            .filter(([, item]) => item !== undefined)
+            .map(([key, item]) => [key, readJsonValue(item, ancestors)])
+        )
+  } finally {
+    ancestors.delete(value)
+  }
+}
+
 /** Interpret only declared owner return contracts. Never reread the document or invent before/after data. */
 export const describeBasicApiResult = (
   contract: BasicApiContract,
   value: unknown,
-  targetElementIds?: unknown
+  targetElementIds?: unknown,
+  args: Readonly<Record<string, unknown>> = {}
 ) => {
   const kind = contract.result.kind
-  const raw = { value: value ?? null }
+  const projected =
+    contract.result.valueFields && value !== null && typeof value === 'object'
+      ? Object.fromEntries(
+          contract.result.valueFields
+            .filter((field) => field in value)
+            .map((field) => [field, Reflect.get(value, field)])
+        )
+      : value
+  const raw = {
+    value:
+      (contract.effect === 'read' ? readJsonValue(projected) : projected) ??
+      null
+  }
 
   if (kind === 'allocated-ids') {
     if (
@@ -131,7 +264,10 @@ export const describeBasicApiResult = (
   }
 
   if (kind === 'mutation-receipt') {
-    return describeMutationReceipt(value)
+    const targets = receiptTargets(contract, args, value)
+
+    // A missing declaration/input cannot certify any owner identities.
+    return describeMutationReceipt(value, targets)
   }
 
   if (kind === 'property-mutation' || kind === 'change-flag') {
@@ -359,7 +495,7 @@ export const basicApiResultSchema = (
   partial = false
 ) => {
   const kind = contract.result.kind
-  let valueSchema: unknown = true
+  let valueSchema: unknown = contract.result.valueSchema ?? true
 
   if (kind === 'created-items') {
     valueSchema = partial
@@ -445,12 +581,12 @@ export const basicApiResultSchema = (
   fields.settlement = {
     enum: ['not-started', 'completed', 'partial', 'unknown']
   }
-  if (['grouped', 'ungrouped', 'moves', 'removed'].includes(kind)) {
+  if (basicApiDeliverySchema(contract)) {
     fields.value = valueSchema
     fields.mutationScope = toolMutationScope
     fields.modelResult = basicApiDeliverySchema(contract)
     fields.retained = retainedElementSetSchema
-    if (!partial) {
+    if (!partial && kind !== 'mutation-receipt') {
       required.push('retained')
     }
 
@@ -493,22 +629,36 @@ export const basicApiResultSchema = (
 /** A model view never substitutes for a complete typed owner result. */
 export const basicApiDeliverySchema = (contract: BasicApiContract) => {
   if (
-    !['grouped', 'ungrouped', 'moves', 'removed'].includes(contract.result.kind)
+    !['grouped', 'ungrouped', 'moves', 'removed', 'mutation-receipt'].includes(
+      contract.result.kind
+    )
   ) {
     return undefined
   }
 
-  return toolResultObject(
+  const valid = toolResultObject(
     {
       status: toolResultStatus,
-      value: toolResultObject(
-        {
-          count: { type: 'integer', minimum: 0 },
-          groupId: toolDocumentReference,
-          removed: { type: 'boolean' }
-        },
-        ['count']
-      ),
+      ...(contract.result.kind === 'mutation-receipt'
+        ? {
+            changed: { type: 'boolean' },
+            acceptedCount: { type: 'integer', minimum: 0 },
+            unavailableCount: { type: 'integer', minimum: 0 },
+            settlement: {
+              enum: ['not-started', 'completed', 'partial', 'unknown']
+            },
+            message: { type: 'string' }
+          }
+        : {
+            value: toolResultObject(
+              {
+                count: { type: 'integer', minimum: 0 },
+                groupId: toolDocumentReference,
+                removed: { type: 'boolean' }
+              },
+              ['count']
+            )
+          }),
       mutationScope: toolResultObject({
         complete: { type: 'boolean' },
         elementCount: { type: 'integer', minimum: 0 },
@@ -520,6 +670,30 @@ export const basicApiDeliverySchema = (contract: BasicApiContract) => {
         message: { type: 'string' }
       })
     },
-    ['status', 'value', 'mutationScope']
+    contract.result.kind === 'mutation-receipt'
+      ? ['status', 'mutationScope']
+      : ['status', 'value', 'mutationScope']
   )
+
+  if (contract.result.kind !== 'mutation-receipt') {
+    return valid
+  }
+
+  return {
+    anyOf: [
+      valid,
+      toolResultObject({
+        status: { const: 'failed' },
+        code: { const: 'OWNER_RESULT_INVALID' },
+        message: { type: 'string' },
+        settlement: { const: 'completed' },
+        ownerResult: true,
+        mutationScope: toolResultObject({
+          complete: { type: 'boolean' },
+          elementCount: { type: 'integer', minimum: 0 },
+          removedElementCount: { type: 'integer', minimum: 0 }
+        })
+      })
+    ]
+  }
 }

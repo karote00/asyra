@@ -83,12 +83,14 @@ describe('Asyra Design configured AI model backend', () => {
 
     expect(fetchImpl).toHaveBeenCalledTimes(1)
     const [endpoint, request] = fetchImpl.mock.calls[0] ?? []
+
     expect(endpoint).toBe('https://provider.example/actions')
     expect(new Headers(request?.headers).get('authorization')).toBe(
       'Bearer backend-only-secret'
     )
 
     const body = JSON.parse(String(request?.body)) as Record<string, unknown>
+
     expect(body).toMatchObject({
       input,
       model: 'configured-model',
@@ -156,12 +158,14 @@ describe('Asyra Design configured AI model backend', () => {
 it('captures source once at local invocation entry and preserves execution when unavailable', async () => {
   vi.mocked(requestLocalAiActionBatch).mockResolvedValue(batch)
   const capture = vi.mocked(captureAiSourceIdentity)
+
   capture.mockClear()
   const identity = {
     sourceRevision: 'abc',
     sourceFingerprint: 'f'.repeat(64),
     sourceIdentityStatus: 'captured' as const
   }
+
   capture
     .mockResolvedValueOnce(identity)
     .mockResolvedValueOnce({ sourceIdentityStatus: 'unavailable' })
@@ -169,6 +173,7 @@ it('captures source once at local invocation entry and preserves execution when 
     AI_PROVIDER_BACKEND: 'local-codex',
     AI_PROVIDER_MODEL: 'test-model'
   }
+
   expect(await requestConfiguredAiActionBatch(input, { environment })).toEqual(
     batch
   )

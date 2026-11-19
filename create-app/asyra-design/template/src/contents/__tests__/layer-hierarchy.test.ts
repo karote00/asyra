@@ -40,6 +40,7 @@ describe('canonical Layers hierarchy projection', () => {
       root: element('root', 'workspace', 'custom-container'),
       leaf: element('leaf', 'root', 'custom-leaf')
     }
+
     expect(projectExpandedLayerRow('root', data)).toMatchObject({
       canExpand: true
     })
@@ -120,10 +121,13 @@ describe('canonical Layers hierarchy projection', () => {
   it('derives a wide valid hierarchy without rereading each ancestor per child', () => {
     let rootParentReadCount = 0
     const root = element('root', 'workspace', EntityTypes.GROUP)
+
     Object.defineProperty(root, 'parentId', {
       enumerable: true,
+
       get: () => {
         rootParentReadCount += 1
+
         return 'workspace'
       }
     })
@@ -166,6 +170,7 @@ describe('canonical Layers hierarchy projection', () => {
       root: element('root', 'child', EntityTypes.GROUP),
       child: element('child', 'root', EntityTypes.GROUP)
     }
+
     expect(
       projectVisibleLayerRows(['root', 'child'], cyclicMap, new Set())
     ).toMatchObject({ rows: [], error: expect.stringMatching(/cycle/i) })
@@ -177,6 +182,7 @@ it('exposes nested frame disclosure in both expanded and collapsed projections',
     ...elementDataMap,
     nested: element('nested', 'root', EntityTypes.FRAME)
   }
+
   expect(projectExpandedLayerRow('nested', data)).toMatchObject({
     canExpand: true,
     isExpanded: true
@@ -191,6 +197,7 @@ it('exposes nested frame disclosure in both expanded and collapsed projections',
     data,
     new Set(['nested'])
   )
+
   expect(collapsed.rows.map((row) => row.id)).toEqual([
     'root',
     'child',

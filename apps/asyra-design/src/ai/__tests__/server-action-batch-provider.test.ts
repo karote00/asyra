@@ -1,4 +1,9 @@
-import type { AiActionBatch, AiProviderInput } from '@asyra/ai-agent-runtime'
+import { requiredRecord } from '../../__tests__/assert-result'
+import type {
+  AiActionBatch,
+  AiProviderInput,
+  AiFetchRequestInit
+} from '@asyra/ai-agent-runtime'
 import { subscribeToBrowserDragPhases } from '@asyra/utils'
 import { describe, expect, it, vi } from 'vitest'
 import {
@@ -34,7 +39,7 @@ describe('server action-batch provider', () => {
     const controller = new AbortController()
     let transport: AbortSignal | undefined
     const provider = createServerActionBatchProvider({
-      fetch: async (_url, init) => {
+      fetch: async (_url: string, init: AiFetchRequestInit) => {
         transport = init.signal
 
         return new Promise<never>(() => undefined)
@@ -202,7 +207,7 @@ it.each([
     JSON.stringify({ type: 'result', batch }) +
     '\n'
 ])(
-  'rejects incomplete or malformed streams without admitting a batch',
+  'rejects incomplete or malformed streams without admitting a batch - case %#',
   async (body) => {
     const provider = createServerActionBatchProvider({
       fetch: (async () =>
@@ -221,6 +226,44 @@ it.each([
 )
 
 describe('sequential server prepared batch transport', () => {
+  it.each([1000, 1001])(
+    'preserves the code-point message boundary over NDJSON - %s',
+    async (length) => {
+      const message = '\u{2000B}'.repeat(length)
+      const provider = createServerActionBatchProvider({
+        fetch: async () =>
+          new Response(
+            JSON.stringify({
+              type: 'activity',
+              tool: 'prepare_design',
+              status: 'running',
+              message
+            }) +
+              '\n' +
+              JSON.stringify({ type: 'result', batch }) +
+              '\n',
+            { headers: { 'content-type': 'application/x-ndjson' } }
+          )
+      })
+      const onProgress = vi.fn()
+
+      try {
+        await expect(
+          provider.requestActionBatch(input, {
+            signal: new AbortController().signal,
+            onProgress
+          })
+        ).resolves.toEqual(batch)
+        expect(onProgress).toHaveBeenCalledOnce()
+        expect(onProgress.mock.calls[0][0].message).toBe(
+          length === 1000 ? message : undefined
+        )
+      } finally {
+        provider.dispose()
+      }
+    }
+  )
+
   it('decodes split UTF-8 and multiple frames in a single chunk in order', async () => {
     const frame = JSON.stringify({
       type: 'activity',
@@ -342,7 +385,7 @@ describe('sequential server prepared batch transport', () => {
     const receipt = { actionResults: [], context: { actual: true } }
     const calls: string[] = []
     const provider = createServerActionBatchProvider({
-      fetch: (async (_url, init) => {
+      fetch: (async (_url: string, init: AiFetchRequestInit) => {
         if ((init?.headers as Record<string, string>)?.['x-ai-batch-receipt']) {
           calls.push('receipt')
           expect(JSON.parse(String(init?.body))).toEqual(receipt)
@@ -387,7 +430,7 @@ it('acknowledges a rejected browser batch and keeps the stream open for recovery
     throw error
   })
   const provider = createServerActionBatchProvider({
-    fetch: (async (_url, init) => {
+    fetch: (async (_url: string, init: AiFetchRequestInit) => {
       if ((init.headers as Record<string, string>)['x-ai-batch-receipt']) {
         receipts.push(JSON.parse(String(init.body)))
 
@@ -438,7 +481,7 @@ it.each(['stop', 'lost-ack'])(
     let posts = 0
     let executions = 0
     const provider = createServerActionBatchProvider({
-      fetch: (async (_url, init) => {
+      fetch: (async (_url: string, init: AiFetchRequestInit) => {
         if ((init.headers as Record<string, string>)['x-ai-batch-receipt']) {
           posts++
           throw new Error('ack transport failed')
@@ -486,7 +529,7 @@ it.each(['ACTION_BATCH_INVALID_RECEIPT', 'private body with secrets'])(
     const executeBatch = vi.fn(async () => ({ actionResults: [], context: {} }))
     let posts = 0
     const provider = createServerActionBatchProvider({
-      fetch: (async (_url, init) => {
+      fetch: (async (_url: string, init: AiFetchRequestInit) => {
         if ((init.headers as Record<string, string>)['x-ai-batch-receipt']) {
           posts++
 
@@ -546,7 +589,7 @@ it.each(['activity', 'receipt', 'handoff'])(
       batch
     }
     const provider = createServerActionBatchProvider({
-      fetch: (async (_url, init) => {
+      fetch: (async (_url: string, init: AiFetchRequestInit) => {
         if ((init.headers as Record<string, string>)['x-ai-batch-receipt']) {
           receipts++
           if (phase === 'receipt') {
@@ -674,7 +717,7 @@ describe('evaluation capture and actual provider protocol', () => {
           {
             ...input,
             metadata: {
-              ...input.metadata,
+              ...requiredRecord(input.metadata),
               sourceRequestId: 'real-provider-request'
             }
           },
@@ -721,7 +764,9 @@ it('delivers the exact local evaluation deadline with existing metadata and leav
   const previous = location.href
   const window = {
     workDeadlineAt: Date.now() + 120000,
-    reportTimeoutMs: 60000,
+    reportTimeoutMs: 300000,
+    announceWorkDeadline: false,
+    reportInstructions: 'Explain actual waits in the same thread.',
     expandedNodeLimit: 2000
   }
   const url = new URL(previous)
@@ -730,7 +775,7 @@ it('delivers the exact local evaluation deadline with existing metadata and leav
   history.replaceState(null, '', url)
   const requests: unknown[] = []
   const provider = createServerActionBatchProvider({
-    fetch: async (_url, init) => {
+    fetch: async (_url: string, init: AiFetchRequestInit) => {
       requests.push(JSON.parse(String(init.body)))
 
       return {
@@ -756,6 +801,520 @@ it('delivers the exact local evaluation deadline with existing metadata and leav
     expect(requests[1]).toEqual(input)
   } finally {
     history.replaceState(null, '', previous)
+    provider.dispose()
+  }
+})
+
+describe('progress admission is independent of execution', () => {
+  it.each([
+    { tool: 'design_operations.map_retained_fills', status: 'running' },
+    { tool: 42, status: 'running' },
+    { tool: 'read_design_context', status: 'invalid' },
+    {
+      tool: 'read_design_context',
+      status: 'running',
+      activity: { kind: 'invalid' }
+    },
+    { status: 'running' }
+  ])(
+    'retains the open execution stream after progress %j',
+    async (progress) => {
+      let streamController!: ReadableStreamDefaultController<Uint8Array>
+      const cancelled = vi.fn()
+      const stream = new ReadableStream<Uint8Array>({
+        start(controller) {
+          streamController = controller
+        },
+
+        cancel: cancelled
+      })
+
+      const frame = (value: unknown) =>
+        streamController.enqueue(
+          new TextEncoder().encode(JSON.stringify(value) + '\n')
+        )
+
+      const receipt = { context: {}, actionResults: [] }
+      const executeBatch = vi.fn(async () => receipt)
+      const onProgress = vi.fn()
+      let requests = 0
+      const fetch = vi.fn(async () =>
+        ++requests > 1
+          ? new Response('{}')
+          : new Response(stream, {
+              headers: { 'content-type': 'application/x-ndjson' }
+            })
+      )
+      const provider = createServerActionBatchProvider({
+        fetch: fetch as never
+      })
+      let settled = false
+      const pending = provider.requestActionBatch(input, {
+        signal: new AbortController().signal,
+        executeBatch,
+        onProgress
+      })
+
+      void pending.then(
+        () => {
+          settled = true
+        },
+        () => {
+          settled = true
+        }
+      )
+
+      try {
+        frame({ type: 'activity', ...progress })
+        await new Promise((resolve) => setTimeout(resolve, 0))
+        expect(settled).toBe(false)
+        expect(cancelled).not.toHaveBeenCalled()
+        frame({
+          type: 'batch',
+          receiptToken: '11111111-1111-4111-8111-111111111111',
+          batch
+        })
+        await vi.waitFor(() => expect(executeBatch).toHaveBeenCalledOnce())
+        frame({ type: 'result', batch })
+        streamController.close()
+        await expect(pending).resolves.toEqual(batch)
+        expect(executeBatch).toHaveBeenCalledOnce()
+        expect(fetch).toHaveBeenCalledTimes(2)
+        if (typeof progress.tool === 'string' && progress.tool.includes('.')) {
+          expect(onProgress).toHaveBeenCalledWith(progress)
+        } else {
+          expect(onProgress).not.toHaveBeenCalled()
+        }
+      } finally {
+        provider.dispose()
+      }
+    }
+  )
+})
+
+it('isolates observer exceptions while preserving final execution results', async () => {
+  const provider = createServerActionBatchProvider({
+    fetch: (async () =>
+      new Response(
+        [
+          {
+            type: 'activity',
+            tool: 'design_operations.map_retained_fills',
+            status: 'running'
+          },
+          { type: 'result', batch }
+        ]
+          .map((frame) => JSON.stringify(frame))
+          .join('\n'),
+        { headers: { 'content-type': 'application/x-ndjson' } }
+      )) as never
+  })
+
+  try {
+    await expect(
+      provider.requestActionBatch(input, {
+        signal: new AbortController().signal,
+
+        onProgress: () => {
+          throw new Error('Observer failed')
+        }
+      })
+    ).resolves.toEqual(batch)
+  } finally {
+    provider.dispose()
+  }
+})
+
+it.each([
+  { type: 'unknown', tool: 'read_design_context', status: 'running' },
+  { type: 'batch', batch },
+  { type: 'result' },
+  { type: 'error', code: 'ACTION_BATCH_MODEL_INVALID_RESPONSE' }
+])(
+  'keeps execution protocol errors fatal after ignored progress: %j',
+  async (event) => {
+    const executeBatch = vi.fn()
+    const provider = createServerActionBatchProvider({
+      fetch: (async () =>
+        new Response(
+          [
+            { type: 'activity', tool: null, status: 'invalid' },
+            event,
+            { type: 'result', batch }
+          ]
+            .map((frame) => JSON.stringify(frame))
+            .join('\n'),
+          { headers: { 'content-type': 'application/x-ndjson' } }
+        )) as never
+    })
+
+    try {
+      await expect(
+        provider.requestActionBatch(input, {
+          signal: new AbortController().signal,
+          executeBatch
+        })
+      ).rejects.toMatchObject({ code: 'AI_PROVIDER_MALFORMED_RESPONSE' })
+      expect(executeBatch).not.toHaveBeenCalled()
+    } finally {
+      provider.dispose()
+    }
+  }
+)
+
+it('still honors user cancellation after dropping invalid progress', async () => {
+  const controller = new AbortController()
+  const cancel = vi.fn()
+  const onProgress = vi.fn()
+  const stream = new ReadableStream<Uint8Array>({
+    start(output) {
+      output.enqueue(
+        new TextEncoder().encode(
+          JSON.stringify({ type: 'activity', tool: null, status: 'running' }) +
+            '\n'
+        )
+      )
+    },
+
+    cancel
+  })
+  const provider = createServerActionBatchProvider({
+    fetch: (async () =>
+      new Response(stream, {
+        headers: { 'content-type': 'application/x-ndjson' }
+      })) as never
+  })
+  const pending = provider.requestActionBatch(input, {
+    signal: controller.signal,
+    onProgress
+  })
+  const stopped = expect(pending).rejects.toMatchObject({
+    code: 'AI_PROVIDER_ABORTED'
+  })
+
+  try {
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    expect(cancel).not.toHaveBeenCalled()
+    controller.abort()
+    await stopped
+    await vi.waitFor(() => expect(cancel).toHaveBeenCalledOnce())
+    expect(onProgress).not.toHaveBeenCalled()
+  } finally {
+    provider.dispose()
+  }
+})
+
+it('ignores late progress after the final result without reopening activity', async () => {
+  const onProgress = vi.fn()
+  const provider = createServerActionBatchProvider({
+    fetch: (async () =>
+      new Response(
+        [
+          { type: 'result', batch },
+          {
+            type: 'activity',
+            tool: 'design_operations.map_retained_fills',
+            status: 'running'
+          },
+          { type: 'activity', tool: null, status: 'invalid' }
+        ]
+          .map((frame) => JSON.stringify(frame))
+          .join('\n'),
+        { headers: { 'content-type': 'application/x-ndjson' } }
+      )) as never
+  })
+
+  try {
+    await expect(
+      provider.requestActionBatch(input, {
+        signal: new AbortController().signal,
+        onProgress
+      })
+    ).resolves.toEqual(batch)
+    expect(onProgress).not.toHaveBeenCalled()
+  } finally {
+    provider.dispose()
+  }
+})
+
+it('acknowledges browser conversation result writes and private reads without invoking a canvas action', async () => {
+  const token = '12345678-1234-1234-1234-123456789abc'
+  const commands = [
+    {
+      save: { trim: 'private-element-id' },
+      origins: {
+        trim: {
+          operation: 'prepare_and_apply_design',
+          step: 'trim',
+          source: 'result',
+          path: '/compositionIds/0'
+        }
+      }
+    },
+    { read: { trim: { name: 'trim', path: '' } } },
+    { read: { trim: { name: 'trim', path: '' } } }
+  ]
+  const requests: Record<string, unknown>[] = []
+  const acks: AiBatchReceiptLike[] = []
+
+  interface AiBatchReceiptLike {
+    context: { ok: boolean; code?: string; values?: Record<string, unknown> }
+  }
+  const provider = createServerActionBatchProvider({
+    fetch: async (_url: string, init: AiFetchRequestInit) => {
+      const value = JSON.parse(init.body)
+
+      if ('context' in value && 'actionResults' in value) {
+        acks.push(value)
+
+        return new Response('{}')
+      }
+
+      requests.push(value)
+
+      return new Response(
+        JSON.stringify({
+          type: 'conversation-results',
+          receiptToken: token,
+          command: commands.shift()
+        }) +
+          '\n' +
+          JSON.stringify({ type: 'result', batch }) +
+          '\n',
+        { headers: { 'content-type': 'application/x-ndjson' } }
+      )
+    }
+  })
+  const executeBatch = vi.fn()
+
+  try {
+    for (const conversationId of ['one', 'one', 'two']) {
+      await provider.requestActionBatch(
+        { ...input, metadata: { conversationId } },
+        { signal: new AbortController().signal, executeBatch }
+      )
+    }
+
+    expect(acks.map((a) => a.context.ok)).toEqual([true, true, false])
+    expect(acks[1].context.values).toEqual({ trim: 'private-element-id' })
+    expect(acks[2].context.code).toBe('TOOL_INPUT_INVALID')
+    expect(requests[1].metadata).toMatchObject({
+      conversationResultNames: ['trim'],
+      conversationResults: [
+        {
+          name: 'trim',
+          type: 'string',
+          paths: [{ path: '', type: 'string' }],
+          origin: {
+            operation: 'prepare_and_apply_design',
+            step: 'trim',
+            source: 'result',
+            path: '/compositionIds/0'
+          }
+        }
+      ]
+    })
+    expect(JSON.stringify(requests)).not.toContain('private-element-id')
+    expect(executeBatch).not.toHaveBeenCalled()
+  } finally {
+    provider.dispose()
+  }
+})
+
+it('binds saved input and target through the ordinary browser stream into a successor host without model readback', async () => {
+  const { createLocalToolHost } =
+    await import('../../../server/local-tool-host')
+  const { LocalToolLibraryLimits } =
+    await import('../../../server/local-tool-library-limits')
+  const { toolSemantics } = await import('../tool-contract')
+  const requests: AiProviderInput[] = []
+  const replies: string[] = []
+  const inputs: unknown[] = []
+  let acknowledge: ((value: Record<string, unknown>) => void) | undefined
+  const token = '12345678-1234-1234-1234-123456789abc'
+  const provider = createServerActionBatchProvider({
+    fetch: async (_url: string, init: AiFetchRequestInit) => {
+      const request = JSON.parse(init.body)
+
+      if ('actionResults' in request) {
+        acknowledge?.(request.context)
+
+        return new Response('{}')
+      }
+
+      requests.push(request)
+      const turn = requests.length
+      const stream = new ReadableStream({
+        start(controller) {
+          const send = (value: unknown) =>
+            controller.enqueue(
+              new TextEncoder().encode(JSON.stringify(value) + '\n')
+            )
+
+          const host = createLocalToolHost({
+            requestId: `ordinary-${turn}`,
+            signal: new AbortController().signal,
+            capacity: 32,
+            receiptCapacity: 8,
+            artifactCapacity: 64,
+            limits: LocalToolLibraryLimits.recipe,
+            store: {
+              read: async () => undefined,
+
+              list: async () => [],
+
+              write: async () => {
+                throw Error('No library writes')
+              }
+            },
+
+            resultContext: (command) =>
+              new Promise((resolve, reject) => {
+                acknowledge = (context) =>
+                  context.ok
+                    ? resolve(context.values as never)
+                    : reject(Error(String(context.error)))
+                send({
+                  type: 'conversation-results',
+                  receiptToken: token,
+                  command
+                })
+              }),
+
+            createGroups: () => [
+              {
+                name: 'fixture',
+                description: 'Deterministic owner',
+                owner: {
+                  definitions: [
+                    {
+                      type: 'function',
+                      name: 'apply',
+                      description: 'Use the supplied target and geometry',
+                      ...toolSemantics(
+                        {
+                          type: 'object',
+                          additionalProperties: false,
+                          required: ['id'],
+                          properties: { id: { type: 'string' } }
+                        },
+                        'read',
+                        []
+                      ),
+                      composition: 'allowed',
+                      inputSchema: {
+                        type: 'object',
+                        additionalProperties: false,
+                        required: ['target', 'geometry'],
+                        properties: {
+                          target: { type: 'string' },
+                          geometry: {
+                            type: 'object',
+                            additionalProperties: false,
+                            required: ['width'],
+                            properties: { width: { type: 'number' } }
+                          }
+                        }
+                      }
+                    }
+                  ],
+
+                  call: async (_name, value) => {
+                    inputs.push(value)
+
+                    return JSON.stringify({ id: 'private-root-id' })
+                  }
+                }
+              }
+            ]
+          })
+
+          void (async () => {
+            try {
+              const reply = await host.invoke({
+                name: 'design_operations.execute_design',
+                input: {
+                  operations: [
+                    {
+                      id: 'stage',
+                      name: 'fixture.apply',
+                      arguments:
+                        turn === 1
+                          ? {
+                              target: 'private-root-id',
+                              geometry: { width: 9876 }
+                            }
+                          : {
+                              target: { kind: 'named', name: 'root', path: '' },
+                              geometry: {
+                                kind: 'named',
+                                name: 'source',
+                                path: '/geometry'
+                              }
+                            }
+                    }
+                  ],
+                  ...(turn === 1
+                    ? {
+                        retain: {
+                          root: { step: 'stage', path: '/id' },
+                          source: { step: 'stage', source: 'input', path: '' },
+                          unused: {
+                            step: 'stage',
+                            source: 'input',
+                            path: '/geometry/width'
+                          }
+                        }
+                      }
+                    : {}),
+                  delivery: 'status'
+                }
+              })
+
+              expect(reply.outcome.status, reply.text).toBe('success')
+              replies.push(reply.text)
+              send({ type: 'result', batch })
+              controller.close()
+            } catch (error) {
+              controller.error(error)
+            } finally {
+              await host.dispose()
+            }
+          })()
+        }
+      })
+
+      return new Response(stream, {
+        headers: { 'content-type': 'application/x-ndjson' }
+      })
+    }
+  })
+  const executeBatch = vi.fn()
+
+  try {
+    for (let turn = 0; turn < 2; turn++) {
+      await provider.requestActionBatch(
+        { ...input, metadata: { conversationId: 'ordinary-reuse' } },
+        {
+          signal: new AbortController().signal,
+          executeBatch
+        }
+      )
+    }
+
+    expect(inputs).toEqual([
+      { target: 'private-root-id', geometry: { width: 9876 } },
+      { target: 'private-root-id', geometry: { width: 9876 } }
+    ])
+    expect(requests[1].metadata).toMatchObject({
+      conversationResultNames: ['root', 'source', 'unused']
+    })
+    expect(JSON.stringify(requests)).not.toContain('private-root-id')
+    expect(JSON.stringify(requests)).not.toContain('9876')
+    expect(replies.join('')).not.toContain('private-root-id')
+    expect(replies.join('')).not.toContain('9876')
+    expect(executeBatch).not.toHaveBeenCalled()
+  } finally {
     provider.dispose()
   }
 })

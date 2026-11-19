@@ -1,0 +1,700 @@
+{
+  "anchor": {
+    "message": "補齊基座窗格、入口、冠部與508公尺尖塔",
+    "inspection": "defer",
+    "draft": {
+      "type": "group",
+      "name": "台北101｜基座與冠部細節",
+      "projection": {
+        "azimuth": 35,
+        "elevation": 28,
+        "scale": 1,
+        "originX": 12500,
+        "originY": 47000
+      },
+      "fillTemplates": {
+        "bright": {
+          "gradientType": "linear",
+          "gradientHandles": [
+            {
+              "x": 0,
+              "y": 0
+            },
+            {
+              "x": 1,
+              "y": 1
+            }
+          ],
+          "gradientStops": [
+            {
+              "position": 0,
+              "color": "#6F999C",
+              "opacity": 1
+            },
+            {
+              "position": 0.45,
+              "color": "#326B75",
+              "opacity": 1
+            },
+            {
+              "position": 1,
+              "color": "#245462",
+              "opacity": 1
+            }
+          ]
+        },
+        "dark": {
+          "gradientType": "linear",
+          "gradientHandles": [
+            {
+              "x": 0,
+              "y": 0
+            },
+            {
+              "x": 1,
+              "y": 0.7
+            }
+          ],
+          "gradientStops": [
+            {
+              "position": 0,
+              "color": "#39616C",
+              "opacity": 1
+            },
+            {
+              "position": 0.5,
+              "color": "#183D4F",
+              "opacity": 1
+            },
+            {
+              "position": 1,
+              "color": "#356775",
+              "opacity": 1
+            }
+          ]
+        },
+        "metal": {
+          "gradientType": "linear",
+          "gradientHandles": [
+            {
+              "x": 0,
+              "y": 0
+            },
+            {
+              "x": 1,
+              "y": 0
+            }
+          ],
+          "gradientStops": [
+            {
+              "position": 0,
+              "color": "#617A85",
+              "opacity": 1
+            },
+            {
+              "position": 0.25,
+              "color": "#C8D2D0",
+              "opacity": 1
+            },
+            {
+              "position": 0.52,
+              "color": "#A5B7B9",
+              "opacity": 1
+            },
+            {
+              "position": 1,
+              "color": "#5B7783",
+              "opacity": 1
+            }
+          ]
+        }
+      },
+      "motifTemplates": {
+        "front": [
+          {
+            "key": "pane",
+            "name": "基座玻璃",
+            "fill": {
+              "template": "bright"
+            },
+            "vertices": [
+              {
+                "u": 0.05,
+                "v": 0.08
+              },
+              {
+                "u": 0.94,
+                "v": 0.08
+              },
+              {
+                "u": 0.94,
+                "v": 0.9
+              },
+              {
+                "u": 0.05,
+                "v": 0.9
+              }
+            ]
+          },
+          {
+            "key": "mullion",
+            "name": "基座豎窗框",
+            "fill": "#A7C0BF",
+            "vertices": [
+              {
+                "u": 0,
+                "v": 0
+              },
+              {
+                "u": 0.025,
+                "v": 0
+              },
+              {
+                "u": 0.025,
+                "v": 1
+              },
+              {
+                "u": 0,
+                "v": 1
+              }
+            ]
+          },
+          {
+            "key": "sill",
+            "name": "基座水平窗框",
+            "fill": "#94AFB0",
+            "vertices": [
+              {
+                "u": 0,
+                "v": 0.02
+              },
+              {
+                "u": 1,
+                "v": 0.02
+              },
+              {
+                "u": 1,
+                "v": 0.05
+              },
+              {
+                "u": 0,
+                "v": 0.05
+              }
+            ]
+          }
+        ],
+        "side": [
+          {
+            "key": "pane",
+            "name": "側基座玻璃",
+            "fill": {
+              "template": "dark"
+            },
+            "vertices": [
+              {
+                "u": 0.05,
+                "v": 0.08
+              },
+              {
+                "u": 0.94,
+                "v": 0.08
+              },
+              {
+                "u": 0.94,
+                "v": 0.9
+              },
+              {
+                "u": 0.05,
+                "v": 0.9
+              }
+            ]
+          },
+          {
+            "key": "mullion",
+            "name": "側基座豎窗框",
+            "fill": "#7A9B9F",
+            "vertices": [
+              {
+                "u": 0,
+                "v": 0
+              },
+              {
+                "u": 0.025,
+                "v": 0
+              },
+              {
+                "u": 0.025,
+                "v": 1
+              },
+              {
+                "u": 0,
+                "v": 1
+              }
+            ]
+          },
+          {
+            "key": "sill",
+            "name": "側基座水平窗框",
+            "fill": "#60868F",
+            "vertices": [
+              {
+                "u": 0,
+                "v": 0.02
+              },
+              {
+                "u": 1,
+                "v": 0.02
+              },
+              {
+                "u": 1,
+                "v": 0.05
+              },
+              {
+                "u": 0,
+                "v": 0.05
+              }
+            ]
+          }
+        ],
+        "crownFront": [
+          {
+            "key": "metal",
+            "name": "冠部金屬框架",
+            "fill": {
+              "template": "metal"
+            },
+            "vertices": [
+              {
+                "u": 0,
+                "v": 0
+              },
+              {
+                "u": 1,
+                "v": 0
+              },
+              {
+                "u": 1,
+                "v": 1
+              },
+              {
+                "u": 0,
+                "v": 1
+              }
+            ]
+          },
+          {
+            "key": "glass",
+            "name": "冠部窗戶",
+            "fill": {
+              "template": "bright"
+            },
+            "vertices": [
+              {
+                "u": 0.12,
+                "v": 0.25
+              },
+              {
+                "u": 0.88,
+                "v": 0.25
+              },
+              {
+                "u": 0.88,
+                "v": 0.85
+              },
+              {
+                "u": 0.12,
+                "v": 0.85
+              }
+            ]
+          }
+        ],
+        "crownSide": [
+          {
+            "key": "metal",
+            "name": "冠部側金屬框架",
+            "fill": "#7C969E",
+            "vertices": [
+              {
+                "u": 0,
+                "v": 0
+              },
+              {
+                "u": 1,
+                "v": 0
+              },
+              {
+                "u": 1,
+                "v": 1
+              },
+              {
+                "u": 0,
+                "v": 1
+              }
+            ]
+          },
+          {
+            "key": "glass",
+            "name": "冠部側窗",
+            "fill": {
+              "template": "dark"
+            },
+            "vertices": [
+              {
+                "u": 0.12,
+                "v": 0.25
+              },
+              {
+                "u": 0.88,
+                "v": 0.25
+              },
+              {
+                "u": 0.88,
+                "v": 0.85
+              },
+              {
+                "u": 0.12,
+                "v": 0.85
+              }
+            ]
+          }
+        ]
+      },
+      "children": [
+        {
+          "type": "surface-grid",
+          "key": "baseCentral",
+          "name": "基座中央凹槽與銀色樓板帶",
+          "boundary": [
+            {
+              "x": 1000,
+              "y": 3179,
+              "z": 0
+            },
+            {
+              "x": -1000,
+              "y": 3179,
+              "z": 0
+            },
+            {
+              "x": -1000,
+              "y": 2404,
+              "z": 11000
+            },
+            {
+              "x": 1000,
+              "y": 2404,
+              "z": 11000
+            }
+          ],
+          "rows": 26,
+          "columns": 6,
+          "order": "cell-major",
+          "motifs": [
+            {
+              "key": "recess",
+              "name": "中央深色反射窗",
+              "fill": "#244C58",
+              "vertices": [
+                {
+                  "u": 0,
+                  "v": 0
+                },
+                {
+                  "u": 1,
+                  "v": 0
+                },
+                {
+                  "u": 1,
+                  "v": 1
+                },
+                {
+                  "u": 0,
+                  "v": 1
+                }
+              ]
+            },
+            {
+              "key": "band",
+              "name": "中央寬銀色樓層帶",
+              "fill": {
+                "template": "metal"
+              },
+              "vertices": [
+                {
+                  "u": 0,
+                  "v": 0.02
+                },
+                {
+                  "u": 1,
+                  "v": 0.02
+                },
+                {
+                  "u": 1,
+                  "v": 0.18
+                },
+                {
+                  "u": 0,
+                  "v": 0.18
+                }
+              ]
+            },
+            {
+              "key": "frame",
+              "name": "凹槽細豎框",
+              "fill": "#7B9EA5",
+              "vertices": [
+                {
+                  "u": 0,
+                  "v": 0
+                },
+                {
+                  "u": 0.025,
+                  "v": 0
+                },
+                {
+                  "u": 0.025,
+                  "v": 1
+                },
+                {
+                  "u": 0,
+                  "v": 1
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "create": {
+    "id": "baseFine",
+    "name": "design_workflow.prepare_and_apply_design",
+    "arguments": {
+      "parentId": "design-daaf9f1e-f465-4286-a522-06208b047460-0",
+      "inspection": "defer",
+      "message": "細化基座窗框而保留入口與中央立面",
+      "draft": {
+        "type": "group",
+        "name": "基座次級分格",
+        "projection": {
+          "azimuth": 35,
+          "elevation": 28,
+          "scale": 1,
+          "originX": 4149.464020685366,
+          "originY": 44856.61998634451
+        },
+        "motifTemplates": {
+          "fine": [
+            {
+              "key": "vshadow",
+              "name": "基座次級豎框陰邊",
+              "fill": "#254C57",
+              "vertices": [
+                {
+                  "u": 0.484,
+                  "v": 0.07
+                },
+                {
+                  "u": 0.516,
+                  "v": 0.07
+                },
+                {
+                  "u": 0.516,
+                  "v": 0.92
+                },
+                {
+                  "u": 0.484,
+                  "v": 0.92
+                }
+              ]
+            },
+            {
+              "key": "vlight",
+              "name": "基座次級豎框亮邊",
+              "fill": "#89A9AD",
+              "vertices": [
+                {
+                  "u": 0.49,
+                  "v": 0.07
+                },
+                {
+                  "u": 0.502,
+                  "v": 0.07
+                },
+                {
+                  "u": 0.502,
+                  "v": 0.92
+                },
+                {
+                  "u": 0.49,
+                  "v": 0.92
+                }
+              ]
+            },
+            {
+              "key": "hshadow",
+              "name": "基座次級橫框陰邊",
+              "fill": "#254C57",
+              "vertices": [
+                {
+                  "u": 0.04,
+                  "v": 0.485
+                },
+                {
+                  "u": 0.96,
+                  "v": 0.485
+                },
+                {
+                  "u": 0.96,
+                  "v": 0.515
+                },
+                {
+                  "u": 0.04,
+                  "v": 0.515
+                }
+              ]
+            },
+            {
+              "key": "hlight",
+              "name": "基座次級橫框亮邊",
+              "fill": "#89A9AD",
+              "vertices": [
+                {
+                  "u": 0.04,
+                  "v": 0.5
+                },
+                {
+                  "u": 0.96,
+                  "v": 0.5
+                },
+                {
+                  "u": 0.96,
+                  "v": 0.51
+                },
+                {
+                  "u": 0.04,
+                  "v": 0.51
+                }
+              ]
+            }
+          ]
+        },
+        "children": [
+          {
+            "type": "surface-grid",
+            "key": "baseFineY",
+            "name": "基座正面細框",
+            "boundary": [
+              {
+                "x": 2700,
+                "y": 3178,
+                "z": 0
+              },
+              {
+                "x": -2700,
+                "y": 3178,
+                "z": 0
+              },
+              {
+                "x": -1950,
+                "y": 2403,
+                "z": 11000
+              },
+              {
+                "x": 1950,
+                "y": 2403,
+                "z": 11000
+              }
+            ],
+            "rows": 26,
+            "columns": 20,
+            "order": "cell-major",
+            "motifs": {
+              "template": "fine"
+            }
+          },
+          {
+            "type": "surface-grid",
+            "key": "baseFineX",
+            "name": "基座側面細框",
+            "boundary": [
+              {
+                "x": 3178,
+                "y": -2700,
+                "z": 0
+              },
+              {
+                "x": 3178,
+                "y": 2700,
+                "z": 0
+              },
+              {
+                "x": 2403,
+                "y": 1950,
+                "z": 11000
+              },
+              {
+                "x": 2403,
+                "y": -1950,
+                "z": 11000
+              }
+            ],
+            "rows": 26,
+            "columns": 20,
+            "order": "cell-major",
+            "motifs": {
+              "template": "fine"
+            }
+          }
+        ]
+      }
+    }
+  },
+  "order": {
+    "name": "api_hierarchy_moveElementsRelative",
+    "arguments": {
+      "request": {
+        "elementIds": {
+          "kind": "step",
+          "step": "baseFine",
+          "path": "/compositionIds"
+        },
+        "placement": "before"
+      }
+    },
+    "target": {
+      "artifactId": "daaf9f1e-f465-4286-a522-06208b047460",
+      "keys": ["baseCentral"],
+      "field": "anchorId",
+      "path": ["request", "anchorId"]
+    }
+  },
+  "fill": {
+    "name": "api_fill_updateFillsAtIndex",
+    "arguments": {
+      "index": 0,
+      "patch": {
+        "opacity": 0.3
+      }
+    },
+    "target": {
+      "field": "elementIds",
+      "query": {
+        "scope": "region",
+        "bounds": {
+          "x": 8000,
+          "y": 10000,
+          "width": 9000,
+          "height": 30000
+        },
+        "filter": {
+          "ancestorId": "design-bdb59347-1400-4789-8f82-aec315e3e9ad-0",
+          "name": {
+            "equals": "如意背後投影"
+          }
+        },
+        "expectedCount": 8
+      }
+    }
+  }
+}

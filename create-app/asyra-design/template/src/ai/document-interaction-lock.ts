@@ -94,10 +94,13 @@ const isAgentCancelActivation = (event: Event): boolean => {
   if (AGENT_CANCEL_ACTIVATION_EVENT_TYPES.has(event.type)) {
     return true
   }
+
   if (event.type !== 'keydown' && event.type !== 'keyup') {
     return false
   }
+
   const code = (event as KeyboardEvent).code
+
   return code === 'Enter' || code === 'Space'
 }
 
@@ -117,6 +120,7 @@ const isViewportZoomModifierChange = (event: Event): boolean => {
 
 const isAllowedInteraction = (event: Event): boolean => {
   const interactionTarget = getInteractionTarget(event)
+
   return (
     interactionTarget === AiDocumentInteractionTargets.AGENT_INTERFACE ||
     isViewportZoomModifierChange(event) ||
@@ -152,6 +156,7 @@ export const createDocumentInteractionLock = (
     // Release the editor without forwarding a document-editing pointer event.
     if (event.type === 'pointerdown' || event.type === 'mousedown') {
       const activeElement = document.activeElement
+
       if (
         activeElement instanceof HTMLElement &&
         activeElement
@@ -162,9 +167,11 @@ export const createDocumentInteractionLock = (
         activeElement.blur()
       }
     }
+
     if (event.cancelable) {
       event.preventDefault()
     }
+
     event.stopImmediatePropagation()
   }
 
@@ -173,6 +180,7 @@ export const createDocumentInteractionLock = (
     if (!attachedTarget) {
       return
     }
+
     for (const eventType of GUARDED_EVENT_TYPES) {
       attachedTarget.addEventListener(
         eventType,
@@ -186,6 +194,7 @@ export const createDocumentInteractionLock = (
     if (!attachedTarget) {
       return
     }
+
     for (const eventType of GUARDED_EVENT_TYPES) {
       attachedTarget.removeEventListener(
         eventType,
@@ -193,6 +202,7 @@ export const createDocumentInteractionLock = (
         LISTENER_OPTIONS
       )
     }
+
     attachedTarget = null
   }
 
@@ -201,6 +211,7 @@ export const createDocumentInteractionLock = (
       if (acquisitionCount === 0) {
         attach()
       }
+
       acquisitionCount += 1
       let released = false
 
@@ -208,6 +219,7 @@ export const createDocumentInteractionLock = (
         if (released) {
           return
         }
+
         released = true
         acquisitionCount -= 1
         if (acquisitionCount === 0) {
@@ -215,6 +227,7 @@ export const createDocumentInteractionLock = (
         }
       }
     },
+
     isActive: () => acquisitionCount > 0
   }
 }

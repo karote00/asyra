@@ -10,6 +10,7 @@ const shape = {
   width: 40,
   height: 50
 }
+
 describe('semantic container selection', () => {
   it('derives Group bounds and preserves world placement in mixed nested containers', () => {
     const result = prepareDesign({
@@ -40,6 +41,7 @@ describe('semantic container selection', () => {
       ]
     })
     const ds = result.entries.map((e) => e.descriptor)
+
     expect(ds[0]).toMatchObject({
       type: 'group',
       x: 110,
@@ -90,6 +92,7 @@ describe('semantic container selection', () => {
         }
       ]
     })
+
     expect(result.entries[0].descriptor).toMatchObject({
       x: 35,
       y: 56,
@@ -114,6 +117,7 @@ describe('semantic container selection', () => {
       height: 400,
       children: [shape]
     })
+
     expect(result.entries[0].descriptor).toMatchObject({
       type: 'frame',
       width: 300,

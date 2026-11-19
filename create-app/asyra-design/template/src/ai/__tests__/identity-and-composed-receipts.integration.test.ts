@@ -55,11 +55,19 @@ const reset = () => {
 it('executes the published identity example through the real Core and uses issued keys for source references', async () => {
   reset()
   const contract = basicApiContracts.find((c) => c.method === 'allocateIds')
+
   expect(contract).toBeDefined()
-  if (!contract) throw new Error('Missing identity allocation contract')
+  if (!contract) {
+    throw new Error('Missing identity allocation contract')
+  }
+
   const actions = createBasicApiActions()
   const action = actions.find((a) => a.name === contract.name)
-  if (!action) throw new Error('Missing allocated identity executor')
+
+  if (!action) {
+    throw new Error('Missing allocated identity executor')
+  }
+
   const dispatch = vi.fn(
     async (batch: import('../action-batch-protocol').AiActionBatch) => ({
       context: null,
@@ -76,13 +84,21 @@ it('executes the published identity example through the real Core and uses issue
   )
   const operations = createLocalOperationTools(
     actions,
-    { modelActions: (actions) => actions, resolveBatch: (value) => value },
+    {
+      modelActions: (actions) => actions,
+
+      resolveBatch: (value) => value
+    },
     dispatch
   )
   const definition = operations.definitions.find(
     (item) => item.name === 'describe_design_apis'
   )
-  if (!definition) throw new Error('Missing discovery definition')
+
+  if (!definition) {
+    throw new Error('Missing discovery definition')
+  }
+
   const delivery = JSON.parse(
     (
       await invokeLocalTool(
@@ -93,16 +109,22 @@ it('executes the published identity example through the real Core and uses issue
       )
     ).text
   )
+
   expect(delivery.contentDelivery).toBeUndefined()
   const published = delivery.apis[0]
   const invocation = published.invocationExample.invocation
   const example = invocation.arguments.operations[0].arguments
+
   expect(example).toEqual((contract.inputSchema.examples as unknown[])[0])
   expect(invocation.tool).toBe('execute_design_batch')
   const batchDefinition = operations.definitions.find(
     (item) => item.name === invocation.tool
   )
-  if (!batchDefinition) throw new Error('Missing advertised batch definition')
+
+  if (!batchDefinition) {
+    throw new Error('Missing advertised batch definition')
+  }
+
   expect(
     operationInputIssue(invocation.arguments, batchDefinition.inputSchema)
   ).toBeUndefined()
@@ -122,6 +144,7 @@ it('executes the published identity example through the real Core and uses issue
       )
     ).text
   )
+
   expect(native.toolOutcome.status).toBe('success')
   expect(dispatch).toHaveBeenCalledTimes(1)
   const first = native.actionResults[0].result as {
@@ -129,11 +152,13 @@ it('executes the published identity example through the real Core and uses issue
     status: string
     application: string
   }
+
   expect(first).toMatchObject({ status: 'no-change', application: 'prepared' })
   expect(first.value).toHaveLength(2)
   const second = (await action.execute(example, { signal })) as {
     value: string[]
   }
+
   expect(new Set([...first.value, ...second.value]).size).toBe(4)
   const [face, grid] = first.value
   const vertices = [
@@ -185,6 +210,7 @@ it('executes the published identity example through the real Core and uses issue
     ]
   }
   const prepared = prepareDesign(draft, 'allocated-reference')
+
   expect(prepared.keyToId[face]).toBeTruthy()
   expect(core.getCanonicalOwnerSnapshot()).toEqual(before)
   expect(core.getUndoHistoryDepth()).toBe(depth)
@@ -194,6 +220,7 @@ it('executes the published identity example through the real Core and uses issue
     )
   ).toBe(true)
   const current = idCounter.current(IDTypes.ELEMENT)
+
   await expect(
     action.execute({ types: ['el', 'not-registered'] }, { signal })
   ).rejects.toThrow()
@@ -214,6 +241,7 @@ const gradient = {
     { position: 1, color: '#ffffff', opacity: 1 }
   ]
 }
+
 const materialFixture = () => {
   reset()
   core.createElementsInParent(
@@ -246,19 +274,23 @@ it('keeps actual canonical no-op evidence through prepared material application'
   const signal = new AbortController().signal
   const owner = createPreparedMaterialApplication({
     read: () => ({ geometry: 'fixed', binding: 'fixed' }),
+
     update: fillApis.updateFillsAtIndex
   })
+
   try {
     owner.capture('root', ['panel'], signal)
     const input = {
       rootId: 'root',
       updates: [{ elementId: 'panel', color: '#000000', gradient }]
     }
+
     expect(await owner.action.execute(input, { signal })).toMatchObject({
       status: 'complete'
     })
     const before = core.getCanonicalOwnerSnapshot()
     const depth = core.getUndoHistoryDepth()
+
     expect(await owner.action.execute(input, { signal })).toMatchObject({
       status: 'no-change',
       changed: false,
@@ -292,12 +324,14 @@ it('keeps actual canonical no-op evidence through retained fill mapping', async 
       }
     ]
   }
+
   try {
     expect(await action.execute(input, { signal })).toMatchObject({
       status: 'complete'
     })
     const before = core.getCanonicalOwnerSnapshot()
     const depth = core.getUndoHistoryDepth()
+
     expect(await action.execute(input, { signal })).toMatchObject({
       status: 'no-change',
       changed: false,
@@ -319,12 +353,17 @@ it('preserves a real unchanged oval geometry result in the composed action', asy
   const action = createAiActions(undefined, {
     yieldToHost: vi.fn(async () => undefined)
   }).find((a) => a.name === 'update_composition_elements')
-  if (!action) throw new Error('Missing composition updater')
+
+  if (!action) {
+    throw new Error('Missing composition updater')
+  }
+
   const before = core.getCanonicalOwnerSnapshot()
   const result = await action.execute(
     { updates: [{ elementId: 'oval', geometry: { scaleX: 1, scaleY: 1 } }] },
     { signal: new AbortController().signal }
   )
+
   expect(result).toMatchObject({
     status: 'no-change',
     appliedElementIds: [],
@@ -343,6 +382,7 @@ it('preserves partial material targets and rejects malformed receipts without re
   }))
   const owner = createPreparedMaterialApplication({
     read: () => ({ geometry: 'fixed', binding: 'fixed' }),
+
     update: update as never
   })
   const input = {
@@ -353,6 +393,7 @@ it('preserves partial material targets and rejects malformed receipts without re
       gradient
     }))
   }
+
   try {
     owner.capture('root', ['a', 'b'], signal)
     expect(await owner.action.execute(input, { signal })).toMatchObject({

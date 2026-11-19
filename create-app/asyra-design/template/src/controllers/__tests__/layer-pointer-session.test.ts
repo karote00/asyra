@@ -22,10 +22,12 @@ describe('Layers hierarchy pointer normalization', () => {
       clientY: 20,
       target: null
     })
+
     expect(update).not.toBeNull()
     if (!update) {
       throw new Error('Expected a normalized below-threshold update')
     }
+
     const end = endLayerPointerSession(update, {
       pointerId: 7,
       clientX: 12,
@@ -128,9 +130,11 @@ describe('Layers hierarchy pointer normalization', () => {
   it('bypasses editable, action, and disclosure targets', () => {
     const input = document.createElement('input')
     const action = document.createElement('button')
+
     action.dataset.layerPointerBypass = 'true'
     const disclosureChild = document.createElement('span')
     const disclosure = document.createElement('button')
+
     disclosure.dataset.layerPointerBypass = 'true'
     disclosure.append(disclosureChild)
     const label = document.createElement('span')

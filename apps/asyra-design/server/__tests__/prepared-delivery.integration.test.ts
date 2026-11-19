@@ -526,13 +526,13 @@ async function verifyPreparedDeliveryHistory(
 
     recordPhase('preparation')
     await operations.call(
-      AiDesignToolIds.EXECUTE_DESIGN_BATCH,
+      AiDesignToolIds.EXECUTE_DESIGN,
       {
         inspection: 'defer',
         operations: [
           {
             name: action.name,
-            arguments: { artifactId: prepared.artifactId, response: 'full' }
+            arguments: { artifactId: prepared.artifactId }
           }
         ]
       },
@@ -921,13 +921,12 @@ describe.each(vectorDeliveryFixture.cases)(
         JSON.parse(JSON.stringify(source))
       )
       expect(compile).toHaveBeenCalledTimes(1)
-      expect(Buffer.byteLength(encoded)).toBeLessThanOrEqual(
-        saved.source.inputBytes * 0.86
-      )
+      // Compare the same current action envelope, not a historical selector's bytes.
       const baseline = { ...delivered, design: capturedVectorBaseline(source) }
 
-      expect(Buffer.byteLength(JSON.stringify(baseline))).toBe(
-        saved.source.inputBytes
+      expect(delivered).not.toHaveProperty('response')
+      expect(Buffer.byteLength(encoded)).toBeLessThanOrEqual(
+        Buffer.byteLength(JSON.stringify(baseline)) * 0.86
       )
       expect(admitCapturedVectorBaseline(baseline.design)).toEqual(
         JSON.parse(JSON.stringify(source))

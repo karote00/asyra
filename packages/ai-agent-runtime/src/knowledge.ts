@@ -10,14 +10,20 @@ import type {
 } from './knowledge-types.js'
 
 export class AiKnowledgeError extends Error {
-  constructor(readonly code: string) {
+  constructor(
+    readonly code: string,
+    readonly stage: 'input' | 'execution'
+  ) {
     super(code)
     this.name = 'AiKnowledgeError'
   }
 }
 
-const fail = (code: string): never => {
-  throw new AiKnowledgeError(code)
+const fail = (
+  code: string,
+  stage: 'input' | 'execution' = 'execution'
+): never => {
+  throw new AiKnowledgeError(code, stage)
 }
 
 const validId = (value: unknown): value is string =>
@@ -351,7 +357,7 @@ export const createAiKnowledgeAccess = (options: AiKnowledgeOptions) => {
           try {
             signal.throwIfAborted()
             if (!query || !Array.isArray(query.ids) || !query.ids.length) {
-              return fail('KNOWLEDGE_INVALID_QUERY')
+              return fail('KNOWLEDGE_INVALID_QUERY', 'input')
             }
 
             const ids = list(query.ids)
@@ -363,7 +369,7 @@ export const createAiKnowledgeAccess = (options: AiKnowledgeOptions) => {
                 query.rehydrate !== undefined ||
                 query.reuseFrom !== undefined
               ) {
-                return fail('KNOWLEDGE_INVALID_QUERY')
+                return fail('KNOWLEDGE_INVALID_QUERY', 'input')
               }
 
               const original = [...delivered.values()].find(
@@ -378,7 +384,7 @@ export const createAiKnowledgeAccess = (options: AiKnowledgeOptions) => {
                 query.contexts !== undefined &&
                 JSON.stringify(contexts) !== JSON.stringify(original.contexts)
               ) {
-                return fail('KNOWLEDGE_INVALID_QUERY')
+                return fail('KNOWLEDGE_INVALID_QUERY', 'input')
               }
 
               const full = original.full
@@ -497,7 +503,7 @@ export const createAiKnowledgeAccess = (options: AiKnowledgeOptions) => {
               query.rehydrate !== undefined &&
               typeof query.rehydrate !== 'boolean'
             ) {
-              return fail('KNOWLEDGE_INVALID_QUERY')
+              return fail('KNOWLEDGE_INVALID_QUERY', 'input')
             }
 
             if (
@@ -507,7 +513,7 @@ export const createAiKnowledgeAccess = (options: AiKnowledgeOptions) => {
                 query.reuseFrom.some((key) => !boundedText(key, 128)) ||
                 new Set(query.reuseFrom).size !== query.reuseFrom.length)
             ) {
-              return fail('KNOWLEDGE_INVALID_QUERY')
+              return fail('KNOWLEDGE_INVALID_QUERY', 'input')
             }
 
             const reuseFrom = query.rehydrate
@@ -540,12 +546,18 @@ export const createAiKnowledgeAccess = (options: AiKnowledgeOptions) => {
               const metadata = entries.get(id)
 
               if (!metadata) {
-                return fail('KNOWLEDGE_NOT_FOUND')
+                return fail(
+                  'KNOWLEDGE_NOT_FOUND',
+                  depth === 0 ? 'input' : 'execution'
+                )
               }
 
               requirePermission('read', who, metadata)
               if (!relevant(metadata, contexts)) {
-                fail('KNOWLEDGE_NOT_APPLICABLE')
+                fail(
+                  'KNOWLEDGE_NOT_APPLICABLE',
+                  depth === 0 ? 'input' : 'execution'
+                )
               }
 
               visiting.add(id)

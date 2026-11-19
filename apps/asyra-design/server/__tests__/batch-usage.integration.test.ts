@@ -23,14 +23,12 @@ const loadBatchRuntime = async () => {
     await import('../../src/ai/basic-api-actions')
   const { observeAiAction } = await import('../../src/ai/runtime-input')
 
-  return {
-    core,
-    applyPreset,
-    PresetProfiles,
-    PresetDefaults,
-    createBasicApiActions,
-    observeAiAction
-  }
+  applyPreset(core, {
+    profile: PresetProfiles.CUSTOM,
+    defaults: [PresetDefaults.BASIC_SHAPES, PresetDefaults.CONTAINERS]
+  })
+
+  return { core, createBasicApiActions, observeAiAction }
 }
 
 let batchRuntime: Awaited<ReturnType<typeof loadBatchRuntime>>
@@ -50,35 +48,35 @@ beforeAll(async () => {
       vi.unstubAllGlobals()
     }
 
-    console.info(
+    process.stdout.write(
       JSON.stringify({
         measurement: 'batch-usage-module-initialization',
         durationMs: performance.now() - startedAt
-      })
+      }) + '\n'
     )
   }
 })
 
-it('delivers selected batch usage independent of unrelated inventory and executes its real owner example', async () => {
+it.each([
+  {
+    title:
+      'executes selected batch usage through real owners with recovery and history',
+    inventoryOnly: false
+  },
+  {
+    title:
+      'keeps selected batch usage unchanged with 10000 unrelated catalog entries',
+    inventoryOnly: true
+  }
+])('$title', async ({ inventoryOnly }) => {
   const hadWindow = 'window' in globalThis
 
   if (!hadWindow) {
     vi.stubGlobal('window', {})
   }
 
-  const {
-    core,
-    applyPreset,
-    PresetProfiles,
-    PresetDefaults,
-    createBasicApiActions,
-    observeAiAction
-  } = batchRuntime
+  const { core, createBasicApiActions, observeAiAction } = batchRuntime
 
-  applyPreset(core, {
-    profile: PresetProfiles.CUSTOM,
-    defaults: [PresetDefaults.BASIC_SHAPES, PresetDefaults.CONTAINERS]
-  })
   core.load({
     version: '1.0.0',
     props: {},
@@ -114,7 +112,7 @@ it('delivers selected batch usage independent of unrelated inventory and execute
     review,
     createAiInspectionAction(() => ({
       available: true,
-      image: { dataUrl: 'data:image/png;base64,eA==' }
+      image: { dataUrl: 'data:image/png;base64,eA==', width: 1, height: 1 }
     })),
     ...createBasicApiActions(undefined, undefined, queries),
     createDocumentContextAction(queries.read),
@@ -126,12 +124,12 @@ it('delivers selected batch usage independent of unrelated inventory and execute
   const transaction = createAiTransactionRunner()
   const dispatched: string[] = []
   let stopAfterFirst = false
-  let boundIds: string[] | undefined
+  let boundIds: readonly string[] | undefined
   const signal = new AbortController().signal
   const hosts: ReturnType<typeof createLocalToolHost>[] = []
 
   const setup = (unrelated = 0) => {
-    let tools: ReturnType<typeof createLocalOperationTools>
+    let tools!: ReturnType<typeof createLocalOperationTools>
 
     const build = (ownership: LocalToolOwnership) =>
       (tools = createLocalOperationTools(
@@ -146,7 +144,7 @@ it('delivers selected batch usage independent of unrelated inventory and execute
               throw new Error('Expired retained source')
             }
 
-            return boundIds
+            return [...boundIds]
           }
         },
         async (batch) => {
@@ -205,6 +203,7 @@ it('delivers selected batch usage independent of unrelated inventory and execute
           getNativeTools: () => [
             ...host.definitions(),
             ...Array.from({ length: unrelated }, (_, i) => ({
+              ...toolSemantics(true, 'read', []),
               name: `unrelated_${i}`,
               namespace: 'unrelated',
               description: 'Unrelated capability',
@@ -248,35 +247,70 @@ it('delivers selected batch usage independent of unrelated inventory and execute
 
     hosts.push(host)
 
-    const call = async (
-      name: string,
-      input: unknown,
-      activeSignal = signal
-    ) => {
-      const definition = tools.definitions.find((d) => d.name === name)
+    const invoke = (name: string, input: unknown, activeSignal = signal) =>
+      host.invoke({
+        name: `design_operations.${name}`,
+        input,
+        signal: activeSignal
+      })
 
-      if (!definition) {
-        throw new Error('Missing tool definition')
-      }
+    const call = async (name: string, input: unknown, activeSignal = signal) =>
+      JSON.parse((await invoke(name, input, activeSignal)).text)
 
-      return JSON.parse(
-        (
-          await host.invoke({
-            name: `design_operations.${name}`,
-            input,
-            signal: activeSignal
-          })
-        ).text
-      )
-    }
-
-    return { tools, call, host }
+    return { tools, call, invoke, host }
   }
 
   try {
-    const { call, host } = setup()
-    const query = { operations: ['element.deleteElements'], view: 'usage' }
-    const reply = await call('describe_design_apis', query)
+    const { call, invoke, host } = setup()
+    const query = {
+      names: ['element.deleteElements'],
+      view: 'usage',
+      includeResultSchema: true
+    }
+    const concise = await call('read_design_contracts', {
+      ...query,
+      includeResultSchema: false
+    })
+
+    expect(concise.apis[0].usageGuide.results.anyOf).toBeUndefined()
+    expect(concise.apis[0].usageGuide.results.guaranteedFields).toContain(
+      '/actionResults'
+    )
+    expect(concise.apis[0].usageGuide.results.interpretation).toContain(
+      'separate toolOutcome acknowledgement'
+    )
+    const reply = await call('read_design_contracts', {
+      ...query,
+      includeResultSchema: true
+    })
+
+    expect(concise.apis[0].usageGuide.parameters).toEqual(
+      reply.apis[0].usageGuide.parameters
+    )
+    expect(concise.apis[0].invocationExample).toEqual(
+      reply.apis[0].invocationExample
+    )
+    expect(Buffer.byteLength(JSON.stringify(concise))).toBeLessThan(
+      Buffer.byteLength(JSON.stringify(reply)) * 0.8
+    )
+
+    process.stdout.write(
+      JSON.stringify({
+        measurement: 'default-versus-machine-deletion',
+        defaultBytes: Buffer.byteLength(JSON.stringify(concise)),
+        machineBytes: Buffer.byteLength(JSON.stringify(reply)),
+        calls: 1
+      }) + '\n'
+    )
+    for (const invalid of [
+      { operations: query.names, includeResultSchema: true },
+      { ...query, view: 'full' },
+      { ...query, includeResultSchema: 'true' }
+    ]) {
+      expect(
+        (await invoke('read_design_contracts', invalid)).outcome.status
+      ).toBe('failed')
+    }
 
     expect(reply.contentDelivery).toBeUndefined()
     const api = reply.apis[0]
@@ -289,7 +323,11 @@ it('delivers selected batch usage independent of unrelated inventory and execute
       )
     ).toBeDefined()
     expect(api.usageGuide.instructions).toContain('Omit target-supplied')
-    expect(JSON.stringify(api.usageGuide.parameters)).toContain('inspection')
+    expect(api.usageGuide.parameters).toBeUndefined()
+    expect(api.usageGuide.hostContract).toEqual({
+      tool: 'read_design_contracts',
+      arguments: { names: ['design_operations.execute_design'], view: 'usage' }
+    })
     expect(JSON.stringify(api.usageGuide.operationParameters)).toContain(
       'uniqueItems'
     )
@@ -300,25 +338,43 @@ it('delivers selected batch usage independent of unrelated inventory and execute
     expect(api.usageGuide.recovery).toMatch(/replay/i)
     expect(api.inputSchema).toBeUndefined()
     expect(api.outputSchema).toBeUndefined()
-    const large = setup(10000)
-    const inventory = await large.call('describe_design_apis', {
-      query: 'Unrelated capability'
-    })
+    if (inventoryOnly) {
+      const large = setup(10000)
+      const inventory = await large.call('search_design_tools', {
+        query: 'Unrelated capability'
+      })
 
-    expect(inventory.count).toBe(10000)
-    const expanded = await large.call('describe_design_apis', query)
+      const baselineInventory = await call('search_design_tools', {
+        query: 'Unrelated capability'
+      })
 
-    expect(expanded.resultKey).toEqual(expect.any(String))
-    expect(reply.resultKey).toEqual(expect.any(String))
-    expect(expanded.resultKey).not.toBe(reply.resultKey)
-    expect({ ...expanded, resultKey: undefined }).toEqual({
-      ...reply,
-      resultKey: undefined
-    })
+      expect(inventory.count - baselineInventory.count).toBe(10000)
+      const expanded = await large.call('read_design_contracts', query)
+
+      expect(expanded.resultKey).toEqual(expect.any(String))
+      expect(reply.resultKey).toEqual(expect.any(String))
+      expect(expanded.resultKey).not.toBe(reply.resultKey)
+      expect({ ...expanded, resultKey: undefined }).toEqual({
+        ...reply,
+        resultKey: undefined
+      })
+      expect(dispatched).toEqual([])
+      process.stdout.write(
+        JSON.stringify({
+          measurement: 'selected-usage-catalog-growth',
+          unrelatedOperations: inventory.count - baselineInventory.count,
+          replyBytes: Buffer.byteLength(JSON.stringify(reply)),
+          expandedReplyBytes: Buffer.byteLength(JSON.stringify(expanded))
+        }) + '\n'
+      )
+
+      return
+    }
+
     const replyBytes = Buffer.byteLength(JSON.stringify(reply))
 
     expect(replyBytes).toBeLessThan(recorded.baselineReplyBytes)
-    const menu = await call('describe_design_apis', {
+    const menu = await call('search_design_tools', {
       query: 'element.deleteElements'
     })
     const selected = menu.apis.find(
@@ -327,8 +383,8 @@ it('delivers selected batch usage independent of unrelated inventory and execute
     )
 
     expect(selected.usage).toEqual({
-      tool: 'describe_design_apis',
-      arguments: query
+      tool: 'read_design_contracts',
+      arguments: { view: 'usage', names: query.names }
     })
     const again = await call(
       api.definition.refresh.tool,
@@ -337,22 +393,27 @@ it('delivers selected batch usage independent of unrelated inventory and execute
 
     expect(again.apis[0].usageGuide).toEqual(api.usageGuide)
     expect(dispatched).toEqual([])
-    const invocation = api.invocationExample.invocation
+    const invocation = concise.apis[0].invocationExample.invocation
 
-    expect(invocation.tool).toBe('execute_design_batch')
+    expect(invocation.tool).toBe('execute_design')
     const ids = invocation.arguments.operations[0].arguments.elementIds
 
     core.createElementsInParent(
-      ids.map((id: string) => ({ id, type: 'rect', width: 20, height: 20 })),
+      ids.map((id: string) => ({
+        id,
+        type: 'rect',
+        x: 0,
+        y: 0,
+        width: 20,
+        height: 20
+      })),
       'workspace'
     )
     const saved = await core.save()
-    const result = await call(invocation.tool, {
-      ...invocation.arguments,
-      inspection: 'defer'
-    })
+    const resultReply = await invoke(invocation.tool, invocation.arguments)
+    const result = JSON.parse(resultReply.text)
 
-    expect(result.toolOutcome.status, JSON.stringify(result)).toBe('success')
+    expect(resultReply.outcome.status, JSON.stringify(result)).toBe('success')
     expect(operationInputIssue(result, api.usageGuide.results)).toBeUndefined()
     expect(
       operationInputIssue(
@@ -415,13 +476,13 @@ it('delivers selected batch usage independent of unrelated inventory and execute
       expect(core.getElementMetadata(id)).toBeUndefined()
     }
 
-    const invalid = await call(invocation.tool, {
+    const invalidReply = await invoke(invocation.tool, {
       operations: [
         { name: 'api_element_deleteElements', arguments: { elementIds: 5 } }
       ]
     })
 
-    expect(invalid.toolOutcome.status).not.toBe('success')
+    expect(invalidReply.outcome.status).not.toBe('success')
     const cancelled = new AbortController()
 
     cancelled.abort()
@@ -431,25 +492,26 @@ it('delivers selected batch usage independent of unrelated inventory and execute
     expect(dispatched).toHaveLength(1)
     // Saved target-only invocation uses the same batch binding contract.
     const savedInput = recorded.calls[3].input
-    const missing = await call('execute_design_batch', savedInput)
+    const missingReply = await invoke('execute_design', savedInput)
 
-    expect(missing.toolOutcome.status).toBe('failed')
+    expect(missingReply.outcome.status).toBe('failed')
     expect(dispatched).toHaveLength(1)
     boundIds = core.createElementsInParent(
-      [{ type: 'rect', width: 10, height: 10 }],
+      [{ type: 'rect', x: 0, y: 0, width: 10, height: 10 }],
       'workspace'
     )
-    const targetResult = await call('execute_design_batch', savedInput)
+    const targetResultReply = await invoke('execute_design', savedInput)
+    const targetResult = JSON.parse(targetResultReply.text)
 
-    expect(targetResult.toolOutcome.status, JSON.stringify(targetResult)).toBe(
+    expect(targetResultReply.outcome.status, JSON.stringify(targetResult)).toBe(
       'success'
     )
     expect(core.getElementMetadata(boundIds[0])).toBeUndefined()
     // A retained prefix may settle before interruption; retry only the pending operation.
     const pendingIds = core.createElementsInParent(
       [
-        { type: 'rect', width: 10, height: 10 },
-        { type: 'rect', width: 10, height: 10 }
+        { type: 'rect', x: 0, y: 0, width: 10, height: 10 },
+        { type: 'rect', x: 0, y: 0, width: 10, height: 10 }
       ],
       'workspace'
     )
@@ -459,14 +521,28 @@ it('delivers selected batch usage independent of unrelated inventory and execute
     }))
 
     stopAfterFirst = true
-    const partial = await call('execute_design_batch', {
+    const partialReply = await invoke('execute_design', {
       operations: pendingOperations,
       inspection: 'defer'
     })
+    const partial = JSON.parse(partialReply.text)
 
-    expect(partial.toolOutcome.status).not.toBe('success')
-    expect(partial.recovery).toContain('do not replay acknowledged mutations')
+    expect(partialReply.outcome).toMatchObject({
+      status: 'partial',
+      settlement: 'partial'
+    })
+    expect(
+      partial.executionResult?.failure,
+      JSON.stringify(partial)
+    ).toMatchObject({
+      settlement: 'not-started',
+      actionName: 'api_element_deleteElements'
+    })
+    expect(partial).not.toHaveProperty('recovery')
     expect(operationInputIssue(partial, api.usageGuide.results)).toBeUndefined()
+    expect(partial.executionResult, JSON.stringify(partial)).toHaveProperty(
+      'actionResults'
+    )
     const acknowledged = partial.executionResult.actionResults
 
     expect(
@@ -490,25 +566,25 @@ it('delivers selected batch usage independent of unrelated inventory and execute
     expect(core.getElementMetadata(pendingIds[0])).toBeUndefined()
     expect(core.getElementMetadata(pendingIds[1])).toBeDefined()
     const beforeRetry = dispatched.length
-    const resumed = await call('execute_design_batch', {
+    const resumedReply = await invoke('execute_design', {
       operations: pendingOperations.slice(acknowledged.length),
       inspection: 'defer'
     })
+    const resumed = JSON.parse(resumedReply.text)
 
-    expect(resumed.toolOutcome.status, JSON.stringify(resumed)).toBe('success')
+    expect(resumedReply.outcome.status, JSON.stringify(resumed)).toBe('success')
     expect(dispatched.length - beforeRetry).toBe(1)
     expect(core.getElementMetadata(pendingIds[1])).toBeUndefined()
     const multiple = JSON.parse(
       await readCompleteInformation(
-        async (input) =>
-          JSON.stringify(await call('describe_design_apis', input)),
+        async (input, requestedTool) =>
+          JSON.stringify(await call(requestedTool, input)),
         {
-          operations: [
-            'element.deleteElements',
-            'element.updateElementProperties'
-          ],
-          view: 'usage'
-        }
+          names: ['element.deleteElements', 'element.updateElementProperties'],
+          view: 'usage',
+          includeResultSchema: true
+        },
+        'read_design_contracts'
       )
     )
 
@@ -520,24 +596,27 @@ it('delivers selected batch usage independent of unrelated inventory and execute
     // Independent full schema remains available through the existing paged read.
     const full = JSON.parse(
       await readCompleteInformation(
-        async (input) =>
-          JSON.stringify(await call('describe_design_apis', input)),
-        { operations: query.operations, view: 'full' }
+        async (input, requestedTool) =>
+          JSON.stringify(await call(requestedTool, input)),
+        { names: query.names, view: 'full' },
+        'read_design_contracts'
       )
     )
 
     expect(full.apis[0].inputSchema).toBeDefined()
     // A native recipe dependency keeps canonical schemas, while its usage
-    // describes the external envelope even when response=full is requested.
+    // describes the external envelope, including unchanged and partial outcomes.
     const nativeQuery = {
       names: ['design_operations.api_element_deleteElements'],
-      view: 'usage'
+      view: 'usage',
+      includeResultSchema: true
     }
     const nativeUsage = JSON.parse(
       await readCompleteInformation(
-        async (input) =>
-          JSON.stringify(await call('describe_design_apis', input)),
-        nativeQuery
+        async (input, requestedTool) =>
+          JSON.stringify(await call(requestedTool, input)),
+        nativeQuery,
+        'read_design_contracts'
       )
     ).tools[0]
     const nativeInput = {
@@ -567,6 +646,7 @@ it('delivers selected batch usage independent of unrelated inventory and execute
     const nativePartial = {
       ...noChange,
       toolOutcome: { status: 'partial', settlement: 'completed' },
+      deliveryOutcome: { status: 'partial', settlement: 'completed' },
       execution: {
         ...noChange.execution,
         status: 'partial',
@@ -586,6 +666,12 @@ it('delivers selected batch usage independent of unrelated inventory and execute
     expect(
       operationInputIssue(nativePartial, nativeUsage.usageGuide.results)
     ).toBeUndefined()
+    expect(
+      operationInputIssue(
+        { ...nativePartial, deliveryOutcome: noChange.deliveryOutcome },
+        nativeUsage.usageGuide.results
+      )
+    ).toBeDefined()
     for (const invalid of [
       {
         ...nativePartial.execution.value.executionResult.actionResults[0],
@@ -605,19 +691,21 @@ it('delivers selected batch usage independent of unrelated inventory and execute
       expect(
         operationInputIssue(candidate, nativeUsage.usageGuide.results)
       ).toBeDefined()
+
+      // Downgrading only the inner acknowledgement cannot legalize invalid
+      // evidence while the execution and owner receipt still claim completion.
+      candidate.execution.value.toolOutcome = {
+        status: 'failed',
+        settlement: 'unknown'
+      }
+      expect(
+        operationInputIssue(candidate, nativeUsage.usageGuide.results),
+        'Unknown inner outcome must not bypass validation of the completed prefix'
+      ).toBeDefined()
     }
 
-    const fullResult = await call(invocation.tool, {
-      ...invocation.arguments,
-      operations: [{ name: api.name, arguments: { elementIds: [] } }],
-      inspection: 'defer',
-      response: 'full'
-    })
-
-    expect(fullResult.actionResults[0].result.value).toEqual({ count: 0 })
-    expect(
-      operationInputIssue(fullResult, api.usageGuide.results)
-    ).toBeUndefined()
+    // Full structural acknowledgements are read through the retained receipt,
+    // not an obsolete response override on the unified host input.
     const beforeRead = dispatched.filter((name) => name === api.name).length
     const historical = await call('read_design_context', {
       arguments: {
@@ -638,27 +726,36 @@ it('delivers selected batch usage independent of unrelated inventory and execute
     )
     const dependency = JSON.parse(
       await readCompleteInformation(
-        async (input) =>
-          JSON.stringify(await call('describe_design_apis', input)),
-        { names: nativeQuery.names, view: 'full' }
+        async (input, requestedTool) =>
+          JSON.stringify(await call(requestedTool, input)),
+        { names: nativeQuery.names, view: 'full' },
+        'read_design_contracts'
       )
     ).tools[0]
 
     expect(dependency.resultScope).toBe('internal-composition')
     expect(dependency.delivery.outputSchema).toBeDefined()
     expect(operationInputIssue(noChange, dependency.outputSchema)).toBeDefined()
-    const field = await call('describe_design_apis', api.fieldQuery.arguments)
+    const fieldReply = await invoke(
+      'read_design_contracts',
+      api.fieldQuery.arguments
+    )
 
-    expect(field.toolOutcome.status).toBe('success')
+    expect(fieldReply.outcome.status).toBe('success')
     for (const selection of [
-      { names: [api.name], view: 'usage' },
-      { query: 'element.deleteElements', view: 'usage' }
+      { names: [api.name], view: 'usage', includeResultSchema: true },
+      {
+        names: ['element.deleteElements'],
+        view: 'usage',
+        includeResultSchema: true
+      }
     ]) {
       const selected = JSON.parse(
         await readCompleteInformation(
-          async (input) =>
-            JSON.stringify(await call('describe_design_apis', input)),
-          selection
+          async (input, requestedTool) =>
+            JSON.stringify(await call(requestedTool, input)),
+          selection,
+          'read_design_contracts'
         )
       )
 
@@ -669,31 +766,33 @@ it('delivers selected batch usage independent of unrelated inventory and execute
     }
 
     const editId = core.createElementsInParent(
-      [{ type: 'rect', width: 20, height: 20 }],
+      [{ type: 'rect', x: 0, y: 0, width: 20, height: 20 }],
       'workspace'
     )[0]
     const editGuide = JSON.parse(
       await readCompleteInformation(
-        async (input) =>
-          JSON.stringify(await call('describe_design_apis', input)),
+        async (input, requestedTool) =>
+          JSON.stringify(await call(requestedTool, input)),
         {
-          operations: ['element.setElementPositions'],
-          view: 'usage'
-        }
+          names: ['element.setElementPositions'],
+          view: 'usage',
+          includeResultSchema: true
+        },
+        'read_design_contracts'
       )
     ).apis[0]
-    const edited = await call('execute_design_batch', {
+    const editedReply = await invoke('execute_design', {
       operations: [
         {
           name: editGuide.name,
           arguments: { positionsById: { [editId]: { x: 10, y: 15 } } }
         }
       ],
-      inspection: 'immediate',
-      response: 'full'
+      inspection: 'immediate'
     })
+    const edited = JSON.parse(editedReply.text)
 
-    expect(edited.toolOutcome.status, JSON.stringify(edited)).toBe('success')
+    expect(editedReply.outcome.status, JSON.stringify(edited)).toBe('success')
     expect(
       operationInputIssue(edited, editGuide.usageGuide.results)
     ).toBeUndefined()
@@ -703,7 +802,7 @@ it('delivers selected batch usage independent of unrelated inventory and execute
 
     expect(
       tails.map((entry: { actionName: string }) => entry.actionName)
-    ).toContain('review_design')
+    ).not.toContain('review_design')
     expect(
       tails.map((entry: { actionName: string }) => entry.actionName)
     ).toContain('inspect_drawing')
@@ -727,7 +826,7 @@ it('delivers selected batch usage independent of unrelated inventory and execute
           replyBytes,
           baselineReplyBytes: modelDelivery.baselineReplyBytes,
           pages: 1,
-          unrelatedOperations: 10000
+          unrelatedOperations: 0
         }
       }) + '\n'
     )
@@ -921,7 +1020,6 @@ it.each(
                 if (view === 'interrupted') {
                   return JSON.stringify({
                     available: false,
-                    recoverable: true,
                     code: 'OWNER_INTERRUPTED',
                     message: 'Read completed evidence; do not replay.',
                     settlement: 'partial',
@@ -956,20 +1054,29 @@ it.each(
       const query = {
         names: ['fixture.retained_source'],
         view: 'usage',
+        includeResultSchema: true,
         ...(shape === 'scoped'
-          ? { inputScope: { operation: 'draft', nodeTypes: ['pattern'] } }
+          ? {
+              scopes: {
+                'fixture.retained_source': {
+                  inputScope: { operation: 'draft', nodeTypes: ['pattern'] }
+                }
+              }
+            }
           : {})
       }
 
-      const read = async (input: unknown) =>
+      const read = async (input: unknown, requestedTool: string) =>
         (
           await host.invoke({
-            name: 'design_operations.describe_design_apis',
+            name: 'design_operations.' + requestedTool,
             input
           })
         ).text
 
-      const discovered = JSON.parse(await readCompleteInformation(read, query))
+      const discovered = JSON.parse(
+        await readCompleteInformation(read, query, 'read_design_contracts')
+      )
 
       expect(discovered.tools, JSON.stringify(discovered)).toBeDefined()
       expect(wrapper).toHaveBeenCalledTimes(exposure === 'registry' ? 1 : 0)
@@ -977,15 +1084,63 @@ it.each(
       const invocation = entry.invocationExample.invocation
 
       expect(invocation).toBeDefined()
+      const invocationInput =
+        entry.execution.kind === 'host-operation'
+          ? invocation.arguments.operations[0].arguments
+          : invocation.arguments
+      const invocationName = `${entry.execution.namespace ?? 'design_operations'}.${invocation.tool}`
+
       expect(
-        operationInputIssue(invocation.arguments, entry.usageGuide.parameters)
+        operationInputIssue(invocationInput, entry.usageGuide.parameters)
       ).toBeUndefined()
 
-      const invoke = () =>
-        host.invoke({
-          name: `${entry.execution.namespace}.${invocation.tool}`,
+      const invoke = async () => {
+        const reply = await host.invoke({
+          name: invocationName,
           input: invocation.arguments
         })
+
+        if (entry.execution.kind !== 'host-operation') {
+          return reply
+        }
+
+        const hostResult = JSON.parse(reply.text)
+
+        expect(hostResult.execution, reply.text).toBeDefined()
+        if (view === 'interrupted') {
+          expect(hostResult.execution).toMatchObject({
+            status: 'failed',
+            settlement: 'partial'
+          })
+          const recovery = hostResult.execution.recovery.find(
+            (call: { name: string }) => call.name === 'fixture.retained_source'
+          )
+
+          expect(recovery).toMatchObject({
+            status: 'partial',
+            settlement: 'partial'
+          })
+
+          return { ...reply, text: JSON.stringify(recovery.value) }
+        }
+
+        if (shape.startsWith('canonical') && !reply.success) {
+          const recovery = hostResult.execution.recovery.find(
+            (call: { name: string }) => call.name === 'fixture.retained_source'
+          )
+
+          expect(recovery, reply.text).toBeDefined()
+          expect(hostResult.execution.status).toBe('unknown')
+
+          return { ...reply, text: JSON.stringify(recovery.value) }
+        }
+
+        expect(hostResult.execution).toHaveProperty('value')
+
+        // Selected usage describes the named operation; execute_design owns
+        // the surrounding execution receipt, including partial settlement.
+        return { ...reply, text: JSON.stringify(hostResult.execution.value) }
+      }
 
       const reply = await invoke()
 
@@ -1003,7 +1158,11 @@ it.each(
       if (exposure === 'registry') {
         const savedFailure = {
           ...success,
-          storage: { status: 'unsaved', issue: 'Injected storage outage' },
+          storage: {
+            status: 'unsaved',
+            code: 'storage-failed',
+            issue: 'Injected storage outage'
+          },
           toolOutcome: { status: 'partial', settlement: 'completed' }
         }
 
@@ -1060,7 +1219,7 @@ it.each(
       expect(success.ids).toBeUndefined()
       expect(success.payload).toBeUndefined()
       const outerFailure = await host.invoke({
-        name: `${entry.execution.namespace}.${invocation.tool}`,
+        name: invocationName,
         input:
           exposure === 'registry'
             ? { ...invocation.arguments, revision: 0 }
@@ -1078,22 +1237,28 @@ it.each(
         )
       ).toBeUndefined()
       expect(calls).toBe(1)
-      if (shape.startsWith('canonical')) {
-        expect(calls).toBe(1)
-
-        return
-      }
-
-      for (view of [undefined, { count: -1 }]) {
+      for (view of [{}, { count: -1 }]) {
         const failed = await invoke()
         const result = JSON.parse(failed.text)
 
         expect(failed.success).toBe(false)
-        expect(valueOf(result)).toMatchObject({
-          code: 'TOOL_DELIVERY_INVALID',
-          toolOutcome: { status: 'partial', settlement: 'completed' }
-        })
-        expect(valueOf(result).message).toContain('must not be replayed')
+        if (shape.startsWith('canonical')) {
+          // Invalid owner output cannot establish a completed execution receipt.
+          expect(valueOf(result)).toMatchObject({
+            code: 'TOOL_RESULT_INVALID',
+            toolOutcome: { status: 'failed', settlement: 'unknown' }
+          })
+          expect(valueOf(result).message).toContain('output')
+          expect(valueOf(result)).not.toHaveProperty('recovery')
+        } else {
+          // A valid internal receipt followed by invalid model delivery preserves settlement.
+          expect(valueOf(result)).toMatchObject({
+            code: 'TOOL_DELIVERY_INVALID',
+            toolOutcome: { status: 'partial', settlement: 'completed' }
+          })
+          expect(valueOf(result).message).toContain('must not be replayed')
+        }
+
         expect(
           operationInputIssue(result, entry.usageGuide.results)
         ).toBeUndefined()
@@ -1101,7 +1266,11 @@ it.each(
 
       expect(calls).toBe(3)
       const refreshed = JSON.parse(
-        await readCompleteInformation(read, entry.definition.refresh.arguments)
+        await readCompleteInformation(
+          read,
+          entry.definition.refresh.arguments,
+          'read_design_contracts'
+        )
       ).tools[0]
 
       expect(refreshed.usageGuide).toEqual(entry.usageGuide)
@@ -1117,7 +1286,7 @@ it.each(
         operationInputIssue(partial, entry.usageGuide.results)
       ).toBeUndefined()
       const invalid = await host.invoke({
-        name: `${entry.execution.namespace}.${invocation.tool}`,
+        name: invocationName,
         input:
           exposure === 'registry'
             ? { ...invocation.arguments, input: { unknown: true } }
@@ -1126,32 +1295,20 @@ it.each(
       const rejected = JSON.parse(invalid.text)
 
       expect(invalid.success).toBe(false)
-      if (exposure === 'registry') {
-        expect(rejected.execution).toMatchObject({
-          status: 'failed',
-          settlement: 'not-started',
-          calls: [
-            {
-              name: invocation.arguments.name,
-              status: 'failed',
-              settlement: 'not-started'
-            }
-          ]
-        })
-        expect(rejected.execution.issues.join(' ')).toContain('unknown')
-        expect(
-          operationInputIssue(rejected, entry.usageGuide.results)
-        ).toBeUndefined()
-      } else {
-        expect(rejected).toMatchObject({
-          stage: 'admission',
-          settlement: 'not-started'
-        })
-      }
+      expect(rejected).toMatchObject({
+        code: 'TOOL_INPUT_INVALID',
+        stage: 'admission',
+        settlement: 'not-started'
+      })
+      expect(rejected.message).toContain('unknown')
+      expect(rejected).not.toHaveProperty('execution')
+      expect(
+        operationInputIssue(rejected, entry.usageGuide.results)
+      ).toBeUndefined()
 
       await expect(
         host.invoke({
-          name: `${entry.execution.namespace}.${invocation.tool}`,
+          name: invocationName,
           input: invocation.arguments,
           signal: AbortSignal.abort()
         })
@@ -1161,7 +1318,7 @@ it.each(
         const stale = JSON.parse(
           (
             await host.invoke({
-              name: `${entry.execution.namespace}.${invocation.tool}`,
+              name: invocationName,
               input: {
                 ...invocation.arguments,
                 revision: invocation.arguments.revision + 1
@@ -1170,8 +1327,11 @@ it.each(
           ).text
         )
 
-        expect(stale.execution.status).toBe('failed')
-        expect(stale.execution.settlement).toBe('not-started')
+        expect(stale).toMatchObject({
+          code: 'TOOL_INPUT_INVALID',
+          settlement: 'not-started'
+        })
+        expect(stale).not.toHaveProperty('execution')
         expect(
           operationInputIssue(stale, entry.usageGuide.results)
         ).toBeUndefined()
@@ -1184,3 +1344,135 @@ it.each(
     }
   }
 )
+
+it('bounds the recorded fill and context short-name queries while retaining qualified routes', async () => {
+  // Native request 4772d3af-6282-423a-b3f7-e2143ee69116, inputs 275 and 281.
+  const { observeAiAction } = batchRuntime
+  const { createDocumentContextAction } =
+    await import('../../src/ai/context-action')
+  const { createRetainedFillAction } =
+    await import('../../src/ai/retained-fill-action')
+  const { createAiInspectionAction } = await import('../../src/ai/inspection')
+  const actions = [
+    ...[
+      createDocumentContextAction(),
+      createRetainedFillAction({} as never),
+      createAiInspectionAction()
+    ].map((owner) => createAiToolContract(observeAiAction(owner))),
+    {
+      name: 'apply_prepared_design',
+      inputSchema: {},
+      description: 'Apply prepared design'
+    }
+  ]
+  const prep = createLocalDesignTools(actions)
+  const signal = new AbortController().signal
+  const dispatch = vi.fn(async () => ({ context: {}, actionResults: [] }))
+  let ops!: ReturnType<typeof createLocalOperationTools>
+  const host = createLocalToolHost({
+    requestId: 'recorded-usage',
+    signal,
+    capacity: 256,
+    receiptCapacity: 32,
+    artifactCapacity: 128,
+    limits: {
+      steps: 32,
+      bindings: 128,
+      bindingDepth: 32,
+      bytes: 24000,
+      issues: 8
+    },
+    store: {
+      list: async () => [],
+
+      read: async () => undefined,
+
+      write: vi.fn()
+    },
+
+    createGroups: (ownership) => [
+      { name: 'design_preparation', description: 'Preparation', owner: prep },
+      {
+        name: 'design_operations',
+        description: 'Operations',
+        owner: (ops = createLocalOperationTools(actions, prep, dispatch, {
+          ownership,
+
+          getNativeTools: () => host.definitions()
+        }))
+      }
+    ]
+  })
+
+  const read = async (toolName: string, query: Record<string, unknown>) => {
+    let pages = 0
+    const body = await readCompleteInformation(
+      async (args, requestedTool) => {
+        pages++
+
+        return ops.call(requestedTool, args, signal)
+      },
+      {
+        ...query,
+        ...(toolName === 'read_design_contracts' ? { view: 'usage' } : {})
+      },
+      toolName
+    )
+
+    return { ...JSON.parse(body), pages, bytes: Buffer.byteLength(body) }
+  }
+
+  try {
+    for (const [names, budget, pages] of [
+      [
+        ['map_retained_fills', 'retain_design_targets', 'execute_design'],
+        37000,
+        2
+      ],
+      [['read_design_context'], 20000, 1]
+    ] as const) {
+      const short = await read('read_design_contracts', { names })
+
+      expect(short.missingNames).toEqual([])
+      expect(short.tools.map((entry: { name: string }) => entry.name)).toEqual(
+        names.slice(1)
+      )
+      expect(short.apis[0].usageGuide.operationParameters).toBeDefined()
+      const qualified = short.apis[0].recipeDependency.name
+      const byQuery = await read('read_design_contracts', { names: [names[0]] })
+
+      expect(byQuery.tools).toEqual([])
+      expect(byQuery.apis[0].recipeDependency.name).toBe(qualified)
+      const machine = await read('read_design_contracts', {
+        names: [names[0]],
+        includeResultSchema: true
+      })
+
+      expect(machine.apis[0].recipeDependency.name).toBe(qualified)
+      expect(machine.tools).toEqual([])
+
+      const alternative = await read('read_design_contracts', {
+        names: [qualified]
+      })
+
+      expect(alternative.tools[0].registeredName).toBe(qualified)
+      expect(alternative.tools[0].usageGuide.parameters).toBeDefined()
+      expect(alternative.tools[0].outputFields.length).toBeLessThan(40)
+      expect(short.bytes).toBeLessThan(budget)
+      expect(short.pages).toBeLessThanOrEqual(pages)
+      const explicit = await read('read_design_contracts', {
+        names: [names[0], qualified]
+      })
+
+      expect(
+        explicit.tools.map(
+          (tool: { registeredName: string }) => tool.registeredName
+        )
+      ).toEqual([qualified])
+    }
+
+    expect(dispatch).not.toHaveBeenCalled()
+  } finally {
+    await host.dispose()
+  }
+})

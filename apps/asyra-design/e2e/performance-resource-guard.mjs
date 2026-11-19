@@ -15,6 +15,7 @@ import {
   setTimeout
 } from 'node:timers'
 import { fileURLToPath, URL } from 'node:url'
+import { normalizeEndpointInteractionEvidence } from './endpoint-interaction-evidence.mjs'
 export const DEFAULT_RESOURCE_GUARD_CONFIG = Object.freeze({
   maximumCpuPercent: 400,
   maximumFrontendCpuPercent: 250,
@@ -207,6 +208,7 @@ export const isEndpointGuardAbsolutePath = (value) =>
   value.length <= ENDPOINT_GUARD_ABSOLUTE_PATH_LIMIT &&
   isAbsolute(value)
 
+/** @param {{ attributionCase?: string, bundledChromiumExecutablePath?: string, googleChromeExecutablePath?: string, platform?: NodeJS.Platform }} [options] */
 export const resolveEndpointBrowserExecutablePath = ({
   attributionCase = process.env.ENDPOINT_ATTRIBUTION_CASE?.trim() ?? '',
   bundledChromiumExecutablePath,
@@ -858,7 +860,12 @@ const sanitizeFailure = (value) => {
   }
 }
 
-const sanitizeEndpointReport = (value, expectedOwner, proofKind) => {
+const sanitizeEndpointReport = (
+  value,
+  expectedOwner,
+  proofKind,
+  totalCount
+) => {
   if (
     !value ||
     typeof value !== 'object' ||
@@ -887,10 +894,23 @@ const sanitizeEndpointReport = (value, expectedOwner, proofKind) => {
     return null
   }
 
+  const localInteraction =
+    proofKind === 'endpoint'
+      ? normalizeEndpointInteractionEvidence(value.localInteraction, totalCount)
+      : undefined
+
+  if (
+    (proofKind === 'endpoint' && localInteraction === null) ||
+    (proofKind !== 'endpoint' && value.localInteraction !== undefined)
+  ) {
+    return null
+  }
+
   return {
     ...sanitizeScalarRecord(value),
     actorA,
     actorB,
+    ...(localInteraction ? { localInteraction } : {}),
     owner: expectedOwner,
     proofKind,
     status: 'complete'
@@ -1385,7 +1405,8 @@ export const recordResourceHeartbeat = (
       ? sanitizeEndpointReport(
           body.heartbeat.report,
           expectedOwner,
-          heartbeat.proofKind
+          heartbeat.proofKind,
+          heartbeat.actorA.total
         )
       : state.endpointReport
 

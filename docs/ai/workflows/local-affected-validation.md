@@ -33,8 +33,10 @@ existing CI runners or the E2E owner's local command. Keep owner resource guards
 and zero-test checks. Selected failure, missing result, zero tests or cancellation
 cannot produce a passing aggregate. Unselected checks are explicit. This command
 runs the selected security audit first using `yarn security:audit`, with the same
-selection and severity threshold as CI. An audit failure or registry error stops
-subsequent checks and remains in the run evidence. Unselected audits do not query
+selection and severity threshold as CI. The [dependency audit policy](../framework/SECURITY.md#dependency-audit-and-delivery-policy)
+retains recursive findings but blocks delivery only for direct-dependency findings
+or an incomplete/failed scan. Transitive-only findings remain visible without
+stopping subsequent checks. Blocking outcomes remain in the run evidence. Unselected audits do not query
 the registry. Audit results depend on the live advisory database; rerun before
 push rather than treating an earlier pass as permanent. This command does not
 certify release, publication, production artifact or hosting gates.

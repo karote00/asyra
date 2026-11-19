@@ -1,4 +1,5 @@
 import type { AiContextProvider } from '@asyra/ai-agent-runtime'
+import core from '../contexts'
 import {
   elementApis,
   hierarchyApis,
@@ -37,6 +38,8 @@ export interface AiElementContext {
   readonly type: string
   readonly visible: boolean
   readonly locked: boolean
+  readonly parentId: string | null
+  readonly coordinateSpace: 'parent-local'
   readonly bounds: AiElementBounds | null
 }
 
@@ -56,6 +59,7 @@ export interface AiElementContextSource {
   readonly type?: unknown
   readonly visible?: unknown
   readonly locked?: unknown
+  readonly parentId?: unknown
   readonly bounds?: unknown
   readonly [key: string]: unknown
 }
@@ -79,6 +83,7 @@ const defaultQueries: AiContextQueries = {
 
   getElementSummary: (elementId) => ({
     id: elementId,
+    parentId: core.getElementMetadata(elementId)?.parentId ?? null,
     type: elementApis.getElementType(elementId),
     visible: elementApis.isElementVisible(elementId),
     locked: elementApis.isElementLocked(elementId),
@@ -121,6 +126,11 @@ const toElementContext = (
   Object.freeze({
     id: elementId,
     type: typeof source.type === 'string' ? source.type : 'unknown',
+    parentId:
+      typeof source.parentId === 'string' && source.parentId
+        ? source.parentId
+        : null,
+    coordinateSpace: 'parent-local',
     visible: source.visible !== false,
     locked: source.locked === true,
     bounds: toBounds(source.bounds)

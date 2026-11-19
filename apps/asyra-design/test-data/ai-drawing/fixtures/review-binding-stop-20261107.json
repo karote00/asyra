@@ -1,0 +1,380 @@
+{
+  "source": "taipei-101-fixed-1793989016959",
+  "input": {
+    "phase": "visual",
+    "final": false,
+    "inspections": [
+      {
+        "elementId": "workspace",
+        "view": "overview",
+        "checks": [
+          {
+            "criterionId": "whole"
+          },
+          {
+            "criterionId": "view"
+          }
+        ]
+      },
+      {
+        "elementId": "design-df51a02f-540f-40ac-8f65-7325da90a059-0",
+        "view": "overview",
+        "checks": [
+          {
+            "criterionId": "detail",
+            "unitId": "base"
+          }
+        ]
+      },
+      {
+        "elementId": "design-df51a02f-540f-40ac-8f65-7325da90a059-0",
+        "view": "detail",
+        "region": {
+          "x": 1700,
+          "y": 4000,
+          "width": 1024,
+          "height": 1024
+        },
+        "checks": [
+          {
+            "criterionId": "detail",
+            "unitId": "base"
+          }
+        ]
+      },
+      {
+        "elementId": "design-883edb38-5861-4f8d-a858-aecea724f18b-0",
+        "view": "overview",
+        "checks": [
+          {
+            "criterionId": "detail",
+            "unitId": "tiers"
+          }
+        ]
+      },
+      {
+        "elementId": "design-883edb38-5861-4f8d-a858-aecea724f18b-0",
+        "view": "detail",
+        "region": {
+          "x": 2200,
+          "y": 2200,
+          "width": 1024,
+          "height": 1024
+        },
+        "checks": [
+          {
+            "criterionId": "detail",
+            "unitId": "tiers"
+          }
+        ]
+      },
+      {
+        "elementId": "design-4976d187-a214-48a0-83dc-396cb7ad3b36-0",
+        "view": "overview",
+        "checks": [
+          {
+            "criterionId": "detail",
+            "unitId": "crown"
+          }
+        ]
+      },
+      {
+        "elementId": "design-4976d187-a214-48a0-83dc-396cb7ad3b36-0",
+        "view": "detail",
+        "region": {
+          "x": 2200,
+          "y": 8000,
+          "width": 1024,
+          "height": 1024
+        },
+        "checks": [
+          {
+            "criterionId": "detail",
+            "unitId": "crown"
+          }
+        ]
+      }
+    ]
+  },
+  "output": {
+    "phase": "visual",
+    "accepted": false,
+    "reviewOperation": "capture",
+    "recordedChecks": [],
+    "inspectionIds": [
+      "f8e30960-29be-4108-b9a4-e92bdc8bb22a",
+      "0f19f397-01cf-469c-b3a0-f54cebc31ef4",
+      "cf71f97a-0602-4517-a994-ceabff2c22ae",
+      "74cd6f2f-9692-4685-822e-93115bf3d831",
+      "a95dc0c7-a92b-4505-be38-d41e5bbf5277",
+      "595a8559-525a-494a-89ae-bcab37798785",
+      "e1d3ceae-0fc5-49c3-942b-8fcf6f898af5"
+    ],
+    "actionResults": [
+      {
+        "actionId": "b028d25a-2c9c-44bc-b2d4-0d094d31f9cd",
+        "actionName": "inspect_drawing",
+        "result": {
+          "available": true,
+          "image": {
+            "width": 258,
+            "height": 1024
+          },
+          "toolOutcome": {
+            "status": "success",
+            "settlement": "completed"
+          },
+          "inspectionId": "f8e30960-29be-4108-b9a4-e92bdc8bb22a",
+          "revision": 5
+        }
+      },
+      {
+        "actionId": "f9501c93-a25e-4e37-aee4-089513937839",
+        "actionName": "inspect_drawing",
+        "result": {
+          "available": true,
+          "image": {
+            "width": 1024,
+            "height": 984
+          },
+          "toolOutcome": {
+            "status": "success",
+            "settlement": "completed"
+          },
+          "inspectionId": "0f19f397-01cf-469c-b3a0-f54cebc31ef4",
+          "revision": 5
+        }
+      },
+      {
+        "actionId": "0130e5aa-9c01-43c5-8257-387ca64749ee",
+        "actionName": "inspect_drawing",
+        "result": {
+          "available": true,
+          "image": {
+            "width": 1024,
+            "height": 1024
+          },
+          "toolOutcome": {
+            "status": "success",
+            "settlement": "completed"
+          },
+          "inspectionId": "cf71f97a-0602-4517-a994-ceabff2c22ae",
+          "revision": 5
+        }
+      },
+      {
+        "actionId": "e7f4fcee-de3c-470b-b082-ef57e3f53115",
+        "actionName": "inspect_drawing",
+        "result": {
+          "available": true,
+          "image": {
+            "width": 262,
+            "height": 1024
+          },
+          "toolOutcome": {
+            "status": "success",
+            "settlement": "completed"
+          },
+          "inspectionId": "74cd6f2f-9692-4685-822e-93115bf3d831",
+          "revision": 5
+        }
+      },
+      {
+        "actionId": "65c83fb4-2bef-40fd-bb29-023480c7688a",
+        "actionName": "inspect_drawing",
+        "result": {
+          "available": true,
+          "image": {
+            "width": 1024,
+            "height": 1024
+          },
+          "toolOutcome": {
+            "status": "success",
+            "settlement": "completed"
+          },
+          "inspectionId": "a95dc0c7-a92b-4505-be38-d41e5bbf5277",
+          "revision": 5
+        }
+      },
+      {
+        "actionId": "00b9d9e7-b515-4ce3-b60c-d41e7934809c",
+        "actionName": "inspect_drawing",
+        "result": {
+          "available": true,
+          "image": {
+            "width": 150,
+            "height": 1024
+          },
+          "toolOutcome": {
+            "status": "success",
+            "settlement": "completed"
+          },
+          "inspectionId": "595a8559-525a-494a-89ae-bcab37798785",
+          "revision": 5
+        }
+      },
+      {
+        "actionId": "06a79d83-a860-437e-bc2c-e7bfd05713fc",
+        "actionName": "inspect_drawing",
+        "result": {
+          "available": true,
+          "image": {
+            "width": 1024,
+            "height": 1024
+          },
+          "toolOutcome": {
+            "status": "success",
+            "settlement": "completed"
+          },
+          "inspectionId": "e1d3ceae-0fc5-49c3-942b-8fcf6f898af5",
+          "revision": 5
+        }
+      }
+    ],
+    "status": "partial",
+    "settlement": "partial",
+    "coverage": {
+      "required": 6,
+      "passed": 2,
+      "pending": [
+        {
+          "id": "visual-unit:[\"detail\",\"base\"]",
+          "criterionId": "detail",
+          "unitId": "base",
+          "status": "fail"
+        },
+        {
+          "id": "visual-unit:[\"detail\",\"tiers\"]",
+          "criterionId": "detail",
+          "unitId": "tiers",
+          "status": "fail"
+        },
+        {
+          "id": "visual-unit:[\"detail\",\"crown\"]",
+          "criterionId": "detail",
+          "unitId": "crown",
+          "status": "fail"
+        },
+        {
+          "id": "visual:native",
+          "criterionId": "native",
+          "status": "stale"
+        }
+      ]
+    },
+    "acceptanceContext": {
+      "method": "Editable native projected polygons and individual window cells. Orthographic elevated three-quarter architectural view azimuth 36 degrees elevation 24 degrees, meter world units at scale100. Verified height508m. Widths, tier elevations, ornament profiles estimated from referenced architectural descriptions/images, not construction documentation. Transparent surrounding canvas.",
+      "requirementRevision": 1,
+      "checks": [
+        {
+          "criterionId": "whole",
+          "requirement": "Entire Taipei101 from base to tip, distinctive silhouette without schematic simplification",
+          "description": "Complete tower, eight projecting bamboo modules, tapered base, crown and spire; no unrelated scenery"
+        },
+        {
+          "criterionId": "view",
+          "requirement": "Fixed elevated three-quarter view with top surfaces and consistent perspective",
+          "description": "All visible surfaces use same projection and coherent occlusion"
+        },
+        {
+          "criterionId": "detail",
+          "unitId": "base",
+          "requirement": "Highly detailed facade, window frames, visible ornamentation, realistic materials lighting shadows",
+          "description": "Native glazing, mullions, ledges, roof surfaces, ornament relief and directional material shading"
+        },
+        {
+          "criterionId": "detail",
+          "unitId": "tiers",
+          "requirement": "Highly detailed facade, window frames, visible ornamentation, realistic materials lighting shadows",
+          "description": "Native glazing, mullions, ledges, roof surfaces, ornament relief and directional material shading"
+        },
+        {
+          "criterionId": "detail",
+          "unitId": "crown",
+          "requirement": "Highly detailed facade, window frames, visible ornamentation, realistic materials lighting shadows",
+          "description": "Native glazing, mullions, ledges, roof surfaces, ornament relief and directional material shading"
+        }
+      ]
+    },
+    "next": {
+      "tool": "review_drawing",
+      "arguments": {
+        "phase": "visual",
+        "final": false,
+        "inspectionIds": [
+          "f8e30960-29be-4108-b9a4-e92bdc8bb22a",
+          "0f19f397-01cf-469c-b3a0-f54cebc31ef4",
+          "cf71f97a-0602-4517-a994-ceabff2c22ae",
+          "74cd6f2f-9692-4685-822e-93115bf3d831",
+          "a95dc0c7-a92b-4505-be38-d41e5bbf5277",
+          "595a8559-525a-494a-89ae-bcab37798785",
+          "e1d3ceae-0fc5-49c3-942b-8fcf6f898af5"
+        ],
+        "bindChecks": [
+          {
+            "criterionId": "whole",
+            "inspectionIds": [
+              "f8e30960-29be-4108-b9a4-e92bdc8bb22a"
+            ]
+          },
+          {
+            "criterionId": "view",
+            "inspectionIds": [
+              "f8e30960-29be-4108-b9a4-e92bdc8bb22a"
+            ]
+          },
+          {
+            "criterionId": "detail",
+            "unitId": "base",
+            "inspectionIds": [
+              "0f19f397-01cf-469c-b3a0-f54cebc31ef4",
+              "cf71f97a-0602-4517-a994-ceabff2c22ae"
+            ],
+            "supersedes": {
+              "revision": 2
+            }
+          },
+          {
+            "criterionId": "detail",
+            "unitId": "tiers",
+            "inspectionIds": [
+              "74cd6f2f-9692-4685-822e-93115bf3d831",
+              "a95dc0c7-a92b-4505-be38-d41e5bbf5277"
+            ],
+            "supersedes": {
+              "revision": 2
+            }
+          },
+          {
+            "criterionId": "detail",
+            "unitId": "crown",
+            "inspectionIds": [
+              "595a8559-525a-494a-89ae-bcab37798785",
+              "e1d3ceae-0fc5-49c3-942b-8fcf6f898af5"
+            ],
+            "supersedes": {
+              "revision": 2
+            }
+          }
+        ]
+      },
+      "requiredInputs": [
+        "bindChecks[2].supersedes.reason",
+        "bindChecks[3].supersedes.reason",
+        "bindChecks[4].supersedes.reason"
+      ],
+      "instruction": "Keep the returned check identities, image assignments and reference uses. Fill the named missing fields with your explicit redesign reasons, or correct the reported invalid selection, then call this tool with next.arguments. Revalidation is mandatory. Binding records no judgments. Do not recapture images, replay edits or resend unrelated passed checks."
+    },
+    "message": "Check binding failed: Check unit scope changed for detail/base; provide supersedes with the current result revision 2 and redesign reason. No judgments were recorded. Check unit scope changed for detail/tiers; provide supersedes with the current result revision 2 and redesign reason. No judgments were recorded. Check unit scope changed for detail/crown; provide supersedes with the current result revision 2 and redesign reason. No judgments were recorded. No judgments were recorded. Successful images and selected checks are retained in next.arguments; complete requiredInputs before rebinding.",
+    "toolOutcome": {
+      "status": "partial",
+      "settlement": "partial",
+      "issues": [
+        {
+          "code": "RESULT_PARTIAL",
+          "message": "Check binding failed: Check unit scope changed for detail/base; provide supersedes with the current result revision 2 and redesign reason. No judgments were recorded. Check unit scope changed for detail/tiers; provide supersedes with the current result revision 2 and redesign reason. No judgments were recorded. Check unit scope changed for detail/crown; provide supersedes with the current result revision 2 and redesign reason. No judgments were recorded. No judgments were recorded. Successful images and selected checks are retained in next.arguments; complete requiredInputs before rebinding."
+        }
+      ]
+    }
+  }
+}

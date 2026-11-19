@@ -361,6 +361,138 @@
             "apps/asyra-design/src/features/switch-primary-tool/index.ts",
             "apps/asyra-design/src/common-apis/system-context.ts"
           ]
+        },
+        {
+          "id": "functional.rectangle-handoff.d962d964b216",
+          "stepId": "switch-tool",
+          "testFile": "apps/asyra-design/e2e/rectangle-handoff.spec.ts",
+          "testName": "Rectangle creation handoff holding R beyond 100ms without key repeat preserves drag resizing",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/config/key-combinations.ts",
+            "apps/asyra-design/src/features/switch-primary-tool/index.ts",
+            "apps/asyra-design/src/common-apis/system-context.ts"
+          ]
+        },
+        {
+          "id": "functional.rectangle-handoff.4f9d4fd57b2e",
+          "stepId": "switch-tool",
+          "testFile": "apps/asyra-design/e2e/rectangle-handoff.spec.ts",
+          "testName": "Rectangle creation handoff holding R beyond 100ms with key repeat preserves drag resizing",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/config/key-combinations.ts",
+            "apps/asyra-design/src/features/switch-primary-tool/index.ts",
+            "apps/asyra-design/src/common-apis/system-context.ts"
+          ]
+        },
+        {
+          "id": "functional.rectangle-handoff.9b22090e4492",
+          "stepId": "switch-tool",
+          "testFile": "apps/asyra-design/e2e/rectangle-handoff.spec.ts",
+          "testName": "Rectangle creation handoff a fresh different tool press still finalizes the active rectangle gesture",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/config/key-combinations.ts",
+            "apps/asyra-design/src/features/switch-primary-tool/index.ts",
+            "apps/asyra-design/src/common-apis/system-context.ts"
+          ]
+        },
+        {
+          "id": "functional.tool-shortcut-handoff.6ab31b67fe14",
+          "stepId": "switch-tool",
+          "testFile": "apps/asyra-design/e2e/tool-shortcut-handoff.spec.ts",
+          "testName": "Tool shortcut gesture handoff held O repeats preserve ellipse resizing and one reversible creation",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/config/key-combinations.ts",
+            "apps/asyra-design/src/features/switch-primary-tool/index.ts",
+            "apps/asyra-design/src/common-apis/system-context.ts"
+          ]
+        },
+        {
+          "id": "functional.tool-shortcut-handoff.a9ef9e649d3b",
+          "stepId": "switch-tool",
+          "testFile": "apps/asyra-design/e2e/tool-shortcut-handoff.spec.ts",
+          "testName": "Tool shortcut gesture handoff held V repeats preserve the entire selected-element move",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/config/key-combinations.ts",
+            "apps/asyra-design/src/features/switch-primary-tool/index.ts",
+            "apps/asyra-design/src/common-apis/system-context.ts"
+          ]
+        },
+        {
+          "id": "functional.tool-shortcut-handoff.7bc104ded82d",
+          "stepId": "switch-tool",
+          "testFile": "apps/asyra-design/e2e/tool-shortcut-handoff.spec.ts",
+          "testName": "Tool shortcut gesture handoff held P repeats preserve connected handle dragging while fresh P still disconnects continuation",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/config/key-combinations.ts",
+            "apps/asyra-design/src/features/switch-primary-tool/index.ts",
+            "apps/asyra-design/src/common-apis/system-context.ts"
+          ]
+        },
+        {
+          "id": "functional.tool-shortcut-handoff.a2b3b59c37fd",
+          "stepId": "switch-tool",
+          "testFile": "apps/asyra-design/e2e/tool-shortcut-handoff.spec.ts",
+          "testName": "Tool shortcut gesture handoff held T repeats preserve dragged text width and the editable commit",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/config/key-combinations.ts",
+            "apps/asyra-design/src/features/switch-primary-tool/index.ts",
+            "apps/asyra-design/src/common-apis/system-context.ts"
+          ]
+        },
+        {
+          "id": "functional.tool-shortcut-handoff.6bff4463d471",
+          "stepId": "switch-tool",
+          "testFile": "apps/asyra-design/e2e/tool-shortcut-handoff.spec.ts",
+          "testName": "Tool shortcut gesture handoff fresh O still switches tools and finalizes the active rectangle",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/config/key-combinations.ts",
+            "apps/asyra-design/src/features/switch-primary-tool/index.ts",
+            "apps/asyra-design/src/common-apis/system-context.ts"
+          ]
+        },
+        {
+          "id": "functional.tool-shortcut-handoff.7c90fcdab7f4",
+          "stepId": "switch-tool",
+          "testFile": "apps/asyra-design/e2e/tool-shortcut-handoff.spec.ts",
+          "testName": "Tool shortcut gesture handoff fresh P still switches tools and finalizes the active rectangle",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/config/key-combinations.ts",
+            "apps/asyra-design/src/features/switch-primary-tool/index.ts",
+            "apps/asyra-design/src/common-apis/system-context.ts"
+          ]
+        },
+        {
+          "id": "functional.tool-shortcut-handoff.5f9812c1dfa2",
+          "stepId": "switch-tool",
+          "testFile": "apps/asyra-design/e2e/tool-shortcut-handoff.spec.ts",
+          "testName": "Tool shortcut gesture handoff fresh V still switches tools and finalizes the active rectangle",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/config/key-combinations.ts",
+            "apps/asyra-design/src/features/switch-primary-tool/index.ts",
+            "apps/asyra-design/src/common-apis/system-context.ts"
+          ]
+        },
+        {
+          "id": "functional.tool-shortcut-handoff.c055653a0528",
+          "stepId": "switch-tool",
+          "testFile": "apps/asyra-design/e2e/tool-shortcut-handoff.spec.ts",
+          "testName": "Tool shortcut gesture handoff fresh T still switches tools and finalizes the active rectangle",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/config/key-combinations.ts",
+            "apps/asyra-design/src/features/switch-primary-tool/index.ts",
+            "apps/asyra-design/src/common-apis/system-context.ts"
+          ]
         }
       ],
       "handoffs": []
@@ -371,6 +503,39 @@
       "goal": "Create and update a rectangle or oval in one canonical pointer session.",
       "stepIds": ["create-element"],
       "cases": [
+        {
+          "id": "functional.rectangle-handoff.73e369151d89",
+          "stepId": "create-element",
+          "testFile": "apps/asyra-design/e2e/rectangle-handoff.spec.ts",
+          "testName": "Rectangle creation handoff rectangle creation hands off canonical selection and visible controls on a slow main thread",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/features/create-element/feature.ts",
+            "apps/asyra-design/src/common-apis/element/apis.ts"
+          ]
+        },
+        {
+          "id": "functional.rectangle-handoff.92c2d3efd194",
+          "stepId": "create-element",
+          "testFile": "apps/asyra-design/e2e/rectangle-handoff.spec.ts",
+          "testName": "Rectangle creation handoff rectangle helper waits for the real interaction queue before handing off selection",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/features/create-element/feature.ts",
+            "apps/asyra-design/src/common-apis/element/apis.ts"
+          ]
+        },
+        {
+          "id": "functional.rectangle-handoff.90946f270c13",
+          "stepId": "create-element",
+          "testFile": "apps/asyra-design/e2e/rectangle-handoff.spec.ts",
+          "testName": "Rectangle creation handoff rectangle helper rejects when pointer input never creates an element",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/features/create-element/feature.ts",
+            "apps/asyra-design/src/common-apis/element/apis.ts"
+          ]
+        },
         {
           "id": "functional.element-creation.972c55b3a8a5",
           "stepId": "create-element",
@@ -709,13 +874,38 @@
           ]
         },
         {
-          "id": "functional.delete-element.8a8a15dbb599",
+          "id": "functional.delete-element.8a8a15dbb599-eligible",
           "stepId": "delete-subtree",
           "testFile": "apps/asyra-design/e2e/delete-element.spec.ts",
-          "testName": "Delete Selected Element delete re-evaluates hovered target instead of blindly clearing it",
+          "testName": "Delete Selected Element delete re-evaluates the remaining eligible target with the normal hover policy",
           "projectName": "chromium",
           "implementationPaths": [
             "apps/asyra-design/src/features/delete-element/index.ts",
+            "apps/asyra-design/src/controllers/hover-target.ts",
+            "apps/asyra-design/src/common-apis/element/apis.ts"
+          ]
+        },
+        {
+          "id": "functional.delete-element.8a8a15dbb599-locked",
+          "stepId": "delete-subtree",
+          "testFile": "apps/asyra-design/e2e/delete-element.spec.ts",
+          "testName": "Delete Selected Element delete re-evaluates the remaining locked target with the normal hover policy",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/features/delete-element/index.ts",
+            "apps/asyra-design/src/controllers/hover-target.ts",
+            "apps/asyra-design/src/common-apis/element/apis.ts"
+          ]
+        },
+        {
+          "id": "functional.delete-element.8a8a15dbb599-hidden",
+          "stepId": "delete-subtree",
+          "testFile": "apps/asyra-design/e2e/delete-element.spec.ts",
+          "testName": "Delete Selected Element delete re-evaluates the remaining hidden target with the normal hover policy",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/features/delete-element/index.ts",
+            "apps/asyra-design/src/controllers/hover-target.ts",
             "apps/asyra-design/src/common-apis/element/apis.ts"
           ]
         }
@@ -748,6 +938,18 @@
       "goal": "Route user Undo and Redo through the App History API.",
       "stepIds": ["replay-history"],
       "cases": [
+        {
+          "id": "functional.history-foreground.native-focus",
+          "stepId": "replay-history",
+          "testFile": "apps/asyra-design/e2e/history-foreground.spec.ts",
+          "testName": "history interaction activates its page before replay with native browser focus",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/features/undo-redo/index.ts",
+            "apps/asyra-design/src/common-apis/history.ts",
+            "apps/asyra-design/src/common-apis/transaction.ts"
+          ]
+        },
         {
           "id": "functional.delete-element.41e27778b047",
           "stepId": "replay-history",
@@ -1014,6 +1216,18 @@
           "stepId": "edit-vector-path",
           "testFile": "apps/asyra-design/e2e/pen-tool.spec.ts",
           "testName": "Pen Tool - Editing Flow creates a new vector on empty canvas click",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/features/pen-tool/feature.ts",
+            "apps/asyra-design/src/features/path-editing-intents.ts",
+            "apps/asyra-design/src/common-apis/element/vector-apis.ts"
+          ]
+        },
+        {
+          "id": "functional.pen-tool.2b1f9ddd8508",
+          "stepId": "edit-vector-path",
+          "testFile": "apps/asyra-design/e2e/pen-tool.spec.ts",
+          "testName": "Pen Tool - Editing Flow canonical selection drives each successive Pen connection before display refresh",
           "projectName": "chromium",
           "implementationPaths": [
             "apps/asyra-design/src/features/pen-tool/feature.ts",
@@ -2211,6 +2425,17 @@
             "apps/asyra-design/src/features/zoom-fit/index.ts",
             "apps/asyra-design/src/common-apis/viewport.ts"
           ]
+        },
+        {
+          "id": "functional.drawing-framing.edf60433de5f",
+          "stepId": "navigate-viewport",
+          "testFile": "apps/asyra-design/e2e/drawing-framing.spec.ts",
+          "testName": "recording resumes after overview navigation and frames later geometry without document edits",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/test-data/ai-drawing/drawing-framing.mjs",
+            "apps/asyra-design/src/common-apis/viewport.ts"
+          ]
         }
       ],
       "handoffs": []
@@ -2451,6 +2676,17 @@
           "implementationPaths": [
             "apps/asyra-design/src/app/ai-conversation-panel.tsx",
             "apps/asyra-design/src/ai/tool-library-management.ts"
+          ]
+        },
+        {
+          "id": "functional.ai-conversation-navigation.942bc1fe13b1",
+          "stepId": "present-conversation",
+          "testFile": "apps/asyra-design/e2e/ai-conversation-navigation.spec.ts",
+          "testName": "delayed attachments return to their originating draft and only that submission",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/app/ai-conversation-panel.tsx",
+            "apps/asyra-design/src/ai/conversation.ts"
           ]
         }
       ],
@@ -2772,6 +3008,160 @@
           "projectName": "chromium",
           "implementationPaths": [
             "apps/asyra-design/src/ai/server-action-batch-provider.ts"
+          ]
+        },
+        {
+          "id": "functional.ai-conversation-navigation.884114132d68",
+          "stepId": "execute-agent-request",
+          "testFile": "apps/asyra-design/e2e/ai-conversation-navigation.spec.ts",
+          "testName": "ordinary selected-object and multi-object style revisions preserve history and unrelated content",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/features/ai-agent/index.ts",
+            "apps/asyra-design/src/ai/transaction.ts",
+            "apps/asyra-design/src/ai/design-actions.ts"
+          ]
+        },
+        {
+          "id": "functional.ai-retained-anchor.4288c2aa1254",
+          "stepId": "execute-agent-request",
+          "testFile": "apps/asyra-design/e2e/ai-retained-anchor.spec.ts",
+          "testName": "staged host shows the first application while independent preparation continues",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/server/local-tool-host.ts",
+            "apps/asyra-design/server/local-design-workflow.ts",
+            "apps/asyra-design/src/ai/actions.ts"
+          ]
+        },
+        {
+          "id": "functional.ai-repeated-detail.c794a75a6920",
+          "stepId": "execute-agent-request",
+          "testFile": "apps/asyra-design/e2e/ai-repeated-detail.spec.ts",
+          "testName": "native workflow preserves Runtime permission rejection without claiming unknown mutation",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/features/ai-agent/index.ts",
+            "apps/asyra-design/src/ai/runtime-input.ts",
+            "apps/asyra-design/src/ai/transaction.ts",
+            "apps/asyra-design/server/local-tool-host.ts"
+          ]
+        },
+        {
+          "id": "functional.ai-repeated-detail.8eebedd16ede",
+          "stepId": "execute-agent-request",
+          "testFile": "apps/asyra-design/e2e/ai-repeated-detail.spec.ts",
+          "testName": "repeated-detail execution rejects denied writes before canonical mutation",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/features/ai-agent/index.ts",
+            "apps/asyra-design/src/ai/runtime-input.ts",
+            "apps/asyra-design/src/ai/transaction.ts",
+            "apps/asyra-design/server/local-tool-host.ts"
+          ]
+        },
+        {
+          "id": "functional.conversation-provider-handoff.1a64d4864b98",
+          "stepId": "execute-agent-request",
+          "testFile": "apps/asyra-design/e2e/conversation-provider-handoff.spec.ts",
+          "testName": "carries isolated draft images and clarification history through the real App into native requests",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/features/ai-agent/index.ts",
+            "apps/asyra-design/src/ai/runtime-input.ts",
+            "apps/asyra-design/src/ai/transaction.ts",
+            "apps/asyra-design/server/local-tool-host.ts"
+          ]
+        },
+        {
+          "id": "functional.conversation-provider-handoff.73995c5f906a",
+          "stepId": "execute-agent-request",
+          "testFile": "apps/asyra-design/e2e/conversation-provider-handoff.spec.ts",
+          "testName": "detects corrupted attachment association at the actual native consumer",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/features/ai-agent/index.ts",
+            "apps/asyra-design/src/ai/runtime-input.ts",
+            "apps/asyra-design/src/ai/transaction.ts",
+            "apps/asyra-design/server/local-tool-host.ts"
+          ]
+        },
+        {
+          "id": "functional.conversation-provider-handoff.3aba03d27442",
+          "stepId": "execute-agent-request",
+          "testFile": "apps/asyra-design/e2e/conversation-provider-handoff.spec.ts",
+          "testName": "submits a translated hierarchy through the real App and delivers its actual capture with reversible canonical state",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/features/ai-agent/index.ts",
+            "apps/asyra-design/src/ai/runtime-input.ts",
+            "apps/asyra-design/src/ai/transaction.ts",
+            "apps/asyra-design/server/local-tool-host.ts"
+          ]
+        },
+        {
+          "id": "functional.conversation-provider-handoff.4f96d8928973",
+          "stepId": "execute-agent-request",
+          "testFile": "apps/asyra-design/e2e/conversation-provider-handoff.spec.ts",
+          "testName": "groups and edits created region targets and delivers two captures in one actual native handoff",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/features/ai-agent/index.ts",
+            "apps/asyra-design/src/ai/runtime-input.ts",
+            "apps/asyra-design/src/ai/transaction.ts",
+            "apps/asyra-design/server/local-tool-host.ts"
+          ]
+        },
+        {
+          "id": "functional.conversation-provider-handoff.ceccbe8b0882",
+          "stepId": "execute-agent-request",
+          "testFile": "apps/asyra-design/e2e/conversation-provider-handoff.spec.ts",
+          "testName": "detects loss of two captured images after a real canonical sequence",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/features/ai-agent/index.ts",
+            "apps/asyra-design/src/ai/runtime-input.ts",
+            "apps/asyra-design/src/ai/transaction.ts",
+            "apps/asyra-design/server/local-tool-host.ts"
+          ]
+        },
+        {
+          "id": "functional.conversation-provider-handoff.43d6acbfe7f8",
+          "stepId": "execute-agent-request",
+          "testFile": "apps/asyra-design/e2e/conversation-provider-handoff.spec.ts",
+          "testName": "executes real staged template reuse and mechanical repair before applying the next part",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/features/ai-agent/index.ts",
+            "apps/asyra-design/src/ai/runtime-input.ts",
+            "apps/asyra-design/src/ai/transaction.ts",
+            "apps/asyra-design/server/local-tool-host.ts"
+          ]
+        },
+        {
+          "id": "functional.conversation-provider-handoff.10e628624bb9",
+          "stepId": "execute-agent-request",
+          "testFile": "apps/asyra-design/e2e/conversation-provider-handoff.spec.ts",
+          "testName": "repairs a current canonical target through a real host iteration without a model round trip",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/features/ai-agent/index.ts",
+            "apps/asyra-design/src/ai/runtime-input.ts",
+            "apps/asyra-design/src/ai/transaction.ts",
+            "apps/asyra-design/server/local-tool-host.ts"
+          ]
+        },
+        {
+          "id": "functional.conversation-provider-handoff.d85ad0e5049e",
+          "stepId": "execute-agent-request",
+          "testFile": "apps/asyra-design/e2e/conversation-provider-handoff.spec.ts",
+          "testName": "detects a corrupted mechanical verdict at the canonical consumer despite native success",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/features/ai-agent/index.ts",
+            "apps/asyra-design/src/ai/runtime-input.ts",
+            "apps/asyra-design/src/ai/transaction.ts",
+            "apps/asyra-design/server/local-tool-host.ts"
           ]
         }
       ],
@@ -5624,7 +6014,7 @@
           "id": "functional.ai-repeated-detail.e63adc078df5",
           "stepId": "apply-prepared-design",
           "testFile": "apps/asyra-design/e2e/ai-repeated-detail.spec.ts",
-          "testName": "saved multi-face detail uses current targets and preserves sibling passes through edit, history, peer and durable reload",
+          "testName": "saved multi-face detail uses current targets and preserves independent image currency through edit, history, peer and durable reload",
           "projectName": "chromium",
           "implementationPaths": [
             "apps/asyra-design/src/ai/prepared-design.ts",
@@ -5891,26 +6281,13 @@
           "projectName": "chromium",
           "implementationPaths": [
             "apps/asyra-design/src/common-apis/inspection-evidence.ts",
-            "apps/asyra-design/server/local-design-review.ts",
-            "apps/asyra-design/server/local-operation-tools.ts"
-          ]
-        },
-        {
-          "id": "functional.ai-inspection-evidence.d9ae60878406",
-          "stepId": "inspect-design",
-          "testFile": "apps/asyra-design/e2e/ai-inspection-evidence.spec.ts",
-          "testName": "public review handoffs retain independent evidence and recover before runtime completion",
-          "projectName": "chromium",
-          "implementationPaths": [
-            "apps/asyra-design/src/common-apis/inspection-evidence.ts",
-            "apps/asyra-design/server/local-design-review.ts",
             "apps/asyra-design/server/local-operation-tools.ts"
           ]
         },
         {
           "id": "functional.mechanical-repair.complete",
           "stepId": "inspect-design",
-          "testFile": "apps/asyra-design/e2e/ai-inspection-evidence.spec.ts",
+          "testFile": "apps/asyra-design/e2e/ai-mechanical-repair.spec.ts",
           "testName": "aggregate mechanical repair preserves independent passes through history and durable reload - complete",
           "projectName": "chromium",
           "implementationPaths": [
@@ -5922,7 +6299,7 @@
         {
           "id": "functional.mechanical-repair.basis-changed",
           "stepId": "inspect-design",
-          "testFile": "apps/asyra-design/e2e/ai-inspection-evidence.spec.ts",
+          "testFile": "apps/asyra-design/e2e/ai-mechanical-repair.spec.ts",
           "testName": "aggregate mechanical repair preserves independent passes through history and durable reload - basis-changed",
           "projectName": "chromium",
           "implementationPaths": [
@@ -5934,7 +6311,7 @@
         {
           "id": "functional.mechanical-repair.no-progress",
           "stepId": "inspect-design",
-          "testFile": "apps/asyra-design/e2e/ai-inspection-evidence.spec.ts",
+          "testFile": "apps/asyra-design/e2e/ai-mechanical-repair.spec.ts",
           "testName": "aggregate mechanical repair preserves independent passes through history and durable reload - no-progress",
           "projectName": "chromium",
           "implementationPaths": [
@@ -5946,7 +6323,7 @@
         {
           "id": "functional.mechanical-repair.cancel-after-write",
           "stepId": "inspect-design",
-          "testFile": "apps/asyra-design/e2e/ai-inspection-evidence.spec.ts",
+          "testFile": "apps/asyra-design/e2e/ai-mechanical-repair.spec.ts",
           "testName": "aggregate mechanical repair preserves independent passes through history and durable reload - cancel-after-write",
           "projectName": "chromium",
           "implementationPaths": [
@@ -5958,7 +6335,7 @@
         {
           "id": "functional.mechanical-repair.interrupted-after-write",
           "stepId": "inspect-design",
-          "testFile": "apps/asyra-design/e2e/ai-inspection-evidence.spec.ts",
+          "testFile": "apps/asyra-design/e2e/ai-mechanical-repair.spec.ts",
           "testName": "aggregate mechanical repair preserves independent passes through history and durable reload - interrupted-after-write",
           "projectName": "chromium",
           "implementationPaths": [
@@ -6048,7 +6425,7 @@
           "id": "functional.ai-inspection-evidence.d885eed9d87f",
           "stepId": "inspect-design",
           "testFile": "apps/asyra-design/e2e/ai-inspection-evidence.spec.ts",
-          "testName": "published representative guidance reaches real capture and completion without replaying drawing",
+          "testName": "published optional material guidance reaches real capture without approval or replay",
           "projectName": "chromium",
           "implementationPaths": [
             "apps/asyra-design/src/common-apis/inspection.ts",
@@ -6078,6 +6455,52 @@
             "apps/asyra-design/src/common-apis/inspection.ts",
             "apps/asyra-design/src/common-apis/inspection-evidence.ts",
             "apps/asyra-design/src/ai/inspection.ts"
+          ]
+        },
+        {
+          "id": "functional.ai-inspection-evidence.6eb82ab52319",
+          "stepId": "inspect-design",
+          "testFile": "apps/asyra-design/e2e/ai-inspection-evidence.spec.ts",
+          "testName": "regional evidence excludes empty Group extents while preserving real contributors",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/common-apis/inspection-evidence.ts",
+            "apps/asyra-design/src/common-apis/inspection.ts"
+          ]
+        },
+        {
+          "id": "functional.ai-repeated-detail.d4f4c7b60817",
+          "stepId": "inspect-design",
+          "testFile": "apps/asyra-design/e2e/ai-repeated-detail.spec.ts",
+          "testName": "recorded leaf and group capture targets preserve subtree membership and local region pixels",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/common-apis/inspection.ts",
+            "apps/asyra-design/src/ai/inspection.ts"
+          ]
+        },
+        {
+          "id": "functional.mechanical-repair.library-reuse",
+          "stepId": "inspect-design",
+          "testFile": "apps/asyra-design/e2e/ai-mechanical-repair.spec.ts",
+          "testName": "mechanical repair saves and reopens its library without replaying canvas work",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/server/local-mechanical-checks.ts",
+            "apps/asyra-design/server/local-operation-tools.ts",
+            "apps/asyra-design/src/ai/prescribed-position-action.ts"
+          ]
+        },
+        {
+          "id": "functional.mechanical-repair.peer-invalidation",
+          "stepId": "inspect-design",
+          "testFile": "apps/asyra-design/e2e/ai-mechanical-repair.spec.ts",
+          "testName": "mechanical repair rechecks only the pass invalidated by a peer and its Undo",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/server/local-mechanical-checks.ts",
+            "apps/asyra-design/server/local-operation-tools.ts",
+            "apps/asyra-design/src/ai/prescribed-position-action.ts"
           ]
         }
       ],
@@ -6478,6 +6901,27 @@
             "packages/render-engine-pixi/src/mesh-material-batch.ts",
             "packages/render-engine-pixi/src/mesh-material-shader.ts"
           ]
+        },
+        {
+          "id": "functional.hierarchy-projection-updates.7dfdcb92a8ad",
+          "stepId": "render-material",
+          "testFile": "apps/asyra-design/e2e/hierarchy-projection-updates.spec.ts",
+          "testName": "retired GPU owners preserve model restore and surviving ungroup children",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "packages/render-engine-pixi/src/pixi-render-engine.ts",
+            "packages/render-engine-pixi/src/mesh-material-batch.ts"
+          ]
+        },
+        {
+          "id": "functional.render-state-observer.3954ba4a7d51",
+          "stepId": "render-material",
+          "testFile": "apps/asyra-design/e2e/render-state-observer.spec.ts",
+          "testName": "observes actual program state and forwards changed and repeated matrices",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/e2e/render-state-observer.ts"
+          ]
         }
       ],
       "handoffs": []
@@ -6519,6 +6963,39 @@
           "implementationPaths": [
             "packages/render-engine-pixi/src/pixi-render-engine.ts",
             "packages/render-engine-pixi/src/pixi-batch-partitions.ts"
+          ]
+        },
+        {
+          "id": "functional.hierarchy-projection-updates.3d65c4337402",
+          "stepId": "retain-navigation",
+          "testFile": "apps/asyra-design/e2e/hierarchy-projection-updates.spec.ts",
+          "testName": "reparented Groups keep live child geometry, style, order, visibility, history and remote replay",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "packages/render-engine-pixi/src/pixi-render-engine.ts",
+            "packages/preset/src/subscriptions/data-channel.ts"
+          ]
+        },
+        {
+          "id": "functional.hierarchy-projection-updates.91eec0010c31",
+          "stepId": "retain-navigation",
+          "testFile": "apps/asyra-design/e2e/hierarchy-projection-updates.spec.ts",
+          "testName": "records accepted hierarchy and coordinate batches at immediate read barriers",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "packages/preset/src/subscriptions/data-channel.ts",
+            "packages/render/src/render.ts"
+          ]
+        },
+        {
+          "id": "functional.hierarchy-recorded-scene.72e3060c5d00",
+          "stepId": "retain-navigation",
+          "testFile": "apps/asyra-design/e2e/hierarchy-recorded-scene.spec.ts",
+          "testName": "recorded hierarchy preserves pixels, world geometry, order, history and shared replay with bounded work",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "packages/render-engine-pixi/src/pixi-render-engine.ts",
+            "packages/preset/src/subscriptions/data-channel.ts"
           ]
         }
       ],

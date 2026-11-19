@@ -1,0 +1,151 @@
+{
+  "sourceRun": "taipei-101-fixed-1794060989815",
+  "input": {
+    "operations": [
+      {
+        "name": "design_operations.review_drawing",
+        "arguments": {
+          "phase": "visual",
+          "final": false,
+          "inspectionIds": [
+            "3a8f9f43-ad09-4a5f-bbd1-78840cfd9f48",
+            "cd400387-2c9c-4e84-8f5a-2c34abbd89aa",
+            "baf0384b-dbed-4be1-b2c0-3a0edf161ea7",
+            "33f6e3c8-b268-4dff-a97b-7303fafe67ed"
+          ],
+          "checks": [
+            {
+              "criterionId": "details",
+              "unitId": "base",
+              "referenceUses": [
+                {
+                  "kind": "named",
+                  "name": "referenceUses",
+                  "path": "/0/uses/1/receipt"
+                }
+              ],
+              "inspectionIds": [
+                "3a8f9f43-ad09-4a5f-bbd1-78840cfd9f48",
+                "cd400387-2c9c-4e84-8f5a-2c34abbd89aa"
+              ],
+              "binding": {
+                "requestId": "db004aae-1297-4ff7-b3b9-6ce52973b183",
+                "requirementRevision": 1,
+                "checkRevision": 1,
+                "signature": "078ce23d6b70fd9995c5a90c7c473eb0a19c9167b40d62557cd51915a39a9533"
+              },
+              "status": "pass",
+              "evidence": "基座完整收分、兩側青綠反射玻璃、逐格金屬窗框、入口門框台階與古錢飾板清楚可見；原尺寸顯示細橫框、玻璃漸層與柱側陰影。參考照片作外觀依據，裝飾尺寸為估算。"
+            },
+            {
+              "criterionId": "details",
+              "unitId": "tiers",
+              "referenceUses": [
+                {
+                  "kind": "named",
+                  "name": "referenceUses",
+                  "path": "/0/uses/2/receipt"
+                }
+              ],
+              "inspectionIds": [
+                "baf0384b-dbed-4be1-b2c0-3a0edf161ea7",
+                "33f6e3c8-b268-4dff-a97b-7303fafe67ed"
+              ],
+              "binding": {
+                "requestId": "db004aae-1297-4ff7-b3b9-6ce52973b183",
+                "requirementRevision": 1,
+                "checkRevision": 1,
+                "signature": "c8db8d49f99225d447946081338458501f3c6d82afc2a1cf7026efd1cecf1141"
+              },
+              "status": "pass",
+              "evidence": "八組外擴段及獨立八層窗格、突出簷板、退縮平台、如意飾板均可見；原尺寸可辨三層轉角金屬肋、深凹暗縫與細窗框，玻璃明暗跨立面連續。"
+            }
+          ]
+        }
+      },
+      {
+        "name": "design_operations.review_drawing",
+        "arguments": {
+          "phase": "visual",
+          "final": false,
+          "inspections": [
+            {
+              "elementId": "grp-actor-631b5d70-c05e-4671-8b3b-ef80ab242342-5",
+              "view": "overview",
+              "checks": [
+                {
+                  "criterionId": "whole",
+                  "referenceUses": [
+                    {
+                      "kind": "named",
+                      "name": "referenceUses",
+                      "path": "/0/uses/0/receipt"
+                    }
+                  ]
+                },
+                {
+                  "criterionId": "view"
+                }
+              ]
+            },
+            {
+              "elementId": "grp-actor-631b5d70-c05e-4671-8b3b-ef80ab242342-8",
+              "view": "overview",
+              "checks": [
+                {
+                  "criterionId": "details",
+                  "unitId": "crown",
+                  "supersedes": {
+                    "revision": 1,
+                    "reason": "冠部斜撐已修正並與新增層帶整合，改以完整冠部群組檢查同一義務。"
+                  },
+                  "referenceUses": [
+                    {
+                      "kind": "named",
+                      "name": "referenceUses",
+                      "path": "/0/uses/3/receipt"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "elementId": "grp-actor-631b5d70-c05e-4671-8b3b-ef80ab242342-8",
+              "view": "detail",
+              "region": {
+                "x": 2600,
+                "y": 9250,
+                "width": 1024,
+                "height": 1024
+              },
+              "checks": [
+                {
+                  "criterionId": "details",
+                  "unitId": "crown",
+                  "supersedes": {
+                    "revision": 1,
+                    "reason": "以修正後斜撐接點及冠部窗框的原尺寸證據檢查同一冠部義務。"
+                  },
+                  "referenceUses": [
+                    {
+                      "kind": "named",
+                      "name": "referenceUses",
+                      "path": "/0/uses/3/receipt"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ],
+    "delivery": {
+      "fields": {
+        "review": {
+          "path": ""
+        }
+      }
+    }
+  }
+}

@@ -75,8 +75,8 @@ interface VectorEditingRuntimeState {
   pathEditingVectorId: string | null
   pathEditingStartNewSubpath: boolean
   pathEditingContinuation: PathEditingContinuationState | null
-  selectedVectorPoint: SelectedVectorPointState | null
-  selectedVectorSegment: SelectedVectorSegmentState | null
+  vectorPointSelectionIds: string[]
+  vectorSegmentSelectionIds: string[]
   hoveredVectorPoint: SelectedVectorPointState | null
   hoveredVectorSegment: SelectedVectorSegmentState | null
   hoveredVectorSegmentInsertPoint: ReturnType<
@@ -111,8 +111,8 @@ const captureVectorEditingRuntimeState = (): VectorEditingRuntimeState => ({
   pathEditingVectorId: systemContextApis.getPathEditingVectorId(),
   pathEditingStartNewSubpath: systemContextApis.getPathEditingStartNewSubpath(),
   pathEditingContinuation: systemContextApis.getPathEditingContinuation(),
-  selectedVectorPoint: systemContextApis.getSelectedVectorPoint(),
-  selectedVectorSegment: systemContextApis.getSelectedVectorSegment(),
+  vectorPointSelectionIds: selectionApis.getVectorPointSelectionIds(),
+  vectorSegmentSelectionIds: selectionApis.getVectorSegmentSelectionIds(),
   hoveredVectorPoint: systemContextApis.getHoveredVectorPoint(),
   hoveredVectorSegment: systemContextApis.getHoveredVectorSegment(),
   hoveredVectorSegmentInsertPoint:
@@ -125,8 +125,12 @@ const restoreVectorEditingRuntimeState = (state: VectorEditingRuntimeState) => {
     state.pathEditingStartNewSubpath
   )
   systemContextApis.setPathEditingContinuation(state.pathEditingContinuation)
-  systemContextApis.setSelectedVectorPoint(state.selectedVectorPoint)
-  systemContextApis.setSelectedVectorSegment(state.selectedVectorSegment)
+  selectionApis.selectVectorPoints(state.vectorPointSelectionIds, {
+    undoable: false
+  })
+  selectionApis.selectVectorSegments(state.vectorSegmentSelectionIds, {
+    undoable: false
+  })
   systemContextApis.setHoveredVectorPoint(state.hoveredVectorPoint)
   systemContextApis.setHoveredVectorSegment(state.hoveredVectorSegment)
   systemContextApis.setHoveredVectorSegmentInsertPoint(
@@ -248,12 +252,6 @@ const resolveAutoUpdateConnectedHandleTarget = (
     : target
 }
 
-const flushSelectedVectorPointMirror = (
-  next: SelectedVectorPointState | null
-) => {
-  systemContextApis.setSelectedVectorPoint(next)
-}
-
 const computeFirstSegmentStyleHandles = (
   connectedPoint: VectorAnchorPoint,
   currentPoint: VectorAnchorPoint,
@@ -290,35 +288,19 @@ const setSelectedAnchorPoint = (
 ) => {
   if (!selectedPoint) {
     selectionApis.clearVectorPointSelection(options)
-    systemContextApis.setSelectedVectorPoint(null)
 
     return
-  }
-
-  const selectedState: SelectedVectorPointState = {
-    elementId,
-    pointId: selectedPoint.point.id,
-    index: selectedPoint.index,
-    target: VECTOR_TOKENS.POINT.TARGET.ANCHOR,
-    x: selectedPoint.point.x,
-    y: selectedPoint.point.y,
-    handleMode: elementApis.getVectorAnchorPointHandleMode(
-      elementId,
-      selectedPoint.point.id
-    )
   }
 
   selectionApis.clearVectorSegmentSelection()
   selectionApis.selectVectorPoint(
     {
       elementId,
-      pointId: selectedState.pointId,
-      target: selectedState.target
+      pointId: selectedPoint.point.id,
+      target: VECTOR_TOKENS.POINT.TARGET.ANCHOR
     },
     options
   )
-  // Compatibility mirror during SelectionManager migration.
-  systemContextApis.setSelectedVectorPoint(selectedState)
 }
 
 const getCurrentMouseWorkspacePos = () => {
@@ -378,42 +360,6 @@ const getAutoUpdatedConnectedHandleTarget = (
 ): VectorHandleTarget =>
   autoUpdateConnectedHandleTarget ??
   getConnectedHandleTargetForSide(connectionSide)
-
-const syncSelectedVectorPointMirror = (
-  elementId: string,
-  selectedPoint: { point: VectorAnchorPoint; index: number } | null,
-  target: VectorPointTarget
-) => {
-  if (!selectedPoint) {
-    return false
-  }
-
-  const targetPosition = getVectorPointTargetPosition(
-    selectedPoint.point,
-    target
-  )
-
-  if (!targetPosition) {
-    return false
-  }
-
-  const nextState: SelectedVectorPointState = {
-    elementId,
-    pointId: selectedPoint.point.id,
-    index: selectedPoint.index,
-    target,
-    x: targetPosition.x,
-    y: targetPosition.y,
-    handleMode: elementApis.getVectorAnchorPointHandleMode(
-      elementId,
-      selectedPoint.point.id
-    )
-  }
-
-  flushSelectedVectorPointMirror(nextState)
-
-  return true
-}
 
 const updateVectorPointTargetPosition = (
   targetState: VectorPointDragTargetState,
@@ -580,7 +526,9 @@ const removeSelectedSinglePointSubpathOnCancel = (
   }
 
   const singlePointId = lastSubpath[0].id
-  const selectedPoint = systemContextApis.getSelectedVectorPoint()
+  const selectedPoint = selectionApis
+    .getSelectedVectorPoints()
+    .find((point) => point.elementId === elementId)
   const continuation = systemContextApis.getPathEditingContinuation()
   let activePointId: string | null = null
 
@@ -663,8 +611,9 @@ export const penFeature = defineFeature<Record<string, unknown>, PenState>(
             clickedPoint &&
             clickedPoint.target === VECTOR_TOKENS.POINT.TARGET.ANCHOR
           ) {
-            const selectedVectorPoint =
-              systemContextApis.getSelectedVectorPoint()
+            const selectedVectorPoint = selectionApis
+              .getSelectedVectorPoints()
+              .find((point) => point.elementId === pathEditingVectorId)
             const sourceContinuation =
               selectedVectorPoint?.elementId === pathEditingVectorId &&
               selectedVectorPoint.target === VECTOR_TOKENS.POINT.TARGET.ANCHOR
@@ -679,7 +628,7 @@ export const penFeature = defineFeature<Record<string, unknown>, PenState>(
             )
 
             setSelectedAnchorPoint(pathEditingVectorId, selectedPoint)
-            systemContextApis.setSelectedVectorSegment(null)
+
             systemContextApis.setHoveredVectorSegment(null)
             systemContextApis.setHoveredVectorSegmentInsertPoint(null)
             systemContextApis.setHoveredVectorPoint(null)
@@ -727,7 +676,7 @@ export const penFeature = defineFeature<Record<string, unknown>, PenState>(
             )
 
             setSelectedAnchorPoint(pathEditingVectorId, nextSelectedPoint)
-            systemContextApis.setSelectedVectorSegment(null)
+
             systemContextApis.setHoveredVectorSegment(null)
             systemContextApis.setHoveredVectorSegmentInsertPoint(null)
             systemContextApis.setHoveredVectorPoint(null)
@@ -790,7 +739,7 @@ export const penFeature = defineFeature<Record<string, unknown>, PenState>(
 
             if (insertedPoint) {
               selectionApis.selectElements([pathEditingVectorId])
-              systemContextApis.setSelectedVectorSegment(null)
+
               systemContextApis.setHoveredVectorSegment(null)
               systemContextApis.setHoveredVectorSegmentInsertPoint(null)
               // Keep split mode active after split actions. Non-endpoint
@@ -1018,11 +967,6 @@ export const selectVectorPointFeature = defineFeature<
             segmentId: activeHoveredSegmentId
           })
           selectionApis.clearVectorPointSelection()
-          systemContextApis.setSelectedVectorPoint(null)
-          systemContextApis.setSelectedVectorSegment({
-            elementId: pathEditingVectorId,
-            segmentId: activeHoveredSegmentId
-          })
 
           return {
             segmentId: activeHoveredSegmentId,
@@ -1034,14 +978,12 @@ export const selectVectorPointFeature = defineFeature<
 
         selectionApis.clearVectorPointSelection()
         selectionApis.clearVectorSegmentSelection()
-        systemContextApis.setSelectedVectorPoint(null)
-        systemContextApis.setSelectedVectorSegment(null)
 
         return null
       }
 
       selectionApis.clearVectorSegmentSelection()
-      systemContextApis.setSelectedVectorSegment(null)
+
       transactionApis.configureSharedDeliverySequence({
         mode: 'atomic',
         batchPublications: false,
@@ -1052,21 +994,6 @@ export const selectVectorPointFeature = defineFeature<
         pointId: activeHoveredPoint.pointId,
         target: activeHoveredPoint.target
       })
-      const handleMode = elementApis.getVectorAnchorPointHandleMode(
-        activeHoveredPoint.elementId,
-        activeHoveredPoint.pointId
-      )
-
-      systemContextApis.setSelectedVectorPoint({
-        elementId: activeHoveredPoint.elementId,
-        pointId: activeHoveredPoint.pointId,
-        index: activeHoveredPoint.index,
-        target: activeHoveredPoint.target,
-        x: activeHoveredPoint.x,
-        y: activeHoveredPoint.y,
-        handleMode
-      })
-
       const dragStartWorkspacePos = elementApis.getMousePosInWorkspace(
         snapshot.mousePosition
       )
@@ -1178,28 +1105,7 @@ export const selectVectorPointFeature = defineFeature<
         return
       }
 
-      try {
-        if (!dragTarget.hasMoved) {
-          return
-        }
-
-        const committedPoint = elementApis.getVectorAnchorPointById(
-          dragTarget.elementId,
-          dragTarget.pointId
-        )
-
-        if (!committedPoint) {
-          return
-        }
-
-        syncSelectedVectorPointMirror(
-          dragTarget.elementId,
-          committedPoint,
-          dragTarget.target
-        )
-      } finally {
-        state.dragTarget = null
-      }
+      state.dragTarget = null
 
       return
     },

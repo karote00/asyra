@@ -6,6 +6,8 @@ import { createLocalToolHost } from '../local-tool-host'
 import { createLocalDesignTools } from '../local-design-tools'
 import { createLocalOperationTools } from '../local-operation-tools'
 import { operationContractIssue } from '../operation-input-schema'
+import { localToolFailureSchema } from '../local-tool-invocation'
+
 vi.mock('../../src/contexts', () => ({ default: {} }))
 vi.mock('../../src/common-apis/fills', () => ({ fillApis: {} }))
 import { createDocumentContextAction } from '../../src/ai/context-action'
@@ -87,7 +89,12 @@ it.each(['native', 'registered'])(
                 if (name === 'read_design_context') {
                   const result = source.output.actionResults[0].result
 
-                  if (!result.snapshotId || !result.leaseId) {
+                  if (
+                    !('snapshotId' in result) ||
+                    !('leaseId' in result) ||
+                    !result.snapshotId ||
+                    !result.leaseId
+                  ) {
                     throw new Error('Missing saved read handles')
                   }
 
@@ -137,7 +144,19 @@ it.each(['native', 'registered'])(
             ).text
           )
 
-          expect(refused.execution.status).toBe('failed')
+          expect(
+            operationContractIssue(refused, localToolFailureSchema, {
+              stage: 'output'
+            })
+          ).toBeUndefined()
+          expect(refused).toMatchObject({
+            available: false,
+            code: 'TOOL_INPUT_INVALID',
+            stage: 'admission',
+            settlement: 'not-started',
+            toolOutcome: { status: 'failed', settlement: 'not-started' }
+          })
+
           expect(calls.get(source.tool)).toBeUndefined()
           continue
         }
@@ -161,16 +180,20 @@ it.each(['native', 'registered'])(
         expect(
           operationContractIssue(
             value,
-            modelToolResultSchemas(definition, 'host').outputSchema,
+            modelToolResultSchemas(definition).outputSchema,
             { stage: 'output' }
           )
         ).toBeUndefined()
         const receipt = value.actionResults[0].result
 
+        const savedResult = source.output.actionResults[0].result
+
         if (source.tool === 'read_design_context') {
-          expect(receipt.columns).toEqual(
-            source.output.actionResults[0].result.columns
-          )
+          if (!('columns' in savedResult)) {
+            throw Error('Missing saved columns')
+          }
+
+          expect(receipt.columns).toEqual(savedResult.columns)
           expect(receipt).toMatchObject({
             total: 2,
             delivery: 'columns',
@@ -179,11 +202,18 @@ it.each(['native', 'registered'])(
           })
           expect(receipt).not.toHaveProperty('observation')
         } else {
+          if (
+            !('appliedElementIds' in savedResult) ||
+            !('materialProvenance' in savedResult)
+          ) {
+            throw Error('Missing material acknowledgement')
+          }
+
           expect(receipt.appliedElementIds).toEqual(
-            source.output.actionResults[0].result.appliedElementIds
+            savedResult.appliedElementIds
           )
           expect(receipt.materialProvenance).toEqual(
-            source.output.actionResults[0].result.materialProvenance
+            savedResult.materialProvenance
           )
           expect(value.checks.counts).toEqual(source.output.checks?.counts)
           expect(value.checks).not.toHaveProperty('visitedResults')
@@ -229,7 +259,11 @@ it.each(['native', 'registered'])(
 it('delivers the operation-owned capture identity through the real host for reuse without recapture', async () => {
   const { createAiInspectionAction } = await import('../../src/ai/inspection')
   const action = createAiToolContract(createAiInspectionAction())
-  const image = { dataUrl: 'data:image/png;base64,aW1hZ2U=' }
+  const image = {
+    dataUrl: 'data:image/png;base64,aW1hZ2U=',
+    width: 1,
+    height: 1
+  }
   const dispatch = vi.fn(async (batch) => ({
     context: {},
     actionResults: batch.actions.map((entry: { id: string; name: string }) => ({
@@ -303,8 +337,7 @@ it('delivers the operation-owned capture identity through the real host for reus
           result: {
             available: true,
             image,
-            inspectionId: expect.any(String),
-            revision: 0
+            inspectionId: expect.any(String)
           }
         }
       ]
@@ -312,7 +345,7 @@ it('delivers the operation-owned capture identity through the real host for reus
     expect(
       operationContractIssue(
         value,
-        modelToolResultSchemas(definition, 'host').outputSchema,
+        modelToolResultSchemas(definition).outputSchema,
         { stage: 'output' }
       )
     ).toBeUndefined()
@@ -325,7 +358,7 @@ it('delivers the operation-owned capture identity through the real host for reus
       }
     })
 
-    expect(JSON.parse(read.text).toolOutcome.status).toBe('success')
+    expect(read.outcome.status).toBe('success')
     expect(dispatch).toHaveBeenCalledTimes(1)
   } finally {
     await host.dispose()

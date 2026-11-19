@@ -3,8 +3,12 @@ import type { SceneTreeRawData } from '@asyra/utils'
 import { EntityTypes } from '@asyra/utils'
 import {
   CONTAINER_COMPONENT_DEFINITIONS,
-  GROUP_COMPONENT_DEFINITION
+  GROUP_COMPONENT_DEFINITION,
+  GROUP_RENDER_STRATEGY,
+  FRAME_RENDER_STRATEGY,
+  RECTANGLE_RENDER_STRATEGY
 } from '../components/index.js'
+import { RenderGraphics } from '@asyra/render'
 import * as presetPublicApi from '../index.js'
 import {
   prepareGroupOperation,
@@ -93,10 +97,92 @@ const createSnapshot = (): SceneTreeRawData => ({
 })
 
 const createCore = (snapshot: SceneTreeRawData): GroupHierarchyReadCore => ({
-  sceneTreeSaveData: () => structuredClone(snapshot)
+  getElementData: (id: string) => structuredClone(snapshot.elements[id])
 })
 
 describe('official Preset Group operation planning', () => {
+  it('rejects cyclic affected ancestry before normalizing or mutating geometry', () => {
+    const snapshot = createSnapshot()
+
+    snapshot.elements.outer.parentId = 'nested-group'
+    const updateElementProperties = vi.fn()
+    const core = { ...createCore(snapshot), updateElementProperties }
+
+    expect(() =>
+      normalizeGroupsForElements(core as never, ['nested-leaf'])
+    ).toThrow('hierarchy cycle')
+    expect(updateElementProperties).not.toHaveBeenCalled()
+  })
+
+  it('isolates a semantic Group transform without changing its geometry', () => {
+    const graphic = new RenderGraphics()
+
+    GROUP_RENDER_STRATEGY(graphic, {
+      id: 'group',
+      type: 'group',
+      x: 12,
+      y: 24
+    } as never)
+    expect(graphic.transformGroup).toBe(true)
+    expect(graphic.x).toBe(12)
+    expect(graphic.y).toBe(24)
+  })
+
+  it.each([
+    GROUP_RENDER_STRATEGY,
+    FRAME_RENDER_STRATEGY,
+    RECTANGLE_RENDER_STRATEGY
+  ])(
+    'projects canonical rotation on creation and resets it on a later snapshot (%#)',
+    (strategy) => {
+      const graphic = new RenderGraphics()
+      const data = {
+        id: 'group',
+        type: 'group',
+        x: 12,
+        y: 24,
+        width: 20,
+        height: 40,
+        fills: [],
+        rotation: Math.PI / 2
+      }
+
+      strategy(graphic, data as never)
+      expect(graphic.rotation).toBe(Math.PI / 2)
+      expect(graphic.toGlobal({ x: 3, y: 4 })).toMatchObject({ x: 8, y: 27 })
+      strategy(graphic, { ...data, rotation: 0 } as never)
+      expect(graphic.rotation).toBe(0)
+      expect(graphic.toGlobal({ x: 3, y: 4 })).toMatchObject({ x: 15, y: 28 })
+      strategy(graphic, data as never)
+      strategy(graphic, { ...data, rotation: undefined } as never)
+      expect(graphic.rotation).toBe(0)
+      expect(graphic.toGlobal({ x: 3, y: 4 })).toMatchObject({ x: 15, y: 28 })
+      graphic.destroy()
+    }
+  )
+
+  it('plans known group IDs without reading unrelated scene elements', () => {
+    const snapshot = createSnapshot()
+    const reads: string[] = []
+    const save = vi.fn(() => structuredClone(snapshot))
+    const core = {
+      sceneTreeSaveData: save,
+
+      getElementData: (id: string) => {
+        reads.push(id)
+
+        return structuredClone(snapshot.elements[id])
+      }
+    }
+
+    expect(prepareGroupOperation(core, ['last', 'first']).elementIds).toEqual([
+      'first',
+      'last'
+    ])
+    expect(save).not.toHaveBeenCalled()
+    expect(reads.sort()).toEqual(['first', 'last', 'workspace'])
+  })
+
   it('keeps one official GROUP component registration', () => {
     expect(GROUP_COMPONENT_DEFINITION.type).toBe(EntityTypes.GROUP)
     expect(GROUP_COMPONENT_DEFINITION.isContainer).toBe(true)
@@ -218,7 +304,7 @@ describe('official Preset Group geometry adapters', () => {
       }
     } as unknown as SceneTreeRawData
     const core = {
-      sceneTreeSaveData: vi.fn(() => snapshot),
+      getElementData: vi.fn((id: string) => snapshot.elements[id]),
       getElementComputedData: vi.fn(),
       updateElementProperties: vi.fn()
     }
@@ -236,7 +322,7 @@ describe('official Preset Group geometry adapters', () => {
         values: { x: 35, y: 20, width: 50 }
       }
     ])
-    expect(core.sceneTreeSaveData).not.toHaveBeenCalled()
+    expect(core.getElementData).not.toHaveBeenCalled()
     expect(core.getElementComputedData).not.toHaveBeenCalled()
     expect(core.updateElementProperties).not.toHaveBeenCalled()
   })
@@ -256,7 +342,9 @@ describe('official Preset Group geometry adapters', () => {
     const beforeSnapshot = structuredClone(snapshot)
     const beforeComputed = structuredClone(computed)
     const core = {
-      sceneTreeSaveData: vi.fn(() => structuredClone(snapshot)),
+      getElementData: vi.fn((id: string) =>
+        structuredClone(snapshot.elements[id])
+      ),
       getElementComputedData: vi.fn((elementId: keyof typeof computed) =>
         structuredClone(computed[elementId])
       ),
@@ -302,7 +390,7 @@ describe('official Preset Group geometry adapters', () => {
 
   it('returns non-geometry property updates without reading or mutating Group state', () => {
     const core = {
-      sceneTreeSaveData: vi.fn(),
+      getElementData: vi.fn(),
       getElementComputedData: vi.fn(),
       updateElementProperties: vi.fn()
     }
@@ -312,7 +400,7 @@ describe('official Preset Group geometry adapters', () => {
         { elementId: 'first', values: { rotation: 15 } }
       ])
     ).toEqual([{ elementId: 'first', values: { rotation: 15 } }])
-    expect(core.sceneTreeSaveData).not.toHaveBeenCalled()
+    expect(core.getElementData).not.toHaveBeenCalled()
     expect(core.getElementComputedData).not.toHaveBeenCalled()
     expect(core.updateElementProperties).not.toHaveBeenCalled()
   })
@@ -320,7 +408,9 @@ describe('official Preset Group geometry adapters', () => {
   it('rejects duplicate or invalid later geometry targets without canonical mutation', () => {
     const snapshot = createSnapshot()
     const core = {
-      sceneTreeSaveData: vi.fn(() => structuredClone(snapshot)),
+      getElementData: vi.fn((id: string) =>
+        structuredClone(snapshot.elements[id])
+      ),
       getElementComputedData: vi.fn(() => ({
         x: 0,
         y: 0,
@@ -356,7 +446,9 @@ describe('official Preset Group geometry adapters', () => {
       last: { x: 80, y: 10, width: 20, height: 15 }
     }
     const core = {
-      sceneTreeSaveData: vi.fn(() => structuredClone(snapshot)),
+      getElementData: vi.fn((id: string) =>
+        structuredClone(snapshot.elements[id])
+      ),
       getElementComputedData: vi.fn(
         (elementId: keyof typeof computed) => computed[elementId]
       ),
@@ -372,7 +464,11 @@ describe('official Preset Group geometry adapters', () => {
 
     const result = groupElements(core as never, ['last', 'first'], options)
 
-    expect(core.sceneTreeSaveData).toHaveBeenCalledOnce()
+    expect(core.getElementData.mock.calls.map(([id]) => id).sort()).toEqual([
+      'first',
+      'last',
+      'workspace'
+    ])
     expect(core.createElementInParent).toHaveBeenCalledWith(
       {
         type: EntityTypes.GROUP,
@@ -416,7 +512,7 @@ describe('official Preset Group geometry adapters', () => {
       empty: { x: 0, y: 0, width: 0, height: 0 }
     }
     const core = {
-      sceneTreeSaveData: () => structuredClone(snapshot),
+      getElementData: (id: string) => structuredClone(snapshot.elements[id]),
 
       getElementComputedData: vi.fn(
         (elementId: keyof typeof normalComputed) => normalComputed[elementId]
@@ -469,7 +565,7 @@ describe('official Preset Group geometry adapters', () => {
   it('rejects non-finite child geometry before creating a Group', () => {
     const snapshot = createSnapshot()
     const core = {
-      sceneTreeSaveData: () => structuredClone(snapshot),
+      getElementData: (id: string) => structuredClone(snapshot.elements[id]),
 
       getElementComputedData: vi.fn(() => ({
         x: Number.NaN,
@@ -510,7 +606,7 @@ describe('official Preset Group geometry adapters', () => {
       last: { x: 70, y: 0, width: 20, height: 15 }
     }
     const core = {
-      sceneTreeSaveData: () => structuredClone(snapshot),
+      getElementData: (id: string) => structuredClone(snapshot.elements[id]),
 
       getElementComputedData: vi.fn(
         (elementId: keyof typeof computed) => computed[elementId]
@@ -573,7 +669,7 @@ describe('official Preset Group geometry adapters', () => {
       first: { x: 10, y: 15, width: 40, height: 25 }
     }
     const core = {
-      sceneTreeSaveData: () => structuredClone(snapshot),
+      getElementData: (id: string) => structuredClone(snapshot.elements[id]),
 
       getElementComputedData: vi.fn(
         (elementId: keyof typeof computed) => computed[elementId]
@@ -641,7 +737,7 @@ describe('official Preset Group geometry adapters', () => {
       first: { x: 35, y: 20, width: 40, height: 25 }
     }
     const core = {
-      sceneTreeSaveData: () => structuredClone(snapshot),
+      getElementData: (id: string) => structuredClone(snapshot.elements[id]),
 
       getElementComputedData: vi.fn(
         (elementId: keyof typeof computed) => computed[elementId]
@@ -733,7 +829,7 @@ describe('official Preset Group geometry adapters', () => {
       last: { x: 0, y: 0, width: 20, height: 20 }
     }
     const core = {
-      sceneTreeSaveData: () => structuredClone(snapshot),
+      getElementData: (id: string) => structuredClone(snapshot.elements[id]),
 
       getElementComputedData: vi.fn((elementId: keyof typeof computed) =>
         structuredClone(computed[elementId])

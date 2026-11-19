@@ -1,0 +1,1117 @@
+{
+  "sourceRun": "taipei-101-fixed-1794215656743",
+  "providerRequestId": "f5c12a6c-2fa1-4cb0-8f78-f977b27ad0b0",
+  "rejected": {
+    "operations": [
+      {
+        "id": "crown",
+        "name": "design_workflow.prepare_and_apply_design",
+        "arguments": {
+          "message": "完成冠部平台、設備百葉與508公尺尖塔",
+          "inspection": "defer",
+          "draft": {
+            "type": "group",
+            "name": "台北101｜冠部與完整尖塔",
+            "projection": {
+              "azimuth": 35,
+              "elevation": 24,
+              "scale": 1,
+              "originX": 12000,
+              "originY": 48000
+            },
+            "motifTemplates": {
+              "crownGlass": [
+                {
+                  "key": "pane",
+                  "name": "冠部玻璃與窗框",
+                  "fills": [
+                    "#3F746B",
+                    "#5F8F80",
+                    "#34665F",
+                    "#719D8C",
+                    "#3C6E64"
+                  ],
+                  "vertices": [
+                    {
+                      "u": 0.08,
+                      "v": 0.12
+                    },
+                    {
+                      "u": 0.92,
+                      "v": 0.12
+                    },
+                    {
+                      "u": 0.92,
+                      "v": 0.86
+                    },
+                    {
+                      "u": 0.08,
+                      "v": 0.86
+                    }
+                  ]
+                },
+                {
+                  "key": "edge",
+                  "name": "金屬橫框亮邊",
+                  "fill": "#CDD3BF",
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0.93
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.93
+                    },
+                    {
+                      "u": 1,
+                      "v": 1
+                    },
+                    {
+                      "u": 0,
+                      "v": 1
+                    }
+                  ]
+                }
+              ]
+            },
+            "children": [
+              {
+                "type": "projected-face",
+                "key": "terrace1Y",
+                "name": "觀景台上層受光面",
+                "fill": "#7F9B8B",
+                "vertices": [
+                  {
+                    "x": -1900,
+                    "y": 1900,
+                    "z": 39180
+                  },
+                  {
+                    "x": 1900,
+                    "y": 1900,
+                    "z": 39180
+                  },
+                  {
+                    "x": 1900,
+                    "y": 1900,
+                    "z": 39800
+                  },
+                  {
+                    "x": -1900,
+                    "y": 1900,
+                    "z": 39800
+                  }
+                ]
+              },
+              {
+                "type": "surface-grid",
+                "key": "terrace1Ygrid",
+                "name": "觀景台窗牆",
+                "boundary": {
+                  "face": "terrace1Y"
+                },
+                "rows": 2,
+                "columns": 22,
+                "order": "cell-major",
+                "motifs": {
+                  "template": "crownGlass"
+                }
+              },
+              {
+                "type": "projected-face",
+                "key": "terrace1X",
+                "name": "觀景台上層側面",
+                "fill": "#597E6F",
+                "vertices": [
+                  {
+                    "x": 1900,
+                    "y": 1900,
+                    "z": 39180
+                  },
+                  {
+                    "x": 1900,
+                    "y": -1900,
+                    "z": 39180
+                  },
+                  {
+                    "x": 1900,
+                    "y": -1900,
+                    "z": 39800
+                  },
+                  {
+                    "x": 1900,
+                    "y": 1900,
+                    "z": 39800
+                  }
+                ]
+              },
+              {
+                "type": "surface-grid",
+                "key": "terrace1Xgrid",
+                "name": "觀景台側面窗牆",
+                "boundary": {
+                  "face": "terrace1X"
+                },
+                "rows": 2,
+                "columns": 22,
+                "order": "cell-major",
+                "motifs": {
+                  "template": "crownGlass",
+                  "overrides": {
+                    "pane": {
+                      "fills": [
+                        "#2B534B",
+                        "#416E5D",
+                        "#315C52"
+                      ]
+                    },
+                    "edge": {
+                      "fill": "#91AC98"
+                    }
+                  }
+                }
+              },
+              {
+                "type": "projected-face",
+                "key": "terrace1Roof",
+                "name": "第一層冠部平台",
+                "fill": "#BBC2AE",
+                "vertices": [
+                  {
+                    "x": -2000,
+                    "y": -2000,
+                    "z": 39800
+                  },
+                  {
+                    "x": 2000,
+                    "y": -2000,
+                    "z": 39800
+                  },
+                  {
+                    "x": 2000,
+                    "y": 2000,
+                    "z": 39800
+                  },
+                  {
+                    "x": -2000,
+                    "y": 2000,
+                    "z": 39800
+                  }
+                ]
+              },
+              {
+                "type": "projected-face",
+                "key": "terrace2Y",
+                "name": "機電層正面",
+                "fill": "#628072",
+                "vertices": [
+                  {
+                    "x": -1450,
+                    "y": 1450,
+                    "z": 39800
+                  },
+                  {
+                    "x": 1450,
+                    "y": 1450,
+                    "z": 39800
+                  },
+                  {
+                    "x": 1450,
+                    "y": 1450,
+                    "z": 40500
+                  },
+                  {
+                    "x": -1450,
+                    "y": 1450,
+                    "z": 40500
+                  }
+                ]
+              },
+              {
+                "type": "surface-grid",
+                "key": "louvresY",
+                "name": "機電層密集百葉",
+                "boundary": {
+                  "face": "terrace2Y"
+                },
+                "rows": 12,
+                "columns": 10,
+                "order": "cell-major",
+                "motifs": [
+                  {
+                    "key": "slat",
+                    "name": "百葉遮光片",
+                    "fill": "#B5C2AA",
+                    "vertices": [
+                      {
+                        "u": 0.03,
+                        "v": 0.55
+                      },
+                      {
+                        "u": 0.97,
+                        "v": 0.55
+                      },
+                      {
+                        "u": 0.97,
+                        "v": 0.8
+                      },
+                      {
+                        "u": 0.03,
+                        "v": 0.8
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "projected-face",
+                "key": "terrace2X",
+                "name": "機電層側面",
+                "fill": "#3A5D50",
+                "vertices": [
+                  {
+                    "x": 1450,
+                    "y": 1450,
+                    "z": 39800
+                  },
+                  {
+                    "x": 1450,
+                    "y": -1450,
+                    "z": 39800
+                  },
+                  {
+                    "x": 1450,
+                    "y": -1450,
+                    "z": 40500
+                  },
+                  {
+                    "x": 1450,
+                    "y": 1450,
+                    "z": 40500
+                  }
+                ]
+              },
+              {
+                "type": "surface-grid",
+                "key": "louvresX",
+                "name": "側面機電百葉",
+                "boundary": {
+                  "face": "terrace2X"
+                },
+                "rows": 12,
+                "columns": 10,
+                "order": "cell-major",
+                "motifs": [
+                  {
+                    "key": "slat",
+                    "name": "側面百葉片",
+                    "fill": "#88A18B",
+                    "vertices": [
+                      {
+                        "u": 0.03,
+                        "v": 0.55
+                      },
+                      {
+                        "u": 0.97,
+                        "v": 0.55
+                      },
+                      {
+                        "u": 0.97,
+                        "v": 0.8
+                      },
+                      {
+                        "u": 0.03,
+                        "v": 0.8
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "projected-face",
+                "key": "terrace2Roof",
+                "name": "第二層冠部平台",
+                "fill": "#B9C1AE",
+                "vertices": [
+                  {
+                    "x": -1520,
+                    "y": -1520,
+                    "z": 40500
+                  },
+                  {
+                    "x": 1520,
+                    "y": -1520,
+                    "z": 40500
+                  },
+                  {
+                    "x": 1520,
+                    "y": 1520,
+                    "z": 40500
+                  },
+                  {
+                    "x": -1520,
+                    "y": 1520,
+                    "z": 40500
+                  }
+                ]
+              },
+              {
+                "type": "projected-face",
+                "key": "shoulderY",
+                "name": "冠部斜面支座",
+                "fill": "#71937F",
+                "vertices": [
+                  {
+                    "x": -1250,
+                    "y": 1250,
+                    "z": 40500
+                  },
+                  {
+                    "x": 1250,
+                    "y": 1250,
+                    "z": 40500
+                  },
+                  {
+                    "x": 850,
+                    "y": 850,
+                    "z": 41000
+                  },
+                  {
+                    "x": -850,
+                    "y": 850,
+                    "z": 41000
+                  }
+                ]
+              },
+              {
+                "type": "surface-grid",
+                "key": "shouldergridY",
+                "name": "斜面窗框",
+                "boundary": {
+                  "face": "shoulderY"
+                },
+                "rows": 2,
+                "columns": 14,
+                "order": "cell-major",
+                "motifs": {
+                  "template": "crownGlass"
+                }
+              },
+              {
+                "type": "projected-face",
+                "key": "shoulderX",
+                "name": "冠部斜面側向支座",
+                "fill": "#486E5B",
+                "vertices": [
+                  {
+                    "x": 1250,
+                    "y": 1250,
+                    "z": 40500
+                  },
+                  {
+                    "x": 1250,
+                    "y": -1250,
+                    "z": 40500
+                  },
+                  {
+                    "x": 850,
+                    "y": -850,
+                    "z": 41000
+                  },
+                  {
+                    "x": 850,
+                    "y": 850,
+                    "z": 41000
+                  }
+                ]
+              },
+              {
+                "type": "surface-grid",
+                "key": "shouldergridX",
+                "name": "斜側面窗框",
+                "boundary": {
+                  "face": "shoulderX"
+                },
+                "rows": 2,
+                "columns": 14,
+                "order": "cell-major",
+                "motifs": {
+                  "template": "crownGlass"
+                }
+              },
+              {
+                "type": "projected-face",
+                "key": "lanternY",
+                "name": "冠部外張玻璃塔",
+                "fill": "#9BAD94",
+                "vertices": [
+                  {
+                    "x": -850,
+                    "y": 850,
+                    "z": 41000
+                  },
+                  {
+                    "x": 850,
+                    "y": 850,
+                    "z": 41000
+                  },
+                  {
+                    "x": 1250,
+                    "y": 1250,
+                    "z": 43500
+                  },
+                  {
+                    "x": -1250,
+                    "y": 1250,
+                    "z": 43500
+                  }
+                ]
+              },
+              {
+                "type": "surface-grid",
+                "key": "lanternYgrid",
+                "name": "冠部細密窗格",
+                "boundary": {
+                  "face": "lanternY"
+                },
+                "rows": 10,
+                "columns": 14,
+                "order": "cell-major",
+                "motifs": {
+                  "template": "crownGlass"
+                }
+              },
+              {
+                "type": "projected-face",
+                "key": "lanternX",
+                "name": "冠部外張塔側面",
+                "fill": "#718D74",
+                "vertices": [
+                  {
+                    "x": 850,
+                    "y": 850,
+                    "z": 41000
+                  },
+                  {
+                    "x": 850,
+                    "y": -850,
+                    "z": 41000
+                  },
+                  {
+                    "x": 1250,
+                    "y": -1250,
+                    "z": 43500
+                  },
+                  {
+                    "x": 1250,
+                    "y": 1250,
+                    "z": 43500
+                  }
+                ]
+              },
+              {
+                "type": "surface-grid",
+                "key": "lanternXgrid",
+                "name": "冠部側面細密窗格",
+                "boundary": {
+                  "face": "lanternX"
+                },
+                "rows": 10,
+                "columns": 14,
+                "order": "cell-major",
+                "motifs": {
+                  "template": "crownGlass",
+                  "overrides": {
+                    "pane": {
+                      "fills": [
+                        "#244E46",
+                        "#456E5C",
+                        "#31594D",
+                        "#56816A"
+                      ]
+                    },
+                    "edge": {
+                      "fill": "#A5B59B"
+                    }
+                  }
+                }
+              },
+              {
+                "type": "projected-face",
+                "key": "lanterncap",
+                "name": "冠部頂部金屬蓋",
+                "fill": "#C1C5AF",
+                "vertices": [
+                  {
+                    "x": -1300,
+                    "y": -1300,
+                    "z": 43500
+                  },
+                  {
+                    "x": 1300,
+                    "y": -1300,
+                    "z": 43500
+                  },
+                  {
+                    "x": 1300,
+                    "y": 1300,
+                    "z": 43500
+                  },
+                  {
+                    "x": -1300,
+                    "y": 1300,
+                    "z": 43500
+                  }
+                ]
+              },
+              {
+                "type": "pattern",
+                "key": "crownRings",
+                "name": "冠部層疊金屬簷口",
+                "origin": {
+                  "x": 0,
+                  "y": 0,
+                  "z": 0
+                },
+                "axes": [
+                  {
+                    "count": 3,
+                    "step": {
+                      "x": 0,
+                      "y": 0,
+                      "z": 210
+                    }
+                  }
+                ],
+                "members": [
+                  {
+                    "type": "projected-face",
+                    "key": "Y",
+                    "name": "簷口前緣",
+                    "fill": "#C6CAB3",
+                    "vertices": [
+                      {
+                        "x": -1270,
+                        "y": 1290,
+                        "z": 43320
+                      },
+                      {
+                        "x": 1270,
+                        "y": 1290,
+                        "z": 43320
+                      },
+                      {
+                        "x": 1270,
+                        "y": 1290,
+                        "z": 43410
+                      },
+                      {
+                        "x": -1270,
+                        "y": 1290,
+                        "z": 43410
+                      }
+                    ]
+                  },
+                  {
+                    "type": "projected-face",
+                    "key": "X",
+                    "name": "簷口側緣",
+                    "fill": "#8A9E83",
+                    "vertices": [
+                      {
+                        "x": 1290,
+                        "y": -1270,
+                        "z": 43320
+                      },
+                      {
+                        "x": 1290,
+                        "y": 1270,
+                        "z": 43320
+                      },
+                      {
+                        "x": 1290,
+                        "y": 1270,
+                        "z": 43410
+                      },
+                      {
+                        "x": 1290,
+                        "y": -1270,
+                        "z": 43410
+                      }
+                    ]
+                  },
+                  {
+                    "type": "projected-face",
+                    "key": "top",
+                    "name": "簷口可見頂面",
+                    "fill": "#BFC5AF",
+                    "vertices": [
+                      {
+                        "x": -1290,
+                        "y": -1290,
+                        "z": 43410
+                      },
+                      {
+                        "x": 1290,
+                        "y": -1290,
+                        "z": 43410
+                      },
+                      {
+                        "x": 1290,
+                        "y": 1290,
+                        "z": 43410
+                      },
+                      {
+                        "x": -1290,
+                        "y": 1290,
+                        "z": 43410
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "projected-face",
+                "key": "turretY",
+                "name": "尖塔方形塔座",
+                "fill": {
+                  "gradientType": "linear",
+                  "gradientHandles": [
+                    {
+                      "x": 0,
+                      "y": 0
+                    },
+                    {
+                      "x": 1,
+                      "y": 0
+                    }
+                  ],
+                  "gradientStops": [
+                    {
+                      "position": 0,
+                      "color": "#C9CCB6",
+                      "opacity": 1
+                    },
+                    {
+                      "position": 1,
+                      "color": "#98AA90",
+                      "opacity": 1
+                    }
+                  ]
+                },
+                "vertices": [
+                  {
+                    "x": -650,
+                    "y": 650,
+                    "z": 43830
+                  },
+                  {
+                    "x": 650,
+                    "y": 650,
+                    "z": 43830
+                  },
+                  {
+                    "x": 500,
+                    "y": 500,
+                    "z": 45100
+                  },
+                  {
+                    "x": -500,
+                    "y": 500,
+                    "z": 45100
+                  }
+                ]
+              },
+              {
+                "type": "projected-face",
+                "key": "turretX",
+                "name": "尖塔塔座側面",
+                "fill": "#718C70",
+                "vertices": [
+                  {
+                    "x": 650,
+                    "y": 650,
+                    "z": 43830
+                  },
+                  {
+                    "x": 650,
+                    "y": -650,
+                    "z": 43830
+                  },
+                  {
+                    "x": 500,
+                    "y": -500,
+                    "z": 45100
+                  },
+                  {
+                    "x": 500,
+                    "y": 500,
+                    "z": 45100
+                  }
+                ]
+              },
+              {
+                "type": "projected-face",
+                "key": "turretVentY",
+                "name": "塔座正面通風窗",
+                "fill": "#36564B",
+                "vertices": [
+                  {
+                    "x": -180,
+                    "y": 610,
+                    "z": 44100
+                  },
+                  {
+                    "x": 180,
+                    "y": 610,
+                    "z": 44100
+                  },
+                  {
+                    "x": 180,
+                    "y": 560,
+                    "z": 44520
+                  },
+                  {
+                    "x": -180,
+                    "y": 560,
+                    "z": 44520
+                  }
+                ]
+              },
+              {
+                "type": "projected-face",
+                "key": "turretRoof",
+                "name": "尖塔塔座頂板",
+                "fill": "#CDD0BA",
+                "vertices": [
+                  {
+                    "x": -620,
+                    "y": -620,
+                    "z": 45100
+                  },
+                  {
+                    "x": 620,
+                    "y": -620,
+                    "z": 45100
+                  },
+                  {
+                    "x": 620,
+                    "y": 620,
+                    "z": 45100
+                  },
+                  {
+                    "x": -620,
+                    "y": 620,
+                    "z": 45100
+                  }
+                ]
+              },
+              {
+                "type": "projected-face",
+                "key": "spireSun",
+                "name": "尖塔日照金屬面",
+                "fill": {
+                  "gradientType": "linear",
+                  "gradientHandles": [
+                    {
+                      "x": 0,
+                      "y": 0
+                    },
+                    {
+                      "x": 1,
+                      "y": 0
+                    }
+                  ],
+                  "gradientStops": [
+                    {
+                      "position": 0,
+                      "color": "#8DA294",
+                      "opacity": 1
+                    },
+                    {
+                      "position": 0.5,
+                      "color": "#F0EDDB",
+                      "opacity": 1
+                    },
+                    {
+                      "position": 1,
+                      "color": "#B9C3AE",
+                      "opacity": 1
+                    }
+                  ]
+                },
+                "vertices": [
+                  {
+                    "x": -210,
+                    "y": 210,
+                    "z": 45100
+                  },
+                  {
+                    "x": 210,
+                    "y": 210,
+                    "z": 45100
+                  },
+                  {
+                    "x": 35,
+                    "y": 35,
+                    "z": 50200
+                  },
+                  {
+                    "x": 0,
+                    "y": 0,
+                    "z": 50800
+                  }
+                ]
+              },
+              {
+                "type": "projected-face",
+                "key": "spireShade",
+                "name": "尖塔背光金屬面",
+                "fill": "#758E7B",
+                "vertices": [
+                  {
+                    "x": 210,
+                    "y": 210,
+                    "z": 45100
+                  },
+                  {
+                    "x": 210,
+                    "y": -210,
+                    "z": 45100
+                  },
+                  {
+                    "x": 35,
+                    "y": -35,
+                    "z": 50200
+                  },
+                  {
+                    "x": 0,
+                    "y": 0,
+                    "z": 50800
+                  },
+                  {
+                    "x": 35,
+                    "y": 35,
+                    "z": 50200
+                  }
+                ]
+              },
+              {
+                "type": "pattern",
+                "key": "spireBands",
+                "name": "尖塔上段金屬環",
+                "origin": {
+                  "x": 0,
+                  "y": 0,
+                  "z": 0
+                },
+                "axes": [
+                  {
+                    "count": 12,
+                    "step": {
+                      "x": 0,
+                      "y": 0,
+                      "z": 160
+                    }
+                  }
+                ],
+                "members": [
+                  {
+                    "type": "projected-face",
+                    "key": "ring",
+                    "name": "尖塔環箍",
+                    "fill": "#B9C6B6",
+                    "ellipse": {
+                      "center": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 48200
+                      },
+                      "u": {
+                        "x": 91,
+                        "y": 0,
+                        "z": 0
+                      },
+                      "v": {
+                        "x": 0,
+                        "y": 91,
+                        "z": 0
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "pattern",
+                "key": "terraceRailsY",
+                "name": "冠部平台安全欄杆",
+                "origin": {
+                  "x": 0,
+                  "y": 0,
+                  "z": 0
+                },
+                "axes": [
+                  {
+                    "count": 21,
+                    "step": {
+                      "x": 190,
+                      "y": 0,
+                      "z": 0
+                    }
+                  }
+                ],
+                "members": [
+                  {
+                    "type": "projected-face",
+                    "key": "upright",
+                    "name": "細金屬欄杆",
+                    "fill": "#D2D7C5",
+                    "vertices": [
+                      {
+                        "x": -1910,
+                        "y": 1960,
+                        "z": 39800
+                      },
+                      {
+                        "x": -1890,
+                        "y": 1960,
+                        "z": 39800
+                      },
+                      {
+                        "x": -1890,
+                        "y": 1960,
+                        "z": 39920
+                      },
+                      {
+                        "x": -1910,
+                        "y": 1960,
+                        "z": 39920
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "projected-face",
+                "key": "terraceHandrail",
+                "name": "平台欄杆扶手",
+                "fill": "#D4D7C8",
+                "vertices": [
+                  {
+                    "x": -1920,
+                    "y": 1960,
+                    "z": 39910
+                  },
+                  {
+                    "x": 1920,
+                    "y": 1960,
+                    "z": 39910
+                  },
+                  {
+                    "x": 1920,
+                    "y": 1960,
+                    "z": 39930
+                  },
+                  {
+                    "x": -1920,
+                    "y": 1960,
+                    "z": 39930
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      }
+    ],
+    "retain": {
+      "taipeiCrown": {
+        "step": "crown",
+        "source": "input",
+        "path": "/draft"
+      },
+      "taipeiCrownIds": {
+        "step": "crown",
+        "path": "/compositionIds"
+      }
+    },
+    "delivery": "status",
+    "inspection": "defer"
+  },
+  "input": {
+    "operations": [
+      {
+        "id": "crownFixed",
+        "name": "design_workflow.prepare_and_apply_design",
+        "arguments": {
+          "message": "修正尖塔平面幾何並完成冠部",
+          "inspection": "defer",
+          "repair": {
+            "draftId": "f0d25010-266d-4722-b518-cfc88180c2cc",
+            "replacements": [
+              {
+                "path": "/children/24/vertices",
+                "value": [
+                  {
+                    "x": -210,
+                    "y": 210,
+                    "z": 45100
+                  },
+                  {
+                    "x": 210,
+                    "y": 210,
+                    "z": 45100
+                  },
+                  {
+                    "x": 0,
+                    "y": 0,
+                    "z": 50800
+                  }
+                ]
+              },
+              {
+                "path": "/children/25/vertices",
+                "value": [
+                  {
+                    "x": 210,
+                    "y": 210,
+                    "z": 45100
+                  },
+                  {
+                    "x": 210,
+                    "y": -210,
+                    "z": 45100
+                  },
+                  {
+                    "x": 0,
+                    "y": 0,
+                    "z": 50800
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "whole",
+        "name": "design_operations.inspect_drawing",
+        "arguments": {
+          "arguments": {
+            "elementId": "workspace",
+            "view": "overview"
+          },
+          "message": "檢查台北101全樓輪廓與俯視投影"
+        }
+      }
+    ],
+    "retain": {
+      "taipeiCrownIds": {
+        "step": "crownFixed",
+        "path": "/compositionIds"
+      }
+    },
+    "inspection": "defer"
+  }
+}

@@ -5,7 +5,7 @@ import {
   type BatchableElement,
   BatchableMesh,
   DefaultBatcher,
-  DefaultShader,
+  type Shader,
   type Batch,
   ExtensionType,
   Mesh,
@@ -16,7 +16,10 @@ import {
   type RenderPipe
 } from 'pixi.js'
 import { meshMaterialSources } from './mesh-material-resources.js'
-import { createMeshMaterialShader } from './mesh-material-shader.js'
+import {
+  createMeshMaterialShader,
+  createOrdinaryBatchShader
+} from './mesh-material-shader.js'
 
 const materialBatchName = 'analytic-mesh-material'
 // Analytic programs have dynamic layer/stop loops, unlike Pixi texture sampling.
@@ -32,9 +35,9 @@ export class MeshMaterialBatcher extends Batcher {
 
   readonly vertexSize = 6
 
-  shader: DefaultShader | ReturnType<typeof createMeshMaterialShader>
+  shader: Shader
 
-  private readonly ordinaryShader: DefaultShader
+  private readonly ordinaryShader: Shader
 
   private materialShader?: ReturnType<typeof createMeshMaterialShader>
 
@@ -96,7 +99,7 @@ export class MeshMaterialBatcher extends Batcher {
       ...options,
       maxTextures: Math.min(options.maxTextures, materialBatchTextureCapacity)
     })
-    this.ordinaryShader = new DefaultShader(this.maxTextures)
+    this.ordinaryShader = createOrdinaryBatchShader(this.maxTextures)
     this.shader = this.ordinaryShader
   }
 }

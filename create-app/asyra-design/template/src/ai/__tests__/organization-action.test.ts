@@ -6,10 +6,13 @@ vi.mock('../../common-apis/design-organization', () => ({
 import { createOrganizationAction } from '../organization-action'
 it('forwards hierarchy requests and rejects cancelled calls before mutation', async () => {
   const mutationCalls = vi.fn()
+
   const runMutation: AiMutationExecutor = async (mutate) => {
     mutationCalls()
+
     return mutate()
   }
+
   const organize = vi.fn(() => ({
     status: 'complete',
     operation: 'group' as const,
@@ -18,6 +21,7 @@ it('forwards hierarchy requests and rejects cancelled calls before mutation', as
   }))
   const action = createOrganizationAction(organize)
   const controller = new AbortController()
+
   await action.execute({ operation: 'group', elementIds: ['a'] }, {
     signal: controller.signal,
     runMutation

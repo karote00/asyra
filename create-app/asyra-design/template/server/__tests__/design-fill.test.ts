@@ -14,6 +14,7 @@ const gradient = (gradientType = 'linear') => ({
     { position: 1, color: '#448899', opacity: 1 }
   ]
 })
+
 const draft = (fill: unknown) => ({
   type: 'frame',
   name: 'Glass',
@@ -31,6 +32,7 @@ describe('AI gradient fill contract', () => {
     (kind) => {
       const fill = gradient(kind)
       const design = prepareDesign(draft(fill))
+
       expect(admitPreparedDesign(JSON.parse(JSON.stringify(design)))).toEqual(
         design
       )
@@ -39,6 +41,7 @@ describe('AI gradient fill contract', () => {
           expect.objectContaining({ kind: 'gradient', gradient: fill })
         ])
       }
+
       expect(design.entries).toHaveLength(2)
     }
   )
@@ -77,6 +80,7 @@ describe('AI gradient fill contract', () => {
         }
       ]
     })
+
     expect(admitPreparedDesign(JSON.parse(JSON.stringify(design)))).toEqual(
       design
     )
@@ -115,8 +119,10 @@ describe('AI gradient fill contract', () => {
   })
   it('rejects tampered prepared gradients and retains existing solid compatibility', () => {
     const design = prepareDesign(draft('#112233'))
+
     expect(admitPreparedDesign(design)).toBeDefined()
     const changed = JSON.parse(JSON.stringify(design))
+
     changed.entries[0].descriptor.fills[0].kind = 'gradient'
     changed.entries[0].descriptor.fills[0].gradient = {
       ...gradient(),

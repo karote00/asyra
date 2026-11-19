@@ -261,7 +261,7 @@ it.each([
   [2000, recoveryFixture.input.draft],
   [10000, briefFixture.input.draft]
 ] as const)(
-  'preserves every prepared coordinate, path, fill and source order across retained partitions at %i',
+  'preserves every prepared coordinate, path, fill and source order across retained partitions at %i - case %#',
   async (limit, source) => {
     const session = createDesignPreparationSession(
       undefined,

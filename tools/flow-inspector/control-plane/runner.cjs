@@ -98,6 +98,8 @@ function runProcess({
   timeoutMs = 30000,
   maxOutputBytes = 262144,
   inheritProcessGroup = false,
+  stdout,
+  stderr,
   onSpawn
 }) {
   if (signal?.aborted) {
@@ -180,6 +182,14 @@ function runProcess({
       if (outputBytes > maxOutputBytes) {
         stop('output-limit')
       }
+    }
+
+    if (stdout) {
+      child.stdout.pipe(stdout, { end: false })
+    }
+
+    if (stderr) {
+      child.stderr.pipe(stderr, { end: false })
     }
 
     child.stdout.on('data', collect)

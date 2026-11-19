@@ -8,8 +8,10 @@ const DataContexts = () => {
     const fileLoadSubscription = subscribeToFileLoadComplete(() => {
       try {
         const featureAPI = getFeature(FeatureNames.ZOOM_FIT)
+
         if (featureAPI?.zoomFit) {
           const zoomFitFn = featureAPI.zoomFit as () => void
+
           zoomFitFn()
         }
       } catch (error) {

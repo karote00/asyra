@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import test from 'node:test'
 import { fileURLToPath } from 'node:url'
@@ -47,5 +47,21 @@ test('Asyra Design reports active render startup failures', () => {
   assert.match(
     renderAppSource,
     /if \(active\) \{\s*console\.error\(\s*'\[RenderApp\] Render startup failed:'/s
+  )
+})
+
+test('App has no independent renderer state or public lifecycle forwarding entry', () => {
+  const controller = readFileSync(
+    path.resolve(testDirectory, '../../controllers/app.ts'),
+    'utf8'
+  )
+
+  assert.doesNotMatch(
+    controller,
+    /destroyRenderApp|setupInputSystem|renderIsReady|setPixiApp/
+  )
+  assert.equal(
+    existsSync(path.resolve(testDirectory, '../../states/app.ts')),
+    false
   )
 })

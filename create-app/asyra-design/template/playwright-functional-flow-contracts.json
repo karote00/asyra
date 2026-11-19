@@ -23,10 +23,7 @@
     },
     {
       "name": "@asyra/asyra-design",
-      "inputs": [
-        "src/**",
-        "server/**"
-      ],
+      "inputs": ["src/**", "server/**"],
       "entry": null
     }
   ],
@@ -35,9 +32,7 @@
       "id": "functional-start-editor",
       "title": "Start and reset the editor",
       "goal": "Compose the editor and expose its ready editable shell.",
-      "stepIds": [
-        "start-editor"
-      ],
+      "stepIds": ["start-editor"],
       "cases": [
         {
           "id": "functional.app.0ed5202f90ef",
@@ -45,9 +40,7 @@
           "testFile": "apps/asyra-design/e2e/app.spec.ts",
           "testName": "Asyra Design Tool should load the application",
           "projectName": "chromium",
-          "implementationPaths": [
-            "apps/asyra-design/index.html"
-          ]
+          "implementationPaths": ["apps/asyra-design/index.html"]
         },
         {
           "id": "functional.app.fb7b866d4b66",
@@ -235,6 +228,39 @@
             "apps/asyra-design/src/collaboration/websocket-provider.ts",
             "apps/asyra-design/src/collaboration/collaboration-transport-worker.ts"
           ]
+        },
+        {
+          "id": "functional.ai-inspection-evidence.69bc9bbe7c81",
+          "stepId": "start-editor",
+          "testFile": "apps/asyra-design/e2e/ai-inspection-evidence.spec.ts",
+          "testName": "execution continuity rejects unexpected editor replacement without rewriting a save failure",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/init/init-app.ts",
+            "apps/asyra-design/src/render-app/index.tsx"
+          ]
+        },
+        {
+          "id": "functional.ai-inspection-evidence.d0a3c7a39b35",
+          "stepId": "start-editor",
+          "testFile": "apps/asyra-design/e2e/ai-inspection-evidence.spec.ts",
+          "testName": "execution continuity rejects unexpected peer replacement without rewriting a save failure",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/init/init-app.ts",
+            "apps/asyra-design/src/render-app/index.tsx"
+          ]
+        },
+        {
+          "id": "functional.ai-inspection-evidence.56c6de400ade",
+          "stepId": "start-editor",
+          "testFile": "apps/asyra-design/e2e/ai-inspection-evidence.spec.ts",
+          "testName": "execution continuity rejects unexpected closed replacement without rewriting a save failure",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/init/init-app.ts",
+            "apps/asyra-design/src/render-app/index.tsx"
+          ]
         }
       ],
       "handoffs": []
@@ -243,9 +269,7 @@
       "id": "functional-switch-tool",
       "title": "Switch the primary tool",
       "goal": "Route toolbar and keyboard tool selection through the App feature.",
-      "stepIds": [
-        "switch-tool"
-      ],
+      "stepIds": ["switch-tool"],
       "cases": [
         {
           "id": "functional.oval.35187e9c8c85",
@@ -345,9 +369,7 @@
       "id": "functional-create-element",
       "title": "Create an element gesture",
       "goal": "Create and update a rectangle or oval in one canonical pointer session.",
-      "stepIds": [
-        "create-element"
-      ],
+      "stepIds": ["create-element"],
       "cases": [
         {
           "id": "functional.element-creation.972c55b3a8a5",
@@ -488,9 +510,7 @@
       "id": "functional-select-elements",
       "title": "Select elements",
       "goal": "Resolve click, area and Contents selection through App selection APIs.",
-      "stepIds": [
-        "select-elements"
-      ],
+      "stepIds": ["select-elements"],
       "cases": [
         {
           "id": "functional.selection.70cef0afc1ce",
@@ -602,9 +622,7 @@
       "id": "functional-hover-elements",
       "title": "Resolve hover",
       "goal": "Project eligible render hover events into App interaction state.",
-      "stepIds": [
-        "hover-elements"
-      ],
+      "stepIds": ["hover-elements"],
       "cases": [
         {
           "id": "functional.selection.2e58d1642f60",
@@ -635,9 +653,7 @@
       "id": "functional-move-elements",
       "title": "Move elements",
       "goal": "Apply parent-local positions throughout one pointer gesture.",
-      "stepIds": [
-        "move-elements"
-      ],
+      "stepIds": ["move-elements"],
       "cases": [
         {
           "id": "functional.group-interaction.52d1ac0de516",
@@ -679,9 +695,7 @@
       "id": "functional-delete-subtree",
       "title": "Delete a selected subtree",
       "goal": "Delete a canonical element and its subtree through the App element API.",
-      "stepIds": [
-        "delete-subtree"
-      ],
+      "stepIds": ["delete-subtree"],
       "cases": [
         {
           "id": "functional.delete-element.e873bdf40a7b",
@@ -712,9 +726,7 @@
       "id": "functional-delete-vector-point",
       "title": "Delete a vector anchor",
       "goal": "Remove the selected editable anchor through the canonical topology operation.",
-      "stepIds": [
-        "delete-vector-point"
-      ],
+      "stepIds": ["delete-vector-point"],
       "cases": [
         {
           "id": "functional.delete-element.d754de456719",
@@ -734,9 +746,7 @@
       "id": "functional-replay-history",
       "title": "Replay user actions",
       "goal": "Route user Undo and Redo through the App History API.",
-      "stepIds": [
-        "replay-history"
-      ],
+      "stepIds": ["replay-history"],
       "cases": [
         {
           "id": "functional.delete-element.41e27778b047",
@@ -941,6 +951,18 @@
             "apps/asyra-design/src/common-apis/history.ts",
             "apps/asyra-design/src/common-apis/transaction.ts"
           ]
+        },
+        {
+          "id": "functional.ai-inspection-evidence.2139412c33ea",
+          "stepId": "replay-history",
+          "testFile": "apps/asyra-design/e2e/ai-inspection-evidence.spec.ts",
+          "testName": "recorded UI Undo retires the exact property graph after removing its element",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/features/undo-redo/index.ts",
+            "apps/asyra-design/src/common-apis/history.ts",
+            "apps/asyra-design/src/common-apis/transaction.ts"
+          ]
         }
       ],
       "handoffs": []
@@ -949,9 +971,7 @@
       "id": "functional-edit-vector-path",
       "title": "Edit vector paths",
       "goal": "Own pen continuation, anchor and segment editing sessions.",
-      "stepIds": [
-        "edit-vector-path"
-      ],
+      "stepIds": ["edit-vector-path"],
       "cases": [
         {
           "id": "functional.basic-api-actions.b1f9c05c1f49",
@@ -1284,9 +1304,7 @@
       "id": "functional-edit-properties",
       "title": "Edit selected properties",
       "goal": "Project selected properties and route field edits through canonical App APIs.",
-      "stepIds": [
-        "edit-properties"
-      ],
+      "stepIds": ["edit-properties"],
       "cases": [
         {
           "id": "functional.properties.8409b93a338b",
@@ -1415,9 +1433,7 @@
       "id": "functional-edit-fills",
       "title": "Edit fills and strokes",
       "goal": "Apply field-preserving fill and stroke edits with canonical property identity.",
-      "stepIds": [
-        "edit-fills"
-      ],
+      "stepIds": ["edit-fills"],
       "cases": [
         {
           "id": "functional.fill-patch.6f2492342e93",
@@ -1550,20 +1566,6 @@
           "stepId": "edit-fills",
           "testFile": "apps/asyra-design/e2e/fill-patch.spec.ts",
           "testName": "multi-selection Fill UI edits both elements in one Undo action",
-          "projectName": "chromium",
-          "implementationPaths": [
-            "apps/asyra-design/src/common-apis/fills.ts",
-            "apps/asyra-design/src/common-apis/property-patch.ts",
-            "apps/asyra-design/src/properties/fills/use-fill-interactions.ts",
-            "apps/asyra-design/src/properties/fills/use-gradient-interactions.ts",
-            "apps/asyra-design/src/properties/strokes/use-stroke-interactions.ts"
-          ]
-        },
-        {
-          "id": "functional.fill-patch.d4bf568caa7e",
-          "stepId": "edit-fills",
-          "testFile": "apps/asyra-design/e2e/fill-patch.spec.ts",
-          "testName": "shared Fill property links propagate edits and detach with exact Undo/Redo",
           "projectName": "chromium",
           "implementationPaths": [
             "apps/asyra-design/src/common-apis/fills.ts",
@@ -1880,6 +1882,20 @@
             "apps/asyra-design/src/properties/fills/use-fill-interactions.ts",
             "apps/asyra-design/src/properties/fills/use-gradient-interactions.ts"
           ]
+        },
+        {
+          "id": "functional.fill-patch.777703ffc4f0",
+          "stepId": "edit-fills",
+          "testFile": "apps/asyra-design/e2e/fill-patch.spec.ts",
+          "testName": "shared Fill intents preserve local masks, peers, Undo/Redo and durable reload",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/common-apis/fills.ts",
+            "apps/asyra-design/src/common-apis/property-patch.ts",
+            "apps/asyra-design/src/properties/fills/use-fill-interactions.ts",
+            "apps/asyra-design/src/properties/fills/use-gradient-interactions.ts",
+            "apps/asyra-design/src/properties/strokes/use-stroke-interactions.ts"
+          ]
         }
       ],
       "handoffs": []
@@ -1888,9 +1904,7 @@
       "id": "functional-drag-gradient-handles",
       "title": "Drag gradient handles",
       "goal": "Convert canvas handle drags into normalized canonical gradient data.",
-      "stepIds": [
-        "drag-gradient-handles"
-      ],
+      "stepIds": ["drag-gradient-handles"],
       "cases": [
         {
           "id": "functional.gradient-fill-handles.cb0509a270c9",
@@ -1943,9 +1957,7 @@
       "id": "functional-target-hierarchy",
       "title": "Resolve hierarchy interactions",
       "goal": "Resolve Group/Frame interaction targets and child-level selection.",
-      "stepIds": [
-        "target-hierarchy"
-      ],
+      "stepIds": ["target-hierarchy"],
       "cases": [
         {
           "id": "functional.group-hierarchy.dc75cefb2ff0",
@@ -2014,9 +2026,7 @@
       "id": "functional-group-elements",
       "title": "Group and ungroup elements",
       "goal": "Route explicit grouping through canonical hierarchy APIs.",
-      "stepIds": [
-        "group-elements"
-      ],
+      "stepIds": ["group-elements"],
       "cases": [
         {
           "id": "functional.group-interaction.61aff3d7b873",
@@ -2047,9 +2057,7 @@
       "id": "functional-move-layer-hierarchy",
       "title": "Move Layers hierarchy",
       "goal": "Resolve Layers pointer intent and commit one canonical move.",
-      "stepIds": [
-        "move-layer-hierarchy"
-      ],
+      "stepIds": ["move-layer-hierarchy"],
       "cases": [
         {
           "id": "functional.layer-tree-reparent-reorder.63841ee3ab7a",
@@ -2071,9 +2079,7 @@
       "id": "functional-navigate-viewport",
       "title": "Navigate the viewport",
       "goal": "Apply pan, zoom and fit through App viewport APIs.",
-      "stepIds": [
-        "navigate-viewport"
-      ],
+      "stepIds": ["navigate-viewport"],
       "cases": [
         {
           "id": "functional.ai-conversation-flow.16a389be438b",
@@ -2213,9 +2219,7 @@
       "id": "functional-present-conversation",
       "title": "Present the conversation",
       "goal": "Retain conversation navigation, drafts, activity and composer context.",
-      "stepIds": [
-        "present-conversation"
-      ],
+      "stepIds": ["present-conversation"],
       "cases": [
         {
           "id": "functional.ai-composer-layout.8ad3189fe559",
@@ -2456,9 +2460,7 @@
       "id": "functional-execute-agent-request",
       "title": "Execute an Agent request",
       "goal": "Route a prepared request through App permission, action and transaction owners.",
-      "stepIds": [
-        "execute-agent-request"
-      ],
+      "stepIds": ["execute-agent-request"],
       "cases": [
         {
           "id": "functional.ai-conversation-flow.ecd0bb0556ba",
@@ -2674,9 +2676,7 @@
           "testFile": "apps/asyra-design/e2e/action-usage.spec.ts",
           "testName": "registered action usage - report_outcome",
           "projectName": "chromium",
-          "implementationPaths": [
-            "apps/asyra-design/src/ai/actions.ts"
-          ]
+          "implementationPaths": ["apps/asyra-design/src/ai/actions.ts"]
         },
         {
           "id": "functional.action-usage.82d317c0f086",
@@ -2684,9 +2684,7 @@
           "testFile": "apps/asyra-design/e2e/action-usage.spec.ts",
           "testName": "registered action usage - request_clarification",
           "projectName": "chromium",
-          "implementationPaths": [
-            "apps/asyra-design/src/ai/actions.ts"
-          ]
+          "implementationPaths": ["apps/asyra-design/src/ai/actions.ts"]
         },
         {
           "id": "functional.action-usage.47f966ee68fb",
@@ -2694,9 +2692,7 @@
           "testFile": "apps/asyra-design/e2e/action-usage.spec.ts",
           "testName": "registered action usage - request_drawing_detail_choice",
           "projectName": "chromium",
-          "implementationPaths": [
-            "apps/asyra-design/src/ai/actions.ts"
-          ]
+          "implementationPaths": ["apps/asyra-design/src/ai/actions.ts"]
         },
         {
           "id": "functional.document-export.97250a96e367",
@@ -2754,6 +2750,29 @@
             "apps/asyra-design/src/ai/actions.ts",
             "apps/asyra-design/src/ai/document-export.ts"
           ]
+        },
+        {
+          "id": "functional.ai-repeated-detail.5ab3947a7ed2",
+          "stepId": "execute-agent-request",
+          "testFile": "apps/asyra-design/e2e/ai-repeated-detail.spec.ts",
+          "testName": "actual provider receipt ownership preserves a recorded prefix through repair, history and durable reload",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/features/ai-agent/index.ts",
+            "apps/asyra-design/src/ai/startup.ts",
+            "apps/asyra-design/src/ai/transaction.ts",
+            "apps/asyra-design/src/ai/design-actions.ts"
+          ]
+        },
+        {
+          "id": "functional.local-ai-provider.07dda9620703",
+          "stepId": "execute-agent-request",
+          "testFile": "apps/asyra-design/e2e/local-ai-provider.spec.ts",
+          "testName": "captures the admitted report after network body eviction without replaying drawing",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/ai/server-action-batch-provider.ts"
+          ]
         }
       ],
       "handoffs": []
@@ -2762,9 +2781,7 @@
       "id": "functional-invoke-basic-api",
       "title": "Invoke a registered public API",
       "goal": "Execute only catalogued basic actions through their explicit public owner.",
-      "stepIds": [
-        "invoke-basic-api"
-      ],
+      "stepIds": ["invoke-basic-api"],
       "cases": [
         {
           "id": "functional.basic-api-actions.803332ede82f",
@@ -5059,6 +5076,126 @@
             "apps/asyra-design/src/ai/basic-api-actions.ts",
             "apps/asyra-design/src/ai/basic-api-results.ts"
           ]
+        },
+        {
+          "id": "functional.basic-api-actions.2a7f8ab1fe42",
+          "stepId": "invoke-basic-api",
+          "testFile": "apps/asyra-design/e2e/basic-api-actions.spec.ts",
+          "testName": "visibility receipts preserve unchanged and unavailable outcomes through history and durable reload",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/ai/basic-api-actions.ts",
+            "apps/asyra-design/src/ai/basic-api-catalog.ts",
+            "apps/asyra-design/src/ai/basic-api-results.ts",
+            "apps/asyra-design/src/ai/basic-core-api-contracts.ts",
+            "apps/asyra-design/src/ai/basic-design-api-contracts.ts",
+            "apps/asyra-design/src/ai/basic-vector-api-contracts.ts"
+          ]
+        },
+        {
+          "id": "functional.basic-api-actions.b818869a6f2f",
+          "stepId": "invoke-basic-api",
+          "testFile": "apps/asyra-design/e2e/basic-api-actions.spec.ts",
+          "testName": "real registered basic actions api_core_allocateIds",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/ai/basic-api-actions.ts",
+            "apps/asyra-design/src/ai/basic-api-catalog.ts",
+            "apps/asyra-design/src/ai/basic-api-results.ts",
+            "apps/asyra-design/src/ai/basic-core-api-contracts.ts",
+            "apps/asyra-design/src/ai/basic-design-api-contracts.ts",
+            "apps/asyra-design/src/ai/basic-vector-api-contracts.ts"
+          ]
+        },
+        {
+          "id": "functional.basic-api-actions.aece56dbe206",
+          "stepId": "invoke-basic-api",
+          "testFile": "apps/asyra-design/e2e/basic-api-actions.spec.ts",
+          "testName": "real registered basic actions api_core_readElementPropertyTargets",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/ai/basic-api-actions.ts",
+            "apps/asyra-design/src/ai/basic-api-catalog.ts",
+            "apps/asyra-design/src/ai/basic-api-results.ts",
+            "apps/asyra-design/src/ai/basic-core-api-contracts.ts",
+            "apps/asyra-design/src/ai/basic-design-api-contracts.ts",
+            "apps/asyra-design/src/ai/basic-vector-api-contracts.ts"
+          ]
+        },
+        {
+          "id": "functional.basic-api-actions.d94e51dde24d",
+          "stepId": "invoke-basic-api",
+          "testFile": "apps/asyra-design/e2e/basic-api-actions.spec.ts",
+          "testName": "real registered basic actions api_core_updateElementPropertyTargets",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/ai/basic-api-actions.ts",
+            "apps/asyra-design/src/ai/basic-api-catalog.ts",
+            "apps/asyra-design/src/ai/basic-api-results.ts",
+            "apps/asyra-design/src/ai/basic-core-api-contracts.ts",
+            "apps/asyra-design/src/ai/basic-design-api-contracts.ts",
+            "apps/asyra-design/src/ai/basic-vector-api-contracts.ts"
+          ]
+        },
+        {
+          "id": "functional.basic-api-actions.4c9779d45cbc",
+          "stepId": "invoke-basic-api",
+          "testFile": "apps/asyra-design/e2e/basic-api-actions.spec.ts",
+          "testName": "real registered basic actions api_core_updateSharedPropertySources",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/ai/basic-api-actions.ts",
+            "apps/asyra-design/src/ai/basic-api-catalog.ts",
+            "apps/asyra-design/src/ai/basic-api-results.ts",
+            "apps/asyra-design/src/ai/basic-core-api-contracts.ts",
+            "apps/asyra-design/src/ai/basic-design-api-contracts.ts",
+            "apps/asyra-design/src/ai/basic-vector-api-contracts.ts"
+          ]
+        },
+        {
+          "id": "functional.basic-api-actions.b3c975c11deb",
+          "stepId": "invoke-basic-api",
+          "testFile": "apps/asyra-design/e2e/basic-api-actions.spec.ts",
+          "testName": "real registered basic actions api_core_resetElementPropertyOverrides",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/ai/basic-api-actions.ts",
+            "apps/asyra-design/src/ai/basic-api-catalog.ts",
+            "apps/asyra-design/src/ai/basic-api-results.ts",
+            "apps/asyra-design/src/ai/basic-core-api-contracts.ts",
+            "apps/asyra-design/src/ai/basic-design-api-contracts.ts",
+            "apps/asyra-design/src/ai/basic-vector-api-contracts.ts"
+          ]
+        },
+        {
+          "id": "functional.basic-api-actions.680a21afd5b2",
+          "stepId": "invoke-basic-api",
+          "testFile": "apps/asyra-design/e2e/basic-api-actions.spec.ts",
+          "testName": "real registered basic actions api_core_detachElementPropertyTargets",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/ai/basic-api-actions.ts",
+            "apps/asyra-design/src/ai/basic-api-catalog.ts",
+            "apps/asyra-design/src/ai/basic-api-results.ts",
+            "apps/asyra-design/src/ai/basic-core-api-contracts.ts",
+            "apps/asyra-design/src/ai/basic-design-api-contracts.ts",
+            "apps/asyra-design/src/ai/basic-vector-api-contracts.ts"
+          ]
+        },
+        {
+          "id": "functional.basic-api-actions.8a4e5328b718",
+          "stepId": "invoke-basic-api",
+          "testFile": "apps/asyra-design/e2e/basic-api-actions.spec.ts",
+          "testName": "real registered basic actions api_core_shareElementPropertyTargets",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/ai/basic-api-actions.ts",
+            "apps/asyra-design/src/ai/basic-api-catalog.ts",
+            "apps/asyra-design/src/ai/basic-api-results.ts",
+            "apps/asyra-design/src/ai/basic-core-api-contracts.ts",
+            "apps/asyra-design/src/ai/basic-design-api-contracts.ts",
+            "apps/asyra-design/src/ai/basic-vector-api-contracts.ts"
+          ]
         }
       ],
       "handoffs": []
@@ -5067,9 +5204,7 @@
       "id": "functional-apply-prepared-design",
       "title": "Apply prepared design",
       "goal": "Admit and apply prepared editable content through ordinary design actions.",
-      "stepIds": [
-        "apply-prepared-design"
-      ],
+      "stepIds": ["apply-prepared-design"],
       "cases": [
         {
           "id": "functional.design-construction.6317e5763e37",
@@ -5385,9 +5520,7 @@
           "testFile": "apps/asyra-design/e2e/action-usage.spec.ts",
           "testName": "registered action usage - apply_prepared_design",
           "projectName": "chromium",
-          "implementationPaths": [
-            "apps/asyra-design/src/ai/prepared-design.ts"
-          ]
+          "implementationPaths": ["apps/asyra-design/src/ai/prepared-design.ts"]
         },
         {
           "id": "functional.action-usage.df736ea815ac",
@@ -5395,9 +5528,7 @@
           "testFile": "apps/asyra-design/e2e/action-usage.spec.ts",
           "testName": "registered action usage - arrange_design",
           "projectName": "chromium",
-          "implementationPaths": [
-            "apps/asyra-design/src/ai/design-actions.ts"
-          ]
+          "implementationPaths": ["apps/asyra-design/src/ai/design-actions.ts"]
         },
         {
           "id": "functional.action-usage.0c7b3b0f2ce6",
@@ -5405,9 +5536,7 @@
           "testFile": "apps/asyra-design/e2e/action-usage.spec.ts",
           "testName": "registered action usage - organize_design",
           "projectName": "chromium",
-          "implementationPaths": [
-            "apps/asyra-design/src/ai/design-actions.ts"
-          ]
+          "implementationPaths": ["apps/asyra-design/src/ai/design-actions.ts"]
         },
         {
           "id": "functional.action-usage.8a95602e4935",
@@ -5425,9 +5554,7 @@
           "testFile": "apps/asyra-design/e2e/action-usage.spec.ts",
           "testName": "registered action usage - replace_vector_composition",
           "projectName": "chromium",
-          "implementationPaths": [
-            "apps/asyra-design/src/ai/actions.ts"
-          ]
+          "implementationPaths": ["apps/asyra-design/src/ai/actions.ts"]
         },
         {
           "id": "functional.action-usage.95f3c7fe0ab9",
@@ -5435,9 +5562,7 @@
           "testFile": "apps/asyra-design/e2e/action-usage.spec.ts",
           "testName": "registered action usage - insert_vector_composition",
           "projectName": "chromium",
-          "implementationPaths": [
-            "apps/asyra-design/src/ai/actions.ts"
-          ]
+          "implementationPaths": ["apps/asyra-design/src/ai/actions.ts"]
         },
         {
           "id": "functional.action-usage.6b97923575f1",
@@ -5445,9 +5570,7 @@
           "testFile": "apps/asyra-design/e2e/action-usage.spec.ts",
           "testName": "registered action usage - remove_ai_composition",
           "projectName": "chromium",
-          "implementationPaths": [
-            "apps/asyra-design/src/ai/actions.ts"
-          ]
+          "implementationPaths": ["apps/asyra-design/src/ai/actions.ts"]
         },
         {
           "id": "functional.action-usage.c72f73dc0416",
@@ -5455,9 +5578,7 @@
           "testFile": "apps/asyra-design/e2e/action-usage.spec.ts",
           "testName": "registered action usage - set_element_visibility",
           "projectName": "chromium",
-          "implementationPaths": [
-            "apps/asyra-design/src/ai/actions.ts"
-          ]
+          "implementationPaths": ["apps/asyra-design/src/ai/actions.ts"]
         },
         {
           "id": "functional.action-usage.d9aae02879ae",
@@ -5465,8 +5586,150 @@
           "testFile": "apps/asyra-design/e2e/action-usage.spec.ts",
           "testName": "registered action usage - update_composition_elements",
           "projectName": "chromium",
+          "implementationPaths": ["apps/asyra-design/src/ai/actions.ts"]
+        },
+        {
+          "id": "functional.action-usage.9a4c451ba96c",
+          "stepId": "apply-prepared-design",
+          "testFile": "apps/asyra-design/e2e/action-usage.spec.ts",
+          "testName": "registered action usage - apply_prepared_material",
+          "projectName": "chromium",
           "implementationPaths": [
-            "apps/asyra-design/src/ai/actions.ts"
+            "apps/asyra-design/src/ai/prepared-material-action.ts"
+          ]
+        },
+        {
+          "id": "functional.ai-linear-material.e227d8288bf1",
+          "stepId": "apply-prepared-design",
+          "testFile": "apps/asyra-design/e2e/ai-linear-material.spec.ts",
+          "testName": "recorded world material reaches real tools, local checks, history, peer and durable reload without inference",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/ai/prepared-material-action.ts",
+            "apps/asyra-design/src/ai/design-actions.ts"
+          ]
+        },
+        {
+          "id": "functional.ai-linear-material.e537d445e46a",
+          "stepId": "apply-prepared-design",
+          "testFile": "apps/asyra-design/e2e/ai-linear-material.spec.ts",
+          "testName": "source material revisions update original faces, extend coherently and survive history, peer and reload",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/ai/prepared-material-action.ts",
+            "apps/asyra-design/src/ai/design-actions.ts"
+          ]
+        },
+        {
+          "id": "functional.ai-repeated-detail.e63adc078df5",
+          "stepId": "apply-prepared-design",
+          "testFile": "apps/asyra-design/e2e/ai-repeated-detail.spec.ts",
+          "testName": "saved multi-face detail uses current targets and preserves sibling passes through edit, history, peer and durable reload",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/ai/prepared-design.ts",
+            "apps/asyra-design/src/ai/prepared-design-admission.ts",
+            "apps/asyra-design/src/ai/design-actions.ts",
+            "apps/asyra-design/src/ai/design-edit-action.ts",
+            "apps/asyra-design/server/design-preparation.ts"
+          ]
+        },
+        {
+          "id": "functional.ai-repeated-detail.7fb7b5adbd34",
+          "stepId": "apply-prepared-design",
+          "testFile": "apps/asyra-design/e2e/ai-repeated-detail.spec.ts",
+          "testName": "ordered multi-face preparation preserves an acknowledged prefix and retries only the corrected part",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/ai/prepared-design.ts",
+            "apps/asyra-design/src/ai/prepared-design-admission.ts",
+            "apps/asyra-design/src/ai/design-actions.ts",
+            "apps/asyra-design/src/ai/design-edit-action.ts",
+            "apps/asyra-design/server/design-preparation.ts"
+          ]
+        },
+        {
+          "id": "functional.ai-retained-anchor.1ba24c039816",
+          "stepId": "apply-prepared-design",
+          "testFile": "apps/asyra-design/e2e/ai-retained-anchor.spec.ts",
+          "testName": "retained anchor reaches real hierarchy, rejects ambiguity, and preserves peer order, history and reload",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/ai/prepared-design.ts",
+            "apps/asyra-design/src/ai/prepared-design-admission.ts",
+            "apps/asyra-design/src/ai/design-actions.ts",
+            "apps/asyra-design/src/ai/design-edit-action.ts",
+            "apps/asyra-design/server/design-preparation.ts"
+          ]
+        },
+        {
+          "id": "functional.design-construction.69dabae4a174",
+          "stepId": "apply-prepared-design",
+          "testFile": "apps/asyra-design/e2e/design-construction.spec.ts",
+          "testName": "structured ovals preparation renders editable geometry with one Undo",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/ai/prepared-design.ts",
+            "apps/asyra-design/src/ai/prepared-design-admission.ts",
+            "apps/asyra-design/src/ai/design-actions.ts",
+            "apps/asyra-design/src/ai/design-edit-action.ts",
+            "apps/asyra-design/server/design-preparation.ts"
+          ]
+        },
+        {
+          "id": "functional.design-construction.e2af961a2fe5",
+          "stepId": "apply-prepared-design",
+          "testFile": "apps/asyra-design/e2e/design-construction.spec.ts",
+          "testName": "face boundaries preserve partition recovery, collaboration, Undo and durable reload",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/ai/prepared-design.ts",
+            "apps/asyra-design/src/ai/prepared-design-admission.ts",
+            "apps/asyra-design/src/ai/design-actions.ts",
+            "apps/asyra-design/src/ai/design-edit-action.ts",
+            "apps/asyra-design/server/design-preparation.ts"
+          ]
+        },
+        {
+          "id": "functional.design-construction.b2c1b0447d52",
+          "stepId": "apply-prepared-design",
+          "testFile": "apps/asyra-design/e2e/design-construction.spec.ts",
+          "testName": "shared motifs preserve independent surfaces through application, Undo and durable reload",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/ai/prepared-design.ts",
+            "apps/asyra-design/src/ai/prepared-design-admission.ts",
+            "apps/asyra-design/src/ai/design-actions.ts",
+            "apps/asyra-design/src/ai/design-edit-action.ts",
+            "apps/asyra-design/server/design-preparation.ts"
+          ]
+        },
+        {
+          "id": "functional.design-construction.23c159de0217",
+          "stepId": "apply-prepared-design",
+          "testFile": "apps/asyra-design/e2e/design-construction.spec.ts",
+          "testName": "budget partitions preserve one root through canonical normalization, Undo and durable reload",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/ai/prepared-design.ts",
+            "apps/asyra-design/src/ai/prepared-design-admission.ts",
+            "apps/asyra-design/src/ai/design-actions.ts",
+            "apps/asyra-design/src/ai/design-edit-action.ts",
+            "apps/asyra-design/server/design-preparation.ts"
+          ]
+        },
+        {
+          "id": "functional.design-construction.b40578ec7ee0",
+          "stepId": "apply-prepared-design",
+          "testFile": "apps/asyra-design/e2e/design-construction.spec.ts",
+          "testName": "layered patterns preserve references through application, Undo and durable reload",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/ai/prepared-design.ts",
+            "apps/asyra-design/src/ai/prepared-design-admission.ts",
+            "apps/asyra-design/src/ai/design-actions.ts",
+            "apps/asyra-design/src/ai/design-edit-action.ts",
+            "apps/asyra-design/server/design-preparation.ts"
           ]
         }
       ],
@@ -5476,9 +5739,7 @@
       "id": "functional-inspect-design",
       "title": "Inspect current design",
       "goal": "Capture canonical and rendered inspection evidence for the current design.",
-      "stepIds": [
-        "inspect-design"
-      ],
+      "stepIds": ["inspect-design"],
       "cases": [
         {
           "id": "functional.ai-inspection-evidence.29d7c8fe685d",
@@ -5594,9 +5855,7 @@
           "testFile": "apps/asyra-design/e2e/action-usage.spec.ts",
           "testName": "registered action usage - review_design",
           "projectName": "chromium",
-          "implementationPaths": [
-            "apps/asyra-design/src/ai/review-action.ts"
-          ]
+          "implementationPaths": ["apps/asyra-design/src/ai/review-action.ts"]
         },
         {
           "id": "functional.action-usage.92b2bd8dd167",
@@ -5604,9 +5863,7 @@
           "testFile": "apps/asyra-design/e2e/action-usage.spec.ts",
           "testName": "registered action usage - read_design_attachment",
           "projectName": "chromium",
-          "implementationPaths": [
-            "apps/asyra-design/src/ai/inspection.ts"
-          ]
+          "implementationPaths": ["apps/asyra-design/src/ai/inspection.ts"]
         },
         {
           "id": "functional.action-usage.10888b0b3218",
@@ -5614,9 +5871,7 @@
           "testFile": "apps/asyra-design/e2e/action-usage.spec.ts",
           "testName": "registered action usage - inspect_drawing",
           "projectName": "chromium",
-          "implementationPaths": [
-            "apps/asyra-design/src/ai/inspection.ts"
-          ]
+          "implementationPaths": ["apps/asyra-design/src/ai/inspection.ts"]
         },
         {
           "id": "functional.action-usage.93c23d8e8c47",
@@ -5788,6 +6043,42 @@
             "apps/asyra-design/src/common-apis/design-review.ts",
             "apps/asyra-design/src/common-apis/inspection-evidence.ts"
           ]
+        },
+        {
+          "id": "functional.ai-inspection-evidence.d885eed9d87f",
+          "stepId": "inspect-design",
+          "testFile": "apps/asyra-design/e2e/ai-inspection-evidence.spec.ts",
+          "testName": "published representative guidance reaches real capture and completion without replaying drawing",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/common-apis/inspection.ts",
+            "apps/asyra-design/src/common-apis/inspection-evidence.ts",
+            "apps/asyra-design/src/ai/inspection.ts"
+          ]
+        },
+        {
+          "id": "functional.ai-inspection-evidence.75cb6b6c0cce",
+          "stepId": "inspect-design",
+          "testFile": "apps/asyra-design/e2e/ai-inspection-evidence.spec.ts",
+          "testName": "shared source field changes preserve masked visual receipts and unrelated local passes",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/common-apis/inspection.ts",
+            "apps/asyra-design/src/common-apis/inspection-evidence.ts",
+            "apps/asyra-design/src/ai/inspection.ts"
+          ]
+        },
+        {
+          "id": "functional.drawing-inspection.955d6ed71fc4",
+          "stepId": "inspect-design",
+          "testFile": "apps/asyra-design/e2e/drawing-inspection.spec.ts",
+          "testName": "workspace overview preserves independent roots, visual order and read-only evidence through reload",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/common-apis/inspection.ts",
+            "apps/asyra-design/src/common-apis/inspection-evidence.ts",
+            "apps/asyra-design/src/ai/inspection.ts"
+          ]
         }
       ],
       "handoffs": []
@@ -5796,9 +6087,7 @@
       "id": "functional-query-design-context",
       "title": "Query bounded design context",
       "goal": "Resolve current region queries and retained edit selections through canonical indexes.",
-      "stepIds": [
-        "query-design-context"
-      ],
+      "stepIds": ["query-design-context"],
       "cases": [
         {
           "id": "functional.indexed-design-query.d8098ca29a69",
@@ -5871,9 +6160,7 @@
           "testFile": "apps/asyra-design/e2e/action-usage.spec.ts",
           "testName": "registered action usage - read_design_context",
           "projectName": "chromium",
-          "implementationPaths": [
-            "apps/asyra-design/src/ai/context-action.ts"
-          ]
+          "implementationPaths": ["apps/asyra-design/src/ai/context-action.ts"]
         },
         {
           "id": "functional.action-usage.e8af76bfb50e",
@@ -5881,9 +6168,7 @@
           "testFile": "apps/asyra-design/e2e/action-usage.spec.ts",
           "testName": "registered action usage - resolve_design_targets",
           "projectName": "chromium",
-          "implementationPaths": [
-            "apps/asyra-design/src/ai/context-action.ts"
-          ]
+          "implementationPaths": ["apps/asyra-design/src/ai/context-action.ts"]
         },
         {
           "id": "functional.action-usage.de23028658f4",
@@ -5891,9 +6176,7 @@
           "testFile": "apps/asyra-design/e2e/action-usage.spec.ts",
           "testName": "registered action usage - release_design_context",
           "projectName": "chromium",
-          "implementationPaths": [
-            "apps/asyra-design/src/ai/context-action.ts"
-          ]
+          "implementationPaths": ["apps/asyra-design/src/ai/context-action.ts"]
         },
         {
           "id": "functional.action-usage.f0997e1fb4f3",
@@ -5904,6 +6187,19 @@
           "implementationPaths": [
             "apps/asyra-design/src/ai/retained-fill-action.ts"
           ]
+        },
+        {
+          "id": "functional.indexed-design-query.b69338ae5b13",
+          "stepId": "query-design-context",
+          "testFile": "apps/asyra-design/e2e/indexed-design-query.spec.ts",
+          "testName": "recovers a rejected recorded query through explicit refinement, local edit, history and durable reload",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/common-apis/design-context.ts",
+            "apps/asyra-design/src/common-apis/retained-design-context.ts",
+            "apps/asyra-design/src/ai/context-action.ts",
+            "apps/asyra-design/src/ai/retained-fill-action.ts"
+          ]
         }
       ],
       "handoffs": []
@@ -5912,9 +6208,7 @@
       "id": "functional-project-vector-geometry",
       "title": "Project vector geometry",
       "goal": "Project canonical vector geometry and coverage to the renderer.",
-      "stepIds": [
-        "project-vector-geometry"
-      ],
+      "stepIds": ["project-vector-geometry"],
       "cases": [
         {
           "id": "functional.vector-gradient-fill.8bcb02eddcd9",
@@ -5967,9 +6261,7 @@
       "id": "functional-render-material",
       "title": "Render native materials",
       "goal": "Render canonical mesh and gradient material commands through the concrete engine.",
-      "stepIds": [
-        "render-material"
-      ],
+      "stepIds": ["render-material"],
       "cases": [
         {
           "id": "functional.gradient-fill-render.6b617cbabb6c",
@@ -6174,6 +6466,18 @@
             "packages/render-engine-pixi/src/mesh-material-batch.ts",
             "packages/render-engine-pixi/src/mesh-material-shader.ts"
           ]
+        },
+        {
+          "id": "functional.ai-linear-material.94f7ade0d0ab",
+          "stepId": "render-material",
+          "testFile": "apps/asyra-design/e2e/ai-linear-material.spec.ts",
+          "testName": "native field sampling stays continuous across the rendered join of translated independent panels",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "packages/render-engine-pixi/src/mesh-material.ts",
+            "packages/render-engine-pixi/src/mesh-material-batch.ts",
+            "packages/render-engine-pixi/src/mesh-material-shader.ts"
+          ]
         }
       ],
       "handoffs": []
@@ -6182,9 +6486,7 @@
       "id": "functional-retain-navigation",
       "title": "Retain navigation projections",
       "goal": "Reuse camera-independent geometry while applying current navigation and local changes.",
-      "stepIds": [
-        "retain-navigation"
-      ],
+      "stepIds": ["retain-navigation"],
       "cases": [
         {
           "id": "functional.large-document-navigation.641f3e0e5311",
@@ -6226,9 +6528,7 @@
       "id": "functional-edit-native-text",
       "title": "Edit native text",
       "goal": "Apply editable native text with canonical save and replay behavior.",
-      "stepIds": [
-        "edit-native-text"
-      ],
+      "stepIds": ["edit-native-text"],
       "cases": [
         {
           "id": "functional.native-text.27b2b5daa8f1",
@@ -6662,9 +6962,7 @@
       "id": "functional-show-context-menu",
       "title": "Present Group commands",
       "goal": "Present eligible Group commands without mutation until an explicit command.",
-      "stepIds": [
-        "show-context-menu"
-      ],
+      "stepIds": ["show-context-menu"],
       "cases": [
         {
           "id": "functional.context-menu.36c22a73a6c4",
@@ -6721,9 +7019,7 @@
       "id": "functional-rollback-transaction",
       "title": "Rollback rejected mutations",
       "goal": "Reverse a failed transaction journal without creating committed History.",
-      "stepIds": [
-        "rollback-transaction"
-      ],
+      "stepIds": ["rollback-transaction"],
       "cases": [
         {
           "id": "functional.delete-element.05b69c2318a3",
@@ -6731,9 +7027,7 @@
           "testFile": "apps/asyra-design/e2e/delete-element.spec.ts",
           "testName": "Delete Selected Element validation failure restores deleted element and props exactly",
           "projectName": "chromium",
-          "implementationPaths": [
-            "packages/factory/src/data-transact.ts"
-          ]
+          "implementationPaths": ["packages/factory/src/data-transact.ts"]
         }
       ],
       "handoffs": []
@@ -6742,9 +7036,7 @@
       "id": "functional-group-history-members",
       "title": "Group finite History members",
       "goal": "Commit finite canonical members while retaining one open History group.",
-      "stepIds": [
-        "group-history-members"
-      ],
+      "stepIds": ["group-history-members"],
       "cases": [
         {
           "id": "functional.transaction-history-groups.d56462fd928a",
@@ -6752,9 +7044,7 @@
           "testFile": "apps/asyra-design/e2e/transaction-history-groups.spec.ts",
           "testName": "finite history members project nested hierarchy before the history group closes",
           "projectName": "chromium",
-          "implementationPaths": [
-            "packages/factory/src/data-transact.ts"
-          ]
+          "implementationPaths": ["packages/factory/src/data-transact.ts"]
         }
       ],
       "handoffs": []
@@ -6763,9 +7053,7 @@
       "id": "functional-present-layer-hierarchy",
       "title": "Present canonical Layers hierarchy",
       "goal": "Project canonical hierarchy as expandable Layers rows without changing document structure.",
-      "stepIds": [
-        "present-layer-hierarchy"
-      ],
+      "stepIds": ["present-layer-hierarchy"],
       "cases": [
         {
           "id": "functional.group-hierarchy.caf2f297812e",
@@ -6788,9 +7076,7 @@
       "id": "functional-project-ui-membership",
       "title": "Project canonical UI membership",
       "goal": "Publish ordered flattened UI membership from canonical scene changes without rereading unchanged rows.",
-      "stepIds": [
-        "project-ui-membership"
-      ],
+      "stepIds": ["project-ui-membership"],
       "cases": [
         {
           "id": "functional.large-document-navigation.c877f564233e",

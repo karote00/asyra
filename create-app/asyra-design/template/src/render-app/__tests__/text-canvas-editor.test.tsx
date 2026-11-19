@@ -34,11 +34,15 @@ const mocks = vi.hoisted(() => ({
     y: p.y * 2 + 20
   }))
 }))
+
 vi.mock('@asyra/core', async (original) => ({
   ...(await original<typeof import('@asyra/core')>()),
+
   getFeature: () => ({ finish: mocks.finish, cancel: mocks.cancel }),
+
   subscribeToFileLoadComplete: (fn: () => void) => {
     mocks.load = fn
+
     return { unsubscribe: mocks.unsubscribe }
   }
 }))
@@ -47,12 +51,16 @@ vi.mock('../../contexts', () => ({
     suspendElementPresentation: mocks.suspendElementPresentation,
     elementLocalToWorkspace: mocks.elementLocalToWorkspace,
     workspaceToCanvas: mocks.workspaceToCanvas,
+
     subscribeToFrameComplete: (fn: () => void) => {
       mocks.frame = fn
+
       return mocks.unsubscribe
     },
+
     subscribeToSharedPublication: (fn: () => void) => {
       mocks.publication = fn
+
       return mocks.unsubscribe
     }
   }
@@ -60,7 +68,9 @@ vi.mock('../../contexts', () => ({
 vi.mock('../../common-apis/text-canvas', () => ({
   textCanvasApis: {
     getSnapshot: () => mocks.current,
+
     getDraftSnapshot: () => mocks.draft,
+
     subscribe: mocks.subscribe,
     cancel: mocks.cancel,
     isCurrent: mocks.isCurrent,
@@ -74,15 +84,22 @@ beforeEach(() => {
   mocks.draft = null
   mocks.listeners.clear()
   mocks.subscribe.mockImplementation((listener?: () => void) => {
-    if (listener) mocks.listeners.add(listener)
+    if (listener) {
+      mocks.listeners.add(listener)
+    }
+
     return vi.fn(() => {
-      if (listener) mocks.listeners.delete(listener)
+      if (listener) {
+        mocks.listeners.delete(listener)
+      }
     })
   })
   mocks.updateDraft.mockImplementation((text?: string) => {
     const bounds = { x: 0, y: 0, width: 40, height: 20 }
+
     mocks.draft = { text: text ?? '', bounds }
     mocks.listeners.forEach((listener) => listener())
+
     return bounds
   })
   mocks.suspendElementPresentation.mockReturnValue(mocks.resumePresentation)
@@ -107,9 +124,12 @@ afterEach(cleanup)
 it('uses the full affine transform and does no canonical validation on unchanged frames', () => {
   const view = render(<TextCanvasEditor />)
   const input = screen.getByRole('textbox')
+
   expect(input.style.transform).toBe('matrix(0,2,-2,0,210,120)')
   act(() => {
-    for (let i = 0; i < 10; i++) mocks.frame?.()
+    for (let i = 0; i < 10; i++) {
+      mocks.frame?.()
+    }
   })
   expect(mocks.elementLocalToWorkspace).toHaveBeenCalledTimes(33)
   expect(mocks.isCurrent).not.toHaveBeenCalled()
@@ -120,6 +140,7 @@ it('uses the full affine transform and does no canonical validation on unchanged
 })
 it('renders only the text input without an editing hint or close button', () => {
   const view = render(<TextCanvasEditor />)
+
   expect(view.container.children).toHaveLength(1)
   expect(view.container.firstElementChild).toBe(screen.getByRole('textbox'))
   expect(screen.getByRole('textbox').hasAttribute('aria-describedby')).toBe(
@@ -129,6 +150,7 @@ it('renders only the text input without an editing hint or close button', () => 
 it('keeps composing Enter local and commits the complete native draft afterwards', () => {
   render(<TextCanvasEditor />)
   const input = screen.getByRole('textbox')
+
   fireEvent.compositionStart(input)
   fireEvent.change(input, { target: { value: '台灣' } })
   fireEvent.keyDown(input, { key: 'Enter', ctrlKey: true })
@@ -158,8 +180,10 @@ it('cancels transient state when a new document is loaded', () => {
 it('commits an outside pointer before the clicked target handles its action', () => {
   render(<TextCanvasEditor />)
   const calls: string[] = []
+
   mocks.finish.mockImplementationOnce(() => calls.push('commit'))
   const button = document.createElement('button')
+
   document.body.append(button)
   button.addEventListener('pointerdown', () => calls.push('target'))
   fireEvent.pointerDown(button)
@@ -170,17 +194,21 @@ it('commits an outside pointer before the clicked target handles its action', ()
 it('uses measured draft bounds and does not measure again on viewport frames', () => {
   render(<TextCanvasEditor />)
   const input = screen.getByRole('textbox')
+
   fireEvent.change(input, { target: { value: 'Small' } })
   expect(input.style.width).toBe('40px')
   expect(input.style.height).toBe('20px')
   act(() => {
-    for (let i = 0; i < 10; i++) mocks.frame?.()
+    for (let i = 0; i < 10; i++) {
+      mocks.frame?.()
+    }
   })
   expect(mocks.updateDraft).toHaveBeenCalledExactlyOnceWith('Small')
 })
 
 it('suspends the canonical glyph projection only for the native editing lifetime', () => {
   const view = render(<TextCanvasEditor />)
+
   expect(mocks.suspendElementPresentation).toHaveBeenCalledExactlyOnceWith(
     'text'
   )
@@ -190,6 +218,7 @@ it('suspends the canonical glyph projection only for the native editing lifetime
 
 it('projects live Canvas drafts without restarting presentation ownership', () => {
   const view = render(<TextCanvasEditor />)
+
   expect(document.activeElement).toBe(
     screen.getByRole('textbox', { name: 'Canvas text editor' })
   )

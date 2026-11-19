@@ -385,6 +385,53 @@ test('retains direct renderer CPU-time milliseconds without converting them to p
   assert.equal(Object.hasOwn(result.sample, 'intervalCpuPercent'), false)
 })
 
+const endpointInteraction = () => ({
+  duringCreation: {
+    keyboard: {
+      canonicalElements: 3600,
+      loadingConnected: true,
+      rectangleActive: true,
+      turnAccepted: true,
+      turnOutcome: null
+    },
+    pointer: {
+      canonicalElements: 5400,
+      loadingConnected: true,
+      rectangleActive: true,
+      turnAccepted: true,
+      turnOutcome: null
+    },
+    documentEventAttempts: { rectangleButton: 1, rectangleShortcut: 1 },
+    documentEventDeliveries: { rectangleButton: 1, rectangleShortcut: 1 }
+  },
+  completion: {
+    canonicalElements: 7076,
+    historyActionCount: 1,
+    loadingRemoved: true,
+    ordinaryKeyboardToolSwitchAccepted: true,
+    ordinaryToolSwitchAccepted: true
+  },
+  loadingAtZero: {
+    canonicalElements: 0,
+    connected: true,
+    phase: 'drawing',
+    rect: { x: 0, y: 0, width: 1672, height: 941 },
+    sourceBounds: { x: 0, y: 0, width: 1672, height: 941 }
+  },
+  pan: { before: { x: 0, y: 0 }, after: { x: 10, y: 15 } },
+  zoom: { before: 1, after: 1.2 },
+  progress: {
+    cooperativeYieldCount: 5,
+    longestCanonicalWorkUnitMs: 2,
+    milestones: [1, 1769, 3538, 5307, 7075].map((targetElements, index) => ({
+      atMs: index * 10,
+      completedElements: targetElements,
+      sampleIndex: index + 1,
+      targetElements
+    }))
+  }
+})
+
 const heartbeat = ({
   actorAElements = 0,
   actorBElements = 0,
@@ -1900,6 +1947,7 @@ test('stops on stalled A/B progress, but disables progress stall after both acto
           actorB: {},
           owner: OWNER,
           proofKind: 'endpoint',
+          localInteraction: endpointInteraction(),
           status: 'complete'
         }
       }
@@ -1943,6 +1991,7 @@ test('does not invalidate an accepted proof when Chrome process identity changes
           actorB: {},
           owner: OWNER,
           proofKind: 'endpoint',
+          localInteraction: endpointInteraction(),
           status: 'complete'
         }
       }
@@ -4347,6 +4396,7 @@ test('retains only bounded canonical and owner-timing evidence from a completed 
           durationMs: 2_000,
           owner: OWNER,
           proofKind: 'endpoint',
+          localInteraction: endpointInteraction(),
           status: 'complete',
           ignoredPayload: Array.from({ length: 10_000 }, () => 'drop-me')
         }
@@ -4360,6 +4410,10 @@ test('retains only bounded canonical and owner-timing evidence from a completed 
 
   assert.equal(report.endpointReport.owner, OWNER)
   assert.equal(report.endpointReport.durationMs, 2_000)
+  assert.deepEqual(
+    report.endpointReport.localInteraction,
+    endpointInteraction()
+  )
   assert.equal(report.endpointReport.actorA.summary.pointCount, 115_000)
   assert.deepEqual(report.endpointReport.actorB.summary.whiteBackgrounds, [
     { height: 941, id: 'background', width: 1672 }
@@ -4374,3 +4428,91 @@ test('retains only bounded canonical and owner-timing evidence from a completed 
   )
   assert.equal(Object.hasOwn(report.endpointReport, 'ignoredPayload'), false)
 })
+
+for (const [label, change] of [
+  [
+    'missing',
+    (value) => {
+      delete value.localInteraction
+    }
+  ],
+  [
+    'old lock report',
+    (value) => {
+      value.localInteraction = {
+        blockedActionAttempts: { deleteKeyBlocked: true }
+      }
+    }
+  ],
+  [
+    'settled turn',
+    (value) => {
+      value.localInteraction.duringCreation.keyboard.turnOutcome = 'success'
+    }
+  ],
+  [
+    'inactive tool',
+    (value) => {
+      value.localInteraction.duringCreation.pointer.rectangleActive = false
+    }
+  ],
+  [
+    'no partial progress',
+    (value) => {
+      value.localInteraction.duringCreation.keyboard.canonicalElements = 0
+    }
+  ],
+  [
+    'late interaction',
+    (value) => {
+      value.localInteraction.duringCreation.pointer.canonicalElements = 7076
+    }
+  ],
+  [
+    'lost input',
+    (value) => {
+      value.localInteraction.duringCreation.documentEventDeliveries.rectangleShortcut = 0
+    }
+  ],
+  [
+    'unknown payload',
+    (value) => {
+      value.localInteraction.extra = 'undeclared'
+    }
+  ]
+]) {
+  test('endpoint completion rejects ' + label + ' interaction evidence', () => {
+    const ready = record(
+      arm(createResourceGuardState({ nowMs: 0 })),
+      'ready',
+      0
+    )
+    const value = {
+      actorA: {},
+      actorB: {},
+      owner: OWNER,
+      proofKind: 'endpoint',
+      status: 'complete',
+      localInteraction: endpointInteraction()
+    }
+
+    change(value)
+    const result = record(
+      ready.state,
+      'complete',
+      1000,
+      heartbeat({
+        actorAElements: 7076,
+        actorBElements: 7076,
+        actorAComplete: true,
+        actorBComplete: true,
+        phase: 'complete',
+        extra: { report: value }
+      })
+    )
+
+    assert.equal(result.accepted, false)
+    assert.equal(result.reason, 'invalid-endpoint-report')
+    assert.equal(result.state.finished, false)
+  })
+}

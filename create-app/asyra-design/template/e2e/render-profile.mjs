@@ -1,13 +1,18 @@
 export const summarize = (samples) => {
   const ordered = [...samples].sort((left, right) => left - right)
+
   const percentile = (ratio) => {
-    if (ordered.length === 0) return 0
+    if (ordered.length === 0) {
+      return 0
+    }
+
     // The bounded profile budgets p95 and max separately. Use the lower sample
     // quantile so one maximum sample does not make those two oracles identical.
     const index = Math.min(
       ordered.length - 1,
       Math.max(0, Math.floor((ordered.length - 1) * ratio))
     )
+
     return ordered[index]
   }
 

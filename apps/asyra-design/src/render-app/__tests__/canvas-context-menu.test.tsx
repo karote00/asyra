@@ -5,6 +5,7 @@ import type { CoreCollaborationSession } from '@asyra/core'
 import type { ProviderStatus } from '@asyra/collaboration'
 import core from '../../contexts'
 import * as collaborationLifecycle from '../../collaboration/lifecycle'
+import * as collaborationObservation from '../../collaboration/session-observation'
 import type { CollaborationDebugHandle } from '../../collaboration/lifecycle'
 import {
   AI_DOCUMENT_INTERACTION_TARGET_ATTRIBUTE,
@@ -34,9 +35,22 @@ const collaborationHandle = {
 
   onSessionStateChange: () => () => undefined,
 
+  prepareRecovery: async () => undefined,
+
+  getRecoveryDocument: () => undefined,
+
+  hasUnpersistedChanges: () => false,
+
   disconnect: async () => undefined,
 
   reconnect: async () => undefined,
+
+  confirmPersistence: async () => ({
+    documentId: 'canvas-context-menu',
+    documentGeneration: 1,
+    sequence: 0,
+    durableSequence: 0
+  }),
 
   whenIdle: async () => undefined,
 
@@ -75,7 +89,7 @@ describe('Render canvas context-menu intake', () => {
       'createCollaborationDocumentSession'
     ).mockReturnValue(coreCollaborationSession)
     vi.spyOn(
-      collaborationLifecycle,
+      collaborationObservation,
       'getActiveCollaborationHandle'
     ).mockReturnValue(collaborationHandle)
     coreCollaborationSession.prepare.mockClear()

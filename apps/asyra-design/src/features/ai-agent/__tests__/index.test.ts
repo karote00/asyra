@@ -11,6 +11,7 @@ import {
   AI_AGENT_FEATURE_PRIORITY,
   registerAiAgentFeature,
   type AiAgentFeatureResult,
+  type AiAgentFeatureRuntime,
   type AiAgentFeatureTerminalResult
 } from '..'
 
@@ -69,7 +70,7 @@ describe.sequential('AI agent Feature lifecycle', () => {
 
   it('passes normalized intent and the Feature-owned signal to the runtime', async () => {
     const externalController = new AbortController()
-    const run = vi.fn(async () => executedResult)
+    const run = vi.fn<AiAgentFeatureRuntime['run']>(async () => executedResult)
 
     registerAiAgentFeature({ run })
 
@@ -98,7 +99,7 @@ describe.sequential('AI agent Feature lifecycle', () => {
 
   it('forwards detached turn metadata and progress while retaining Feature-owned cancellation', async () => {
     const progressObserver = vi.fn()
-    const run = vi.fn(async () => executedResult)
+    const run = vi.fn<AiAgentFeatureRuntime['run']>(async () => executedResult)
 
     registerAiAgentFeature({ run })
 
@@ -132,7 +133,7 @@ describe.sequential('AI agent Feature lifecycle', () => {
   })
 
   it('rejects empty intent without starting a Feature task', async () => {
-    const run = vi.fn(async () => executedResult)
+    const run = vi.fn<AiAgentFeatureRuntime['run']>(async () => executedResult)
 
     registerAiAgentFeature({ run })
 

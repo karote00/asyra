@@ -26,15 +26,20 @@ export const transactionApis = {
   runTransaction,
   updateTransaction,
   configureSharedDeliverySequence,
+
   isTransactionBoundaryIdle: () => core.isTransactionBoundaryIdle(),
+
   startHistoryGroup: (...args: Parameters<typeof core.startHistoryGroup>) =>
     core.startHistoryGroup(...args),
+
   updateHistoryGroup: <T>(
     handle: Parameters<typeof core.updateHistoryGroup>[0],
     mutate: () => T
   ): T => core.updateHistoryGroup(handle, mutate),
+
   endHistoryGroup: (...args: Parameters<typeof core.endHistoryGroup>) =>
     core.endHistoryGroup(...args),
+
   subscribeToTransactionStatus: (
     ...args: Parameters<typeof core.subscribeToTransactionStatus>
   ) => core.subscribeToTransactionStatus(...args)

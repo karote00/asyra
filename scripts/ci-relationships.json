@@ -135,6 +135,10 @@
   ],
   "workspaceInputRules": [
     {
+      "pattern": "conversation-flow-inspector.config.json",
+      "workspaceDirectory": "apps/asyra-design"
+    },
+    {
       "pattern": "docs/public/**",
       "workspaceDirectory": "apps/asyra-framework-site"
     },
@@ -260,9 +264,9 @@
         "docs/ai/tools/flow-inspector/CORE_PROOF.md",
         "scripts/run-e2e.sh",
         "scripts/run-collaboration-e2e.sh",
-        "scripts/balanced-ai-correctness-scope.mjs",
         "scripts/local-validation*.mjs",
         "scripts/validation-checks.mjs",
+        "scripts/security-audit.mjs",
         "docs/ai/workflows/local-affected-validation.md",
         "scripts/test-impact.mjs",
         "scripts/test-impact-workspaces.mjs"
@@ -272,6 +276,7 @@
         "scripts/__tests__/workspace-automation.test.mjs",
         "tools/flow-inspector/control-plane/__tests__/workflow-results.test.cjs",
         "scripts/__tests__/release-automation.test.mjs",
+        "scripts/__tests__/security-audit.test.mjs",
         "scripts/__tests__/local-validation.test.mjs",
         "scripts/__tests__/local-validation-runner.test.mjs",
         "scripts/__tests__/test-impact.test.mjs"
@@ -524,6 +529,7 @@
     "scripts/__tests__/plan-closeout.test.mjs",
     "scripts/__tests__/production-artifact-resource-evidence.test.mjs",
     "scripts/__tests__/release-automation.test.mjs",
+    "scripts/__tests__/security-audit.test.mjs",
     "scripts/__tests__/release-records.test.mjs",
     "scripts/__tests__/task-context.test.mjs",
     "scripts/__tests__/test-file-placement.test.mjs",

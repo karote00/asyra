@@ -10,6 +10,7 @@ export const DesignNodeTypes = [
   'text',
   'vector'
 ] as const
+
 export const isDesignContainerType = (type: unknown): boolean =>
   DesignContainerTypes.some((kind) => kind === type)
 
@@ -29,6 +30,7 @@ export const DesignPreparationLimits = Object.freeze({
   recoveryParts: 128,
   retainedDraftBytes: 8 * 1024 * 1024
 })
+
 export interface PreparedDesignEntry {
   readonly key: string
   readonly parentId: string | null
@@ -69,6 +71,7 @@ export const PreparedVectorRecordFields = [
   'segments',
   'networks'
 ] as const
+
 type PreparedVectorRecordDelivery = Readonly<Record<string, unknown>> & {
   readonly id?: never
 }
@@ -76,8 +79,10 @@ type PreparedVectorRecordDelivery = Readonly<Record<string, unknown>> & {
 function deliverVectorRecords(
   input: unknown
 ): Record<string, PreparedVectorRecordDelivery> {
-  if (!input || typeof input !== 'object' || Array.isArray(input))
+  if (!input || typeof input !== 'object' || Array.isArray(input)) {
     throw new Error('Prepared vector identity map is invalid.')
+  }
+
   return Object.fromEntries(
     Object.entries(input).map(([key, value]) => {
       if (
@@ -85,13 +90,17 @@ function deliverVectorRecords(
         typeof value !== 'object' ||
         Array.isArray(value) ||
         value.id !== key
-      )
+      ) {
         throw new Error('Prepared vector identity is inconsistent.')
+      }
+
       const { id: _id, ...record } = value
+
       return [key, record]
     })
   )
 }
+
 export interface PreparedDesignDelivery extends Omit<
   PreparedDesign,
   'version' | 'entries' | 'keyToId'
@@ -109,20 +118,30 @@ export function deliverPreparedDesign(
   design: PreparedDesign
 ): PreparedDesignDelivery {
   const { keyToId, entries, ...rest } = design
-  if (Object.keys(keyToId).length !== entries.length)
+
+  if (Object.keys(keyToId).length !== entries.length) {
     throw new Error('Prepared design identity map is inconsistent.')
+  }
+
   const keys = new Set<string>()
+
   return {
     ...rest,
     version: PREPARED_DESIGN_DELIVERY_VERSION,
     entries: entries.map((entry) => {
       const { props, ...descriptor } = entry.descriptor
-      if (keys.has(entry.key) || keyToId[entry.key] !== descriptor.id)
+
+      if (keys.has(entry.key) || keyToId[entry.key] !== descriptor.id) {
         throw new Error('Prepared design identity map is inconsistent.')
+      }
+
       keys.add(entry.key)
       const names = Object.keys(props)
-      if (names.some((name) => props[name] !== `${descriptor.id}-${name}`))
+
+      if (names.some((name) => props[name] !== `${descriptor.id}-${name}`)) {
         throw new Error('Prepared design property identity is inconsistent.')
+      }
+
       const vector =
         descriptor.type === 'vector'
           ? Object.fromEntries(
@@ -132,6 +151,7 @@ export function deliverPreparedDesign(
               ])
             )
           : {}
+
       return {
         ...entry,
         descriptor: { ...descriptor, ...vector, props: names }
@@ -158,27 +178,37 @@ export const DesignTextDefaults = Object.freeze({
   lineHeight: 20,
   letterSpacing: 0
 })
+
 const finiteTextRange = (value: unknown, min: number, max: number) =>
   typeof value === 'number' &&
   Number.isFinite(value) &&
   value >= min &&
   value <= max
+
 export const DesignTextValidators: Readonly<
   Record<keyof typeof DesignTextDefaults, (value: unknown) => boolean>
 > = Object.freeze({
   text: (value: unknown) =>
     typeof value === 'string' &&
     value.length <= DesignPreparationLimits.textCharacters,
+
   textSizing: (value: unknown) =>
     DesignTextSizingModes.some((mode) => mode === value),
+
   fontFamily: (value: unknown) =>
     typeof value === 'string' && value.trim().length > 0 && value.length <= 128,
+
   fontSize: (value: unknown) => finiteTextRange(value, Number.MIN_VALUE, 4096),
+
   fontWeight: (value: unknown) => value === 'normal' || value === 'bold',
+
   fontStyle: (value: unknown) => value === 'normal' || value === 'italic',
+
   textAlign: (value: unknown) =>
     value === 'left' || value === 'center' || value === 'right',
+
   lineHeight: (value: unknown) =>
     finiteTextRange(value, Number.MIN_VALUE, 8192),
+
   letterSpacing: (value: unknown) => finiteTextRange(value, -100, 100)
 })

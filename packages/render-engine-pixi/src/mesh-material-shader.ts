@@ -10,8 +10,33 @@ import {
   colorBitGl,
   roundPixelsBit,
   roundPixelsBitGl,
+  generateTextureBatchBit,
+  generateTextureBatchBitGl,
   getBatchSamplersUniformGroup
 } from 'pixi.js'
+
+/** Share immutable programs while keeping each batcher's Shader bindings local. */
+export function createOrdinaryBatchShader(maxTextures: number): Shader {
+  return new Shader({
+    glProgram: GlProgram.from({
+      name: 'batch',
+      ...compileHighShaderGl({
+        template: { vertex: vertexGlTemplate, fragment: fragmentGlTemplate },
+        bits: [
+          globalUniformsBitGl,
+          colorBitGl,
+          generateTextureBatchBitGl(maxTextures),
+          roundPixelsBitGl
+        ]
+      })
+    }),
+    gpuProgram: compileHighShaderGpuProgram({
+      name: 'batch',
+      bits: [colorBit, generateTextureBatchBit(maxTextures), roundPixelsBit]
+    }),
+    resources: { batchSamplers: getBatchSamplersUniformGroup(maxTextures) }
+  })
+}
 
 const glEvaluation = `
 float parameter(int source, int index) {

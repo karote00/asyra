@@ -38,6 +38,7 @@ const reportDiagnostics = (
     formatLoadDiagnostics(report.diagnostics).forEach((line) => {
       logger(line)
     })
+
     return
   }
 

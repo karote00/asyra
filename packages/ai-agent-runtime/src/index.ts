@@ -21,6 +21,7 @@ export {
   AiConfirmationError,
   AiExecutionError,
   AiActionExecutionError,
+  AiActionInputError,
   AiPermissionError,
   AiTransactionError,
   AiTransactionSettlementError,
@@ -136,6 +137,7 @@ export {
   createAiToolMiddleware,
   describeAiTool,
   embedAiToolSchema,
+  normalizeAiToolSchemaReferences,
   inspectAiToolResult,
   selectAiToolResultSchema
 } from './tool-contract.js'
@@ -155,6 +157,10 @@ export type {
   ExecutionRecordDeliveryIssue
 } from './profiler/record-outbox.js'
 
+export {
+  registeredRecipeOutputAt,
+  RecipeReferenceError
+} from './recipe-schema.js'
 export { admitAiRecipe } from './recipe-admission.js'
 export type {
   AiRecipe,
@@ -180,6 +186,7 @@ export {
   createAiRecipeRecoverySchema
 } from './recipe-execution.js'
 export type {
+  AiRecipeFailure,
   AiRecipeCallReceipt,
   AiRecipeExecutionResult,
   AiRecipeRecovery,

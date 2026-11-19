@@ -18,10 +18,13 @@ vi.mock('../../contexts', () => ({
     shareElementPropertyTargets: mocks.shareElementPropertyTargets,
     detachElementPropertyTargets: mocks.detachElementPropertyTargets,
     commitPropertyChanges: mocks.commitPropertyChanges,
+
     getElementComputedData: (elementId: string) =>
       mocks.getElementById(elementId)?.getAllComputedData(),
+
     getElementData: (elementId: string) =>
       mocks.getElementById(elementId) ? { id: elementId } : undefined,
+
     patchElementProperties: mocks.patchElementProperties,
     updateElementProperties: mocks.updateElementProperties,
     updatePropertyById: mocks.updatePropertyById
@@ -251,6 +254,7 @@ describe('fill common API primary-color boundary', () => {
       if (elementId === 'missing') {
         return undefined
       }
+
       return {
         getAllComputedData: () => ({
           fills: [
@@ -318,6 +322,7 @@ describe('fill common API primary-color boundary', () => {
       sharedDelivery: 'transaction-end',
       undoable: true
     } as const
+
     fillApis.updateFillFields(
       'rect-1',
       'fill-1',
@@ -512,6 +517,7 @@ describe('Fill property reuse', () => {
         /unique/
       )
     }
+
     expect(mocks.getElementById).not.toHaveBeenCalled()
     expect(mocks.patchElementProperties).not.toHaveBeenCalled()
     expect(mocks.runTransaction).not.toHaveBeenCalled()
@@ -543,7 +549,11 @@ describe('Fill property reuse', () => {
   })
   it('rejects a source-backed row without silently dropping its overrides', () => {
     const read = mocks.readElementPropertyTargets.getMockImplementation()
-    if (!read) throw new Error('Missing target read fixture')
+
+    if (!read) {
+      throw new Error('Missing target read fixture')
+    }
+
     mocks.readElementPropertyTargets.mockImplementation((targets) =>
       read(targets).map((view, i) =>
         targets[i].path.length
@@ -592,6 +602,7 @@ it('delivers actual primary-color owner outcomes through registered action and h
   const { designActionOutcome } = await import('../../ai/tool-contract')
   const { localToolOutcome } =
     await import('../../../server/local-tool-invocation')
+
   vi.clearAllMocks()
   mocks.getElementById.mockImplementation((id: string) =>
     id === 'missing'
@@ -612,13 +623,23 @@ it('delivers actual primary-color owner outcomes through registered action and h
       stroke: {},
       fill: fillApis
     }),
-    { observe: () => () => undefined, resolve: () => 'live' }
+    {
+      observe: () => () => undefined,
+
+      resolve: () => 'live'
+    }
   ).find((entry) => entry.name === 'api_fill_updatePrimaryFillColors')
-  if (!action) throw new Error('Missing primary Fill action')
+
+  if (!action) {
+    throw new Error('Missing primary Fill action')
+  }
+
   const context = {
     signal: new AbortController().signal,
+
     runMutation: async <T>(write: () => T) => write()
   }
+
   for (const [updates, status] of [
     [[], 'success'],
     [[{ elementId: 'same', color: '#111111' }], 'success'],
@@ -634,6 +655,7 @@ it('delivers actual primary-color owner outcomes through registered action and h
   ] as const) {
     const result = await action.execute({ updates }, context)
     const toolOutcome = designActionOutcome(result)
+
     expect(toolOutcome.status).toBe(status)
     expect(
       localToolOutcome({
@@ -646,6 +668,7 @@ it('delivers actual primary-color owner outcomes through registered action and h
       }).status
     ).toBe(status)
   }
+
   expect(mocks.patchElementProperties).toHaveBeenCalledOnce()
   expect(mocks.patchElementProperties.mock.calls[0][0]).toEqual([
     {

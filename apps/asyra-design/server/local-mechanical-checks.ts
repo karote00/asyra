@@ -310,9 +310,7 @@ export const createMechanicalChecks = (options: {
 
       signal.throwIfAborted()
       if (ids.some((id) => !current.has(id))) {
-        throw new LocalToolInputError(
-          'Mechanical evidence is unavailable before repair.'
-        )
+        throw new Error('Mechanical evidence is unavailable before repair.')
       }
 
       // Never silently substitute newer revisions while admitting a write.

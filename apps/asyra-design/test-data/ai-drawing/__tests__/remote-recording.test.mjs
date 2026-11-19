@@ -1,3 +1,4 @@
+import { readBrowserSnapshot } from '../browser-snapshot.mjs'
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { mkdir, mkdtemp, readFile, rm } from 'node:fs/promises'
@@ -26,6 +27,26 @@ test('saves a real remote browser video before server disposal', async () => {
     await page.setContent(
       '<body style="background:blue">Recording export proof</body>'
     )
+    const transfers = []
+    const snapshot = await readBrowserSnapshot(
+      page,
+      () => ({
+        document: {
+          rows: Array.from({ length: 60000 }, (_, id) => ({
+            id,
+            name: 'Window frame and reflection'
+          }))
+        },
+        report: 'Complete original report'
+      }),
+      (transfer) => transfers.push(transfer)
+    )
+
+    assert.equal(snapshot.document.rows.length, 60000)
+    assert.equal(snapshot.document.rows.at(-1).id, 59999)
+    assert.equal(snapshot.report, 'Complete original report')
+    assert.ok(transfers[0].chunks > 1)
+    assert.equal(await page.title(), '')
     await page.waitForTimeout(350)
     const destination = join(directory, 'saved.webm')
     const result = await saveRemoteRecording(context, page, destination)

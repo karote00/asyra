@@ -48,11 +48,14 @@ export const designInlineFillSchema = {
 
 const record = (v: unknown): v is Record<string, unknown> =>
   !!v && typeof v === 'object' && !Array.isArray(v)
+
 const exact = (v: Record<string, unknown>, keys: string[]) =>
   Object.keys(v).length === keys.length &&
   keys.every((k) => Object.hasOwn(v, k))
+
 const finite = (v: unknown, min: number, max: number): v is number =>
   typeof v === 'number' && Number.isFinite(v) && v >= min && v <= max
+
 const isColor = (v: unknown): v is string =>
   typeof v === 'string' && /^#[0-9a-f]{6}$/i.test(v)
 
@@ -73,9 +76,12 @@ export const isDesignGradient = (v: unknown): v is DesignGradientData => {
     !Array.isArray(v.gradientStops) ||
     v.gradientStops.length < 2 ||
     v.gradientStops.length > 64
-  )
+  ) {
     return false
+  }
+
   let previous = -1
+
   return v.gradientStops.every((s) => {
     if (
       !record(s) ||
@@ -84,9 +90,12 @@ export const isDesignGradient = (v: unknown): v is DesignGradientData => {
       s.position < previous ||
       !isColor(s.color) ||
       !finite(s.opacity, 0, 1)
-    )
+    ) {
       return false
+    }
+
     previous = s.position
+
     return true
   })
 }

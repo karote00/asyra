@@ -1,0 +1,12 @@
+{
+  "extends": "./tsconfig.json",
+  "include": [
+    "src/types.d.ts",
+    "server/__tests__/native-provider-fixture.ts",
+    "server/__tests__/native-provider-handoff.integration.test.ts",
+    "server/__tests__/conversation-production-handoff.integration.test.ts",
+    "e2e/conversation-provider-handoff.spec.ts",
+    "e2e/ai-repeated-detail.spec.ts",
+    "e2e/crdt-endpoint-performance.spec.ts"
+  ]
+}

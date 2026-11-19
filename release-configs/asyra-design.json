@@ -15,7 +15,8 @@
     "test:e2e:ai-crdt-activity:16",
     "test:e2e:ai-crdt-attribution:1280",
     "test:e2e:ai-crdt-attribution:320",
-    "test:e2e:ai-crdt-video"
+    "test:e2e:ai-crdt-video",
+    "test:live:taipei-101"
   ],
   "removeScriptArguments": {
     "test:server-response-harness": [
@@ -27,7 +28,8 @@
     "test:local": [
       "__tests__/prepared-server-response-artifacts.test.mjs",
       "__tests__/playwright-config.test.mjs",
-      "src/common-apis/element/__tests__/vector-parent-creation.test.ts"
+      "src/common-apis/element/__tests__/vector-parent-creation.test.ts",
+      "__tests__/taipei-101-live-contract.test.mjs"
     ]
   },
   "cleanFiles": [
@@ -41,6 +43,7 @@
     ".env*",
     ".*-data",
     ".turbo",
+    "tmp",
     "coverage",
     "dist",
     "playwright-report",
@@ -67,6 +70,6 @@
     "flow-contracts.json",
     "server/__tests__/execution-flow.config.ts",
     "server/__tests__/execution-flow-proof.test.ts",
-    "tmp"
+    "__tests__/taipei-101-live-contract.test.mjs"
   ]
 }

@@ -1280,7 +1280,7 @@ export class RenderNode {
     this.runtime?.releaseRegionQuery(this)
   }
 
-  getBoundsRelativeTo(ancestor: RenderNode): RenderBounds {
+  getTransformRelativeTo(ancestor: RenderNode): RenderMatrix {
     let transform = this === ancestor ? new RenderMatrix() : this.localTransform
     let parent = this === ancestor ? ancestor : this.parent
 
@@ -1293,6 +1293,11 @@ export class RenderNode {
       throw new Error('Region target is outside the workspace')
     }
 
+    return transform
+  }
+
+  getBoundsRelativeTo(ancestor: RenderNode): RenderBounds {
+    const transform = this.getTransformRelativeTo(ancestor)
     const local = this.getPresentationLocalBounds()
     const points = [
       { x: local.x, y: local.y },

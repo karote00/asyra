@@ -70,9 +70,13 @@ export interface AiContextQueries {
 
 const defaultQueries: AiContextQueries = {
   getSelectedElementIds: () => selectionApis.getSelectedIds(),
+
   getWorkspaceId: () => hierarchyApis.getWorkspaceId(),
+
   getElementCount: () => hierarchyApis.getFlattenedElementIds().length,
+
   getSystemSnapshot: () => systemContextApis.getSystemContextSnapshot(),
+
   getElementSummary: (elementId) => ({
     id: elementId,
     type: elementApis.getElementType(elementId),
@@ -92,13 +96,16 @@ const toBounds = (value: unknown): AiElementBounds | null => {
   if (!value || typeof value !== 'object') {
     return null
   }
+
   const bounds = value as Record<string, unknown>
   const values = [bounds.x, bounds.y, bounds.width, bounds.height]
+
   if (
     values.some((entry) => typeof entry !== 'number' || !Number.isFinite(entry))
   ) {
     return null
   }
+
   return Object.freeze({
     x: bounds.x as number,
     y: bounds.y as number,
@@ -133,6 +140,7 @@ export const createAiContextProvider = (
       if (!intent.trim()) {
         throw new AiContextCollectionError('AI_CONTEXT_INVALID_INTENT')
       }
+
       assertNotAborted(signal)
 
       const [
@@ -146,6 +154,7 @@ export const createAiContextProvider = (
         queries.getElementCount(),
         queries.getSystemSnapshot()
       ])
+
       assertNotAborted(signal)
 
       const selectedElementIds = selectedElementIdsValue.filter(
@@ -162,6 +171,7 @@ export const createAiContextProvider = (
             )
           )
       )
+
       assertNotAborted(signal)
 
       return Object.freeze({

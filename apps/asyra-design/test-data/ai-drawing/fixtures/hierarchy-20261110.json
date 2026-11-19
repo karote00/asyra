@@ -1,0 +1,12 @@
+{
+  "sourceRun": "taipei-101-fixed-1794244803070",
+  "sourceSnapshotSha256": "9d472c8d63ce32dd9c126d67e963015ab976d3fb545b668433fcc405f8893a3b",
+  "documentSha256": "75c1cb497186a507429ae2e8fa70388958126617a71b7dd3b3d90158d64bd40a",
+  "groupElementIds": [
+    "design-458f035b-5125-43a0-bc0b-74b6f437e472-0",
+    "design-e844e5f0-2af4-4d33-bdfb-750c94905dbb-0",
+    "design-635bd503-521a-4be3-b989-9fea8f4004cf-0",
+    "design-cd72fe2a-1b3e-4e87-8bda-ee340c80fa95-0"
+  ],
+  "snapshotStage": "Completed drawing after the later 48-element ornament reorder. The original four grouping targets remain siblings. Geometry and user-authored names are immutable evidence."
+}

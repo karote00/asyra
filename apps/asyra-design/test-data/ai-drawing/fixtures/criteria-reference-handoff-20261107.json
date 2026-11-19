@@ -1,0 +1,114 @@
+{
+  "sourceRun": "taipei-101-fixed-1794060038560",
+  "input": {
+    "operations": [
+      {
+        "id": "criteria",
+        "name": "design_operations.define_design_criteria",
+        "arguments": {
+          "phase": "plan",
+          "method": "Editable projected polygons and window motifs, world centimetres at 1 px/cm; fixed orthographic three-quarter azimuth35 elevation24. Heights sourced, local dimensions photo estimated. No scenery or background.",
+          "references": [
+            "https://www.skyscrapercenter.com/building/taipei-101/117",
+            "https://www.onenessarchitects.com/project/Taipei-101",
+            "https://commons.wikimedia.org/wiki/File:Taipei.101.ruyi.altonthompson.jpg"
+          ],
+          "criteria": {
+            "whole": {
+              "requirement": "Entire Taipei 101 from base to spire; distinctive realistic silhouette, no broad schematic simplification.",
+              "description": "Complete isolated building, eight flaring tiers, tapering lower base, crown and full needle.",
+              "verification": "visual",
+              "requiredUnits": []
+            },
+            "view": {
+              "requirement": "Fixed elevated three-quarter view looking down, visible top surfaces and consistent perspective.",
+              "description": "All visible surfaces share one projection and coherent occlusion.",
+              "verification": "visual",
+              "requiredUnits": []
+            },
+            "detail": {
+              "requirement": "Highly detailed editable façade, window frames and visible ornamentation.",
+              "description": "Inspect base, repeated tier windows and ornament, crown and spire at useful detail scale.",
+              "verification": "visual",
+              "requiredUnits": [
+                "base",
+                "tiers",
+                "ornaments",
+                "crown"
+              ]
+            },
+            "material": {
+              "requirement": "Realistic materials, lighting and shadows.",
+              "description": "Teal reflective glass, metallic frames, lit and shaded faces, terrace and ledge shadows.",
+              "verification": "visual",
+              "requiredUnits": []
+            },
+            "scale": {
+              "requirement": "Real-world dimensions 1cm=1px before projection; projected lengths reflect angle.",
+              "description": "50800cm tip, 44800cm roof, nominal local measurements distinguished from estimates, projection scale1.",
+              "verification": "data"
+            },
+            "editable": {
+              "requirement": "Use editable 2D shapes.",
+              "description": "Native vector faces and individually editable façade elements, no raster insertion.",
+              "verification": "data"
+            }
+          },
+          "detailRequired": true
+        }
+      },
+      {
+        "name": "design_operations.select_design_references",
+        "arguments": {
+          "referenceImageIndexes": [
+            0,
+            1
+          ],
+          "requirementRevision": {
+            "kind": "step",
+            "step": "criteria",
+            "path": "/requirementRevision"
+          },
+          "referenceDecisions": [
+            {
+              "referenceId": "reference:2641a97ca7ed04ffc472541566c573aaf9e570ae7cf69d1b6fe845882d7549d7",
+              "status": "restricted",
+              "reason": "建築師提供的全樓空拍圖適合確認輪廓與退縮組織，不足以測量局部窗格。",
+              "uses": [
+                {
+                  "id": "silhouette",
+                  "criterionId": "whole",
+                  "purpose": "visual",
+                  "region": "whole",
+                  "limitations": [
+                    "不同相機方位；不描繪背景城市",
+                    "局部尺寸為估計，不作施工圖"
+                  ]
+                }
+              ]
+            },
+            {
+              "referenceId": "reference:d4b293abf4e0d0571846b398fda42aed0e7ca6dae611ac32abe288ae63753bdd",
+              "status": "restricted",
+              "reason": "Alton Thompson 的如意近照適合金屬浮雕外形比較。",
+              "uses": [
+                {
+                  "id": "ruyi-shape",
+                  "criterionId": "detail",
+                  "unitId": "ornaments",
+                  "purpose": "visual",
+                  "region": "whole",
+                  "limitations": [
+                    "不同光向及正視近照",
+                    "局部細節以可編輯圖形重建，不是逐像素複製"
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ],
+    "response": "full"
+  }
+}

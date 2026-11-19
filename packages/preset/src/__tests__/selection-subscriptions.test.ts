@@ -655,8 +655,8 @@ describe('Preset Selection Subscriptions', () => {
             uiContext.get<Record<string, unknown>>('elementDataMap') ?? {}
           )
         ).toEqual(['outer', 'nested', 'leaf', 'sibling'])
-        // Each owner traverses once; pointer movement never rebuilds this index.
-        expect(elements.get('leaf')?.save).toHaveBeenCalledTimes(2)
+        // The load snapshot feeds both projections once; pointer movement never rebuilds this index.
+        expect(elements.get('leaf')?.save).toHaveBeenCalledOnce()
         rows[0].children = []
         for (const id of ['outer', 'nested', 'leaf', 'sibling']) {
           elements.delete(id)
@@ -1370,6 +1370,69 @@ describe('Preset Selection Subscriptions', () => {
       remove.mockRestore()
       reload.mockRestore()
       uiSet.mockRestore()
+    }
+  })
+
+  it('reuses unchanged flattened subtrees when grouping known roots', () => {
+    const core = {
+      getSelection: () => undefined,
+
+      registerDataChannelObserver: vi.fn(),
+      unregisterDataChannelObserver: vi.fn()
+    } as unknown as PresetCoreAPIs
+
+    propertyRegistry.register('flattenedElementIds', { defaultValue: [] })
+    propertyRegistry.register('elementDataMap', { defaultValue: {} })
+    const dispose = registerDefaultDataChannelObservers(
+      core,
+      createDeps(),
+      undefined,
+      { uiContext: true }
+    )
+    const counters = new Map<string, number>()
+    const unsubscribe = subscribeToDiagnosticCounters((name, value) =>
+      counters.set(name, (counters.get(name) ?? 0) + value)
+    )
+
+    const add = (id: string, parentId: string, index: number) => ({
+      action: SCENE_TREE_ACTIONS.ADD_ELEMENT,
+      data: { id, parentId },
+      parentId,
+      index
+    })
+
+    try {
+      projectSceneChanges([
+        add('a', 'workspace', 0),
+        add('b', 'workspace', 1),
+        ...Array.from({ length: 1000 }, (_, i) => add(`leaf-${i}`, 'a', i))
+      ])
+      const before = uiContext.get<string[]>('flattenedElementIds') ?? []
+
+      counters.clear()
+      projectSceneChanges([
+        add('wrapper', 'workspace', 0),
+        {
+          action: SCENE_TREE_ACTIONS.MOVE_ELEMENTS,
+          moves: ['a', 'b'].map((elementId, index) => ({
+            elementId,
+            before: { parentId: 'workspace', index: index + 1 },
+            after: { parentId: 'wrapper', index }
+          }))
+        }
+      ])
+      expect(uiContext.get('flattenedElementIds')).toEqual([
+        'wrapper',
+        ...before
+      ])
+      expect(
+        counters.get('ui-context-hierarchy-node-visit') ?? 0
+      ).toBeLessThanOrEqual(3)
+    } finally {
+      unsubscribe()
+      dispose()
+      propertyRegistry.unregister('flattenedElementIds')
+      propertyRegistry.unregister('elementDataMap')
     }
   })
 

@@ -17,6 +17,7 @@ const aiMocks = vi.hoisted(() => ({
 vi.mock('../../render-app', () => ({
   default: (props: unknown) => {
     renderAppProps(props)
+
     return <div data-testid="render-app" tabIndex={-1} />
   }
 }))
@@ -26,6 +27,7 @@ vi.mock('../../toolbar', () => ({
     onAiToggle: (invoker: HTMLButtonElement) => void
   }) => {
     toolbarProps(props)
+
     return props.onAiToggle ? (
       <button
         aria-label="Agent toolbar"
@@ -54,7 +56,9 @@ vi.mock('../ai-conversation-panel', () => ({
 }))
 vi.mock('../../providers', () => ({
   useElementSelection: () => new Set(['a', 'b']),
+
   useFlattenedIdsData: () => ['a', 'b'],
+
   useElementDataMap: () => ({
     a: { id: 'a', type: 'element', parentId: 'workspace' },
     b: { id: 'b', type: 'element', parentId: 'workspace' }
@@ -62,8 +66,10 @@ vi.mock('../../providers', () => ({
 }))
 vi.mock('../../config/group-command-descriptors', () => ({
   detectGroupCommandPlatform: () => 'macos',
+
   createGroupCommandDescriptors: ({ platform }: { platform: string }) => {
     const macOS = platform === 'macos'
+
     return [
       {
         id: 'group',
@@ -98,6 +104,7 @@ const createAi = () =>
     confirmation: {},
     conversation: {
       cancel: aiMocks.cancel,
+
       getSnapshot: () => ({ activeTurn: aiMocks.activeTurn })
     },
     history: {}
@@ -135,6 +142,7 @@ describe('App context-menu composition', () => {
       }) => void
       onCanvasHostTeardown: () => void
     }
+
     expect(props).toEqual(
       expect.objectContaining({
         onContextMenuRequest: expect.any(Function),
@@ -143,6 +151,7 @@ describe('App context-menu composition', () => {
     )
 
     const canvasHost = document.createElement('div')
+
     document.body.append(canvasHost)
     act(() => {
       props.onContextMenuRequest({
@@ -162,6 +171,7 @@ describe('App context-menu composition', () => {
   it('presents fixed rows and closes before one enabled descriptor execution', async () => {
     render(<App ai={createAi()} />)
     const canvasHost = document.createElement('div')
+
     canvasHost.tabIndex = -1
     document.body.append(canvasHost)
     const props = renderAppProps.mock.lastCall?.[0] as {
@@ -181,6 +191,7 @@ describe('App context-menu composition', () => {
     })
 
     const rows = screen.getAllByRole('menuitem')
+
     expect(rows.map((row) => row.textContent)).toEqual([
       'Toggle Agent Panel⌘I',
       'Group⌘G',
@@ -194,6 +205,7 @@ describe('App context-menu composition', () => {
 
     descriptorMocks.executeGroup.mockImplementation(() => {
       expect(screen.queryByRole('menu')).toBeNull()
+
       return null
     })
     fireEvent.click(rows[1] as HTMLElement)
@@ -230,6 +242,7 @@ describe('App context-menu composition', () => {
     ).onContextMenuRequest
     const firstCanvas = document.createElement('div')
     const secondCanvas = document.createElement('div')
+
     firstCanvas.tabIndex = -1
     secondCanvas.tabIndex = -1
     document.body.append(firstCanvas, secondCanvas)
@@ -248,6 +261,7 @@ describe('App context-menu composition', () => {
     })
 
     let menus = screen.getAllByRole('menu')
+
     expect(menus).toHaveLength(2)
     expect(menus.map((menu) => [menu.style.left, menu.style.top])).toEqual([
       ['45px', '60px'],
@@ -311,6 +325,7 @@ describe('App context-menu composition', () => {
       })
     })
     const rows = screen.getAllByRole('menuitem')
+
     expect(rows.map((row) => row.textContent)).toEqual([
       'Toggle Agent Panel⌘I',
       'Group⌘G',
@@ -337,6 +352,7 @@ describe('App context-menu composition', () => {
   it('keeps the shortcut app-root-local and bypasses unrelated editable fields', () => {
     render(<App ai={createAi()} groupCommandPlatform="macos" />)
     const outsideInput = document.createElement('input')
+
     document.body.append(outsideInput)
 
     fireEvent.keyDown(outsideInput, { key: 'i', metaKey: true })

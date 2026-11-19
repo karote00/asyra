@@ -9,7 +9,7 @@ import {
 const countsScopeSchema = {
   enum: ['request-checks', 'selected-checks'],
   description:
-    'The population counted, independent of detail pagination. Counts may include tool and main-agent evidence; they do not establish visual acceptance or document durability.'
+    'The population counted, independent of detail pagination. Counts describe program findings; they do not establish visual acceptance or document durability.'
 }
 
 export const designCheckResultsSchema = toolResultObject({
@@ -25,14 +25,7 @@ export const designCheckResultsSchema = toolResultObject({
     items: toolResultObject(
       {
         id: toolResultString,
-        criterionId: toolResultString,
-        unitId: toolResultString,
-        supersedes: toolResultObject({
-          revision: { type: 'integer', minimum: 1 },
-          reason: toolResultString
-        }),
-        deferredDecision: { enum: ['omit', 'restored', 'pending'] },
-        origin: { enum: ['tool', 'main-agent'] },
+        origin: { const: 'tool' },
         status: { enum: ['pass', 'fail', 'unverified', 'stale'] },
         evidence: toolResultString,
         dependencies: {
@@ -51,11 +44,7 @@ export const designCheckResultsSchema = toolResultObject({
 
 export interface DesignCheckResult {
   id: string
-  criterionId?: string
-  unitId?: string
-  supersedes?: { revision: number; reason: string }
-  deferredDecision?: 'omit' | 'restored' | 'pending'
-  origin: 'tool' | 'main-agent'
+  origin: 'tool'
   status: 'pass' | 'fail' | 'unverified' | 'stale'
   evidence: string
   dependencies: Record<string, string>
@@ -333,41 +322,7 @@ export const createDesignCheckResults = () => {
       return [...selected]
     },
 
-    /** Only the pre-drawing plan owner may replace unjudged declarations. */
-    discardDeclarations(ids: readonly string[]): void {
-      const selected = [...new Set(ids)].flatMap((id) => {
-        const result = results.get(id)
-
-        if (!result) {
-          return []
-        }
-
-        if (
-          result.origin !== 'main-agent' ||
-          !['unverified', 'stale'].includes(result.status) ||
-          result.scope !== undefined ||
-          result.supersedes !== undefined ||
-          Object.keys(result.dependencies).some(
-            (key) =>
-              key !== 'scene' &&
-              key !== 'coverage:whole-view' &&
-              !key.startsWith('criterion:')
-          )
-        ) {
-          throw new Error(
-            'Only untouched declaration placeholders can be discarded.'
-          )
-        }
-
-        return [result]
-      })
-
-      for (const result of selected) {
-        remove(result, 'The unjudged declaration was replaced.')
-      }
-    },
-
-    /** Canonical target removal retires tool work, never a visual obligation. */
+    /** Retire work when its canonical target is removed. */
     retire(id: string, reason: string) {
       const result = results.get(id)
 
@@ -535,9 +490,6 @@ export const createDesignCheckResults = () => {
         previous.status === value.status &&
         previous.evidence === value.evidence &&
         JSON.stringify(previous.recheck) === JSON.stringify(recheck) &&
-        previous.deferredDecision === value.deferredDecision &&
-        JSON.stringify(previous.supersedes) ===
-          JSON.stringify(value.supersedes) &&
         JSON.stringify(previous.dependencies) ===
           JSON.stringify(value.dependencies) &&
         JSON.stringify(previous.scope) === JSON.stringify(value.scope)

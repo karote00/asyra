@@ -87,10 +87,12 @@ const data = {
         'Route toolbar and keyboard tool selection through the App feature.',
       inputs: [
         'Shortcut or toolbar primaryTool value',
+        'For keyboard input: held phase, changed key, repeat and composition metadata',
         'Current pathEditingMode and path continuation state'
       ],
       outputs: ['artifact:switch-tool-outcome'],
       conditions: [
+        'Admit only a fresh matching tool keydown before session cancellation; ignore repeats and unrelated held changes.',
         'Apply the selected tool and its path-editing transition through system context.'
       ],
       bypasses: ['Missing tool input does not change state.'],
@@ -105,6 +107,7 @@ const data = {
       cacheDimensions: [],
       implementationBoundary: [
         'apps/asyra-design/src/features/switch-primary-tool/index.ts',
+        'apps/asyra-design/src/config/key-combinations.ts',
         'apps/asyra-design/src/common-apis/system-context.ts',
         'apps/asyra-design/src/toolbar/tool-button.tsx'
       ],
@@ -158,7 +161,8 @@ const data = {
       inputs: [
         'Pointer position, area-selection bounds and Shift modifier',
         'Current selection, registered container capabilities and raw render hit',
-        'Canonical hierarchy and locked/hidden state'
+        'Canonical hierarchy and locked/hidden state',
+        'Current viewport projection for workspace marquee endpoints'
       ],
       outputs: ['artifact:select-elements-outcome'],
       conditions: [
@@ -175,9 +179,10 @@ const data = {
         'Observation records or test assertions as canonical product state',
         'Guessed ownership or test-specific runtime output'
       ],
-      cacheDimensions: [],
+      cacheDimensions: ['Projected marquee endpoints and selection presence'],
       implementationBoundary: [
         'apps/asyra-design/src/features/selection/feature.ts',
+        'apps/asyra-design/src/render-layers/area-selection-render-layer.ts',
         'apps/asyra-design/src/common-apis/selection.ts',
         'apps/asyra-design/src/controllers/canvas-hierarchy-target.ts',
         'apps/asyra-design/src/contents/contents-panel.tsx',
@@ -218,6 +223,7 @@ const data = {
       cacheDimensions: [],
       implementationBoundary: [
         'apps/asyra-design/src/features/hover-element/index.ts',
+        'apps/asyra-design/src/controllers/hover-target.ts',
         'apps/asyra-design/src/common-apis/system-context.ts'
       ],
       specRefs: ['#hover-elements'],
@@ -289,6 +295,7 @@ const data = {
       cacheDimensions: [],
       implementationBoundary: [
         'apps/asyra-design/src/features/delete-element/index.ts',
+        'apps/asyra-design/src/controllers/hover-target.ts',
         'apps/asyra-design/src/common-apis/element/apis.ts'
       ],
       specRefs: ['#delete-subtree'],
@@ -543,7 +550,10 @@ const data = {
         'Observation records or test assertions as canonical product state',
         'Guessed ownership or test-specific runtime output'
       ],
-      cacheDimensions: [],
+      cacheDimensions: [
+        'One current Preset-published descriptor map identity, flattened order identity and workspace; released by Core runtime cleanup',
+        'Dynamic hit, selection and modifiers are resolved on each call; mutable explicit inputs are always admitted afresh'
+      ],
       implementationBoundary: [
         'apps/asyra-design/src/controllers/canvas-hierarchy-target.ts',
         'apps/asyra-design/src/features/selection/feature.ts',
@@ -637,7 +647,7 @@ const data = {
       ],
       outputs: ['artifact:navigate-viewport-outcome'],
       conditions: [
-        'Use wheel modifiers and current visible viewport bounds to preserve canonical camera semantics.'
+        'Use wheel modifiers and current visible viewport bounds to preserve canonical camera semantics. Recording framing uses the same viewport APIs without editing document content.'
       ],
       bypasses: ['Empty fit content or invalid input does not invent bounds.'],
       allowedContributors: [
@@ -654,7 +664,8 @@ const data = {
         'apps/asyra-design/src/features/pan/index.ts',
         'apps/asyra-design/src/features/zoom-fit/index.ts',
         'apps/asyra-design/src/common-apis/viewport.ts',
-        'apps/asyra-design/src/toolbar/zoom.tsx'
+        'apps/asyra-design/src/toolbar/zoom.tsx',
+        'apps/asyra-design/test-data/ai-drawing/drawing-framing.mjs'
       ],
       specRefs: ['#navigate-viewport'],
       failureOwnerStepId: 'navigate-viewport'
@@ -713,7 +724,7 @@ const data = {
       ],
       outputs: ['artifact:execute-agent-request-outcome'],
       conditions: [
-        'Keep dependent actions in the intended History group and expose actual completion or partial failure.',
+        'Keep dependent actions in the intended History group and expose actual completion or partial failure. A staged host sequence exposes completed applications while independent preparation continues.',
         'Explicit document export retains immutable downloadable bytes outside model receipts. Export does not confirm persistence or add history; completion reports durable, local-only and unavailable independently.'
       ],
       bypasses: [
@@ -736,7 +747,9 @@ const data = {
         'apps/asyra-design/src/ai/startup.ts',
         'apps/asyra-design/src/ai/transaction.ts',
         'apps/asyra-design/src/ai/design-actions.ts',
-        'apps/asyra-design/src/ai/actions.ts'
+        'apps/asyra-design/src/ai/actions.ts',
+        'apps/asyra-design/server/local-tool-host.ts',
+        'apps/asyra-design/server/local-design-workflow.ts'
       ],
       specRefs: ['#execute-agent-request'],
       failureOwnerStepId: 'execute-agent-request'
@@ -863,7 +876,6 @@ const data = {
         'apps/asyra-design/src/common-apis/inspection.ts',
         'apps/asyra-design/src/common-apis/inspection-evidence.ts',
         'apps/asyra-design/src/ai/inspection.ts',
-        'apps/asyra-design/server/local-design-review.ts',
         'apps/asyra-design/src/ai/review-action.ts'
       ],
       specRefs: ['#inspect-design'],
@@ -955,7 +967,10 @@ const data = {
       ],
       outputs: ['artifact:render-material-outcome'],
       conditions: [
-        'Preserve ordered colors, stops, alpha and geometry across batching and camera changes.'
+        'Preserve ordered colors, stops, alpha and geometry across batching and camera changes.',
+        'Reuse source/capacity-identical SDK programs with separate Shader bindings; preserve current uniforms, surviving owners and context restoration without query/extraction work.',
+        'Final native instruction-owner destruction releases registered batchers through the SDK; preserve pooled reset/reuse and canonical SceneTree restore ownership.',
+        'GPU measurement helpers preserve actual program/uniform state and forward every original WebGL call unchanged; evidence producers do not replace the render owner.'
       ],
       bypasses: [
         'Empty or invalid material inputs do not become unrelated fallback imagery.'
@@ -968,11 +983,18 @@ const data = {
         'Observation records or test assertions as canonical product state',
         'Guessed ownership or test-specific runtime output'
       ],
-      cacheDimensions: [],
+      cacheDimensions: [
+        'immutable shader source including effective texture capacity',
+        'SDK program cache lifetime',
+        'native renderer/context lifetime'
+      ],
       implementationBoundary: [
+        'packages/render-engine-pixi/package.json',
         'packages/render-engine-pixi/src/mesh-material.ts',
         'packages/render-engine-pixi/src/mesh-material-batch.ts',
-        'packages/render-engine-pixi/src/mesh-material-shader.ts'
+        'packages/render-engine-pixi/src/mesh-material-shader.ts',
+        'packages/render-engine-pixi/src/pixi-render-engine.ts',
+        'apps/asyra-design/e2e/render-state-observer.ts'
       ],
       specRefs: ['#render-material'],
       failureOwnerStepId: 'render-material'
@@ -992,7 +1014,7 @@ const data = {
       ],
       outputs: ['artifact:retain-navigation-outcome'],
       conditions: [
-        'Camera changes preserve canonical document identity and reuse unchanged geometry; edits invalidate affected projections.'
+        'Camera changes preserve canonical document identity and reuse unchanged geometry; edits invalidate affected projections. Accepted hierarchy/coordinate batches reach immediate reads; real child changes, order, visibility, history and remote replay remain current.'
       ],
       bypasses: [
         'Missing renderer state remains unavailable rather than a valid profile.'
@@ -1008,7 +1030,9 @@ const data = {
       cacheDimensions: [],
       implementationBoundary: [
         'packages/render-engine-pixi/src/pixi-render-engine.ts',
-        'packages/render-engine-pixi/src/pixi-batch-partitions.ts'
+        'packages/render-engine-pixi/src/pixi-batch-partitions.ts',
+        'packages/preset/src/subscriptions/data-channel.ts',
+        'packages/render/src/render.ts'
       ],
       specRefs: ['#retain-navigation'],
       failureOwnerStepId: 'retain-navigation'
@@ -1767,4 +1791,6 @@ const data = {
 }
 
 globalThis.FLOW_INSPECTOR_DATA = data
-if (typeof module !== 'undefined') {module.exports = data}
+if (typeof module !== 'undefined') {
+  module.exports = data
+}

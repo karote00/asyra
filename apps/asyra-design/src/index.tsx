@@ -51,6 +51,7 @@ const bootstrapApp = async (): Promise<void> => {
             ai={{
               confirmation: initialization.aiConfirmation,
               conversation: initialization.aiConversation,
+              drafts: initialization.aiDrafts,
               history: initialization.aiHistory
             }}
           />

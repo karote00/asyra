@@ -44,15 +44,17 @@ const mocks = vi.hoisted(() => ({
   onUIPropertyChange: vi.fn(),
   defineUIProperty: vi.fn(),
   setUIProperty: vi.fn(),
-  getAllElements: vi.fn(),
-  getElementById: vi.fn(),
+  getAllElementData: vi.fn(),
+  getElementData: vi.fn(),
   getVectorAnchorSubpaths: vi.fn(),
+  getSelectedVectorPoints: vi.fn(),
   getVectorAnchorContinuation: vi.fn(),
   getVectorTopology: vi.fn(),
   buildVectorIconPath: vi.fn()
 }))
 
-vi.mock('@asyra/reactive-events', () => ({
+vi.mock('@asyra/core', () => ({
+  VECTOR_TOKENS: { POINT: { TARGET: { ANCHOR: 'anchor' } } },
   EventTypes: {
     UPDATE_COMPUTED_DATA: 'updateComputedData',
     UPDATE_COMPUTED_DATA_PATCH: 'updateComputedDataPatch'
@@ -86,16 +88,6 @@ vi.mock('@asyra/reactive-events', () => ({
   subscribeToSceneTreeLoadComplete: mocks.subscribeToSceneTreeLoadComplete
 }))
 
-vi.mock('@asyra/core', () => ({
-  VECTOR_TOKENS: {
-    POINT: {
-      TARGET: {
-        ANCHOR: 'anchor'
-      }
-    }
-  }
-}))
-
 vi.mock('@asyra/preset', () => ({
   PresetSystemPropertyKeys: {
     PATH_EDITING_CONTINUATION: 'pathEditingContinuation',
@@ -113,15 +105,14 @@ vi.mock('../../contexts', () => ({
     getSystemPropertyObservable: mocks.getSystemPropertyObservable,
     onUIPropertyChange: mocks.onUIPropertyChange,
     setSystemProperty: mocks.setSystemProperty,
-    setUIProperty: mocks.setUIProperty
-  },
-  sceneTree: {
-    getAllElements: mocks.getAllElements,
-    getElementById: mocks.getElementById
+    setUIProperty: mocks.setUIProperty,
+    getAllElementData: mocks.getAllElementData,
+    getElementData: mocks.getElementData
   }
 }))
 
 vi.mock('../../common-apis', () => ({
+  selectionApis: { getSelectedVectorPoints: mocks.getSelectedVectorPoints },
   elementApis: {
     getVectorAnchorContinuation: mocks.getVectorAnchorContinuation,
     getVectorAnchorSubpaths: mocks.getVectorAnchorSubpaths,
@@ -232,10 +223,9 @@ describe('local computed derived-state initialization', () => {
       }
     )
     mocks.getSystemPropertyObservable.mockReturnValue(undefined)
-    mocks.getAllElements.mockReturnValue(new Map())
-    mocks.getElementById.mockReturnValue({
-      get: (key: string) => (key === 'type' ? 'vector' : undefined)
-    })
+    mocks.getSelectedVectorPoints.mockReturnValue([])
+    mocks.getAllElementData.mockReturnValue([])
+    mocks.getElementData.mockReturnValue({ type: 'vector' })
     mocks.getVectorAnchorSubpaths.mockReturnValue([
       [{ id: 'point-1' }, { id: 'point-2' }]
     ])
@@ -254,6 +244,28 @@ describe('local computed derived-state initialization', () => {
 
   afterEach(() => {
     vi.unstubAllGlobals()
+  })
+
+  it('uses canonical selected identity while the displayed point is awaiting a frame', () => {
+    mocks.systemProperties.set('pathEditingVectorId', 'vector-1')
+    mocks.systemProperties.set('selectedVectorPoint', {
+      elementId: 'vector-1',
+      pointId: 'point-1',
+      target: 'anchor'
+    })
+    mocks.getSelectedVectorPoints.mockReturnValue([
+      { elementId: 'vector-1', pointId: 'point-2', target: 'anchor' }
+    ])
+
+    initPathEditingContinuation()
+
+    expect(mocks.getVectorAnchorContinuation).toHaveBeenCalledWith(
+      'vector-1',
+      'point-2'
+    )
+    expect(mocks.getSystemProperty).not.toHaveBeenCalledWith(
+      'selectedVectorPoint'
+    )
   })
 
   it('syncs path continuation once for each relevant ordinary scalar, batch, and patch event', () => {

@@ -57,6 +57,7 @@ const crossedMovementThreshold = (
   const deltaX = input.clientX - session.startClientX
   const deltaY = input.clientY - session.startClientY
   const threshold = FEATURE_MOVEMENT_THRESHOLD.layerHierarchy
+
   return deltaX * deltaX + deltaY * deltaY >= threshold * threshold
 }
 

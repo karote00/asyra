@@ -10,7 +10,7 @@ import {
   PUBLICATION_FRAME_VERSION_OFFSET,
   decodeCollaborationMessage,
   decodePublicationMessageFrames,
-  encodePublicationMessageFrames as encodeProtocolPublicationMessageFrames,
+  encodePublicationMessageFrames,
   inspectPublicationFrameHeader,
   isPublicationFrame,
   type PublicationFrameHeader
@@ -57,44 +57,6 @@ interface Deferred<T> {
 }
 
 const diagnosticDisposers: (() => void)[] = []
-let inboundDocumentSequence = 0
-
-const encodePublicationMessageFrames = (
-  message: Parameters<typeof encodeProtocolPublicationMessageFrames>[0],
-  options?: Parameters<typeof encodeProtocolPublicationMessageFrames>[1]
-): ReturnType<typeof encodeProtocolPublicationMessageFrames> => {
-  if (message.type === 'publication') {
-    const sequenced = {
-      ...message,
-      sequence:
-        'sequence' in message && typeof message.sequence === 'number'
-          ? message.sequence
-          : ++inboundDocumentSequence
-    }
-
-    return encodeProtocolPublicationMessageFrames(sequenced, options)
-  }
-
-  if (message.type === 'publications') {
-    const firstSequence = inboundDocumentSequence + 1
-    const sequences =
-      'sequences' in message && Array.isArray(message.sequences)
-        ? message.sequences
-        : message.publications.map((_, index) => firstSequence + index)
-
-    inboundDocumentSequence = Math.max(
-      inboundDocumentSequence,
-      sequences.at(-1) ?? inboundDocumentSequence
-    )
-
-    return encodeProtocolPublicationMessageFrames(
-      { ...message, sequences },
-      options
-    )
-  }
-
-  return encodeProtocolPublicationMessageFrames(message, options)
-}
 
 const createDeferred = <T>(): Deferred<T> => {
   let resolve!: Deferred<T>['resolve']
@@ -157,7 +119,7 @@ const bootstrapTailItem = (
 ) => ({
   sequence,
   publicationId: item.publicationId,
-  encodedPublicationFrames: encodeProtocolPublicationMessageFrames({
+  encodedPublicationFrames: encodePublicationMessageFrames({
     type: 'publication',
     publication: item,
     fromActorId,
@@ -416,6 +378,7 @@ const createLoopbackServer = async (
               normalized = JSON.stringify({
                 ...message,
                 bootstrap: {
+                  documentGeneration: 0,
                   checkpoint: {
                     version: '1.0.0',
                     sceneTree: {
@@ -616,7 +579,6 @@ const createProvider = (endpoint: string): TestProvider =>
   })
 
 beforeEach(() => {
-  inboundDocumentSequence = 0
   mainThreadWebSocketConstructor.mockClear()
 
   function MainThreadWebSocketSentinel() {
@@ -654,6 +616,7 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
             JSON.stringify({
               type: 'ready',
               bootstrap: {
+                documentGeneration: 0,
                 checkpoint: { elements: [{ id: 'element-a' }] },
                 durableSequence: 3,
                 headSequence: 4,
@@ -734,7 +697,8 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
           sendPublicationFrames(socket, {
             type: 'publications',
             publications: [publication, secondPublication],
-            fromActorId: 'actor-b'
+            fromActorId: 'actor-b',
+            sequences: [1, 2]
           })
 
         return
@@ -2134,7 +2098,8 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
         sendPublicationFrames(socket, {
           type: 'publication',
           publication: largePublication,
-          fromActorId: 'actor-b'
+          fromActorId: 'actor-b',
+          sequence: 1
         })
     })
     const provider = createProvider(server.endpoint)
@@ -2314,7 +2279,8 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
       {
         type: 'publication',
         publication: inboundPublication,
-        fromActorId: 'actor-b'
+        fromActorId: 'actor-b',
+        sequence: 1
       },
       { softTargetBytes: 256 }
     )
@@ -2401,17 +2367,20 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
     const firstFrames = encodePublicationMessageFrames({
       type: 'publication',
       publication: firstPublication,
-      fromActorId: 'actor-b'
+      fromActorId: 'actor-b',
+      sequence: 1
     })
     const oversizedFrames = encodePublicationMessageFrames({
       type: 'publication',
       publication: oversizedPublication,
-      fromActorId: 'actor-b'
+      fromActorId: 'actor-b',
+      sequence: 2
     })
     const trailingFrames = encodePublicationMessageFrames({
       type: 'publication',
       publication: trailingPublication,
-      fromActorId: 'actor-b'
+      fromActorId: 'actor-b',
+      sequence: 3
     })
     const inboundFrames = [
       ...firstFrames,
@@ -2527,7 +2496,8 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
     const inboundFrames = encodePublicationMessageFrames({
       type: 'publications',
       publications,
-      fromActorId: 'actor-b'
+      fromActorId: 'actor-b',
+      sequences: publications.map((_, index) => index + 1)
     })
 
     expect(inboundFrames).toHaveLength(publications.length)
@@ -2669,7 +2639,8 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
           sendPublicationFrames(socket, {
             type: 'publications',
             publications: [publication, secondPublication],
-            fromActorId: 'actor-b'
+            fromActorId: 'actor-b',
+            sequences: [1, 2]
           })
 
         return
@@ -2778,7 +2749,8 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
     const frames = encodePublicationMessageFrames({
       type: 'publication',
       publication: oversizedPublication,
-      fromActorId: 'actor-b'
+      fromActorId: 'actor-b',
+      sequence: 1
     })
 
     expect(frames).toHaveLength(1)
@@ -2848,7 +2820,8 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
           sendPublicationFrames(socket, {
             type: 'publications',
             publications: [publication, secondPublication],
-            fromActorId: 'actor-b'
+            fromActorId: 'actor-b',
+            sequences: [1, 2]
           })
 
         return
@@ -2897,7 +2870,8 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
           sendPublicationFrames(socket, {
             type: 'publications',
             publications: [publication, secondPublication],
-            fromActorId: 'actor-b'
+            fromActorId: 'actor-b',
+            sequences: [1, 2]
           })
 
         return
@@ -2980,14 +2954,16 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
       {
         type: 'publication',
         publication: firstPublication,
-        fromActorId: 'actor-b'
+        fromActorId: 'actor-b',
+        sequence: 1
       },
       { softTargetBytes: 256 }
     )
     const secondFrames = encodePublicationMessageFrames({
       type: 'publication',
       publication: secondPublication,
-      fromActorId: 'actor-c'
+      fromActorId: 'actor-c',
+      sequence: 2
     })
 
     expect(firstFrames.length).toBeGreaterThan(1)
@@ -3070,7 +3046,8 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
       {
         type: 'publication',
         publication: inboundPublication,
-        fromActorId: 'actor-b'
+        fromActorId: 'actor-b',
+        sequence: 1
       },
       { softTargetBytes: 256 }
     )
@@ -3128,7 +3105,8 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
     const frames = encodePublicationMessageFrames({
       type: 'publications',
       publications: [publication, secondPublication],
-      fromActorId: 'actor-b'
+      fromActorId: 'actor-b',
+      sequences: [1, 2]
     })
 
     expect(frames).toHaveLength(2)
@@ -3198,7 +3176,8 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
       {
         type: 'publications',
         publications: [firstPublication, secondPublication],
-        fromActorId: 'actor-b'
+        fromActorId: 'actor-b',
+        sequences: [1, 2]
       },
       { softTargetBytes: 256 }
     )
@@ -3274,7 +3253,8 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
         sendPublicationFrames(socket, {
           type: 'publication',
           publication,
-          fromActorId: 'actor-b'
+          fromActorId: 'actor-b',
+          sequence: 1
         })
 
         return
@@ -3370,7 +3350,8 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
         JSON.stringify({
           type: 'publication',
           publication,
-          fromActorId: 'actor-b'
+          fromActorId: 'actor-b',
+          sequence: 1
         })
       )
     })
@@ -3409,7 +3390,8 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
       sendPublicationFrames(socket, {
         type: 'publication',
         publication,
-        fromActorId: 'actor-b'
+        fromActorId: 'actor-b',
+        sequence: 1
       })
     })
     const provider = createProvider(server.endpoint)
@@ -3475,7 +3457,8 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
       const frame = encodePublicationMessageFrames({
         type: 'publication',
         publication,
-        fromActorId: 'actor-b'
+        fromActorId: 'actor-b',
+        sequence: 1
       })[0]
 
       if (!frame) {
@@ -3533,7 +3516,8 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
       const frame = encodePublicationMessageFrames({
         type: 'publication',
         publication,
-        fromActorId: 'actor-b'
+        fromActorId: 'actor-b',
+        sequence: 1
       })[0]
 
       if (!frame) {
@@ -3580,7 +3564,8 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
         sendPublicationFrames(socket, {
           type: 'publication',
           publication,
-          fromActorId: 'actor-b'
+          fromActorId: 'actor-b',
+          sequence: 1
         })
     })
     const provider = createProvider(server.endpoint)

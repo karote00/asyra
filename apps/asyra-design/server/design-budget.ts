@@ -1,3 +1,5 @@
+import { AiToolFailureCodes } from '../src/constants/ai-design'
+import { resolveMotifReference } from './design-motif-reference'
 import { facePointCount, resolveSurfaceBoundaries } from './design-face'
 import { designConstructionSchema } from './design-construction-schema'
 import { operationInputIssue } from '../src/ai/tool-schema'
@@ -180,13 +182,23 @@ export const measureDesignBudget = (
         record(value.motifs) && typeof value.motifs.template === 'string'
           ? definitionCounts.get(value.motifs.template)
           : undefined
-      const motifs = Array.isArray(value.motifs)
+      const overridden =
+        record(value.motifs) && value.motifs.overrides !== undefined
+      let motifs = Array.isArray(value.motifs)
         ? value.motifs
         : (reference?.motifs ?? [])
-      let motifPoints = reference?.points ?? 0
+
+      if (overridden) {
+        motifs = resolveMotifReference(
+          value.motifs as Record<string, unknown>,
+          definitions
+        )
+      }
+
+      let motifPoints = overridden ? 0 : (reference?.points ?? 0)
 
       primitivePoints = Math.max(4, reference?.largest ?? 0)
-      if (!reference) {
+      if (!reference || overridden) {
         for (const motif of motifs) {
           const vertices = record(motif) ? motif.vertices : undefined
           const count = Array.isArray(vertices) ? vertices.length : 0
@@ -204,7 +216,23 @@ export const measureDesignBudget = (
         boundaryPoints = 4
       }
 
-      sourcePoints = boundaryPoints + (reference ? 0 : motifPoints)
+      let patchPoints = 0
+
+      if (
+        overridden &&
+        record(value.motifs) &&
+        record(value.motifs.overrides)
+      ) {
+        for (const patch of Object.values(value.motifs.overrides)) {
+          if (record(patch) && Array.isArray(patch.vertices)) {
+            patchPoints += patch.vertices.length
+          }
+
+          observed.sourceNodes++
+        }
+      }
+
+      sourcePoints = boundaryPoints + (reference ? patchPoints : motifPoints)
       generatedNodes = instances * motifs.length
       expandedPoints = instances * motifPoints
       observed.sourceNodes += reference ? 0 : motifs.length
@@ -255,8 +283,7 @@ export const inspectDesignBudget = (
 
   return {
     available: false,
-    code: 'DESIGN_BUDGET_EXCEEDED',
-    recovery: 'correct_input',
+    code: AiToolFailureCodes.INPUT_INVALID,
     budget: { observed, allowed, lowerBound },
     message: `Construction budgets exceeded before geometry compilation: ${exceeded.map((key) => `${key}=${observed[key]} > ${allowed[key]}`).join('; ')}${lowerBound ? ' (observations are lower bounds)' : ''}. Source work is partitioned automatically; this input exceeds an expanded artifact, depth or indivisible primitive guard. Template compression does not reduce expanded output. Use existing ordered parts for independent ready artifacts that each fit, preserving geometry, painter order, keys and relationships. Do not replay completed parts. No canvas changes were made.`
   }

@@ -43,15 +43,25 @@ const recoverReceipt = async (
 ): Promise<ReceiptRead> => {
   let offset: number | undefined
   const chunks: string[] = []
+
   for (;;) {
     const result = (await read(offset)) as ReceiptRead & {
       receiptPage?: { text: string; nextOffset: number | null }
     }
-    if (result.receipt) return result
-    if (!result.receiptPage) throw new Error('Missing bounded receipt page')
+
+    if (result.receipt) {
+      return result
+    }
+
+    if (!result.receiptPage) {
+      throw new Error('Missing bounded receipt page')
+    }
+
     chunks.push(result.receiptPage.text)
-    if (result.receiptPage.nextOffset === null)
+    if (result.receiptPage.nextOffset === null) {
       return { current: result.current, receipt: JSON.parse(chunks.join('')) }
+    }
+
     offset = result.receiptPage.nextOffset
   }
 }
@@ -59,7 +69,9 @@ const recoverReceipt = async (
 const fixture = (count = 1000, maxBytes?: number) => {
   const controller = new AbortController()
   const signal = controller.signal
+
   let changed = () => undefined
+
   const ids = Array.from({ length: count }, (_, i) => `child-${i}`)
   const children = vi.fn(() => ({
     available: true,
@@ -76,14 +88,20 @@ const fixture = (count = 1000, maxBytes?: number) => {
   const queries = createRetainedDesignContext(
     {
       getCurrentWorkspaceId: () => 'workspace',
+
       getSelectedElementIds: () => ids,
+
       getElementChildren: children,
+
       getElementIdsInBounds: () => ids,
+
       getElementMetadata: metadata,
+
       getElementComputedData: () => ({})
     },
     (listener) => {
       changed = listener
+
       return () => undefined
     },
     { maxBytes }
@@ -105,6 +123,7 @@ const fixture = (count = 1000, maxBytes?: number) => {
           })),
           elementIds: ids
         }),
+
         deleteElement: () => ({
           elementId: 'group',
           removed: ids.map((elementId) => ({ elementId })),
@@ -113,6 +132,7 @@ const fixture = (count = 1000, maxBytes?: number) => {
       },
       hierarchy: {
         groupElements: group,
+
         ungroupElement: () => ({
           groupId: 'group',
           elementIds: ids,
@@ -121,6 +141,7 @@ const fixture = (count = 1000, maxBytes?: number) => {
       },
       element: {
         setElementsVisible: edit,
+
         deleteElements: () => ({
           removed: ids.map((elementId) => ({ elementId })),
           rootParentChildrenAfter: []
@@ -131,25 +152,40 @@ const fixture = (count = 1000, maxBytes?: number) => {
       selection: {},
       viewport: {}
     }),
-    { observe: () => () => undefined, resolve: () => 'live' },
+    {
+      observe: () => () => undefined,
+
+      resolve: () => 'live'
+    },
     queries
   )
+
   const action = (name: string) => {
     const found = actions.find((a) => a.name === name)
-    if (!found) throw new Error(`Unknown test action: ${name}`)
+
+    if (!found) {
+      throw new Error(`Unknown test action: ${name}`)
+    }
+
     return found
   }
+
   const runMutation: AiMutationExecutor = async (write, settled) => {
     const value = write()
+
     settled?.(value)
+
     return value
   }
+
   const context = { signal, runMutation }
+
   const produce = () =>
     action('api_hierarchy_groupElements').execute(
       { elementIds: ids },
       context
     ) as Promise<StructuralReceipt>
+
   return {
     queries,
     controller,
@@ -161,14 +197,17 @@ const fixture = (count = 1000, maxBytes?: number) => {
     edit,
     action,
     produce,
+
     change: () => changed()
   }
 }
 
 it('hands ordered structural output to a plural edit without querying children or copying IDs through model arguments', async () => {
   const app = fixture()
+
   try {
     const result = await app.produce()
+
     expect(result.retained).toMatchObject({
       snapshotId: expect.any(String),
       leaseId: expect.any(String),
@@ -181,6 +220,7 @@ it('hands ordered structural output to a plural edit without querying children o
       )
     ).toBeUndefined()
     const input = { elementIds: result.retained, visible: false }
+
     expect(JSON.stringify(input).length).toBeLessThan(250)
     expect(
       operationInputIssue(
@@ -206,6 +246,7 @@ it('hands ordered structural output to a plural edit without querying children o
         app.context
       )
     )
+
     expect(full.receipt.value).toEqual(result.value)
     expect(full.current).toBe(true)
   } finally {
@@ -215,15 +256,19 @@ it('hands ordered structural output to a plural edit without querying children o
 
 it('rejects references made stale while the consumer waits for mutation admission without replaying the producer', async () => {
   const app = fixture(8)
+
   try {
     const result = await app.produce()
+
     await expect(
       app.action('api_element_setElementsVisible').execute(
         { elementIds: result.retained, visible: false },
         {
           ...app.context,
+
           runMutation: async (write) => {
             app.change()
+
             return write()
           }
         }
@@ -242,6 +287,7 @@ it('rejects references made stale while the consumer waits for mutation admissio
         app.context.signal
       )
     )
+
     expect(full.current).toBe(false)
     expect(full.receipt.value.elementIds).toEqual(app.ids)
   } finally {
@@ -251,8 +297,10 @@ it('rejects references made stale while the consumer waits for mutation admissio
 
 it('preserves the acknowledged mutation when retained delivery capacity refuses its full receipt', async () => {
   const app = fixture(8, 20)
+
   try {
     const result = await app.produce()
+
     expect(result).toMatchObject({
       status: 'complete',
       value: { groupId: 'group' },
@@ -279,6 +327,7 @@ it('keeps model structural replies bounded while full receipts remain readable w
     definitions.map(createAiToolContract),
     {
       modelActions: (a) => a,
+
       resolveBatch: (b) => b
     },
     async (batch) => ({
@@ -287,7 +336,11 @@ it('keeps model structural replies bounded while full receipts remain readable w
         batch.actions.map(async (call) => {
           calls.push(call.name)
           const action = definitions.find((a) => a.name === call.name)
-          if (!action) throw new Error('Missing test action')
+
+          if (!action) {
+            throw new Error('Missing test action')
+          }
+
           return {
             actionId: call.id,
             actionName: call.name,
@@ -297,6 +350,7 @@ it('keeps model structural replies bounded while full receipts remain readable w
       )
     })
   )
+
   try {
     const text = await tools.call(
       'execute_design_batch',
@@ -311,8 +365,10 @@ it('keeps model structural replies bounded while full receipts remain readable w
       },
       app.context.signal
     )
+
     expect(text.length).toBeLessThan(2500)
     const result = JSON.parse(text).actionResults[0].result
+
     expect(result.value.elementIds).toBeUndefined()
     expect(result.retained.total).toBe(4000)
     const read = await recoverReceipt(
@@ -332,6 +388,7 @@ it('keeps model structural replies bounded while full receipts remain readable w
           )
         ).actionResults[0].result
     )
+
     expect(read.receipt.value.elementIds).toEqual(app.ids)
     expect(app.group).toHaveBeenCalledOnce()
     expect(calls[0]).toBe('api_hierarchy_groupElements')
@@ -346,19 +403,24 @@ it('keeps model structural replies bounded while full receipts remain readable w
 
 it('does not bless a later document revision when another change occurs after mutation settlement', async () => {
   const app = fixture(8)
+
   try {
     const produced = await app.action('api_hierarchy_groupElements').execute(
       { elementIds: app.ids },
       {
         signal: app.context.signal,
+
         runMutation: async (write, settled) => {
           const value = write()
+
           settled?.(value)
           app.change()
+
           return value
         }
       }
     )
+
     expect(produced.retained).toBeDefined()
     await expect(
       app
@@ -376,16 +438,28 @@ it.each(['foreign', 'released', 'count', 'cancelled'] as const)(
   'rejects %s structural references before the canonical edit',
   async (failure) => {
     const app = fixture(4)
+
     try {
       const produced = await app.produce()
       const reference = { ...produced.retained }
       let context = app.context
-      if (failure === 'foreign')
+
+      if (failure === 'foreign') {
         context = { ...context, signal: new AbortController().signal }
-      if (failure === 'released')
+      }
+
+      if (failure === 'released') {
         app.queries.releaseLease(reference.leaseId, context.signal)
-      if (failure === 'count') reference.total++
-      if (failure === 'cancelled') app.controller.abort()
+      }
+
+      if (failure === 'count') {
+        reference.total++
+      }
+
+      if (failure === 'cancelled') {
+        app.controller.abort()
+      }
+
       await expect(
         app
           .action('api_element_setElementsVisible')
@@ -407,6 +481,7 @@ it.each([
   'preserves exact live targets and original evidence for %s',
   async (name) => {
     const app = fixture(4)
+
     try {
       const result = await app.action(name).execute(
         {
@@ -421,6 +496,7 @@ it.each([
         app.context
       )
       const expected = name.includes('delete') ? [] : app.ids
+
       expect(
         app.queries.get(
           result.retained.snapshotId,
@@ -436,6 +512,7 @@ it.each([
         },
         app.context.signal
       )
+
       expect(full.receipt.value).toEqual(result.value)
       full.receipt.value.changedByReader = true
       const again = app.queries.read(
@@ -446,6 +523,7 @@ it.each([
         },
         app.context.signal
       )
+
       expect(again.receipt.value.changedByReader).toBeUndefined()
       expect(app.children).not.toHaveBeenCalled()
     } finally {
@@ -456,8 +534,10 @@ it.each([
 
 it('preserves completed writes when cancellation prevents reference publication', async () => {
   const app = fixture(4)
+
   app.group.mockImplementationOnce((ids) => {
     app.controller.abort()
+
     return {
       groupId: 'group',
       elementIds: ids,
@@ -466,6 +546,7 @@ it('preserves completed writes when cancellation prevents reference publication'
   })
   try {
     const result = await app.produce()
+
     expect(result).toMatchObject({
       status: 'complete',
       delivery: { status: 'unavailable' }
@@ -483,7 +564,10 @@ it('publishes structural output through the real runtime wrapper before a depend
   const runtime = createAiAgentRuntime({
     provider: {
       requestActionBatch: async (_input, options) => {
-        if (!options.executeBatch) throw new Error('Missing execution boundary')
+        if (!options.executeBatch) {
+          throw new Error('Missing execution boundary')
+        }
+
         const receipt = await options.executeBatch({
           batchId: 'group',
           actions: [
@@ -495,6 +579,7 @@ it('publishes structural output through the real runtime wrapper before a depend
             }
           ]
         })
+
         produced = receipt.actionResults[0]
           ?.result as unknown as StructuralReceipt
         expect(produced.delivery).toBeUndefined()
@@ -514,10 +599,12 @@ it('publishes structural output through the real runtime wrapper before a depend
             }
           ]
         })
+
         expect(
           (original.actionResults[0].result as unknown as ReceiptRead).receipt
             .value.elementIds
         ).toEqual(app.ids)
+
         return {
           batchId: 'edit',
           actions: [
@@ -541,11 +628,13 @@ it('publishes structural output through the real runtime wrapper before a depend
     confirmationHandler: { confirm: async () => true },
     transactionRunner: createAiTransactionRunner({ apis: new Factory() })
   })
+
   try {
     const result = await runtime.run({
       intent: 'Group then hide',
       signal: app.context.signal
     })
+
     expect(result.status).toBe('executed')
     expect(app.group).toHaveBeenCalledTimes(1)
     expect(app.edit).toHaveBeenCalledExactlyOnceWith(app.ids, false)
@@ -560,6 +649,7 @@ it('projects real observed fill receipts after preserving complete original muta
   let listener: ((change?: InspectionDependencyChange) => void) | undefined
   const writes = vi.fn((elementIds: string[]) => {
     listener?.({ elementIds })
+
     return {
       value: null,
       acceptedIds: elementIds,
@@ -580,29 +670,47 @@ it('projects real observed fill receipts after preserving complete original muta
     {
       observe: (next) => {
         listener = next
+
         return () => {
           listener = undefined
         }
       },
+
       resolve: () => 'live'
     }
   ).find((action) => action.name === 'api_fill_updateFillsAtIndex')
-  if (!base) throw new Error('Missing fill action')
+
+  if (!base) {
+    throw new Error('Missing fill action')
+  }
+
   const action = observeAiAction(base)
   const report = createAiActions().find(
     (item) => item.name === 'report_outcome'
   )
-  if (!report) throw new Error('Missing final outcome action')
+
+  if (!report) {
+    throw new Error('Missing final outcome action')
+  }
+
   const originals: unknown[] = []
   let compact = ''
   const runtime = createAiAgentRuntime({
     provider: {
       requestActionBatch: async (_input, options) => {
         const execute = options.executeBatch
-        if (!execute) throw new Error('Missing runtime batch boundary')
+
+        if (!execute) {
+          throw new Error('Missing runtime batch boundary')
+        }
+
         const tools = createLocalOperationTools(
           [action],
-          { modelActions: (a) => a, resolveBatch: (b) => b },
+          {
+            modelActions: (a) => a,
+
+            resolveBatch: (b) => b
+          },
           (batch) =>
             observeActionBatch(
               batch,
@@ -610,10 +718,13 @@ it('projects real observed fill receipts after preserving complete original muta
               [action],
               'native-fill',
               (event, value) => {
-                if (event === 'action_completed') originals.push(value)
+                if (event === 'action_completed') {
+                  originals.push(value)
+                }
               }
             )
         )
+
         compact = await tools.call(
           'execute_design_batch',
           {
@@ -632,6 +743,7 @@ it('projects real observed fill receipts after preserving complete original muta
           },
           new AbortController().signal
         )
+
         return {
           batchId: 'done',
           actions: [
@@ -654,24 +766,28 @@ it('projects real observed fill receipts after preserving complete original muta
     confirmationHandler: { confirm: async () => true },
     transactionRunner: createAiTransactionRunner({ apis: new Factory() })
   })
+
   try {
     const outcome = await runtime.run({
       intent: 'Adjust window reflections',
       signal: new AbortController().signal
     })
+
     expect(
       outcome.status,
       outcome.status === 'failed' ? outcome.message : undefined
     ).toBe('executed')
     expect(writes).toHaveBeenCalledTimes(16)
     expect(originals).toHaveLength(16)
-    for (const original of originals)
+    for (const original of originals) {
       expect(original).toMatchObject({
         result: {
           toolOutcome: { status: 'success', settlement: 'completed' },
           mutationScope: { complete: true, elementIds: expect.any(Array) }
         }
       })
+    }
+
     expect(
       originals.reduce(
         (total: number, item) =>
@@ -682,18 +798,23 @@ it('projects real observed fill receipts after preserving complete original muta
       )
     ).toBe(3072)
     const reply = JSON.parse(compact)
+
     expect(reply.actionResults).toHaveLength(16)
     expect(reply.batchSummary.acknowledgedActions).toBeUndefined()
-    for (const receipt of reply.actionResults)
+    for (const receipt of reply.actionResults) {
       expect(receipt.result).toMatchObject({
         changed: true,
         toolOutcome: { status: 'success', settlement: 'completed' }
       })
+    }
+
     // Explicit owner identities remain actionable; compact scope is not inferred success.
-    for (const [part, receipt] of reply.actionResults.entries())
+    for (const [part, receipt] of reply.actionResults.entries()) {
       expect(receipt.result.acceptedIds).toEqual(
         Array.from({ length: 192 }, (_, index) => `window-${part}-${index}`)
       )
+    }
+
     expect(reply.checks.counts.unverified).toBe(3072)
     expect(localToolOutcome(reply)).toMatchObject({
       status: 'partial',
@@ -715,12 +836,15 @@ it('projects real observed fill receipts after preserving complete original muta
 it('keeps eight structural recovery receipts without exhausting a subsequent region query', async () => {
   // Recorded 101: seven groups, another group, then a region read; no query yet.
   const app = fixture(3)
+
   try {
     const receipts: StructuralReceipt[] = []
+
     for (let index = 0; index < 8; index++) {
       receipts.push(await app.produce())
       app.change()
     }
+
     const read = app.queries.read(
       {
         scope: 'region',
@@ -730,6 +854,7 @@ it('keeps eight structural recovery receipts without exhausting a subsequent reg
       },
       app.context.signal
     )
+
     expect(read.total).toBe(3)
     for (const receipt of receipts) {
       const recovered = app.queries.read(
@@ -740,6 +865,7 @@ it('keeps eight structural recovery receipts without exhausting a subsequent reg
         },
         app.context.signal
       ) as ReceiptRead
+
       expect(recovered.receipt.value).toEqual(receipt.value)
       expect(recovered.current).toBe(false)
       expect(() =>
@@ -750,6 +876,7 @@ it('keeps eight structural recovery receipts without exhausting a subsequent reg
         )
       ).toThrow(/stale/)
     }
+
     expect(app.group).toHaveBeenCalledTimes(8)
     expect(app.children).not.toHaveBeenCalled()
   } finally {

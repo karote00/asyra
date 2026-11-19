@@ -30,10 +30,13 @@ const computedEventUpdatesVectorPoints = (
   ) {
     return false
   }
+
   const payload = event.payload as unknown as Record<string, unknown>
+
   if (payload.key === 'points') {
     return true
   }
+
   if (
     Array.isArray(payload.changes) &&
     payload.changes.some(
@@ -46,10 +49,12 @@ const computedEventUpdatesVectorPoints = (
   ) {
     return true
   }
+
   const patch =
     typeof payload.patch === 'object' && payload.patch !== null
       ? (payload.patch as Record<string, unknown>)
       : undefined
+
   return (
     (typeof patch?.values === 'object' &&
       patch.values !== null &&
@@ -71,6 +76,7 @@ const eventMarksCommittedReplay = (event: AllEvent): boolean => {
   }
 
   const payload = event.payload as unknown as Record<string, unknown>
+
   return (
     payload.status === 'committed' &&
     (payload.origin === 'undo' || payload.origin === 'redo')
@@ -101,14 +107,17 @@ const toSelectedVectorPointState = (
     selected.elementId,
     selected.pointId
   )
+
   if (!anchorPoint) {
     return null
   }
 
   let targetPosition = anchorPoint.point.outHandle
+
   if (selected.target === 'inHandle') {
     targetPosition = anchorPoint.point.inHandle
   }
+
   if (selected.target === 'anchor') {
     targetPosition = { x: anchorPoint.point.x, y: anchorPoint.point.y }
   }
@@ -193,15 +202,18 @@ export const initSelectionCompatibility = () => {
   const pathEditingVectorObservable = core.getSystemPropertyObservable<
     string | null
   >(PresetSystemPropertyKeys.PATH_EDITING_VECTOR_ID)
+
   pathEditingVectorObservable?.subscribe(() => {
     syncDerivedVectorSelectionProperties()
   })
 
   let frameRefreshPending = false
+
   core.subscribeToFrameComplete(() => {
     if (!frameRefreshPending) {
       return
     }
+
     frameRefreshPending = false
     syncDerivedVectorSelectionProperties()
   })
@@ -215,6 +227,7 @@ export const initSelectionCompatibility = () => {
       core.getSystemProperty<string | null>(
         PresetSystemPropertyKeys.PATH_EDITING_VECTOR_ID
       ) ?? null
+
     if (
       pathEditingVectorId &&
       events.some((event) =>

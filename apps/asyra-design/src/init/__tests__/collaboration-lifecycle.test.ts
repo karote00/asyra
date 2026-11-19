@@ -1,8 +1,14 @@
+import {
+  getActiveCollaborationHandle,
+  getActiveDocumentScope
+} from '../../collaboration/session-observation'
+import * as lifecycleExports from '../../collaboration/lifecycle'
 import * as documentPreparation from '../../collaboration/document-publication'
 import { prepareDocumentPublication } from '../../collaboration/document-publication'
 import 'fake-indexeddb/auto'
 import { Buffer } from 'node:buffer'
-import { afterEach, beforeEach, expect, it, vi } from 'vitest'
+import { afterEach, beforeAll, beforeEach, expect, it, vi } from 'vitest'
+import { applyPreset, PresetDefaults, PresetProfiles } from '@asyra/preset'
 import * as collaborationModule from '@asyra/collaboration'
 import { ProviderFailure } from '@asyra/collaboration'
 import factory, {
@@ -33,11 +39,8 @@ import {
   createRemotePublicationHandler,
   createCollaborationDocumentSession,
   disposeCollaboration,
-  getActiveCollaborationHandle,
-  prepareCollaborationDocumentSession,
   resetCollaborationDocument,
-  resolveCollaborationConnectionTransition,
-  startCollaboration
+  resolveCollaborationConnectionTransition
 } from '../../collaboration/lifecycle'
 import core from '../../contexts'
 
@@ -63,6 +66,22 @@ vi.mock('@asyra/collaboration', async (importOriginal) => {
     ) => collaborationModuleState.createCollaboration(...args)
   }
 })
+
+const startRegisteredDocumentSession = async (
+  mode: Parameters<typeof createCollaborationDocumentSession>[0]
+) => {
+  core.registerCollaborationSession(createCollaborationDocumentSession(mode))
+  await core.start(document.createElement('div'), { width: 128, height: 128 })
+  const handle = getActiveCollaborationHandle()
+
+  if (!handle) {
+    throw new Error(
+      'Core startup did not activate its registered document session'
+    )
+  }
+
+  return handle
+}
 
 const EMPTY_DOCUMENT = {
   version: '1.0.0',
@@ -192,7 +211,15 @@ const harness = {
   }
 }
 
+beforeAll(() => {
+  applyPreset(core, {
+    profile: PresetProfiles.CUSTOM,
+    defaults: [PresetDefaults.BASIC_SHAPES, PresetDefaults.CONTAINERS]
+  })
+})
+
 beforeEach(async () => {
+  await core.destroy()
   await disposeCollaboration()
   vi.restoreAllMocks()
   collaborationModuleState.createCollaboration =
@@ -202,6 +229,7 @@ beforeEach(async () => {
     CollaborationWebSocketProvider.prototype,
     'openDocumentSession'
   ).mockResolvedValue({
+    documentGeneration: 0,
     checkpoint: EMPTY_DOCUMENT,
     durableSequence: 0,
     headSequence: 0,
@@ -227,6 +255,8 @@ beforeEach(async () => {
 })
 
 afterEach(async () => {
+  vi.useRealTimers()
+  await core.destroy()
   await disposeCollaboration()
   vi.useRealTimers()
   idCounter.clear()
@@ -276,12 +306,12 @@ it('starts at none and suppresses only the none-to-connected transition', () => 
 })
 
 it('does not publish a new session state when the connection state is unchanged', async () => {
-  const prepared = await prepareCollaborationDocumentSession({
+  const prepared = {
     fileId: 'file-connection-state-deduplication',
     actorId: 'actor-lifecycle',
     endpoint: 'ws://127.0.0.1:4101/collaboration'
-  })
-  const handle = await prepared.activate()
+  }
+  const handle = await startRegisteredDocumentSession(prepared)
   const publishedStates: unknown[] = []
   const unsubscribe = handle.onSessionStateChange((state) => {
     publishedStates.push(state)
@@ -303,13 +333,13 @@ it('runs the server Reset barrier before disposing the active file session and c
   const resetDocument = vi.mocked(
     CollaborationWebSocketProvider.prototype.resetDocument
   )
-  const prepared = await prepareCollaborationDocumentSession({
+  const prepared = {
     fileId: 'file-reset-recovery',
     actorId: 'actor-lifecycle',
     endpoint: 'ws://127.0.0.1:4101/collaboration'
-  })
+  }
 
-  await prepared.activate()
+  await startRegisteredDocumentSession(prepared)
 
   await resetCollaborationDocument('file-reset-recovery')
 
@@ -340,12 +370,12 @@ it('clears reset-invalidated recovery before it can enter the new document gener
   )
   const applyCanonicalChanges = vi.spyOn(core, 'applyCanonicalChanges')
 
-  const prepared = await prepareCollaborationDocumentSession({
+  const prepared = {
     fileId,
     actorId: 'actor-after-reset',
     endpoint: 'ws://127.0.0.1:4101/collaboration'
-  })
-  const handle = await prepared.activate()
+  }
+  const handle = await startRegisteredDocumentSession(prepared)
 
   await handle.whenIdle()
 
@@ -441,6 +471,7 @@ it('opens the socket bootstrap before activation and applies its tail before liv
     order.push('open-session')
 
     return {
+      documentGeneration: 0,
       checkpoint: EMPTY_DOCUMENT,
       durableSequence: 0,
       headSequence: 1,
@@ -462,17 +493,13 @@ it('opens the socket bootstrap before activation and applies its tail before liv
     return mutate()
   })
 
-  const prepared = await prepareCollaborationDocumentSession({
+  const prepared = {
     fileId: 'file-lifecycle',
     actorId: 'actor-lifecycle',
     endpoint: 'ws://127.0.0.1:4101/collaboration'
-  })
+  }
 
-  expect(prepared.bootstrap.checkpoint).toEqual(EMPTY_DOCUMENT)
-  expect(order).toEqual(['open-session'])
-  expect(getActiveCollaborationHandle()).toBeUndefined()
-
-  await prepared.activate()
+  await startRegisteredDocumentSession(prepared)
 
   expect(order).toEqual([
     'open-session',
@@ -497,6 +524,7 @@ it('reopens the socket bootstrap and hydrates checkpoint plus tail before reconn
 
   vi.mocked(CollaborationWebSocketProvider.prototype.openDocumentSession)
     .mockResolvedValueOnce({
+      documentGeneration: 0,
       checkpoint: EMPTY_DOCUMENT,
       durableSequence: 0,
       headSequence: 0,
@@ -506,6 +534,7 @@ it('reopens the socket bootstrap and hydrates checkpoint plus tail before reconn
       order.push('reconnect-open')
 
       return {
+        documentGeneration: 0,
         checkpoint: reconnectDocument,
         durableSequence: 0,
         headSequence: 1,
@@ -522,6 +551,7 @@ it('reopens the socket bootstrap and hydrates checkpoint plus tail before reconn
       order.push('reconnect-open')
 
       return {
+        documentGeneration: 0,
         checkpoint: reconnectDocument,
         durableSequence: 0,
         headSequence: 1,
@@ -539,10 +569,16 @@ it('reopens the socket bootstrap and hydrates checkpoint plus tail before reconn
   ).mockImplementation(async () => {
     order.push('bootstrap-consumed')
   })
-  vi.spyOn(core, 'load').mockImplementation((document) => {
-    expect(document).toEqual(reconnectDocument)
-    order.push('core-load')
-  })
+  const load = vi
+    .spyOn(core, 'load')
+    .mockImplementationOnce((document) => {
+      expect(document).toEqual(EMPTY_DOCUMENT)
+    })
+    .mockImplementation((document) => {
+      expect(document).toEqual(reconnectDocument)
+      order.push('core-load')
+    })
+
   vi.spyOn(core, 'applyCanonicalChanges').mockImplementation(() => {
     order.push('core-apply')
   })
@@ -552,13 +588,14 @@ it('reopens the socket bootstrap and hydrates checkpoint plus tail before reconn
     return mutate()
   })
 
-  const prepared = await prepareCollaborationDocumentSession({
+  const prepared = {
     fileId: 'file-lifecycle',
     actorId: 'actor-lifecycle',
     endpoint: 'ws://127.0.0.1:4101/collaboration'
-  })
-  const handle = await prepared.activate()
+  }
+  const handle = await startRegisteredDocumentSession(prepared)
 
+  expect(load).toHaveBeenNthCalledWith(1, EMPTY_DOCUMENT)
   order.length = 0
 
   await handle.reconnect()
@@ -594,22 +631,16 @@ it('keeps a provisional local session active and retries an unavailable socket a
     .mockImplementationOnce(() => retry.promise)
   const load = vi.spyOn(core, 'load').mockImplementation(() => undefined)
 
-  const prepared = await prepareCollaborationDocumentSession({
+  const prepared = {
     fileId: 'file-offline-retry',
     actorId: 'actor-lifecycle',
     endpoint: 'ws://127.0.0.1:4101/collaboration'
-  })
+  }
 
-  vi.useFakeTimers()
-  const handle = await prepared.activate()
+  vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+  const handle = await startRegisteredDocumentSession(prepared)
 
-  expect(prepared.bootstrap).toEqual({
-    checkpoint: createFormalInitialDocument(),
-    documentGeneration: 0,
-    durableSequence: 0,
-    headSequence: 0,
-    pendingTail: []
-  })
+  expect(load).toHaveBeenNthCalledWith(1, createFormalInitialDocument())
   expect(handle.getSessionState()).toEqual(
     expect.objectContaining({
       connection: 'disconnected',
@@ -641,6 +672,7 @@ it('keeps a provisional local session active and retries an unavailable socket a
 
   vi.useRealTimers()
   retry.resolve({
+    documentGeneration: 0,
     checkpoint: EMPTY_DOCUMENT,
     durableSequence: 0,
     headSequence: 0,
@@ -708,12 +740,12 @@ it('retains disconnected Factory publications and removes them after reconnect s
   vi.spyOn(factory, 'runRemoteTransaction').mockImplementation((mutate) =>
     mutate()
   )
-  const prepared = await prepareCollaborationDocumentSession({
+  const prepared = {
     fileId: 'file-offline-publication',
     actorId: 'actor-lifecycle',
     endpoint: 'ws://127.0.0.1:4101/collaboration'
-  })
-  const handle = await prepared.activate()
+  }
+  const handle = await startRegisteredDocumentSession(prepared)
 
   await handle.disconnect()
 
@@ -767,12 +799,14 @@ it('includes a queued local publication in the reconnect recovery cutoff before 
 
   vi.mocked(CollaborationWebSocketProvider.prototype.openDocumentSession)
     .mockResolvedValueOnce({
+      documentGeneration: 0,
       checkpoint: EMPTY_DOCUMENT,
       durableSequence: 0,
       headSequence: 0,
       pendingTail: []
     })
     .mockResolvedValueOnce({
+      documentGeneration: 0,
       checkpoint: EMPTY_DOCUMENT,
       durableSequence: 0,
       headSequence: 0,
@@ -780,6 +814,7 @@ it('includes a queued local publication in the reconnect recovery cutoff before 
     })
     .mockImplementationOnce(() => reconnectBootstrap.promise)
     .mockResolvedValue({
+      documentGeneration: 0,
       checkpoint: EMPTY_DOCUMENT,
       durableSequence: 0,
       headSequence: 0,
@@ -816,12 +851,12 @@ it('includes a queued local publication in the reconnect recovery cutoff before 
   )
   vi.spyOn(core, 'load').mockImplementation(() => undefined)
 
-  const prepared = await prepareCollaborationDocumentSession({
+  const prepared = {
     fileId: 'file-reconnect-cutoff',
     actorId: 'actor-lifecycle',
     endpoint: 'ws://127.0.0.1:4101/collaboration'
-  })
-  const handle = await prepared.activate()
+  }
+  const handle = await startRegisteredDocumentSession(prepared)
 
   await handle.disconnect()
 
@@ -829,6 +864,7 @@ it('includes a queued local publication in the reconnect recovery cutoff before 
 
   publish?.(factoryPublication('queued-before-reconnect'))
   reconnectBootstrap.resolve({
+    documentGeneration: 0,
     checkpoint: EMPTY_DOCUMENT,
     durableSequence: 0,
     headSequence: 0,
@@ -875,12 +911,12 @@ it('disposes the previous composition before a reconnect replacement becomes liv
     .mockReturnValueOnce(firstComposition as never)
     .mockReturnValueOnce(secondComposition as never)
 
-  const prepared = await prepareCollaborationDocumentSession({
+  const prepared = {
     fileId: 'file-reconnect-disposal',
     actorId: 'actor-lifecycle',
     endpoint: 'ws://127.0.0.1:4101/collaboration'
-  })
-  const handle = await prepared.activate()
+  }
+  const handle = await startRegisteredDocumentSession(prepared)
 
   await handle.disconnect()
   await handle.reconnect()
@@ -919,12 +955,12 @@ it('retains an acknowledgement-rejected publication as an explicit conflict', as
   const consoleError = vi
     .spyOn(console, 'error')
     .mockImplementation(() => undefined)
-  const prepared = await prepareCollaborationDocumentSession({
+  const prepared = {
     fileId: 'file-conflicted-publication',
     actorId: 'actor-lifecycle',
     endpoint: 'ws://127.0.0.1:4101/collaboration'
-  })
-  const handle = await prepared.activate()
+  }
+  const handle = await startRegisteredDocumentSession(prepared)
 
   publish?.(factoryPublication('conflicted-local'))
   await handle.whenIdle()
@@ -953,7 +989,7 @@ it('starts the real app collaboration composition without an Awareness preview r
 
   collaborationModuleState.createCollaboration = createCollaboration
 
-  await startCollaboration({
+  await startRegisteredDocumentSession({
     fileId: 'file-lifecycle',
     actorId: 'actor-lifecycle',
     endpoint: 'ws://127.0.0.1:4101/collaboration'
@@ -988,7 +1024,7 @@ it('binds source-sliced remote canonical requests to one Factory coordinator', a
     () => harness.collaboration as never
   )
 
-  await startCollaboration({
+  await startRegisteredDocumentSession({
     fileId: 'file-lifecycle',
     actorId: 'actor-lifecycle',
     endpoint: 'ws://127.0.0.1:4101/collaboration'
@@ -1009,7 +1045,7 @@ it('exposes remote publication outcomes through the local collaboration handle',
   collaborationModuleState.createCollaboration = vi.fn(
     () => harness.collaboration as never
   )
-  const handle = await startCollaboration({
+  const handle = await startRegisteredDocumentSession({
     fileId: 'file-lifecycle',
     actorId: 'actor-lifecycle',
     endpoint: 'ws://127.0.0.1:4101/collaboration'
@@ -1050,7 +1086,7 @@ it('exposes provider status through the local collaboration handle', async () =>
   collaborationModuleState.createCollaboration = vi.fn(
     () => harness.collaboration as never
   )
-  const handle = await startCollaboration({
+  const handle = await startRegisteredDocumentSession({
     fileId: 'file-lifecycle',
     actorId: 'actor-lifecycle',
     endpoint: 'ws://127.0.0.1:4101/collaboration'
@@ -1084,7 +1120,7 @@ it('settles after remote apply without saving the receiving document', async () 
 
   collaborationModuleState.createCollaboration = createCollaboration
 
-  await startCollaboration({
+  await startRegisteredDocumentSession({
     fileId: 'file-lifecycle',
     actorId: 'actor-lifecycle',
     endpoint: 'ws://127.0.0.1:4101/collaboration'
@@ -1141,12 +1177,12 @@ it('confirms persistence after earlier publications without blocking later publi
   const confirm = vi
     .spyOn(CollaborationWebSocketProvider.prototype, 'confirmPersistence')
     .mockReturnValue(receipt.promise)
-  const prepared = await prepareCollaborationDocumentSession({
+  const prepared = {
     fileId: 'file-persistence-boundary',
     actorId: 'actor-lifecycle',
     endpoint: 'ws://127.0.0.1:4101/collaboration'
-  })
-  const handle = await prepared.activate()
+  }
+  const handle = await startRegisteredDocumentSession(prepared)
 
   publish?.(factoryPublication('before-confirmation'))
   const confirmation = handle.confirmPersistence()
@@ -1197,12 +1233,12 @@ it('cancels a queued persistence confirmation without waiting for a pending publ
     CollaborationWebSocketProvider.prototype,
     'confirmPersistence'
   )
-  const prepared = await prepareCollaborationDocumentSession({
+  const prepared = {
     fileId: 'file-persistence-cancel',
     actorId: 'actor-lifecycle',
     endpoint: 'ws://127.0.0.1:4101/collaboration'
-  })
-  const handle = await prepared.activate()
+  }
+  const handle = await startRegisteredDocumentSession(prepared)
 
   publish?.(factoryPublication('pending-publication'))
   await vi.waitFor(() => expect(send).toHaveBeenCalledOnce())
@@ -1251,12 +1287,12 @@ it('retains a producer conversion failure instead of reporting an unsaved local 
     CollaborationWebSocketProvider.prototype,
     'confirmPersistence'
   )
-  const prepared = await prepareCollaborationDocumentSession({
+  const prepared = {
     fileId: 'file-producer-conversion-failure',
     actorId: 'actor-lifecycle',
     endpoint: 'ws://127.0.0.1:4101/collaboration'
-  })
-  const handle = await prepared.activate()
+  }
+  const handle = await startRegisteredDocumentSession(prepared)
 
   producer.startTransaction()
   producer.updateTransaction({
@@ -1312,13 +1348,13 @@ it('retains a producer conversion failure instead of reporting an unsaved local 
     sync: 'conflicted'
   })
   expect(send).not.toHaveBeenCalled()
-  await disposeCollaboration()
-  const reopened = await prepareCollaborationDocumentSession({
+  await core.destroy()
+  const reopened = {
     fileId: 'file-producer-conversion-failure',
     actorId: 'actor-lifecycle',
     endpoint: 'ws://127.0.0.1:4101/collaboration'
-  })
-  const reopenedHandle = await reopened.activate()
+  }
+  const reopenedHandle = await startRegisteredDocumentSession(reopened)
 
   await reopenedHandle.whenIdle()
   expect(reopenedHandle.getSessionState()).toMatchObject({
@@ -1354,12 +1390,12 @@ it('blocks confirmation and transport after failed preparation retention even th
   )
 
   vi.spyOn(console, 'error').mockImplementation(() => undefined)
-  const prepared = await prepareCollaborationDocumentSession({
+  const prepared = {
     fileId: 'preparation-storage-failure',
     actorId: 'actor-lifecycle',
     endpoint: 'ws://127.0.0.1:4101/collaboration'
-  })
-  const handle = await prepared.activate()
+  }
+  const handle = await startRegisteredDocumentSession(prepared)
 
   vi.spyOn(
     IndexedDbPublicationOutboxStorage.prototype,
@@ -1430,12 +1466,12 @@ it('retains action replay and compensation behind a rejected predecessor without
     )
 
   vi.spyOn(console, 'error').mockImplementation(() => undefined)
-  const prepared = await prepareCollaborationDocumentSession({
+  const prepared = {
     fileId: 'rejected-replay-prefix',
     actorId: 'actor-lifecycle',
     endpoint: 'ws://127.0.0.1:4101/collaboration'
-  })
-  const handle = await prepared.activate()
+  }
+  const handle = await startRegisteredDocumentSession(prepared)
 
   publish?.(factoryPublication('rejected-predecessor'))
   for (const origin of [
@@ -1520,8 +1556,11 @@ it('preserves the local recovery document across reconnect and reopen, then resu
     actorId: 'recovery-actor',
     endpoint: 'ws://127.0.0.1:4101/collaboration'
   }
-  const initial = await prepareCollaborationDocumentSession(mode)
-  const handle = await initial.activate()
+  const initial = mode
+  const handle = await startRegisteredDocumentSession(initial)
+
+  expect(load).toHaveBeenNthCalledWith(1, EMPTY_DOCUMENT)
+  load.mockClear()
 
   publish?.(factoryPublication('recoverable-source'))
   await handle.whenIdle()
@@ -1529,19 +1568,19 @@ it('preserves the local recovery document across reconnect and reopen, then resu
   await handle.reconnect()
   expect(load).not.toHaveBeenCalled()
   expect(send).not.toHaveBeenCalled()
-  await disposeCollaboration()
-  const reopened = await prepareCollaborationDocumentSession(mode)
+  await core.destroy()
+  const reopened = mode
 
-  expect(reopened.bootstrap.checkpoint).toMatchObject(draft)
-  const reopenedHandle = await reopened.activate()
+  const reopenedHandle = await startRegisteredDocumentSession(reopened)
 
+  expect(load).toHaveBeenLastCalledWith(draft)
   await reopenedHandle.prepareRecovery()
-  await disposeCollaboration()
-  const resumed = await prepareCollaborationDocumentSession(mode)
+  await core.destroy()
+  const resumed = mode
 
-  expect(resumed.bootstrap.checkpoint).toEqual(EMPTY_DOCUMENT)
-  const resumedHandle = await resumed.activate()
+  const resumedHandle = await startRegisteredDocumentSession(resumed)
 
+  expect(load).toHaveBeenLastCalledWith(EMPTY_DOCUMENT)
   await resumedHandle.whenIdle()
   expect(send).toHaveBeenCalledTimes(1)
   expect(resumedHandle.getSessionState()).toMatchObject({
@@ -1573,12 +1612,12 @@ it('retains the failed source even when capturing its recovery document also fai
   ).mockImplementationOnce(() => {
     throw new Error('converter unavailable')
   })
-  const prepared = await prepareCollaborationDocumentSession({
+  const prepared = {
     fileId: 'snapshot-failed',
     actorId: 'actor',
     endpoint: 'ws://127.0.0.1:4101/collaboration'
-  })
-  const handle = await prepared.activate()
+  }
+  const handle = await startRegisteredDocumentSession(prepared)
 
   expect(() => publish?.(factoryPublication('must-retain'))).not.toThrow()
   await handle.whenIdle()
@@ -1619,12 +1658,15 @@ it('isolates a rejected source even when persisting the conflict fails', async (
     ).mockRejectedValue(new Error('disk unavailable'))
     throw new ProviderFailure('acknowledgement-failed', 'rejected')
   })
-  const prepared = await prepareCollaborationDocumentSession({
+  const prepared = {
     fileId: 'conflict-retention-failed',
     actorId: 'actor',
     endpoint: 'ws://127.0.0.1:4101/collaboration'
-  })
-  const handle = await prepared.activate()
+  }
+  const handle = await startRegisteredDocumentSession(prepared)
+
+  expect(load).toHaveBeenNthCalledWith(1, EMPTY_DOCUMENT)
+  load.mockClear()
 
   publish?.(factoryPublication('rejected-source'))
   await handle.whenIdle()
@@ -1647,12 +1689,12 @@ it('keeps reopened recovery available after failed Reset and clears it only afte
     'invalid source',
     EMPTY_DOCUMENT
   )
-  const prepared = await prepareCollaborationDocumentSession({
+  const prepared = {
     fileId,
     actorId: 'actor-lifecycle',
     endpoint: 'ws://127.0.0.1:4101/collaboration'
-  })
-  const handle = await prepared.activate()
+  }
+  const handle = await startRegisteredDocumentSession(prepared)
 
   expect(handle.getSessionState().recoveryAvailable).toBe(true)
   const reset = vi.mocked(
@@ -1694,12 +1736,12 @@ it('keeps preparation retry available after reopening evidence whose optional dr
     factoryPublication('source-without-draft'),
     'converter unavailable'
   )
-  const prepared = await prepareCollaborationDocumentSession({
+  const prepared = {
     fileId,
     actorId: 'actor-lifecycle',
     endpoint: 'ws://127.0.0.1:4101/collaboration'
-  })
-  const handle = await prepared.activate()
+  }
+  const handle = await startRegisteredDocumentSession(prepared)
 
   expect(handle.getSessionState()).toMatchObject({
     recoveryAvailable: true,
@@ -1744,12 +1786,12 @@ it('exposes recovery after accepted-source cleanup fails and preserves the exact
   const remove = vi
     .spyOn(IndexedDbPublicationOutboxStorage.prototype, 'delete')
     .mockRejectedValueOnce(new Error('delete failed'))
-  const prepared = await prepareCollaborationDocumentSession({
+  const prepared = {
     fileId: 'accepted-cleanup-failed',
     actorId: 'actor',
     endpoint: 'ws://127.0.0.1:4101/collaboration'
-  })
-  const handle = await prepared.activate()
+  }
+  const handle = await startRegisteredDocumentSession(prepared)
 
   publish?.(factoryPublication('accepted-source'))
   await handle.whenIdle()
@@ -1791,12 +1833,15 @@ it('abandons an in-flight reconnect when a source failure establishes a recovery
 
   vi.spyOn(core, 'getCanonicalOwnerSnapshot').mockReturnValue(draft as never)
   const load = vi.spyOn(core, 'load').mockImplementation(() => undefined)
-  const prepared = await prepareCollaborationDocumentSession({
+  const prepared = {
     fileId: 'reconnect-racing-recovery',
     actorId: 'actor',
     endpoint: 'ws://127.0.0.1:4101/collaboration'
-  })
-  const handle = await prepared.activate()
+  }
+  const handle = await startRegisteredDocumentSession(prepared)
+
+  expect(load).toHaveBeenNthCalledWith(1, EMPTY_DOCUMENT)
+  load.mockClear()
 
   await handle.disconnect()
   const opened = createDeferred<undefined>()
@@ -1823,6 +1868,7 @@ it('abandons an in-flight reconnect when a source failure establishes a recovery
   })
   publish?.(factoryPublication('racing-failure'))
   pending.resolve({
+    documentGeneration: 0,
     checkpoint: EMPTY_DOCUMENT,
     durableSequence: 0,
     headSequence: 0,
@@ -1876,12 +1922,12 @@ it('does not reload Core or erase history when a live edit is rejected after suc
 
       return { publicationId: publication.publicationId, sequence: 1 }
     })
-  const prepared = await prepareCollaborationDocumentSession({
+  const prepared = {
     fileId,
     actorId: 'actor',
     endpoint: 'ws://127.0.0.1:4101/collaboration'
-  })
-  const handle = await prepared.activate()
+  }
+  const handle = await startRegisteredDocumentSession(prepared)
 
   expect(handle.getSessionState().sync).toBe('synced')
   load.mockClear()
@@ -1900,12 +1946,12 @@ it('does not reload Core or erase history when a live edit is rejected after suc
 })
 
 it('does not permit recovery reload while a new transaction remains open after retention settled', async () => {
-  const prepared = await prepareCollaborationDocumentSession({
+  const prepared = {
     fileId: 'active-edit-recovery-reload',
     actorId: 'actor',
     endpoint: 'ws://127.0.0.1:4101/collaboration'
-  })
-  const handle = await prepared.activate()
+  }
+  const handle = await startRegisteredDocumentSession(prepared)
 
   vi.spyOn(core, 'isTransactionBoundaryIdle').mockReturnValue(false)
   await handle.whenIdle()
@@ -1926,12 +1972,12 @@ it('keeps startup recovery actionable when binding retained records to the docum
 
   vi.spyOn(console, 'error').mockImplementation(() => undefined)
   vi.spyOn(core, 'isTransactionBoundaryIdle').mockReturnValue(true)
-  const prepared = await prepareCollaborationDocumentSession({
+  const prepared = {
     fileId,
     actorId: 'actor',
     endpoint: 'ws://127.0.0.1:4101/collaboration'
-  })
-  const handle = await prepared.activate()
+  }
+  const handle = await startRegisteredDocumentSession(prepared)
 
   expect(handle.getSessionState()).toMatchObject({
     recoveryAvailable: true,
@@ -1948,11 +1994,11 @@ it('keeps startup recovery actionable when binding retained records to the docum
 it('cannot revive an activation after its document session is disposed', async () => {
   const pending = createDeferred<undefined>()
   const starting = createDeferred<undefined>()
-  const prepared = await prepareCollaborationDocumentSession({
+  const prepared = {
     fileId: 'disposed-during-activation',
     actorId: 'actor',
     endpoint: 'ws://127.0.0.1:4101/collaboration'
-  })
+  }
 
   vi.mocked(
     CollaborationWebSocketProvider.prototype.completeDocumentBootstrap
@@ -1960,7 +2006,7 @@ it('cannot revive an activation after its document session is disposed', async (
     starting.resolve(undefined)
     await pending.promise
   })
-  const activation = prepared.activate()
+  const activation = startRegisteredDocumentSession(prepared)
   const rejected = expect(activation).rejects.toThrow('disposed')
 
   await starting.promise
@@ -2008,15 +2054,16 @@ it.each(['resolved', 'rejected'] as const)(
 
     await opening.promise
     const disposal = session.dispose()
-    const successor = await prepareCollaborationDocumentSession({
+    const successor = {
       fileId: `successor-${settlement}`,
       actorId: 'new-actor',
       endpoint: 'ws://127.0.0.1:4101/collaboration'
-    })
-    const active = await successor.activate()
+    }
+    const active = await startRegisteredDocumentSession(successor)
 
     if (settlement === 'resolved') {
       pending.resolve({
+        documentGeneration: 0,
         checkpoint: EMPTY_DOCUMENT,
         durableSequence: 0,
         headSequence: 0,
@@ -2050,4 +2097,35 @@ it('retires a prepared checkpoint load source when its Core session is disposed'
   expect(await preparation?.loadSource?.load()).toEqual(EMPTY_DOCUMENT)
   await session.dispose()
   await expect(preparation?.loadSource?.load()).rejects.toThrow('disposed')
+})
+
+it('exposes only the Core-owned startup entry and no retired startup API', () => {
+  expect(lifecycleExports).not.toHaveProperty(
+    'prepareCollaborationDocumentSession'
+  )
+  expect(lifecycleExports).not.toHaveProperty('startCollaboration')
+  expect(lifecycleExports).not.toHaveProperty('getActiveCollaborationHandle')
+  expect(lifecycleExports).not.toHaveProperty('getActiveDocumentScope')
+  expect(lifecycleExports.createCollaborationDocumentSession).toBeTypeOf(
+    'function'
+  )
+})
+
+it('projects live scope through the lightweight observer and clears it after Core disposal', async () => {
+  const handle = await startRegisteredDocumentSession({
+    fileId: 'observer-file',
+    actorId: 'observer-actor',
+    endpoint: 'ws://127.0.0.1:4101/collaboration'
+  })
+
+  expect(getActiveCollaborationHandle()).toBe(handle)
+  expect(JSON.parse(getActiveDocumentScope() ?? 'null')).toEqual([
+    'observer-file',
+    'observer-file',
+    'observer-actor',
+    0
+  ])
+  await core.destroy()
+  expect(getActiveCollaborationHandle()).toBeUndefined()
+  expect(getActiveDocumentScope()).toBeUndefined()
 })

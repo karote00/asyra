@@ -375,7 +375,7 @@ describe('compact planar patterns', () => {
     { ...pattern(), axes: [] },
     { ...pattern(), fills: [] }
   ])(
-    'rejects invalid and excessive expansion before returning an artifact',
+    'rejects invalid and excessive expansion before returning an artifact - case %#',
     (p) => {
       expect(() => prepareDesign(draft([p]), 'bad')).toThrow()
     }
@@ -783,7 +783,14 @@ it('counts independent faces separately while preserving expanded and primitive 
         { ...pattern(), axes: [{ count: 10000, step: { x: 1, y: 0, z: 0 } }] }
       ])
     )
-  ).toMatchObject({ code: 'DESIGN_BUDGET_EXCEEDED' })
+  ).toMatchObject({
+    available: false,
+    code: 'TOOL_INPUT_INVALID',
+    budget: {
+      observed: { expandedNodes: 10001 },
+      allowed: { expandedNodes: 10000 }
+    }
+  })
   expect(
     inspectDesignBudget(
       draft([
@@ -803,7 +810,14 @@ it('counts independent faces separately while preserving expanded and primitive 
         }
       ])
     )
-  ).toMatchObject({ code: 'DESIGN_BUDGET_EXCEEDED' })
+  ).toMatchObject({
+    available: false,
+    code: 'TOOL_INPUT_INVALID',
+    budget: {
+      observed: { sourcePrimitivePathCommands: 20001 },
+      allowed: { sourcePrimitivePathCommands: 20000 }
+    }
+  })
 })
 
 it('preserves sparse instance indices and palette phase beyond one work window', () => {
@@ -1434,7 +1448,14 @@ it('preserves exact mixed object capacity, rejects excess and translated extent,
         { ...single, axes: [{ count: 10000, step: { x: 0, y: 0, z: 0 } }] }
       ])
     )
-  ).toMatchObject({ code: 'DESIGN_BUDGET_EXCEEDED' })
+  ).toMatchObject({
+    available: false,
+    code: 'TOOL_INPUT_INVALID',
+    budget: {
+      observed: { expandedNodes: 10001 },
+      allowed: { expandedNodes: 10000 }
+    }
+  })
   expect(() =>
     constructDesign({
       ...input,

@@ -441,7 +441,7 @@ __metadata:
   dependencies:
     "@asyra/render-engine": "workspace:*"
     "@vitest/coverage-v8": "npm:^3.2.6"
-    pixi.js: "npm:^8.20.1"
+    pixi.js: "npm:^8.22.0"
     typescript: "npm:^5.7.2"
     vitest: "npm:^3.2.6"
   languageName: unknown
@@ -8600,9 +8600,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"pixi.js@npm:^8.20.1":
-  version: 8.20.1
-  resolution: "pixi.js@npm:8.20.1"
+"pixi.js@npm:^8.22.0":
+  version: 8.22.0
+  resolution: "pixi.js@npm:8.22.0"
   dependencies:
     "@pixi/colord": "npm:^2.9.6"
     "@types/earcut": "npm:^3.0.0"
@@ -8614,7 +8614,7 @@ __metadata:
     ismobilejs: "npm:^1.1.1"
     parse-svg-path: "npm:^0.2.0"
     tiny-lru: "npm:^11.4.7"
-  checksum: 10c0/5bdb21a39009559082aec4e440ea6cd2a66376b5829f14711ed5514389428cc6539607d8538a4dbcd927ce2372ab8c62093c6d58a56d308fb9f0bc715327c0f0
+  checksum: 10c0/dd3879a994250f4aa4ac27f25c3546feefdca6a3e00f4eba5f5aed72622263feba92275d83f78e508944842e70d3b660a6fdef410379f6f002d12b23ecfd99b6
   languageName: node
   linkType: hard
 

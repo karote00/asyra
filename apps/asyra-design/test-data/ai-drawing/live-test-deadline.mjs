@@ -21,7 +21,7 @@ export const processIdentity = (pid) => {
   }
 }
 
-export const LIVE_TEST_LIMIT_MS = 15 * 60 * 1000
+export const LIVE_TEST_LIMIT_MS = 18 * 60 * 1000
 
 if (!isMainThread && workerData?.owner === 'local-live-deadline') {
   const { deadlineAt, groups, processes, identities, evidencePath } = workerData

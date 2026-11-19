@@ -1,8 +1,11 @@
 import { describe, expect, it, vi } from 'vitest'
 const observed = vi.hoisted(() => ({
   channels: new Map<string, (change?: unknown) => void>(),
+
   loaded: () => undefined as unknown,
+
   computed: (_events: unknown[]) => undefined as unknown,
+
   stopped: vi.fn(),
   getElementData: vi.fn(),
   getElementMetadata: vi.fn(),
@@ -15,6 +18,7 @@ const observed = vi.hoisted(() => ({
     y: 200 + point.x
   }))
 }))
+
 vi.mock('../../contexts', () => ({
   default: {
     getElementData: observed.getElementData,
@@ -24,8 +28,10 @@ vi.mock('../../contexts', () => ({
     getElementComputedData: observed.getElementComputedData,
     isContainerType: observed.isContainerType,
     elementLocalToWorkspace: observed.elementLocalToWorkspace,
+
     observeSharedDataChannel: (channel: string, listener: () => void) => {
       observed.channels.set(channel, listener)
+
       return () => {
         observed.channels.delete(channel)
         observed.stopped()
@@ -37,13 +43,18 @@ vi.mock('../../constants', async () => import('../../constants/ai-actions'))
 vi.mock('../index', () => ({ inspectionApis: { inspect: vi.fn() } }))
 vi.mock('@asyra/core', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@asyra/core')>()),
+
   yieldToCooperativeHost: async () => undefined,
+
   subscribeToEventBatches: (listener: (events: unknown[]) => void) => {
     observed.computed = listener
+
     return { unsubscribe: observed.stopped }
   },
+
   subscribeToFileLoadComplete: (listener: () => void) => {
     observed.loaded = listener
+
     return { unsubscribe: observed.stopped }
   }
 }))
@@ -57,13 +68,22 @@ import { createInspectionValidationAction } from '../../ai/inspection'
 
 const setup = () => {
   let changed: () => void = () => undefined
+
   const stop = vi.fn()
   const observe = vi.fn((listener: () => void) => {
     changed = listener
+
     return stop
   })
   const evidence = createInspectionEvidence(observe)
-  return { evidence, observe, stop, change: () => changed() }
+
+  return {
+    evidence,
+    observe,
+    stop,
+
+    change: () => changed()
+  }
 }
 
 describe('canonical inspection evidence lifetime', () => {
@@ -73,16 +93,21 @@ describe('canonical inspection evidence lifetime', () => {
       available: true,
       image: { dataUrl: 'png' }
     }))
+
     expect(observe).not.toHaveBeenCalled()
     const first = await evidence.capture(capture)
+
     expect(first.available).toBe(true)
-    for (let i = 0; i < 100; i++)
+    for (let i = 0; i < 100; i++) {
       expect(evidence.isCurrent(first.evidence)).toBe(true)
+    }
+
     expect(capture).toHaveBeenCalledTimes(1)
     expect(observe).toHaveBeenCalledTimes(1)
     change()
     expect(evidence.isCurrent(first.evidence)).toBe(false)
     const second = await evidence.capture(capture)
+
     expect(evidence.isCurrent(second.evidence)).toBe(true)
     expect(second.evidence).not.toEqual(first.evidence)
     expect(capture).toHaveBeenCalledTimes(2)
@@ -99,8 +124,10 @@ describe('canonical inspection evidence lifetime', () => {
     const { evidence, change } = setup()
     const mixed = await evidence.capture(async () => {
       change()
+
       return { available: true, image: { dataUrl: 'mixed' } }
     })
+
     expect(mixed).toMatchObject({
       available: false,
       code: 'INSPECTION_DOCUMENT_CHANGED',
@@ -110,6 +137,7 @@ describe('canonical inspection evidence lifetime', () => {
     expect(mixed).not.toHaveProperty('evidence')
     const next = await evidence.capture(() => ({ available: true }))
     const successor = setup().evidence
+
     await successor.capture(() => ({ available: true }))
     expect(successor.isCurrent(next.evidence)).toBe(false)
     expect(evidence.isCurrent(undefined)).toBe(false)
@@ -120,6 +148,7 @@ describe('canonical inspection evidence lifetime', () => {
 
   it('does not fabricate evidence for failed captures or absent observation', async () => {
     const { evidence } = setup()
+
     expect(
       await evidence.capture(() => ({ available: false }))
     ).not.toHaveProperty('evidence')
@@ -132,6 +161,7 @@ describe('canonical inspection evidence lifetime', () => {
       throw new Error('No observer')
     })
     const capture = vi.fn(() => ({ available: true }))
+
     await expect(unavailable.capture(capture)).rejects.toThrow('No observer')
     expect(capture).not.toHaveBeenCalled()
     evidence.dispose()
@@ -142,6 +172,7 @@ describe('canonical inspection evidence lifetime', () => {
 it('invalidates through structure, committed effective changes and document-load routes', async () => {
   observed.stopped.mockClear()
   const evidence = createInspectionEvidence()
+
   for (const change of [
     () => observed.channels.get(SharedDataChannelNames.SCENE_TREE)?.(),
     () =>
@@ -160,10 +191,12 @@ it('invalidates through structure, committed effective changes and document-load
     () => observed.loaded()
   ]) {
     const result = await evidence.capture(() => ({ available: true }))
+
     expect(evidence.isCurrent(result.evidence)).toBe(true)
     change()
     expect(evidence.isCurrent(result.evidence)).toBe(false)
   }
+
   evidence.dispose()
   expect(observed.channels.size).toBe(0)
   expect(observed.stopped).toHaveBeenCalledTimes(3)
@@ -191,7 +224,9 @@ describe('canonical inspection scope coverage', () => {
         typeof action.execute
       >[1]
     )
+
     evidence.dispose()
+
     return result
   }
 
@@ -202,6 +237,7 @@ describe('canonical inspection scope coverage', () => {
       b: 'tower',
       untouched: undefined
     }
+
     expect(await verify(parents, ['a', 'b'], ['tower'])).toMatchObject({
       current: true,
       coverage: { complete: true, missingIds: [], uncoveredIds: [] }
@@ -266,6 +302,7 @@ describe('canonical inspection scope coverage', () => {
 
 it('captures only the canonical parent chain and transformed local basis for preparation review', async () => {
   const { evidence, change } = setup()
+
   observed.getElementMetadata.mockImplementation(
     (id) =>
       ({
@@ -275,6 +312,7 @@ it('captures only the canonical parent chain and transformed local basis for pre
   )
   observed.getElementMetadata.mockClear()
   const result = await evidence.attachment('group')
+
   expect(result).toMatchObject({
     available: true,
     parentId: 'group',
@@ -323,6 +361,7 @@ it('keeps a target capture current across an unrelated canonical edit', async ()
   const captured = await owner.capture(() => ({ available: true }), {
     elementId: 'tier-1'
   })
+
   observed.channels.get(SharedDataChannelNames.SCENE_TREE)?.({
     action: SCENE_TREE_ACTIONS.UPDATE_ELEMENT_DATA,
     id: 'tier-3',
@@ -334,8 +373,12 @@ it('keeps a target capture current across an unrelated canonical edit', async ()
 
 it('retains attachment checks by actual parent geometry and reads changed signatures only once', async () => {
   let width = 40
+
   observed.getElementMetadata.mockImplementation((id: string) => {
-    if (id === 'workspace') return { id, type: 'group' }
+    if (id === 'workspace') {
+      return { id, type: 'group' }
+    }
+
     return { id, type: 'group', parentId: id === 'child-a' ? 'a' : 'workspace' }
   })
   observed.getElementComputedData.mockImplementation((...args: unknown[]) => ({
@@ -344,21 +387,29 @@ it('retains attachment checks by actual parent geometry and reads changed signat
     width: args[0] === 'a' ? width : 40,
     height: 20
   }))
+
   let changed: (change?: { elementIds: string[] }) => void = () => undefined
+
   const evidence = createInspectionEvidence((listener) => {
     changed = listener
+
     return () => undefined
   })
   const a = await evidence.attachment('a')
   const b = await evidence.attachment('b')
+
   observed.getElementComputedData.mockClear()
   observed.getElementData.mockClear()
   changed({ elementIds: ['child-a'] })
   expect(evidence.isCurrent(a.evidence)).toBe(true)
   expect(evidence.isCurrent(b.evidence)).toBe(true)
   const reads = observed.getElementComputedData.mock.calls.length
+
   expect(reads).toBe(1)
-  for (let i = 0; i < 10; i++) expect(evidence.isCurrent(a.evidence)).toBe(true)
+  for (let i = 0; i < 10; i++) {
+    expect(evidence.isCurrent(a.evidence)).toBe(true)
+  }
+
   expect(observed.getElementComputedData).toHaveBeenCalledTimes(reads)
   expect(observed.getElementData).not.toHaveBeenCalled()
   width = 60
@@ -373,6 +424,7 @@ it('retains attachment checks by actual parent geometry and reads changed signat
 it('invalidates attachment editability without invalidating unchanged rendered pixels', async () => {
   let locked = false
   let scale = 1
+
   observed.getElementMetadata.mockImplementation((id: string) => ({
     id,
     type: 'group',
@@ -395,6 +447,7 @@ it('invalidates attachment editability without invalidating unchanged rendered p
   const image = await owner.capture(() => ({ available: true }), {
     elementId: 'a'
   })
+
   locked = true
   observed.channels.get(SharedDataChannelNames.SCENE_TREE)?.({
     action: SCENE_TREE_ACTIONS.UPDATE_ELEMENT_DATA,
@@ -406,6 +459,7 @@ it('invalidates attachment editability without invalidating unchanged rendered p
   expect(owner.isCurrent(image.evidence)).toBe(true)
   locked = false
   const fresh = await owner.attachment('a')
+
   scale = 2
   observed.channels.get(SharedDataChannelNames.SCENE_TREE)?.({
     action: SCENE_TREE_ACTIONS.UPDATE_ELEMENT_DATA,
@@ -447,14 +501,17 @@ it.each([
       workspace: undefined,
       building: 'workspace'
     }
+
     for (const [index, unit] of units.entries()) {
       parents[unit] = 'building'
       parents[`window-${index}`] = unit
     }
+
     const metadata = (id: string) =>
       Object.hasOwn(parents, id)
         ? { id, type: 'group', parentId: parents[id] }
         : undefined
+
     observed.getElementData.mockImplementation(metadata)
     observed.getElementMetadata.mockImplementation(metadata)
     observed.elementLocalToWorkspace.mockImplementation((id, point) => ({
@@ -477,7 +534,11 @@ it.each([
         AiActionNames.INSPECT_DRAWING,
         AiActionNames.VALIDATE_INSPECTION_EVIDENCE
       ].map((name) => ({ name, description: name, inputSchema: {} })),
-      { modelActions: (actions) => actions, resolveBatch: (value) => value },
+      {
+        modelActions: (actions) => actions,
+
+        resolveBatch: (value) => value
+      },
       async (batch) => {
         batchSizes.push(batch.actions.length)
         if (changeDuringValidation && batch.actions.length < 24) {
@@ -488,6 +549,7 @@ it.each([
             changes: [{ key: 'visible', before: true, after: false }]
           })
         }
+
         const reply = {
           context: {},
           actionResults: await Promise.all(
@@ -499,6 +561,7 @@ it.each([
                 region?: { x: number; y: number; width: number; height: number }
               }
               let result
+
               if (action.name === AiActionNames.VALIDATE_INSPECTION_EVIDENCE) {
                 result = evidence.validate(args.evidence, args.scope)
                 validations.push(result)
@@ -513,35 +576,55 @@ it.each([
                   { elementId: args.elementId, region: args.region }
                 )
               }
+
               return { actionId: action.id, actionName: action.name, result }
             })
           )
         }
         const currentFault = validationFault
+
         validationFault = undefined
-        if (currentFault === 'duplicate')
+        if (currentFault === 'duplicate') {
           reply.actionResults.push(reply.actionResults[0])
-        if (currentFault === 'missing') reply.actionResults.shift()
-        if (currentFault === 'wrong-name')
+        }
+
+        if (currentFault === 'missing') {
+          reply.actionResults.shift()
+        }
+
+        if (currentFault === 'wrong-name') {
           reply.actionResults[0].actionName = 'wrong'
-        if (currentFault === 'invalid-without-version')
-          (reply.actionResults[0].result as Record<string, unknown>).current =
+        }
+
+        if (currentFault === 'invalid-without-version') {
+          ;(reply.actionResults[0].result as Record<string, unknown>).current =
             false
+        }
+
         if (
           currentFault === 'missing-version' ||
           currentFault === 'invalid-without-version'
-        )
+        ) {
           delete (reply.actionResults[0].result as Record<string, unknown>)
             .validatedAt
-        if (currentFault === 'extra')
+        }
+
+        if (currentFault === 'extra') {
           reply.actionResults.push({
             ...reply.actionResults[0],
             actionId: 'unexpected'
           })
-        if (currentFault === 'cancel') controller.abort()
-        if (currentFault === 'throw')
+        }
+
+        if (currentFault === 'cancel') {
+          controller.abort()
+        }
+
+        if (currentFault === 'throw') {
           throw new Error('Validation transport unavailable')
-        if (currentFault === 'failure')
+        }
+
+        if (currentFault === 'failure') {
           return {
             ...reply,
             failure: {
@@ -555,12 +638,16 @@ it.each([
               contextFresh: false
             }
           }
+        }
+
         return reply
       },
       { reviewTargetId: 'building' }
     )
+
     const call = async (name: string, args: Record<string, unknown>) =>
       JSON.parse(await tools.call(name, args, signal))
+
     try {
       await call(AiDesignToolIds.DEFINE_DESIGN_CRITERIA, {
         method: 'Draw the requested building',
@@ -593,6 +680,7 @@ it.each([
         }
       })
       const capturedBindings = new Map<string, Record<string, unknown>>()
+
       const capture = async (elementId: string, regional = true) => {
         const selection = regional
           ? {
@@ -613,12 +701,16 @@ it.each([
             }
           ]
         })
+
         expect(reply).not.toHaveProperty('status', 'partial')
         expect(reply.message).toContain('submit primary-agent findings')
         const id = reply.inspectionIds[0] as string
+
         capturedBindings.set(id, reply.next.arguments.checks[0])
+
         return id
       }
+
       const submit = async (unitId: string, inspectionIds: string[]) => {
         const bound =
           unitId === 'alignment'
@@ -629,6 +721,7 @@ it.each([
                 })
               ).next.arguments.checks[0]
             : capturedBindings.get(inspectionIds[0])
+
         return call(AiDesignToolIds.REVIEW_DRAWING, {
           phase: 'visual',
           final: true,
@@ -636,16 +729,21 @@ it.each([
           checks: [{ ...bound, status: 'pass', evidence: `Observed ${unitId}` }]
         })
       }
+
       const images: string[] = []
+
       for (const unit of units) {
         const image = await capture(unit)
+
         images.push(image)
         expect((await submit(unit, [image])).accepted).toBe(false)
       }
+
       expect((await submit('alignment', [images[2], images[3]])).accepted).toBe(
         false
       )
       const whole = await capture('building', false)
+
       const overall = (image: string) =>
         call(AiDesignToolIds.REVIEW_DRAWING, {
           phase: 'visual',
@@ -659,13 +757,16 @@ it.each([
             }
           ]
         })
+
       const retainedBefore = await call(AiDesignToolIds.READ_DESIGN_CHECKS, {
         view: 'details',
         includePassed: true
       })
+
       changeDuringValidation = drift
       validationFault = fault
       const dispatchCount = batchSizes.length
+
       if (fault === 'cancel' || fault === 'throw') {
         await expect(overall(whole)).rejects.toThrow()
         expect(batchSizes.length - dispatchCount).toBe(1)
@@ -676,10 +777,14 @@ it.each([
             new AbortController().signal
           )
         )
+
         expect(retained.items).toEqual(retainedBefore.items)
+
         return
       }
+
       const initial = await overall(whole)
+
       if (fault) {
         expect(initial).toMatchObject({ accepted: false, status: 'partial' })
         expect(batchSizes.length - dispatchCount).toBe(1)
@@ -687,16 +792,20 @@ it.each([
           view: 'details',
           includePassed: true
         })
+
         expect(retainedAfter.items).toEqual(retainedBefore.items)
         expect((await overall(whole)).accepted).toBe(true)
         expect(captureTargets).toHaveLength(regionCount + 1)
+
         return
       }
+
       if (drift) {
         expect(initial).toMatchObject({ accepted: false, status: 'partial' })
         const pending = await call(AiDesignToolIds.READ_DESIGN_CHECKS, {
           view: 'details'
         })
+
         expect(
           pending.items
             .map(
@@ -706,14 +815,17 @@ it.each([
             .sort()
         ).toEqual(['Overall', 'alignment', 'tier-2'])
         expect(captureTargets).toHaveLength(regionCount + 1)
+
         return
       }
+
       expect(initial.accepted).toBe(true)
       const before = await call(AiDesignToolIds.READ_DESIGN_CHECKS, {
         view: 'details',
         includePassed: true
       })
       const memberships = observed.getElementIdsInBounds.mock.calls.length
+
       observed.channels.get(SharedDataChannelNames.SCENE_TREE)?.({
         action: SCENE_TREE_ACTIONS.UPDATE_ELEMENT_DATA,
         id: 'window-2',
@@ -722,6 +834,7 @@ it.each([
       const pending = await call(AiDesignToolIds.READ_DESIGN_CHECKS, {
         view: 'details'
       })
+
       expect(
         pending.items
           .map(
@@ -731,6 +844,7 @@ it.each([
           .sort()
       ).toEqual(['Overall', 'alignment', 'tier-2'])
       const fresh = await capture('tier-2')
+
       expect((await submit('tier-2', [fresh])).accepted).toBe(false)
       expect((await submit('alignment', [fresh, images[3]])).accepted).toBe(
         false
@@ -743,6 +857,7 @@ it.each([
         view: 'details',
         includePassed: true
       })
+
       for (const unit of units.filter((unit) => unit !== 'tier-2')) {
         expect(
           after.items.find((item: { unitId?: string }) => item.unitId === unit)
@@ -751,6 +866,7 @@ it.each([
         )
         expect(captureTargets.filter((id) => id === unit)).toHaveLength(1)
       }
+
       expect(captureTargets.filter((id) => id === 'tier-2')).toHaveLength(2)
       expect(captureTargets.filter((id) => id === 'building')).toHaveLength(2)
       expect(
@@ -774,11 +890,13 @@ it.each([
 it('keeps canonical mutations separate from effective visual freshness and disposes both', async () => {
   const canonical = vi.fn()
   const stop = observeInspectionChanges(canonical)
+
   observed.channels.get(SharedDataChannelNames.PROPS)?.()
   expect(canonical).toHaveBeenCalledOnce()
   stop()
   const evidence = createInspectionEvidence()
   const captured = await evidence.capture(() => ({ available: true }))
+
   expect(observed.channels.has(SharedDataChannelNames.PROPS)).toBe(false)
   observed.channels.get(SharedDataChannelNames.SCENE_TREE)?.({
     action: SCENE_TREE_ACTIONS.UPDATE_ELEMENT_PROPERTY_BINDINGS,

@@ -1,5 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { InputType, ModifierKey, type RawInputEvent } from '@asyra/utils'
+import {
+  InputType,
+  ModifierKey,
+  MouseButton,
+  type RawInputEvent
+} from '@asyra/utils'
 import type { SystemContextSnapshotWithDetail } from '@asyra/utils'
 
 const mocks = vi.hoisted(() => ({
@@ -53,13 +58,13 @@ describe('history shortcut intent handoff', () => {
       it(`retains ${modifier} history direction with Shift=${shift} after later input`, async () => {
         const combo = keyCombinations[
           InputSystemEvents.INPUT_SHORTCUT_UNDOREDO
-        ].find((item) => item.modifiers.includes(modifier))
+        ].find((item) => item.modifiers.some((value) => value === modifier))
 
         if (!combo) {
           throw new Error('Missing history shortcut')
         }
 
-        const raw = {
+        const raw: RawInputEvent = {
           type: InputType.KEYBOARD,
           keys: ['z'],
           modifiers: {
@@ -68,8 +73,16 @@ describe('history shortcut intent handoff', () => {
             ctrl: modifier === ModifierKey.CTRL,
             alt: false
           },
+          pointer: {
+            clientX: 0,
+            clientY: 0,
+            deltaX: 0,
+            deltaY: 0,
+            deltaZ: 0,
+            button: MouseButton.LEFT
+          },
           detail: { unrelated: 'preserved' }
-        } as RawInputEvent
+        }
 
         combo.callback(raw)
         expect(raw.detail).toEqual({
@@ -101,17 +114,25 @@ describe('history shortcut intent handoff', () => {
       it(`rejects busy ${modifier} history input with Shift=${shift} before dispatch`, () => {
         const combo = keyCombinations[
           InputSystemEvents.INPUT_SHORTCUT_UNDOREDO
-        ].find((item) => item.modifiers.includes(modifier))
+        ].find((item) => item.modifiers.some((value) => value === modifier))
 
         if (!combo) {
           throw new Error('Missing shortcut')
         }
 
-        const raw = {
+        const raw: RawInputEvent = {
           type: InputType.KEYBOARD,
           keys: ['z'],
-          modifiers: { shift, meta: true, ctrl: false, alt: false }
-        } as RawInputEvent
+          modifiers: { shift, meta: true, ctrl: false, alt: false },
+          pointer: {
+            clientX: 0,
+            clientY: 0,
+            deltaX: 0,
+            deltaY: 0,
+            deltaZ: 0,
+            button: MouseButton.LEFT
+          }
+        }
 
         mocks.isInUndoRedo.mockReturnValue(true)
         expect(combo.callback(raw)).toBe(false)

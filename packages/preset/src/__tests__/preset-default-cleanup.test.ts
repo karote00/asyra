@@ -1,11 +1,11 @@
-import { BaseSelection } from '@asyra/core'
+import runtimeCore, { BaseSelection } from '@asyra/core'
 import { PropertyTypes, type RegistrationNodeMetadata } from '@asyra/utils'
-import { BehaviorSubject } from 'rxjs'
 import { describe, expect, it, vi } from 'vitest'
 import { createOwnedStateCleanup } from '../defaults/owned-state.js'
 import { installSelectionDefault } from '../defaults/modules/selection.js'
 import { installUIContextDefault } from '../defaults/modules/ui-context.js'
-import { installVectorEditingDefault } from '../defaults/modules/vector-editing.js'
+import { applyPreset } from '../preset.js'
+import { PresetDefaults, PresetProfiles } from '../constants.js'
 import { createPrivatePrerequisiteManager } from '../defaults/private-manager.js'
 import type { PrivatePrerequisiteInstaller } from '../defaults/types.js'
 import { PRESET_REGISTRATION_OWNER } from '../registration.js'
@@ -268,55 +268,26 @@ describe('Preset default cleanup ownership', () => {
     ).toContain(PropertyTypes.CUSTOM)
   })
 
-  it('acquires vector selection projection with the vector-editing module', () => {
-    const selections = new Map<string, BaseSelection>()
-    const observers = new Map<string, { name: string }>()
-    const cleanups: (() => void)[] = []
-    const core = {
-      getSelection: (type: string) => selections.get(type),
-
-      defineSelection: (type: string, selection: BaseSelection) => {
-        selections.set(type, selection)
-      },
-
-      unregisterSelection: (type: string) => selections.delete(type),
-
-      defineUIProperty: vi.fn(),
-      defineSystemProperty: vi.fn(
-        (_key: string, defaultValue: unknown) =>
-          new BehaviorSubject(defaultValue)
-      ),
-      registerRenderLayer: vi.fn(),
-      unregisterRenderLayer: vi.fn(),
-      hasSharedDataChannel: vi.fn(() => false),
-      createLocalSharedDataChannel: vi.fn(() => ({})),
-      registerSharedDataChannel: vi.fn(),
-      unregisterSharedDataChannel: vi.fn(),
-      registerDataChannelObserver: vi.fn((registration: { name: string }) => {
-        observers.set(registration.name, registration)
-      }),
-      unregisterDataChannelObserver: vi.fn((name: string) =>
-        observers.delete(name)
-      )
-    } as unknown as PresetCoreAPIs
-    const privatePrerequisites = createPrivatePrerequisiteManager(
-      (_key, dispose) => cleanups.push(dispose)
+  it('acquires vector selection projection and releases it on terminal runtime reset', async () => {
+    applyPreset(runtimeCore, {
+      profile: PresetProfiles.CUSTOM,
+      defaults: [PresetDefaults.VECTOR_EDITING]
+    })
+    const path = runtimeCore.getSystemPropertyObservable<string | null>(
+      PresetSystemPropertyKeys.PATH_EDITING_VECTOR_ID
     )
+    const unregister = vi.spyOn(runtimeCore, 'unregisterDataChannelObserver')
 
-    try {
-      installVectorEditingDefault({
-        core,
-        dependencies: {
-          render: {},
-          sceneTree: {},
-          systemContext: {}
-        } as never,
-        privatePrerequisites
-      })
-
-      expect(observers.has('preset.vectorEditing.selection')).toBe(true)
-    } finally {
-      cleanups.reverse().forEach((dispose) => dispose())
-    }
+    expect(
+      runtimeCore.getSelection(SelectionChannels.VECTOR_POINT)
+    ).toBeDefined()
+    expect(
+      runtimeCore.getSelection(SelectionChannels.VECTOR_SEGMENT)
+    ).toBeDefined()
+    expect(path?.observed).toBe(true)
+    await runtimeCore.resetRuntime()
+    expect(path?.observed).toBe(false)
+    expect(unregister).toHaveBeenCalledWith('preset.vectorEditing.selection')
+    unregister.mockRestore()
   })
 })

@@ -97,6 +97,25 @@ describe('Asyra Design configured AI model backend', () => {
       protocolVersion: 1
     })
     expect(body.systemPrompt).toMatch(/registered App actions and image tools/i)
+    expect(body.systemPrompt).toContain(
+      'domain principles, common failure modes'
+    )
+    expect(body.systemPrompt).toContain('optional reference material')
+    expect(body.systemPrompt).toContain(
+      'shorten exploration and repeated correction'
+    )
+    expect(body.systemPrompt).toContain(
+      'Prefer a suitable existing direct tool'
+    )
+    expect(body.systemPrompt).toContain(
+      'use submit_tool for a finite recipe and invoke_tool'
+    )
+    expect(body.systemPrompt).toContain(
+      'cannot create missing primitive capabilities'
+    )
+    expect(body.systemPrompt).not.toMatch(
+      /default method reference|representative route before repeating/
+    )
     expect(body.imageTools).toEqual([
       {
         capabilities: ['retained-reference-validation'],

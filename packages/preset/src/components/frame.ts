@@ -1,4 +1,7 @@
-import type { ComponentDefinition, RenderStrategy } from '@asyra/core'
+import type {
+  ComponentDefinition,
+  EngineNeutralRenderStrategy
+} from '@asyra/core'
 import {
   EntityTypes,
   PropertyTypes,
@@ -32,7 +35,10 @@ export const FRAME_COMPONENT_DEFINITION: ComponentDefinition = {
   ]
 }
 
-export const FRAME_RENDER_STRATEGY: RenderStrategy = (graphic, data) => {
+export const FRAME_RENDER_STRATEGY: EngineNeutralRenderStrategy = (
+  graphic,
+  data
+) => {
   graphic.clear()
   setElementGeometryLocalBounds(
     graphic as Parameters<typeof setElementGeometryLocalBounds>[0],
@@ -52,4 +58,5 @@ export const FRAME_RENDER_STRATEGY: RenderStrategy = (graphic, data) => {
   applyRenderableFill(graphic, data.fills, { replayPath })
   graphic.x = data.x
   graphic.y = data.y
+  graphic.rotation = data.rotation ?? 0
 }

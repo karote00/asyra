@@ -10,6 +10,7 @@ describe('Text layer icon', () => {
     const row = render(<ElementIcon elementId="heading" type="text" />)
     const actual = row.container.querySelector('svg')?.outerHTML
     const reference = render(<Icon name="Text" />)
+
     expect(actual).toBeDefined()
     expect(reference.container.querySelector('svg')).not.toBeNull()
     expect(actual).toBe(reference.container.querySelector('svg')?.outerHTML)

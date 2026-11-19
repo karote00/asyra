@@ -43,9 +43,14 @@ it('distinguishes replacing canvas objects from overwriting earlier Undo history
   const summary = createAiConfirmationSummary({
     batchId: 'replace',
     actions: [
-      { id: 'replace', name: 'replace_vector_composition', summary: 'Replace' }
+      {
+        id: 'replace',
+        name: 'replace_vector_composition',
+        permission: 'confirm',
+        summary: 'Replace'
+      }
     ]
-  } as AiActionBatchPreview)
+  })
 
   expect(summary.message).toContain(
     'Previous steps remain available through Undo.'

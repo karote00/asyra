@@ -12,7 +12,10 @@ import {
 import { createPublicationProcessor } from '../../collaboration/publication-processor'
 
 const required = <T>(value: T | undefined): T => {
-  if (value === undefined) throw new Error('Missing fixture entry')
+  if (value === undefined) {
+    throw new Error('Missing fixture entry')
+  }
+
   return value
 }
 
@@ -20,6 +23,7 @@ const change: CanonicalChange = {
   kind: 'property-components',
   updates: [{ propertyId: 'position-a', values: { x: 12 } }]
 }
+
 const publication = (canonical: boolean): SharedPublication => ({
   publicationId: 'publication-a',
   artifactId: 'artifact-a',
@@ -55,12 +59,15 @@ const publication = (canonical: boolean): SharedPublication => ({
     }
   ]
 })
+
 const processor = () => {
   const apply = vi.fn()
+
   return {
     apply,
     process: createPublicationProcessor({
       decideRemotePublication: (value) => value,
+
       applyRemoteCanonicalChangeSlices: apply
     })
   }
@@ -142,6 +149,7 @@ describe('explicit canonical document publication', () => {
     }
     const prepared = prepareDocumentPublication(source)
     const changes = readDocumentPublicationSlices(prepared)[0]
+
     expect(changes).toEqual([
       {
         kind: 'property-components',
@@ -170,6 +178,7 @@ describe('explicit canonical document publication', () => {
     const payload = invalid.slices[0].batches[0].deliveries[0].payload as {
       changes: unknown[]
     }
+
     payload.changes = [
       {
         kind: 'property-components',
@@ -193,6 +202,7 @@ describe('explicit canonical document publication', () => {
 
   it('applies typed operations without reconstructing low-level channel evidence', () => {
     const { apply, process } = processor()
+
     expect(process(publication(true))).toBe(true)
     expect(apply).toHaveBeenCalledExactlyOnceWith({
       origin: 'action',
@@ -202,6 +212,7 @@ describe('explicit canonical document publication', () => {
 
   it('rejects raw owner events at the receiving document boundary before mutation', () => {
     const { apply, process } = processor()
+
     expect(() => process(publication(false))).toThrow()
     expect(apply).not.toHaveBeenCalled()
   })
@@ -238,6 +249,7 @@ describe('explicit canonical document publication', () => {
     }
     const a = processor(),
       b = processor()
+
     a.process(split)
     b.process(joined)
     expect(a.apply.mock.calls).toEqual(b.apply.mock.calls)
@@ -319,6 +331,7 @@ it.each([
       ]
     }
     const { apply, process } = processor()
+
     expect(() => process(input)).toThrow()
     expect(apply).not.toHaveBeenCalled()
   }
@@ -326,6 +339,7 @@ it.each([
 
 it('preserves publication-level compensation without inventing owner delivery targets', () => {
   const { apply, process } = processor()
+
   expect(
     process({
       ...publication(true),
@@ -345,6 +359,7 @@ it('accepts finite signed zero coordinates supported by the binary transport', (
   const source = required(slice.batches[0])
   const delivery = required(source.deliveries[0])
   const { apply, process } = processor()
+
   process({
     ...input,
     slices: [
@@ -416,6 +431,7 @@ it('prepares element changes without transporting local execution options', asyn
       }
     ]
   })
+
   expect(readDocumentPublicationSlices(prepared)).toEqual([
     [
       {
@@ -439,6 +455,7 @@ for (const context of ['standalone', 'creation', 'removal'] as const) {
     `preserves sequential moves of the same element inside one %s transport batch - ${context}`,
     (origin) => {
       const document = createFormalInitialDocument()
+
       const element = (id: string) => ({
         id,
         name: id,
@@ -447,6 +464,7 @@ for (const context of ['standalone', 'creation', 'removal'] as const) {
         visible: true,
         lock: false
       })
+
       document.sceneTree.elements.a = element('a')
       document.sceneTree.elements.b = element('b')
       document.sceneTree.elements.workspace.children = ['a', 'b']
@@ -487,8 +505,10 @@ for (const context of ['standalone', 'creation', 'removal'] as const) {
                 batchId: 'moves',
                 channel: 'sceneTree',
                 deliveries: changes.map((change, index) => {
-                  if (change.kind !== 'hierarchy-moves')
+                  if (change.kind !== 'hierarchy-moves') {
                     throw new Error('Missing move fixture')
+                  }
+
                   return {
                     deliveryId: index === 0 ? 'first' : 'second',
                     eventName: 'moveElements',
@@ -504,6 +524,7 @@ for (const context of ['standalone', 'creation', 'removal'] as const) {
       const expectedChanges = [...changes]
       const batches = [...source.slices[0].batches]
       const moves = batches[0]
+
       if (context === 'creation') {
         const data = {
           ...element('created'),
@@ -513,6 +534,7 @@ for (const context of ['standalone', 'creation', 'removal'] as const) {
           { id: 'created-position', type: 'position', x: 0, y: 0 }
         ]
         const entry = { data, parentId: 'workspace', index: 2 }
+
         expectedChanges.unshift({
           kind: 'element-creation',
           entries: [entry],
@@ -543,8 +565,10 @@ for (const context of ['standalone', 'creation', 'removal'] as const) {
           ]
         })
       }
+
       if (context === 'removal') {
         const entry = { data: element('b'), parentId: 'workspace', index: 1 }
+
         expectedChanges.push({ kind: 'element-removal', removals: [entry] })
         batches[0] = {
           ...moves,
@@ -559,11 +583,13 @@ for (const context of ['standalone', 'creation', 'removal'] as const) {
           ]
         }
       }
+
       const prepared = prepareDocumentPublication({
         ...source,
         slices: [{ ...source.slices[0], batches }]
       })
       const decoded = readDocumentPublicationSlices(prepared).flat()
+
       expect(decoded).toEqual(expectedChanges)
       expect(applyCanonicalChangesToDocument(document, decoded)).toEqual(
         applyCanonicalChangesToDocument(document, expectedChanges)
@@ -587,6 +613,7 @@ it.each([false, true])(
       visible: true,
       lock: false
     }
+
     document.sceneTree.elements.a = element
     document.sceneTree.elements.b = { ...element, id: 'b' }
     document.sceneTree.elements.workspace.children = ['a', 'b']
@@ -621,10 +648,12 @@ it.each([false, true])(
       { kind: 'hierarchy-moves', moves },
       { kind: 'element-data', changes: [update] }
     ]
+
     if (reverse) {
       deliveries.reverse()
       expected.reverse()
     }
+
     const source: SharedPublication = {
       ...publication(false),
       slices: [
@@ -638,8 +667,10 @@ it.each([false, true])(
     const decoded = readDocumentPublicationSlices(
       prepareDocumentPublication(source)
     ).flat()
+
     expect(decoded).toEqual(expected)
     const saved = applyCanonicalChangesToDocument(document, decoded)
+
     expect(saved.sceneTree.elements.workspace.children).toEqual(['b', 'a'])
     expect(saved.sceneTree.elements.a.name).toBe('After')
   }

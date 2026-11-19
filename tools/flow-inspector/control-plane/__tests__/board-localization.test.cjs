@@ -450,11 +450,13 @@ test(
 )
 
 test(
-  'Design execution Board selects three failed owners and retains the original history',
+  'Design execution Board selects all mapped failed owners and retains the original history',
   { timeout: 90000 },
   async (t) => {
     const fixture = localizationFixture()
     const { page, server } = await openBoard(t, fixture)
+
+    t.diagnostic('Execution Board evidence: ' + fixture.directory)
 
     for (const scenario of [
       'omit-registered-tools',
@@ -483,6 +485,14 @@ test(
           .flatMap((scenario) => scenario.expectedFailedCaseIds)
       )
     ].sort()
+    const expectedOwners = [
+      ...new Set(
+        manifest.flows
+          .flatMap((flow) => flow.cases)
+          .filter((item) => expected.includes(item.id))
+          .map((item) => item.stepId)
+      )
+    ].sort()
 
     assert.deepEqual(
       failures
@@ -495,7 +505,27 @@ test(
     const buttons = frame.locator('#test-result-failures button')
 
     await expect(buttons).toHaveCount(expected.length)
-    await expect(frame.locator('.observation-failed')).toHaveCount(3)
+
+    const failedOwners = () =>
+      frame
+        .locator('.observation-failed')
+        .evaluateAll((nodes) =>
+          nodes.map((node) => node.getAttribute('data-step-id')).sort()
+        )
+
+    try {
+      await expect.poll(failedOwners).toEqual(expectedOwners)
+    } finally {
+      await page.screenshot({
+        path: path.join(fixture.directory, 'execution-owner-status.png'),
+        fullPage: true
+      })
+      fs.writeFileSync(
+        path.join(fixture.directory, 'execution-owner-status.txt'),
+        await page.locator('body').innerText()
+      )
+    }
+
     const details = frame.locator('#test-result-detail')
 
     for (const [index, item] of failures.entries()) {
@@ -536,9 +566,9 @@ test(
     await expect(frame.locator('.observation-failed')).toHaveCount(0)
     await frame.locator('#test-result-history').selectOption(fault.record.id)
     await expect(buttons).toHaveCount(expected.length)
+    await expect.poll(failedOwners).toEqual(expectedOwners)
     await buttons.first().click()
     await expect(details).toContainText(failures[0].failures[0])
-    t.diagnostic('Execution Board evidence: ' + fixture.directory)
   }
 )
 

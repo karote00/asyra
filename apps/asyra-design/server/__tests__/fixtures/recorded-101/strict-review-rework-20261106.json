@@ -1,0 +1,473 @@
+{
+  "source": {
+    "run": "taipei-101-fixed-1793948243380",
+    "callId": "call_dGqBqAtGeriPHQYURB8D4aOZ"
+  },
+  "input": {
+    "phase": "visual",
+    "final": false,
+    "inspectionIds": [
+      "782cc4e4-79d1-4428-9d19-a3c5c9fe8735"
+    ],
+    "checks": [
+      {
+        "criterionId": "whole",
+        "inspectionIds": [
+          "782cc4e4-79d1-4428-9d19-a3c5c9fe8735"
+        ],
+        "binding": {
+          "requestId": "7f9e2c7f-9510-418c-961a-2dc8bfa1792f",
+          "requirementRevision": 1,
+          "checkRevision": 1,
+          "signature": "d4d9b186495ed2d0b2e867302eab1852e3c227366af6c5793f220d847e4471a2"
+        },
+        "status": "fail",
+        "evidence": "整棟與八節輪廓均可見，但基座左側有不應存在的懸空橫線，玻璃逐格反射重複過強，使整體偏模型感；需修正基座橫帶及玻璃反射。"
+      },
+      {
+        "criterionId": "view",
+        "inspectionIds": [
+          "782cc4e4-79d1-4428-9d19-a3c5c9fe8735"
+        ],
+        "binding": {
+          "requestId": "7f9e2c7f-9510-418c-961a-2dc8bfa1792f",
+          "requirementRevision": 1,
+          "checkRevision": 1,
+          "signature": "13650435003ea6a19ef4554241f28e11e16ead8f7ae6d49ea2a760ac31513e7b"
+        },
+        "status": "pass",
+        "evidence": "兩面幕牆、每節外露平臺與冠部頂面均一致俯視；未混用不同視角。"
+      }
+    ]
+  },
+  "output": {
+    "phase": "visual",
+    "reviewOperation": "record",
+    "recordedChecks": [
+      {
+        "id": "visual:whole",
+        "criterionId": "whole",
+        "origin": "main-agent",
+        "status": "fail",
+        "revision": 2
+      },
+      {
+        "id": "visual:view",
+        "criterionId": "view",
+        "origin": "main-agent",
+        "status": "pass",
+        "revision": 2
+      }
+    ],
+    "results": {
+      "countsScope": "request-checks",
+      "counts": {
+        "pass": 2,
+        "fail": 1,
+        "unverified": 6,
+        "stale": 2
+      },
+      "revision": 17,
+      "firstPendingId": "visual:whole"
+    },
+    "coverage": {
+      "required": 10,
+      "passed": 1,
+      "pending": [
+        {
+          "id": "visual:whole",
+          "criterionId": "whole",
+          "status": "fail"
+        },
+        {
+          "id": "visual-unit:[\"detail\",\"base\"]",
+          "criterionId": "detail",
+          "unitId": "base",
+          "status": "unverified"
+        },
+        {
+          "id": "visual-unit:[\"detail\",\"tiers\"]",
+          "criterionId": "detail",
+          "unitId": "tiers",
+          "status": "unverified"
+        },
+        {
+          "id": "visual-unit:[\"detail\",\"crown\"]",
+          "criterionId": "detail",
+          "unitId": "crown",
+          "status": "unverified"
+        },
+        {
+          "id": "visual-unit:[\"material\",\"base\"]",
+          "criterionId": "material",
+          "unitId": "base",
+          "status": "unverified"
+        },
+        {
+          "id": "visual-unit:[\"material\",\"tiers\"]",
+          "criterionId": "material",
+          "unitId": "tiers",
+          "status": "unverified"
+        },
+        {
+          "id": "visual-unit:[\"material\",\"crown\"]",
+          "criterionId": "material",
+          "unitId": "crown",
+          "status": "unverified"
+        },
+        {
+          "id": "visual:scale",
+          "criterionId": "scale",
+          "status": "stale"
+        },
+        {
+          "id": "visual:editable",
+          "criterionId": "editable",
+          "status": "stale"
+        }
+      ]
+    },
+    "final": false,
+    "facts": [
+      {
+        "id": "height",
+        "statement": "台北101建築總高508公尺，101層。",
+        "scope": "整棟高度，不證明每一細部尺寸。",
+        "sources": [
+          "https://www.skyscrapercenter.com/building/taipei-101/117",
+          "https://www.onenessarchitects.com/project/Taipei-101"
+        ],
+        "verification": "CTBUH與建築師專案頁皆列508m。",
+        "dependencies": [
+          {
+            "key": "height-source",
+            "version": "2026-11-06"
+          }
+        ],
+        "status": "valid",
+        "freshness": "current",
+        "evidence": {
+          "kind": "source-assertion",
+          "author": "model",
+          "status": "asserted",
+          "inapplicableSources": [],
+          "assertedSources": [
+            "https://www.skyscrapercenter.com/building/taipei-101/117",
+            "https://www.onenessarchitects.com/project/Taipei-101"
+          ],
+          "referenceIds": []
+        }
+      },
+      {
+        "id": "form",
+        "statement": "八個八層外張模組位於內收基座上；冠部退縮，尖塔約60m；外牆有如意、轉角龍形及24至27層圓形方孔裝飾。",
+        "scope": "建築組成；各裝飾細部依影像估繪而非測繪。",
+        "sources": [
+          "https://www.onenessarchitects.com/project/Taipei-101",
+          "https://www.skyscraper.org/ten-tops/featured-buildings/",
+          "https://www.enr.com/articles/37144-megastructure-supports-taipei-s-508-meter-megatower"
+        ],
+        "verification": "建築師說明八層單元與裝飾；博物館說明60m尖塔；ENR記錄7度外張。",
+        "dependencies": [
+          {
+            "key": "form-source",
+            "version": "2026-11-06"
+          }
+        ],
+        "status": "valid",
+        "freshness": "current",
+        "evidence": {
+          "kind": "source-assertion",
+          "author": "model",
+          "status": "asserted",
+          "inapplicableSources": [],
+          "assertedSources": [
+            "https://www.onenessarchitects.com/project/Taipei-101",
+            "https://www.skyscraper.org/ten-tops/featured-buildings/",
+            "https://www.enr.com/articles/37144-megastructure-supports-taipei-s-508-meter-megatower"
+          ],
+          "referenceIds": []
+        }
+      }
+    ],
+    "deferredDetails": [],
+    "deferredChecks": [],
+    "pendingDetails": [],
+    "regressions": [],
+    "revision": 2,
+    "accepted": false,
+    "checks": [
+      {
+        "criterionId": "whole",
+        "inspectionIds": [
+          "782cc4e4-79d1-4428-9d19-a3c5c9fe8735"
+        ],
+        "binding": {
+          "requestId": "7f9e2c7f-9510-418c-961a-2dc8bfa1792f",
+          "requirementRevision": 1,
+          "checkRevision": 1,
+          "signature": "d4d9b186495ed2d0b2e867302eab1852e3c227366af6c5793f220d847e4471a2"
+        },
+        "status": "fail",
+        "evidence": "整棟與八節輪廓均可見，但基座左側有不應存在的懸空橫線，玻璃逐格反射重複過強，使整體偏模型感；需修正基座橫帶及玻璃反射。",
+        "factIds": []
+      }
+    ],
+    "inspectionIds": [
+      "782cc4e4-79d1-4428-9d19-a3c5c9fe8735"
+    ],
+    "correction": {
+      "diagnosticOnly": true,
+      "coverage": {
+        "required": 10,
+        "passed": 1,
+        "pending": [
+          {
+            "id": "visual:whole",
+            "criterionId": "whole",
+            "status": "fail"
+          },
+          {
+            "id": "visual-unit:[\"detail\",\"base\"]",
+            "criterionId": "detail",
+            "unitId": "base",
+            "status": "unverified"
+          },
+          {
+            "id": "visual-unit:[\"detail\",\"tiers\"]",
+            "criterionId": "detail",
+            "unitId": "tiers",
+            "status": "unverified"
+          },
+          {
+            "id": "visual-unit:[\"detail\",\"crown\"]",
+            "criterionId": "detail",
+            "unitId": "crown",
+            "status": "unverified"
+          },
+          {
+            "id": "visual-unit:[\"material\",\"base\"]",
+            "criterionId": "material",
+            "unitId": "base",
+            "status": "unverified"
+          },
+          {
+            "id": "visual-unit:[\"material\",\"tiers\"]",
+            "criterionId": "material",
+            "unitId": "tiers",
+            "status": "unverified"
+          },
+          {
+            "id": "visual-unit:[\"material\",\"crown\"]",
+            "criterionId": "material",
+            "unitId": "crown",
+            "status": "unverified"
+          },
+          {
+            "id": "visual:scale",
+            "criterionId": "scale",
+            "status": "stale"
+          },
+          {
+            "id": "visual:editable",
+            "criterionId": "editable",
+            "status": "stale"
+          }
+        ]
+      },
+      "referenceDecisions": [],
+      "requiresFreshReview": true,
+      "revision": 2,
+      "checks": [
+        {
+          "id": "visual:whole",
+          "criterionId": "whole",
+          "status": "fail",
+          "revision": 2,
+          "evidence": "整棟與八節輪廓均可見，但基座左側有不應存在的懸空橫線，玻璃逐格反射重複過強，使整體偏模型感；需修正基座橫帶及玻璃反射。",
+          "inspectionIds": [
+            "782cc4e4-79d1-4428-9d19-a3c5c9fe8735"
+          ],
+          "factElementIds": []
+        },
+        {
+          "id": "visual-unit:[\"detail\",\"base\"]",
+          "criterionId": "detail",
+          "unitId": "base",
+          "status": "unverified",
+          "revision": 1,
+          "evidence": "Await primary-agent review of actual rendered evidence.",
+          "inspectionIds": [],
+          "factElementIds": []
+        },
+        {
+          "id": "visual-unit:[\"detail\",\"tiers\"]",
+          "criterionId": "detail",
+          "unitId": "tiers",
+          "status": "unverified",
+          "revision": 1,
+          "evidence": "Await primary-agent review of actual rendered evidence.",
+          "inspectionIds": [],
+          "factElementIds": []
+        },
+        {
+          "id": "visual-unit:[\"detail\",\"crown\"]",
+          "criterionId": "detail",
+          "unitId": "crown",
+          "status": "unverified",
+          "revision": 1,
+          "evidence": "Await primary-agent review of actual rendered evidence.",
+          "inspectionIds": [],
+          "factElementIds": []
+        },
+        {
+          "id": "visual-unit:[\"material\",\"base\"]",
+          "criterionId": "material",
+          "unitId": "base",
+          "status": "unverified",
+          "revision": 1,
+          "evidence": "Await primary-agent review of actual rendered evidence.",
+          "inspectionIds": [],
+          "factElementIds": []
+        },
+        {
+          "id": "visual-unit:[\"material\",\"tiers\"]",
+          "criterionId": "material",
+          "unitId": "tiers",
+          "status": "unverified",
+          "revision": 1,
+          "evidence": "Await primary-agent review of actual rendered evidence.",
+          "inspectionIds": [],
+          "factElementIds": []
+        },
+        {
+          "id": "visual-unit:[\"material\",\"crown\"]",
+          "criterionId": "material",
+          "unitId": "crown",
+          "status": "unverified",
+          "revision": 1,
+          "evidence": "Await primary-agent review of actual rendered evidence.",
+          "inspectionIds": [],
+          "factElementIds": []
+        },
+        {
+          "id": "visual:scale",
+          "criterionId": "scale",
+          "status": "stale",
+          "revision": 1,
+          "evidence": "Await primary-agent review of actual rendered evidence.",
+          "reason": "Unscoped canonical evidence changed.",
+          "inspectionIds": [],
+          "dataEvidenceIds": [],
+          "factElementIds": []
+        },
+        {
+          "id": "visual:editable",
+          "criterionId": "editable",
+          "status": "stale",
+          "revision": 1,
+          "evidence": "Await primary-agent review of actual rendered evidence.",
+          "reason": "Unscoped canonical evidence changed.",
+          "inspectionIds": [],
+          "dataEvidenceIds": [],
+          "factElementIds": []
+        }
+      ],
+      "inspections": [
+        {
+          "inspectionId": "782cc4e4-79d1-4428-9d19-a3c5c9fe8735",
+          "elementId": "design-00fc98b5-ed2b-42df-ac82-d7f465c3e3e8-part-0-0",
+          "overview": true,
+          "detail": false
+        }
+      ],
+      "unavailableInspectionIds": [],
+      "discovery": {
+        "tool": "describe_design_apis",
+        "arguments": {
+          "view": "usage"
+        },
+        "requiredInputs": [
+          "query"
+        ],
+        "instruction": "Use a known scoped edit directly. Only for a missing contract, fill query with your chosen correction capability or exact registered name and follow its execution route. Image targets/regions and factElementIds are evidence context, not inferred edit targets; target-local regions are not workspace query bounds. Resolve missing current targets through the existing query owner. Choose new values explicitly. Preserve actual partial receipts and retry only unfinished work; never replay completed edits. Reinspect affected evidence and submit only changed checks, retaining unrelated passes and whole-view obligations."
+      }
+    },
+    "toolOutcome": {
+      "status": "success",
+      "settlement": "completed",
+      "issues": []
+    }
+  },
+  "laterRejectedInput": {
+    "operations": [
+      {
+        "id": "root",
+        "name": "read_design_context",
+        "arguments": {
+          "scope": "ids",
+          "elementIds": [
+            "design-00fc98b5-ed2b-42df-ac82-d7f465c3e3e8-part-0-0"
+          ],
+          "fields": [
+            "x",
+            "y",
+            "width",
+            "height"
+          ],
+          "delivery": "columns"
+        }
+      },
+      {
+        "id": "sample",
+        "name": "read_design_context",
+        "arguments": {
+          "scope": "region",
+          "bounds": {
+            "x": 9500,
+            "y": 28000,
+            "width": 500,
+            "height": 500
+          },
+          "fields": [
+            "x",
+            "y",
+            "width",
+            "height"
+          ],
+          "limit": 6,
+          "delivery": "page"
+        }
+      }
+    ],
+    "delivery": {
+      "fields": {
+        "root": {
+          "step": "root"
+        },
+        "sample": {
+          "step": "sample"
+        }
+      }
+    },
+    "message": "讀取局部窗格命名與比例座標，準備修正反射"
+  },
+  "laterRejectedOutput": {
+    "available": false,
+    "code": "PREPARATION_REJECTED",
+    "stage": "admission",
+    "settlement": "not-started",
+    "recoverable": true,
+    "message": "arguments: oneOf mismatch; arguments.delivery: anyOf mismatch; arguments.delivery: unexpected constant; arguments.delivery.fields.root.path: required field is missing; arguments.delivery.fields.sample.path: required field is missing; arguments.operations: unknown field; allowed fields: delivery; arguments.delivery.fields.root.name: required field is missing; arguments.delivery.fields.root.step: unknown field; allowed fields: name, path; arguments.delivery.fields.sample.name: required field is missing; arguments.delivery.fields.sample.step: unknown field; allowed fields: name, path; arguments.message: unknown field; allowed fields: delivery; Correct these fields and retry for remaining diagnostics",
+    "toolOutcome": {
+      "status": "failed",
+      "settlement": "not-started",
+      "issues": [
+        {
+          "code": "PREPARATION_REJECTED",
+          "message": "arguments: oneOf mismatch; arguments.delivery: anyOf mismatch; arguments.delivery: unexpected constant; arguments.delivery.fields.root.path: required field is missing; arguments.delivery.fields.sample.path: required field is missing; arguments.operations: unknown field; allowed fields: delivery; arguments.delivery.fields.root.name: required field is missing; arguments.delivery.fields.root.step: unknown field; allowed fields: name, path; arguments.delivery.fields.sample.name: required field is missing; arguments.delivery.fields.sample.step: unknown field; allowed fields: name, path; arguments.message: unknown field; allowed fields: delivery; Correct these fields and retry for remaining diagnostics"
+        }
+      ]
+    }
+  }
+}

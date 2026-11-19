@@ -836,7 +836,7 @@ const createDetailedTabbyPrefixBatch = async (
     throw new Error('Detailed-tabby action batch is invalid.')
   }
 
-  let remaining = itemCount
+  let remaining: number = itemCount
   let pointCount = 0
   const selectedSlices: PreparedDrawingSlice[] = []
   const roleToElementIds: Record<string, readonly string[]> = {}
@@ -899,7 +899,7 @@ const createDetailedTabbyPrefixBatch = async (
           name: AiActionNames.INSERT_VECTOR_COMPOSITION,
           summary: {
             affectedCount: artifact.elementCount,
-            bounds: artifact.groupBounds,
+            bounds: { ...artifact.groupBounds },
             pointCount: artifact.pointCount,
             skippedCount: artifact.skipped.length
           }
@@ -958,7 +958,7 @@ export const createServerResponseRecord = async (
           name: AiActionNames.INSERT_VECTOR_COMPOSITION,
           summary: {
             affectedCount: artifact.elementCount,
-            bounds: artifact.groupBounds,
+            bounds: { ...artifact.groupBounds },
             pointCount: artifact.pointCount,
             skippedCount: artifact.skipped.length
           }

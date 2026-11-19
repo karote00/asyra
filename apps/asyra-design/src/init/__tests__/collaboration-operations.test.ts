@@ -1,7 +1,8 @@
+import { requiredRecord } from '../../__tests__/assert-result'
 import { prepareDocumentPublication } from '../../collaboration/document-publication'
 import { applyCanonicalChangesToDocument } from '../../../server/document-canonical-reducer'
 import { createFormalInitialDocument } from '../../collaboration/initial-document'
-import type { CanonicalChange } from '@asyra/core'
+import type { CanonicalChange } from '../../collaboration/app-protocol-types'
 import { Buffer } from 'node:buffer'
 import type {
   SharedPublication,
@@ -549,6 +550,7 @@ describe('Asyra Design app-owned collaboration processing', () => {
     await expect(
       applyDocumentSessionBootstrapTail({
         bootstrap: {
+          documentGeneration: 0,
           checkpoint: { version: '1.0.0' },
           durableSequence: 4,
           headSequence: 6,
@@ -598,6 +600,7 @@ describe('Asyra Design app-owned collaboration processing', () => {
       await expect(
         applyDocumentSessionBootstrapTail({
           bootstrap: {
+            documentGeneration: 0,
             checkpoint: { version: '1.0.0' },
             durableSequence: 1,
             headSequence: 3,
@@ -847,7 +850,7 @@ describe('Asyra Design app-owned collaboration processing', () => {
     expect(harness.applyCanonicalChanges).toHaveBeenCalledWith([
       {
         kind: 'property-components',
-        creations: pointAddition.payload.data,
+        creations: requiredRecord(pointAddition.payload).data,
         removals: [],
         updates: []
       },
@@ -915,7 +918,7 @@ describe('Asyra Design app-owned collaboration processing', () => {
       },
       {
         kind: 'property-components',
-        removals: pointRemoval.payload.data,
+        removals: requiredRecord(pointRemoval.payload).data,
         updates: []
       }
     ])
@@ -995,7 +998,7 @@ describe('Asyra Design app-owned collaboration processing', () => {
     expect(harness.applyCanonicalChanges).toHaveBeenCalledWith([
       {
         kind: 'property-components',
-        creations: segmentAddition.payload.data,
+        creations: requiredRecord(segmentAddition.payload).data,
         removals: [],
         updates: []
       },
@@ -1007,7 +1010,7 @@ describe('Asyra Design app-owned collaboration processing', () => {
       },
       {
         kind: 'property-components',
-        removals: segmentRemoval.payload.data,
+        removals: requiredRecord(segmentRemoval.payload).data,
         updates: []
       }
     ])
@@ -2023,6 +2026,7 @@ const createMaterializationHarness = (
   })
 ) => {
   let record: MaterializationTestRecord = {
+    documentGeneration: 0,
     document: { appliedValues: [] },
     durableSequence: 0,
     publicationSequences: {},
@@ -2112,18 +2116,21 @@ describe('Asyra Design backend document materialization', () => {
       x: 0,
       y: 0
     }
-    const propsKeys = vi.fn((target: object) => Reflect.ownKeys(target))
+    const propsKeys = vi.fn((target: typeof document.props) =>
+      Reflect.ownKeys(target)
+    )
     const input = {
       ...document,
       props: new Proxy(document.props, { ownKeys: propsKeys })
     }
     let record: MaterializedDocumentRecord<typeof document> = {
+      documentGeneration: 0,
       document: input,
       durableSequence: 0,
       publicationSequences: {},
       batches: {}
     }
-    const service = createDocumentMaterializationService({
+    const service = createDocumentMaterializationService<typeof document>({
       authorize: async () => undefined,
 
       applyCanonicalChanges: (current, changes, observation) => {
@@ -2378,6 +2385,7 @@ describe('Asyra Design backend document materialization', () => {
       )
     ).rejects.toThrow('backend canonical apply failed')
     expect(harness.getRecord()).toEqual({
+      documentGeneration: 0,
       document: { appliedValues: [] },
       durableSequence: 0,
       publicationSequences: {},

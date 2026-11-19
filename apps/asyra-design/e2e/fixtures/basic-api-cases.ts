@@ -1,6 +1,6 @@
 import { DEFAULT_ELEMENT_SIZE } from '@asyra/utils'
 import core from '../../src/contexts'
-import { getActiveCollaborationHandle } from '../../src/collaboration/lifecycle'
+import { getActiveCollaborationHandle } from '../../src/collaboration/session-observation'
 import {
   elementApis,
   fillApis,

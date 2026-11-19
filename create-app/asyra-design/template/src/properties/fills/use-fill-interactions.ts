@@ -73,6 +73,7 @@ const createPickerPatch = (
   )
 
   const patch = createColorPatch(sourceFill, nextColor)
+
   if (!isEqual(sourceFill.opacity, opacity)) {
     patch.opacity = opacity
   }
@@ -142,6 +143,7 @@ export const useFillInteractions = ({
 
   useEffect(() => {
     const activeGradientFill = systemContextApis.getActiveGradientFill()
+
     if (!activeGradientFill) {
       return
     }
@@ -164,6 +166,7 @@ export const useFillInteractions = ({
   useEffect(
     () => () => {
       const activeGradientFill = systemContextApis.getActiveGradientFill()
+
       if (
         activeGradientFill?.elementId === ownerElementId &&
         activeGradientFill.fillId === fillId
@@ -223,6 +226,7 @@ export const useFillInteractions = ({
   ) => {
     if (colorPickerTransactionRef.current) {
       commitFillPatch(patch, options)
+
       return
     }
 
@@ -239,19 +243,23 @@ export const useFillInteractions = ({
     const sourceFill = colorPickerTransactionRef.current
       ? (pickerLatestFillRef.current ?? pickerFillRef.current)
       : pickerFillRef.current
+
     if (!sourceFill) {
       return null
     }
 
     const patch = createPickerPatch(sourceFill, color, opacity)
     const nextFill = applyFillPatch(sourceFill, patch)
+
     pickerLatestFillRef.current = nextFill
     commitFillPatch(patch, options)
+
     return nextFill
   }
 
   const startFillInteractionTransaction = () => {
     const wasActive = colorPickerTransactionRef.current
+
     startInteractionTransaction(
       colorPickerTransactionRef,
       pickerFillRef.current !== null
@@ -285,10 +293,12 @@ export const useFillInteractions = ({
         elementId: ownerElementId,
         fillId
       })
+
       return
     }
 
     const activeGradientFill = systemContextApis.getActiveGradientFill()
+
     if (
       nextKind !== FillKinds.GRADIENT &&
       activeGradientFill?.elementId === ownerElementId &&
@@ -310,11 +320,13 @@ export const useFillInteractions = ({
 
   const handleOpacityChange = (value: string): boolean => {
     const parsed = Number.parseFloat(value)
+
     if (!Number.isFinite(parsed)) {
       return false
     }
 
     const nextOpacity = Math.max(0, Math.min(100, parsed)) / 100
+
     if (!fill || isEqual(fill.opacity, nextOpacity)) {
       return false
     }
@@ -322,6 +334,7 @@ export const useFillInteractions = ({
     commitFillInteractionPatch({
       opacity: nextOpacity
     })
+
     return true
   }
 
@@ -351,11 +364,13 @@ export const useFillInteractions = ({
     )
 
     const patch = createColorPatch(fill, nextColor)
+
     if (!hasFillPatch(patch)) {
       return false
     }
 
     commitFillInteractionPatch(patch)
+
     return true
   }
 
@@ -365,6 +380,7 @@ export const useFillInteractions = ({
   }) => {
     if (colorPickerTransactionRef.current) {
       writePickerFill(next.color, next.opacity, FILL_COLOR_PICKER_DRAG_OPTIONS)
+
       return
     }
 
@@ -375,6 +391,7 @@ export const useFillInteractions = ({
 
   const handleColorPickerChangeStart = () => {
     const currentFill = pickerFillRef.current
+
     if (!currentFill) {
       return
     }
@@ -411,10 +428,12 @@ export const useFillInteractions = ({
         elementId: ownerElementId,
         fillId
       })
+
       return
     }
 
     const activeGradientFill = systemContextApis.getActiveGradientFill()
+
     if (
       activeGradientFill?.elementId === ownerElementId &&
       activeGradientFill.fillId === fillId

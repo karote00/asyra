@@ -83,17 +83,20 @@ export const viewportApis = {
    */
   zoomFit: () => {
     const viewportAnchor = document.getElementById('viewport-anchor')
+
     if (!viewportAnchor) {
       return
     }
 
     const viewportBounds = viewportAnchor.getBoundingClientRect()
     const elementsBounds = core.getAllElementsBounds()
+
     if (!elementsBounds) {
       core.setSystemProperty(PresetSystemPropertyKeys.VIEWPORT_POSITION, {
         x: viewportBounds.x + DEFAULT_CANVAS_PADDING,
         y: viewportBounds.y + DEFAULT_CANVAS_PADDING
       })
+
       return
     }
 

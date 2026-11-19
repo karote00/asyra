@@ -95,11 +95,13 @@ const getEditableGradientFillState = (snapshot: SystemContextSnapshot) => {
   }
 
   const activeGradientFill = systemContextApis.getActiveGradientFill()
+
   if (!activeGradientFill) {
     return null
   }
 
   const selectedIds = selectionApis.getSelectedIds()
+
   if (
     selectedIds.length !== 1 ||
     selectedIds[0] !== activeGradientFill.elementId
@@ -121,6 +123,7 @@ const getHandleHitFromGeometry = (
   for (const [handleIndex, handlePos] of geometry.canvasHandles.entries()) {
     const dx = handlePos.x - canvasPos.x
     const dy = handlePos.y - canvasPos.y
+
     if (dx * dx + dy * dy <= hitRadiusSquared) {
       return {
         handleIndex: handleIndex as 0 | 1
@@ -157,6 +160,7 @@ const getStopHitFromGeometry = (
   const offsetDist = stopOffsetFromLine + rectHalf
 
   const stops = geometry.fill.gradient.gradientStops
+
   for (let i = 0; i < stops.length; i++) {
     const stop = stops[i]
 
@@ -201,6 +205,7 @@ const getStopPositionFromClientPos = (
   const dx = end.x - start.x
   const dy = end.y - start.y
   const lengthSq = dx * dx + dy * dy
+
   if (lengthSq < 0.001) {
     return 0
   }
@@ -208,6 +213,7 @@ const getStopPositionFromClientPos = (
   // Project the canvas position onto the gradient line
   const t =
     ((canvasPos.x - start.x) * dx + (canvasPos.y - start.y) * dy) / lengthSq
+
   return clampUnit(t)
 }
 
@@ -228,6 +234,7 @@ const applyHandleDragUpdate = (
 
   const currentHandle = state.latestGradient.gradientHandles[state.handleIndex]
   const nextHandle = nextGradient.gradientHandles[state.handleIndex]
+
   if (
     currentHandle &&
     nextHandle &&
@@ -261,10 +268,12 @@ const scheduleHandleDragUpdate = (
   state.rafId = requestAnimationFrame(() => {
     state.rafId = null
     const pending = state.pendingWorkspacePos
+
     state.pendingWorkspacePos = null
     if (!pending) {
       return
     }
+
     applyHandleDragUpdate(state, pending)
   })
 }
@@ -274,10 +283,13 @@ const flushHandleDragUpdate = (state: GradientHandleDragState) => {
     cancelAnimationFrame(state.rafId)
     state.rafId = null
   }
+
   if (!state.pendingWorkspacePos) {
     return
   }
+
   const pending = state.pendingWorkspacePos
+
   state.pendingWorkspacePos = null
   applyHandleDragUpdate(state, pending)
 }
@@ -287,6 +299,7 @@ const cancelHandleDragUpdate = (state: GradientHandleDragState) => {
     cancelAnimationFrame(state.rafId)
     state.rafId = null
   }
+
   state.pendingWorkspacePos = null
   systemContextApis.setSelectedGradientHandle(state.previousSelectedHandle)
   systemContextApis.setHoveredGradientHandle(state.previousHoveredHandle)
@@ -302,11 +315,13 @@ const applyStopDragUpdate = (
     clientPos,
     state.canvasBounds
   )
+
   if (position === null) {
     return
   }
 
   const currentStop = state.latestGradient.gradientStops[state.stopIndex]
+
   if (
     currentStop &&
     Math.abs(currentStop.position - position) <= DRAG_EPSILON
@@ -348,10 +363,12 @@ const scheduleStopDragUpdate = (
   state.rafId = requestAnimationFrame(() => {
     state.rafId = null
     const pending = state.pendingClientPos
+
     state.pendingClientPos = null
     if (!pending) {
       return
     }
+
     applyStopDragUpdate(state, pending)
   })
 }
@@ -361,10 +378,13 @@ const flushStopDragUpdate = (state: GradientStopDragState) => {
     cancelAnimationFrame(state.rafId)
     state.rafId = null
   }
+
   if (!state.pendingClientPos) {
     return
   }
+
   const pending = state.pendingClientPos
+
   state.pendingClientPos = null
   applyStopDragUpdate(state, pending)
 }
@@ -374,6 +394,7 @@ const cancelStopDragUpdate = (state: GradientStopDragState) => {
     cancelAnimationFrame(state.rafId)
     state.rafId = null
   }
+
   state.pendingClientPos = null
   systemContextApis.setSelectedGradientStop(state.previousSelectedStop)
   systemContextApis.setHoveredGradientStop(state.previousHoveredStop)
@@ -386,11 +407,14 @@ export const hoverGradientHandleFeature = defineFeature(
   {
     priority: 9,
     exclusive: false,
+
     execution: (snapshot: SystemContextSnapshot) => {
       const activeGradientFill = getEditableGradientFillState(snapshot)
+
       if (!activeGradientFill) {
         systemContextApis.setHoveredGradientHandle(null)
         cursorApis.resetCanvasCursor()
+
         return null
       }
 
@@ -398,15 +422,20 @@ export const hoverGradientHandleFeature = defineFeature(
         activeGradientFill.elementId,
         activeGradientFill.fillId
       )
+
       if (!geometry) {
         systemContextApis.setHoveredGradientHandle(null)
         cursorApis.resetCanvasCursor()
+
         return null
       }
+
       const hit = getHandleHitFromGeometry(geometry, snapshot.mousePosition)
+
       if (!hit) {
         systemContextApis.setHoveredGradientHandle(null)
         cursorApis.resetCanvasCursor()
+
         return null
       }
 
@@ -430,8 +459,10 @@ export const hoverGradientStopFeature = defineFeature(
   {
     priority: 8,
     exclusive: false,
+
     execution: (snapshot: SystemContextSnapshot) => {
       const activeGradientFill = getEditableGradientFillState(snapshot)
+
       if (!activeGradientFill) {
         return null
       }
@@ -440,14 +471,18 @@ export const hoverGradientStopFeature = defineFeature(
         activeGradientFill.elementId,
         activeGradientFill.fillId
       )
+
       if (!geometry) {
         systemContextApis.setHoveredGradientStop(null)
+
         return null
       }
 
       const hit = getStopHitFromGeometry(geometry, snapshot.mousePosition)
+
       if (!hit) {
         systemContextApis.setHoveredGradientStop(null)
+
         return null
       }
 
@@ -456,6 +491,7 @@ export const hoverGradientStopFeature = defineFeature(
         stopIndex: hit.stopIndex
       })
       cursorApis.setCanvasCursor('grab')
+
       return { ...activeGradientFill, stopIndex: hit.stopIndex }
     }
   }
@@ -471,6 +507,7 @@ export const dragGradientHandleFeature = defineFeature<
   session: {
     onStart: (snapshot: SystemContextSnapshot) => {
       const activeGradientFill = getEditableGradientFillState(snapshot)
+
       if (!activeGradientFill) {
         return null
       }
@@ -479,6 +516,7 @@ export const dragGradientHandleFeature = defineFeature<
         activeGradientFill.elementId,
         activeGradientFill.fillId
       )
+
       if (!geometry || !geometry.fill.gradient) {
         return null
       }
@@ -491,6 +529,7 @@ export const dragGradientHandleFeature = defineFeature<
           ? hoveredHandle.handleIndex
           : getHandleHitFromGeometry(geometry, snapshot.mousePosition)
               ?.handleIndex
+
       if (resolvedHandleIndex === undefined) {
         return null
       }
@@ -498,9 +537,11 @@ export const dragGradientHandleFeature = defineFeature<
       const dragStartWorkspacePos = elementApis.getMousePosInWorkspace(
         snapshot.mousePosition
       )
+
       if (!dragStartWorkspacePos) {
         return null
       }
+
       transactionApis.configureSharedDeliverySequence({
         mode: 'atomic',
         batchPublications: false,
@@ -549,6 +590,7 @@ export const dragGradientHandleFeature = defineFeature<
       const currentWorkspacePos = elementApis.getMousePosInWorkspace(
         snapshot.mousePosition
       )
+
       if (!currentWorkspacePos) {
         return
       }
@@ -563,6 +605,7 @@ export const dragGradientHandleFeature = defineFeature<
       ) {
         return
       }
+
       scheduleHandleDragUpdate(state, currentWorkspacePos)
     },
 
@@ -577,6 +620,7 @@ export const dragGradientHandleFeature = defineFeature<
         return
       }
     },
+
     onCancel: (_snapshot, state): undefined => {
       cancelHandleDragUpdate(state)
     }
@@ -593,6 +637,7 @@ export const dragGradientStopFeature = defineFeature<
   session: {
     onStart: (snapshot: SystemContextSnapshot) => {
       const activeGradientFill = getEditableGradientFillState(snapshot)
+
       if (!activeGradientFill) {
         return null
       }
@@ -601,6 +646,7 @@ export const dragGradientStopFeature = defineFeature<
         activeGradientFill.elementId,
         activeGradientFill.fillId
       )
+
       if (!geometry || !geometry.fill.gradient) {
         return null
       }
@@ -612,6 +658,7 @@ export const dragGradientStopFeature = defineFeature<
         hoveredStop.fillId === activeGradientFill.fillId
           ? hoveredStop.stopIndex
           : getStopHitFromGeometry(geometry, snapshot.mousePosition)?.stopIndex
+
       if (resolvedStopIndex === undefined) {
         return null
       }
@@ -661,6 +708,7 @@ export const dragGradientStopFeature = defineFeature<
       }
 
       const dragStart = snapshot.mouseDragStart
+
       if (
         !state.isDragging &&
         dragStart &&
@@ -683,6 +731,7 @@ export const dragGradientStopFeature = defineFeature<
         return
       }
     },
+
     onCancel: (_snapshot, state): undefined => {
       cancelStopDragUpdate(state)
     }

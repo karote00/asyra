@@ -1,6 +1,6 @@
 ---
 {
-  "description": "Choose a material method and representative visual evidence before expanding repetition.",
+  "description": "Optional representative checks for uncertain repeated materials; weigh correction savings against review cost.",
   "contexts": [
     "architectural-illustration"
   ],
@@ -13,18 +13,18 @@
 }
 ---
 
-# Choose a material method before repeating a surface
+# Evaluate an uncertain repeated material when useful
 
 ## What
 
-**Applicability:** Use this reasoning when repeated details form a larger visible
+**Applicability:** Consider this reasoning when repeated details form a larger visible
 surface and material or lighting choices are still open. A known-value local edit,
 a deliberately flat graphic, or irregular ornament does not require this process.
 The requested style takes precedence over a realistic-material interpretation.
 
 ## Why
 
-Choose a coherent material method before expanding repeated detail; early choices affect later corrections.
+A representative section can reveal costly material mistakes before repetition, but adds preparation and review time. Known methods, simple edits and independent parts need not wait for this approach. It is optional advice, not an additional acceptance standard.
 
 ## How
 
@@ -85,7 +85,7 @@ view excludes a necessary layer or join, obtain the appropriate view rather than
 changing paint to compensate for missing evidence. More gradient stops or stronger
 contrast alone cannot satisfy a material judgment.
 
-**Revision:** Once a representative relationship is satisfactory, repeat the
+**Revision:** If you choose this approach, once a representative relationship is satisfactory, repeat the
 chosen geometry with its intended material roles. Reuse decisions, not a visual
 approval for all future placements: occlusion, joints and overall appearance still
 need inspection in the finished context. Retain decisions whose evidence and

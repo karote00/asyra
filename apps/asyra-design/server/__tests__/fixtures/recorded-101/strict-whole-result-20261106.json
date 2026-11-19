@@ -1,0 +1,984 @@
+{
+  "source": {
+    "run": "taipei-101-fixed-1793946411154",
+    "callId": "call_R5qCQz01VYW3ZypuyBGw0hS6"
+  },
+  "input": {
+    "operations": [
+      {
+        "id": "base",
+        "name": "design_workflow.prepare_and_apply_design",
+        "arguments": {
+          "message": "建立台北101裙樓、入口與下段塔身，保留透明背景",
+          "inspection": "defer",
+          "draft": {
+            "type": "group",
+            "name": "台北101｜裙樓與基座｜1cm=1px",
+            "key": "taipei-base",
+            "projection": {
+              "azimuth": 35,
+              "elevation": 25,
+              "scale": 1,
+              "originX": 12000,
+              "originY": 49000
+            },
+            "brief": {
+              "intent": "完整台北101可編輯寫實建築插畫，下段與裙樓；世界單位公分",
+              "viewpoint": "固定正交三分之四視角，方位35度、俯角25度；所有部分共用投影",
+              "sources": [
+                "https://www.thorntontomasetti.com/project/taipei-101",
+                "https://www.onenessarchitects.com/project/Taipei-101",
+                "https://ndl.ethernet.edu.et/bitstream/123456789/46132/1/Tall%20Buildings%20Structural%20Systems%20and%20Aerodynamic%20Form.pdf"
+              ],
+              "assumptions": [
+                "508m總高已確認；底面63.5m為出版資料；其他標高、裙樓外形及窗格尺寸依照片估算，不是竣工圖",
+                "無城市背景；光從畫面左上方照入，右側立面較暗"
+              ]
+            },
+            "fillTemplates": {
+              "stone": {
+                "gradientType": "linear",
+                "gradientHandles": [
+                  {
+                    "x": 0,
+                    "y": 0
+                  },
+                  {
+                    "x": 1,
+                    "y": 1
+                  }
+                ],
+                "gradientStops": [
+                  {
+                    "position": 0,
+                    "color": "#BBC5C3",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 0.5,
+                    "color": "#7E9696",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 1,
+                    "color": "#536E71",
+                    "opacity": 1
+                  }
+                ]
+              },
+              "glassLight": {
+                "gradientType": "linear",
+                "gradientHandles": [
+                  {
+                    "x": 0,
+                    "y": 0
+                  },
+                  {
+                    "x": 0.8,
+                    "y": 1
+                  }
+                ],
+                "gradientStops": [
+                  {
+                    "position": 0,
+                    "color": "#87B5BA",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 0.43,
+                    "color": "#548D96",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 0.47,
+                    "color": "#689EA6",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 1,
+                    "color": "#396C78",
+                    "opacity": 1
+                  }
+                ]
+              },
+              "glassDark": {
+                "gradientType": "linear",
+                "gradientHandles": [
+                  {
+                    "x": 0,
+                    "y": 0
+                  },
+                  {
+                    "x": 1,
+                    "y": 1
+                  }
+                ],
+                "gradientStops": [
+                  {
+                    "position": 0,
+                    "color": "#3B6E78",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 0.5,
+                    "color": "#214D5D",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 1,
+                    "color": "#477781",
+                    "opacity": 1
+                  }
+                ]
+              }
+            },
+            "motifTemplates": {
+              "lightWindows": [
+                {
+                  "key": "glass",
+                  "name": "青綠反射玻璃",
+                  "fill": {
+                    "template": "glassLight"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0.045,
+                      "v": 0.045
+                    },
+                    {
+                      "u": 0.955,
+                      "v": 0.045
+                    },
+                    {
+                      "u": 0.955,
+                      "v": 0.79
+                    },
+                    {
+                      "u": 0.045,
+                      "v": 0.79
+                    }
+                  ]
+                },
+                {
+                  "key": "spandrel",
+                  "name": "樓板綠色背板",
+                  "fills": [
+                    "#426D75",
+                    "#4A7981",
+                    "#3B6871",
+                    "#467982",
+                    "#5A8990",
+                    "#3D6D76",
+                    "#51818A"
+                  ],
+                  "vertices": [
+                    {
+                      "u": 0.045,
+                      "v": 0.81
+                    },
+                    {
+                      "u": 0.955,
+                      "v": 0.81
+                    },
+                    {
+                      "u": 0.955,
+                      "v": 0.97
+                    },
+                    {
+                      "u": 0.045,
+                      "v": 0.97
+                    }
+                  ]
+                },
+                {
+                  "key": "sill",
+                  "name": "鋁框反光細緣",
+                  "fill": "#A1BDBB",
+                  "vertices": [
+                    {
+                      "u": 0.015,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.035,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.035,
+                      "v": 1
+                    },
+                    {
+                      "u": 0.015,
+                      "v": 1
+                    }
+                  ]
+                }
+              ],
+              "darkWindows": [
+                {
+                  "key": "glass",
+                  "name": "背光玻璃",
+                  "fill": {
+                    "template": "glassDark"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0.045,
+                      "v": 0.045
+                    },
+                    {
+                      "u": 0.955,
+                      "v": 0.045
+                    },
+                    {
+                      "u": 0.955,
+                      "v": 0.79
+                    },
+                    {
+                      "u": 0.045,
+                      "v": 0.79
+                    }
+                  ]
+                },
+                {
+                  "key": "spandrel",
+                  "name": "背光樓板背板",
+                  "fills": [
+                    "#254B59",
+                    "#2A5360",
+                    "#335E67",
+                    "#234955",
+                    "#3B626B"
+                  ],
+                  "vertices": [
+                    {
+                      "u": 0.045,
+                      "v": 0.81
+                    },
+                    {
+                      "u": 0.955,
+                      "v": 0.81
+                    },
+                    {
+                      "u": 0.955,
+                      "v": 0.97
+                    },
+                    {
+                      "u": 0.045,
+                      "v": 0.97
+                    }
+                  ]
+                },
+                {
+                  "key": "sill",
+                  "name": "細鋁立框",
+                  "fill": "#688B91",
+                  "vertices": [
+                    {
+                      "u": 0.015,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.035,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.035,
+                      "v": 1
+                    },
+                    {
+                      "u": 0.015,
+                      "v": 1
+                    }
+                  ]
+                }
+              ]
+            },
+            "children": [
+              {
+                "type": "projected-face",
+                "key": "podium-roof",
+                "name": "裙樓屋頂",
+                "fill": "#8D9F9D",
+                "vertices": [
+                  {
+                    "x": -5600,
+                    "y": -5000,
+                    "z": 2700
+                  },
+                  {
+                    "x": 6000,
+                    "y": -5000,
+                    "z": 2700
+                  },
+                  {
+                    "x": 6000,
+                    "y": 5000,
+                    "z": 2700
+                  },
+                  {
+                    "x": -5600,
+                    "y": 5000,
+                    "z": 2700
+                  }
+                ]
+              },
+              {
+                "type": "projected-face",
+                "key": "podium-front",
+                "name": "商場石材正面",
+                "fill": {
+                  "template": "stone"
+                },
+                "vertices": [
+                  {
+                    "x": -5600,
+                    "y": 5000,
+                    "z": 0
+                  },
+                  {
+                    "x": 6000,
+                    "y": 5000,
+                    "z": 0
+                  },
+                  {
+                    "x": 6000,
+                    "y": 5000,
+                    "z": 2700
+                  },
+                  {
+                    "x": -5600,
+                    "y": 5000,
+                    "z": 2700
+                  }
+                ]
+              },
+              {
+                "type": "surface-grid",
+                "key": "podium-front-grid",
+                "name": "商場入口及窗列",
+                "boundary": {
+                  "face": "podium-front"
+                },
+                "rows": 5,
+                "columns": 32,
+                "order": "cell-major",
+                "motifs": [
+                  {
+                    "key": "recess",
+                    "name": "窗洞深色陰影",
+                    "fill": "#294852",
+                    "vertices": [
+                      {
+                        "u": 0.16,
+                        "v": 0.12
+                      },
+                      {
+                        "u": 0.84,
+                        "v": 0.12
+                      },
+                      {
+                        "u": 0.84,
+                        "v": 0.83
+                      },
+                      {
+                        "u": 0.16,
+                        "v": 0.83
+                      }
+                    ]
+                  },
+                  {
+                    "key": "glazing",
+                    "name": "商場窗玻璃",
+                    "fill": {
+                      "template": "glassLight"
+                    },
+                    "vertices": [
+                      {
+                        "u": 0.2,
+                        "v": 0.16
+                      },
+                      {
+                        "u": 0.77,
+                        "v": 0.16
+                      },
+                      {
+                        "u": 0.77,
+                        "v": 0.8
+                      },
+                      {
+                        "u": 0.2,
+                        "v": 0.8
+                      }
+                    ]
+                  },
+                  {
+                    "key": "mullion",
+                    "name": "商場窗中框",
+                    "fill": "#A8B7B5",
+                    "vertices": [
+                      {
+                        "u": 0.47,
+                        "v": 0.15
+                      },
+                      {
+                        "u": 0.51,
+                        "v": 0.15
+                      },
+                      {
+                        "u": 0.51,
+                        "v": 0.82
+                      },
+                      {
+                        "u": 0.47,
+                        "v": 0.82
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "projected-face",
+                "key": "podium-side",
+                "name": "商場側立面",
+                "fill": "#687F82",
+                "vertices": [
+                  {
+                    "x": 6000,
+                    "y": 5000,
+                    "z": 0
+                  },
+                  {
+                    "x": 6000,
+                    "y": -5000,
+                    "z": 0
+                  },
+                  {
+                    "x": 6000,
+                    "y": -5000,
+                    "z": 2700
+                  },
+                  {
+                    "x": 6000,
+                    "y": 5000,
+                    "z": 2700
+                  }
+                ]
+              },
+              {
+                "type": "surface-grid",
+                "key": "podium-side-grid",
+                "name": "側向商場窗列",
+                "boundary": {
+                  "face": "podium-side"
+                },
+                "rows": 5,
+                "columns": 28,
+                "order": "cell-major",
+                "motifs": [
+                  {
+                    "key": "recess",
+                    "name": "側窗陰影",
+                    "fill": "#183B47",
+                    "vertices": [
+                      {
+                        "u": 0.16,
+                        "v": 0.12
+                      },
+                      {
+                        "u": 0.84,
+                        "v": 0.12
+                      },
+                      {
+                        "u": 0.84,
+                        "v": 0.83
+                      },
+                      {
+                        "u": 0.16,
+                        "v": 0.83
+                      }
+                    ]
+                  },
+                  {
+                    "key": "glass",
+                    "name": "側窗玻璃",
+                    "fill": {
+                      "template": "glassDark"
+                    },
+                    "vertices": [
+                      {
+                        "u": 0.2,
+                        "v": 0.16
+                      },
+                      {
+                        "u": 0.77,
+                        "v": 0.16
+                      },
+                      {
+                        "u": 0.77,
+                        "v": 0.8
+                      },
+                      {
+                        "u": 0.2,
+                        "v": 0.8
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "pattern",
+                "key": "roof-cornices",
+                "name": "裙樓水平簷線",
+                "origin": {
+                  "x": 0,
+                  "y": 0,
+                  "z": 0
+                },
+                "axes": [
+                  {
+                    "count": 3,
+                    "step": {
+                      "x": 0,
+                      "y": 0,
+                      "z": 110
+                    }
+                  }
+                ],
+                "faces": [
+                  {
+                    "key": "front",
+                    "name": "正面石材簷口",
+                    "fill": "#BAC9C4",
+                    "vertices": [
+                      {
+                        "x": -5650,
+                        "y": 5080,
+                        "z": 2420
+                      },
+                      {
+                        "x": 6060,
+                        "y": 5080,
+                        "z": 2420
+                      },
+                      {
+                        "x": 6060,
+                        "y": 5080,
+                        "z": 2470
+                      },
+                      {
+                        "x": -5650,
+                        "y": 5080,
+                        "z": 2470
+                      }
+                    ]
+                  },
+                  {
+                    "key": "side",
+                    "name": "側面石材簷口",
+                    "fill": "#8CA3A3",
+                    "vertices": [
+                      {
+                        "x": 6080,
+                        "y": 5080,
+                        "z": 2420
+                      },
+                      {
+                        "x": 6080,
+                        "y": -5000,
+                        "z": 2420
+                      },
+                      {
+                        "x": 6080,
+                        "y": -5000,
+                        "z": 2470
+                      },
+                      {
+                        "x": 6080,
+                        "y": 5080,
+                        "z": 2470
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "surface-grid",
+                "key": "roof-paving",
+                "name": "裙樓屋頂板縫",
+                "boundary": [
+                  {
+                    "x": -5500,
+                    "y": -4900,
+                    "z": 2710
+                  },
+                  {
+                    "x": 5900,
+                    "y": -4900,
+                    "z": 2710
+                  },
+                  {
+                    "x": 5900,
+                    "y": 4900,
+                    "z": 2710
+                  },
+                  {
+                    "x": -5500,
+                    "y": 4900,
+                    "z": 2710
+                  }
+                ],
+                "rows": 14,
+                "columns": 16,
+                "order": "cell-major",
+                "motifs": [
+                  {
+                    "key": "panel",
+                    "name": "屋面金屬板",
+                    "fills": [
+                      "#97A8A5",
+                      "#8E9F9E",
+                      "#A2AFAC",
+                      "#889C9C",
+                      "#94A6A3"
+                    ],
+                    "vertices": [
+                      {
+                        "u": 0.015,
+                        "v": 0.015
+                      },
+                      {
+                        "u": 0.985,
+                        "v": 0.015
+                      },
+                      {
+                        "u": 0.985,
+                        "v": 0.985
+                      },
+                      {
+                        "u": 0.015,
+                        "v": 0.985
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "projected-face",
+                "key": "base-roof-shadow",
+                "name": "塔身落在裙樓上的陰影",
+                "fill": "#546D70",
+                "vertices": [
+                  {
+                    "x": -2300,
+                    "y": -2000,
+                    "z": 2720
+                  },
+                  {
+                    "x": 4100,
+                    "y": -1700,
+                    "z": 2720
+                  },
+                  {
+                    "x": 5400,
+                    "y": 4300,
+                    "z": 2720
+                  },
+                  {
+                    "x": -1800,
+                    "y": 3600,
+                    "z": 2720
+                  }
+                ]
+              },
+              {
+                "type": "projected-face",
+                "key": "base-front",
+                "name": "向內收分的主塔正面",
+                "fill": "#234E5A",
+                "vertices": [
+                  {
+                    "x": -3010,
+                    "y": 3010,
+                    "z": 2700
+                  },
+                  {
+                    "x": 2610,
+                    "y": 3010,
+                    "z": 2700
+                  },
+                  {
+                    "x": 2050,
+                    "y": 2450,
+                    "z": 11800
+                  },
+                  {
+                    "x": -2450,
+                    "y": 2450,
+                    "z": 11800
+                  }
+                ]
+              },
+              {
+                "type": "surface-grid",
+                "key": "base-front-windows",
+                "name": "基座正面逐層帷幕牆",
+                "boundary": {
+                  "face": "base-front"
+                },
+                "rows": 21,
+                "columns": 32,
+                "order": "cell-major",
+                "motifs": {
+                  "template": "lightWindows"
+                }
+              },
+              {
+                "type": "projected-face",
+                "key": "base-side",
+                "name": "主塔側面收分",
+                "fill": "#163C4B",
+                "vertices": [
+                  {
+                    "x": 3010,
+                    "y": 2610,
+                    "z": 2700
+                  },
+                  {
+                    "x": 3010,
+                    "y": -3010,
+                    "z": 2700
+                  },
+                  {
+                    "x": 2450,
+                    "y": -2450,
+                    "z": 11800
+                  },
+                  {
+                    "x": 2450,
+                    "y": 2050,
+                    "z": 11800
+                  }
+                ]
+              },
+              {
+                "type": "surface-grid",
+                "key": "base-side-windows",
+                "name": "基座側面逐層帷幕牆",
+                "boundary": {
+                  "face": "base-side"
+                },
+                "rows": 21,
+                "columns": 32,
+                "order": "cell-major",
+                "motifs": {
+                  "template": "darkWindows"
+                }
+              },
+              {
+                "type": "projected-face",
+                "key": "base-corner",
+                "name": "削角直立轉角",
+                "fill": "#5D838A",
+                "vertices": [
+                  {
+                    "x": 2610,
+                    "y": 3010,
+                    "z": 2700
+                  },
+                  {
+                    "x": 3010,
+                    "y": 2610,
+                    "z": 2700
+                  },
+                  {
+                    "x": 2450,
+                    "y": 2050,
+                    "z": 11800
+                  },
+                  {
+                    "x": 2050,
+                    "y": 2450,
+                    "z": 11800
+                  }
+                ]
+              },
+              {
+                "type": "surface-grid",
+                "key": "base-corner-grid",
+                "name": "削角窗框",
+                "boundary": {
+                  "face": "base-corner"
+                },
+                "rows": 21,
+                "columns": 3,
+                "order": "cell-major",
+                "motifs": {
+                  "template": "darkWindows"
+                }
+              },
+              {
+                "type": "projected-face",
+                "key": "base-terrace",
+                "name": "26樓露台頂面",
+                "fill": "#B2C2BD",
+                "vertices": [
+                  {
+                    "x": -2600,
+                    "y": -2600,
+                    "z": 11800
+                  },
+                  {
+                    "x": 2600,
+                    "y": -2600,
+                    "z": 11800
+                  },
+                  {
+                    "x": 2600,
+                    "y": 2200,
+                    "z": 11800
+                  },
+                  {
+                    "x": 2200,
+                    "y": 2600,
+                    "z": 11800
+                  },
+                  {
+                    "x": -2600,
+                    "y": 2600,
+                    "z": 11800
+                  }
+                ]
+              }
+            ]
+          },
+          "plan": {
+            "phase": "plan",
+            "method": "使用公分世界座標與共同正交投影建構原生向量；參考已確認塔高，其他局部尺寸由照片估算。以surface-grid建立獨立可編輯玻璃、框與樓板，分層建造裙樓、八竹節、冠部、尖塔與裝飾。",
+            "references": [
+              "https://www.onenessarchitects.com/project/Taipei-101",
+              "https://www.thorntontomasetti.com/project/taipei-101"
+            ],
+            "criteria": {
+              "whole": {
+                "requirement": "從基座至尖塔頂端的完整台北101，具特徵輪廓及固定俯視三分之四視角",
+                "description": "整體看見八個外張竹節、基座、冠部、塔尖與頂面；不加入城市或文字背景",
+                "verification": "visual",
+                "requiredUnits": []
+              },
+              "detail": {
+                "requirement": "高度細緻可見的立面結構、窗框與裝飾，不能簡化成示意量體",
+                "description": "檢視基座、竹節立面及冠部的原生窗框、分層、簷口與可見裝飾",
+                "verification": "visual",
+                "requiredUnits": [
+                  "base",
+                  "tiers",
+                  "crown"
+                ]
+              },
+              "material": {
+                "requirement": "真實材質、光線與陰影",
+                "description": "青綠玻璃反射、金屬亮緣、側面背光、露台與簷下陰影一致",
+                "verification": "visual",
+                "requiredUnits": []
+              },
+              "scale": {
+                "requirement": "真實尺寸以1cm=1px先建立再投影，投影長度反映視角",
+                "description": "508m塔高=50800世界單位，固定35度方位25度俯角scale1；細部估算明示",
+                "verification": "data"
+              },
+              "editable": {
+                "requirement": "使用可編輯2D形狀",
+                "description": "所有建築構件為原生投影後向量及獨立窗格，無點陣影像",
+                "verification": "data"
+              }
+            },
+            "detailRequired": true,
+            "facts": [
+              {
+                "id": "tower-height",
+                "statement": "台北101建築高度為508公尺。",
+                "scope": "整體塔尖高度；不代表各個細部尺寸均已知",
+                "sources": [
+                  "https://www.thorntontomasetti.com/project/taipei-101",
+                  "https://www.onenessarchitects.com/project/Taipei-101"
+                ],
+                "verification": "結構工程師與建築師網站均記載508m",
+                "dependencies": [
+                  {
+                    "key": "published-tower-height",
+                    "version": "2026-11-06"
+                  }
+                ]
+              },
+              {
+                "id": "eight-tiers",
+                "statement": "八組八層節段各自下窄上寬。",
+                "scope": "主塔上段的組織；標高及寬度另為估算",
+                "sources": [
+                  "https://www.thorntontomasetti.com/project/taipei-101"
+                ],
+                "verification": "結構工程師專案說明記載eight repeating pagoda-like modules each eight levels",
+                "dependencies": [
+                  {
+                    "key": "published-tower-modules",
+                    "version": "2026-11-06"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      }
+    ],
+    "retain": {
+      "baseReceipt": {
+        "step": "base",
+        "path": ""
+      },
+      "baseAuthored": {
+        "step": "base",
+        "source": "input",
+        "path": "/draft"
+      }
+    },
+    "delivery": {
+      "fields": {
+        "base": {
+          "step": "base",
+          "path": "/compositionIds"
+        },
+        "artifact": {
+          "step": "base",
+          "path": "/artifactId"
+        },
+        "status": {
+          "step": "base",
+          "path": "/toolOutcome"
+        }
+      }
+    }
+  },
+  "output": {
+    "available": false,
+    "code": "PREPARATION_REJECTED",
+    "stage": "admission",
+    "settlement": "not-started",
+    "recovery": "Inspect the failure and current state, then choose a corrected or alternate operation. Do not automatically replay mutations.",
+    "executionResult": {
+      "batches": []
+    },
+    "recoverable": true,
+    "message": "Nonportable result selection: baseReceipt (step base, path ). Select portable output fields or authored source input; request handles cannot be saved across turns.",
+    "toolOutcome": {
+      "status": "failed",
+      "settlement": "not-started",
+      "issues": [
+        {
+          "code": "PREPARATION_REJECTED",
+          "message": "Nonportable result selection: baseReceipt (step base, path ). Select portable output fields or authored source input; request handles cannot be saved across turns."
+        }
+      ]
+    }
+  }
+}

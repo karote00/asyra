@@ -1,4 +1,10 @@
-import { runAiMutation, type AiActionDefinition } from '@asyra/ai-agent-runtime'
+import { CommonApiInputError } from '../common-apis/common-api-input-error'
+import { ElementPropertyInputError } from '@asyra/core'
+import {
+  AiActionInputError,
+  runAiMutation,
+  type AiActionDefinition
+} from '@asyra/ai-agent-runtime'
 import core from '../contexts'
 import {
   elementApis,
@@ -80,8 +86,16 @@ const basicApiResources = (effect: BasicApiContract['effect']) => {
 }
 
 const basicApiRevision = (contract: BasicApiContract): number => {
-  if (contract.result.kind === 'mutation-receipt') {
+  if (contract.result.valueSchema) {
+    return 3
+  }
+
+  if (contract.result.kind === 'property-mutation') {
     return 9
+  }
+
+  if (contract.result.kind === 'mutation-receipt') {
+    return 11
   }
 
   if (
@@ -239,17 +253,33 @@ export const createBasicApiActions = (
       }
 
       const call = () => {
-        // Resolve in the admitted callback, never before the idle-boundary wait.
-        resolvedArgs = resolve(args, contract.inputSchema) as Record<
-          string,
-          unknown
-        >
+        try {
+          // Resolve only at admitted execution; semantic input diagnostics apply
+          // to read and mutation owners alike, without changing settlement.
+          resolvedArgs = resolve(args, contract.inputSchema) as Record<
+            string,
+            unknown
+          >
 
-        return Reflect.apply(
-          method,
-          owner,
-          contract.parameters.map((name) => resolvedArgs[name])
-        )
+          return Reflect.apply(
+            method,
+            owner,
+            contract.parameters.map((name) => resolvedArgs[name])
+          )
+        } catch (error) {
+          if (error instanceof CommonApiInputError) {
+            throw new AiActionInputError(error.message, error.details)
+          }
+
+          if (error instanceof ElementPropertyInputError) {
+            throw new AiActionInputError(error.message, {
+              elementId: error.elementId,
+              propertyKey: error.propertyKey
+            })
+          }
+
+          throw error
+        }
       }
 
       const documentMutation = ['write', 'delete'].includes(contract.effect)
@@ -286,7 +316,8 @@ export const createBasicApiActions = (
         const result = describeBasicApiResult(
           contract,
           value,
-          resolvedArgs[contract.parameters[0]]
+          resolvedArgs[contract.parameters[0]],
+          resolvedArgs
         )
 
         if (!documentMutation) {
@@ -322,13 +353,36 @@ export const createBasicApiActions = (
         const kind = contract.result.kind
 
         if (
-          !['grouped', 'ungrouped', 'moves', 'removed'].includes(kind) ||
-          !['complete', 'no-change'].includes(result.status)
+          kind === 'mutation-receipt' &&
+          'code' in result &&
+          result.code === 'OWNER_RESULT_INVALID'
+        ) {
+          return {
+            ...receipt,
+            modelResult: {
+              status: result.status,
+              code: result.code,
+              message: result.message,
+              settlement: 'completed',
+              ownerResult: result.value,
+              mutationScope: {
+                complete,
+                elementCount: elementIds.length,
+                removedElementCount: removedElementIds.length
+              }
+            }
+          }
+        }
+
+        if (
+          !basicApiDeliverySchema(contract) ||
+          (kind !== 'mutation-receipt' &&
+            !['complete', 'no-change'].includes(result.status))
         ) {
           return receipt
         }
 
-        const structural = value as Record<string, unknown>
+        const structural = (value ?? {}) as Record<string, unknown>
         let count = 0
 
         if (kind === 'removed' && Array.isArray(structural.removed)) {
@@ -341,15 +395,32 @@ export const createBasicApiActions = (
 
         const summary = {
           status: receipt.status,
-          value: {
-            count,
-            ...(typeof structural.groupId === 'string'
-              ? { groupId: structural.groupId }
-              : {}),
-            ...(typeof structural.removed === 'boolean'
-              ? { removed: structural.removed }
-              : {})
-          },
+          ...(kind === 'mutation-receipt'
+            ? {
+                ...('acceptedIds' in result
+                  ? {
+                      changed: result.changed,
+                      acceptedCount: result.acceptedIds.length,
+                      unavailableCount: result.unavailableIds.length
+                    }
+                  : {}),
+                ...('settlement' in receipt
+                  ? { settlement: receipt.settlement }
+                  : {}),
+                ...('code' in result ? { code: result.code } : {}),
+                ...('message' in result ? { message: result.message } : {})
+              }
+            : {
+                value: {
+                  count,
+                  ...(typeof structural.groupId === 'string'
+                    ? { groupId: structural.groupId }
+                    : {}),
+                  ...(typeof structural.removed === 'boolean'
+                    ? { removed: structural.removed }
+                    : {})
+                }
+              }),
           mutationScope: {
             complete,
             elementCount: elementIds.length,
@@ -365,7 +436,7 @@ export const createBasicApiActions = (
           }
 
           if (!queries) {
-            throw new Error('Retained structural delivery is unavailable.')
+            throw new Error('Retained mutation delivery is unavailable.')
           }
 
           let ids: string[] = []
@@ -380,13 +451,17 @@ export const createBasicApiActions = (
             )
           }
 
+          if (kind === 'mutation-receipt' && 'acceptedIds' in result) {
+            ids = result.acceptedIds
+          }
+
           const retained = queries.retainReceipt(ids, receipt, context.signal)
 
           return { ...receipt, retained, modelResult: { ...summary, retained } }
         } catch (error) {
           const delivery = {
             status: 'unavailable',
-            message: `${error instanceof Error ? error.message : 'Structural delivery failed.'} The mutation already settled; do not replay it.`
+            message: `${error instanceof Error ? error.message : 'Mutation delivery failed.'} The mutation already settled; do not replay it.`
           }
 
           return { ...receipt, delivery, modelResult: { ...summary, delivery } }

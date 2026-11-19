@@ -267,3 +267,35 @@ it('settles workspace overview and explicit unavailable captures at the actual r
     settlement: 'completed'
   })
 })
+
+it('preserves native-size rejection and explicit region recovery without automatic cropping', () => {
+  core.captureElementSnapshot.mockImplementation((_id, limit, options) => {
+    if (options.nativeResolution && !options.region) {
+      throw new Error('Native target exceeds edge budget')
+    }
+
+    return { dataUrl: 'bounded-region', width: limit, height: limit }
+  })
+  expect(
+    inspectionApis.inspect('large-root', undefined, 'detail')
+  ).toMatchObject({ available: false, code: 'CAPTURE_UNAVAILABLE' })
+  const region = { x: 100, y: 200, width: 1024, height: 1024 }
+
+  expect(inspectionApis.inspect('large-root', region, 'detail')).toMatchObject({
+    available: true,
+    partial: true,
+    imageScope: 'region'
+  })
+  expect(core.captureElementSnapshot).toHaveBeenNthCalledWith(
+    1,
+    'large-root',
+    1024,
+    { nativeResolution: true }
+  )
+  expect(core.captureElementSnapshot).toHaveBeenNthCalledWith(
+    2,
+    'large-root',
+    1024,
+    { nativeResolution: true, region }
+  )
+})

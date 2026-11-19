@@ -5,6 +5,7 @@ import { createDocumentPersistenceQueue } from '../document-persistence-queue'
 
 const entry = (sequence: number, byteLength = 128) => {
   const publicationId = `publication-${sequence}`
+
   return {
     sequence,
     publicationId,
@@ -28,11 +29,13 @@ describe('document persistence queue', () => {
       .mockResolvedValueOnce({
         ok: false,
         status: 409,
+
         json: async () => ({ error: 'property "fill-a" is missing' })
       })
       .mockResolvedValueOnce({
         ok: true,
         status: 200,
+
         json: async () => ({ durableSequence: 1 })
       })
     const client = createHttpDocumentPersistenceClient({
@@ -45,6 +48,7 @@ describe('document persistence queue', () => {
       sendBatch: client.sendBatch,
       onFailure: failure
     })
+
     queue.enqueue(entry(1))
     await queue.flushNow()
     expect(failure).toHaveBeenCalledWith(
@@ -128,6 +132,7 @@ describe('document persistence queue', () => {
       maxSerializedBytes: 10_000,
       sendBatch: countSend
     })
+
     countQueue.enqueue(entry(1))
     countQueue.enqueue(entry(2))
     await vi.runAllTicks()
@@ -140,6 +145,7 @@ describe('document persistence queue', () => {
       maxSerializedBytes: 200,
       sendBatch: byteSend
     })
+
     byteQueue.enqueue(entry(1, 200))
     await vi.runAllTicks()
     expect(byteSend).toHaveBeenCalledOnce()
@@ -310,6 +316,7 @@ describe('document persistence queue', () => {
 
     const admission = queue.enqueueBatchWhenAvailable([entry(3), entry(4)])
     let admitted = false
+
     void admission.then(() => {
       admitted = true
     })
@@ -362,6 +369,7 @@ describe('document persistence queue', () => {
     queue.enqueue(entry(1))
     await vi.runAllTicks()
     const failedBatch = sendBatch.mock.calls[0]?.[0]
+
     queue.enqueue(entry(2))
     first.reject(new Error('backend unavailable'))
     await vi.runAllTicks()
@@ -407,6 +415,7 @@ describe('document persistence queue', () => {
     queue.enqueue(entry(1))
     await vi.runAllTicks()
     const retainedBatch = sendBatch.mock.calls[0]?.[0]
+
     expect(queue.getState()).toMatchObject({
       editable: false,
       durableSequence: 0
@@ -429,6 +438,7 @@ describe('document persistence queue', () => {
       documentId: 'document-a',
       sendBatch
     })
+
     queue.enqueue(entry(1))
 
     await queue.flushForShutdown()
@@ -461,6 +471,7 @@ describe('document persistence queue', () => {
     const reset = queue.discardForReset().then(() => {
       resetSettled = true
     })
+
     await vi.runAllTicks()
     expect(resetSettled).toBe(false)
 
@@ -499,6 +510,7 @@ describe('document persistence queue', () => {
       documentId: 'file/a',
       maxPublicationCount: 1,
       retryIntervalMs: 1_000,
+
       sendBatch: (batch) => client.sendBatch(batch)
     })
 
@@ -578,16 +590,20 @@ it('confirms only the captured durable target without waiting for later edits', 
   let acknowledge!: (value: { durableSequence: number }) => void
   const queue = createDocumentPersistenceQueue({
     documentId: 'capture',
+
     sendBatch: () =>
       new Promise((resolve) => {
         acknowledge = resolve
       })
   })
+
   queue.enqueue(entry(1))
   const confirmed = vi.fn()
   const waiting = queue.whenDurable(1).then(confirmed)
+
   expect(confirmed).not.toHaveBeenCalled()
   const flushing = queue.flushNow()
+
   queue.enqueue(entry(2))
   acknowledge({ durableSequence: 1 })
   await flushing
@@ -605,19 +621,23 @@ it('rejects durability confirmation on cancellation, backend failure and disposa
   vi.useFakeTimers()
   const queue = createDocumentPersistenceQueue({
     documentId: 'failure',
+
     sendBatch: async () => {
       throw new Error('offline')
     }
   })
+
   queue.enqueue(entry(1))
   await expect(queue.whenDurable(2)).rejects.toThrow(/sequence/)
   const controller = new AbortController()
   const cancelled = expect(
     queue.whenDurable(1, controller.signal)
   ).rejects.toThrow(/cancelled/)
+
   controller.abort(new Error('cancelled'))
   await cancelled
   const failed = expect(queue.whenDurable(1)).rejects.toThrow(/offline/)
+
   await queue.flushNow()
   await failed
   queue.dispose()

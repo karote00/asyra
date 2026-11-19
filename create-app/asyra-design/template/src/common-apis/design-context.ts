@@ -49,12 +49,18 @@ export interface DesignContextSource {
     fields: readonly string[]
   ): Record<string, unknown> | undefined
 }
+
 export const validateDesignContextFilter = (
   filter: DesignContextQuery['filter']
 ) => {
-  if (filter === undefined) return
-  if (!filter || typeof filter !== 'object' || Array.isArray(filter))
+  if (filter === undefined) {
+    return
+  }
+
+  if (!filter || typeof filter !== 'object' || Array.isArray(filter)) {
     throw new DesignContextQueryError('Invalid context filter.')
+  }
+
   for (const [key, value] of Object.entries(filter)) {
     if (key === 'name') {
       if (
@@ -69,8 +75,9 @@ export const validateDesignContextFilter = (
             !text.length ||
             text.length > 256
         )
-      )
+      ) {
         throw new DesignContextQueryError('Invalid name filter.')
+      }
     } else if (
       key === 'locked'
         ? typeof value !== 'boolean'
@@ -78,8 +85,9 @@ export const validateDesignContextFilter = (
           typeof value !== 'string' ||
           !value.length ||
           value.length > 256
-    )
+    ) {
       throw new DesignContextQueryError('Invalid context filter.')
+    }
   }
 }
 
@@ -87,10 +95,11 @@ export const assertDesignContextCount = (actual: number, expected?: number) => {
   if (
     expected !== undefined &&
     (!Number.isSafeInteger(expected) || expected < 0 || actual !== expected)
-  )
+  ) {
     throw new DesignContextQueryError(
       `Context match count ${actual} does not satisfy expectedCount ${expected}.`
     )
+  }
 }
 
 /** Canonical metadata predicates shared by spatial queries and retained refinements. */
@@ -100,31 +109,51 @@ export const matchesDesignContextFilter = (
   readMetadata: DesignContextSource['getElementMetadata']
 ) => {
   const data = readMetadata(id)
-  if (!data) return false
-  if (filter?.type !== undefined && data.type !== filter.type) return false
-  if (filter?.parentId !== undefined && data.parentId !== filter.parentId)
+
+  if (!data) {
     return false
-  if (filter?.locked !== undefined && (data.lock === true) !== filter.locked)
+  }
+
+  if (filter?.type !== undefined && data.type !== filter.type) {
     return false
+  }
+
+  if (filter?.parentId !== undefined && data.parentId !== filter.parentId) {
+    return false
+  }
+
+  if (filter?.locked !== undefined && (data.lock === true) !== filter.locked) {
+    return false
+  }
+
   const name = filter?.name
+
   if (
     name &&
     (typeof data.name !== 'string' ||
       (name.equals !== undefined && data.name !== name.equals) ||
       (name.prefix !== undefined && !data.name.startsWith(name.prefix)) ||
       (name.suffix !== undefined && !data.name.endsWith(name.suffix)))
-  )
+  ) {
     return false
+  }
+
   if (filter?.ancestorId !== undefined) {
     let parent = data.parentId
     const visited = new Set<string>()
+
     while (typeof parent === 'string' && parent && !visited.has(parent)) {
-      if (parent === filter.ancestorId) return true
+      if (parent === filter.ancestorId) {
+        return true
+      }
+
       visited.add(parent)
       parent = readMetadata(parent)?.parentId
     }
+
     return false
   }
+
   return true
 }
 
@@ -191,17 +220,22 @@ export const validateDesignContextQuery = (query: DesignContextQuery): void => {
         typeof query.parentId !== 'string' ||
         !query.parentId.length ||
         query.parentId.length > 256))
-  )
+  ) {
     throw new DesignContextQueryError('Invalid document context query.')
+  }
+
   const allowed = [
     ...designContextCommonFields,
     ...designContextScopes[query.scope].fields
   ]
   const unsupported = Object.keys(query).filter((key) => !allowed.includes(key))
-  if (unsupported.length)
+
+  if (unsupported.length) {
     throw new DesignContextQueryError(
       `scope=${query.scope} does not support ${unsupported.join(', ')}. Allowed fields: ${allowed.join(', ')}. Direct filter requires scope=region with bounds; to filter hierarchy results, retain children then use scope=snapshot with snapshotId and filter.`
     )
+  }
+
   if (
     (query.scope === 'ids' &&
       (!Array.isArray(query.elementIds) ||
@@ -215,12 +249,15 @@ export const validateDesignContextQuery = (query: DesignContextQuery): void => {
       (!Array.isArray(query.fields) ||
         query.fields.some((field) => !designContextFields.includes(field)) ||
         new Set(query.fields).size !== query.fields.length))
-  )
+  ) {
     throw new DesignContextQueryError(
       'Invalid document context targets or fields.'
     )
+  }
+
   if (query.scope === 'region') {
     const bounds = query.bounds
+
     if (
       !bounds ||
       Object.keys(bounds).some(
@@ -236,19 +273,24 @@ export const validateDesignContextQuery = (query: DesignContextQuery): void => {
       ].every(Number.isFinite) ||
       bounds.width < 0 ||
       bounds.height < 0
-    )
+    ) {
       throw new DesignContextQueryError(
         'Region requires finite workspace bounds with nonnegative dimensions.'
       )
+    }
+
     validateDesignContextFilter(query.filter)
-  } else if (query.bounds !== undefined || query.filter !== undefined)
+  } else if (query.bounds !== undefined || query.filter !== undefined) {
     throw new DesignContextQueryError(
       'Region bounds and filters require scope=region.'
     )
+  }
+
   const offset = query.offset === undefined ? 0 : query.offset
   const limit =
     query.limit ??
     (query.scope === 'ids' ? (query.elementIds?.length ?? 50) : 50)
+
   if (
     !Number.isSafeInteger(offset) ||
     offset < 0 ||
@@ -256,15 +298,18 @@ export const validateDesignContextQuery = (query: DesignContextQuery): void => {
     limit < 1 ||
     (query.limit !== undefined && limit > designContextPageLimit) ||
     query.limit === null
-  )
+  ) {
     throw new DesignContextQueryError('Invalid document context page.')
+  }
+
   if (
     query.expectedCount !== undefined &&
     (!Number.isSafeInteger(query.expectedCount) || query.expectedCount < 0)
-  )
+  ) {
     throw new DesignContextQueryError(
       'expectedCount must be a nonnegative safe integer.'
     )
+  }
 }
 
 export const createDesignContextReader =
@@ -274,10 +319,15 @@ export const createDesignContextReader =
       string,
       ReturnType<DesignContextSource['getElementMetadata']>
     >()
+
     const readMetadata = (id: string) => {
-      if (!metadata.has(id)) metadata.set(id, source.getElementMetadata(id))
+      if (!metadata.has(id)) {
+        metadata.set(id, source.getElementMetadata(id))
+      }
+
       return metadata.get(id)
     }
+
     const fields = query.fields ?? []
     const elementIds = query.elementIds ?? []
     const offset = query.offset === undefined ? 0 : query.offset
@@ -293,17 +343,27 @@ export const createDesignContextReader =
     const available =
       query.scope !== 'children' || Boolean(childPage?.available)
     let ids: string[] = []
-    if (query.scope === 'ids') ids = elementIds
-    else if (query.scope === 'selection') ids = source.getSelectedElementIds()
-    else if (query.scope === 'children') ids = childPage?.elementIds ?? []
-    else
+
+    if (query.scope === 'ids') {
+      ids = elementIds
+    } else if (query.scope === 'selection') {
+      ids = source.getSelectedElementIds()
+    } else if (query.scope === 'children') {
+      ids = childPage?.elementIds ?? []
+    } else {
       ids = source
         .getElementIdsInBounds(query.bounds as Rect)
         .filter((id) =>
           matchesDesignContextFilter(id, query.filter, readMetadata)
         )
-    if (query.allMatches === true) limit = Math.max(ids.length, 1)
+    }
+
+    if (query.allMatches === true) {
+      limit = Math.max(ids.length, 1)
+    }
+
     const total = childPage?.total ?? ids.length
+
     assertDesignContextCount(total, query.expectedCount)
     const pageIds =
       query.scope === 'children' ? ids : ids.slice(offset, offset + limit)
@@ -320,40 +380,61 @@ export const createDesignContextReader =
       properties: Record<string, unknown>
       truncatedFields: string[]
     }[] = []
+
     for (const id of pageIds) {
       const data = readMetadata(id)
+
       if (!data) {
         missingIds.push(id)
         continue
       }
+
       matchedIds.push(id)
-      if (query.result === 'ids') continue
+      if (query.result === 'ids') {
+        continue
+      }
+
       const computed = fields.length
         ? (source.getElementComputedData(id, fields) ?? {})
         : {}
       const properties: Record<string, unknown> = {}
       const truncatedFields: string[] = []
+
       for (const field of fields) {
         const value = computed[field]
-        if (value === undefined) continue
+
+        if (value === undefined) {
+          continue
+        }
+
         if (field === 'text' && typeof value === 'string') {
           properties[field] = value.slice(0, 2000)
-          if (value.length > 2000) truncatedFields.push(field)
+          if (value.length > 2000) {
+            truncatedFields.push(field)
+          }
         } else if (
           (field === 'fills' || field === 'strokes') &&
           Array.isArray(value)
         ) {
           properties[field] = value.slice(0, 8).map((style) => {
-            if (!style || typeof style !== 'object') return null
+            if (!style || typeof style !== 'object') {
+              return null
+            }
+
             return Object.fromEntries(
               ['type', 'color', 'opacity', 'visible', 'width', 'align']
                 .filter((key) => key in style)
                 .map((key) => [key, style[key]])
             )
           })
-          if (value.length > 8) truncatedFields.push(field)
-        } else properties[field] = value
+          if (value.length > 8) {
+            truncatedFields.push(field)
+          }
+        } else {
+          properties[field] = value
+        }
       }
+
       elements.push({
         id,
         name: data.name,
@@ -366,6 +447,7 @@ export const createDesignContextReader =
         truncatedFields
       })
     }
+
     return {
       available,
       scope: query.scope,

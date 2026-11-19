@@ -404,13 +404,13 @@ describe('stroke common API primary-color boundary', () => {
         (p: { elementId: string }) => p.elementId
       )
     ).toEqual(['a', 'a', 'b'])
-    // Target read + type + geometry per distinct owner, not per update.
-    expect(mocks.getElementById).toHaveBeenCalledTimes(6)
+    // Read Stroke targets once per owner; do not read unrelated geometry.
+    expect(mocks.getElementById.mock.calls).toEqual([['a'], ['b']])
     mocks.getElementById.mockClear()
     strokeApis.updateStrokeFieldsBatch([
       { elementId: 'a', strokeId: 'stroke-1', patch: { width: 10 } }
     ])
-    expect(mocks.getElementById).toHaveBeenCalledTimes(3)
+    expect(mocks.getElementById).toHaveBeenCalledExactlyOnceWith('a')
   })
 
   it('validates empty patch targets and rejects unknown fields before a write', () => {
@@ -466,7 +466,7 @@ describe('stroke common API primary-color boundary', () => {
     expect(mocks.changeComputedData).not.toHaveBeenCalled()
   })
 
-  it('coordinates vector bounds values and stroke record fields in the same patch item', () => {
+  it('changes stroke fields without rewriting independently transformed vector geometry', () => {
     const currentStroke = {
       id: 'stroke-1',
       type: 'stroke',
@@ -483,13 +483,17 @@ describe('stroke common API primary-color boundary', () => {
           network: {
             id: 'network',
             segmentIds: [],
-            vertexIds: ['point-1']
+            pointIds: ['point-1'],
+            closed: false
           }
         },
         pointCoordinateSpace: 'workspace',
         points: {
           'point-1': {
             id: 'point-1',
+            kind: 'anchor',
+            anchorType: 'sharp',
+            handleMode: 'none',
             x: 30,
             y: 40
           }
@@ -524,11 +528,7 @@ describe('stroke common API primary-color boundary', () => {
                 }
               }
             }
-          ],
-          values: {
-            height: 0.1,
-            width: 0.1
-          }
+          ]
         }
       ],
       { undoable: true }

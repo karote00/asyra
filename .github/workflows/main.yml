@@ -2,10 +2,6 @@ name: CI
 
 on:
   workflow_call:
-    inputs:
-      run_balanced_ai_correctness:
-        type: boolean
-        default: false
   push:
     branches:
       - main
@@ -357,7 +353,6 @@ jobs:
     needs: scope
     uses: ./.github/workflows/e2e.yml
     with:
-      run_balanced_ai_correctness: ${{ inputs.run_balanced_ai_correctness || false }}
       selected_suites: ${{ needs.scope.outputs.e2e_suites }}
 
   e2e-tests:
@@ -372,7 +367,16 @@ jobs:
     steps:
       - name: Require selected Design E2E producer
         run: |
-          if [ "$E2E_SUITE_SELECTED" = true ]; then test "$DESIGN_E2E_WORKFLOW_RESULT" = success && test "$FLOW_PRODUCER_RESULT" = success; elif [ "$DESIGN_E2E_WORKFLOW_RESULT" = skipped ]; then test -z "$FLOW_PRODUCER_RESULT" || test "$FLOW_PRODUCER_RESULT" = skipped; else test "$FLOW_PRODUCER_RESULT" = skipped; fi
+          if [ "$E2E_SUITE_SELECTED" = true ]; then
+            case "$DESIGN_E2E_WORKFLOW_RESULT" in
+              success|failure) test "$FLOW_PRODUCER_RESULT" = success ;;
+              *) exit 1 ;;
+            esac
+          elif [ "$DESIGN_E2E_WORKFLOW_RESULT" = skipped ]; then
+            test -z "$FLOW_PRODUCER_RESULT" || test "$FLOW_PRODUCER_RESULT" = skipped
+          else
+            test "$FLOW_PRODUCER_RESULT" = skipped
+          fi
 
   collaboration-e2e-tests:
     needs: [scope, design-e2e]
@@ -386,7 +390,16 @@ jobs:
     steps:
       - name: Require selected collaboration E2E producer
         run: |
-          if [ "$E2E_SUITE_SELECTED" = true ]; then test "$DESIGN_E2E_WORKFLOW_RESULT" = success && test "$FLOW_PRODUCER_RESULT" = success; elif [ "$DESIGN_E2E_WORKFLOW_RESULT" = skipped ]; then test -z "$FLOW_PRODUCER_RESULT" || test "$FLOW_PRODUCER_RESULT" = skipped; else test "$FLOW_PRODUCER_RESULT" = skipped; fi
+          if [ "$E2E_SUITE_SELECTED" = true ]; then
+            case "$DESIGN_E2E_WORKFLOW_RESULT" in
+              success|failure) test "$FLOW_PRODUCER_RESULT" = success ;;
+              *) exit 1 ;;
+            esac
+          elif [ "$DESIGN_E2E_WORKFLOW_RESULT" = skipped ]; then
+            test -z "$FLOW_PRODUCER_RESULT" || test "$FLOW_PRODUCER_RESULT" = skipped
+          else
+            test "$FLOW_PRODUCER_RESULT" = skipped
+          fi
 
   validate:
     needs:

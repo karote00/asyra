@@ -11,12 +11,7 @@ import {
   type VectorHandleMode,
   ROW_HEIGHT
 } from '../constants'
-import {
-  elementApis,
-  selectionApis,
-  systemContextApis,
-  transactionApis
-} from '../common-apis'
+import { elementApis, selectionApis, transactionApis } from '../common-apis'
 import { useSelectedVectorPoint } from '../providers'
 import { formatInputNumber, parseFiniteInputNumber } from './number-input'
 import { createStructuralVectorOperationPatchIntent } from '../features/path-editing-intents'
@@ -343,19 +338,6 @@ const VectorPoint = () => {
         elementId,
         pointId,
         target: nextTarget
-      })
-      // Compatibility mirror during SelectionManager migration.
-      systemContextApis.setSelectedVectorPoint({
-        elementId,
-        pointId,
-        index: updatedPoint.index,
-        target: nextTarget,
-        x: targetPosition.x,
-        y: targetPosition.y,
-        handleMode: elementApis.getVectorAnchorPointHandleMode(
-          elementId,
-          pointId
-        )
       })
 
       return true

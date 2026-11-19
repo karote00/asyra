@@ -1022,6 +1022,32 @@ test('CI aggregates still report failed or skipped dependencies but stop on canc
   }
 })
 
+test('functional E2E installs its declared recording runtime before starting tests', () => {
+  const workflow = yaml.load(readText('.github/workflows/e2e.yml'))
+  const job = workflow.jobs['e2e-tests']
+  const installCommand =
+    'yarn workspace @asyra/asyra-design exec playwright install ffmpeg'
+  const installs = job.steps.filter((step) => step.run === installCommand)
+
+  assert.equal(installs.length, 1)
+  assert.equal(
+    job.env.PLAYWRIGHT_BROWSERS_PATH,
+    '${{ github.workspace }}/tmp/playwright-runtime'
+  )
+  const dependencies = job.steps.findIndex(
+    (step) => step.run === 'yarn install --immutable'
+  )
+  const install = job.steps.indexOf(installs[0])
+  const execute = job.steps.findIndex(
+    (step) => step.run === 'bash scripts/run-e2e.sh'
+  )
+
+  assert.ok(dependencies >= 0 && dependencies < install && install < execute)
+  for (const step of job.steps) {
+    assert.equal(step.env?.PLAYWRIGHT_BROWSERS_PATH, undefined)
+  }
+})
+
 test('E2E automation cancels superseded runs and uses runner Chrome', () => {
   const e2e = readText('.github/workflows/e2e.yml')
   const workflowDirectory = path.join(repositoryRoot, '.github', 'workflows')
@@ -1037,7 +1063,13 @@ test('E2E automation cancels superseded runs and uses runner Chrome', () => {
     /group: e2e-\$\{\{ github\.workflow \}\}-\$\{\{ github\.event\.pull_request\.number \|\| github\.ref \}\}/
   )
   assert.match(e2e, /cancel-in-progress: true/)
-  assert.doesNotMatch(allWorkflows, /playwright install/)
+  assert.deepEqual(
+    allWorkflows
+      .split('\n')
+      .filter((line) => /playwright\s+install\b/u.test(line))
+      .map((line) => line.trim()),
+    ['run: yarn workspace @asyra/asyra-design exec playwright install ffmpeg']
+  )
   assert.doesNotMatch(
     readText('scripts/run-e2e.sh'),
     /E2E_RENDER_PERFORMANCE_BROWSER/
@@ -1141,69 +1173,46 @@ test('render contract E2E uses runner Chrome in CI and locally', () => {
   assert.match(runner, /E2E_SKIP_PERFORMANCE=true yarn test:e2e:asyra-design/)
 })
 
-test('CI runs balanced AI correctness only for related changes or explicit dispatch', async () => {
-  const { isBalancedAiCorrectnessPath, resolveBalancedAiCorrectnessScope } =
-    await import('../balanced-ai-correctness-scope.mjs')
+test('maintained E2E configuration excludes the retired balanced correctness gate', () => {
   const e2e = readText('.github/workflows/e2e.yml')
+  const workflow = yaml.load(e2e)
 
+  assert.doesNotMatch(
+    readText('.github/workflows/main.yml'),
+    /balanced_ai_correctness/
+  )
+  assert.doesNotMatch(
+    readText('scripts/ci-relationships.json'),
+    /balanced-ai-correctness/
+  )
+  assert.doesNotMatch(
+    e2e,
+    /balanced_ai_correctness|BALANCED_AI_CORRECTNESS|balanced-ai-correctness/
+  )
+  assert.doesNotMatch(
+    readText('docs/ai/apps/asyra-design/modules/e2e.md'),
+    /RUN_BALANCED_AI_CORRECTNESS|test:e2e:balanced-ai-correctness|balanced-ai-correctness-scope/
+  )
   assert.equal(
-    isBalancedAiCorrectnessPath(
-      'apps/asyra-design/src/ai/composition-actions.ts'
+    fs.existsSync(
+      path.join(repositoryRoot, 'scripts/balanced-ai-correctness-scope.mjs')
     ),
-    true
-  )
-  assert.equal(
-    isBalancedAiCorrectnessPath('packages/factory/src/data-transact.ts'),
-    true
-  )
-  assert.equal(
-    isBalancedAiCorrectnessPath('apps/asyra-design/vtracer-tool-server.mjs'),
-    true
-  )
-  assert.equal(
-    isBalancedAiCorrectnessPath('docs/ai/apps/asyra-design/README.md'),
     false
   )
-  assert.equal(
-    isBalancedAiCorrectnessPath('apps/asyra-design/e2e/oval.spec.ts'),
-    false
+  for (const trigger of ['workflow_call', 'workflow_dispatch']) {
+    assert.equal(workflow.on[trigger].inputs.selected_suites.type, 'string')
+  }
+
+  const run = workflow.jobs['e2e-tests'].steps.find(
+    (step) => step.name === 'Run E2E Tests'
   )
+
+  assert.equal(run.run, 'bash scripts/run-e2e.sh')
+  assert.equal(run.env.E2E_SUITE, 'functional')
   assert.equal(
-    resolveBalancedAiCorrectnessScope({
-      changedPaths: ['packages/render/src/render.ts'],
-      eventName: 'pull_request',
-      manualRequested: false
-    }),
-    true
+    run.env.FLOW_CI_REPORT,
+    '${{ github.workspace }}/tmp/flow-ci/design.json'
   )
-  assert.equal(
-    resolveBalancedAiCorrectnessScope({
-      changedPaths: ['docs/ai/apps/asyra-design/README.md'],
-      eventName: 'pull_request',
-      manualRequested: false
-    }),
-    false
-  )
-  assert.equal(
-    resolveBalancedAiCorrectnessScope({
-      changedPaths: [],
-      eventName: 'workflow_dispatch',
-      manualRequested: true
-    }),
-    true
-  )
-  assert.equal(
-    resolveBalancedAiCorrectnessScope({
-      changedPaths: [],
-      eventName: 'schedule',
-      manualRequested: false
-    }),
-    false
-  )
-  assert.match(e2e, /fetch-depth: 0/)
-  assert.match(e2e, /node scripts\/balanced-ai-correctness-scope\.mjs/)
-  assert.match(e2e, /run_balanced_ai_correctness/)
-  assert.match(e2e, /RUN_BALANCED_AI_CORRECTNESS/)
 })
 
 test('collaboration follows the shared TypeScript library build convention', () => {
@@ -1745,4 +1754,32 @@ test('heavy profile files run in bounded independent jobs without cancelling sib
       ).flatMap((file) => ['--file', file])
     ])
   }
+})
+
+test('functional CI provisions and admits the pinned offline native client before E2E', () => {
+  const workflow = yaml.load(readText('.github/workflows/e2e.yml'))
+  const steps = workflow.jobs['e2e-tests'].steps
+  const setupIndex = steps.findIndex(
+    (step) => step.name === 'Prepare offline native test client'
+  )
+  const runIndex = steps.findIndex(
+    (step) => step.env?.E2E_SUITE === 'functional'
+  )
+
+  assert.ok(setupIndex >= 0, 'functional E2E requires native client setup')
+  assert.ok(setupIndex < runIndex, 'native admission must precede E2E')
+  const setup = steps[setupIndex]
+
+  assert.notEqual(setup['continue-on-error'], true)
+  assert.match(setup.run, /nativeTestClientVersion/)
+  assert.match(setup.run, /native-client-admission\.mjs/)
+  assert.match(setup.run, /npm install.*--prefix/)
+  assert.match(setup.run, /@openai\/codex@\$native_version/)
+  assert.match(setup.run, /resolveNativeTestExecutable/)
+  assert.match(setup.run, /GITHUB_ENV/)
+  assert.ok(
+    setup.run.indexOf('resolveNativeTestExecutable') <
+      setup.run.indexOf('GITHUB_ENV')
+  )
+  assert.doesNotMatch(setup.run, /secrets\.|codex login|--global/)
 })

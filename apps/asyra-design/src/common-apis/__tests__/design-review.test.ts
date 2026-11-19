@@ -1,3 +1,4 @@
+import assert from 'node:assert/strict'
 import { expect, it, vi } from 'vitest'
 vi.mock('../../contexts', () => ({ default: {} }))
 import { createDesignReviewer } from '../design-review'
@@ -6,8 +7,10 @@ import type { InspectionDependencyChange } from '../inspection-dependencies'
 import recordedGroup from '../../../server/__tests__/fixtures/recorded-101/group-containment-20261019.json'
 import { prepareDesign } from '../../../server/design-preparation'
 
-const requiredEvidence = (result: { evidence?: InspectionEvidenceStamp }) => {
-  if (!result.evidence) {
+const requiredEvidence = (
+  result: { evidence?: InspectionEvidenceStamp } | { available: false }
+) => {
+  if (!('evidence' in result) || !result.evidence) {
     throw new Error('Expected a coherent mechanical receipt')
   }
 
@@ -28,7 +31,7 @@ const fixture = () => {
   }
   const apis = {
     read: vi.fn((id: string) => data[id]),
-    computed: vi.fn((id: string) => geometry[id]),
+    computed: vi.fn((id: string, _fields: readonly string[]) => geometry[id]),
     measure: vi.fn(() => [
       { elementId: 't', bounds: { x: 0, y: 0, width: 90, height: 60 } }
     ])
@@ -48,7 +51,7 @@ it('checks recorded incremental groups without treating snapshot dimensions as c
       descriptor.id,
       {
         type: descriptor.type,
-        parentId: descriptor.id === upperId ? rootId : parentId,
+        parentId: descriptor.id === upperId ? rootId : (parentId ?? undefined),
         children: [] as string[]
       }
     ])
@@ -1099,6 +1102,7 @@ it('selects completed descendants without caller candidates and preserves explic
   f.geometry.leaf = { x: 0, y: 0, width: 5, height: 5, rotation: 0 }
   const selected = await f.review.capture('f', undefined, 'descendants')
 
+  assert.ok('coveredMeasurementTargets' in selected)
   expect(selected.coveredMeasurementTargets).toEqual(['t', 'leaf'])
   const reads = f.apis.read.mock.calls.length
 

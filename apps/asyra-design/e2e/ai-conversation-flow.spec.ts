@@ -1,3 +1,4 @@
+import { stopRecordedDrawing } from '../test-data/ai-drawing/stop-recorded-drawing.mjs'
 import { createServer, type ServerResponse } from 'node:http'
 import { writeFile } from 'node:fs/promises'
 import { prepareDesign } from '../server/design-preparation'
@@ -11,6 +12,7 @@ import {
   getCoreDocumentDigest,
   getPersistedDocumentDigest,
   getUndoHistoryDepth,
+  dispatchHistoryShortcut,
   undo,
   redo,
   waitForAppReady
@@ -81,8 +83,7 @@ for (const count of [16, 320, 1280]) {
               id: 'apply',
               name: 'apply_prepared_design',
               arguments: {
-                design: deliverPreparedDesign(design),
-                response: 'compact'
+                design: deliverPreparedDesign(design)
               },
               summary: 'Create repeated visible vectors'
             }
@@ -161,7 +162,13 @@ for (const count of [16, 320, 1280]) {
     expect(totalCounter('render-projection-outcome-applied')).toBe(count + 1)
     // Complete flat identities are still delivered; prior rows are not decoded
     // again for each prepared member publication.
-    expect(totalCounter('ui-context-membership-prepare')).toBe(1)
+    // The initial document already owns the membership index. New members
+    // extend that index instead of rebuilding it during this measured turn.
+    expect(totalCounter('ui-context-membership-prepare')).toBe(0)
+    expect(totalCounter('ui-context-membership-add-batch-entry')).toBe(
+      count + 1
+    )
+    expect(totalCounter('ui-context-hierarchy-append-entry')).toBe(count)
     expect(totalCounter('ui-context-membership-row-read')).toBeLessThan(
       count * 2 + 8
     )
@@ -1385,11 +1392,14 @@ for (const width of [360, 1280]) {
         .locator('li')
         .count()
 
-      for (const [tool, label] of [
+      const inspectedOperations = [
         ['read_design_context', 'Reading the design'],
         ['inspect_drawing', 'Reviewing the drawing'],
-        ['describe_design_apis', 'Finding available operations']
-      ]) {
+        ['search_design_tools', 'Finding available operations'],
+        ['read_design_contracts', 'Reading operation contracts']
+      ]
+
+      for (const [tool, label] of inspectedOperations) {
         for (const toolStatus of ['running', 'completed']) {
           response.write(
             JSON.stringify({
@@ -1421,7 +1431,7 @@ for (const width of [360, 1280]) {
 
       await expect(
         page.getByLabel('Operational progress').locator('li')
-      ).toHaveCount(stableRows + 9)
+      ).toHaveCount(stableRows + inspectedOperations.length * 3)
 
       // Real stream/controller/panel: unrelated siblings must not borrow one
       // another's purpose or leave an execution label after both settle.
@@ -1455,17 +1465,17 @@ for (const width of [360, 1280]) {
         )
       }
 
-      parallel('parallel-review', 'review_drawing', 'Inspect the crown')
+      parallel('parallel-review', 'inspect_drawing', 'Inspect the crown')
       parallel('parallel-edit', 'prepare_design', 'Prepare the entrance')
       await expect(status.locator(':scope > span')).toHaveText([
-        'Checking the requested details - Preparing the design - 2 operations'
+        'Reviewing the drawing - Preparing the design - 2 operations'
       ])
       parallel('parallel-edit', 'prepare_design', 'Prepare the entrance', true)
       await expect(status.locator(':scope > span')).toHaveText([
         'Inspect the crown',
-        'Checking the requested details'
+        'Reviewing the drawing'
       ])
-      parallel('parallel-review', 'review_drawing', 'Inspect the crown', true)
+      parallel('parallel-review', 'inspect_drawing', 'Inspect the crown', true)
       await expect(status.locator(':scope > span')).toHaveText([
         'Prepare the entrance; Inspect the crown',
         'Partially completed operation (2)'
@@ -2280,10 +2290,24 @@ for (const width of [360, 1280]) {
               await import('../src/testing/runtime-access')
             ).testRuntimeState.set('frame-history-arm', true)
           )
-        }
+          await dispatchHistoryShortcut(page, 'undo')
+          await expect
+            .poll(() =>
+              page.evaluate(async () => {
+                const { core, testRuntimeState } =
+                  await import('../src/testing/runtime-access')
 
-        await undo(page)
-        if (width === 360 && i === 0) {
+                return {
+                  held: testRuntimeState
+                    .get<{ kind: string }[]>('frame-history-events')
+                    ?.filter((event) => event.kind === 'undo-yield-held')
+                    .length,
+                  replaying: core.isInUndoRedo(),
+                  depth: core.getUndoHistoryDepth()
+                }
+              })
+            )
+            .toEqual({ held: 1, replaying: true, depth: depth + 1 })
           const events = await page.evaluate(async () =>
             (
               await import('../src/testing/runtime-access')
@@ -2293,7 +2317,7 @@ for (const width of [360, 1280]) {
           expect(
             events?.filter((event) => event.kind === 'undo-yield-held')
           ).toHaveLength(1)
-          // A keyboard helper's delay does not acknowledge a completed transaction.
+          // Dispatch is not completion: the third replay is still held.
           expect(
             events?.filter((event) => event.kind === 'undo-replay-completed')
           ).toHaveLength(2)
@@ -2302,6 +2326,17 @@ for (const width of [360, 1280]) {
               await import('../src/testing/runtime-access')
             ).testRuntimeState.get<() => void>('frame-history-release')?.()
           )
+          await expect
+            .poll(() =>
+              page.evaluate(async () =>
+                (
+                  await import('../src/testing/runtime-access')
+                ).core.isInUndoRedo()
+              )
+            )
+            .toBe(false)
+        } else {
+          await undo(page)
         }
 
         await expect
@@ -2479,9 +2514,7 @@ test('streamed AI members stay visible and independent of user Undo, then Stop s
       }) + '\n'
     )
     await expect.poll(() => receipts.length).toBe(2)
-    await page
-      .getByRole('button', { name: 'Cancel request', exact: true })
-      .click()
+    await stopRecordedDrawing(page)
     await expect(message).toHaveAttribute('data-outcome', 'cancelled')
     await expect(message).toContainText(
       'Changes already applied have been kept.'
@@ -2600,7 +2633,7 @@ for (const direction of ['undo', 'redo'] as const) {
         { direction, fail }
       )
       try {
-        await (direction === 'undo' ? undo(page) : redo(page))
+        await dispatchHistoryShortcut(page, direction)
         await expect
           .poll(() =>
             page.evaluate(async () =>
@@ -2611,9 +2644,9 @@ for (const direction of ['undo', 'redo'] as const) {
           )
           .toBe(true)
         // Both same/opposite commands are ignored, rather than deferred until idle.
-        await undo(page)
-        await redo(page)
-        await undo(page)
+        await dispatchHistoryShortcut(page, 'undo')
+        await dispatchHistoryShortcut(page, 'redo')
+        await dispatchHistoryShortcut(page, 'undo')
         await page.keyboard.press('v')
         expect(
           await page.evaluate(async () => {

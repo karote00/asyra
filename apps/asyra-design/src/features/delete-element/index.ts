@@ -6,6 +6,7 @@ import {
 } from '../../common-apis'
 import { FeatureNames, InputSystemEvents } from '../../constants'
 import type { SystemContextSnapshot } from '@asyra/utils'
+import { refreshHoverAtPointer } from '../../controllers/hover-target'
 
 export const deleteElementFeature = defineFeature(
   FeatureNames.DELETE_SELECTED_ELEMENT,
@@ -28,21 +29,14 @@ export const deleteElementFeature = defineFeature(
       const elementId = selectedIds[0]
 
       return runTransaction(() => {
-        selectionApis.selectElements([])
-
         const deleted = elementApis.deleteElement(elementId)
 
         if (!deleted) {
           return null
         }
 
-        const hoveredAfterDelete = elementApis.getElementIdAtClientPos(
-          snapshot.mousePosition
-        )
-
-        systemContextApis.updateHoveredElementId(
-          hoveredAfterDelete === elementId ? null : hoveredAfterDelete
-        )
+        selectionApis.selectElements([])
+        refreshHoverAtPointer(snapshot)
 
         return { deletedElementId: elementId }
       })

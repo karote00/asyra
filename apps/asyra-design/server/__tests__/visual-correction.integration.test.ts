@@ -1,95 +1,8 @@
 import { expect, it, vi } from 'vitest'
-import { createLocalDesignReview } from '../local-design-review'
 import { createLocalOperationTools as createOperationOwner } from '../local-operation-tools'
 import type { AiBatchReceipt } from '../../src/ai/action-batch-protocol'
 
 it('executes correction discovery through real owners and recovers only the unfinished edit', async () => {
-  const review = createLocalDesignReview()
-
-  review.record({
-    phase: 'plan',
-    method: 'Correct the observed surface',
-    references: [],
-    criteria: {
-      appearance: {
-        requirement: 'Requested finish',
-        description: 'Observed appearance agrees',
-        verification: 'visual',
-        requiredUnits: []
-      }
-    },
-    structureCriteria: [],
-    detailRequired: false
-  })
-  const image = review.inspect('part', true, true)
-
-  if (!image) {
-    throw new Error('Missing image')
-  }
-
-  const bound = review.bindReview('visual', [
-    { criterionId: 'appearance', inspectionIds: [image.inspectionId] }
-  ])
-  const result = review.recordBoundReview({
-    ...bound,
-    checks: bound.checks.map((check) => ({
-      ...check,
-      status: 'fail',
-      evidence: 'The selected surface needs a different color'
-    }))
-  })
-
-  expect(result.accepted).toBe(false)
-  await exerciseCorrectionConsumer(
-    result.correction as ReturnType<typeof review.correctionContext>
-  )
-  review.invalidateInspections(
-    [image.inspectionId],
-    'Confirmed selected material change'
-  )
-  expect(review.isAccepted()).toBe(false)
-  expect(review.correctionContext().unavailableInspectionIds).toEqual([
-    image.inspectionId
-  ])
-  expect(() =>
-    review.recordBoundReview({
-      ...bound,
-      checks: bound.checks.map((check) => ({
-        ...check,
-        status: 'pass',
-        evidence: 'Old image is not current evidence'
-      }))
-    })
-  ).toThrow()
-  const fresh = review.inspect('part', true, true)
-
-  if (!fresh) {
-    throw new Error('Missing fresh image')
-  }
-
-  const next = review.bindReview('visual', [
-    { criterionId: 'appearance', inspectionIds: [fresh.inspectionId] }
-  ])
-
-  expect(
-    review.recordBoundReview({
-      ...next,
-      final: true,
-      checks: next.checks.map((check) => ({
-        ...check,
-        status: 'pass',
-        evidence: 'New explicit judgment of the corrected surface'
-      }))
-    }).accepted
-  ).toBe(true)
-})
-
-/** Consumer decisions are explicit fixture input, never inferred from image coverage. */
-async function exerciseCorrectionConsumer(
-  correction: ReturnType<
-    ReturnType<typeof createLocalDesignReview>['correctionContext']
-  >
-) {
   const hadWindow = 'window' in globalThis
 
   if (!hadWindow) {
@@ -190,21 +103,14 @@ async function exerciseCorrectionConsumer(
   )
 
   try {
-    if (!correction.discovery) {
-      throw new Error('Missing correction discovery')
-    }
-
     const selection = {
-      ...correction.discovery.arguments,
-      query: 'fill.updateFillsAtIndex'
+      view: 'usage',
+      names: ['fill.updateFillsAtIndex']
     }
     const missing = JSON.parse(
       await tools.call(
-        correction.discovery.tool,
-        {
-          ...correction.discovery.arguments,
-          query: 'unregistered-correction-capability'
-        },
+        'search_design_tools',
+        { query: 'unregistered-correction-capability' },
         signal
       )
     )
@@ -212,7 +118,7 @@ async function exerciseCorrectionConsumer(
     expect(missing.apis).toEqual([])
     expect(invoked).toHaveLength(0)
     const lookup = JSON.parse(
-      await tools.call(correction.discovery.tool, selection, signal)
+      await tools.call('read_design_contracts', selection, signal)
     )
 
     expect(lookup.missingNames).toEqual([])
@@ -221,7 +127,10 @@ async function exerciseCorrectionConsumer(
     expect(contract.execution.kind).toBe('batch-action')
     const args = { elementIds: ['part'], index: 0, patch: { color: '#334455' } }
 
-    expect(operationInputIssue(args, contract.inputSchema)).toBeUndefined()
+    expect(contract.usageGuide.operationParameters).toBeDefined()
+    expect(
+      operationInputIssue(args, contract.usageGuide.operationParameters)
+    ).toBeUndefined()
     const before = await core.save()
     const independent = core.getElementComputedData('independent', ['fills'])
 
@@ -263,7 +172,12 @@ async function exerciseCorrectionConsumer(
     expect(
       partial.actionResults[0]?.result,
       JSON.stringify(partial)
-    ).toMatchObject({ status: 'complete', acceptedIds: ['part'] })
+    ).toMatchObject({
+      status: 'complete',
+      acceptedCount: 1,
+      unavailableCount: 0,
+      settlement: 'completed'
+    })
     expect(partial.failure).toMatchObject({ settlement: 'not-started' })
     expect(core.getElementComputedData('part', ['fills'])?.fills).toMatchObject(
       [{ color: '#334455' }]
@@ -307,4 +221,4 @@ async function exerciseCorrectionConsumer(
       vi.unstubAllGlobals()
     }
   }
-}
+})

@@ -28,10 +28,13 @@ const getComputedProjection = (
   ) {
     return null
   }
+
   const payload = event.payload as unknown as Record<string, unknown>
+
   if (typeof payload.key === 'string') {
     return { id: event.payload.id, keys: [payload.key] }
   }
+
   if (Array.isArray(payload.changes)) {
     return {
       id: event.payload.id,
@@ -45,6 +48,7 @@ const getComputedProjection = (
       )
     }
   }
+
   const patch =
     typeof payload.patch === 'object' && payload.patch !== null
       ? (payload.patch as Record<string, unknown>)
@@ -57,6 +61,7 @@ const getComputedProjection = (
     typeof patch?.records === 'object' && patch.records !== null
       ? Object.keys(patch.records)
       : []
+
   return { id: event.payload.id, keys: [...values, ...records] }
 }
 
@@ -92,6 +97,7 @@ const calculateContinuation = (
   // 2. Fallback to last point of last subpath
   if (!targetPointId) {
     const lastSubpath = subpaths[subpaths.length - 1]
+
     if (lastSubpath && lastSubpath.length > 0) {
       targetPointId = lastSubpath[lastSubpath.length - 1].id
     }
@@ -105,6 +111,7 @@ const calculateContinuation = (
     vectorId,
     targetPointId
   )
+
   if (!continuation) {
     return null
   }
@@ -129,6 +136,7 @@ const syncContinuation = () => {
       PresetSystemPropertyKeys.PATH_EDITING_CONTINUATION,
       null
     )
+
     return
   }
 
@@ -172,6 +180,7 @@ export const initPathEditingContinuation = () => {
   subscribeToEventBatches((events) => {
     events.forEach((event) => {
       const projection = getComputedProjection(event)
+
       if (
         projection &&
         projection.keys.some((key) => VECTOR_TOPOLOGY_KEYS.has(key))
@@ -179,6 +188,7 @@ export const initPathEditingContinuation = () => {
         const vectorId = core.getSystemProperty<string | null>(
           PresetSystemPropertyKeys.PATH_EDITING_VECTOR_ID
         )
+
         if (projection.id === vectorId) {
           syncContinuation()
         }

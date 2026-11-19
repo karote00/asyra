@@ -27,6 +27,7 @@ import {
 import { localToolOutcome } from '../../../server/local-tool-invocation'
 import { operationInputIssue } from '../../../server/operation-input-schema'
 import { AiDesignToolIds } from '../../constants/ai-design'
+
 const signal = () => new AbortController().signal
 
 it('hands App-only method examples from real Knowledge reads to current discovery and preparation owners', async () => {
@@ -53,6 +54,7 @@ it('hands App-only method examples from real Knowledge reads to current discover
       doc.target ===
       'design.architectural-illustration.materials.method.parameters'
   )
+
   expect(domain.text).toContain('Choose a material method')
   expect(domain.text).not.toContain('map_retained_fills')
   expect(app.text).toContain('map_retained_fills')
@@ -60,6 +62,7 @@ it('hands App-only method examples from real Knowledge reads to current discover
   const materialRows = app.text
     .split('\n')
     .filter((line: string) => line.startsWith('|'))
+
   expect(
     materialRows.some(
       (line: string) =>
@@ -73,17 +76,20 @@ it('hands App-only method examples from real Knowledge reads to current discover
     ),
     'utf8'
   )
+
   expect(app.text).toBe(
     appMarkdown.match(/^---\r?\n[\s\S]*?\r?\n---\r?\n([\s\S]+)$/)?.[1]
   )
 
   const registry = createAiActionRegistry()
+
   for (const action of [
     ...createBasicApiActions(),
     createPreparedDesignAction()
   ]) {
     registry.register(action)
   }
+
   const actions = registry.list()
   const session = createDesignPreparationSession()
   const designs = createLocalDesignTools(actions, session)
@@ -107,6 +113,7 @@ it('hands App-only method examples from real Knowledge reads to current discover
     (match) =>
       JSON.parse(match[1]).tool !== AiDesignToolIds.EXECUTE_DESIGN_BATCH
   )
+
   expect(samples).toHaveLength(3)
   for (const match of samples) {
     const sample = JSON.parse(match[1])
@@ -114,16 +121,22 @@ it('hands App-only method examples from real Knowledge reads to current discover
     const definition = owner.definitions.find(
       (item) => item.name === sample.tool
     )
-    if (!definition) throw new Error(`Unknown documented tool ${sample.tool}`)
+
+    if (!definition) {
+      throw new Error(`Unknown documented tool ${sample.tool}`)
+    }
+
     expect(
       operationInputIssue(sample.arguments, definition.inputSchema)
     ).toBeUndefined()
     const result = JSON.parse(
       await owner.call(sample.tool, sample.arguments, signal())
     )
+
     if (sample.tool === 'prepare_design') {
       expect(result.available).toBe(true)
       const prepared = session.resolve(result.artifactId)
+
       expect(session.recipe(result.artifactId).recipe).toMatchObject({
         brief: { assumptions: sample.arguments.draft.brief.assumptions }
       })
@@ -132,9 +145,14 @@ it('hands App-only method examples from real Knowledge reads to current discover
       expect(admitPreparedDesign(structuredClone(prepared))).toEqual(prepared)
       const panes = ['pane-a', 'pane-b'].map((key) => {
         const entry = prepared.entries.find((item) => item.key === key)
-        if (!entry) throw new Error(`Missing documented material part ${key}`)
+
+        if (!entry) {
+          throw new Error(`Missing documented material part ${key}`)
+        }
+
         return entry.descriptor
       })
+
       expect(
         panes.map((pane) => pane.fills?.[0].gradient?.gradientType)
       ).toEqual(['linear', 'linear'])
@@ -144,6 +162,7 @@ it('hands App-only method examples from real Knowledge reads to current discover
           y: Number(pane.y) + handle.y * Number(pane.height)
         }))
       )
+
       expect(worldDomains).toEqual([
         [
           { x: 0, y: 0 },
@@ -164,10 +183,12 @@ it('hands App-only method examples from real Knowledge reads to current discover
       ).toBeNull()
 
       const failed = structuredClone(sample.arguments)
+
       failed.draft.children[0].fill = { template: 'missing-material' }
       const rejected = JSON.parse(
         await owner.call(sample.tool, failed, signal())
       )
+
       expect(rejected).toMatchObject({
         available: false,
         recovery: 'correct_input',
@@ -192,6 +213,7 @@ it('hands App-only method examples from real Knowledge reads to current discover
           signal()
         )
       )
+
       expect(repaired.available).toBe(true)
       expect(repaired.preparationInput.kind).toBe('retained-repair')
       expect(session.recipe(repaired.artifactId).recipe).toEqual(
@@ -206,6 +228,7 @@ it('hands App-only method examples from real Knowledge reads to current discover
       expect(result.apis[0].execution.kind).toBe('batch-action')
     }
   }
+
   expect(dispatch).not.toHaveBeenCalled()
   knowledge.dispose()
   registry.dispose()
@@ -225,6 +248,7 @@ it('carries the recorded material decision into initial preparation without chan
   const repairOperation = saved.calls[1].inputValue.operations[1]
   const targetKeys = new Set<string>(repairOperation.target.keys)
   const chosenGradient = repairOperation.arguments.patch.gradient
+
   expect(saved.calls[0].status).toBe('usable')
   expect(saved.calls[0].outputValue.available).toBe(true)
   expect(
@@ -236,6 +260,7 @@ it('carries the recorded material decision into initial preparation without chan
   // This is the recorded later decision applied offline, not an inferred role
   // or a claim that the agent would independently choose it earlier.
   const candidate = structuredClone(original)
+
   candidate.fillTemplates.selectedMetal = structuredClone(chosenGradient)
   candidate.brief = {
     intent:
@@ -250,33 +275,44 @@ it('carries the recorded material decision into initial preparation without chan
     checks: []
   }
   for (const child of candidate.children) {
-    if (targetKeys.has(child.key)) child.fill = { template: 'selectedMetal' }
+    if (targetKeys.has(child.key)) {
+      child.fill = { template: 'selectedMetal' }
+    }
   }
+
   const before = prepareDesign(original, 'material-role')
   const after = prepareDesign(candidate, 'material-role')
+
   expect(after.entries.map((entry) => entry.key)).toEqual(
     before.entries.map((entry) => entry.key)
   )
   const selectedFillIds: string[] = []
+
   for (const [index, entry] of after.entries.entries()) {
     const previous = before.entries[index]
+
     if (!targetKeys.has(entry.key)) {
       expect(entry).toEqual(previous)
       continue
     }
+
     const { fills, ...geometry } = entry.descriptor
     const { fills: previousFills, ...previousGeometry } = previous.descriptor
+
     expect(geometry).toEqual(previousGeometry)
     expect(fills).not.toEqual(previousFills)
     const values = fills as { id: string; gradient: unknown }[]
+
     expect(values).toHaveLength(1)
     expect(values[0].gradient).toEqual(chosenGradient)
     selectedFillIds.push(values[0].id)
   }
+
   expect(new Set(selectedFillIds).size).toBe(targetKeys.size)
 
   const knowledge = createLocalKnowledgeTools('material-method')
   const registry = createAiActionRegistry()
+
   try {
     const read = JSON.parse(
       await knowledge.call(
@@ -288,6 +324,7 @@ it('carries the recorded material decision into initial preparation without chan
         signal()
       )
     )
+
     expect(
       read.sources.map((source: { id: string; revision: number }) => [
         source.id,
@@ -304,8 +341,10 @@ it('carries the recorded material decision into initial preparation without chan
     for (const action of [
       ...createBasicApiActions(),
       createPreparedDesignAction()
-    ])
+    ]) {
       registry.register(action)
+    }
+
     const session = createDesignPreparationSession()
     const designs = createLocalDesignTools(registry.list(), session)
     const dispatch = vi.fn()
@@ -331,15 +370,21 @@ it('carries the recorded material decision into initial preparation without chan
         signal()
       )
     )
+
     expect(described.tools[0].schemaFragments[0].path).toBe('/properties/draft')
+
     const prepare = (draft: unknown) =>
       designs.call('prepare_design', { draft }, signal()).then(JSON.parse)
+
     const baseline = await prepare(original)
+
     expect(baseline.available).toBe(true)
     const priorArtifact = structuredClone(session.resolve(baseline.artifactId))
     const invalid = structuredClone(candidate)
+
     Reflect.deleteProperty(invalid.fillTemplates, 'selectedMetal')
     const rejected = await prepare(invalid)
+
     expect(rejected).toMatchObject({
       available: false,
       recovery: 'correct_input',
@@ -361,6 +406,7 @@ it('carries the recorded material decision into initial preparation without chan
         signal()
       )
     )
+
     expect(insertedTemplate).toMatchObject({
       available: true,
       preparationInput: { kind: 'retained-repair', replacementCount: 1 }
@@ -383,6 +429,7 @@ it('carries the recorded material decision into initial preparation without chan
         signal()
       )
     )
+
     expect(repaired.available).toBe(true)
     expect(repaired.artifactId).not.toBe(baseline.artifactId)
     expect(repaired.preparationInput.kind).toBe('retained-repair')
@@ -392,6 +439,7 @@ it('carries the recorded material decision into initial preparation without chan
       candidate,
       repaired.artifactId
     )
+
     expect(review).toEqual(candidate.brief)
     expect(session.resolve(repaired.artifactId)).toEqual(expectedArtifact)
     expect(
@@ -426,9 +474,12 @@ it('recovers missing template containers through fully admitted insertion or exi
       }
     ]
   }
+
   const prepare = (input: unknown) =>
     designs.call('prepare_design', input, signal()).then(JSON.parse)
+
   const rejected = await prepare({ draft })
+
   expect(rejected).toMatchObject({
     available: false,
     recovery: 'correct_input',
@@ -440,6 +491,7 @@ it('recovers missing template containers through fully admitted insertion or exi
       replacements: [{ path: '/fillTemplates', value: { glass: '#527b86' } }]
     }
   })
+
   expect(missingContainer).toMatchObject({
     available: true,
     preparationInput: { kind: 'retained-repair', replacementCount: 1 }
@@ -465,6 +517,7 @@ it('recovers missing template containers through fully admitted insertion or exi
       replacements: [{ path: '/children/0/fill', value: '#527b86' }]
     }
   })
+
   expect(repaired.available).toBe(true)
   expect(session.recipe(repaired.artifactId).recipe).toEqual({
     ...draft,
@@ -488,6 +541,7 @@ it('recovers missing template containers through fully admitted insertion or exi
       signal()
     )
   )
+
   expect(expired).toMatchObject({
     available: false,
     message: expect.stringContaining('resend the source draft')
@@ -504,6 +558,7 @@ it('recovers missing template containers through fully admitted insertion or exi
       signal()
     )
   )
+
   expect(sourceRecovery.available).toBe(true)
   expect(session.resolve(repaired.artifactId).entries).toHaveLength(2)
 })
@@ -519,12 +574,15 @@ it('routes recorded local material edits through actual discovery and artifact t
     )
   )
   const registry = createAiActionRegistry()
+
   try {
     for (const action of [
       ...createBasicApiActions(),
       createPreparedDesignAction()
-    ])
+    ]) {
       registry.register(action)
+    }
+
     const session = createDesignPreparationSession()
     const designs = createLocalDesignTools(registry.list(), session)
     const prepared = JSON.parse(
@@ -574,11 +632,14 @@ it('routes recorded local material edits through actual discovery and artifact t
         signal()
       )
     )
+
     expect(
       usage.apis.map((api: { operation: string }) => api.operation)
     ).toEqual(['fill.updateFillsAtIndex', 'fill.detachFillsAtIndex'])
     const operation = structuredClone(saved.calls[1].inputValue.operations[1])
+
     operation.target.artifactId = prepared.artifactId
+
     const call = (value: unknown) =>
       operations.call(
         'execute_design_batch',
@@ -588,11 +649,14 @@ it('routes recorded local material edits through actual discovery and artifact t
         },
         signal()
       )
+
     const mixed = structuredClone(operation)
+
     mixed.target.keys.push('missing-surface')
     await expect(call(mixed)).rejects.toThrow()
     expect(dispatch).not.toHaveBeenCalled()
     const result = JSON.parse(await call(operation))
+
     expect(localToolOutcome(result)).toMatchObject({
       status: 'partial',
       issues: expect.arrayContaining([
@@ -602,10 +666,12 @@ it('routes recorded local material edits through actual discovery and artifact t
     expect(result.actionResults[0].result.toolOutcome.status).toBe('success')
     expect(dispatch).toHaveBeenCalledTimes(1)
     const actions = dispatch.mock.calls[0][0].actions
+
     expect(actions).toHaveLength(1)
     const selectedIds = operation.target.keys.map(
       (key: string) => artifact.keyToId[key]
     )
+
     expect(actions[0].arguments).toEqual({
       ...operation.arguments,
       elementIds: selectedIds
@@ -619,6 +685,7 @@ it('routes recorded local material edits through actual discovery and artifact t
     // supplied by the caller are a valid route for a new explicit edit. This
     // test does not simulate the document query or replay the completed edit.
     const { target, ...fresh } = operation
+
     expect(target.artifactId).toBe(prepared.artifactId)
     fresh.arguments = {
       ...fresh.arguments,
@@ -626,6 +693,7 @@ it('routes recorded local material edits through actual discovery and artifact t
       patch: { color: '#aabbcc' }
     }
     const freshResult = JSON.parse(await call(fresh))
+
     expect(localToolOutcome(freshResult)).toMatchObject({
       status: 'partial',
       issues: expect.arrayContaining([
@@ -657,37 +725,48 @@ it('preserves every recorded reflection through template preparation and admissi
   const source = saved.calls.find(
     (call: { input: { bytes: number } }) => call.input?.bytes === 670447
   )
+
   expect(source).toBeDefined()
   const originalText = JSON.stringify(source.inputValue)
   const compact = structuredClone(source.inputValue)
   const materials = new Map<string, string>()
   let palettes = 0
+
   for (const child of compact.draft.children) {
     for (const motif of child.motifs ?? []) {
-      if (!motif.fills) continue
+      if (!motif.fills) {
+        continue
+      }
+
       palettes++
       const paints = motif.fills.map((fill: unknown) => JSON.stringify(fill))
+
       // Exhaust every shorter prefix; row-major cycling cannot reproduce this
       // saved palette. This is input evidence, not a visual quality judgment.
       expect(paints).toHaveLength(224)
-      for (let period = 1; period < paints.length; period++)
+      for (let period = 1; period < paints.length; period++) {
         expect(
           paints.every(
             (paint: string, index: number) => paint === paints[index % period]
           )
         ).toBe(false)
+      }
+
       motif.fills = motif.fills.map((fill: unknown) => {
         const serialized = JSON.stringify(fill)
         let key = materials.get(serialized)
+
         if (!key) {
           key = `material-${materials.size}`
           materials.set(serialized, key)
           compact.draft.fillTemplates[key] = fill
         }
+
         return { template: key }
       })
     }
   }
+
   expect(palettes).toBe(16)
   expect(materials.size).toBe(1545)
   expect(Buffer.byteLength(originalText)).toBe(670447)
@@ -700,11 +779,13 @@ it('preserves every recorded reflection through template preparation and admissi
   const result = JSON.parse(
     await designs.call('prepare_design', { draft: compact.draft }, signal())
   )
+
   expect(result.available).toBe(true)
   const { review: _review, ...expected } = prepareDesign(
     source.inputValue.draft,
     result.artifactId
   )
+
   expect(session.resolve(result.artifactId)).toEqual(expected)
   expect(admitPreparedDesign(JSON.parse(JSON.stringify(expected)))).toEqual(
     expected
@@ -712,14 +793,20 @@ it('preserves every recorded reflection through template preparation and admissi
   const fills = expected.entries.flatMap(
     (entry) => entry.descriptor.fills ?? []
   ) as { id: string }[]
+
   expect(new Set(fills.map((fill) => fill.id)).size).toBe(fills.length)
   const broken = structuredClone(compact.draft)
   const first = materials.values().next().value
-  if (!first) throw new Error('Missing recorded material template')
+
+  if (!first) {
+    throw new Error('Missing recorded material template')
+  }
+
   Reflect.deleteProperty(broken.fillTemplates, first)
   const rejected = JSON.parse(
     await designs.call('prepare_design', { draft: broken }, signal())
   )
+
   expect(rejected).toMatchObject({
     available: false,
     recovery: 'correct_input',
@@ -739,6 +826,7 @@ it('preserves every recorded reflection through template preparation and admissi
       signal()
     )
   )
+
   expect(repaired.available).toBe(true)
   expect(session.resolve(result.artifactId)).toEqual(expected)
   expect(session.recipe(repaired.artifactId).recipe).toEqual(compact.draft)
@@ -770,27 +858,36 @@ it('hands a declared color-only method through exact discovery to retained mappi
     .slice(0, 3)
   const ids = selected.map((entry) => entry.descriptor.id)
   const original = JSON.stringify(selected)
+
   let invalidate = () => {
     throw new Error('Observer not installed')
   }
+
   const queries = createRetainedDesignContext(
     {
       getCurrentWorkspaceId: () => prepared.rootId,
+
       getSelectedElementIds: () => [],
+
       getElementChildren: () => {
         throw new Error('No hierarchy enumeration needed')
       },
+
       getElementIdsInBounds: () => {
         throw new Error('Explicit IDs required by this proof')
       },
+
       getElementMetadata: (id) => {
         const entry = entries.get(id)
+
         return entry ? { type: entry.descriptor.type } : undefined
       },
+
       getElementComputedData: (id) => entries.get(id)?.descriptor
     },
     (listener) => {
       invalidate = listener
+
       return () => {
         invalidate = () => undefined
       }
@@ -804,19 +901,27 @@ it('hands a declared color-only method through exact discovery to retained mappi
   }))
   const action = createRetainedFillAction(queries, {
     metadata: (id) => (entries.has(id) ? {} : undefined),
+
     targets: (selectedIds) =>
       selectedIds.map((elementId) => {
         const fills = entries.get(elementId)?.descriptor.fills as
           { id: string }[] | undefined
-        if (!fills?.[0]?.id) throw new Error('Missing recorded Fill')
+
+        if (!fills?.[0]?.id) {
+          throw new Error('Missing recorded Fill')
+        }
+
         return { elementId, fillId: fills[0].id }
       }),
+
     update
   })
   const registry = createAiActionRegistry()
+
   registry.register(action)
   const knowledge = createLocalKnowledgeTools('mapping-capability')
   const activeSignal = signal()
+
   try {
     const read = JSON.parse(
       await knowledge.call(
@@ -828,6 +933,7 @@ it('hands a declared color-only method through exact discovery to retained mappi
         activeSignal
       )
     )
+
     expect(
       read.documents.find(
         (doc: { target: string }) =>
@@ -836,7 +942,11 @@ it('hands a declared color-only method through exact discovery to retained mappi
     ).toContain('map_retained_fills')
     const operations = createLocalOperationTools(
       registry.list(),
-      { modelActions: (actions) => actions, resolveBatch: (value) => value },
+      {
+        modelActions: (actions) => actions,
+
+        resolveBatch: (value) => value
+      },
       vi.fn()
     )
     const lookup = JSON.parse(
@@ -846,6 +956,7 @@ it('hands a declared color-only method through exact discovery to retained mappi
         activeSignal
       )
     )
+
     expect(lookup.apis[0].inputSchema).toEqual(action.inputSchema)
     const positions = selected.map((entry) => Number(entry.descriptor.x))
     const input = {
@@ -875,6 +986,7 @@ it('hands a declared color-only method through exact discovery to retained mappi
         }
       ]
     }
+
     expect(
       operationInputIssue(unsupported, lookup.apis[0].inputSchema)
     ).toBeDefined()
@@ -891,8 +1003,10 @@ it('hands a declared color-only method through exact discovery to retained mappi
     )
     const result = await action.execute(admitted[0].arguments as typeof input, {
       signal: activeSignal,
+
       runMutation: async (write) => write()
     })
+
     expect(result).toMatchObject({ status: 'complete', appliedCount: 3 })
     expect(update).toHaveBeenCalledTimes(1)
     expect(
@@ -900,15 +1014,19 @@ it('hands a declared color-only method through exact discovery to retained mappi
         (entry: { elementId: string }) => entry.elementId
       )
     ).toEqual(ids)
-    for (const entry of update.mock.calls[0][0])
+    for (const entry of update.mock.calls[0][0]) {
       expect(Object.keys(entry.patch)).toEqual(['color'])
+    }
+
     expect(JSON.stringify(selected)).toBe(original)
     const retained = queries.read(
       { scope: 'ids', elementIds: ids, fields: ['x'], delivery: 'reference' },
       activeSignal
     )
+
     invalidate()
     const { query: _query, ...mapping } = input.mappings[0]
+
     await expect(
       action.execute(
         {
@@ -920,7 +1038,11 @@ it('hands a declared color-only method through exact discovery to retained mappi
             }
           ]
         },
-        { signal: activeSignal, runMutation: async (write) => write() }
+        {
+          signal: activeSignal,
+
+          runMutation: async (write) => write()
+        }
       )
     ).rejects.toThrow(/stale/)
     expect(update).toHaveBeenCalledTimes(1)
@@ -930,11 +1052,14 @@ it('hands a declared color-only method through exact discovery to retained mappi
       throw new Error('Receipt unavailable')
     })
     const nextInput = structuredClone(input)
+
     nextInput.mappings[0].stops[0].color = '#112233'
     const settled = await action.execute(nextInput, {
       signal: activeSignal,
+
       runMutation: async (write) => write()
     })
+
     expect(settled).toMatchObject({
       status: 'complete',
       delivery: {
@@ -954,6 +1079,7 @@ it.each([false, true])(
   'keeps reference-backed spatial judgment independent of local detail with Knowledge read=%s',
   async (readAdvice) => {
     const knowledge = createLocalKnowledgeTools('spatial-decision')
+
     try {
       if (readAdvice) {
         const response = JSON.parse(
@@ -966,13 +1092,16 @@ it.each([false, true])(
             signal()
           )
         )
+
         expect(
           response.documents.map((doc: { target: string }) => doc.target)
         ).toContain('illustration.architecture.spatial')
       }
+
       // The recorded agent selected massing advice but its criteria did not isolate
       // relationships. We control that decision here; no automated visual judgment.
       const recorded = recordedDecisions.calls
+
       expect(Object.keys(recorded.criteria.inputValue.criteria)).toEqual([
         'overall',
         'detail',
@@ -993,6 +1122,7 @@ it.each([false, true])(
           }
         ]
       })
+
       review.record({
         phase: 'plan',
         method:
@@ -1016,6 +1146,7 @@ it.each([false, true])(
           }
         }
       })
+
       const select = (
         region:
           'whole' | { x: number; y: number; width: number; height: number }
@@ -1035,13 +1166,19 @@ it.each([false, true])(
             }
           ]
         })
+
       select('whole')
+
       const receipt = () =>
         review.correctionContext().referenceDecisions[0].uses[0].receipt
+
       const whole = review.inspect('composition', true, true)?.inspectionId
       const detail = review.inspect('entrance', true, false)?.inspectionId
-      if (!whole || !detail)
+
+      if (!whole || !detail) {
         throw new Error('Expected controlled capture receipts')
+      }
+
       const submit = (bound: ReturnType<typeof review.bindReview>) =>
         review.recordBoundReview({
           ...bound,
@@ -1053,6 +1190,7 @@ it.each([false, true])(
               'Controlled primary-agent verdict for this explicit requirement'
           }))
         })
+
       // No reference or Knowledge prerequisite for an ordinary detail judgment.
       submit(
         review.bindReview('visual', [
@@ -1063,6 +1201,7 @@ it.each([false, true])(
       const independent = review
         .readChecks({ includePassed: true })
         .items.find((item) => item.unitId === 'base')
+
       expect(() =>
         review.bindReview('visual', [
           {
@@ -1073,6 +1212,7 @@ it.each([false, true])(
           }
         ])
       ).toThrow()
+
       const binding = () =>
         review.bindReview('visual', [
           {
@@ -1081,10 +1221,13 @@ it.each([false, true])(
             referenceUses: [receipt()]
           }
         ])
+
       const original = binding()
+
       submit(original)
       expect(review.isAccepted()).toBe(true)
       const checks = review.readChecks({ includePassed: true })
+
       expect(review.inspect('composition', false, true)).toBeUndefined()
       expect(review.readChecks({ includePassed: true })).toEqual(checks)
       expect(() => select({ x: 500, y: 0, width: 20, height: 20 })).toThrow()
@@ -1107,6 +1250,7 @@ it.each([false, true])(
 
 it('joins advisory reads, real preparation and scoped material verdict recovery without approving unfinished detail', async () => {
   const knowledge = createLocalKnowledgeTools('combined-material')
+
   try {
     const read = JSON.parse(
       await knowledge.call(
@@ -1134,11 +1278,14 @@ it('joins advisory reads, real preparation and scoped material verdict recovery 
     const prepared = JSON.parse(
       await designs.call(sample.tool, sample.arguments, signal())
     )
+
     expect(prepared.available).toBe(true)
     const artifact = session.resolve(prepared.artifactId)
+
     expect(admitPreparedDesign(structuredClone(artifact))).toEqual(artifact)
     const pane = artifact.keyToId['pane-a'],
       mullion = artifact.keyToId.mullion
+
     expect(pane).toBeTypeOf('string')
     expect(mullion).toBeTypeOf('string')
     // The original input demonstrates frame-only evidence followed later by a
@@ -1146,6 +1293,7 @@ it('joins advisory reads, real preparation and scoped material verdict recovery 
     const saved = recordedDecisions.calls
     const oldFrame = saved.earlyCapture.inputValue.inspections[1].elementId
     const combined = saved.combinedCapture.inputValue.inspections[2]
+
     expect(combined.elementId).not.toBe(oldFrame)
     expect(combined.checks[0].supersedes.revision).toBeGreaterThan(0)
     const source = saved.references.inputValue.referenceDecisions[0]
@@ -1158,6 +1306,7 @@ it('joins advisory reads, real preparation and scoped material verdict recovery 
         }
       ]
     })
+
     review.record({
       phase: 'plan',
       method: 'Separate chosen material contrast from detail completion',
@@ -1190,15 +1339,21 @@ it('joins advisory reads, real preparation and scoped material verdict recovery 
     })
     const referenceUse =
       review.correctionContext().referenceDecisions[0].uses[0].receipt
+
     const capture = (
       elementId: string,
       overview: boolean,
       region?: unknown
     ) => {
       const receipt = review.inspect(elementId, true, overview, region)
-      if (!receipt) throw new Error('Expected controlled image capture')
+
+      if (!receipt) {
+        throw new Error('Expected controlled image capture')
+      }
+
       return receipt.inspectionId
     }
+
     const overview = capture(artifact.rootId, true)
     const isolatedFrame = capture(mullion, false)
     // The primary agent intentionally requests the containing ready surface;
@@ -1206,6 +1361,7 @@ it('joins advisory reads, real preparation and scoped material verdict recovery 
     const region = { x: 0, y: 0, width: 24, height: 40 }
     let surface = capture(artifact.rootId, false, region)
     const detail = capture(artifact.keyToId['pane-b'], false)
+
     const bind = () =>
       review.bindReview('visual', [
         {
@@ -1220,7 +1376,9 @@ it('joins advisory reads, real preparation and scoped material verdict recovery 
         },
         { criterionId: 'detail', unitId: 'repeat', inspectionIds: [detail] }
       ])
+
     const original = bind()
+
     expect(
       original.checks[1].binding.dependencies.map((item) => item.inspectionId)
     ).toEqual([surface])
@@ -1240,6 +1398,7 @@ it('joins advisory reads, real preparation and scoped material verdict recovery 
       }))
     })
     const before = review.readChecks({ includePassed: true }).items
+
     expect(before.find((item) => item.criterionId === 'material')?.status).toBe(
       'pass'
     )
@@ -1283,6 +1442,7 @@ it('joins advisory reads, real preparation and scoped material verdict recovery 
         signal()
       )
     ).apis[0]
+
     expect(selected.operation).toBe('fill.updateFillsAtIndex')
     expect(selected.execution.tool).toBe('execute_design_batch')
     const correction = {
@@ -1300,6 +1460,7 @@ it('joins advisory reads, real preparation and scoped material verdict recovery 
       ]
     }
     const invalid = structuredClone(correction)
+
     invalid.operations[0].target.keys.push('missing-pane')
     await expect(
       operations.call('execute_design_batch', invalid, signal())
@@ -1308,6 +1469,7 @@ it('joins advisory reads, real preparation and scoped material verdict recovery 
     const settled = JSON.parse(
       await operations.call('execute_design_batch', correction, signal())
     )
+
     expect(localToolOutcome(settled)).toMatchObject({
       status: 'partial',
       issues: expect.arrayContaining([
@@ -1352,6 +1514,7 @@ it('joins advisory reads, real preparation and scoped material verdict recovery 
       },
       { criterionId: 'material', unitId: 'surface', inspectionIds: [surface] }
     ])
+
     review.recordBoundReview({
       ...repaired,
       final: true,
@@ -1365,6 +1528,7 @@ it('joins advisory reads, real preparation and scoped material verdict recovery 
     const completed = review.bindReview('visual', [
       { criterionId: 'detail', unitId: 'repeat', inspectionIds: [detail] }
     ])
+
     review.recordBoundReview({
       ...completed,
       final: true,
@@ -1385,11 +1549,13 @@ it('joins advisory reads, real preparation and scoped material verdict recovery 
 
 it('uses the current qualified route across partial, full and recovery retrieval without treating receipt history as delivery proof', async () => {
   const recorded = recordedDecisions.discoveryProjection
+
   expect(recorded).toHaveLength(10)
   const first = recorded[0].definitions.find(
     (item) => item.name === 'prepare_and_apply_design'
   )
   const retry = recorded[1]
+
   expect(retry.input).toMatchObject({
     refresh: true,
     refreshReason: 'delivery-failure'
@@ -1401,12 +1567,15 @@ it('uses the current qualified route across partial, full and recovery retrieval
   // Saved receipts do not establish that the model actually received/retained
   // their content. The real owner must keep explicit recovery available.
   const registry = createAiActionRegistry()
+
   try {
     for (const action of [
       ...createBasicApiActions(),
       createPreparedDesignAction()
-    ])
+    ]) {
       registry.register(action)
+    }
+
     const session = createDesignPreparationSession()
     const designs = createLocalDesignTools(registry.list(), session)
     const dispatch = vi.fn()
@@ -1423,16 +1592,20 @@ it('uses the current qualified route across partial, full and recovery retrieval
       }
     )
     const workflow = createLocalDesignWorkflow(designs, operations)
+
     const read = (input: unknown) =>
       operations.call('describe_design_apis', input, signal()).then(JSON.parse)
+
     const name = 'design_workflow.prepare_and_apply_design'
     const usage = (await read({ names: [name], view: 'usage' })).tools[0]
+
     expect(usage.definition.coverage).toBe('usage')
     expect(usage.inputSchema).toBeUndefined()
     expect(usage.inputFields).toContain('/properties/draft')
     const wrong = (
       await read({ names: [name], schemaPaths: ['/properties/missing'] })
     ).tools[0]
+
     expect(wrong.definition.state).toBe('unavailable')
     expect(wrong.schemaResolution.recover.arguments).toEqual({
       names: [name],
@@ -1441,10 +1614,12 @@ it('uses the current qualified route across partial, full and recovery retrieval
     const recoveredUsage = (
       await read(wrong.schemaResolution.recover.arguments)
     ).tools[0]
+
     expect(recoveredUsage.definition.state).toBe('included')
     const partial = (
       await read({ names: [name], schemaPaths: ['/properties/draft'] })
     ).tools[0]
+
     expect(partial.schemaFragments[0].path).toBe('/properties/draft')
     expect(partial.inputSchema).toBeUndefined()
     expect(partial.outputSchema).toBeUndefined()
@@ -1452,7 +1627,11 @@ it('uses the current qualified route across partial, full and recovery retrieval
     const canonical = workflow.definitions.find(
       (definition) => definition.name === 'prepare_and_apply_design'
     )
-    if (!canonical) throw new Error('Expected canonical workflow contract')
+
+    if (!canonical) {
+      throw new Error('Expected canonical workflow contract')
+    }
+
     expect(full.inputSchema).toEqual(canonical.inputSchema)
     expect(full.outputSchema).toEqual(canonical.outputSchema)
     expect(full.partialOutputSchema).toEqual(canonical.partialOutputSchema)
@@ -1462,6 +1641,7 @@ it('uses the current qualified route across partial, full and recovery retrieval
       state: 'included'
     })
     const repeated = (await read({ names: [name] })).tools[0]
+
     expect(repeated.definition).toMatchObject({
       coverage: 'full',
       state: 'included',
@@ -1474,6 +1654,7 @@ it('uses the current qualified route across partial, full and recovery retrieval
         refreshReason: 'delivery-failure'
       })
     ).tools[0]
+
     expect(restored.inputSchema).toEqual(full.inputSchema)
     expect(restored.outputSchema).toEqual(full.outputSchema)
     expect(restored.definition).toMatchObject({
@@ -1481,7 +1662,9 @@ it('uses the current qualified route across partial, full and recovery retrieval
       state: 'included',
       deliveryReason: 'recovery'
     })
+
     const bytes = (value: unknown) => Buffer.byteLength(JSON.stringify(value))
+
     expect(bytes(usage)).toBeLessThan(bytes(full))
     expect(bytes(partial)).toBeLessThan(bytes(full))
     expect(repeated).toEqual(full)
@@ -1529,18 +1712,23 @@ it('hands one continuous parent-space material domain to independent local fills
   }
   const prepared = session.prepare(source)
   const artifact = session.resolve(prepared.artifactId)
+
   expect(admitPreparedDesign(structuredClone(artifact))).toEqual(artifact)
   const gradients = artifact.entries
     .filter((e) => e.descriptor.type === 'rect')
     .map((e) => e.descriptor.fills?.[0].gradient)
+
   expect(gradients).toEqual(source.children.map((c) => c.fill))
   // Parameter continuity at the shared edge; this is not a visual-quality judgment.
   const parameters = source.children.map((c, index) => {
     const [a, b] = c.fill.gradientHandles
+
     return ((index === 0 ? 1 : 0) - a.y) / (b.y - a.y)
   })
+
   expect(parameters).toEqual([0.5, 0.5])
   const invalid = structuredClone(source)
+
   invalid.children[1].fill.gradientHandles[1].y = NaN
   expect(() => session.prepare(invalid)).toThrow()
   expect(session.resolve(prepared.artifactId)).toEqual(artifact)
@@ -1548,6 +1736,7 @@ it('hands one continuous parent-space material domain to independent local fills
 
 it('executes documented exclusive direct and retained target inputs through canonical batch admission', async () => {
   const knowledge = createLocalKnowledgeTools('target-examples')
+
   try {
     const result = JSON.parse(
       await knowledge.call(
@@ -1566,6 +1755,7 @@ it('executes documented exclusive direct and retained target inputs through cano
     const examples = [...app.text.matchAll(/```json\n([\s\S]*?)\n```/g)]
       .map((match) => JSON.parse(String(match[1])))
       .filter((sample) => sample.tool === AiDesignToolIds.EXECUTE_DESIGN_BATCH)
+
     expect(examples).toHaveLength(2)
     const session = createDesignPreparationSession()
     const designs = createLocalDesignTools(createBasicApiActions(), session)
@@ -1586,17 +1776,24 @@ it('executes documented exclusive direct and retained target inputs through cano
     const expected = session
       .resolve(partId)
       .entries.find((entry) => entry.key === 'chosen')?.descriptor.id
+
     expect(expected).toBeDefined()
     for (const sample of examples) {
       const operation = structuredClone(sample.arguments.operations[0])
-      if (operation.target) operation.target.artifactId = partId
-      else operation.arguments.elementIds = [expected]
+
+      if (operation.target) {
+        operation.target.artifactId = partId
+      } else {
+        operation.arguments.elementIds = [expected]
+      }
+
       const resolve = vi.fn(designs.resolveTargets)
       const actions = prepareOperationBatch(
         [operation],
         createBasicApiActions(),
         resolve
       )
+
       expect(actions).toHaveLength(1)
       expect(actions[0].arguments).toEqual({ elementIds: [expected] })
       expect(resolve).toHaveBeenCalledTimes(operation.target ? 1 : 0)
@@ -1619,9 +1816,13 @@ it('executes documented exclusive direct and retained target inputs through cano
 
 it('executes the documented representative review through recorded wrong-crop recovery and independent result reuse', async () => {
   const present = <T>(value: T | null | undefined): T => {
-    if (value == null) throw new Error('Missing required review receipt')
+    if (value == null) {
+      throw new Error('Missing required review receipt')
+    }
+
     return value
   }
+
   const saved = JSON.parse(
     readFileSync(
       new URL(
@@ -1634,6 +1835,7 @@ it('executes the documented representative review through recorded wrong-crop re
   const declaration = saved.calls.find(
     (call: { index: number }) => call.index === 5
   ).input
+
   expect(
     Object.values(declaration.criteria).every(
       (criterion: { requiredUnits: string[] }) =>
@@ -1643,13 +1845,16 @@ it('executes the documented representative review through recorded wrong-crop re
   const recorded = saved.calls.find(
     (call: { index: number }) => call.index === 14
   )
+
   expect(recorded.output.accepted).toBe(false)
   const observed = recorded.input.checks.find(
     (check: { criterionId: string }) => check.criterionId === 'facade'
   )
+
   expect(observed.status).toBe('unverified')
 
   const knowledge = createLocalKnowledgeTools('representative-review')
+
   try {
     const delivery = JSON.parse(
       await knowledge.call(
@@ -1668,20 +1873,29 @@ it('executes the documented representative review through recorded wrong-crop re
     const match = app.text.match(
       /```json representative-review\n([\s\S]*?)\n```/
     )
-    if (!match)
+
+    if (!match) {
       throw new Error('Missing executable representative review example')
+    }
+
     const example = JSON.parse(match[1])
     const { designEvidenceDefinitions } =
       await import('../../../server/local-design-review')
     const definition = designEvidenceDefinitions.find(
       (item) => item.name === example.tool
     )
-    if (!definition) throw new Error('Unknown documented declaration')
+
+    if (!definition) {
+      throw new Error('Unknown documented declaration')
+    }
+
     expect(
       operationInputIssue(example.arguments, definition.inputSchema)
     ).toBeUndefined()
     const owner = createLocalDesignReview()
+
     owner.record({ ...example.arguments, phase: 'plan' })
+
     const crop = (x: number, revision: number) => {
       const result = owner.inspect(
         'sample',
@@ -1695,9 +1909,14 @@ it('executes the documented representative review through recorded wrong-crop re
           receiptId: `sample-${revision}`
         }
       )
-      if (!result) throw new Error('Missing image receipt')
+
+      if (!result) {
+        throw new Error('Missing image receipt')
+      }
+
       return result.inspectionId
     }
+
     const roof = crop(0, 1)
     const bound = owner.bindReview('visual', [
       { criterionId: 'material', unitId: 'sample-join', inspectionIds: [roof] }
@@ -1711,6 +1930,7 @@ it('executes the documented representative review through recorded wrong-crop re
         evidence: observed.evidence
       }))
     })
+
     expect(missing).toMatchObject({
       reviewOperation: 'record',
       accepted: false,
@@ -1720,6 +1940,7 @@ it('executes the documented representative review through recorded wrong-crop re
     })
     const before = owner.readChecks({ includePassed: true })
     const facade = crop(50, 1)
+
     expect(() =>
       owner.bindReview('visual', [
         {
@@ -1751,6 +1972,7 @@ it('executes the documented representative review through recorded wrong-crop re
           'Supplied deterministic observation of the actual material and join.'
       }))
     })
+
     expect(pass).toMatchObject({
       accepted: false,
       recordedChecks: [{ status: 'pass' }],
@@ -1763,6 +1985,7 @@ it('executes the documented representative review through recorded wrong-crop re
       ids: [present(pass.recordedChecks)[0].id],
       includePassed: true
     })
+
     owner.mutate()
     expect(
       owner.readChecks({
@@ -1780,6 +2003,7 @@ it('executes the documented representative review through recorded wrong-crop re
     const finalBinding = owner.bindReview('visual', [
       { criterionId: 'overall', inspectionIds: [whole.inspectionId] }
     ])
+
     expect(
       owner.recordBoundReview({
         ...finalBinding,
@@ -1798,6 +2022,7 @@ it('executes the documented representative review through recorded wrong-crop re
         inspectionIds: [facade]
       }
     ])
+
     owner.invalidateInspections(
       [facade, whole.inspectionId],
       'The material region and its whole-view image changed.'
@@ -1824,6 +2049,7 @@ it('executes the documented representative review through recorded wrong-crop re
     const recovery = owner.bindReview('visual', [
       { criterionId: 'material', unitId: 'sample-join', inspectionIds: [fresh] }
     ])
+
     expect(
       owner.recordBoundReview({
         ...recovery,
@@ -1845,6 +2071,7 @@ it('executes the documented representative review through recorded wrong-crop re
     const complete = owner.bindReview('visual', [
       { criterionId: 'overall', inspectionIds: [recoveredWhole.inspectionId] }
     ])
+
     expect(
       owner.recordBoundReview({
         ...complete,
@@ -1881,8 +2108,10 @@ it.each(['unverified', 'fail'] as const)(
       .input.checks.find(
         (check: { criterionId: string }) => check.criterionId === 'facade'
       )
+
     expect(observation.status).toBe('unverified')
     const knowledge = createLocalKnowledgeTools('native-representative-handoff')
+
     try {
       const response = JSON.parse(
         await knowledge.call(
@@ -1899,15 +2128,22 @@ it.each(['unverified', 'fail'] as const)(
           document.target ===
           'design.architectural-illustration.materials.review'
       ).text
+
       const example = (label: string) => {
         const match = text.match(
           new RegExp('```json ' + label + '\\n([\\s\\S]*?)\\n```')
         )
-        if (!match) throw new Error(`Missing ${label} example`)
+
+        if (!match) {
+          throw new Error(`Missing ${label} example`)
+        }
+
         return JSON.parse(match[1])
       }
+
       const declaration = example('representative-review')
       const capture = example('representative-capture')
+
       declaration.arguments.criteria.independent = {
         requirement: 'Keep the independent accepted part',
         description: 'Separate image and dependencies',
@@ -1924,6 +2160,7 @@ it.each(['unverified', 'fail'] as const)(
               validatedAt: { sessionId: 'saved-route', revision: 1 },
               coverage: { complete: true }
             }
+
             if (action.name === AiActionNames.INSPECT_DRAWING) {
               result = available
                 ? {
@@ -1941,6 +2178,7 @@ it.each(['unverified', 'fail'] as const)(
                       'Capture is unavailable; select the actual visible join.'
                   }
             }
+
             return { actionId: action.id, actionName: action.name, result }
           })
         })
@@ -1950,7 +2188,11 @@ it.each(['unverified', 'fail'] as const)(
           AiActionNames.INSPECT_DRAWING,
           AiActionNames.VALIDATE_INSPECTION_EVIDENCE
         ].map((name) => ({ name, description: name, inputSchema: {} })),
-        { modelActions: (a) => a, resolveBatch: (b) => b },
+        {
+          modelActions: (a) => a,
+
+          resolveBatch: (b) => b
+        },
         dispatch,
         {
           getNativeTools: () =>
@@ -1960,21 +2202,26 @@ it.each(['unverified', 'fail'] as const)(
             }))
         }
       )
+
       const call = async (name: string, args: unknown) =>
         JSON.parse(await operations.call(name, args, signal()))
+
       for (const sample of [declaration, capture]) {
         const name = `${localOperationNamespace}.${sample.tool}`
         const usage = (
           await call('describe_design_apis', { names: [name], view: 'usage' })
         ).tools[0]
+
         expect(usage.definition.coverage).toBe('usage')
         const full = (await call('describe_design_apis', { names: [name] }))
           .tools[0]
+
         expect(
           operationInputIssue(sample.arguments, full.inputSchema)
         ).toBeUndefined()
         const repeated = (await call('describe_design_apis', { names: [name] }))
           .tools[0]
+
         expect(repeated.definition.availableInResponse).toBe(true)
         const restored = (
           await call('describe_design_apis', {
@@ -1982,10 +2229,13 @@ it.each(['unverified', 'fail'] as const)(
             refreshReason: 'delivery-failure'
           })
         ).tools[0]
+
         expect(restored.inputSchema).toEqual(full.inputSchema)
       }
+
       expect(dispatch).not.toHaveBeenCalled()
       await call(declaration.tool, declaration.arguments)
+
       const judge = async (
         bound: { next: { arguments: { checks: object[] } } },
         verdict: string,
@@ -2001,6 +2251,7 @@ it.each(['unverified', 'fail'] as const)(
             evidence
           }))
         })
+
       const independent = await call(capture.tool, {
         phase: 'visual',
         final: false,
@@ -2015,15 +2266,19 @@ it.each(['unverified', 'fail'] as const)(
           'Deterministic independent observation.'
         )
       ).recordedChecks[0]
+
       const retained = () =>
         call(AiDesignToolIds.READ_DESIGN_CHECKS, {
           view: 'details',
           ids: [prior.id],
           includePassed: true
         })
+
       const before = await retained()
+
       available = false
       const unavailable = await call(capture.tool, capture.arguments)
+
       expect(unavailable.recordedChecks ?? []).toEqual([])
       expect(unavailable.accepted).not.toBe(true)
       expect((await retained()).items).toEqual(before.items)
@@ -2036,6 +2291,7 @@ it.each(['unverified', 'fail'] as const)(
           ? observation.evidence
           : 'Deterministic material contrast failure at the selected join.'
       )
+
       expect(missing).toMatchObject({
         accepted: false,
         recordedChecks: [
@@ -2044,6 +2300,7 @@ it.each(['unverified', 'fail'] as const)(
       })
       const failed = missing.recordedChecks[0]
       const replacement = structuredClone(capture.arguments)
+
       replacement.inspections[0].region.x = 40
       replacement.inspections[0].checks[0].supersedes = {
         revision: failed.revision,
@@ -2058,6 +2315,7 @@ it.each(['unverified', 'fail'] as const)(
         'pass',
         'Deterministic corrected join observation; this test does not judge real pixels.'
       )
+
       expect(pass).toMatchObject({
         accepted: false,
         recordedChecks: [
@@ -2084,6 +2342,7 @@ it.each(['unverified', 'fail'] as const)(
         ids: [failed.id],
         includePassed: true
       })
+
       expect(local.items[0]).toMatchObject({
         status: 'pass',
         revision: pass.recordedChecks[0].revision
@@ -2095,6 +2354,7 @@ it.each(['unverified', 'fail'] as const)(
           { elementId: 'whole', checks: [{ criterionId: 'overall' }] }
         ]
       })
+
       expect(whole.next.arguments.final).toBe(false)
       expect(
         await judge(whole, 'pass', 'Deterministic whole observation.')
@@ -2102,11 +2362,13 @@ it.each(['unverified', 'fail'] as const)(
         accepted: false,
         coverage: { required: 3, passed: 3 }
       })
+
       const captures = () =>
         dispatch.mock.calls
           .flatMap(([batch]) => batch.actions)
           .filter((action) => action.name === AiActionNames.INSPECT_DRAWING)
           .length
+
       const beforeCompletion = captures()
       const completion = await call(capture.tool, {
         phase: 'visual',
@@ -2114,6 +2376,7 @@ it.each(['unverified', 'fail'] as const)(
           { criterionId: 'overall', inspectionIds: whole.inspectionIds }
         ]
       })
+
       expect(
         await judge(
           completion,
@@ -2145,16 +2408,21 @@ const createLocalKnowledgeTools = (
 ) => {
   const owner = createKnowledgeOwner(...args)
   const call = owner.call.bind(owner)
+
   owner.call = (name, input, signal) =>
     readCompleteInformation((next) => call(name, next, signal), input)
+
   return owner
 }
+
 const createLocalOperationTools = (
   ...args: Parameters<typeof createOperationOwner>
 ) => {
   const owner = createOperationOwner(...args)
   const call = owner.call.bind(owner)
+
   owner.call = (name, input, signal) =>
     readCompleteInformation((next) => call(name, next, signal), input)
+
   return owner
 }

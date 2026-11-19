@@ -28,9 +28,15 @@ it('admits actual recursive preparation inputs and preserves forbidden fields an
   const native = owner.definitions.find(
     (item) => item.name === 'prepare_design'
   )
-  if (!native) throw new Error('Missing preparation contract')
+
+  if (!native) {
+    throw new Error('Missing preparation contract')
+  }
+
   const dependency = createAiToolContract(native)
+
   const literal = (value: unknown) => ({ kind: 'literal', value })
+
   const child = {
     kind: 'object',
     fields: {
@@ -82,9 +88,11 @@ it('admits actual recursive preparation inputs and preserves forbidden fields an
     ],
     output: { kind: 'step', step: 'prepare', path: '/elementCount' }
   }
+
   const check = () =>
     admitAiRecipe(proposal, {
       resolve: (name) => (name === dependency.name ? dependency : undefined),
+
       validate: operationContractIssue,
       limits: {
         steps: 4,
@@ -94,6 +102,7 @@ it('admits actual recursive preparation inputs and preserves forbidden fields an
         issues: 8
       }
     })
+
   expect(check()).toMatchObject({ ok: true })
   proposal.inputSchema.minimum = 0
   expect(check()).toMatchObject({ ok: false })
@@ -103,6 +112,7 @@ it('admits actual recursive preparation inputs and preserves forbidden fields an
 })
 
 const scalar = { type: 'number' }
+
 const recipe = (name = 'double-write', tool = 'design.set') => ({
   format: 1,
   name,
@@ -121,29 +131,39 @@ const recipe = (name = 'double-write', tool = 'design.set') => ({
   ],
   output: { kind: 'step', step: 'second', path: '' }
 })
+
 const memory = () => {
   const entries = new Map<string, AiToolStoreEntry>()
   let sequence = 0
   const store: AiToolStore = {
     read: async (key) => entries.get(key),
+
     list: async (limit) => [...entries.values()].slice(0, limit),
+
     write: vi.fn(async (input) => {
-      if (entries.get(input.key)?.version !== input.expectedVersion)
+      if (entries.get(input.key)?.version !== input.expectedVersion) {
         throw new Error('CAS conflict')
+      }
+
       const entry = {
         key: input.key,
         version: String(++sequence),
         record: input.record
       }
+
       entries.set(input.key, entry)
+
       return entry
     })
   }
+
   return store
 }
+
 const setup = (store = memory(), requestId = 'request-one', overrides = {}) => {
   const registry = createAiActionRegistry()
   const execute = vi.fn(async (value: unknown) => value)
+
   registry.register({
     name: 'design.set',
     description: 'Set a fresh value.',
@@ -175,6 +195,7 @@ const setup = (store = memory(), requestId = 'request-one', overrides = {}) => {
       issues: 8
     },
     validate: operationContractIssue,
+
     execute: (call, definition) =>
       schedule(undefined, async () => ({
         status: 'success',
@@ -183,27 +204,35 @@ const setup = (store = memory(), requestId = 'request-one', overrides = {}) => {
           signal: call.signal ?? new AbortController().signal
         })
       })),
+
     leases: {
       open: async () => undefined,
+
       retain: async () => undefined,
+
       release: async () => undefined
     },
+
     check: async () => ({
       ok: true,
       scope: 'Validated canonical write sequence; no visual certification.'
     }),
+
     ...overrides
   })
+
   return { host, registry, execute, store }
 }
 
 it('publishes current contracts and a generation for registry mutations', async () => {
   const { host } = setup()
+
   expect(host.list().map((item) => item.name)).toEqual([
     'design.set',
     'design.manage'
   ])
   let before = host.revision
+
   await host.submit({ submissionId: 'one', proposal: recipe() })
   expect(host.revision).toBeGreaterThan(before)
   expect(
@@ -225,6 +254,7 @@ it('publishes current contracts and a generation for registry mutations', async 
 
 it('submits and invokes through the same registry, saves and reuses with fresh inputs in a new request', async () => {
   const first = setup()
+
   expect(
     await first.host.submit({ submissionId: 'one', proposal: recipe() })
   ).toMatchObject({ ok: true })
@@ -246,6 +276,7 @@ it('submits and invokes through the same registry, saves and reuses with fresh i
   expect(first.execute).toHaveBeenCalledTimes(2)
   await first.host.dispose()
   const next = setup(first.store, 'request-two')
+
   expect(await next.host.load()).toMatchObject({ loaded: ['double-write'] })
   expect(
     await next.host.invoke({ name: 'double-write', input: 9 })
@@ -256,6 +287,7 @@ it('submits and invokes through the same registry, saves and reuses with fresh i
 it('repairs bad bindings without execution and rejects control-plane composition', async () => {
   const { host, execute } = setup()
   const invalid = recipe()
+
   invalid.steps[1].input.path = '/missing'
   expect(
     await host.submit({ submissionId: 'bad', proposal: invalid })
@@ -278,8 +310,10 @@ it('repairs bad bindings without execution and rejects control-plane composition
 
 it('keeps save failure independent and retries only durable storage', async () => {
   const { host, execute, store } = setup()
+
   await host.submit({ submissionId: 'one', proposal: recipe() })
   const original = store.write
+
   store.write = vi.fn(async () => {
     throw new Error('Disk full')
   })
@@ -313,9 +347,11 @@ it('never saves partial or uncertain execution as reusable success', async () =>
       value: 2
     })
   })
+
   await host.submit({ submissionId: 'one', proposal: recipe() })
   const writes = vi.mocked(store.write).mock.calls.length
   const result = await host.invoke({ name: 'double-write', input: 2 })
+
   expect(result.execution.settlement).toBe('partial')
   expect(result.storage).toBeUndefined()
   expect(store.write).toHaveBeenCalledTimes(writes)
@@ -323,9 +359,11 @@ it('never saves partial or uncertain execution as reusable success', async () =>
 
 it('pins nested execution without owning the leaf scheduler barrier', async () => {
   const { host, execute } = setup()
+
   await host.submit({ submissionId: 'child', proposal: recipe() })
   await host.invoke({ name: 'double-write', input: 1 })
   const parent = recipe('nested', 'double-write')
+
   parent.steps.forEach((step) => {
     step.revision = 1
   })
@@ -340,9 +378,11 @@ it('pins nested execution without owning the leaf scheduler barrier', async () =
 
 it('preserves saved candidates and suspends or retires durable revisions through Runtime', async () => {
   const first = setup()
+
   await first.host.submit({ submissionId: 'one', proposal: recipe() })
   await first.host.dispose()
   const next = setup(first.store, 'next')
+
   expect((await next.host.load()).loaded).toEqual([])
   expect(await next.host.resume('double-write', 1)).toMatchObject({ ok: true })
   await next.host.invoke({ name: 'double-write', input: 3 })
@@ -374,15 +414,18 @@ it('waits for active dispatch before disposal and rejects new work during closur
     execute: async () => {
       started()
       await wait
+
       return { status: 'success', settlement: 'completed', value: 1 }
     }
   })
   const running = host.invoke({ name: 'design.set', input: 1 })
+
   await start
   let disposed = false
   const closing = host.dispose().then(() => {
     disposed = true
   })
+
   await Promise.resolve()
   expect(disposed).toBe(false)
   await expect(
@@ -397,8 +440,10 @@ it('reserves bounded receipt ownership before mutation and frees it after save-o
   const { host, execute, store } = setup(undefined, 'bounded', {
     receiptCapacity: 1
   })
+
   await host.submit({ submissionId: 'one', proposal: recipe() })
   const original = store.write
+
   store.write = vi.fn(async () => {
     throw new Error('No space')
   })
@@ -426,8 +471,10 @@ it('reserves bounded receipt ownership before mutation and frees it after save-o
 
 it('does not execute cancelled work or dispose a borrowed store or registry', async () => {
   const { host, execute, store, registry } = setup()
+
   await host.submit({ submissionId: 'one', proposal: recipe() })
   const controller = new AbortController()
+
   controller.abort()
   expect(
     (
@@ -446,16 +493,22 @@ it('does not execute cancelled work or dispose a borrowed store or registry', as
 
 it('refuses externally suspended revisions in an already-loaded request without executing', async () => {
   const first = setup()
+
   await first.host.submit({ submissionId: 'one', proposal: recipe() })
   await first.host.invoke({ name: 'double-write', input: 1 })
   const next = setup(first.store, 'request-two')
+
   await next.host.load()
   const management = createAiToolStoreManagement({
     store: first.store,
     capacity: 16
   })
   const entry = await management.read('double-write', 1)
-  if (!entry) throw new Error('Expected saved revision')
+
+  if (!entry) {
+    throw new Error('Expected saved revision')
+  }
+
   expect(
     await management.setState({
       name: 'double-write',
@@ -474,10 +527,12 @@ it('refuses externally suspended revisions in an already-loaded request without 
 
 it('refuses new saved work when storage cannot verify its state', async () => {
   const { host, store, execute } = setup()
+
   await host.submit({ submissionId: 'one', proposal: recipe() })
   store.read = async () => {
     throw new Error('Storage disconnected')
   }
+
   expect(await host.invoke({ name: 'double-write', input: 2 })).toMatchObject({
     execution: { status: 'failed', settlement: 'not-started' }
   })
@@ -496,15 +551,22 @@ it('lets an already-started graph settle after external retirement without repub
   const execute = vi.fn(async () => {
     started()
     await wait
+
     return { status: 'success', settlement: 'completed', value: 1 }
   })
   const { host, store } = setup(undefined, 'active', { execute })
+
   await host.submit({ submissionId: 'one', proposal: recipe() })
   const running = host.invoke({ name: 'double-write', input: 1 })
+
   await start
   const management = createAiToolStoreManagement({ store, capacity: 16 })
   const entry = await management.read('double-write', 1)
-  if (!entry) throw new Error('Expected saved revision')
+
+  if (!entry) {
+    throw new Error('Expected saved revision')
+  }
+
   await management.setState({
     name: 'double-write',
     revision: 1,
@@ -526,8 +588,10 @@ it('lets an already-started graph settle after external retirement without repub
 for (const fault of ['before-commit', 'after-commit'] as const) {
   it(`recovers nested tool saving through real SQLite without replay - ${fault}`, async () => {
     const parentDirectory = resolve('tmp/tool-library-tests')
+
     await mkdir(parentDirectory, { recursive: true })
     const directory = await mkdtemp(resolve(parentDirectory, 'nested-'))
+
     const open = () =>
       createLocalToolStore({
         directory,
@@ -535,32 +599,43 @@ for (const fault of ['before-commit', 'after-commit'] as const) {
         recordBytes: 65536,
         totalBytes: 1048576
       })
+
     const database = await open()
     let reopened: Awaited<ReturnType<typeof open>> | undefined
     let first: ReturnType<typeof setup> | undefined
     let next: ReturnType<typeof setup> | undefined
+
     try {
       let fail = false
       const admissionReads: string[] = []
       const store: AiToolStore = {
         read: (key) => {
           admissionReads.push(key)
+
           return database.read(key)
         },
+
         list: (limit) => database.list(limit),
+
         write: async (input) => {
           if (fail && input.key === JSON.stringify(['double-write', 1])) {
-            if (fault === 'after-commit') await database.write(input)
+            if (fault === 'after-commit') {
+              await database.write(input)
+            }
+
             throw new Error('Injected child save acknowledgement failure')
           }
+
           return database.write(input)
         }
       }
+
       first = setup(store)
       expect(
         await first.host.submit({ submissionId: 'child', proposal: recipe() })
       ).toMatchObject({ ok: true })
       const parent = recipe('nested', 'double-write')
+
       parent.steps.forEach((step) => {
         step.revision = 1
       })
@@ -573,6 +648,7 @@ for (const fault of ['before-commit', 'after-commit'] as const) {
           JSON.stringify(['nested', 1]),
           JSON.stringify(['double-write', 1])
         ])
+
         return value
       })
       fail = true
@@ -581,6 +657,7 @@ for (const fault of ['before-commit', 'after-commit'] as const) {
         input: 3,
         callId: 'root-save'
       })
+
       expect(result).toMatchObject({
         execution: { status: 'success', value: 3 },
         storage: { status: 'unsaved' },
@@ -628,7 +705,11 @@ for (const fault of ['before-commit', 'after-commit'] as const) {
         capacity: 16
       })
       const child = await management.read('double-write', 1)
-      if (!child) throw new Error('Missing saved child')
+
+      if (!child) {
+        throw new Error('Missing saved child')
+      }
+
       expect(
         await management.setState({
           name: 'double-write',
@@ -657,6 +738,7 @@ it('keeps storage eligibility independent of phase observer failures', async () 
       throw new Error('Observer unavailable')
     }
   })
+
   await host.submit({ submissionId: 'one', proposal: recipe() })
   expect(await host.invoke({ name: 'double-write', input: 7 })).toMatchObject({
     execution: { status: 'success', value: 7 },
@@ -669,8 +751,10 @@ it('keeps storage eligibility independent of phase observer failures', async () 
 for (const availability of ['suspended', 'retired'] as const) {
   it(`does not acknowledge stale eligibility across SQLite connections - ${availability}`, async () => {
     const parentDirectory = resolve('tmp/tool-library-tests')
+
     await mkdir(parentDirectory, { recursive: true })
     const directory = await mkdtemp(resolve(parentDirectory, 'publication-'))
+
     const open = () =>
       createLocalToolStore({
         directory,
@@ -678,6 +762,7 @@ for (const availability of ['suspended', 'retired'] as const) {
         recordBytes: 65536,
         totalBytes: 1048576
       })
+
     const database = await open()
     const peer = await open()
     const management = createAiToolStoreManagement({
@@ -689,8 +774,12 @@ for (const availability of ['suspended', 'retired'] as const) {
     const store: AiToolStore = {
       read: async (key) => {
         const snapshot = await database.read(key)
+
         if (interrupt && ++reads === 2) {
-          if (!snapshot) throw new Error('Expected saved definition')
+          if (!snapshot) {
+            throw new Error('Expected saved definition')
+          }
+
           expect(
             await management.setState({
               name: 'double-write',
@@ -700,12 +789,16 @@ for (const availability of ['suspended', 'retired'] as const) {
             })
           ).toMatchObject({ status: 'saved' })
         }
+
         return snapshot
       },
+
       list: (limit) => database.list(limit),
+
       write: (input) => database.write(input)
     }
     const { host, execute } = setup(store)
+
     try {
       expect(
         await host.submit({ submissionId: 'one', proposal: recipe() })
@@ -718,6 +811,7 @@ for (const availability of ['suspended', 'retired'] as const) {
       })
       interrupt = true
       const result = await host.invoke({ name: 'double-write', input: 2 })
+
       expect(result).toMatchObject({
         execution: { status: 'success', value: 2 },
         storage: { status: 'unsaved' },
@@ -741,6 +835,7 @@ for (const availability of ['suspended', 'retired'] as const) {
         availability
       })
       const next = setup(peer, 'fresh-request')
+
       try {
         expect((await next.host.load()).loaded).toEqual([])
         expect(next.execute).not.toHaveBeenCalled()
@@ -759,8 +854,10 @@ for (const availability of ['suspended', 'retired'] as const) {
 for (const mode of ['load', 'resume'] as const) {
   it(`checks current saved authority after dependency validation - ${mode}`, async () => {
     const parentDirectory = resolve('tmp/tool-library-tests')
+
     await mkdir(parentDirectory, { recursive: true })
     const directory = await mkdtemp(resolve(parentDirectory, 'restore-'))
+
     const open = () =>
       createLocalToolStore({
         directory,
@@ -768,6 +865,7 @@ for (const mode of ['load', 'resume'] as const) {
         recordBytes: 65536,
         totalBytes: 1048576
       })
+
     const database = await open()
     const peer = await open()
     const management = createAiToolStoreManagement({
@@ -776,6 +874,7 @@ for (const mode of ['load', 'resume'] as const) {
     })
     const first = setup(database)
     let next: ReturnType<typeof setup> | undefined
+
     try {
       expect(
         await first.host.submit({ submissionId: 'child', proposal: recipe() })
@@ -784,29 +883,37 @@ for (const mode of ['load', 'resume'] as const) {
         await first.host.invoke({ name: 'double-write', input: 1 })
       ).toMatchObject({ storage: { status: 'saved' } })
       const proposal = recipe('nested', 'double-write')
+
       proposal.steps.forEach((step) => {
         step.revision = 1
       })
       expect(
         await first.host.submit({ submissionId: 'parent', proposal })
       ).toMatchObject({ ok: true })
-      if (mode === 'load')
+      if (mode === 'load') {
         expect(
           await first.host.invoke({ name: 'nested', input: 2 })
         ).toMatchObject({ storage: { status: 'saved' } })
+      }
+
       await first.host.dispose()
       let childReads = 0
       let armed = mode === 'load'
       const store: AiToolStore = {
         read: async (key) => {
           const entry = await database.read(key)
+
           if (
             armed &&
             key === JSON.stringify(['double-write', 1]) &&
             ++childReads === (mode === 'load' ? 2 : 1)
           ) {
             const parent = await management.read('nested', 1)
-            if (!parent) throw new Error('Missing saved parent')
+
+            if (!parent) {
+              throw new Error('Missing saved parent')
+            }
+
             expect(
               await management.setState({
                 name: 'nested',
@@ -816,18 +923,25 @@ for (const mode of ['load', 'resume'] as const) {
               })
             ).toMatchObject({ status: 'saved' })
           }
+
           return entry
         },
+
         list: (limit) => database.list(limit),
+
         write: (input) => database.write(input)
       }
+
       next = setup(store, 'reopened')
       const loaded = await next.host.load()
-      if (mode === 'load') expect(loaded.loaded).toEqual(['double-write'])
-      else {
+
+      if (mode === 'load') {
+        expect(loaded.loaded).toEqual(['double-write'])
+      } else {
         armed = true
         expect(await next.host.resume('nested', 1)).toMatchObject({ ok: false })
       }
+
       expect(await management.read('nested', 1)).toMatchObject({
         availability: 'retired'
       })
@@ -846,8 +960,10 @@ for (const mode of ['load', 'resume'] as const) {
 for (const acknowledgement of ['returned', 'lost'] as const) {
   it(`preserves post-commit retirement through settlement and recovery - ${acknowledgement}`, async () => {
     const parentDirectory = resolve('tmp/tool-library-tests')
+
     await mkdir(parentDirectory, { recursive: true })
     const directory = await mkdtemp(resolve(parentDirectory, 'committed-'))
+
     const open = () =>
       createLocalToolStore({
         directory,
@@ -855,6 +971,7 @@ for (const acknowledgement of ['returned', 'lost'] as const) {
         recordBytes: 65536,
         totalBytes: 1048576
       })
+
     const database = await open()
     const peer = await open()
     const management = createAiToolStoreManagement({
@@ -866,9 +983,12 @@ for (const acknowledgement of ['returned', 'lost'] as const) {
     const observations: { name: string; phase: string; output?: unknown }[] = []
     const store: AiToolStore = {
       read: (key) => database.read(key),
+
       list: (limit) => database.list(limit),
+
       write: async (input) => {
         const ack = await database.write(input)
+
         if (retireAfterCommit) {
           retireAfterCommit = false
           committedVersion = ack.version
@@ -880,9 +1000,11 @@ for (const acknowledgement of ['returned', 'lost'] as const) {
               availability: 'retired'
             })
           ).toMatchObject({ status: 'saved', availability: 'retired' })
-          if (acknowledgement === 'lost')
+          if (acknowledgement === 'lost') {
             throw new Error('Committed acknowledgement was lost')
+          }
         }
+
         return ack
       }
     }
@@ -900,12 +1022,14 @@ for (const acknowledgement of ['returned', 'lost'] as const) {
       }
     })
     let next: ReturnType<typeof setup> | undefined
+
     try {
       expect(
         await first.host.submit({ submissionId: 'one', proposal: recipe() })
       ).toMatchObject({ ok: true })
       retireAfterCommit = true
       const result = await first.host.invoke({ name: 'double-write', input: 7 })
+
       expect(result.execution).toMatchObject({ status: 'success', value: 7 })
       if (acknowledgement === 'returned') {
         expect(result.storage).toEqual({
@@ -925,9 +1049,11 @@ for (const acknowledgement of ['returned', 'lost'] as const) {
           })
         ).toMatchObject({ status: 'unsaved' })
       }
+
       const saving = observations.filter(
         (event) => event.name === 'tool_library.save_tool'
       )
+
       expect(saving.map((event) => event.phase)).toEqual([
         'started',
         'completed'
@@ -943,6 +1069,7 @@ for (const acknowledgement of ['returned', 'lost'] as const) {
       database.close()
       next = setup(peer, 'next-request')
       const loaded = await next.host.load()
+
       expect(loaded.loaded).toEqual([])
       expect(loaded.unavailable).toContainEqual({
         key: JSON.stringify(['double-write', 1]),

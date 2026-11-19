@@ -106,6 +106,7 @@ describe('create-element canonical parent handoff', () => {
 
   it('keeps drag geometry in the resolved Group parent coordinate space', () => {
     const state = createElementSession.onStart?.(startSnapshot as never)
+
     mocks.getMousePosInWorkspace.mockReturnValue({ x: 140, y: 260 })
     mocks.getPositionInParent
       .mockReturnValueOnce({ x: 10, y: 20 })
@@ -139,6 +140,7 @@ describe('create-element canonical parent handoff', () => {
 
   it('does not replay unchanged workspace geometry after Group rebasing', () => {
     const state = createElementSession.onStart?.(startSnapshot as never)
+
     mocks.getMousePosInWorkspace.mockReturnValue({ x: 140, y: 260 })
     mocks.getPositionInParent
       .mockReturnValueOnce({ x: 10, y: 20 })

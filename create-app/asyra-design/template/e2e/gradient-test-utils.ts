@@ -29,6 +29,7 @@ export const getSelectedGradientSnapshot = async (
   page.evaluate(async () => {
     const core = (await import('../src/testing/runtime-access')).core
     const selectedId = core?.deps?.selection?.getElementSelectionIds?.()?.[0]
+
     if (!selectedId) {
       return null
     }
@@ -36,6 +37,7 @@ export const getSelectedGradientSnapshot = async (
     const element = core?.deps?.sceneTree?.getElementById?.(selectedId)
     const computed = element?.getAllComputedData?.() ?? {}
     const firstFill = computed?.fills?.[0]
+
     if (!firstFill?.id) {
       return null
     }
@@ -68,6 +70,7 @@ export const getGradientHandleClientPosition = async (
 ) => {
   const snapshot = await getSelectedGradientSnapshot(page)
   const handle = snapshot?.gradient?.gradientHandles?.[handleIndex]
+
   if (!snapshot || !handle) {
     throw new Error(`Missing gradient handle ${handleIndex}`)
   }

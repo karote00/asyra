@@ -32,6 +32,7 @@ test.describe('Viewport Navigation', () => {
 
     await expect(async () => {
       const newZoom = await getZoomLevel(page)
+
       expect(newZoom).toBeGreaterThan(initialZoom)
     }).toPass({ timeout: 2000 })
   })
@@ -49,6 +50,7 @@ test.describe('Viewport Navigation', () => {
 
     await expect(async () => {
       const newZoom = await getZoomLevel(page)
+
       expect(newZoom).toBeLessThan(initialZoom)
     }).toPass({ timeout: 2000 })
   })
@@ -69,6 +71,7 @@ test.describe('Viewport Navigation', () => {
 
     await expect(async () => {
       const afterZoomIn = await getZoomLevel(page)
+
       expect(afterZoomIn).toBeGreaterThan(initialZoom)
     }).toPass({ timeout: 2000 })
 
@@ -78,10 +81,12 @@ test.describe('Viewport Navigation', () => {
       await page.mouse.wheel(0, 50)
       await page.waitForTimeout(50)
     }
+
     await page.keyboard.up('Meta')
 
     await expect(async () => {
       const afterZoomOut = await getZoomLevel(page)
+
       expect(afterZoomOut).toBeLessThan(afterZoomIn)
     }).toPass({ timeout: 2000 })
   })
@@ -89,12 +94,14 @@ test.describe('Viewport Navigation', () => {
   test('should display zoom percentage in toolbar', async ({ page }) => {
     const toolbar = getToolbar(page)
     const zoomDisplay = toolbar.getByTestId('zoom-level')
+
     await expect(zoomDisplay).toBeVisible()
     await expect(zoomDisplay).toContainText(/%/)
   })
 
   test('should respect zoom limits', async ({ page }) => {
     const pos = await getCanvasPosition(page, 0.5, 0.5)
+
     await page.mouse.move(pos.x, pos.y)
 
     await page.keyboard.down('Meta')
@@ -105,6 +112,7 @@ test.describe('Viewport Navigation', () => {
     }
 
     const minZoom = await getZoomLevel(page)
+
     expect(minZoom).toBeGreaterThan(0)
 
     // Zoom in many times
@@ -112,9 +120,11 @@ test.describe('Viewport Navigation', () => {
       await page.mouse.wheel(0, -500)
       await page.waitForTimeout(20)
     }
+
     await page.keyboard.up('Meta')
 
     const maxZoom = await getZoomLevel(page)
+
     expect(maxZoom).toBeGreaterThan(minZoom)
   })
 })
@@ -127,6 +137,7 @@ for (const aiPanelOpen of [false, true]) {
       await page.goto(createTestDocumentURL())
       await waitForAppReady(page)
       const start = await getCanvasPosition(page, 0.2, 0.2)
+
       await page.keyboard.press('r')
       await page.mouse.move(start.x, start.y)
       await page.mouse.down()
@@ -138,23 +149,32 @@ for (const aiPanelOpen of [false, true]) {
       await page.mouse.up()
       await page.keyboard.press('v')
       await page.keyboard.press('Escape')
+
       const readCamera = () =>
         page.evaluate(async () => {
           const { viewportApis } = await import('../src/common-apis/viewport')
+
           return {
             scale: viewportApis.getScale(),
             position: viewportApis.getPosition()
           }
         })
+
       for (const [index, width] of [1280, 960, 1600].entries()) {
         const cameraBeforeLayout = await readCamera()
+
         await page.setViewportSize({ width, height: 720 })
         const panelOpen = index === 1 ? !aiPanelOpen : aiPanelOpen
         const panel = page.getByTestId('ai-agent-panel')
-        if (panelOpen && !(await panel.isVisible()))
+
+        if (panelOpen && !(await panel.isVisible())) {
           await page.getByRole('button', { name: 'Open Agent' }).click()
-        if (!panelOpen && (await panel.isVisible()))
+        }
+
+        if (!panelOpen && (await panel.isVisible())) {
           await page.getByRole('button', { name: 'Close Agent panel' }).click()
+        }
+
         // Layout changes only update the available area, never the camera.
         expect(await readCamera()).toEqual(cameraBeforeLayout)
         await clickCanvas(page, 0.1, 0.5)
@@ -164,17 +184,30 @@ for (const aiPanelOpen of [false, true]) {
             const { core } = await import('../src/testing/runtime-access')
             const { viewportApis } = await import('../src/common-apis/viewport')
             const bounds = core.getAllElementsBounds()
-            if (!bounds) throw new Error('Expected drawn content')
+
+            if (!bounds) {
+              throw new Error('Expected drawn content')
+            }
+
             const anchor = document.getElementById('viewport-anchor')
-            if (!anchor) throw new Error('Expected viewport anchor')
+
+            if (!anchor) {
+              throw new Error('Expected viewport anchor')
+            }
+
             const viewport = anchor.getBoundingClientRect()
             const sidebar =
               document.querySelector('[data-testid="ai-agent-panel"]') ??
               document.querySelector('[data-testid="properties-panel"]')
-            if (!sidebar) throw new Error('Expected visible right sidebar')
+
+            if (!sidebar) {
+              throw new Error('Expected visible right sidebar')
+            }
+
             const visibleRight = sidebar.getBoundingClientRect().left
             const scale = viewportApis.getScale()
             const position = viewportApis.getPosition()
+
             return {
               contentX: ((bounds.minX + bounds.maxX) / 2) * scale + position.x,
               contentY: ((bounds.minY + bounds.maxY) / 2) * scale + position.y,
@@ -184,6 +217,7 @@ for (const aiPanelOpen of [false, true]) {
               viewportY: viewport.y + viewport.height / 2
             }
           })
+
           expect(state.contentX).toBeCloseTo(state.viewportX, 1)
           expect(state.contentY).toBeCloseTo(state.viewportY, 1)
           expect(state.contentRight).toBeLessThanOrEqual(
