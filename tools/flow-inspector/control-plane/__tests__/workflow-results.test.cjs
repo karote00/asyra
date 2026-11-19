@@ -1036,6 +1036,30 @@ test('selected E2E suites require exact outcomes and unselected suites stay skip
   )
 })
 
+test('successful collaboration forwarding cannot hide a failed functional sibling', () => {
+  const result = assess(envelopes(), {
+    e2e: 'failure',
+    designForwarder: 'failure',
+    collaborationForwarder: 'success',
+    e2eSuiteResults: {
+      'flow-inspector-board': 'success',
+      'render-contracts': 'success',
+      functional: 'failure',
+      collaboration: 'success'
+    }
+  })
+
+  assert.notEqual(result.status, 'passed')
+  assert.ok(
+    result.blockers.includes('e2e functional: selected suite did not succeed')
+  )
+  assert.ok(
+    !result.blockers.some((blocker) =>
+      blocker.startsWith('collaborationForwarder:')
+    )
+  )
+})
+
 test('selected lint cannot pass without at least one executed-file result', () => {
   const scope = makeScope()
   const emptyResult = checkResultsFor(scope)
@@ -1471,7 +1495,13 @@ test('existing required E2E check names succeed for producers or declared skips'
     assert.ok(command)
     for (const [selected, workflowResult, result, expected] of [
       ['true', 'success', 'success', true],
+      ['true', 'failure', 'success', true],
       ['true', 'success', 'failure', false],
+      ['true', 'failure', 'failure', false],
+      ['true', 'failure', '', false],
+      ['true', 'failure', 'skipped', false],
+      ['true', 'failure', 'cancelled', false],
+      ['true', 'cancelled', 'success', false],
       ['true', 'skipped', 'success', false],
       ['false', 'skipped', '', true],
       ['false', 'success', 'success', false]

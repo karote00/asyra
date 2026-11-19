@@ -612,6 +612,11 @@ skipped and the forwarding job succeeds only after checking that workflow-level
 skip. The named forwarding checks therefore complete for both selected and
 explicitly unselected scopes; their status cannot remain pending due to an
 inapplicable Design suite.
+For a selected producer, the reusable workflow must have settled as `success`
+or `failure`; a failed sibling does not replace this producer's exported result.
+A skipped, cancelled or absent workflow cannot attest a selected producer.
+The final aggregate independently requires every selected suite and the whole
+workflow to succeed, so producer-specific forwarding never grants overall success.
 These jobs do not rerun tests or replace case evidence. The aggregate uses the
 existing required `validate` check name, so the active ruleset can block on the
 selected category and release results without a new remote check-name change.
@@ -642,7 +647,6 @@ Stdout contains verdicts, blockers, producer case counts and the result path;
 runner details and full case records remain in the artifact and original bundles.
 Failure to persist the result is a failing aggregate, never a successful receipt.
 The output transport must not depend on the size of retained runner payloads.
-
 
 This is observational CI integration, not a protected issuer. Workflow and
 report bytes remain repository-controlled; digest integrity is not authenticity.

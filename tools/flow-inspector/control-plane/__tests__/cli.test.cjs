@@ -147,12 +147,13 @@ test(
     try {
       assert.equal(await invoke('mapping-diff'), 0)
       assert.match(messages.join('\n'), /unchanged/)
-      assert.equal(await invoke('prove'), 0)
+      assert.equal(await invoke('verify'), 0)
       const runs = server.service.state().runs
 
-      assert.equal(runs.length, server.service.contract().scenarios.length + 1)
+      assert.equal(runs.length, 1)
+      assert.equal(runs[0].status, 'passed')
       assert.equal(await invoke('show', runs[0].id), 0)
-      assert.match(messages.join('\n'), /Core proof passed/)
+      assert.equal(runs[0].scenario, 'baseline')
       assert.match(messages.join('\n'), /Mapping/)
       assert.equal(await invoke('status'), 0)
       await assert.rejects(invoke('mapping-accept', 'invalid', 'reason'))

@@ -715,3 +715,125 @@ path or rejection condition changed. Native-focus reproduction proves the missin
 observation precondition; it does not invent the original Linux wait phase.
 Local validation is complete for this bounded correction. The owner will inspect
 the successor PR #365 CI run; no remote-pass claim is made here.
+
+## CI responsibility correction - run 44385457484
+
+The complete 44-job inventory has two directly failing producers: the complete
+mechanical-repair browser case and the Control Plane CLI authority case. Three
+other red jobs forward or aggregate those results. Collaboration, Board, native
+Codex delivery and workspace checks passed. The integration tree equals the PR
+tree at `ab821dcce1e14094fc64d5da214eea637b3c84a0`.
+
+The browser trace reaches its final reload at 29.539 seconds of a 30-second case;
+four real persistence waits consume 13.475 seconds. The final readiness wait is
+where the budget expires, not proof of a startup defect. The case combines
+repair/history/durability, library save/reopen, and peer-driven invalidation.
+The CLI authority test runs nine actual Factory verifications under a 20-second
+transport test budget, duplicating the runner's nine-scenario proof. CI retained
+no substep timing, so the exact pending CLI phase remains unknown.
+
+### Bounded revised plan
+
+1. **Mechanical browser proof.** Move the mechanical integration cases into
+   `e2e/ai-mechanical-repair.spec.ts`. Preserve the real provider-to-host-to-browser
+   bridge and the complete repair/peer/history/durable-reload chain. Give library
+   save failure/reopen and peer invalidation their own cases using the same real
+   setup. Keep all assertions and current per-case deadlines; do not shorten the
+   production persistence interval. Register each case under the existing
+   `inspect-design` responsibility, with no invented product owner.
+2. **CLI proof ownership.** Keep the real HTTP/service authority test to one
+   baseline action and read/denial parity. Consolidate the duplicated complete
+   Factory proof into `cli-proof.test.cjs`: execute the real `prove` command over
+   HTTP once and retain the runner proof's exact negative failures, unaffected
+   passes, identities, and recovery checks. Preserve that proof's existing
+   30-second budget and process guards. Record retained stages on failure; do
+   not infer a specific original timeout phase.
+3. **Result forwarding.** Each selected forwarding check owns its exported
+   producer result, not a sibling's result. Add executable shell regressions
+   for successful collaboration with a failed functional sibling, and rejection
+   of missing, failed, skipped or cancelled selected results. Reject impossible
+   skipped/cancelled workflow states. Keep overall workflow failure blocking
+   `validate`. Report-error evidence stays unverified by the current spec;
+   do not weaken it to make a passed representative case green.
+
+The existing CI failures are the formal red browser/CLI evidence. Add forwarding
+counterexamples before implementation. After each slice run its focused tests
+and review retained assertions and consumers; then run complete Design functional
+and Control Plane validation, exact discovery, App typechecks and scoped lint.
+No product scheduler, model prompt, persistence policy, dependency, compatibility
+path or 101 test changes are authorized. No full repository test is selected.
+New names identify test responsibilities only; existing product and persisted
+identities stay unchanged. Naming baseline passes. Final review is limited to
+these owners, direct consumers and fixed gates. Push to the existing PR #365
+after validation; the owner will inspect CI without agent polling.
+
+The reviewed `inspect-design` flow consumes selected canonical targets and current
+evidence, produces scoped inspection outcomes, and permits public App APIs while
+forbidding test-owned product state. The cases continue to use those APIs. Core
+Proof owns real runner execution and exact source-bound negative/recovery proof;
+the forwarding contract in `CORE_PROOF.md` assigns each required check its actual
+producer. File splitting changes test ownership, not product flow semantics.
+
+### Focused outcomes and review
+
+- All seven mechanical browser cases pass without retries, skips or extended
+  deadlines (`tmp/ci6-mechanical.json`). Complete repair/history/reload takes
+  21.403 seconds locally; save/reopen and peer invalidation take 14.805 and
+  11.761 seconds. These local durations do not establish CI performance.
+  Existing failure, no-progress, cancellation and interruption variants retain
+  their original runtime and history assertions. Library recovery still verifies
+  no canvas replay, stale receipt rejection and fresh-request mechanical checks;
+  peer invalidation still proves exactly the affected root is remeasured.
+- All 34 CLI/proof/runner tests pass (`tmp/ci6-cli.log`). One nine-run real
+  CLI-to-HTTP-to-service proof retains every previous identity and exact-negative
+  assertion. It takes 9.987 seconds locally; the one-action authority case takes
+  1.098 seconds. The duplicated direct runner scenario loop is removed; runner
+  isolation, cleanup and evidence rejection tests remain.
+- The executable forwarding regression first fails on
+  `true/failure/success` (`tmp/ci6-forward-red.log`), then all 50 forwarding and
+  aggregation tests pass (`tmp/ci6-forward-green.log`). A successful collaboration
+  forwarder does not conceal failed functional/overall results. Cancelled,
+  missing and skipped selected outcomes remain rejected.
+- Exact functional discovery passes all 50 contract cases, including the two new
+  mechanical registrations (`tmp/ci6-contracts.log`). App typechecks and scoped
+  lint pass (`tmp/ci6-types.log`, `tmp/ci6-lint.log`). No runtime behavior changed.
+
+The fixed-boundary review preserves the original assertions at their new owners.
+Report-error observations remain non-passing by specification, and the aggregate
+still blocks unsuccessful required jobs. Complete producer validation follows;
+focused success alone is not the final acceptance result.
+
+### Complete bounded acceptance
+
+The final test review adds explicit history-depth and transaction-idle equality
+before/after library save and fresh-host reuse. This preserves the original
+no-extra-history obligation without making that case repeat the independent
+repair/history/reload sequence. The focused browser case passes again
+(`tmp/ci6-library-history.json`).
+
+- The exact CI Control Plane selection, independently compared with the formal
+  command's top-level file inventory, includes all 36 files and the new CLI proof.
+  It passes 681 cases with 57 existing conditional skips, zero failures and zero
+  cancellations (`tmp/ci6-control-plane.log`, 738 total, 617.216 seconds).
+- Complete Design functional validation passes 546 cases with 14 existing
+  conditional skips, zero failures, zero retries/flaky outcomes and zero report
+  errors (`tmp/ci6-functional.json`, 560 total, 1344.617 seconds). The complete
+  mechanical chain takes 20.784 seconds; save/reopen takes 14.801 seconds and
+  peer invalidation takes 11.768 seconds. All seven variants pass. Sources were
+  frozen during this run, including the added history equality assertions.
+- Isolated unavailable-service status passes its one case
+  (`tmp/ci6-status.json`). Both complete producer reports are retained through
+  the formal observation begin/complete paths, with no evidence collection error
+  (`tmp/ci6-functional-observation.log`, `tmp/ci6-status-observation.log`).
+- Final naming, scoped lint and changed code/contract formatting checks pass.
+  App typechecks pass. Dependency audit passes with evidence retained at
+  `tmp/security-audit/run-VH69UM`. Task-owned browser service ports are closed.
+
+The final scope contains test responsibility separation, exact case registration,
+producer-specific forwarding and their documentation. The aggregate's rejection
+rules, product persistence window, process cleanup guards, ordinary browser
+deadlines and existing complete-proof budget remain unchanged. No compatibility
+path, new dependency, model call, 101 run or full repository test was introduced.
+Historical failure evidence remains intact, including the unknown original CLI
+timeout substep. Local acceptance is complete; successor remote CI is not claimed
+to pass and will be inspected by the owner.

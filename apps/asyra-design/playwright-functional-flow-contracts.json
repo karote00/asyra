@@ -6287,7 +6287,7 @@
         {
           "id": "functional.mechanical-repair.complete",
           "stepId": "inspect-design",
-          "testFile": "apps/asyra-design/e2e/ai-inspection-evidence.spec.ts",
+          "testFile": "apps/asyra-design/e2e/ai-mechanical-repair.spec.ts",
           "testName": "aggregate mechanical repair preserves independent passes through history and durable reload - complete",
           "projectName": "chromium",
           "implementationPaths": [
@@ -6299,7 +6299,7 @@
         {
           "id": "functional.mechanical-repair.basis-changed",
           "stepId": "inspect-design",
-          "testFile": "apps/asyra-design/e2e/ai-inspection-evidence.spec.ts",
+          "testFile": "apps/asyra-design/e2e/ai-mechanical-repair.spec.ts",
           "testName": "aggregate mechanical repair preserves independent passes through history and durable reload - basis-changed",
           "projectName": "chromium",
           "implementationPaths": [
@@ -6311,7 +6311,7 @@
         {
           "id": "functional.mechanical-repair.no-progress",
           "stepId": "inspect-design",
-          "testFile": "apps/asyra-design/e2e/ai-inspection-evidence.spec.ts",
+          "testFile": "apps/asyra-design/e2e/ai-mechanical-repair.spec.ts",
           "testName": "aggregate mechanical repair preserves independent passes through history and durable reload - no-progress",
           "projectName": "chromium",
           "implementationPaths": [
@@ -6323,7 +6323,7 @@
         {
           "id": "functional.mechanical-repair.cancel-after-write",
           "stepId": "inspect-design",
-          "testFile": "apps/asyra-design/e2e/ai-inspection-evidence.spec.ts",
+          "testFile": "apps/asyra-design/e2e/ai-mechanical-repair.spec.ts",
           "testName": "aggregate mechanical repair preserves independent passes through history and durable reload - cancel-after-write",
           "projectName": "chromium",
           "implementationPaths": [
@@ -6335,7 +6335,7 @@
         {
           "id": "functional.mechanical-repair.interrupted-after-write",
           "stepId": "inspect-design",
-          "testFile": "apps/asyra-design/e2e/ai-inspection-evidence.spec.ts",
+          "testFile": "apps/asyra-design/e2e/ai-mechanical-repair.spec.ts",
           "testName": "aggregate mechanical repair preserves independent passes through history and durable reload - interrupted-after-write",
           "projectName": "chromium",
           "implementationPaths": [
@@ -6477,6 +6477,30 @@
           "implementationPaths": [
             "apps/asyra-design/src/common-apis/inspection.ts",
             "apps/asyra-design/src/ai/inspection.ts"
+          ]
+        },
+        {
+          "id": "functional.mechanical-repair.library-reuse",
+          "stepId": "inspect-design",
+          "testFile": "apps/asyra-design/e2e/ai-mechanical-repair.spec.ts",
+          "testName": "mechanical repair saves and reopens its library without replaying canvas work",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/server/local-mechanical-checks.ts",
+            "apps/asyra-design/server/local-operation-tools.ts",
+            "apps/asyra-design/src/ai/prescribed-position-action.ts"
+          ]
+        },
+        {
+          "id": "functional.mechanical-repair.peer-invalidation",
+          "stepId": "inspect-design",
+          "testFile": "apps/asyra-design/e2e/ai-mechanical-repair.spec.ts",
+          "testName": "mechanical repair rechecks only the pass invalidated by a peer and its Undo",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/server/local-mechanical-checks.ts",
+            "apps/asyra-design/server/local-operation-tools.ts",
+            "apps/asyra-design/src/ai/prescribed-position-action.ts"
           ]
         }
       ],
