@@ -1022,6 +1022,32 @@ test('CI aggregates still report failed or skipped dependencies but stop on canc
   }
 })
 
+test('functional E2E installs its declared recording runtime before starting tests', () => {
+  const workflow = yaml.load(readText('.github/workflows/e2e.yml'))
+  const job = workflow.jobs['e2e-tests']
+  const installCommand =
+    'yarn workspace @asyra/asyra-design exec playwright install ffmpeg'
+  const installs = job.steps.filter((step) => step.run === installCommand)
+
+  assert.equal(installs.length, 1)
+  assert.equal(
+    job.env.PLAYWRIGHT_BROWSERS_PATH,
+    '${{ github.workspace }}/tmp/playwright-runtime'
+  )
+  const dependencies = job.steps.findIndex(
+    (step) => step.run === 'yarn install --immutable'
+  )
+  const install = job.steps.indexOf(installs[0])
+  const execute = job.steps.findIndex(
+    (step) => step.run === 'bash scripts/run-e2e.sh'
+  )
+
+  assert.ok(dependencies >= 0 && dependencies < install && install < execute)
+  for (const step of job.steps) {
+    assert.equal(step.env?.PLAYWRIGHT_BROWSERS_PATH, undefined)
+  }
+})
+
 test('E2E automation cancels superseded runs and uses runner Chrome', () => {
   const e2e = readText('.github/workflows/e2e.yml')
   const workflowDirectory = path.join(repositoryRoot, '.github', 'workflows')
@@ -1037,7 +1063,13 @@ test('E2E automation cancels superseded runs and uses runner Chrome', () => {
     /group: e2e-\$\{\{ github\.workflow \}\}-\$\{\{ github\.event\.pull_request\.number \|\| github\.ref \}\}/
   )
   assert.match(e2e, /cancel-in-progress: true/)
-  assert.doesNotMatch(allWorkflows, /playwright install/)
+  assert.deepEqual(
+    allWorkflows
+      .split('\n')
+      .filter((line) => /playwright\s+install\b/u.test(line))
+      .map((line) => line.trim()),
+    ['run: yarn workspace @asyra/asyra-design exec playwright install ffmpeg']
+  )
   assert.doesNotMatch(
     readText('scripts/run-e2e.sh'),
     /E2E_RENDER_PERFORMANCE_BROWSER/

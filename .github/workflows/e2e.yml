@@ -107,6 +107,7 @@ jobs:
     outputs:
       evidence: ${{ steps.flow-results.outputs.evidence }}
     env:
+      PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/tmp/playwright-runtime
       FLOW_RESULT_REPOSITORY: ${{ github.repository }}
       FLOW_RESULT_BASE: ${{ github.event.pull_request.base.sha || github.sha }}
       FLOW_RESULT_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
@@ -137,6 +138,9 @@ jobs:
 
       - name: Install dependencies
         run: yarn install --immutable
+
+      - name: Install declared Playwright recording runtime
+        run: yarn workspace @asyra/asyra-design exec playwright install ffmpeg
 
       - name: Prepare offline native test client
         env:

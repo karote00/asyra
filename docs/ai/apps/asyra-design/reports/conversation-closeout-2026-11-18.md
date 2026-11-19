@@ -837,3 +837,75 @@ path, new dependency, model call, 101 run or full repository test was introduced
 Historical failure evidence remains intact, including the unknown original CLI
 timeout substep. Local acceptance is complete; successor remote CI is not claimed
 to pass and will be inspected by the owner.
+
+## CI recording runtime correction - run 44493080246
+
+All 44 jobs were inspected at source `b0808723fc0ed91330fe55401511bcd1aa2eb668`.
+There is one failed producer: Design functional, with 545 passing cases, 14
+conditional skips and one failure in its last case, `drawing-framing.spec.ts`.
+Its page fixture cannot start recording because Playwright's required
+`ffmpeg-1011` executable is absent. No framing assertion runs. The functional
+forwarder and final aggregate correctly propagate this failure. Collaboration,
+Board, native delivery, Control Plane and workspace validation pass; the previous
+responsibility corrections also pass in this run.
+
+The functional CI job installs the declared Playwright packages and uses system
+Chrome, but never installs their managed recording runtime. A blanket workflow
+test prohibits every `playwright install` command, conflating browser downloads
+with the recording executable. The local user cache concealed this missing CI
+prerequisite. This is test environment ownership, not a framing or App defect.
+
+### Bounded plan and reviewed handoff
+
+1. Add a formal workflow regression requiring the functional job to install only
+   the existing Playwright FFmpeg runtime after immutable dependency installation
+   and before tests. Require one project-local runtime path shared by installation
+   and execution. Keep system Chrome and reject browser installation commands.
+2. Reproduce the existing recording case with an empty, project-local Playwright
+   runtime directory. Add the missing CI setup and replace the overbroad old
+   workflow assertion with the exact permitted runtime-only command. This installs
+   an asset of an already-declared dependency; no new dependency, binary version,
+   browser channel or product behavior is introduced.
+3. Execute that exact install command in the isolated local runtime directory and
+   rerun the unchanged real recording case. Verify a nonempty video and all four
+   stage screenshots, then run the complete workflow automation tests, affected
+   workflow-result tests, naming, scoped lint and security audit. Commit and push
+   to PR #365 without monitoring the successor CI.
+
+Only `.github/workflows/e2e.yml`, its existing workspace-automation regression
+file and this record are in mutation scope. Preserve video capture, geometric
+assertions, fail-fast, timeouts, report collection and cleanup. No 101, full-repo
+gate, product rewrite, new helper framework or compatibility path is selected.
+The complete functional CI run already reached every case; only its unchanged
+recording case needs an environment-corrected browser rerun. The existing
+functional observation maps framing to the viewport owner; this repair changes
+setup prerequisites, not that product or Inspector contract. Temporary runtime
+assets and formal test evidence stay under the project `tmp` directory.
+
+### Validation and bounded review
+
+The new setup regression fails before implementation because no recording-runtime
+installation exists (`tmp/ci7-setup-red.log`). Running the unchanged browser case
+with an empty `tmp/ci7-playwright-runtime` reproduces the same missing
+`ffmpeg-1011` error before page creation (`tmp/ci7-recording-red.json`).
+
+The workflow now installs only the declared Playwright recording asset and shares
+its project-local path with subsequent steps. The browser-install prohibition is
+replaced with an exact assertion allowing that single runtime-only command;
+additional install commands and browser operands remain rejected. No test, video,
+framing assertion or ordinary Chrome selection was removed.
+
+Executing the exact CI install command creates only `.links` and `ffmpeg-1011`
+under the isolated runtime directory (`tmp/ci7-runtime-install.log`). The unchanged
+real browser regression then passes with zero retries, skips or report errors
+(`tmp/ci7-recording-green.json`, 11.439 seconds), producing all four stage images
+and a 45,641-byte `video.webm`. The complete workspace-automation and affected
+workflow-results files pass all 100 tests (`tmp/ci7-workflow-tests.log`). Naming,
+scoped lint and diff checks pass; the dependency audit passes with retained
+evidence at `tmp/security-audit/run-ikDbU1`.
+
+Review confirms the installer runs after immutable dependency installation and
+before recording tests, and installation/execution inherit the same runtime
+directory. The actual recorder remains exercised with no preexisting user cache.
+Only environment setup, its regression and this record changed. Previous CI
+failures are retained as history; no successor CI result is claimed.
