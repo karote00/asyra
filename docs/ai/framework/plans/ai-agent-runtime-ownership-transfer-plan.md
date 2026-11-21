@@ -33,6 +33,74 @@ model settings and unrelated CI repairs. New dependencies or tool upgrades still
 require approval. A necessary change outside this boundary stops that slice for
 replanning; it does not expand this task automatically.
 
+## CI integration correction
+
+The owner requested a single integrated correction for run `44893189570` on
+`01c46fbe4`, followed by one push to PR #368. Inspect all failed jobs and their
+direct producer/consumer paths before editing. The bounded correction covers:
+
+1. Synchronize the distributed AI action guide from its canonical source through
+   the existing bundle generator, including the candidate identity and changelog.
+   Five packaging failures share this stale-input cause; do not edit generated
+   references or weaken drift detection.
+2. Replace the workspace oracle requiring Runtime's compiler configuration to
+   equal Factory's with the current portable-root/optional-schema contract.
+   Verify public exports, source entries, strict compilation and the optional
+   Lodash peer explicitly. The approved dependency and runtime behavior do not
+   change; this is a correction of the obsolete test oracle.
+3. Complete the captured-source resolver for Runtime's public schema entry in
+   Design's execution proof. Four localization cases fail before product case
+   collection. Keep uncaptured imports rejected, then execute baseline, actual
+   fault injection and restoration, including a schema-entry isolation proof.
+   After the resolver fix, the formal cumulative tests exposed a second stale
+   boundary: the workflow mutation still matched `LocalToolAccess` instead of
+   the authoritative `AiToolAccess`. Update that mutation, preserving the
+   expected scheduler failure and recovery assertions. Node-entry fault evidence
+   must account for Vitest's real importOriginal wrapper and retain its raw cause.
+
+The aggregate CI failure reports these two failed jobs, rather than an independent
+failure. Existing CI failures supply the initial regression evidence. Add a
+permanent schema-entry isolation case before fixing its resolver. Review the
+changed files and direct consumers, run the affected repository tests and Flow
+control-plane gate, plus naming, formatting and delivery checks. No product
+behavior, schema validation, timeout, compatibility path, dependency version,
+101 run or whole-repository suite is in scope. Do not publish intermediate fixes
+or monitor the next CI run. Unresolved failures in these gates block the push.
+
+### CI correction acceptance
+
+Local RED reproduced all six shared-test failures and all four execution
+localization failures. The added schema-source fault also failed before the
+resolver change. After that change, the cumulative tests exposed the stale
+scheduler mutation; correcting its current-owner identifier restored the same
+expected product failures and recovery history. The added Node-entry case checks
+both Vitest's wrapper in the observation and the underlying injected cause in
+the retained execution output. No product or validation behavior was changed.
+
+Final local evidence under `tmp/ownership-transfer/`:
+
+- `ci-localization-revised.log`: all six cumulative/source-entry cases passed,
+  without skips, including captured root, Node and schema entries.
+- `ci-control-plane.log`: the original CI evidence selected the inventory via
+  `validationCheckCommands`; 683 passed, zero failed, 57 existing conditional
+  skips. The prior CI run had 738 cases with four failures and 109 skips; this
+  source has 740 cases because of the two added entry-isolation cases. No skip
+  condition or timeout changed.
+- `ci-selected-green.log`: all 19 repository script files selected by the failed
+  CI run executed; 261 passed, zero failed, one existing real-installer opt-in
+  skipped. Packaging reproduction/version/drift assertions remain enforced.
+- `ci-runtime-boundary.log`: 14 passed, including actual built-entry dependency
+  isolation. `ci-flow-rerun.log`: two passed. `ci-plan-flow.log`: eight passed.
+- `ci-lint.log`: full lint passed with 109 existing warnings and no errors.
+  Naming (15 cases), public-document currency/validation, bundle currency and
+  dependency security audit passed. Plugin candidate 0.1.14 synchronizes the
+  canonical guide; no installed host or release publication was changed.
+
+This acceptance covers the failed CI paths and their direct handoffs. It does
+not claim a new full-product acceptance, a model test or a repository-wide audit.
+No 101 or whole-repository test suite was run. Push the integrated correction
+once; the owner will inspect the next remote CI run.
+
 ## Session continuation follow-up
 
 Authorized scope: the existing optional native adapter, Design provider/exchange

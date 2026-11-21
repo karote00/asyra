@@ -57,6 +57,13 @@ const sourceAliases = [
     replacement: resolve(sourceRoot, 'packages/' + name + '/src/index.ts')
   })),
   {
+    find: /^@asyra\/ai-agent-runtime\/schema$/,
+    replacement: resolve(
+      sourceRoot,
+      'packages/ai-agent-runtime/src/schema/index.ts'
+    )
+  },
+  {
     find: /^@asyra\/ai-agent-runtime\/node$/,
     replacement: resolve(
       sourceRoot,

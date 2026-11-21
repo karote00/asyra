@@ -415,8 +415,11 @@ function localizationFixture() {
       )
     },
 
-    failExecutionSourceEntry() {
-      const file = 'packages/ai-agent-runtime/src/index.ts'
+    failExecutionSourceEntry(entry) {
+      assert.ok(
+        ['index.ts', 'schema/index.ts', 'node/index.ts'].includes(entry)
+      )
+      const file = 'packages/ai-agent-runtime/src/' + entry
       const original = fs.readFileSync(path.join(repository, file), 'utf8')
 
       originals.set(file, original)
