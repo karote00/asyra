@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { expect, it, vi } from 'vitest'
 import { createDesignAttachmentAction } from '../../src/ai/inspection'
-import { createConversationResults } from '../../src/ai/conversation-results'
+import { createConversationResults } from '@asyra/ai-agent-runtime'
 import { createLocalToolHost } from '../local-tool-host'
 import { LocalToolLibraryLimits } from '../local-tool-library-limits'
 import { createLocalKnowledgeTools } from '../local-knowledge'

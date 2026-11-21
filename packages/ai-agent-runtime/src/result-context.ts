@@ -1,4 +1,5 @@
-import { AiToolContractError, type AiJsonValue } from '@asyra/ai-agent-runtime'
+import { AiToolContractError } from './tool-contract.js'
+import type { AiJsonValue } from './types.js'
 
 export interface ConversationResultOrigin {
   operation: string

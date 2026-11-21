@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { expect, it, vi } from 'vitest'
 import captureSequence from '../../test-data/ai-drawing/fixtures/inspection-recovery-20261109.json'
-import type { AiActionBatch } from '../../src/ai/action-batch-protocol'
+import type { AiActionBatch } from '@asyra/ai-agent-runtime'
 import sharp from 'sharp'
 import { createLocalReferenceTools } from '../local-reference-tools'
 import { localToolContent } from '../local-operation-tools'
@@ -22,7 +22,7 @@ recorded.select.operations = [
     }
   }
 ] as never
-import { createConversationResults } from '../../src/ai/conversation-results'
+import { createConversationResults } from '@asyra/ai-agent-runtime'
 import { createLocalToolHost } from '../local-tool-host'
 import { createLocalOperationTools } from '../local-operation-tools'
 import { LocalToolLibraryLimits } from '../local-tool-library-limits'

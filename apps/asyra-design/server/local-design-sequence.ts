@@ -1,10 +1,10 @@
 import { AiToolFailureCodes } from '../src/constants/ai-design'
-import { localToolSchemaIsPortable } from './local-tool-leases'
+import { aiToolSchemaIsPortable } from '@asyra/ai-agent-runtime/schema'
 import {
   runtimeOperationSchema,
   operationInspectionSchema
 } from './local-operation-batch'
-import { modelToolResultSchemas } from '../src/ai/tool-contract'
+import { modelToolResultSchemas } from '@asyra/ai-agent-runtime/schema'
 import {
   embedAiToolSchema,
   registeredRecipeOutputAt,
@@ -13,14 +13,12 @@ import {
   type AiRecipeBinding,
   type AiToolContract
 } from '@asyra/ai-agent-runtime'
-import { resultNamePattern, resultAt } from '../src/ai/conversation-results'
+import { resultNamePattern, resultAt } from '@asyra/ai-agent-runtime'
 import { getBasicApiContract } from '../src/ai/basic-api-catalog'
 import { toolResultString } from '../src/ai/tool-contract'
-import {
-  LocalToolInputError,
-  type LocalToolDefinition
-} from './local-tool-invocation'
-import { operationInputIssue } from './operation-input-schema'
+import { AiToolInputError } from '@asyra/ai-agent-runtime'
+import { type LocalToolDefinition } from './local-tool-invocation'
+import { operationInputIssue } from '@asyra/ai-agent-runtime/schema'
 import { registeredToolInvocationSchemas } from './local-tool-library-tools'
 import { AiDesignToolIds } from '../src/constants/ai-design'
 
@@ -475,7 +473,7 @@ export function createDesignSequencePlanner(
       stages &&
       new Set(stages.map((stage) => stage.id)).size !== stages.length
     ) {
-      throw new LocalToolInputError('Stage IDs must be unique')
+      throw new AiToolInputError('Stage IDs must be unique')
     }
 
     const checkpoints: { after: string; iteration: Record<string, unknown> }[] =
@@ -491,7 +489,7 @@ export function createDesignSequencePlanner(
             const last = prepare.at(-1)
 
             if (!last) {
-              throw new LocalToolInputError(
+              throw new AiToolInputError(
                 'A stage requires preparation operations'
               )
             }
@@ -527,7 +525,7 @@ export function createDesignSequencePlanner(
     const ids = operations.map((s, i) => s.id ?? 'step-' + (i + 1))
 
     if (new Set(ids).size !== ids.length) {
-      throw new LocalToolInputError('Operation IDs must be unique')
+      throw new AiToolInputError('Operation IDs must be unique')
     }
 
     const selectedSteps = new Set<string>()
@@ -546,7 +544,7 @@ export function createDesignSequencePlanner(
         }
 
         if (typeof selector.step !== 'string' || !ids.includes(selector.step)) {
-          throw new LocalToolInputError(
+          throw new AiToolInputError(
             'Unknown selected step',
             AiToolFailureCodes.INPUT_INVALID
           )
@@ -559,7 +557,7 @@ export function createDesignSequencePlanner(
             try {
               resultAt(operation.arguments, selector.path)
             } catch (error) {
-              throw new LocalToolInputError(
+              throw new AiToolInputError(
                 'Invalid authored input selection for ' +
                   selector.step +
                   ': ' +
@@ -606,8 +604,8 @@ export function createDesignSequencePlanner(
           // at capture, just like final-result selections. Never guess a value.
         }
 
-        if (selected && !localToolSchemaIsPortable(selected, selected, true)) {
-          throw new LocalToolInputError(
+        if (selected && !aiToolSchemaIsPortable(selected, selected, true)) {
+          throw new AiToolInputError(
             'Nonportable result selection: ' +
               alias +
               ' (step ' +
@@ -637,7 +635,7 @@ export function createDesignSequencePlanner(
       const dep = resolve(name)
 
       if (dep?.composition === 'control-plane') {
-        throw new LocalToolInputError(
+        throw new AiToolInputError(
           'Operation ' +
             dep.name +
             ' is a native control. Call its registered native tool directly with the same ordinary arguments; do not compose it or replay completed work.',
@@ -650,7 +648,7 @@ export function createDesignSequencePlanner(
         !['allowed', 'request'].includes(dep.composition ?? '') ||
         (revision !== undefined && dep.revision !== revision)
       ) {
-        throw new LocalToolInputError(
+        throw new AiToolInputError(
           'Missing, ambiguous or ineligible operation: ' + name
         )
       }
@@ -672,7 +670,7 @@ export function createDesignSequencePlanner(
           s.target !== undefined &&
           operationInputIssue(s.target, item?.target)
         ) {
-          throw new LocalToolInputError(
+          throw new AiToolInputError(
             'Invalid target selector',
             AiToolFailureCodes.INPUT_INVALID
           )
@@ -701,7 +699,7 @@ export function createDesignSequencePlanner(
         s.selectAt !== undefined &&
         !(record(s.target) && record(s.target.query))
       ) {
-        throw new LocalToolInputError(
+        throw new AiToolInputError(
           'Step-time selection requires a region target'
         )
       }
@@ -712,7 +710,7 @@ export function createDesignSequencePlanner(
         }
 
         if (!known.has(name)) {
-          throw new LocalToolInputError(
+          throw new AiToolInputError(
             'Target selection requires a known operation with ready arguments'
           )
         }
@@ -721,7 +719,7 @@ export function createDesignSequencePlanner(
           const dep = lookup(name, s.revision)
 
           if (operationInputIssue(s.target, item?.target)) {
-            throw new LocalToolInputError(
+            throw new AiToolInputError(
               'Invalid target selector',
               AiToolFailureCodes.INPUT_INVALID
             )
@@ -751,7 +749,7 @@ export function createDesignSequencePlanner(
           ) ||
           operationInputIssue(s.target, item?.target)
         ) {
-          throw new LocalToolInputError(
+          throw new AiToolInputError(
             'Dependent arguments require registered artifact target selectors'
           )
         }

@@ -22,10 +22,7 @@ import { createLocalToolHost } from '../local-tool-host'
 import { createLocalOperationTools } from '../local-operation-tools'
 import { createLocalDesignTools } from '../local-design-tools'
 import { LocalToolLibraryLimits } from '../local-tool-library-limits'
-import type {
-  AiActionBatch,
-  AiBatchReceipt
-} from '../../src/ai/action-batch-protocol'
+import type { AiActionBatch, AiBatchReceipt } from '@asyra/ai-agent-runtime'
 
 import recorded from '../../test-data/ai-drawing/fixtures/coordinate-continuity-20261112.json'
 

@@ -1,5 +1,5 @@
-import { createConversationResults } from '../../src/ai/conversation-results'
-import { resultDelivery } from '../local-result-delivery'
+import { createConversationResults } from '@asyra/ai-agent-runtime'
+import { createDesignResultDelivery } from '../local-result-delivery'
 import { expect, it as nativeTest, vi } from 'vitest'
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { DatabaseSync } from 'node:sqlite'
@@ -8,7 +8,7 @@ import { isRecord } from '@asyra/utils'
 import { requestConfiguredAiActionBatch } from '../ai-model-provider'
 import { resolveActionBatchRequest } from '../action-batch'
 import { requestLocalAiAssessment } from '../local-ai-provider'
-import { operationInputIssue } from '../operation-input-schema'
+import { operationInputIssue } from '@asyra/ai-agent-runtime/schema'
 import { createEvaluationReportSessions } from '../evaluation-report-sessions'
 import * as designPreparationOwner from '../design-preparation'
 import {
@@ -103,7 +103,7 @@ it('delivers saved inspection pixels and status in the actual native successor',
     )
   )
   const dataUrl = 'data:image/png;base64,' + bytes.toString('base64')
-  const retained = resultDelivery(
+  const retained = createDesignResultDelivery(
     {
       retain: {
         picture: { step: 'capture', path: '/actionResults/0/result/image' }

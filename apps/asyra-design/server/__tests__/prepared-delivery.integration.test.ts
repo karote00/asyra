@@ -24,10 +24,7 @@ import {
   admitPreparedDesignDelivery
 } from '../../src/ai/prepared-design-admission'
 import { createLocalOperationTools } from '../local-operation-tools'
-import type {
-  AiActionBatch,
-  AiBatchReceipt
-} from '../../src/ai/action-batch-protocol'
+import type { AiActionBatch, AiBatchReceipt } from '@asyra/ai-agent-runtime'
 
 const fixture = JSON.parse(
   gunzipSync(

@@ -1,6 +1,6 @@
 import completeResultCost from './fixtures/recorded-101/complete-model-result-cost-20261029.json'
 import { completeUsageBudget } from './tool-contract-assertions'
-import { modelToolResultSchemas } from '../../src/ai/tool-contract'
+import { modelToolResultSchemas } from '@asyra/ai-agent-runtime/schema'
 import { expect, it, vi } from 'vitest'
 import {
   createAiAgentRuntime,
@@ -10,7 +10,7 @@ import {
   projectWorkflowResult,
   workflowUsageParameters
 } from '../design-workflow-discovery'
-import { operationInputIssue } from '../operation-input-schema'
+import { operationInputIssue } from '@asyra/ai-agent-runtime/schema'
 import { createLocalDesignTools } from '../local-design-tools'
 import { invokeLocalTool } from '../local-tool-invocation'
 import saved from './fixtures/recorded-101/missing-brief-checks-20261027.json'

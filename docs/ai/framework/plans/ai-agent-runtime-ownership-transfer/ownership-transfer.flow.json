@@ -2,10 +2,10 @@
   "schemaVersion": 1,
   "projectId": "asyra",
   "flowId": "ai-agent-runtime-ownership-transfer",
-  "revision": 3,
+  "revision": 28,
   "definition": {
     "title": "AI Agent Runtime ownership transfer",
-    "purpose": "Complete tool handoff ownership transfer. Executable case producers remain pending; structural validation and manual review cannot satisfy the required automated connected journey.",
+    "purpose": "Complete tool handoff ownership transfer through public optional adapters, independently verified by a connected inventory journey and preserved Design acceptance.",
     "nodes": [
       {
         "id": "compose",
@@ -31,7 +31,7 @@
         "criteria": [
           {
             "id": "behavior",
-            "title": "C08 C12 - Permanent source-bound cases must be bound and executed before acceptance",
+            "title": "C08 C12 - Reviewed owner contract and executed permanent case handoffs",
             "kind": "manual"
           }
         ],
@@ -41,7 +41,8 @@
         "implementationRefs": [
           "apps/asyra-design/src/ai/startup.ts",
           "apps/asyra-design/src/ai/runtime-input.ts",
-          "apps/asyra-design/src/features/ai-agent/index.ts"
+          "apps/asyra-design/src/features/ai-agent/index.ts",
+          "packages/ai-agent-runtime/src/__tests__/"
         ],
         "actions": []
       },
@@ -61,7 +62,7 @@
         "criteria": [
           {
             "id": "behavior",
-            "title": "C01 C02 C07 - Permanent source-bound cases must be bound and executed before acceptance",
+            "title": "C01 C02 C07 - Reviewed owner contract and executed permanent case handoffs",
             "kind": "manual"
           }
         ],
@@ -69,10 +70,11 @@
           "docs/ai/framework/specs/ai-agent-runtime-host-composition.md"
         ],
         "implementationRefs": [
-          "apps/asyra-design/server/capability-search.ts",
+          "packages/ai-agent-runtime/src/capability-search.ts",
           "apps/asyra-design/server/local-operation-tools.ts",
           "apps/asyra-design/server/local-information-delivery.ts",
-          "packages/ai-agent-runtime/src/"
+          "packages/ai-agent-runtime/src/",
+          "packages/ai-agent-runtime/src/__tests__/"
         ],
         "actions": []
       },
@@ -92,7 +94,7 @@
         "criteria": [
           {
             "id": "behavior",
-            "title": "C07 C08 - Permanent source-bound cases must be bound and executed before acceptance",
+            "title": "C07 C08 - Reviewed owner contract and executed permanent case handoffs",
             "kind": "manual"
           }
         ],
@@ -102,7 +104,8 @@
         "implementationRefs": [
           "packages/ai-agent-runtime/src/knowledge.ts",
           "packages/ai-agent-runtime/src/knowledge-types.ts",
-          "apps/asyra-design/server/local-knowledge.ts"
+          "apps/asyra-design/server/local-knowledge.ts",
+          "packages/ai-agent-runtime/src/__tests__/"
         ],
         "actions": []
       },
@@ -117,7 +120,7 @@
         "criteria": [
           {
             "id": "behavior",
-            "title": "C03 C04 C09 C10 - Permanent source-bound cases must be bound and executed before acceptance",
+            "title": "C03 C04 C09 C10 - Reviewed owner contract and executed permanent case handoffs",
             "kind": "manual"
           }
         ],
@@ -127,9 +130,10 @@
         "implementationRefs": [
           "packages/ai-agent-runtime/src/",
           "apps/asyra-design/server/local-tool-host.ts",
-          "apps/asyra-design/server/local-tool-library.ts",
-          "apps/asyra-design/server/local-tool-leases.ts",
-          "apps/asyra-design/server/local-tool-scheduler.ts"
+          "packages/ai-agent-runtime/src/node/tool-host-library.ts",
+          "packages/ai-agent-runtime/src/schema/tool-leases.ts",
+          "packages/ai-agent-runtime/src/tool-scheduler.ts",
+          "packages/ai-agent-runtime/src/__tests__/"
         ],
         "actions": []
       },
@@ -158,7 +162,8 @@
         ],
         "implementationRefs": [
           "apps/asyra-design/server/local-design-sequence.ts",
-          "apps/asyra-design/server/local-result-delivery.ts"
+          "apps/asyra-design/server/local-result-delivery.ts",
+          "packages/ai-agent-runtime/src/__tests__/"
         ],
         "actions": []
       },
@@ -178,7 +183,7 @@
         "criteria": [
           {
             "id": "behavior",
-            "title": "C03 C04 C12 - Permanent source-bound cases must be bound and executed before acceptance",
+            "title": "C03 C04 C12 - Reviewed owner contract and executed permanent case handoffs",
             "kind": "manual"
           }
         ],
@@ -189,7 +194,8 @@
           "apps/asyra-design/src/ai/basic-api-actions.ts",
           "apps/asyra-design/src/ai/actions.ts",
           "apps/asyra-design/src/ai/transaction.ts",
-          "apps/asyra-design/src/common-apis/"
+          "apps/asyra-design/src/common-apis/",
+          "packages/ai-agent-runtime/src/__tests__/"
         ],
         "actions": []
       },
@@ -209,7 +215,7 @@
         "criteria": [
           {
             "id": "behavior",
-            "title": "C02 C04 C05 C06 C11 - Permanent source-bound cases must be bound and executed before acceptance",
+            "title": "C02 C04 C05 C06 C11 - Reviewed owner contract and executed permanent case handoffs",
             "kind": "manual"
           }
         ],
@@ -222,7 +228,8 @@
           "apps/asyra-design/src/ai/tool-contract.ts",
           "apps/asyra-design/server/local-tool-invocation.ts",
           "apps/asyra-design/server/local-result-delivery.ts",
-          "apps/asyra-design/server/local-tool-media.ts"
+          "apps/asyra-design/server/local-tool-media.ts",
+          "packages/ai-agent-runtime/src/__tests__/"
         ],
         "actions": []
       },
@@ -242,7 +249,7 @@
         "criteria": [
           {
             "id": "behavior",
-            "title": "C05 C06 C08 - Permanent source-bound cases must be bound and executed before acceptance",
+            "title": "C05 C06 C08 - Reviewed owner contract and executed permanent case handoffs",
             "kind": "manual"
           }
         ],
@@ -250,9 +257,10 @@
           "docs/ai/framework/specs/ai-agent-runtime-host-composition.md"
         ],
         "implementationRefs": [
-          "apps/asyra-design/src/ai/conversation-results.ts",
+          "packages/ai-agent-runtime/src/result-context.ts",
           "apps/asyra-design/src/ai/server-action-batch-provider.ts",
-          "packages/ai-agent-runtime/src/"
+          "packages/ai-agent-runtime/src/",
+          "packages/ai-agent-runtime/src/__tests__/"
         ],
         "actions": []
       },
@@ -284,7 +292,7 @@
         "criteria": [
           {
             "id": "behavior",
-            "title": "C02 C04 C06 C09 C11 - Permanent source-bound cases must be bound and executed before acceptance",
+            "title": "C02 C04 C06 C09 C11 - Reviewed owner contract and executed permanent case handoffs",
             "kind": "manual"
           }
         ],
@@ -296,10 +304,11 @@
           "packages/ai-agent-runtime/src/providers/",
           "packages/ai-agent-runtime/src/node/",
           "apps/asyra-design/server/local-ai-provider.ts",
-          "apps/asyra-design/server/native-provider-config.ts",
-          "apps/asyra-design/server/operation-input-schema.ts",
-          "apps/asyra-design/server/batch-exchange.ts",
-          "apps/asyra-design/src/ai/server-action-batch-provider.ts"
+          "packages/ai-agent-runtime/src/node/native-provider-config.ts",
+          "packages/ai-agent-runtime/src/schema/native-input.ts",
+          "packages/ai-agent-runtime/src/node/batch-exchange.ts",
+          "apps/asyra-design/src/ai/server-action-batch-provider.ts",
+          "packages/ai-agent-runtime/src/__tests__/"
         ],
         "actions": []
       },
@@ -319,7 +328,7 @@
         "criteria": [
           {
             "id": "behavior",
-            "title": "C09 C10 C12 - Permanent source-bound cases must be bound and executed before acceptance",
+            "title": "C09 C10 C12 - Reviewed owner contract and executed permanent case handoffs",
             "kind": "manual"
           }
         ],
@@ -331,7 +340,8 @@
           "apps/asyra-design/src/ai/conversation.ts",
           "apps/asyra-design/src/features/ai-agent/index.ts",
           "packages/ai-agent-runtime/src/runtime.ts",
-          "packages/ai-agent-runtime/src/"
+          "packages/ai-agent-runtime/src/",
+          "packages/ai-agent-runtime/src/__tests__/"
         ],
         "actions": []
       }
@@ -344,11 +354,110 @@
       },
       {
         "id": "non-design-journey",
-        "title": "Connected non-Design journey - actual production path and policy variants",
+        "title": "completes the public non-Design provider, host, Knowledge and cross-turn reuse journey",
         "kind": "automated",
         "selector": {
-          "producer": "custom",
-          "identity": "ai-agent-runtime-ownership-transfer/non-design-journey"
+          "producer": "vitest",
+          "identity": "{\"file\":\"packages/ai-agent-runtime/src/__tests__/host-journey.test.mjs\",\"title\":\"completes the public non-Design provider, host, Knowledge and cross-turn reuse journey\",\"cwd\":\"packages/ai-agent-runtime\",\"config\":\"apps/asyra-design/test-data/conversation-verification/runtime.vitest.config.mjs\",\"project\":\"\"}"
+        }
+      },
+      {
+        "id": "internal-values",
+        "title": "keeps unnamed complete internal results available with status-only delivery and equivalent field bindings",
+        "kind": "automated",
+        "selector": {
+          "producer": "vitest",
+          "identity": "{\"file\":\"packages/ai-agent-runtime/src/__tests__/host-journey.test.mjs\",\"title\":\"keeps unnamed complete internal results available with status-only delivery and equivalent field bindings\",\"cwd\":\"packages/ai-agent-runtime\",\"config\":\"apps/asyra-design/test-data/conversation-verification/runtime.vitest.config.mjs\",\"project\":\"\"}"
+        }
+      },
+      {
+        "id": "selected-media",
+        "title": "delivers both selected images independently of saving and later reuses them without another producer",
+        "kind": "automated",
+        "selector": {
+          "producer": "vitest",
+          "identity": "{\"file\":\"packages/ai-agent-runtime/src/__tests__/host-journey.test.mjs\",\"title\":\"delivers both selected images independently of saving and later reuses them without another producer\",\"cwd\":\"packages/ai-agent-runtime\",\"config\":\"apps/asyra-design/test-data/conversation-verification/runtime.vitest.config.mjs\",\"project\":\"\"}"
+        }
+      },
+      {
+        "id": "reject-missing-id",
+        "title": "the complete handoff oracle rejects deliberate corruption: missing-id",
+        "kind": "automated",
+        "selector": {
+          "producer": "vitest",
+          "identity": "{\"file\":\"packages/ai-agent-runtime/src/__tests__/host-journey.test.mjs\",\"title\":\"the complete handoff oracle rejects deliberate corruption: missing-id\",\"cwd\":\"packages/ai-agent-runtime\",\"config\":\"apps/asyra-design/test-data/conversation-verification/runtime.vitest.config.mjs\",\"project\":\"\"}"
+        }
+      },
+      {
+        "id": "reject-invalid-result",
+        "title": "the complete handoff oracle rejects deliberate corruption: invalid-result",
+        "kind": "automated",
+        "selector": {
+          "producer": "vitest",
+          "identity": "{\"file\":\"packages/ai-agent-runtime/src/__tests__/host-journey.test.mjs\",\"title\":\"the complete handoff oracle rejects deliberate corruption: invalid-result\",\"cwd\":\"packages/ai-agent-runtime\",\"config\":\"apps/asyra-design/test-data/conversation-verification/runtime.vitest.config.mjs\",\"project\":\"\"}"
+        }
+      },
+      {
+        "id": "reject-missing-image",
+        "title": "the complete handoff oracle rejects deliberate corruption: missing-image",
+        "kind": "automated",
+        "selector": {
+          "producer": "vitest",
+          "identity": "{\"file\":\"packages/ai-agent-runtime/src/__tests__/host-journey.test.mjs\",\"title\":\"the complete handoff oracle rejects deliberate corruption: missing-image\",\"cwd\":\"packages/ai-agent-runtime\",\"config\":\"apps/asyra-design/test-data/conversation-verification/runtime.vitest.config.mjs\",\"project\":\"\"}"
+        }
+      },
+      {
+        "id": "reject-wrong-revision",
+        "title": "the complete handoff oracle rejects deliberate corruption: wrong-revision",
+        "kind": "automated",
+        "selector": {
+          "producer": "vitest",
+          "identity": "{\"file\":\"packages/ai-agent-runtime/src/__tests__/host-journey.test.mjs\",\"title\":\"the complete handoff oracle rejects deliberate corruption: wrong-revision\",\"cwd\":\"packages/ai-agent-runtime\",\"config\":\"apps/asyra-design/test-data/conversation-verification/runtime.vitest.config.mjs\",\"project\":\"\"}"
+        }
+      },
+      {
+        "id": "reject-wrong-settlement",
+        "title": "the complete handoff oracle rejects deliberate corruption: wrong-settlement",
+        "kind": "automated",
+        "selector": {
+          "producer": "vitest",
+          "identity": "{\"file\":\"packages/ai-agent-runtime/src/__tests__/host-journey.test.mjs\",\"title\":\"the complete handoff oracle rejects deliberate corruption: wrong-settlement\",\"cwd\":\"packages/ai-agent-runtime\",\"config\":\"apps/asyra-design/test-data/conversation-verification/runtime.vitest.config.mjs\",\"project\":\"\"}"
+        }
+      },
+      {
+        "id": "reject-omitted-case",
+        "title": "the complete handoff oracle rejects deliberate corruption: omitted-case",
+        "kind": "automated",
+        "selector": {
+          "producer": "vitest",
+          "identity": "{\"file\":\"packages/ai-agent-runtime/src/__tests__/host-journey.test.mjs\",\"title\":\"the complete handoff oracle rejects deliberate corruption: omitted-case\",\"cwd\":\"packages/ai-agent-runtime\",\"config\":\"apps/asyra-design/test-data/conversation-verification/runtime.vitest.config.mjs\",\"project\":\"\"}"
+        }
+      },
+      {
+        "id": "settlement-undefined",
+        "title": "preserves actual App transaction settlement on later failure: undefined",
+        "kind": "automated",
+        "selector": {
+          "producer": "vitest",
+          "identity": "{\"file\":\"packages/ai-agent-runtime/src/__tests__/host-journey.test.mjs\",\"title\":\"preserves actual App transaction settlement on later failure: undefined\",\"cwd\":\"packages/ai-agent-runtime\",\"config\":\"apps/asyra-design/test-data/conversation-verification/runtime.vitest.config.mjs\",\"project\":\"\"}"
+        }
+      },
+      {
+        "id": "settlement-preserve-progress",
+        "title": "preserves actual App transaction settlement on later failure: preserve-progress",
+        "kind": "automated",
+        "selector": {
+          "producer": "vitest",
+          "identity": "{\"file\":\"packages/ai-agent-runtime/src/__tests__/host-journey.test.mjs\",\"title\":\"preserves actual App transaction settlement on later failure: preserve-progress\",\"cwd\":\"packages/ai-agent-runtime\",\"config\":\"apps/asyra-design/test-data/conversation-verification/runtime.vitest.config.mjs\",\"project\":\"\"}"
+        }
+      },
+      {
+        "id": "store-lifetime",
+        "title": "uses App-owned result storage and leaves borrowed storage alive after provider disposal",
+        "kind": "automated",
+        "selector": {
+          "producer": "vitest",
+          "identity": "{\"file\":\"packages/ai-agent-runtime/src/__tests__/host-journey.test.mjs\",\"title\":\"uses App-owned result storage and leaves borrowed storage alive after provider disposal\",\"cwd\":\"packages/ai-agent-runtime\",\"config\":\"apps/asyra-design/test-data/conversation-verification/runtime.vitest.config.mjs\",\"project\":\"\"}"
         }
       }
     ],
@@ -400,11 +509,15 @@
           "failureOwnerStepId": "compose",
           "order": 1,
           "inputs": [],
-          "outputs": ["artifact:scope"],
+          "outputs": [
+            "artifact:scope"
+          ],
           "conditions": [
             "AI is explicitly enabled; current Feature signal and App scope are supplied."
           ],
-          "bypasses": ["AI disabled: no provider, storage or network work."],
+          "bypasses": [
+            "AI disabled: no provider, storage or network work."
+          ],
           "allowedContributors": [
             "App policy and Feature lifecycle",
             "Public runtime constructors"
@@ -431,12 +544,19 @@
           "purpose": "Read the admitted registry and return exact identity, purpose, fields and selected contracts; preserve ambiguous and missing outcomes.",
           "failureOwnerStepId": "catalog",
           "order": 2,
-          "inputs": ["artifact:scope", "artifact:dispatch"],
-          "outputs": ["artifact:catalog"],
+          "inputs": [
+            "artifact:scope",
+            "artifact:dispatch"
+          ],
+          "outputs": [
+            "artifact:catalog"
+          ],
           "conditions": [
             "The trusted registry and owner exposure policy supply candidates; model calls pass the host boundary."
           ],
-          "bypasses": ["Known exact operations execute without discovery."],
+          "bypasses": [
+            "Known exact operations execute without discovery."
+          ],
           "allowedContributors": [
             "Registered metadata",
             "App categories and exposure policy"
@@ -448,7 +568,7 @@
           ],
           "cacheDimensions": [],
           "implementationBoundary": [
-            "apps/asyra-design/server/capability-search.ts",
+            "packages/ai-agent-runtime/src/capability-search.ts",
             "apps/asyra-design/server/local-operation-tools.ts",
             "apps/asyra-design/server/local-information-delivery.ts",
             "packages/ai-agent-runtime/src/"
@@ -465,12 +585,19 @@
           "purpose": "Resolve selected passive content with current authorization and source revisions through an injected content source.",
           "failureOwnerStepId": "knowledge",
           "order": 3,
-          "inputs": ["artifact:scope", "artifact:dispatch"],
-          "outputs": ["artifact:knowledge"],
+          "inputs": [
+            "artifact:scope",
+            "artifact:dispatch"
+          ],
+          "outputs": [
+            "artifact:knowledge"
+          ],
           "conditions": [
             "Trusted principal and scope are injected; model calls pass host admission."
           ],
-          "bypasses": ["No Knowledge requested: no content load."],
+          "bypasses": [
+            "No Knowledge requested: no content load."
+          ],
           "allowedContributors": [
             "Existing createAiKnowledgeAccess",
             "Optional file loader",
@@ -539,9 +666,9 @@
           "implementationBoundary": [
             "packages/ai-agent-runtime/src/",
             "apps/asyra-design/server/local-tool-host.ts",
-            "apps/asyra-design/server/local-tool-library.ts",
-            "apps/asyra-design/server/local-tool-leases.ts",
-            "apps/asyra-design/server/local-tool-scheduler.ts"
+            "packages/ai-agent-runtime/src/node/tool-host-library.ts",
+            "packages/ai-agent-runtime/src/schema/tool-leases.ts",
+            "packages/ai-agent-runtime/src/tool-scheduler.ts"
           ],
           "specRefs": [
             "docs/ai/framework/specs/ai-agent-runtime-host-composition.md"
@@ -555,8 +682,12 @@
           "purpose": "Translate Design stage/apply grammar and step identities into the existing Runtime recipe format without executing mutations.",
           "failureOwnerStepId": "translate",
           "order": 5,
-          "inputs": ["artifact:authored-request"],
-          "outputs": ["artifact:normalized-request"],
+          "inputs": [
+            "artifact:authored-request"
+          ],
+          "outputs": [
+            "artifact:normalized-request"
+          ],
           "conditions": [
             "Host pins and admits the authored contract first; only its explicitly registered syntax adapter may translate.",
             "Return normalized steps/bindings or an owned translation error to the host; runtime recipe admission and destination validation remain mandatory."
@@ -590,8 +721,14 @@
           "purpose": "Run authorized domain work through its existing common APIs and transaction owner; produce complete output and owned settlement.",
           "failureOwnerStepId": "execute",
           "order": 6,
-          "inputs": ["artifact:scope", "artifact:dispatch"],
-          "outputs": ["artifact:raw", "artifact:transaction-settlement"],
+          "inputs": [
+            "artifact:scope",
+            "artifact:dispatch"
+          ],
+          "outputs": [
+            "artifact:raw",
+            "artifact:transaction-settlement"
+          ],
           "conditions": [
             "Actual target, permission and state checks pass at the canonical owner.",
             "The existing transaction adapter settles the selected policy: Runtime default rollback or explicitly selected preserve-progress. Leaf receipts may precede final settlement; preserve unknown outcomes."
@@ -666,7 +803,8 @@
             "apps/asyra-design/src/ai/tool-contract.ts",
             "apps/asyra-design/server/local-tool-invocation.ts",
             "apps/asyra-design/server/local-result-delivery.ts",
-            "apps/asyra-design/server/local-tool-media.ts"
+            "apps/asyra-design/server/local-tool-media.ts",
+            "packages/ai-agent-runtime/src/schema/"
           ],
           "specRefs": [
             "docs/ai/framework/specs/ai-agent-runtime-host-composition.md"
@@ -685,7 +823,9 @@
             "artifact:store-command",
             "artifact:lookup"
           ],
-          "outputs": ["artifact:stored"],
+          "outputs": [
+            "artifact:stored"
+          ],
           "conditions": [
             "Scope and resource validity are checked on access; retention is explicit."
           ],
@@ -703,7 +843,7 @@
           ],
           "cacheDimensions": [],
           "implementationBoundary": [
-            "apps/asyra-design/src/ai/conversation-results.ts",
+            "packages/ai-agent-runtime/src/result-context.ts",
             "apps/asyra-design/src/ai/server-action-batch-provider.ts",
             "packages/ai-agent-runtime/src/"
           ],
@@ -754,9 +894,9 @@
             "packages/ai-agent-runtime/src/providers/",
             "packages/ai-agent-runtime/src/node/",
             "apps/asyra-design/server/local-ai-provider.ts",
-            "apps/asyra-design/server/native-provider-config.ts",
-            "apps/asyra-design/server/operation-input-schema.ts",
-            "apps/asyra-design/server/batch-exchange.ts",
+            "packages/ai-agent-runtime/src/node/native-provider-config.ts",
+            "packages/ai-agent-runtime/src/schema/native-input.ts",
+            "packages/ai-agent-runtime/src/node/batch-exchange.ts",
             "apps/asyra-design/src/ai/server-action-batch-provider.ts"
           ],
           "specRefs": [
@@ -779,7 +919,10 @@
             "artifact:provider-closed",
             "artifact:transaction-settlement"
           ],
-          "outputs": ["artifact:closed", "artifact:shutdown"],
+          "outputs": [
+            "artifact:closed",
+            "artifact:shutdown"
+          ],
           "conditions": [
             "Completion, abort or explicit owner shutdown; settlement information remains intact.",
             "Final presentation consumes actual App transaction settlement separately from leaf receipts; never infer committed or rolled-back state from delivery status."
@@ -817,7 +960,9 @@
           "to": "catalog",
           "kind": "handoff",
           "predicate": "Trusted App scope, current Feature signal and selected policies; follow the producing step conditions and explicit request selection.",
-          "producedArtifacts": ["artifact:scope"]
+          "producedArtifacts": [
+            "artifact:scope"
+          ]
         },
         {
           "id": "scope-to-knowledge",
@@ -825,7 +970,9 @@
           "to": "knowledge",
           "kind": "handoff",
           "predicate": "Trusted App scope, current Feature signal and selected policies; follow the producing step conditions and explicit request selection.",
-          "producedArtifacts": ["artifact:scope"]
+          "producedArtifacts": [
+            "artifact:scope"
+          ]
         },
         {
           "id": "scope-to-host",
@@ -833,7 +980,9 @@
           "to": "host",
           "kind": "handoff",
           "predicate": "Trusted App scope, current Feature signal and selected policies; follow the producing step conditions and explicit request selection.",
-          "producedArtifacts": ["artifact:scope"]
+          "producedArtifacts": [
+            "artifact:scope"
+          ]
         },
         {
           "id": "scope-to-execute",
@@ -841,7 +990,9 @@
           "to": "execute",
           "kind": "handoff",
           "predicate": "Trusted App scope, current Feature signal and selected policies; follow the producing step conditions and explicit request selection.",
-          "producedArtifacts": ["artifact:scope"]
+          "producedArtifacts": [
+            "artifact:scope"
+          ]
         },
         {
           "id": "scope-to-retain",
@@ -849,7 +1000,9 @@
           "to": "retain",
           "kind": "handoff",
           "predicate": "Trusted App scope, current Feature signal and selected policies; follow the producing step conditions and explicit request selection.",
-          "producedArtifacts": ["artifact:scope"]
+          "producedArtifacts": [
+            "artifact:scope"
+          ]
         },
         {
           "id": "scope-to-provider",
@@ -857,7 +1010,9 @@
           "to": "provider",
           "kind": "handoff",
           "predicate": "Trusted App scope, current Feature signal and selected policies; follow the producing step conditions and explicit request selection.",
-          "producedArtifacts": ["artifact:scope"]
+          "producedArtifacts": [
+            "artifact:scope"
+          ]
         },
         {
           "id": "scope-to-close",
@@ -865,7 +1020,9 @@
           "to": "close",
           "kind": "handoff",
           "predicate": "Trusted App scope, current Feature signal and selected policies; follow the producing step conditions and explicit request selection.",
-          "producedArtifacts": ["artifact:scope"]
+          "producedArtifacts": [
+            "artifact:scope"
+          ]
         },
         {
           "id": "catalog-to-provider",
@@ -873,7 +1030,9 @@
           "to": "provider",
           "kind": "handoff",
           "predicate": "Exact registry identities, contracts, discovery selections and read failures; follow the producing step conditions and explicit request selection.",
-          "producedArtifacts": ["artifact:catalog"]
+          "producedArtifacts": [
+            "artifact:catalog"
+          ]
         },
         {
           "id": "catalog-to-result",
@@ -881,7 +1040,9 @@
           "to": "result",
           "kind": "handoff",
           "predicate": "Exact registry identities, contracts, discovery selections and read failures; follow the producing step conditions and explicit request selection.",
-          "producedArtifacts": ["artifact:catalog"]
+          "producedArtifacts": [
+            "artifact:catalog"
+          ]
         },
         {
           "id": "knowledge-to-result",
@@ -889,7 +1050,9 @@
           "to": "result",
           "kind": "handoff",
           "predicate": "Authorized content, provenance, revision and owner failure; follow the producing step conditions and explicit request selection.",
-          "producedArtifacts": ["artifact:knowledge"]
+          "producedArtifacts": [
+            "artifact:knowledge"
+          ]
         },
         {
           "id": "dispatch-to-execute",
@@ -897,7 +1060,9 @@
           "to": "execute",
           "kind": "handoff",
           "predicate": "Pinned contract and resolved validated arguments for a secured leaf; follow the producing step conditions and explicit request selection.",
-          "producedArtifacts": ["artifact:dispatch"]
+          "producedArtifacts": [
+            "artifact:dispatch"
+          ]
         },
         {
           "id": "dispatch-to-catalog",
@@ -905,7 +1070,9 @@
           "to": "catalog",
           "kind": "handoff",
           "predicate": "Pinned contract and resolved validated arguments for a secured leaf; follow the producing step conditions and explicit request selection.",
-          "producedArtifacts": ["artifact:dispatch"]
+          "producedArtifacts": [
+            "artifact:dispatch"
+          ]
         },
         {
           "id": "dispatch-to-knowledge",
@@ -913,7 +1080,9 @@
           "to": "knowledge",
           "kind": "handoff",
           "predicate": "Pinned contract and resolved validated arguments for a secured leaf; follow the producing step conditions and explicit request selection.",
-          "producedArtifacts": ["artifact:dispatch"]
+          "producedArtifacts": [
+            "artifact:dispatch"
+          ]
         },
         {
           "id": "admission-to-result",
@@ -921,7 +1090,9 @@
           "to": "result",
           "kind": "handoff",
           "predicate": "Explicit rejection or host composition result with completed predecessor settlement; follow the producing step conditions and explicit request selection.",
-          "producedArtifacts": ["artifact:admission"]
+          "producedArtifacts": [
+            "artifact:admission"
+          ]
         },
         {
           "id": "raw-to-result",
@@ -929,7 +1100,9 @@
           "to": "result",
           "kind": "handoff",
           "predicate": "Complete domain output, execution status, settlement and explicit content metadata; follow the producing step conditions and explicit request selection.",
-          "producedArtifacts": ["artifact:raw"]
+          "producedArtifacts": [
+            "artifact:raw"
+          ]
         },
         {
           "id": "store-command-to-retain",
@@ -937,7 +1110,9 @@
           "to": "retain",
           "kind": "handoff",
           "predicate": "Selected save or read request with trusted origin and declared paths; follow the producing step conditions and explicit request selection.",
-          "producedArtifacts": ["artifact:store-command"]
+          "producedArtifacts": [
+            "artifact:store-command"
+          ]
         },
         {
           "id": "stored-to-result",
@@ -945,7 +1120,9 @@
           "to": "result",
           "kind": "handoff",
           "predicate": "Saved names/descriptions or selected retained values; storage failure is distinct; follow the producing step conditions and explicit request selection.",
-          "producedArtifacts": ["artifact:stored"]
+          "producedArtifacts": [
+            "artifact:stored"
+          ]
         },
         {
           "id": "stored-to-host",
@@ -953,7 +1130,9 @@
           "to": "host",
           "kind": "handoff",
           "predicate": "Saved names/descriptions or selected retained values; storage failure is distinct; follow the producing step conditions and explicit request selection.",
-          "producedArtifacts": ["artifact:stored"]
+          "producedArtifacts": [
+            "artifact:stored"
+          ]
         },
         {
           "id": "delivery-to-provider",
@@ -961,7 +1140,9 @@
           "to": "provider",
           "kind": "handoff",
           "predicate": "Validated selected output/content and separate execution/delivery state; follow the producing step conditions and explicit request selection.",
-          "producedArtifacts": ["artifact:delivery"]
+          "producedArtifacts": [
+            "artifact:delivery"
+          ]
         },
         {
           "id": "delivery-to-close",
@@ -969,7 +1150,9 @@
           "to": "close",
           "kind": "handoff",
           "predicate": "Validated selected output/content and separate execution/delivery state; follow the producing step conditions and explicit request selection.",
-          "producedArtifacts": ["artifact:delivery"]
+          "producedArtifacts": [
+            "artifact:delivery"
+          ]
         },
         {
           "id": "call-to-host",
@@ -977,7 +1160,9 @@
           "to": "host",
           "kind": "handoff",
           "predicate": "Provider-authored call in the existing invocation/session; follow the producing step conditions and explicit request selection.",
-          "producedArtifacts": ["artifact:call"]
+          "producedArtifacts": [
+            "artifact:call"
+          ]
         },
         {
           "id": "terminal-to-close",
@@ -985,7 +1170,9 @@
           "to": "close",
           "kind": "handoff",
           "predicate": "Provider completion, abort or transport/session loss without invented mutation status; follow the producing step conditions and explicit request selection.",
-          "producedArtifacts": ["artifact:terminal"]
+          "producedArtifacts": [
+            "artifact:terminal"
+          ]
         },
         {
           "id": "dispatch-to-result",
@@ -993,7 +1180,9 @@
           "to": "result",
           "kind": "handoff",
           "predicate": "Every invoked leaf hands its pinned contract and request selection to result inspection without registry re-resolution.",
-          "producedArtifacts": ["artifact:dispatch"]
+          "producedArtifacts": [
+            "artifact:dispatch"
+          ]
         },
         {
           "id": "lookup-to-retain",
@@ -1001,7 +1190,9 @@
           "to": "retain",
           "kind": "handoff",
           "predicate": "Only an explicit reference to a prior-turn saved value requires storage access; same-call dependencies use the existing recipe path.",
-          "producedArtifacts": ["artifact:lookup"]
+          "producedArtifacts": [
+            "artifact:lookup"
+          ]
         },
         {
           "id": "shutdown-to-host",
@@ -1009,7 +1200,9 @@
           "to": "host",
           "kind": "lifecycle",
           "predicate": "App abort or explicit close; borrowed resources are excluded.",
-          "producedArtifacts": ["artifact:shutdown"]
+          "producedArtifacts": [
+            "artifact:shutdown"
+          ]
         },
         {
           "id": "host-closed-to-close",
@@ -1017,7 +1210,9 @@
           "to": "close",
           "kind": "lifecycle",
           "predicate": "Return actual cleanup state after awaiting owned work; never infer it from observer completion.",
-          "producedArtifacts": ["artifact:host-closed"]
+          "producedArtifacts": [
+            "artifact:host-closed"
+          ]
         },
         {
           "id": "shutdown-to-provider",
@@ -1025,7 +1220,9 @@
           "to": "provider",
           "kind": "lifecycle",
           "predicate": "App abort or explicit close; borrowed resources are excluded.",
-          "producedArtifacts": ["artifact:shutdown"]
+          "producedArtifacts": [
+            "artifact:shutdown"
+          ]
         },
         {
           "id": "provider-closed-to-close",
@@ -1033,7 +1230,9 @@
           "to": "close",
           "kind": "lifecycle",
           "predicate": "Return actual cleanup state after awaiting owned work; never infer it from observer completion.",
-          "producedArtifacts": ["artifact:provider-closed"]
+          "producedArtifacts": [
+            "artifact:provider-closed"
+          ]
         },
         {
           "id": "internal-result-to-host",
@@ -1041,7 +1240,9 @@
           "to": "host",
           "kind": "handoff",
           "predicate": "A successful declared step binding uses the complete validated value directly; retain and model delivery are independent. Recovery values retain their declared failure semantics.",
-          "producedArtifacts": ["artifact:internal-result"]
+          "producedArtifacts": [
+            "artifact:internal-result"
+          ]
         },
         {
           "id": "transaction-settlement-to-close",
@@ -1049,7 +1250,9 @@
           "to": "close",
           "kind": "settlement",
           "predicate": "The transaction owner has settled or reported unknown; earlier leaf receipts do not substitute for this result.",
-          "producedArtifacts": ["artifact:transaction-settlement"]
+          "producedArtifacts": [
+            "artifact:transaction-settlement"
+          ]
         },
         {
           "id": "authored-request-to-translate",
@@ -1057,7 +1260,9 @@
           "to": "translate",
           "kind": "handoff",
           "predicate": "Only registered App-authored syntax invokes this adapter; canonical calls bypass it.",
-          "producedArtifacts": ["artifact:authored-request"]
+          "producedArtifacts": [
+            "artifact:authored-request"
+          ]
         },
         {
           "id": "normalized-request-to-host",
@@ -1065,7 +1270,9 @@
           "to": "host",
           "kind": "handoff",
           "predicate": "Return without canonical writes; host performs existing recipe admission and resolved-value validation.",
-          "producedArtifacts": ["artifact:normalized-request"]
+          "producedArtifacts": [
+            "artifact:normalized-request"
+          ]
         }
       ],
       "artifacts": [
@@ -1089,7 +1296,10 @@
           "id": "artifact:catalog",
           "ownerStepId": "catalog",
           "channel": "owned-handoff",
-          "consumerStepIds": ["provider", "result"],
+          "consumerStepIds": [
+            "provider",
+            "result"
+          ],
           "title": "Exact registry identities, contracts, discovery selections and read failures",
           "terminal": false
         },
@@ -1097,7 +1307,9 @@
           "id": "artifact:knowledge",
           "ownerStepId": "knowledge",
           "channel": "owned-handoff",
-          "consumerStepIds": ["result"],
+          "consumerStepIds": [
+            "result"
+          ],
           "title": "Authorized content, provenance, revision and owner failure",
           "terminal": false
         },
@@ -1105,7 +1317,12 @@
           "id": "artifact:dispatch",
           "ownerStepId": "host",
           "channel": "owned-handoff",
-          "consumerStepIds": ["execute", "catalog", "knowledge", "result"],
+          "consumerStepIds": [
+            "execute",
+            "catalog",
+            "knowledge",
+            "result"
+          ],
           "title": "Pinned invocation contract, explicit request selections and resolved validated leaf arguments",
           "terminal": false
         },
@@ -1113,7 +1330,9 @@
           "id": "artifact:admission",
           "ownerStepId": "host",
           "channel": "owned-handoff",
-          "consumerStepIds": ["result"],
+          "consumerStepIds": [
+            "result"
+          ],
           "title": "Explicit rejection or host composition result with completed predecessor settlement",
           "terminal": false
         },
@@ -1121,7 +1340,9 @@
           "id": "artifact:raw",
           "ownerStepId": "execute",
           "channel": "owned-handoff",
-          "consumerStepIds": ["result"],
+          "consumerStepIds": [
+            "result"
+          ],
           "title": "Complete domain output, execution status, settlement and explicit content metadata",
           "terminal": false
         },
@@ -1129,7 +1350,9 @@
           "id": "artifact:store-command",
           "ownerStepId": "result",
           "channel": "owned-handoff",
-          "consumerStepIds": ["retain"],
+          "consumerStepIds": [
+            "retain"
+          ],
           "title": "Selected save or read request with trusted origin and declared paths",
           "terminal": false
         },
@@ -1137,7 +1360,10 @@
           "id": "artifact:stored",
           "ownerStepId": "retain",
           "channel": "owned-handoff",
-          "consumerStepIds": ["result", "host"],
+          "consumerStepIds": [
+            "result",
+            "host"
+          ],
           "title": "Saved names/descriptions or selected retained values; storage failure is distinct",
           "terminal": false
         },
@@ -1145,7 +1371,10 @@
           "id": "artifact:delivery",
           "ownerStepId": "result",
           "channel": "owned-handoff",
-          "consumerStepIds": ["provider", "close"],
+          "consumerStepIds": [
+            "provider",
+            "close"
+          ],
           "title": "Validated selected output/content and separate execution/delivery state",
           "terminal": false
         },
@@ -1153,7 +1382,9 @@
           "id": "artifact:call",
           "ownerStepId": "provider",
           "channel": "owned-handoff",
-          "consumerStepIds": ["host"],
+          "consumerStepIds": [
+            "host"
+          ],
           "title": "Provider-authored call in the existing invocation/session",
           "terminal": false
         },
@@ -1161,7 +1392,9 @@
           "id": "artifact:terminal",
           "ownerStepId": "provider",
           "channel": "owned-handoff",
-          "consumerStepIds": ["close"],
+          "consumerStepIds": [
+            "close"
+          ],
           "title": "Provider completion, abort or transport/session loss without invented mutation status",
           "terminal": false
         },
@@ -1177,7 +1410,9 @@
           "id": "artifact:lookup",
           "ownerStepId": "host",
           "channel": "owned-handoff",
-          "consumerStepIds": ["retain"],
+          "consumerStepIds": [
+            "retain"
+          ],
           "title": "Selected named paths under the trusted App scope before destination admission",
           "terminal": false
         },
@@ -1185,7 +1420,10 @@
           "id": "artifact:shutdown",
           "ownerStepId": "close",
           "channel": "owned-handoff",
-          "consumerStepIds": ["host", "provider"],
+          "consumerStepIds": [
+            "host",
+            "provider"
+          ],
           "title": "Cancel or dispose only explicitly owned resources and await active work",
           "terminal": false
         },
@@ -1193,7 +1431,9 @@
           "id": "artifact:host-closed",
           "ownerStepId": "host",
           "channel": "owned-handoff",
-          "consumerStepIds": ["close"],
+          "consumerStepIds": [
+            "close"
+          ],
           "title": "Owned host work settled and disposal acknowledged, or explicit cleanup failure",
           "terminal": false
         },
@@ -1201,7 +1441,9 @@
           "id": "artifact:provider-closed",
           "ownerStepId": "provider",
           "channel": "owned-handoff",
-          "consumerStepIds": ["close"],
+          "consumerStepIds": [
+            "close"
+          ],
           "title": "Owned provider work settled and disposal acknowledged, or explicit cleanup failure",
           "terminal": false
         },
@@ -1209,7 +1451,9 @@
           "id": "artifact:internal-result",
           "ownerStepId": "result",
           "channel": "owned-handoff",
-          "consumerStepIds": ["host"],
+          "consumerStepIds": [
+            "host"
+          ],
           "title": "Complete validated step value, pinned contract and execution outcome for existing recipe bindings",
           "terminal": false
         },
@@ -1217,7 +1461,9 @@
           "id": "artifact:transaction-settlement",
           "ownerStepId": "execute",
           "channel": "owned-handoff",
-          "consumerStepIds": ["close"],
+          "consumerStepIds": [
+            "close"
+          ],
           "title": "Actual final App transaction settlement under the selected policy",
           "terminal": false
         },
@@ -1225,7 +1471,9 @@
           "id": "artifact:authored-request",
           "ownerStepId": "host",
           "channel": "owned-handoff",
-          "consumerStepIds": ["translate"],
+          "consumerStepIds": [
+            "translate"
+          ],
           "title": "Pinned authored contract and selections for its explicit syntax adapter",
           "terminal": false
         },
@@ -1233,7 +1481,9 @@
           "id": "artifact:normalized-request",
           "ownerStepId": "translate",
           "channel": "owned-handoff",
-          "consumerStepIds": ["host"],
+          "consumerStepIds": [
+            "host"
+          ],
           "title": "Existing recipe steps/bindings or owned translation rejection",
           "terminal": false
         }
@@ -1253,7 +1503,10 @@
             "provider",
             "close"
           ],
-          "artifactIds": ["artifact:dispatch", "artifact:raw"],
+          "artifactIds": [
+            "artifact:dispatch",
+            "artifact:raw"
+          ],
           "specRefs": [
             "docs/ai/framework/specs/ai-agent-runtime-host-composition.md#invocation-and-contracts"
           ]
@@ -1261,7 +1514,12 @@
         {
           "id": "execution-and-delivery",
           "statement": "Retention, delivery and observer failures never erase acknowledged canonical execution or cause automatic mutation replay.",
-          "stepIds": ["result", "retain", "provider", "close"],
+          "stepIds": [
+            "result",
+            "retain",
+            "provider",
+            "close"
+          ],
           "artifactIds": [
             "artifact:raw",
             "artifact:delivery",
@@ -1274,8 +1532,16 @@
         {
           "id": "internal-before-delivery",
           "statement": "Complete internal handoff does not require retention and cannot be reconstructed from a model projection.",
-          "stepIds": ["host", "result", "retain", "provider"],
-          "artifactIds": ["artifact:internal-result", "artifact:delivery"],
+          "stepIds": [
+            "host",
+            "result",
+            "retain",
+            "provider"
+          ],
+          "artifactIds": [
+            "artifact:internal-result",
+            "artifact:delivery"
+          ],
           "specRefs": [
             "docs/ai/framework/specs/ai-agent-runtime-host-composition.md#invocation-and-contracts"
           ]
@@ -1283,8 +1549,15 @@
         {
           "id": "app-transaction-policy",
           "statement": "The shared host preserves execution evidence and App-selected rollback/commit policy without deciding final canonical state.",
-          "stepIds": ["execute", "result", "close"],
-          "artifactIds": ["artifact:raw", "artifact:transaction-settlement"],
+          "stepIds": [
+            "execute",
+            "result",
+            "close"
+          ],
+          "artifactIds": [
+            "artifact:raw",
+            "artifact:transaction-settlement"
+          ],
           "specRefs": [
             "docs/ai/framework/specs/ai-agent-runtime-host-composition.md#failures-and-lifecycle"
           ]
@@ -1292,7 +1565,11 @@
         {
           "id": "app-syntax-only",
           "statement": "App grammar translation produces existing recipe inputs and never bypasses Runtime admission or executes mutations.",
-          "stepIds": ["host", "translate", "execute"],
+          "stepIds": [
+            "host",
+            "translate",
+            "execute"
+          ],
           "artifactIds": [
             "artifact:authored-request",
             "artifact:normalized-request"
@@ -1329,7 +1606,12 @@
         {
           "id": "rollback-policy",
           "title": "Default rollback remains supported",
-          "stepIds": ["host", "execute", "result", "close"],
+          "stepIds": [
+            "host",
+            "execute",
+            "result",
+            "close"
+          ],
           "assertions": [
             "A fatal invocation failure under the default policy rolls back through the actual App transaction adapter.",
             "Verify final state and settlement; do not misreport an earlier step receipt as final commit."
@@ -1341,7 +1623,12 @@
         {
           "id": "preserve-progress-policy",
           "title": "Explicit preserve-progress remains an App choice",
-          "stepIds": ["host", "execute", "result", "close"],
+          "stepIds": [
+            "host",
+            "execute",
+            "result",
+            "close"
+          ],
           "assertions": [
             "An explicitly selected preserve-progress variant reports the actual retained state and transaction result.",
             "Input correction and delivery/storage errors remain distinct; no automatic mutation replay or assumed commit on unknown settlement."
@@ -1379,10 +1666,318 @@
     }
   },
   "current": {
-    "observations": [],
+    "observations": [
+      {
+        "nodeId": "host",
+        "criterionId": "behavior",
+        "kind": "manual",
+        "status": "accepted",
+        "binding": "51b8acd64fd9665de0ae90c985e163e396ad72fd972a7dbef518391a163f3713",
+        "actor": "Codex owner review",
+        "summary": "Public host assembly reuses registry, invoker, recipe admission, persistence and owner leases. Inventory journey and Design host suites verify direct/composed dispatch and rejection without replay.",
+        "at": "2026-11-21T06:07:00.427Z"
+      },
+      {
+        "nodeId": "translate",
+        "criterionId": "behavior",
+        "kind": "manual",
+        "status": "accepted",
+        "binding": "cb1b75a49d8249ec937e64528cfb8d391c6d5ee40e0f911b13275733f65c751b",
+        "actor": "Codex owner review",
+        "summary": "Design authored stages, apply and canvas grouping remain in local-result-delivery and Design planners. The inventory consumer imports public Runtime exports and uses ordinary recipes without Design grammar.",
+        "at": "2026-11-21T06:07:00.432Z"
+      },
+      {
+        "nodeId": "execute",
+        "criterionId": "behavior",
+        "kind": "manual",
+        "status": "accepted",
+        "binding": "0dcf83cb5850726d06ff7b996b36a8e73fd979828a22464c116e990db69c8bcf",
+        "actor": "Codex owner review",
+        "summary": "Canonical executors, permissions and transaction adapters remain App-owned. Inventory failure variants assert actual rollback and preserve-progress state; existing Design canonical/browser cases pass.",
+        "at": "2026-11-21T06:07:00.436Z"
+      },
+      {
+        "nodeId": "result",
+        "criterionId": "behavior",
+        "kind": "manual",
+        "status": "accepted",
+        "binding": "c8b7dedc606f895d48160c1278a2962184509c6069e1601fcd7693d965e7b5d9",
+        "actor": "Codex owner review",
+        "summary": "Schema entry pins and validates complete owner output before selecting external views. Internal visibility cannot remove successor values; schema/native/result tests and corruption cases preserve type and lifetime rejection.",
+        "at": "2026-11-21T06:07:00.439Z"
+      },
+      {
+        "nodeId": "catalog",
+        "criterionId": "behavior",
+        "kind": "manual",
+        "status": "accepted",
+        "binding": "88420bdcfc0115c2fa4c137536af7c99b2258433d8ad094f630aeb428d03d497",
+        "actor": "Codex owner review",
+        "summary": "Portable purpose/field matching and optional information pagination take App catalogs and budgets. Arbitrary inventory tool names resolve by metadata; Design discovery and contract acquisition regressions pass.",
+        "at": "2026-11-21T06:07:00.443Z"
+      },
+      {
+        "nodeId": "knowledge",
+        "criterionId": "behavior",
+        "kind": "manual",
+        "status": "accepted",
+        "binding": "73325b735e7f2f2c46713e6442a20dc789dc3bc77165394e5208d24cdeb84a3c",
+        "actor": "Codex owner review",
+        "summary": "Runtime retains Knowledge access ownership; optional file loader owns only parsing and lazy resource lifetime. Inventory discovery/read/redisplay and existing authorization/revision cases pass; Design content stays App-owned.",
+        "at": "2026-11-21T06:07:00.446Z"
+      },
+      {
+        "nodeId": "retain",
+        "criterionId": "behavior",
+        "kind": "manual",
+        "status": "accepted",
+        "binding": "09efe5f24b82b84f6a7bf51ce0b9bfc24d062b46936349587985527eab628c65",
+        "actor": "Codex owner review",
+        "summary": "App injects the result store and explicitly owns release. Full values, named paths and selected images cross turns without a new producer. Borrowed stores survive provider disposal; async exchange is awaited.",
+        "at": "2026-11-21T06:07:00.450Z"
+      },
+      {
+        "nodeId": "provider",
+        "criterionId": "behavior",
+        "kind": "manual",
+        "status": "accepted",
+        "binding": "e221bf4a47377a2d68f4294e5206072c249e5a8ece2b4e098698e6f8f45a1282",
+        "actor": "Codex owner review",
+        "summary": "Production HTTP exchange carries actual contracts, execution receipts and selected images. Extracted native RPC transport is exercised by existing offline CLI handoffs; App prompts, endpoints, model settings and evaluation policy stay App-owned.",
+        "at": "2026-11-21T06:07:00.453Z"
+      },
+      {
+        "nodeId": "compose",
+        "criterionId": "behavior",
+        "kind": "manual",
+        "status": "accepted",
+        "binding": "925c994a1823571a8cf32f23a273f6e942b598f45f7b58ef7204a00f6cdea563",
+        "actor": "Codex owner review",
+        "summary": "Portable root imports exclude Node and Lodash; schema is a documented optional Lodash peer at the existing version. Non-Design consumer uses the same public built host/provider/runtime route, and Design imports current entries only.",
+        "at": "2026-11-21T06:07:00.457Z"
+      },
+      {
+        "nodeId": "close",
+        "criterionId": "behavior",
+        "kind": "manual",
+        "status": "accepted",
+        "binding": "6185e381643e42406ef0976eee0b73835a0ffbf025002048759e21c5af4418c1",
+        "actor": "Codex owner review",
+        "summary": "Owned native/SQLite/Knowledge/queue cleanup retains existing cancellation semantics. Borrowed result storage survives disposal and explicit owned release occurs once; full native, lifecycle and browser suites pass.",
+        "at": "2026-11-21T06:07:00.461Z"
+      },
+      {
+        "nodeId": "integration",
+        "criterionId": "non-design-journey",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "10a641c82615a2b7a73e9d75715d4289966bec6d72ce2855fc910b018362b709",
+        "actor": "vitest",
+        "executionId": "a207930b-7f2c-49d9-a0ac-06202ed03a76",
+        "caseId": "60532ee579488d80565542907e403303e486189a38eaba0c5fb67d1959a5cccb",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-21T06:07:45.404Z"
+      },
+      {
+        "nodeId": "integration",
+        "criterionId": "internal-values",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "10a641c82615a2b7a73e9d75715d4289966bec6d72ce2855fc910b018362b709",
+        "actor": "vitest",
+        "executionId": "a207930b-7f2c-49d9-a0ac-06202ed03a76",
+        "caseId": "919345c7c0a40696503d619dcf17a630a43a1d6184b71bc67dae38d4caf41a37",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-21T06:07:45.405Z"
+      },
+      {
+        "nodeId": "integration",
+        "criterionId": "selected-media",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "10a641c82615a2b7a73e9d75715d4289966bec6d72ce2855fc910b018362b709",
+        "actor": "vitest",
+        "executionId": "a207930b-7f2c-49d9-a0ac-06202ed03a76",
+        "caseId": "2349807cf52a8630c9914372b3f90fa60317805803210a9492dbd181139bf66c",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-21T06:07:45.405Z"
+      },
+      {
+        "nodeId": "integration",
+        "criterionId": "reject-missing-id",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "10a641c82615a2b7a73e9d75715d4289966bec6d72ce2855fc910b018362b709",
+        "actor": "vitest",
+        "executionId": "a207930b-7f2c-49d9-a0ac-06202ed03a76",
+        "caseId": "8ba58b9c36c17da89da3a007bde956150eff60ca276d53715b1f8552e91664c7",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-21T06:07:45.405Z"
+      },
+      {
+        "nodeId": "integration",
+        "criterionId": "reject-invalid-result",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "10a641c82615a2b7a73e9d75715d4289966bec6d72ce2855fc910b018362b709",
+        "actor": "vitest",
+        "executionId": "a207930b-7f2c-49d9-a0ac-06202ed03a76",
+        "caseId": "7188546dfbdacc42c406f1067e50311870f295d11e615c4cde7b711a91951336",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-21T06:07:45.405Z"
+      },
+      {
+        "nodeId": "integration",
+        "criterionId": "reject-missing-image",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "10a641c82615a2b7a73e9d75715d4289966bec6d72ce2855fc910b018362b709",
+        "actor": "vitest",
+        "executionId": "a207930b-7f2c-49d9-a0ac-06202ed03a76",
+        "caseId": "e0faedd4fab4394661e0a596cddf7cc2102a855c637bcfb7daa6d4d850646755",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-21T06:07:45.405Z"
+      },
+      {
+        "nodeId": "integration",
+        "criterionId": "reject-wrong-revision",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "10a641c82615a2b7a73e9d75715d4289966bec6d72ce2855fc910b018362b709",
+        "actor": "vitest",
+        "executionId": "a207930b-7f2c-49d9-a0ac-06202ed03a76",
+        "caseId": "7bf34b7a001518406acb593346c772943dafff04fb4a2f21675fddf0ce3a5d0c",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-21T06:07:45.405Z"
+      },
+      {
+        "nodeId": "integration",
+        "criterionId": "reject-wrong-settlement",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "10a641c82615a2b7a73e9d75715d4289966bec6d72ce2855fc910b018362b709",
+        "actor": "vitest",
+        "executionId": "a207930b-7f2c-49d9-a0ac-06202ed03a76",
+        "caseId": "7b1601484950f708b8397a318cc0e04cafbc58b95bbf079367ab5ec2383680c9",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-21T06:07:45.405Z"
+      },
+      {
+        "nodeId": "integration",
+        "criterionId": "reject-omitted-case",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "10a641c82615a2b7a73e9d75715d4289966bec6d72ce2855fc910b018362b709",
+        "actor": "vitest",
+        "executionId": "a207930b-7f2c-49d9-a0ac-06202ed03a76",
+        "caseId": "691295d13291d53fb21e4750f06a70fddb699862a2fe3ba039b005b98eb6bfaf",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-21T06:07:45.405Z"
+      },
+      {
+        "nodeId": "integration",
+        "criterionId": "settlement-undefined",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "10a641c82615a2b7a73e9d75715d4289966bec6d72ce2855fc910b018362b709",
+        "actor": "vitest",
+        "executionId": "a207930b-7f2c-49d9-a0ac-06202ed03a76",
+        "caseId": "8e1d32c14bf1327797b3500f051687c7a5e5156547d3a87706687806bd3c36b7",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-21T06:07:45.405Z"
+      },
+      {
+        "nodeId": "integration",
+        "criterionId": "settlement-preserve-progress",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "10a641c82615a2b7a73e9d75715d4289966bec6d72ce2855fc910b018362b709",
+        "actor": "vitest",
+        "executionId": "a207930b-7f2c-49d9-a0ac-06202ed03a76",
+        "caseId": "525b91cafb4d930cf2cb536ac30f2e2bf3cf29021b28f87a29c776de6acdf260",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-21T06:07:45.405Z"
+      },
+      {
+        "nodeId": "integration",
+        "criterionId": "store-lifetime",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "10a641c82615a2b7a73e9d75715d4289966bec6d72ce2855fc910b018362b709",
+        "actor": "vitest",
+        "executionId": "a207930b-7f2c-49d9-a0ac-06202ed03a76",
+        "caseId": "9b19646bdb9747ac212283759659f743b0e22d1b196c6b7d320f26afe85bfbf2",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-21T06:07:45.405Z"
+      },
+      {
+        "nodeId": "integration",
+        "criterionId": "integration",
+        "kind": "manual",
+        "status": "accepted",
+        "binding": "08f4ca7fb4ca83439ba853c1fc63a2c02657caf0fb5f1bddf8ce7737105da602",
+        "actor": "Codex whole-flow review",
+        "summary": "All C01-C12 boundaries reviewed against the current contract. Twelve public-export inventory journeys passed, including corruption controls, actual rollback/preserve-progress, private internal bindings, cross-turn Knowledge/media and borrowed storage lifetime. Complete unchanged-source Design verification passed all five groups; exact prior failures were remapped and rerun, with no unresolved warning. No legacy forwarding entry, Design syntax in Runtime or weakened validation remains in the transfer.",
+        "at": "2026-11-21T06:07:45.417Z"
+      }
+    ],
     "notes": [],
     "progress": [],
-    "sources": [],
+    "sources": [
+      {
+        "nodeId": "compose",
+        "revision": "3aaa86cb5515235dc3141dacbf39d3b168eb24a82f09c192bf709366c8d4be25"
+      },
+      {
+        "nodeId": "catalog",
+        "revision": "3aaa86cb5515235dc3141dacbf39d3b168eb24a82f09c192bf709366c8d4be25"
+      },
+      {
+        "nodeId": "knowledge",
+        "revision": "3aaa86cb5515235dc3141dacbf39d3b168eb24a82f09c192bf709366c8d4be25"
+      },
+      {
+        "nodeId": "host",
+        "revision": "3aaa86cb5515235dc3141dacbf39d3b168eb24a82f09c192bf709366c8d4be25"
+      },
+      {
+        "nodeId": "translate",
+        "revision": "3aaa86cb5515235dc3141dacbf39d3b168eb24a82f09c192bf709366c8d4be25"
+      },
+      {
+        "nodeId": "execute",
+        "revision": "3aaa86cb5515235dc3141dacbf39d3b168eb24a82f09c192bf709366c8d4be25"
+      },
+      {
+        "nodeId": "result",
+        "revision": "3aaa86cb5515235dc3141dacbf39d3b168eb24a82f09c192bf709366c8d4be25"
+      },
+      {
+        "nodeId": "retain",
+        "revision": "3aaa86cb5515235dc3141dacbf39d3b168eb24a82f09c192bf709366c8d4be25"
+      },
+      {
+        "nodeId": "provider",
+        "revision": "3aaa86cb5515235dc3141dacbf39d3b168eb24a82f09c192bf709366c8d4be25"
+      },
+      {
+        "nodeId": "close",
+        "revision": "3aaa86cb5515235dc3141dacbf39d3b168eb24a82f09c192bf709366c8d4be25"
+      }
+    ],
     "warnings": []
   }
 }

@@ -193,3 +193,26 @@ One invocation uses one App transaction runner: normal completion commits once,
 and cancellation or fatal failure rolls back all intermediate writes. A receipt
 is provisional execution, not a commit or durable acknowledgement. Providers must
 not repeat a completed batch or retry after execution has started.
+
+### Composing dependent tools without adopting Design
+
+Keep the action-only composition above for simple Apps. For a multi-step tool host,
+register the same immutable definitions with the Runtime and host registry, then
+compose `createAiToolHostLibrary` (Node adapter) with an owner executor, validator,
+lease adapter and App-selected tool store. Use its existing recipe admission and
+invocation; do not create a second interpreter. The owner executor routes canonical
+actions through `createBatchExchange` and the Runtime's `executeBatch` callback.
+`createExchangeAiProvider` transports these callbacks and their receipts over the
+configured App endpoint. The App still owns permission and transaction policy.
+
+`invokeAiToolOwner` from the optional schema entry pins and validates complete
+owner values. Feed those complete values to dependent steps; call
+`projectToolDelivery` only for the selected model view. `resultDelivery` coordinates
+independent retain/delivery choices. Save selected values to the App conversation
+context, return their names/provenance, and use `resolveNamedResultInputs` in a
+later turn. A saved name is not permission to reuse a request-scoped resource.
+
+The schema entry's existing Lodash peer must be explicitly declared by consumers.
+Node adapters are separate imports and do not enter the portable root's browser
+graph. The permanent inventory journey under the Runtime tests is an executable
+example of these actual public APIs, including correction, two images and reuse.

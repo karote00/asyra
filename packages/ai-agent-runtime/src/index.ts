@@ -223,3 +223,14 @@ export type {
   AiKnowledgeSession,
   AiKnowledgeOptions
 } from './knowledge-types.js'
+
+export * from './result-context.js'
+export * from './capability-search.js'
+export * from './tool-scheduler.js'
+export * from './tool-input-error.js'
+export * from './result-delivery.js'
+export * from './result-media.js'
+export * from './named-result-inputs.js'
+
+export * from './batch-exchange-types.js'
+export * from './providers/exchange-provider.js'

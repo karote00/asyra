@@ -4,7 +4,7 @@ import recorded from '../../test-data/ai-drawing/fixtures/contract-review-202611
 import { createBasicApiActions } from '../../src/ai/basic-api-actions'
 import { createAiToolContract } from '@asyra/ai-agent-runtime'
 import { createLocalOperationTools } from '../local-operation-tools'
-import { operationInputIssue } from '../operation-input-schema'
+import { operationInputIssue } from '@asyra/ai-agent-runtime/schema'
 import { readCompleteInformation } from './tool-contract-assertions'
 
 it('delivers recorded action arguments without repeating the host schema', async () => {

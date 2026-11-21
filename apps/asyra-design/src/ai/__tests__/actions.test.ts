@@ -9,7 +9,7 @@ import {
   canRetryAiTurn,
   projectAiQuestion
 } from '../presentation'
-import { operationInputIssue } from '../tool-schema'
+import { operationInputIssue } from '@asyra/ai-agent-runtime/schema'
 import { observeAiAction } from '../runtime-input'
 import {
   AiActionError,

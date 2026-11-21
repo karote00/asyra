@@ -9,7 +9,7 @@ import {
 import {
   operationContractIssue,
   requireSupportedToolSchemas
-} from './tool-schema'
+} from '@asyra/ai-agent-runtime/schema'
 import { designActionOutcome } from './tool-contract'
 import core from '../contexts'
 import { createRetainedDesignContext } from '../common-apis/retained-design-context'

@@ -16,8 +16,10 @@ const configuration = JSON.parse(
 const flow = JSON.parse(
   readFileSync(resolve(root, configuration.flows, 'checkout.flow.json'), 'utf8')
 )
-const selected = flow.definition.nodes
-  .flatMap((node) => node.criteria)
+const selected = [
+  ...flow.definition.nodes.flatMap((node) => node.criteria),
+  ...flow.definition.criteria
+]
   .filter((criterion) => criterion.selector)
   .map((criterion) => JSON.parse(criterion.selector.identity))
 const groups = conversationGroups(root)

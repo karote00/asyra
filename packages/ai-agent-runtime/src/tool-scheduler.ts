@@ -1,26 +1,25 @@
-export const LocalToolAccess = Object.freeze({
+export const AiToolAccess = Object.freeze({
   COORDINATOR: 'coordinator',
   ISOLATED: 'isolated',
   INDEPENDENT: 'independent',
   EXCLUSIVE: 'exclusive'
 } as const)
 
-export type LocalToolAccess =
-  (typeof LocalToolAccess)[keyof typeof LocalToolAccess]
+export type AiToolAccess = (typeof AiToolAccess)[keyof typeof AiToolAccess]
 
 /** One request lifetime: only owner-declared independent work shares a barrier. */
-export const createLocalToolScheduler = (signal: AbortSignal) => {
+export const createAiToolScheduler = (signal: AbortSignal) => {
   let exclusive: Promise<unknown> = Promise.resolve()
   let readers: Promise<unknown>[] = []
 
   return <T>(
-    access: LocalToolAccess | undefined,
+    access: AiToolAccess | undefined,
     work: () => Promise<T>
   ): Promise<T> => {
     // Host-declared orchestration never owns the barrier needed by its leaves.
     if (
-      access === LocalToolAccess.COORDINATOR ||
-      access === LocalToolAccess.ISOLATED
+      access === AiToolAccess.COORDINATOR ||
+      access === AiToolAccess.ISOLATED
     ) {
       return Promise.resolve().then(() => {
         signal.throwIfAborted()
@@ -29,7 +28,7 @@ export const createLocalToolScheduler = (signal: AbortSignal) => {
       })
     }
 
-    const independent = access === LocalToolAccess.INDEPENDENT
+    const independent = access === AiToolAccess.INDEPENDENT
     const before = independent
       ? exclusive
       : Promise.all([exclusive, ...readers])

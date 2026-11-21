@@ -1,5 +1,5 @@
 import { AiDesignToolIds } from '../src/constants/ai-design'
-import { operationInputIssue } from './operation-input-schema'
+import { operationInputIssue } from '@asyra/ai-agent-runtime/schema'
 
 export const isDiscoveryTool = (name: string) =>
   name === AiDesignToolIds.SEARCH_DESIGN_TOOLS ||

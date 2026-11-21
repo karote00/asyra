@@ -3,10 +3,13 @@
 ## Status and task contract
 
 Implementation authorized on 2026-11-21. The existing Lodash dependency transfer
-is approved; Stage 0 is preparing the extraction and permanent case bindings.
-Base: `origin/main` at `30f856260a9776f87e0440b1b5b0d88e68a515de`, including
+is approved. All implementation stages and local feature acceptance are complete.
+The integrated change is ready for pull-request review; remote CI is not monitored.
+Parent source: `origin/main` at `30f856260a9776f87e0440b1b5b0d88e68a515de`, including
 the merged Design conversation work in PR #365. Branch:
-`codex/ai-agent-runtime-ownership-transfer`. Closeout owner: the coordinating
+`codex/ai-agent-runtime-ownership-transfer`. The implementation task base is the
+reviewed plan commit `34b85659bb83bbdf5ffc12ab50c069e0e1d38121` on this same branch.
+Closeout owner: the coordinating
 agent for this plan, with user review of the integrated result.
 
 The objective is to let another App compose the complete tool handoff without
@@ -36,8 +39,8 @@ replanning; it does not expand this task automatically.
   and [public exports](../../../../packages/ai-agent-runtime/src/index.ts).
 - Current [Design execution flow](../../apps/asyra-design/specs/ai-execution-flow.md)
   and [registered-action guide](../../../public/build/ai-actions.md).
-- Proposed [host composition contract](../specs/ai-agent-runtime-host-composition.md).
-- Proposed [Flow document](ai-agent-runtime-ownership-transfer/ownership-transfer.flow.json).
+- Current [host composition contract](../specs/ai-agent-runtime-host-composition.md).
+- Current [Flow document](ai-agent-runtime-ownership-transfer/ownership-transfer.flow.json).
 - Existing [runtime
   architecture](../../../../tools/flow-inspector/inspectors/ai-agent-runtime-flow-inspector.data.cjs):
   preserve Feature-owned invocation, App context and permissions, canonical
@@ -148,7 +151,8 @@ avoid a dependency decision.
 
 ## Implementation sequence
 
-All stages are pending. Each stage starts from its Flow owner boundary, adds or
+The stage sequence below defines the authorized work. Each stage starts from its
+Flow owner boundary, adds or
 strengthens permanent behavior tests before implementation, preserves existing
 legal behavior, and reviews the diff plus direct consumers before advancing.
 For a refactor, characterize the accepted baseline first; for a defect, prove a
@@ -367,7 +371,162 @@ illegal, Unicode/reference and projection behavior through the new entry.
 
 Permanent proof locations: package `src/__tests__/host-composition.test.ts`
 (direct/composed correction and complete internal handoff),
-`src/__tests__/host-journey.test.ts` (connected provider/exchange/Knowledge/state
+`src/__tests__/host-journey.test.mjs` (connected provider/exchange/Knowledge/state
 journey and deliberate broken handoffs), and existing migrated schema, retention,
 store, search and native transport suites. Actual case identities and results
 must be published before acceptance; this list is not a passing observation.
+
+### Result owner segment - schema extraction
+
+The optional schema entry now owns supported validation, native input conversion
+and model result projection. Design imports it directly; the two obsolete App
+schema files were removed, with no forwarding entrypoints. Domain outcome and
+action-effect classification remain in Design. Existing Lodash 4.18.1 is the
+optional peer and development dependency; no upgrade occurred.
+
+Validation: the public-import regression first failed because the schema export
+was absent. After implementation, 82 cases across five focused files passed,
+including original schema and result-projection behavior. Runtime build and
+Design server type checking passed. Naming and focused lint passed (four existing
+console warnings). The initial native-schema baseline required building Core's
+existing declaration dependencies; those were built without source changes.
+At that checkpoint, the remaining invocation/host, storage, discovery and
+transport transfers and connected journey were pending; they are now completed
+and verified in the final acceptance below.
+
+### Connected owner handoff - implementation card
+
+The active owner segment is Host -> canonical execution -> complete result ->
+retention/delivery -> provider successor. Inputs are pinned registered contracts,
+normalized recipe bindings and App transaction/storage policy. Outputs are full
+validated internal values, independently selected provider views, saved names and
+actual settlement. Design grammar, coordinates, catalog policy and evaluation
+controls remain excluded from shared code. Allowlisted implementation is the
+Runtime host, schema, result and provider adapters plus their direct Design
+composition consumers and permanent tests.
+
+Permanent source-bound producers are now being implemented:
+
+- `packages/ai-agent-runtime/src/__tests__/host-journey.test.mjs`: C01-C07 and
+  C11-C12 through the public built exports, production HTTP exchange, tool host,
+  canonical runtime executor, Knowledge and a later turn. The inventory model
+  endpoint and App transaction/state are fixture owners; orchestration is real.
+- `packages/ai-agent-runtime/src/__tests__/recipe-admission.test.ts`,
+  `preserves presentation visibility separate from internal binding types and lifetimes`
+  (test title starts `keeps`): a newly exposed upstream mismatch. The complete
+  result contains a presentation-only `x-model-visibility` annotation, but static
+  recipe admission treats that supported annotation as an opaque value and
+  prevents the successor from using it. The formal regression fails before the
+  correction. Remove only the presentation annotation from implication analysis;
+  retain original runtime validation, type constraints and resource lifetimes.
+- Existing Design native provider/config suites now pass 307 cases (one optional
+  installed-registration probe not selected); they execute the extracted native
+  RPC transport. This does not replace the required offline native integration.
+- Existing exchange/invocation tests protect correctable rejection and matching
+  one-use receipts. Browser exchange tests run with their required jsdom
+  environment; a node-only attempt's missing `location` was a harness mismatch.
+
+The entire journey must pass before mutation counterexamples count as evidence.
+Partial results and transaction policy are asserted against actual canonical
+state, not inferred from receipt labels. Flow acceptance remains incomplete until
+all bounded product cases and preserved Design verification run on this source.
+
+### Retention ownership correction before final acceptance
+
+The connected journey passed, but direct consumer review exposed an ownership
+mismatch in the new exchange adapter: it constructed and cleared its own result
+store, so an App-supplied store could not be selected or survive a borrowed
+provider lifetime. The permanent public-export regression demonstrates the missing
+saved names before the correction. The adapter must accept the App result-store
+interface and optional explicit release callback; it must not create a second
+store. Design retains its existing memory store and clears it through its App
+composition. Async store exchange is awaited before a receipt is sent. The first
+whole-feature run was interrupted for this bounded correction; it is not final
+evidence and will be rerun after focused storage/exchange gates pass.
+
+### Final integration gate
+
+The common schema/host/result/search/Knowledge/native/exchange mechanisms are now
+implemented and all transferred App entries are removed. App-owned policy
+composition remains explicit. The scope selector now includes the public built
+`.test.mjs` journey in the Runtime Vitest group, with a red/green selection
+regression. The Flow names its exact cases, including mutation counterexamples
+and both App transaction policies. Direct Design integration tests exercise the
+same moved owners; native provider characterization passed 307 cases plus one
+optional probe not selected. Final verification supplies the required offline
+native executable and does not accept skipped handoff evidence.
+
+The final gate is the existing `verify:conversation` runner, including the Runtime
+suite, preserved App/server consumers, node acceptance and browser handoffs. Its
+source/case reconciliation is retained. No 101, paid model, full-repository test,
+release workflow or CI monitoring is selected. The task Flow accepts only actual
+producer results plus bounded owner review after the gate completes.
+
+### Final acceptance correction - preserved consumers
+
+The complete feature run at `tmp/conversation-proof-IKjLlf` exposed three
+test consumers still reading moved projection exports, a backend boundary list
+missing the new public schema entry, duplicate Inspector source references after
+the protocol transfer, a contained-runner fixture using the old scheduler name,
+and verifier stimuli omitting flow-level required cases. Existing formal tests
+failed before correction. These are direct consumers of the transferred owners;
+update their imports/declared inputs and preserve all behavioral assertions.
+The backend boundary must additionally prove the schema entry has no Framework
+execution-owner dependencies; its approved Lodash dependency is explicit.
+The current document backend build is also required by existing browser-proof
+fixtures and must be prepared before rerunning their tests. No production
+validation, canonical behavior or compatibility entry is changed.
+
+Revised final sequence: correct these bounded consumer handoffs, run their exact
+regressions, then rerun the full feature gate on unchanged source. An interrupted
+or failed run remains failure evidence and cannot close the plan.
+
+The corrected CLI control also exposed premature integration publication: its
+flow-level observations depended on owner observations published by later groups.
+Keep per-group evidence, then bind the admitted integration records after every
+group, the full source/compiled/definition equality guard and required-handoff
+checks succeed. Existing real-CLI corruption cases remain mandatory; no manual
+acceptance is synthesized. Update exact Inspector implementation paths to the
+transferred owners; keep their case identities and assertions unchanged.
+
+## Local acceptance - 2026-11-21
+
+All seven implementation stages are complete. Shared invocation, schema,
+references, retention/delivery, discovery, host composition and optional
+Knowledge/storage/native/exchange adapters now live in Runtime. Design retains
+its grammar, policies, content, canonical operations and UI. Eleven superseded
+App source entries were removed without forwarding paths. Existing Lodash
+4.18.1 remains the optional schema peer and development dependency.
+
+The non-Design public-export journey runs the production Runtime, HTTP exchange,
+host, recipe, executor and provider successor. Twelve permanent cases cover
+complete internal values, equivalent bindings, actual transaction settlement,
+named cross-turn reuse, two images, Knowledge, borrowed/owned storage and six
+deliberate corruptions. All passed after bounded owner review.
+
+Complete Design preservation evidence is in `tmp/conversation-proof-fK3gxR`:
+
+- Server: 3,807 passed, no failed or skipped cases.
+- App: 1,621 passed, no failed or skipped cases.
+- Runtime: 551 passed, no failed or skipped cases.
+- Node verifier and supporting tools: all 62 selected files passed.
+- Browser: 337 passed, no failed, flaky or skipped cases.
+- Independent collection, complete-report admission and source/compiled-file
+  equality passed. The offline Codex CLI was 0.160.0; no paid model or 101 ran.
+
+The full runner initially returned non-success solely for two retained unmapped
+warnings from the earlier failed projection tests. Its five execution groups
+passed. Four existing cases were then bound explicitly in the Flow, rerun, and
+used through supported publication to replace those warnings. Original failure
+diagnostics remain in `tmp/conversation-proof-IKjLlf`; they were not suppressed.
+The complete reports were independently readmitted after checking every source
+and compiled hash against the completed run. Reconciliation is recorded in
+`tmp/ownership-transfer/reconciliation.json`. The current conversation Flow and
+ownership-transfer Flow both evaluate to `done` after manual contract review.
+
+Runtime build, Design server types, 154-file scoped lint, naming, dependency
+audit, public documentation generation checks and focused Flow/document tests
+passed. The final scoped review found no remaining in-scope correction. No
+whole-repository test, release, compatibility shim or CI monitoring was added.
+PR review and merge remain separate from this completed local implementation;
+the named coordinating owner retains the plan's formal archive closeout.

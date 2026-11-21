@@ -1,11 +1,11 @@
 import recorded from './fixtures/recorded-101/staged-retention-20261106.json'
 import { expect, it } from 'vitest'
-import { resultDelivery } from '../local-result-delivery'
-import { createConversationResults } from '../../src/ai/conversation-results'
+import { createDesignResultDelivery } from '../local-result-delivery'
+import { createConversationResults } from '@asyra/ai-agent-runtime'
 
 it('identifies the rejected alias and exact request references without losing a valid selection', async () => {
   const context = createConversationResults(() => 1).open('stage-context')
-  const delivery = resultDelivery(
+  const delivery = createDesignResultDelivery(
     {
       retain: {
         ...recorded.input.retain,
@@ -50,7 +50,7 @@ it('identifies the rejected alias and exact request references without losing a 
 
 it('retains only public authored input fields after successful execution', async () => {
   const context = createConversationResults(() => 1).open('authored')
-  const delivery = resultDelivery(
+  const delivery = createDesignResultDelivery(
     {
       retain: {
         source: { step: 'prepare', source: 'input', path: '' },
@@ -93,7 +93,7 @@ it('retains only public authored input fields after successful execution', async
 it('acknowledges saved operation results with reusable provenance and shape without returning values', async () => {
   const app = createConversationResults(() => 'document')
   const context = app.open('staged')
-  const delivery = resultDelivery(
+  const delivery = createDesignResultDelivery(
     {
       retain: { paneTargets: { step: 'panes', path: '/compositionIds' } },
       delivery: 'status'

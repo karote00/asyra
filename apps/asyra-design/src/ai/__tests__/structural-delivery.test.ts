@@ -28,7 +28,7 @@ vi.mock('../../common-apis', () => ({
 import { createRetainedDesignContext } from '../../common-apis/retained-design-context'
 import { createBasicApiActions } from '../basic-api-actions'
 import { createDocumentContextAction } from '../context-action'
-import { operationInputIssue } from '../tool-schema'
+import { operationInputIssue } from '@asyra/ai-agent-runtime/schema'
 
 interface StructuralReceipt {
   status: string

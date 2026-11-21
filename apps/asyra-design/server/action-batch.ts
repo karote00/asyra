@@ -5,7 +5,7 @@ import {
   evaluationReportSessionEndpoint
 } from './evaluation-report-sessions'
 import type { EvaluationReportSessions } from './evaluation-report-sessions'
-import type { ExchangeConversationResults } from '../src/ai/conversation-results'
+import type { ExchangeConversationResults } from '@asyra/ai-agent-runtime'
 import { admitsConversationContext } from '../src/ai/conversation-context'
 import {
   createExecutionRecordSink,
@@ -13,17 +13,14 @@ import {
   ExecutionRecordCollectionError,
   createFileRecordCollector
 } from '@asyra/ai-agent-runtime/node'
-import type {
-  AiToolProgress,
-  ExecuteAiBatch
-} from '../src/ai/action-batch-protocol'
+import type { AiToolProgress, ExecuteAiBatch } from '@asyra/ai-agent-runtime'
 import { admitsLocalProviderRequest } from './local-request-admission'
 import { createHash, randomUUID } from 'node:crypto'
 import { Buffer } from 'node:buffer'
 import { existsSync, readFileSync } from 'node:fs'
 import { readFile } from 'node:fs/promises'
 import type { IncomingMessage, ServerResponse } from 'node:http'
-import { createBatchExchange } from './batch-exchange'
+import { createBatchExchange } from '@asyra/ai-agent-runtime/node'
 import {
   ACTION_BATCH_ENDPOINT,
   AI_EXECUTION_RECORD_ENDPOINT,
@@ -35,7 +32,7 @@ import type {
   AiActionBatch,
   AiJsonValue,
   AiProviderInput
-} from '../src/ai/action-batch-protocol'
+} from '@asyra/ai-agent-runtime'
 
 const sampleRoot = new URL('../samples/crdt-7076/', import.meta.url)
 const sampleInstructionUrl = new URL('instruction.txt', sampleRoot)

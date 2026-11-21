@@ -14,11 +14,11 @@
         },
         {
           "path": "apps/asyra-design/server/local-knowledge.ts",
-          "sha256": "f590d7b826cb3059a8b45055a6d6249c48aa64a9f40ac078ce3c7d0240a21cd0"
+          "sha256": "bee6ad484a28ea1afa1868efeb7f21a7113744532cff558d13418a68ee03c0b5"
         },
         {
           "path": "apps/asyra-design/server/local-operation-tools.ts",
-          "sha256": "9ce2b19a8a46bec0f6d51201fa29f06de0b40414351ff6e41432f3a9499864d3"
+          "sha256": "731cf90a17551f53430bf53aa3531e0735a9ec71bb7648979c8c6e8209c05fa6"
         }
       ]
     },
@@ -316,11 +316,11 @@
     },
     {
       "id": "build/ai-actions",
-      "pageSha256": "d8677a0ee295a267b87ea01933a38ba5c544e6a02f243d6fec6f401a67eb926b",
+      "pageSha256": "e1738205837b0e3cb495cb300448373951ab21685ebc0147f486ff0eaba1b38c",
       "sources": [
         {
           "path": "docs/ai/framework/packages/ai-agent-runtime.md",
-          "sha256": "71567ddc02254997631b4a7979ca0b33a4fdc1cf49559b8b49820485a874462d"
+          "sha256": "8cdaf68d33ae011e1358f8bf1d1ba6164c3c6d8f3fdd5b7e0c750e06b014637f"
         },
         {
           "path": "docs/ai/framework/golden-paths/compose-ai-agent-runtime.md",
@@ -334,7 +334,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/ai-agent-runtime.md",
-          "sha256": "71567ddc02254997631b4a7979ca0b33a4fdc1cf49559b8b49820485a874462d"
+          "sha256": "8cdaf68d33ae011e1358f8bf1d1ba6164c3c6d8f3fdd5b7e0c750e06b014637f"
         },
         {
           "path": "docs/ai/framework/packages/feature-system.md",
@@ -582,15 +582,15 @@
     },
     {
       "id": "reference/packages/ai-agent-runtime",
-      "pageSha256": "cf8444e4e1a59b845cccd592ea8eed85841bc8530f9aff884f67a20870056e09",
+      "pageSha256": "2709c376aa8b443ed8953a7240f831949fc611497d1abbef25dda8e8261b93ab",
       "sources": [
         {
           "path": "docs/ai/framework/packages/ai-agent-runtime.md",
-          "sha256": "71567ddc02254997631b4a7979ca0b33a4fdc1cf49559b8b49820485a874462d"
+          "sha256": "8cdaf68d33ae011e1358f8bf1d1ba6164c3c6d8f3fdd5b7e0c750e06b014637f"
         },
         {
           "path": "packages/ai-agent-runtime/package.json",
-          "sha256": "b7333829a47fb2da53c13255b6ebf741ab7163cfcac0d628f9479d0e9fb2bed0"
+          "sha256": "8ff77c83d4afcf8aa017e6af629bc3aba31669d54dfe19cb611856f5790e81f9"
         }
       ]
     },
@@ -918,15 +918,15 @@
       "sources": [
         {
           "path": "apps/asyra-design/server/local-operation-tools.ts",
-          "sha256": "9ce2b19a8a46bec0f6d51201fa29f06de0b40414351ff6e41432f3a9499864d3"
+          "sha256": "731cf90a17551f53430bf53aa3531e0735a9ec71bb7648979c8c6e8209c05fa6"
         },
         {
           "path": "apps/asyra-design/server/local-design-workflow.ts",
-          "sha256": "57fae9a136806e5b22bd23d723e65bd4c78920046b718bf51e178f150a51fe64"
+          "sha256": "d0ee072895e9b8fe4d8d281b568186c8578d76628c5567d356b33af98fcf523a"
         },
         {
           "path": "packages/ai-agent-runtime/src/recipe-schema.ts",
-          "sha256": "4c5a2056501bbec6bddc6f50d099f99c9e0ca5ae723b8daa5b17bfdd907c3fcb"
+          "sha256": "e4ffa1f1215bf1cb8ae4139a11d1443caea36cfae87448b76b2eda7a379c1cf6"
         },
         {
           "path": "packages/preset/src/props/components/text-component.ts",

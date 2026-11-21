@@ -7,12 +7,13 @@ This file tracks framework planning topics and points to detailed references.
 ## AI Agent Runtime Ownership Transfer
 
 - [AI Agent Runtime Ownership Transfer](plans/ai-agent-runtime-ownership-transfer-plan.md)
-  - Planning only. Separate shared tool handoffs from optional adapters and
-    Design policy; reuse existing Runtime owners, remove superseded App paths,
-    and verify a non-Design consumer plus preserved Design behavior.
-  - The proposed contract and Flow document do not mark implementation complete.
-    Public exports, dependency decisions and executable case bindings precede
-    production changes.
+  - Implementation and local acceptance complete (2026-11-21); ready for PR
+    review. Runtime mechanisms, optional adapters and Design policy are separated
+    without old forwarding entries. The public non-Design journey and all five
+    Design conversation verification groups passed.
+  - Current Flow evidence is accepted, including explicit replacement of prior
+    unmapped failures. PR review, merge and formal archive closeout remain separate;
+    no CI monitoring or release operation is selected.
 
 ## Active Public Entry Experience Plans
 

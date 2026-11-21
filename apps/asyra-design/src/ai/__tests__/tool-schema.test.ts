@@ -3,7 +3,7 @@ import {
   operationInputIssue,
   operationInputIssues,
   formatOperationInputIssues
-} from '../tool-schema'
+} from '@asyra/ai-agent-runtime/schema'
 
 it('enforces negative constraints together with ordinary sibling constraints', () => {
   const schema = {

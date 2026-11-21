@@ -5,9 +5,9 @@ vi.mock('../../src/common-apis', () => ({}))
 vi.mock('../../src/common-apis/fills', () => ({ fillApis: {} }))
 import { createRetainedDesignContext } from '../../src/common-apis/retained-design-context'
 import {
-  createLocalToolLeases,
-  type LocalToolOwnership
-} from '../local-tool-leases'
+  createAiToolLeases,
+  type AiToolOwnership
+} from '@asyra/ai-agent-runtime/schema'
 import { createLocalQueryArtifacts } from '../local-query-artifacts'
 import { AiActionNames } from '../../src/constants/ai-actions'
 import { basicApiContracts } from '../../src/ai/basic-api-catalog'
@@ -78,9 +78,9 @@ const fixture = () => {
     },
     () => () => undefined
   )
-  const leases = createLocalToolLeases({ requestId: 'request', capacity: 20 })
+  const leases = createAiToolLeases({ requestId: 'request', capacity: 20 })
   let callId = 'producer'
-  const ownership: LocalToolOwnership = {
+  const ownership: AiToolOwnership = {
     requestId: 'request',
 
     publish: (handle, release, validate) =>
@@ -746,7 +746,8 @@ it.each(['page', 'columns', 'reference'] as const)(
     const app = fixture()
     const { createDocumentContextAction } =
       await import('../../src/ai/context-action')
-    const { operationInputIssue } = await import('../operation-input-schema')
+    const { operationInputIssue } =
+      await import('@asyra/ai-agent-runtime/schema')
     const action = createDocumentContextAction(app.queries.read)
 
     try {
@@ -774,7 +775,7 @@ it.each(['recipe', 'native', 'partial'] as const)(
       await import('../../src/ai/context-action')
     const { createBasicApiActions } =
       await import('../../src/ai/basic-api-actions')
-    const { requireBatchSuccess } = await import('../batch-exchange')
+    const { requireBatchSuccess } = await import('@asyra/ai-agent-runtime/node')
     const update = vi.fn((ids: string[]) => ids.map(() => 'changed'))
     const select = vi.fn(() => {
       throw new Error('The dependent selection failed after grouping.')
@@ -863,7 +864,7 @@ it.each(['recipe', 'native', 'partial'] as const)(
             async (batch) => {
               const receipt: {
                 context: null
-                actionResults: import('../../src/ai/action-batch-protocol').AiBatchReceipt['actionResults'][number][]
+                actionResults: import('@asyra/ai-agent-runtime').AiBatchReceipt['actionResults'][number][]
               } = {
                 context: null,
                 actionResults: []

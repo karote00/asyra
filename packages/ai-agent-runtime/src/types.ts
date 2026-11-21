@@ -38,11 +38,14 @@ export interface AiActionDefinition<
   execute(args: TArgs, context: AiExecutionContext): Promise<TResult>
 }
 
-export interface AiActionDescription {
+interface CompactAiActionDescription {
   readonly name: string
   readonly description: string
   readonly inputSchema: AiJsonValue
 }
+
+/** Transport accepts a compact descriptor or its pinned canonical contract. */
+export type AiActionDescription = CompactAiActionDescription | AiToolContract
 
 export interface AiActionLookup {
   readonly requestId?: string

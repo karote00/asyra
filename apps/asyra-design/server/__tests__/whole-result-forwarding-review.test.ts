@@ -14,7 +14,7 @@ import { toolSemantics } from '../../src/ai/tool-contract'
 import { createLocalToolHost } from '../local-tool-host'
 import { createLocalOperationTools } from '../local-operation-tools'
 import { LocalToolLibraryLimits } from '../local-tool-library-limits'
-import { operationInputIssue } from '../operation-input-schema'
+import { operationInputIssue } from '@asyra/ai-agent-runtime/schema'
 import { readCompleteInformation } from './tool-contract-assertions'
 
 const fixture = (

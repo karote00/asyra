@@ -4,12 +4,12 @@ import type {
   AiActionDescription,
   AiActionBatch,
   AiBatchReceipt
-} from '../src/ai/action-batch-protocol'
+} from '@asyra/ai-agent-runtime'
 import { AiActionNames } from '../src/constants/ai-actions'
 import {
-  localToolReferences,
-  type LocalToolOwnership
-} from './local-tool-leases'
+  aiToolReferences,
+  type AiToolOwnership
+} from '@asyra/ai-agent-runtime/schema'
 import { getBasicApiContract } from '../src/ai/basic-api-catalog'
 
 const record = (value: unknown): value is Record<string, unknown> =>
@@ -18,7 +18,7 @@ const record = (value: unknown): value is Record<string, unknown> =>
 /** Ownership bridge only: the browser remains the query, revision and data owner. */
 export const createLocalQueryArtifacts = (options: {
   actions?: readonly AiActionDescription[]
-  ownership: LocalToolOwnership
+  ownership: AiToolOwnership
   release: (snapshotId: string) => Promise<void>
 }) => {
   const receiptFields = new Map<string, { receipt: string; view: string }>()
@@ -59,7 +59,7 @@ export const createLocalQueryArtifacts = (options: {
         const contract = getBasicApiContract(action.name)
 
         if (contract) {
-          for (const handle of localToolReferences(
+          for (const handle of aiToolReferences(
             action.arguments,
             contract.inputSchema
           )) {

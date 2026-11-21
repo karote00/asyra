@@ -12,7 +12,7 @@ import {
   surfaceGridSchema,
   surfaceMotifsSchema
 } from '../design-construction-schema'
-import { operationInputIssue } from '../operation-input-schema'
+import { operationInputIssue } from '@asyra/ai-agent-runtime/schema'
 
 interface PaintedNode {
   key: string

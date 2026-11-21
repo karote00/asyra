@@ -262,7 +262,7 @@ it('keeps advertised field exclusivity equivalent at canonical and native schema
   const { projectedFaceSchema, designPatternSchema } =
     await import('../design-construction-schema')
   const { nativeToolInputSchema, operationInputIssue } =
-    await import('../operation-input-schema')
+    await import('@asyra/ai-agent-runtime/schema')
   const { createLocalDesignTools } = await import('../local-design-tools')
   const definition = createLocalDesignTools([
     { name: 'apply_prepared_design', description: 'Apply', inputSchema: {} }

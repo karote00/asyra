@@ -1,7 +1,4 @@
-import type {
-  AiToolValidator,
-  AiToolContractInput
-} from '@asyra/ai-agent-runtime'
+import type { AiToolValidator, AiToolContractInput } from '../tool-contract.js'
 import lodash from 'lodash'
 const { isEqual } = lodash
 
@@ -88,7 +85,7 @@ const schemaKeywords = new Set<string>([
   'writeOnly'
 ])
 
-/** The App supports an explicit schema vocabulary; unknown semantics never mean valid. */
+/** The adapter supports an explicit schema vocabulary; unknown semantics never mean valid. */
 export const operationSchemaIssue = (
   schema: unknown,
   referenceRoot: unknown = schema

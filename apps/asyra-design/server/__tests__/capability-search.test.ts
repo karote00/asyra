@@ -6,7 +6,7 @@ import {
   matchCapability,
   matchCapabilityFields,
   readCapabilityMetadata
-} from '../capability-search'
+} from '@asyra/ai-agent-runtime'
 
 describe('capability search metadata', () => {
   it('indexes legal choices without examples, defaults or substring matches', () => {

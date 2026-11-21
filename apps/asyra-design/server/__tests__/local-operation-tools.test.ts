@@ -1,8 +1,8 @@
-import { LocalToolInputError } from '../local-tool-invocation'
-import { requireBatchSuccess } from '../batch-exchange'
-import * as capabilitySearch from '../capability-search'
+import { AiToolInputError } from '@asyra/ai-agent-runtime'
+import { requireBatchSuccess } from '@asyra/ai-agent-runtime/node'
+import * as capabilitySearch from '@asyra/ai-agent-runtime'
 import { recordAcquisitionCost } from './tool-contract-assertions'
-import { operationInputIssue } from '../operation-input-schema'
+import { operationInputIssue } from '@asyra/ai-agent-runtime/schema'
 import recordedAcquisition from './fixtures/recorded-101/acquisition-recovery-20261019.json'
 import recordedClosure from './fixtures/recorded-101/whole-flow-closure-20261019.json'
 import { createAiActions } from '../../src/ai/actions'
@@ -24,10 +24,7 @@ import {
 import { basicApiContracts } from '../../src/ai/basic-api-catalog'
 import { createDesignCheckResults } from '../design-check-results'
 import { AiDesignToolIds } from '../../src/constants/ai-design'
-import type {
-  AiActionBatch,
-  AiJsonValue
-} from '../../src/ai/action-batch-protocol'
+import type { AiActionBatch, AiJsonValue } from '@asyra/ai-agent-runtime'
 import { describe, expect, it, vi } from 'vitest'
 vi.mock('../../src/contexts', () => ({ default: {} }))
 import {
@@ -239,8 +236,9 @@ const basicActionName = (method: string) => {
 it.each(['success', 'partial', 'failed'] as const)(
   'preserves canonical reference scope in native %s receipts',
   async (status) => {
-    const { operationInputIssue } = await import('../operation-input-schema')
-    const { localToolReferences } = await import('../local-tool-leases')
+    const { operationInputIssue } =
+      await import('@asyra/ai-agent-runtime/schema')
+    const { aiToolReferences } = await import('@asyra/ai-agent-runtime/schema')
     const domain = {
       type: 'object',
       required: ['handle'],
@@ -297,7 +295,7 @@ it.each(['success', 'partial', 'failed'] as const)(
     }
 
     expect(operationInputIssue(value, schema)).toBeUndefined()
-    expect(localToolReferences(value, schema)).toEqual(['retained'])
+    expect(aiToolReferences(value, schema)).toEqual(['retained'])
     expect(operationInputIssue({ handle: 'retained' }, schema)).toBeDefined()
     expect(
       operationInputIssue(
@@ -317,7 +315,7 @@ it.each(['success', 'partial', 'failed'] as const)(
       operationInputIssue({ handle: 'retained' }, semantics.partialOutputSchema)
     ).toBeUndefined()
     expect(
-      localToolReferences({ handle: 'retained' }, semantics.partialOutputSchema)
+      aiToolReferences({ handle: 'retained' }, semantics.partialOutputSchema)
     ).toEqual(['retained'])
   }
 )
@@ -369,7 +367,7 @@ it('binds the native single-action receipt to the canonical browser success cont
     throw new Error('Missing native wrapper')
   }
 
-  const { operationInputIssue } = await import('../operation-input-schema')
+  const { operationInputIssue } = await import('@asyra/ai-agent-runtime/schema')
   const { invokeLocalTool } = await import('../local-tool-invocation')
   const args = { arguments: { elementIds: ['a', 'b'] } }
 
@@ -1647,7 +1645,7 @@ it('rejects misplaced action fields from the registered schema before dispatch a
       },
       signal
     )
-  ).rejects.toThrow(LocalToolInputError)
+  ).rejects.toThrow(AiToolInputError)
   expect(executeBatch).not.toHaveBeenCalled()
   await operations.call(
     AiActionNames.UPDATE_DESIGN_ELEMENT,
@@ -1725,7 +1723,7 @@ it('validates nested batch items and union choices before any canonical dispatch
         { arguments: { updates: [valid, bad] }, inspection: 'defer' },
         new AbortController().signal
       )
-    ).rejects.toThrow(LocalToolInputError)
+    ).rejects.toThrow(AiToolInputError)
   }
 
   expect(execute).not.toHaveBeenCalled()
@@ -3441,7 +3439,7 @@ it('delivers both same-name route schemas in one lookup and invokes each without
   expect(queryLookup.tools).toEqual(lookup.tools)
   const native = lookup.tools[0]
   const batchAction = lookup.apis[0]
-  const { operationInputIssue } = await import('../operation-input-schema')
+  const { operationInputIssue } = await import('@asyra/ai-agent-runtime/schema')
   const { invokeLocalTool } = await import('../local-tool-invocation')
   const values = { elementIds: ['a', 'b'] }
 
@@ -4715,7 +4713,7 @@ it('reports every target binding conflict before resolving or dispatching the re
       (failure: Error) => failure
     )
 
-  expect(error).toBeInstanceOf(LocalToolInputError)
+  expect(error).toBeInstanceOf(AiToolInputError)
   expect(error).toMatchObject({ code: 'TOOL_INPUT_INVALID' })
   expect(error.message).toContain('operations[0].target[0]')
   expect(error.message).toContain('arguments ["request","elementIds"]')

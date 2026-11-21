@@ -1,5 +1,5 @@
 import { observeActionBatch as observeRuntimeBatch } from '@asyra/ai-agent-runtime/node'
-import { BrowserBatchExecutionError } from './batch-exchange'
+import { BrowserBatchExecutionError } from '@asyra/ai-agent-runtime/node'
 
 /** Design translates its browser transport exception; Runtime owns observation. */
 export const observeActionBatch = (

@@ -1624,8 +1624,9 @@ it('reuses immutable fill template compilation while keeping independent propert
 
 describe('prepared artifact host ownership', () => {
   it('keeps the real prepared source and its target alias through child completion', async () => {
-    const { createLocalToolLeases } = await import('../local-tool-leases')
-    const leases = createLocalToolLeases({ requestId: 'r', capacity: 12 })
+    const { createAiToolLeases } =
+      await import('@asyra/ai-agent-runtime/schema')
+    const leases = createAiToolLeases({ requestId: 'r', capacity: 12 })
     let callId: string | undefined = 'child'
     const session = createDesignPreparationSession(undefined, undefined, {
       requestId: 'r',

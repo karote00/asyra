@@ -5,8 +5,8 @@ import {
   designCheckSelectionSchema,
   type DesignCheckSelection
 } from './design-check-results'
-import { LocalToolInputError } from './local-tool-invocation'
-import { operationInputIssue } from './operation-input-schema'
+import { AiToolInputError } from '@asyra/ai-agent-runtime'
+import { operationInputIssue } from '@asyra/ai-agent-runtime/schema'
 import { toolResultObject, toolResultString } from '../src/ai/tool-contract'
 
 export const mechanicalVerificationSchema = toolResultObject({
@@ -86,21 +86,19 @@ export const createMechanicalChecks = (options: {
     const issue = operationInputIssue(input, designCheckInputSchema)
 
     if (issue) {
-      throw new LocalToolInputError(issue)
+      throw new AiToolInputError(issue)
     }
 
     const value = input as MechanicalCheckInput
 
     if (value.requestId !== options.requestId) {
-      throw new LocalToolInputError(
-        'Mechanical checks belong to another request.'
-      )
+      throw new AiToolInputError('Mechanical checks belong to another request.')
     }
 
     try {
       store.select(value.checks)
     } catch (error) {
-      throw new LocalToolInputError((error as Error).message)
+      throw new AiToolInputError((error as Error).message)
     }
 
     return value
@@ -324,7 +322,7 @@ export const createMechanicalChecks = (options: {
         !pending.length ||
         records.some((item) => !item.retired && !item.recheck)
       ) {
-        throw new LocalToolInputError(
+        throw new AiToolInputError(
           'No complete supported pending repair selection.'
         )
       }
@@ -349,7 +347,7 @@ export const createMechanicalChecks = (options: {
             !item.recheck.findings.every(prescribedPositionFinding)
         )
       ) {
-        throw new LocalToolInputError(
+        throw new AiToolInputError(
           'The complete pending set is not supported by this repair.'
         )
       }

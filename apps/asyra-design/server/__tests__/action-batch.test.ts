@@ -4,10 +4,7 @@ import { createServer } from 'node:http'
 import type { AddressInfo } from 'node:net'
 import { fileURLToPath } from 'node:url'
 import { gunzipSync } from 'node:zlib'
-import type {
-  AiActionBatch,
-  AiProviderInput
-} from '../../src/ai/action-batch-protocol'
+import type { AiActionBatch, AiProviderInput } from '@asyra/ai-agent-runtime'
 import { describe, expect, it, vi } from 'vitest'
 import {
   ActionBatchServerError,
@@ -422,7 +419,8 @@ it('delivers a real browser failure through HTTP before closing the execution st
   const { createServerActionBatchProvider } =
     await import('../../src/ai/server-action-batch-provider')
   const { recordActionFailure } = await import('../../src/ai/action-failure')
-  const { BrowserBatchExecutionError } = await import('../batch-exchange')
+  const { BrowserBatchExecutionError } =
+    await import('@asyra/ai-agent-runtime/node')
   let received: unknown
   const prepared = {
     batchId: 'failed-batch',
@@ -501,7 +499,7 @@ it.each(['completed', 'partial', 'unknown'] as const)(
     const { createServerActionBatchProvider } =
       await import('../../src/ai/server-action-batch-provider')
     const { requireBatchSuccess, BrowserBatchExecutionError } =
-      await import('../batch-exchange')
+      await import('@asyra/ai-agent-runtime/node')
     const prepared = {
       batchId: 'large-result',
       actions: [

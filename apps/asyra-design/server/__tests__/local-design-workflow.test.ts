@@ -1,7 +1,7 @@
 import {
-  createLocalToolLeases,
-  type LocalToolOwnership
-} from '../local-tool-leases'
+  createAiToolLeases,
+  type AiToolOwnership
+} from '@asyra/ai-agent-runtime/schema'
 import materialRepair from '../../test-data/knowledge-evaluation/__fixtures__/material-repair-20261028.json'
 import nonplanar from './fixtures/recorded-101/nonplanar-recovery-20261026.json'
 import briefFixture from './fixtures/recorded-101/brief-capacity-20261024.json'
@@ -16,20 +16,17 @@ import {
 } from '../local-operation-tools'
 import capacityFixture from './fixtures/recorded-101/pattern-budget-recovery-20261023.json'
 import { invokeLocalTool, localToolOutcome } from '../local-tool-invocation'
-import { requireBatchSuccess } from '../batch-exchange'
+import { requireBatchSuccess } from '@asyra/ai-agent-runtime/node'
 import {
   nativeToolInputSchema,
   operationInputIssue
-} from '../operation-input-schema'
+} from '@asyra/ai-agent-runtime/schema'
 import { describe, expect, it, vi } from 'vitest'
 import { createLocalDesignWorkflow } from '../local-design-workflow'
 
 import { createLocalDesignTools } from '../local-design-tools'
 import { createLocalOperationTools } from '../local-operation-tools'
-import {
-  createLocalToolScheduler,
-  LocalToolAccess
-} from '../local-tool-scheduler'
+import { createAiToolScheduler, AiToolAccess } from '@asyra/ai-agent-runtime'
 import {
   createDesignPreparationSession,
   prepareDesign,
@@ -40,7 +37,7 @@ import type {
   AiBatchReceipt,
   AiActionDescription,
   AiActionBatch
-} from '../../src/ai/action-batch-protocol'
+} from '@asyra/ai-agent-runtime'
 
 const actions = [
   {
@@ -68,7 +65,7 @@ const draft = {
 
 const setup = (
   registered: AiActionDescription[] = actions,
-  ownership?: LocalToolOwnership
+  ownership?: AiToolOwnership
 ) => {
   const compile = vi.fn(prepareDesignAsync)
   const session = createDesignPreparationSession(
@@ -276,7 +273,7 @@ it('composes compact rejected-draft repair through preparation before one canoni
 it('keeps combined preparation and canvas application behind independent work', async () => {
   const { workflow, execute } = setup()
   const controller = new AbortController()
-  const schedule = createLocalToolScheduler(controller.signal)
+  const schedule = createAiToolScheduler(controller.signal)
   let signalEntered!: () => void
   const entered = new Promise<void>((resolve) => {
     signalEntered = resolve
@@ -285,7 +282,7 @@ it('keeps combined preparation and canvas application behind independent work', 
   const release = new Promise<void>((resolve) => {
     resume = resolve
   })
-  const read = schedule(LocalToolAccess.INDEPENDENT, async () => {
+  const read = schedule(AiToolAccess.INDEPENDENT, async () => {
     signalEntered()
     await release
   })
@@ -2175,7 +2172,7 @@ it('uses the failed part owner guide without replaying completed material work',
 })
 
 it('retains material conflicts and source ownership without writes or replay', async () => {
-  const leases = createLocalToolLeases({
+  const leases = createAiToolLeases({
     requestId: 'material-recovery',
     capacity: 32
   })

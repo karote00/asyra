@@ -11,12 +11,13 @@
       "name": "@asyra/ai-agent-runtime",
       "publicEntries": [
         ".",
-        "./node"
+        "./node",
+        "./schema"
       ],
       "sourceDigests": {
-        "contract": "71567ddc02254997631b4a7979ca0b33a4fdc1cf49559b8b49820485a874462d",
-        "guide": "cf8444e4e1a59b845cccd592ea8eed85841bc8530f9aff884f67a20870056e09",
-        "manifest": "b7333829a47fb2da53c13255b6ebf741ab7163cfcac0d628f9479d0e9fb2bed0"
+        "contract": "8cdaf68d33ae011e1358f8bf1d1ba6164c3c6d8f3fdd5b7e0c750e06b014637f",
+        "guide": "2709c376aa8b443ed8953a7240f831949fc611497d1abbef25dda8e8261b93ab",
+        "manifest": "8ff77c83d4afcf8aa017e6af629bc3aba31669d54dfe19cb611856f5790e81f9"
       },
       "version": "0.5.1"
     },

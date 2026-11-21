@@ -5,7 +5,7 @@ import {
   createAiToolMiddleware
 } from '@asyra/ai-agent-runtime'
 import { createDocumentContextAction } from '../../ai/context-action'
-import { operationContractIssue } from '../../ai/tool-schema'
+import { operationContractIssue } from '@asyra/ai-agent-runtime/schema'
 import { designActionOutcome } from '../../ai/tool-contract'
 import recordedQuery from '../../../server/__tests__/fixtures/recorded-101/context-query-20261019.json'
 import { describe, expect, it, vi } from 'vitest'

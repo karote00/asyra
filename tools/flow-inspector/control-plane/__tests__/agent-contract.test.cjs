@@ -34,7 +34,7 @@ test('workspace task admission binds actual App source inputs without granting d
     ...request(),
     stepId: 'schedule',
     contractDigest: selected.digest,
-    allowedFiles: ['apps/asyra-design/server/local-tool-scheduler.ts']
+    allowedFiles: ['packages/ai-agent-runtime/src/tool-scheduler.ts']
   }
   const task = admitTask(input, selected, 1, 'local-developer')
   const snapshot = require('../snapshot.cjs').captureSource(

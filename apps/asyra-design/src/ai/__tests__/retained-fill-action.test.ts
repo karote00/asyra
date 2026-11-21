@@ -1,6 +1,6 @@
 import { requiredString } from '../../__tests__/assert-result'
 import { createAiToolContract } from '@asyra/ai-agent-runtime'
-import { operationInputIssue } from '../tool-schema'
+import { operationInputIssue } from '@asyra/ai-agent-runtime/schema'
 import { expect, it, vi } from 'vitest'
 import {
   createAiActionRegistry,
@@ -754,8 +754,9 @@ it.each(['capacity', 'cancel'] as const)(
       modelResult: { delivery: { status: 'unavailable' } }
     })
     expect(result).not.toHaveProperty('retained')
-    const { projectToolDelivery, designActionOutcome } =
-      await import('../tool-contract')
+    const { designActionOutcome } = await import('../tool-contract')
+    const { projectToolDelivery } =
+      await import('@asyra/ai-agent-runtime/schema')
     const external = projectToolDelivery(
       action,
       result,
@@ -1040,7 +1041,7 @@ it('reuses a rejected mapping query through another local-edit consumer, then re
 
 it('advertises only executable inline query scopes for retained fill consumers', async () => {
   const { operationInputIssue, nativeToolInputSchema } =
-    await import('../../../server/operation-input-schema')
+    await import('@asyra/ai-agent-runtime/schema')
   const action = createRetainedFillAction({} as never, {
     targets,
 

@@ -3,12 +3,12 @@ import targetGroupCapture from './fixtures/recorded-101/target-group-capture-202
 import independentDelivery from './fixtures/recorded-101/independent-delivery-20261109.json'
 import { readCompleteInformation } from './tool-contract-assertions'
 import executableHandoffs from '../../test-data/ai-drawing/fixtures/executable-handoffs-20261109.json'
-import { operationInputIssue } from '../operation-input-schema'
+import { operationInputIssue } from '@asyra/ai-agent-runtime/schema'
 import referenceChain from '../../test-data/ai-drawing/fixtures/reference-chain-20261108.json'
 import phaseContinuity from '../../test-data/ai-drawing/fixtures/phase-continuity-20261108.json'
 import resultRoute from '../../test-data/ai-drawing/fixtures/result-route-stop-20261107.json'
 
-import { modelToolResultSchemas } from '../../src/ai/tool-contract'
+import { modelToolResultSchemas } from '@asyra/ai-agent-runtime/schema'
 import strictArtifactRetention from './fixtures/recorded-101/strict-artifact-retention-20261106.json'
 import strictWholeResult from './fixtures/recorded-101/strict-whole-result-20261106.json'
 import strictOutput from './fixtures/recorded-101/strict-output-selection-20261106.json'
@@ -43,7 +43,7 @@ import { LocalToolLibraryLimits } from '../local-tool-library-limits'
 import {
   createConversationResults,
   type ExchangeConversationResults
-} from '../../src/ai/conversation-results'
+} from '@asyra/ai-agent-runtime'
 import stageReuse from './fixtures/recorded-101/stage-reuse-20261105.json'
 import baseOrder from './fixtures/recorded-101/base-order-20261105.json'
 import reuse from './fixtures/recorded-101/conversation-results-20261105.json'

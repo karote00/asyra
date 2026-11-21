@@ -15,9 +15,12 @@ import { createLocalToolHost } from '../local-tool-host'
 import { createDesignCheckResults } from '../design-check-results'
 import { AiActionNames } from '../../src/constants/ai-actions'
 import { AiDesignToolIds } from '../../src/constants/ai-design'
-import { createBatchExchange, requireBatchSuccess } from '../batch-exchange'
+import {
+  createBatchExchange,
+  requireBatchSuccess
+} from '@asyra/ai-agent-runtime/node'
 import { observeActionBatch } from '../local-action-observation'
-import type { ExecuteAiBatch } from '../../src/ai/action-batch-protocol'
+import type { ExecuteAiBatch } from '@asyra/ai-agent-runtime'
 
 const literal = (value: unknown) => ({ kind: 'literal', value })
 
@@ -1297,7 +1300,7 @@ it.each([
             async (batch) => {
               const receipt: {
                 context: null
-                actionResults: import('../../src/ai/action-batch-protocol').AiBatchReceipt['actionResults'][number][]
+                actionResults: import('@asyra/ai-agent-runtime').AiBatchReceipt['actionResults'][number][]
               } = { context: null, actionResults: [] }
 
               for (const call of batch.actions) {

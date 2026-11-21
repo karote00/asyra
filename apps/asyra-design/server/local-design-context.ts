@@ -1,4 +1,4 @@
-import { LocalToolInputError } from './local-tool-invocation'
+import { AiToolInputError } from '@asyra/ai-agent-runtime'
 import { AiDesignToolIds, AiToolFailureCodes } from '../src/constants/ai-design'
 import { toolSemantics, toolResultObject } from '../src/ai/tool-contract'
 import {
@@ -9,7 +9,7 @@ import {
   designCalculationsResultSchema
 } from './local-design-facts'
 import { imageRegionSchema, type ReferenceIdentity } from './local-image-tools'
-import { operationInputIssue } from './operation-input-schema'
+import { operationInputIssue } from '@asyra/ai-agent-runtime/schema'
 
 const text = { type: 'string', minLength: 1 }
 const referenceNote = {
@@ -107,7 +107,7 @@ export const createLocalDesignContext = (options: {
       const issue = operationInputIssue(input, definition.inputSchema)
 
       if (issue) {
-        throw new LocalToolInputError(issue)
+        throw new AiToolInputError(issue)
       }
 
       if (name === AiDesignToolIds.RECORD_DESIGN_FACTS) {
@@ -138,9 +138,7 @@ export const createLocalDesignContext = (options: {
         new Set(additions.map((note) => note.referenceId)).size !==
         additions.length
       ) {
-        throw new LocalToolInputError(
-          'Reference notes require unique identities.'
-        )
+        throw new AiToolInputError('Reference notes require unique identities.')
       }
 
       const required = additions.filter(
@@ -153,7 +151,7 @@ export const createLocalDesignContext = (options: {
             (identity) => identity.referenceId === note.referenceId
           )
         ) {
-          throw new LocalToolInputError(
+          throw new AiToolInputError(
             'Reference note must identify a selected existing image.'
           )
         }
@@ -180,7 +178,7 @@ export const createLocalDesignContext = (options: {
         )
 
         if (!identity) {
-          throw new LocalToolInputError(
+          throw new AiToolInputError(
             'Reference note must identify a selected existing image.'
           )
         }
@@ -189,7 +187,7 @@ export const createLocalDesignContext = (options: {
           const bounds = identity.validation
 
           if (!bounds) {
-            throw new LocalToolInputError(
+            throw new AiToolInputError(
               'Reference crop requires decoded image bounds; the selected source is unavailable.',
               AiToolFailureCodes.SOURCE_UNAVAILABLE
             )
@@ -199,7 +197,7 @@ export const createLocalDesignContext = (options: {
             note.region.x + note.region.width > bounds.width ||
             note.region.y + note.region.height > bounds.height
           ) {
-            throw new LocalToolInputError(
+            throw new AiToolInputError(
               'Reference crop must stay inside decoded image bounds.'
             )
           }

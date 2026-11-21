@@ -2,7 +2,7 @@ import { Blob as NodeBlob } from 'node:buffer'
 import { createHash } from 'node:crypto'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { createDocumentExport } from '../document-export'
-import { operationInputIssue } from '../tool-schema'
+import { operationInputIssue } from '@asyra/ai-agent-runtime/schema'
 import { AiActionNames } from '../../constants'
 
 beforeEach(() => vi.stubGlobal('Blob', NodeBlob))

@@ -1,5 +1,5 @@
 import { expect, it, vi } from 'vitest'
-import { createConversationResults } from '../../src/ai/conversation-results'
+import { createConversationResults } from '@asyra/ai-agent-runtime'
 import { createLocalKnowledgeTools } from '../local-knowledge'
 import { createLocalToolHost } from '../local-tool-host'
 import { LocalToolLibraryLimits } from '../local-tool-library-limits'

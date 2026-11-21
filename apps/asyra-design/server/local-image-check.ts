@@ -7,8 +7,8 @@ import {
   toolResultCount,
   toolSemantics
 } from '../src/ai/tool-contract'
-import { LocalToolAccess } from './local-tool-scheduler'
-import { operationInputIssue } from './operation-input-schema'
+import { AiToolAccess } from '@asyra/ai-agent-runtime'
+import { operationInputIssue } from '@asyra/ai-agent-runtime/schema'
 import { imageRegionSchema } from './local-image-tools'
 import type { createDesignCheckResults } from './design-check-results'
 
@@ -97,7 +97,7 @@ export const imageCheckDefinition = {
   name: AiDesignToolIds.CHECK_DRAWING_IMAGE,
   ...toolSemantics(imageCheckResultSchema, 'read', ['request-artifacts']),
   revision: 2,
-  executionAccess: LocalToolAccess.EXCLUSIVE,
+  executionAccess: AiToolAccess.EXCLUSIVE,
   description:
     'Check an explicitly aligned native-pixel reference crop against an existing inspect_drawing region, without AI. Supply the retained inspectionId, reference attachment index/crop and fixed tolerances. Same-size, same-view correspondence is YOUR assertion; this tool cannot align a photo, infer perspective or certify appearance. Captures isolate the target subtree on white, not other canvas occluders. No scaling. Returns compact differences in target-local coordinates and saves a tool check in read_design_checks using resultId. Reuse checkId after a correction with a fresh inspectionId; baseline, target region and tolerances cannot change. Unsupported images stay unverified. Primary-agent visual review remains required.',
   inputSchema: {

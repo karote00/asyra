@@ -1,5 +1,5 @@
 import { expect, it, vi } from 'vitest'
-import { operationInputIssue } from '../tool-schema'
+import { operationInputIssue } from '@asyra/ai-agent-runtime/schema'
 import { describeBasicApiResult } from '../basic-api-results'
 import { createBasicApiActions } from '../basic-api-actions'
 import {

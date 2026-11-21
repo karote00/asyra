@@ -17,7 +17,7 @@ import { createBasicApiActions } from '../basic-api-actions'
 import { createAiTransactionRunner } from '../transaction'
 import { vectorApis } from '../../common-apis/element/vector-apis'
 import { invokeLocalTool } from '../../../server/local-tool-invocation'
-import { operationInputIssue } from '../tool-schema'
+import { operationInputIssue } from '@asyra/ai-agent-runtime/schema'
 
 const required = <T>(value: T | null | undefined): T => {
   if (value == null) {

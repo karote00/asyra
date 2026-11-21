@@ -605,3 +605,14 @@ test('required review areas cannot disappear or be excluded while additional obl
     'Missing conversation verification definition'
   ])
 })
+
+test('selects the public built-export inventory journey as a Runtime Vitest case', () => {
+  const group = conversationGroups(root).find((item) => item.id === 'runtime')
+
+  assert.equal(group.producer, 'vitest')
+  assert.ok(
+    group.files.includes(
+      'packages/ai-agent-runtime/src/__tests__/host-journey.test.mjs'
+    )
+  )
+})

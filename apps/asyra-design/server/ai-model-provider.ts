@@ -1,14 +1,8 @@
 import type { EvaluationReportSessions } from './evaluation-report-sessions'
-import type { ExchangeConversationResults } from '../src/ai/conversation-results'
+import type { ExchangeConversationResults } from '@asyra/ai-agent-runtime'
 import { captureAiSourceIdentity } from '@asyra/ai-agent-runtime/node'
-import type {
-  AiToolProgress,
-  ExecuteAiBatch
-} from '../src/ai/action-batch-protocol'
-import type {
-  AiActionBatch,
-  AiProviderInput
-} from '../src/ai/action-batch-protocol'
+import type { AiToolProgress, ExecuteAiBatch } from '@asyra/ai-agent-runtime'
+import type { AiActionBatch, AiProviderInput } from '@asyra/ai-agent-runtime'
 import { AI_APP_PROMPT, AI_IMAGE_TOOL_CATALOG } from './ai-domain-prompt'
 
 export type AiModelBackendErrorCode =

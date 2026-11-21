@@ -1,12 +1,11 @@
 import { AiToolFailureCodes } from '../src/constants/ai-design'
-import { requireSupportedToolSchemas } from '../src/ai/tool-schema'
-import type { LocalToolImage } from './local-tool-media'
-import type { ExchangeConversationResults } from '../src/ai/conversation-results'
+import { requireSupportedToolSchemas } from '@asyra/ai-agent-runtime/schema'
+import type { AiToolImage } from '@asyra/ai-agent-runtime'
+import type { ExchangeConversationResults } from '@asyra/ai-agent-runtime'
+import { readNamedFields, type DeliveryRequest } from '@asyra/ai-agent-runtime'
 import {
-  resultDelivery,
-  readNamedFields,
-  resolveConversationInputs,
-  type DeliveryRequest
+  createDesignResultDelivery,
+  resolveConversationInputs
 } from './local-result-delivery'
 import { runtimeOperationSchema } from './local-operation-batch'
 import { AsyncLocalStorage } from 'node:async_hooks'
@@ -32,11 +31,11 @@ import {
   type AiToolOutcome
 } from '@asyra/ai-agent-runtime'
 import {
-  createLocalToolLeases,
-  localToolReferences,
-  localToolSchemaIsPortable
-} from './local-tool-leases'
-import { createLocalToolLibrary } from './local-tool-library'
+  createAiToolLeases,
+  aiToolReferences,
+  aiToolSchemaIsPortable
+} from '@asyra/ai-agent-runtime/schema'
+import { createAiToolHostLibrary } from '@asyra/ai-agent-runtime/node'
 import {
   operationGroupName,
   createDesignSequencePlanner,
@@ -48,14 +47,11 @@ import {
   createLocalToolLibraryTools,
   registeredToolInvocationSchemas
 } from './local-tool-library-tools'
-import {
-  createLocalToolScheduler,
-  LocalToolAccess
-} from './local-tool-scheduler'
+import { createAiToolScheduler, AiToolAccess } from '@asyra/ai-agent-runtime'
+import { AiToolInputError } from '@asyra/ai-agent-runtime'
 import {
   invokeLocalTool,
   invocationRecoverySchema,
-  LocalToolInputError,
   localToolFailureReply,
   localToolFailureSchema,
   localToolFailureModelSchema,
@@ -71,15 +67,15 @@ import {
 import {
   operationContractIssue,
   operationInputIssue
-} from './operation-input-schema'
-import type { LocalToolOwnership } from './local-tool-leases'
+} from '@asyra/ai-agent-runtime/schema'
+import type { AiToolOwnership } from '@asyra/ai-agent-runtime/schema'
 import {
   projectToolDelivery,
   toolDeliveryFailure,
   projectToolResultFields,
   modelToolDeliveryFailureSchema,
   modelToolResultSchemas
-} from '../src/ai/tool-contract'
+} from '@asyra/ai-agent-runtime/schema'
 import { AiDesignToolIds } from '../src/constants/ai-design'
 
 export interface LocalToolGroup {
@@ -95,12 +91,12 @@ export interface LocalToolGroup {
     validateScheduledOperations?(operations: unknown): void
     canOverlapPreparation?(name: string, input: unknown): boolean
     readonly definitions: readonly (LocalToolDefinition & {
-      readonly executionAccess?: LocalToolAccess
+      readonly executionAccess?: AiToolAccess
     })[]
   }
 }
 type Reply = Awaited<ReturnType<typeof invokeLocalTool>> & {
-  media?: LocalToolImage[]
+  media?: AiToolImage[]
   executionContract?: AiToolContract
 }
 
@@ -114,7 +110,7 @@ export const createLocalToolHost = (options: {
   receiptCapacity: number
   artifactCapacity: number
   limits: AiRecipeLimits
-  createGroups: (ownership: LocalToolOwnership) => readonly LocalToolGroup[]
+  createGroups: (ownership: AiToolOwnership) => readonly LocalToolGroup[]
   execute?: (
     call: AiInvocationContext,
     work: () => Promise<Reply>
@@ -130,7 +126,7 @@ export const createLocalToolHost = (options: {
   ) => void | Promise<void>
 }) => {
   const context = new AsyncLocalStorage<AiInvocationContext>()
-  const selectedImages = new WeakMap<AiInvocationContext, LocalToolImage[]>()
+  const selectedImages = new WeakMap<AiInvocationContext, AiToolImage[]>()
   // Invocation evidence lives only through one outer call's public delivery.
   // Inputs/contracts are shared references; no second saved-result store exists.
   const completedInvocations = new AsyncLocalStorage<
@@ -146,12 +142,12 @@ export const createLocalToolHost = (options: {
     >
   >()
   const registry = createAiActionRegistry()
-  const leases = createLocalToolLeases({
+  const leases = createAiToolLeases({
     requestId: options.requestId,
     capacity: options.artifactCapacity
   })
-  const schedule = createLocalToolScheduler(options.signal)
-  const ownership: LocalToolOwnership = {
+  const schedule = createAiToolScheduler(options.signal)
+  const ownership: AiToolOwnership = {
     requestId: options.requestId,
 
     publish: (handle, release, validate, lifetime) => {
@@ -188,7 +184,7 @@ export const createLocalToolHost = (options: {
       owner: LocalToolGroup['owner']
       definition: AiToolContract &
         Pick<LocalToolDefinition, 'providerExposure' | 'resultPaths'>
-      access?: LocalToolAccess
+      access?: AiToolAccess
     }
   >()
   const active = new Set<Promise<unknown>>()
@@ -285,7 +281,7 @@ export const createLocalToolHost = (options: {
 
     return schedule(
       binding.owner.canOverlapPreparation?.(binding.definition.name, call.input)
-        ? LocalToolAccess.ISOLATED
+        ? AiToolAccess.ISOLATED
         : binding.access,
       () =>
         context.run(call, async () => {
@@ -398,7 +394,8 @@ export const createLocalToolHost = (options: {
   }
 
   groups.forEach(register)
-  const library = createLocalToolLibrary({
+  const library = createAiToolHostLibrary({
+    saveInvocationName: 'tool_library.save_tool',
     privateDependency: operationGroupName,
 
     canOverlapPreparation: (definition, input) => {
@@ -534,13 +531,13 @@ export const createLocalToolHost = (options: {
 
   const resolveStep = (name: string) => {
     if (name === operationGroupName) {
-      throw new LocalToolInputError('Private dispatcher')
+      throw new AiToolInputError('Private dispatcher')
     }
 
     const names = operationNames.get(name)
 
     if (names && names.length > 1) {
-      throw new LocalToolInputError('Ambiguous operation: ' + name)
+      throw new AiToolInputError('Ambiguous operation: ' + name)
     }
 
     return library.describe(names?.[0] ?? name)
@@ -576,7 +573,7 @@ export const createLocalToolHost = (options: {
       )
 
     return authoredInput
-      ? new LocalToolInputError(message)
+      ? new AiToolInputError(message)
       : new AiToolContractError(
           'registration',
           message || 'Host contract admission did not return complete issues'
@@ -625,7 +622,7 @@ export const createLocalToolHost = (options: {
           registeredRecipeOutputAt(runtimeOperationSchema(schema), path, true)
         } catch (error) {
           throw error instanceof RecipeReferenceError
-            ? new LocalToolInputError(localToolErrorMessage(error))
+            ? new AiToolInputError(localToolErrorMessage(error))
             : new AiToolContractError(
                 'registration',
                 localToolErrorMessage(error)
@@ -656,7 +653,7 @@ export const createLocalToolHost = (options: {
         }
 
         if (!source) {
-          throw new LocalToolInputError(
+          throw new AiToolInputError(
             'Selected result requires a step output',
             AiToolFailureCodes.INPUT_INVALID
           )
@@ -693,7 +690,7 @@ export const createLocalToolHost = (options: {
               } catch (error) {
                 if (
                   !(error instanceof RecipeReferenceError) ||
-                  !localToolSchemaIsPortable(selectedSchema)
+                  !aiToolSchemaIsPortable(selectedSchema)
                 ) {
                   throw error
                 }
@@ -710,7 +707,7 @@ export const createLocalToolHost = (options: {
                 localToolErrorMessage(error)
 
               throw error instanceof RecipeReferenceError
-                ? new LocalToolInputError(message)
+                ? new AiToolInputError(message)
                 : new AiToolContractError('registration', message)
             }
           }
@@ -758,7 +755,7 @@ export const createLocalToolHost = (options: {
     try {
       plan = prepare(args)
     } catch (error) {
-      if (error instanceof LocalToolInputError) {
+      if (error instanceof AiToolInputError) {
         throw error
       }
 
@@ -801,9 +798,7 @@ export const createLocalToolHost = (options: {
 
   const sequenceOwner = {
     projectedResultPaths: ['/execution/value', '/execution/recovery/*/value'],
-    definitions: [
-      { ...sequence, executionAccess: LocalToolAccess.COORDINATOR }
-    ],
+    definitions: [{ ...sequence, executionAccess: AiToolAccess.COORDINATOR }],
 
     invocationSchemas(
       _name: string,
@@ -1031,7 +1026,7 @@ export const createLocalToolHost = (options: {
     async call(_name: string, args: unknown, signal: AbortSignal) {
       const call = context.getStore()
 
-      const deliverImages = (images: LocalToolImage[], name: string) => {
+      const deliverImages = (images: AiToolImage[], name: string) => {
         if (call) {
           const prefix =
             '/fields/' + name.replace(/~/g, '~0').replace(/\//g, '~1')
@@ -1061,7 +1056,11 @@ export const createLocalToolHost = (options: {
         request.delivery ||
         request.retain ||
         (args as Record<string, unknown>).stages
-          ? resultDelivery(request, options.resultContext, deliverImages)
+          ? createDesignResultDelivery(
+              request,
+              options.resultContext,
+              deliverImages
+            )
           : undefined
 
       let finalSelectionData:
@@ -1115,10 +1114,10 @@ export const createLocalToolHost = (options: {
             delivery.retains(step) ||
             (finalSelection && delivery.retains(undefined))
           ) {
-            localToolReferences(projected.value, projected.schema, blocked)
+            aiToolReferences(projected.value, projected.schema, blocked)
             const inputPaths = new Set<string>()
 
-            localToolReferences(input, projected.inputSchema, inputPaths)
+            aiToolReferences(input, projected.inputSchema, inputPaths)
             const prefix = planSequence.publicInputSchemaPath(name, step)
 
             for (const path of inputPaths) {
@@ -1472,7 +1471,7 @@ export const createLocalToolHost = (options: {
       } catch (error) {
         return localToolFailureReply(
           localToolErrorMessage(error),
-          error instanceof LocalToolInputError
+          error instanceof AiToolInputError
             ? error.code
             : 'TOOL_CONTRACT_INVALID',
           { stage: 'admission', settlement: 'not-started' }
@@ -1576,7 +1575,7 @@ export const createLocalToolHost = (options: {
         } else {
           output = interrupted(
             error,
-            !opened && error instanceof LocalToolInputError
+            !opened && error instanceof AiToolInputError
               ? error.code
               : 'TOOL_HANDOFF_FAILED'
           )

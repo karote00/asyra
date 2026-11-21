@@ -1,3 +1,16 @@
+vi.mock('@asyra/ai-agent-runtime/node', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@asyra/ai-agent-runtime/node')>()),
+  createNativeProviderConfig: vi.fn(async () => ({
+    path: 'fixture-model.json',
+    arguments: ['-c', 'model_catalog_json="fixture-model.json"'],
+    dispose: vi.fn(async () => undefined)
+  })),
+  createExecutionRecordSink: vi.fn(() => ({
+    write: () => undefined,
+
+    flush: async () => ({ status: 'saved', path: null })
+  }))
+}))
 import { readCompleteInformation } from './tool-contract-assertions'
 import { contractReadFixture } from './contract-read-fixture'
 import targetAdmission from '../../test-data/ai-drawing/fixtures/target-admission-20261107.json'
@@ -6,10 +19,10 @@ import preparationFindings from '../../test-data/ai-drawing/fixtures/preparation
 import acquisitionQuery from '../../test-data/ai-drawing/fixtures/capability-acquisition-20261106.json'
 
 import selectedInspection from '../../test-data/ai-drawing/fixtures/selected-inspection-20261106.json'
-import { resultDelivery } from '../local-result-delivery'
-import type { LocalToolImage } from '../local-tool-media'
+import { createDesignResultDelivery } from '../local-result-delivery'
+import type { AiToolImage } from '@asyra/ai-agent-runtime'
 import recordedGrid from '../../test-data/ai-drawing/fixtures/strict-grid-material-20261106.json'
-import { operationInputIssue } from '../operation-input-schema'
+import { operationInputIssue } from '@asyra/ai-agent-runtime/schema'
 import { deliverPreparedDesign } from '../../src/ai/prepared-design'
 import { admitPreparedDesignDelivery } from '../../src/ai/prepared-design-admission'
 import type { PreparedElementDescriptor } from '../../src/common-apis'
@@ -51,7 +64,7 @@ import type {
   AiActionBatch,
   AiActionDescription,
   AiBatchReceipt
-} from '../../src/ai/action-batch-protocol'
+} from '@asyra/ai-agent-runtime'
 import type {
   PreparedDesign,
   PreparedDesignDelivery
@@ -77,18 +90,11 @@ import {
 import { evaluateExecution as evaluate } from '@asyra/ai-agent-runtime'
 import { assessExecution } from '@asyra/ai-agent-runtime'
 import { requestLocalAiActionBatch } from '../local-ai-provider'
-import { createLocalToolScheduler } from '../local-tool-scheduler'
+import { createAiToolScheduler } from '@asyra/ai-agent-runtime'
 import { createLocalToolHost } from '../local-tool-host'
 
 const { spawn } = vi.hoisted(() => ({ spawn: vi.fn() }))
 
-vi.mock('../native-provider-config', () => ({
-  createNativeProviderConfig: vi.fn(async () => ({
-    path: 'fixture-model.json',
-    arguments: ['-c', 'model_catalog_json="fixture-model.json"'],
-    dispose: vi.fn(async () => undefined)
-  }))
-}))
 vi.mock('node:child_process', async (importOriginal) => ({
   ...(await importOriginal<typeof import('node:child_process')>()),
   spawn
@@ -572,7 +578,7 @@ it('execution proof preserves partial lookup full recovery and declaration const
   }
 
   const { nativeToolInputSchema, operationInputIssue } =
-    await import('../operation-input-schema')
+    await import('@asyra/ai-agent-runtime/schema')
   const nativePreparation = nativeToolInputSchema(preparation.inputSchema) as {
     examples: unknown[]
     oneOf: Record<string, unknown>[]
@@ -644,14 +650,6 @@ it('execution proof preserves partial lookup full recovery and declaration const
   expect(restoredUsage.invocationExample).toEqual(usage.invocationExample)
   expect(execute).not.toHaveBeenCalled()
 })
-vi.mock('@asyra/ai-agent-runtime/node', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@asyra/ai-agent-runtime/node')>()),
-  createExecutionRecordSink: vi.fn(() => ({
-    write: () => undefined,
-
-    flush: async () => ({ status: 'saved', path: null })
-  }))
-}))
 
 it('execution proof preserves registered native capability envelopes', async ({
   onTestFinished
@@ -1448,7 +1446,7 @@ it('execution proof composes preparation and canonical dispatch without repeated
     trace: (stage, evidence) => handoffs.push({ stage, ...evidence })
   })
   const signal = new AbortController().signal
-  const schedule = createLocalToolScheduler(signal)
+  const schedule = createAiToolScheduler(signal)
   let resume!: () => void
   const gate = new Promise<void>((resolve) => {
     resume = resolve
@@ -2525,7 +2523,8 @@ it('execution proof binds prepared recipe assessment to immutable source before 
 it('execution proof shares immutable tool contracts and preserves rejected output without replay', async () => {
   const { createAiToolContract, createAiToolMiddleware } =
     await import('@asyra/ai-agent-runtime')
-  const { operationContractIssue } = await import('../operation-input-schema')
+  const { operationContractIssue } =
+    await import('@asyra/ai-agent-runtime/schema')
   const contract = createAiToolContract({
     name: 'inventory',
     description: 'Read inventory',
@@ -3527,7 +3526,7 @@ it('execution proof connects tool-first guidance to native selection and Runtime
 })
 
 it('execution proof saves nested tool evidence and reopens without product replay', async () => {
-  const { createLocalToolStore } = await import('../local-tool-store')
+  const { createSqliteToolStore } = await import('@asyra/ai-agent-runtime/node')
   const { toolRequestReference } = await import('../../src/ai/tool-contract')
   const parentDirectory = resolve('tmp/stage4-tool-proof')
 
@@ -3535,7 +3534,7 @@ it('execution proof saves nested tool evidence and reopens without product repla
   const directory = await mkdtemp(resolve(parentDirectory, 'case-'))
 
   const open = () =>
-    createLocalToolStore({
+    createSqliteToolStore({
       directory,
       capacity: 16,
       recordBytes: 65536,
@@ -4386,7 +4385,7 @@ it('execution proof preserves completed writes and unresolved coverage after bou
   const { createActionBatchMiddleware } = await import('../action-batch')
   const { createServerActionBatchProvider } =
     await import('../../src/ai/server-action-batch-provider')
-  const { requireBatchSuccess } = await import('../batch-exchange')
+  const { requireBatchSuccess } = await import('@asyra/ai-agent-runtime/node')
   let delivered: Record<string, unknown> | undefined
   let final: AiActionBatch | undefined
   let postedBytes = 0
@@ -5173,7 +5172,7 @@ it('execution proof admits complete per-target material corrections from the pub
   const { basicApiResultSchema } =
     await import('../../src/ai/basic-api-results')
   const { toolSemantics } = await import('../../src/ai/tool-contract')
-  const { operationInputIssue } = await import('../operation-input-schema')
+  const { operationInputIssue } = await import('@asyra/ai-agent-runtime/schema')
   const method = await readKnowledgeTopic(
     'design.architectural-illustration.materials.correction'
   )
@@ -5353,7 +5352,7 @@ it('execution proof preserves exact shared property relationships in publication
 })
 
 it('execution proof preserves owner result distinctions through native contract admission', async () => {
-  const { operationInputIssue } = await import('../operation-input-schema')
+  const { operationInputIssue } = await import('@asyra/ai-agent-runtime/schema')
   const { toolSemantics, designActionOutcome } =
     await import('../../src/ai/tool-contract')
   const contract = basicApiContracts.find(
@@ -5491,7 +5490,7 @@ it('execution proof preserves Core mutation and valid no-op receipts through nat
   const { runWithTransactionOwner, runTransaction } =
     await import('@asyra/reactive-events')
   const { toolSemantics } = await import('../../src/ai/tool-contract')
-  const { operationInputIssue } = await import('../operation-input-schema')
+  const { operationInputIssue } = await import('@asyra/ai-agent-runtime/schema')
   const type = 'owner-receipt-proof-value',
     ownerType = 'owner-receipt-proof-element'
   const config = {
@@ -7012,7 +7011,7 @@ it('execution proof delivers selected operation contracts without exhaustive dis
   ])
 
   const { workflowQueryGuidance } = await import('../design-workflow-discovery')
-  const { operationInputIssue } = await import('../operation-input-schema')
+  const { operationInputIssue } = await import('@asyra/ai-agent-runtime/schema')
   const designs = createLocalDesignTools([
     {
       name: AiActionNames.APPLY_PREPARED_DESIGN,
@@ -9710,8 +9709,8 @@ it('execution proof preserves retained images during direct response reprojectio
   }
 
   captured.result.image = { width: 2, height: 2, dataUrl: uri }
-  const media: LocalToolImage[] = []
-  const delivery = resultDelivery(
+  const media: AiToolImage[] = []
+  const delivery = createDesignResultDelivery(
     selectedInspection.request,
     undefined,
     (images) => media.push(...images)
@@ -10864,12 +10863,10 @@ const completeUsageBudget = (
 
 it('execution proof preserves raw browser prefixes at the host failure boundary', async () => {
   const { localToolFailureReply } = await import('../local-tool-invocation')
-  const {
-    toolSemantics,
-    toolResultObject,
-    toolInternalResult,
-    projectToolResultFields
-  } = await import('../../src/ai/tool-contract')
+  const { toolSemantics, toolResultObject, toolInternalResult } =
+    await import('../../src/ai/tool-contract')
+  const { projectToolResultFields } =
+    await import('@asyra/ai-agent-runtime/schema')
   const schema = toolResultObject({
     value: { type: 'string' },
     diagnostic: toolInternalResult({ type: 'string' })
@@ -11340,8 +11337,7 @@ it('execution proof preserves recoverable discovery identity selection without h
 
 it('execution proof uses named-step result contracts and corrects selectors before dispatch', async () => {
   const { createLocalToolHost } = await import('../local-tool-host')
-  const { createConversationResults } =
-    await import('../../src/ai/conversation-results')
+  const { createConversationResults } = await import('@asyra/ai-agent-runtime')
   const { toolSemantics, toolInternalResult, toolRequestReference } =
     await import('../../src/ai/tool-contract')
   const actions = [
@@ -11536,8 +11532,7 @@ it('execution proof uses named-step result contracts and corrects selectors befo
 })
 
 it('execution proof preserves correctable compiled findings before any canvas write', async () => {
-  const { createConversationResults } =
-    await import('../../src/ai/conversation-results')
+  const { createConversationResults } = await import('@asyra/ai-agent-runtime')
   const context = createConversationResults(() => 1).open('findings-proof')
   let writes = 0
   const host = createLocalToolHost({
@@ -11641,8 +11636,7 @@ it('execution proof preserves correctable compiled findings before any canvas wr
 })
 
 it('execution proof preserves target admission correction across direct and inline routes', async () => {
-  const { createConversationResults } =
-    await import('../../src/ai/conversation-results')
+  const { createConversationResults } = await import('@asyra/ai-agent-runtime')
   const { documentContextProperties } =
     await import('../../src/ai/context-schema')
   const { prepareOperationBatch } = await import('../local-operation-batch')
@@ -11937,12 +11931,11 @@ it('execution proof composes request-only reads with guarded successor inputs', 
 })
 
 it('execution proof reuses named result navigation without transferring stored values', async () => {
-  const { createConversationResults } =
-    await import('../../src/ai/conversation-results')
+  const { createConversationResults } = await import('@asyra/ai-agent-runtime')
   const context = createConversationResults(() => 'document')
   const first = context.open('conversation')
 
-  const delivery = resultDelivery(
+  const delivery = createDesignResultDelivery(
     {
       retain: { crownTargets: { step: 'crown', path: '/createdTargets' } },
       delivery: 'status'
@@ -12050,8 +12043,7 @@ it('execution proof preserves authored input correction while blocking incomplet
 
   const { default: reference } =
     await import('../../test-data/ai-drawing/fixtures/sequence-reference-recovery-20261108.json')
-  const { createConversationResults } =
-    await import('../../src/ai/conversation-results')
+  const { createConversationResults } = await import('@asyra/ai-agent-runtime')
 
   for (const mode of [
     'correctable',

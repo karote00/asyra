@@ -1,17 +1,12 @@
+import type { AiToolImage } from '@asyra/ai-agent-runtime'
 import { AiActionNames } from '../src/constants'
 import { AiReferenceToolIds } from './ai-domain-prompt'
-
-export interface LocalToolImage {
-  path: string
-  actionName: string
-  image: Record<string, unknown>
-}
 
 const record = (value: unknown): value is Record<string, unknown> =>
   !!value && typeof value === 'object' && !Array.isArray(value)
 
 /** Read only canonical receipt envelopes, never arbitrary authored payloads. */
-export function localToolImages(value: unknown, path = ''): LocalToolImage[] {
+export function localToolImages(value: unknown, path = ''): AiToolImage[] {
   if (Array.isArray(value)) {
     return localToolImages({ actionResults: value }, path).map((image) => ({
       ...image,
@@ -23,7 +18,7 @@ export function localToolImages(value: unknown, path = ''): LocalToolImage[] {
     return []
   }
 
-  const images: LocalToolImage[] = []
+  const images: AiToolImage[] = []
 
   if (Array.isArray(value.actionResults)) {
     value.actionResults.forEach((entry, index) => {
@@ -72,25 +67,4 @@ export function localToolImages(value: unknown, path = ''): LocalToolImage[] {
   }
 
   return images
-}
-
-/** Preserve output provenance through aliases, including selected image leaves. */
-export function selectLocalToolImages(
-  images: readonly LocalToolImage[],
-  path: string,
-  name: string
-): LocalToolImage[] {
-  const target = '/fields/' + name.replace(/~/g, '~0').replace(/\//g, '~1')
-
-  return images.flatMap((image) => {
-    if (image.path === path || image.path.startsWith(path + '/')) {
-      return [{ ...image, path: target + image.path.slice(path.length) }]
-    }
-
-    if (path === image.path + '/dataUrl') {
-      return [{ ...image, path: target }]
-    }
-
-    return []
-  })
 }

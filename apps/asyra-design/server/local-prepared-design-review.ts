@@ -13,8 +13,8 @@ import {
 import { createHash } from 'node:crypto'
 import type { InspectionEvidenceStamp } from '../src/ai/inspection-evidence'
 import { AiDesignToolIds } from '../src/constants/ai-design'
-import { LocalToolAccess } from './local-tool-scheduler'
-import { operationInputIssue } from './operation-input-schema'
+import { AiToolAccess } from '@asyra/ai-agent-runtime'
+import { operationInputIssue } from '@asyra/ai-agent-runtime/schema'
 import type { DesignCheckAssessment } from './design-check-contract'
 
 const record = (value: unknown): value is Record<string, unknown> =>
@@ -91,7 +91,7 @@ export const preparedReviewDefinition = {
   ),
   revision: 3,
   name: AiDesignToolIds.REVIEW_PREPARED_DESIGN,
-  executionAccess: LocalToolAccess.EXCLUSIVE,
+  executionAccess: AiToolAccess.EXCLUSIVE,
   description:
     'Check canonical attachment and selected recipe coverage using program checks only. Preparation already retains compiler findings; this call is not needed merely to record them. No model is invoked. Pass covers data checks only; appearance and request interpretation remain for the primary agent using rendered output. Supply artifactId and intended parentId. Partial keys cannot hide a compiler failure. Correct failures and recheck. Exact dependencies reuse results; the AI judges rendered appearance separately.',
   inputSchema: {

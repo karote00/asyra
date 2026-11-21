@@ -1,6 +1,6 @@
 import sharp from 'sharp'
 import { isRecord } from '@asyra/utils'
-import { requireBatchSuccess } from '../server/batch-exchange'
+import { requireBatchSuccess } from '@asyra/ai-agent-runtime/node'
 import { observeActionBatch } from '../server/local-action-observation'
 import { createNativeProviderFixture } from '../server/__tests__/native-provider-fixture'
 import recordedPreparation from '../server/__tests__/fixtures/recorded-101/ordered-preparation-20261019.json' with { type: 'json' }

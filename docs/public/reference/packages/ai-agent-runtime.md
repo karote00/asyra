@@ -14,7 +14,7 @@ app-approved actions.
 
 ## Does not own
 
-Model vendors, credentials, app-domain actions, Feature sessions, canonical
+The portable core does not own model vendors, credentials, app-domain actions, Feature sessions, canonical
 state, transaction implementation, collaboration, or provider retry after
 execution begins.
 
@@ -115,3 +115,41 @@ for exact result redisplay, validity boundaries and read-only recovery.
 Version and exported-entry facts are generated from this package manifest into
 `docs/public/generated/package-reference.json`. The documentation gate reviews
 this page against the exact 19-package release inventory.
+
+## Optional complete tool host
+
+The portable root additionally exposes request scheduling (`createAiToolScheduler`),
+App-scoped result context (`createConversationResults`), named references
+(`resolveNamedResultInputs`), independent `resultDelivery` selections, media
+selection and purpose/field metadata search. These mechanisms do not select an
+App's transaction, domain vocabulary, document identity or storage lifetime.
+
+Import `@asyra/ai-agent-runtime/schema` for `invokeAiToolOwner`,
+`operationContractIssue`, `nativeToolInputSchema`, `projectToolDelivery` and
+`createAiToolLeases`. This opt-in entry requires the consumer to declare Lodash
+`^4.18.1`; the portable root does not load Lodash. Complete owner output is
+validated before any external projection. Presentation-only internal fields can
+still feed a successor. Request-scoped/secret lifetimes remain enforced.
+
+Import `@asyra/ai-agent-runtime/node` for `createAiToolHostLibrary`,
+`createSqliteToolStore`, `createAiToolStoreSession`, `createBatchExchange`,
+`createNativeProviderConfig`, `startNativeProcess`, `createNativeRpcTransport`,
+`parseKnowledgeFile`, `createKnowledgeFileLoader` and `createInformationDelivery`.
+These imports are optional and inert. The App supplies paths, catalogs, budgets,
+permissions and owned-resource cleanup. Native transport supports the tested
+Codex app-server protocol; executable selection, model, prompts, tool catalog and
+report/evaluation policy stay outside it. Normal providers need no native client.
+
+`createExchangeAiProvider` extends the existing generic HTTP provider with
+bidirectional batch receipts and App conversation result storage. Configure the
+endpoint/headers, byte budgets, App-owned `results` store and failure callbacks
+explicitly. Its store supplies scope-aware names, descriptions and awaited
+exchange. Borrowed stores survive provider disposal; only an explicit
+`releaseResults` callback releases owned storage.
+A receipt transport failure does not undo acknowledged work or authorize replay.
+
+The executable inventory journey in
+`packages/ai-agent-runtime/src/__tests__/fixtures/inventory-journey.mjs` demonstrates
+public built imports from `runtime.run` through the provider/exchange, host,
+canonical executor and a later turn. Its App transaction adapter tests default
+rollback and explicitly selected preserve-progress. It is not a Design shim.

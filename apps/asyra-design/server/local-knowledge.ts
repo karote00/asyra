@@ -1,29 +1,30 @@
+import {
+  createKnowledgeFileLoader,
+  parseKnowledgeFile,
+  type KnowledgeFile
+} from '@asyra/ai-agent-runtime/node'
 import { AiToolFailureCodes } from '../src/constants/ai-design'
 import {
   contentPageSchema,
-  deliverInformation,
   informationDeliveryInstructions,
   informationDeliverySchema
-} from './local-information-delivery'
+} from '@asyra/ai-agent-runtime/node'
+import { deliverInformation } from './local-information-delivery'
 import { readFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
 import {
   createAiKnowledgeAccess,
   AiKnowledgeError,
-  type AiKnowledgeMetadata,
   type AiKnowledgeContent,
-  type AiKnowledgeSession,
   type AiKnowledgeResult,
   type AiKnowledgeSource
 } from '@asyra/ai-agent-runtime'
 import { AiDesignToolIds } from '../src/constants/ai-design'
 import { toolSemantics, toolResultObject } from '../src/ai/tool-contract'
-import { operationInputIssue } from './operation-input-schema'
-import {
-  LocalToolInputError,
-  type LocalToolDefinition
-} from './local-tool-invocation'
-import { LocalToolAccess } from './local-tool-scheduler'
+import { operationInputIssue } from '@asyra/ai-agent-runtime/schema'
+import { AiToolInputError } from '@asyra/ai-agent-runtime'
+import { type LocalToolDefinition } from './local-tool-invocation'
+import { AiToolAccess } from '@asyra/ai-agent-runtime'
 
 const sharedIds = [
   'typography',
@@ -39,100 +40,6 @@ const sharedIds = [
   'illustration.architecture.materials.method'
 ] as const
 const require = createRequire(import.meta.url)
-
-export interface KnowledgeFile {
-  readonly id: string
-  readonly revision: number
-  readonly markdown: string
-}
-
-/** Trusted file admission only. The initial loader accepts YAML's JSON subset. */
-export const parseKnowledgeFile = (
-  file: KnowledgeFile
-): {
-  metadata: AiKnowledgeMetadata
-  text: string
-  overrides: NonNullable<AiKnowledgeContent['overrides']>
-} => {
-  if (
-    typeof file.markdown !== 'string' ||
-    Buffer.byteLength(file.markdown) > 65536
-  ) {
-    throw new Error('Knowledge file exceeds the admission limit')
-  }
-
-  const match = /^---\r?\n([\s\S]*?)\r?\n---\r?\n([\s\S]+)$/.exec(file.markdown)
-
-  if (!match) {
-    throw new Error('Knowledge frontmatter is required')
-  }
-
-  const value: unknown = JSON.parse(match[1])
-
-  if (!value || typeof value !== 'object' || Array.isArray(value)) {
-    throw new Error('Knowledge metadata must be an object')
-  }
-
-  const fields = value as Record<string, unknown>
-
-  if ('id' in fields || 'revision' in fields) {
-    throw new Error('Knowledge identity belongs to the trusted file catalog')
-  }
-
-  const keys = new Set([
-    'description',
-    'provenance',
-    'contexts',
-    'references',
-    'children',
-    'extends',
-    'overrides'
-  ])
-
-  if (Object.keys(fields).some((key) => !keys.has(key))) {
-    throw new Error('Unsupported knowledge metadata')
-  }
-
-  const rawOverrides = fields.overrides ?? []
-
-  if (
-    !Array.isArray(rawOverrides) ||
-    rawOverrides.length > 32 ||
-    rawOverrides.some(
-      (item) =>
-        !item ||
-        typeof item !== 'object' ||
-        Array.isArray(item) ||
-        Object.keys(item).some(
-          (key) => !['target', 'priority', 'text'].includes(key)
-        ) ||
-        typeof item.text !== 'string' ||
-        !item.text.length
-    )
-  ) {
-    throw new Error('Targeted override text is required')
-  }
-
-  const overrides = Object.freeze(
-    rawOverrides.map((item) =>
-      Object.freeze({ target: item.target, text: item.text })
-    )
-  )
-
-  return {
-    metadata: {
-      ...fields,
-      overrides: rawOverrides.map((item) => ({
-        target: item.target,
-        priority: item.priority
-      })),
-      id: file.id,
-      revision: file.revision
-    } as unknown as AiKnowledgeMetadata,
-    overrides,
-    text: match[2]
-  }
-}
 
 /** Only trusted App code holds administration. No file-writing path exists. */
 export const createDesignKnowledge = (
@@ -402,48 +309,14 @@ export const createLocalKnowledgeTools = (
   taskId: string,
   load: typeof loadFiles = loadFiles
 ) => {
-  let disposed = false
-  let owner: ReturnType<typeof createDesignKnowledge> | undefined
-  let pending: Promise<AiKnowledgeSession> | undefined
+  const loader = createKnowledgeFileLoader(load, () =>
+    createDesignKnowledge(taskId, true)
+  )
 
-  const initialize = () => {
-    if (disposed) {
-      throw new Error('Knowledge session is closed')
-    }
-
-    if (!pending) {
-      pending = load()
-        .then((files) => {
-          if (disposed) {
-            throw new Error('Knowledge session is closed')
-          }
-
-          const candidate = createDesignKnowledge(taskId, true)
-
-          try {
-            for (const file of files) {
-              candidate.install(file)
-            }
-
-            owner = candidate
-
-            return candidate.session
-          } catch (error) {
-            candidate.dispose()
-            throw error
-          }
-        })
-        .catch((error) => {
-          pending = undefined
-          throw error
-        })
-    }
-
-    return pending
-  }
+  const initialize = async () => (await loader.open()).session
 
   const definitions: (LocalToolDefinition & {
-    executionAccess: LocalToolAccess
+    executionAccess: AiToolAccess
   })[] = [
     {
       name: AiDesignToolIds.DISCOVER_KNOWLEDGE,
@@ -459,7 +332,7 @@ export const createLocalKnowledgeTools = (
       ),
       revision: 4,
       composition: 'request',
-      executionAccess: LocalToolAccess.INDEPENDENT
+      executionAccess: AiToolAccess.INDEPENDENT
     },
     {
       name: AiDesignToolIds.READ_KNOWLEDGE,
@@ -516,7 +389,7 @@ export const createLocalKnowledgeTools = (
       ),
       revision: 7,
       composition: 'request',
-      executionAccess: LocalToolAccess.INDEPENDENT
+      executionAccess: AiToolAccess.INDEPENDENT
     }
   ]
 
@@ -538,7 +411,7 @@ export const createLocalKnowledgeTools = (
       const issue = operationInputIssue(args, definition.inputSchema)
 
       if (issue) {
-        throw new LocalToolInputError(issue)
+        throw new AiToolInputError(issue)
       }
 
       const input = args as { ids: string[]; contexts?: string[] }
@@ -555,7 +428,7 @@ export const createLocalKnowledgeTools = (
       const query = args as Record<string, unknown>
 
       if (query.contentPage && query.rehydrate) {
-        throw new LocalToolInputError(
+        throw new AiToolInputError(
           'Continue without rehydrate; restart the read separately to reset context.'
         )
       }
@@ -578,14 +451,14 @@ export const createLocalKnowledgeTools = (
         )
       } catch (error) {
         if (error instanceof AiKnowledgeError && error.stage === 'input') {
-          throw new LocalToolInputError(error.message)
+          throw new AiToolInputError(error.message)
         }
 
         if (
           error instanceof AiKnowledgeError &&
           error.code === 'KNOWLEDGE_REUSE_UNAVAILABLE'
         ) {
-          throw new LocalToolInputError(
+          throw new AiToolInputError(
             'Retained advice or selected targets are unavailable in this session. Repeat only this read as `read_knowledge({ ids, contexts })` without fromResult/reuseFrom; use rehydrate: true after context loss. Never replay completed writes or captures.',
             AiToolFailureCodes.INPUT_INVALID
           )
@@ -596,16 +469,11 @@ export const createLocalKnowledgeTools = (
     },
 
     invalidateContext() {
-      if (disposed) {
-        throw new Error('Knowledge session is closed')
-      }
-
-      owner?.session.invalidateContext()
+      loader.current()?.session.invalidateContext()
     },
 
     dispose() {
-      disposed = true
-      owner?.dispose()
+      loader.dispose()
     }
   }
 }

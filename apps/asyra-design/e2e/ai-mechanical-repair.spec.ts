@@ -50,7 +50,7 @@ for (const mode of [
     const { createLocalOperationTools } =
       await import('../server/local-operation-tools')
     const { BrowserBatchExecutionError, requireBatchSuccess } =
-      await import('../server/batch-exchange')
+      await import('@asyra/ai-agent-runtime/node')
     const { createLocalToolHost } = await import('../server/local-tool-host')
     const { createDesignCheckResults, designCheckInputSchema } =
       await import('../server/design-check-results')
@@ -71,13 +71,13 @@ for (const mode of [
       }
     }
 
-    type ProviderInput =
-      import('../src/ai/action-batch-protocol').AiProviderInput
-    type Receipt = import('../src/ai/action-batch-protocol').AiBatchReceipt
-    const { createLocalToolStore } = await import('../server/local-tool-store')
+    type ProviderInput = import('@asyra/ai-agent-runtime').AiProviderInput
+    type Receipt = import('@asyra/ai-agent-runtime').AiBatchReceipt
+    const { createSqliteToolStore } =
+      await import('@asyra/ai-agent-runtime/node')
 
     const openStore = () =>
-      createLocalToolStore({
+      createSqliteToolStore({
         directory: testInfo.outputPath('tool-library'),
         capacity: 32,
         recordBytes: 262144,

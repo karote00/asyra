@@ -2,17 +2,17 @@ import { designContextDefinitions } from '../local-design-context'
 import recordedInputRejection from './fixtures/recorded-101/input-rejection-20261112.json'
 import { basicApiContracts } from '../../src/ai/basic-api-catalog'
 
+import { AiToolInputError } from '@asyra/ai-agent-runtime'
 import {
-  LocalToolInputError,
   localToolFailureReply,
   localToolFailureSchema
 } from '../local-tool-invocation'
 import correctablePreparation from '../../test-data/ai-drawing/fixtures/correctable-preparation-20261106.json'
 import { expect, it, vi } from 'vitest'
-import * as libraryOwner from '../local-tool-library'
+import * as libraryOwner from '@asyra/ai-agent-runtime/node'
 import { readCompleteInformation } from './tool-contract-assertions'
-import { operationContractIssue } from '../operation-input-schema'
-import { BrowserBatchExecutionError } from '../batch-exchange'
+import { operationContractIssue } from '@asyra/ai-agent-runtime/schema'
+import { BrowserBatchExecutionError } from '@asyra/ai-agent-runtime/node'
 import type { AiToolStoreEntry } from '@asyra/ai-agent-runtime'
 import { createLocalToolHost } from '../local-tool-host'
 import { createLocalDesignTools } from '../local-design-tools'
@@ -20,13 +20,13 @@ import { createLocalDesignWorkflow } from '../local-design-workflow'
 import { createLocalOperationTools } from '../local-operation-tools'
 import { createDesignPreparationSession } from '../design-preparation'
 import { AiActionNames } from '../../src/constants/ai-actions'
-import { createConversationResults } from '../../src/ai/conversation-results'
+import { createConversationResults } from '@asyra/ai-agent-runtime'
+import { projectToolResultFields } from '@asyra/ai-agent-runtime/schema'
 import {
   toolRequestReference,
   toolSemantics,
   toolResultObject,
-  toolInternalResult,
-  projectToolResultFields
+  toolInternalResult
 } from '../../src/ai/tool-contract'
 
 const object = (properties: Record<string, unknown>) => ({
@@ -519,7 +519,7 @@ it.each(
 
               selections.push(stage ?? 'owner')
               if (condition === 'selector-input-error') {
-                throw new LocalToolInputError(
+                throw new AiToolInputError(
                   'The requested input combination is not supported'
                 )
               }
@@ -3601,9 +3601,9 @@ it('keeps a rejected artifact selector correctable before native resource admiss
 })
 
 it('keeps incomplete Host contract admission distinct from authored input rejection', async () => {
-  const create = libraryOwner.createLocalToolLibrary
+  const create = libraryOwner.createAiToolHostLibrary
   const replacement = vi
-    .spyOn(libraryOwner, 'createLocalToolLibrary')
+    .spyOn(libraryOwner, 'createAiToolHostLibrary')
     .mockImplementation((options) => {
       const library = create(options)
 

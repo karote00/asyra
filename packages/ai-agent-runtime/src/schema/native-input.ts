@@ -1,21 +1,13 @@
-import { normalizeAiToolSchemaReferences } from '@asyra/ai-agent-runtime'
+import { normalizeAiToolSchemaReferences } from '../tool-contract.js'
 import lodash from 'lodash'
 
 const { isEqual } = lodash
 
-// App-owned model-input admission. Canonical executors remain the authority for
+// Optional provider model-input admission. Canonical executors remain the authority for
 // target permissions, current state and writes. Never validate prepared geometry
 // again here: this consumes the advertised model-facing operation schema.
 const record = (v: unknown): v is Record<string, unknown> =>
   !!v && typeof v === 'object' && !Array.isArray(v)
-
-export {
-  operationInputIssue,
-  operationInputIssues,
-  formatOperationInputIssues,
-  type OperationInputIssue,
-  operationContractIssue
-} from '../src/ai/tool-schema'
 
 // Native schema rendering projects union branches without their sibling constraints.
 // Distribute object constraints into each alternative before registration; local

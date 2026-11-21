@@ -1,12 +1,9 @@
-import { resolveLocalSchemaReference } from '../src/ai/tool-schema'
+import { resolveLocalSchemaReference } from '@asyra/ai-agent-runtime/schema'
 import { AiToolFailureCodes } from '../src/constants/ai-design'
-import { LocalToolInputError } from './local-tool-invocation'
+import { AiToolInputError } from '@asyra/ai-agent-runtime'
 import { randomUUID } from 'node:crypto'
-import type {
-  AiActionBatch,
-  AiProviderInput
-} from '../src/ai/action-batch-protocol'
-import { operationInputIssue } from './operation-input-schema'
+import type { AiActionBatch, AiProviderInput } from '@asyra/ai-agent-runtime'
+import { operationInputIssue } from '@asyra/ai-agent-runtime/schema'
 
 export const operationInspectionSchema = {
   enum: ['immediate', 'defer'],
@@ -271,7 +268,7 @@ export const bindOperationTargets = (
     const targets = Array.isArray(target) ? target : [target]
 
     if (!targets.length) {
-      throw new LocalToolInputError(
+      throw new AiToolInputError(
         'Target references cannot be empty.',
         AiToolFailureCodes.INPUT_INVALID
       )
@@ -326,7 +323,7 @@ export const bindOperationTargets = (
     }
 
     if (issues.length) {
-      throw new LocalToolInputError(
+      throw new AiToolInputError(
         issues.join('\n'),
         AiToolFailureCodes.INPUT_INVALID
       )
@@ -378,7 +375,7 @@ export const prepareOperationBatch = (
   resolveTargets?: (reference: unknown, mode: ElementBindingMode) => string[]
 ): AiActionBatch['actions'] => {
   if (!Array.isArray(operations) || !operations.length) {
-    throw new LocalToolInputError(
+    throw new AiToolInputError(
       'A nonempty operations array is required.',
       AiToolFailureCodes.INPUT_INVALID
     )
@@ -394,7 +391,7 @@ export const prepareOperationBatch = (
       ) ||
       !record(operation.arguments)
     ) {
-      throw new LocalToolInputError(
+      throw new AiToolInputError(
         'Invalid batch operation.',
         AiToolFailureCodes.INPUT_INVALID
       )
@@ -421,7 +418,7 @@ export const prepareOperationBatch = (
       const issue = operationInputIssue(args, definition.inputSchema)
 
       if (issue) {
-        throw new LocalToolInputError(issue, AiToolFailureCodes.INPUT_INVALID)
+        throw new AiToolInputError(issue, AiToolFailureCodes.INPUT_INVALID)
       }
 
       actions.push({

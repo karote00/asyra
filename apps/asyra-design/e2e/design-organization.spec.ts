@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test'
 import { prepareDesign } from '../server/design-preparation'
 import { deliverPreparedDesign } from '../src/ai/prepared-design'
-import type { AiActionBatch } from '../src/ai/action-batch-protocol'
+import type { AiActionBatch } from '@asyra/ai-agent-runtime'
 import {
   createTestDocumentIdentity,
   waitForAppReady,

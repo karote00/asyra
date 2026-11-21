@@ -4,7 +4,7 @@ import { getActiveCollaborationHandle } from '../../src/collaboration/session-ob
 import { createAiRuntimeInput } from '../../src/ai/runtime-input'
 import { createAiTransactionRunner } from '../../src/ai/transaction'
 import { basicApiContracts } from '../../src/ai/basic-api-catalog'
-import { operationInputIssue } from '../../server/operation-input-schema'
+import { operationInputIssue } from '@asyra/ai-agent-runtime/schema'
 import {
   deliverPreparedDesign,
   type PreparedDesign

@@ -13,7 +13,7 @@ import { basicApiContracts } from '../../src/ai/basic-api-catalog'
 import {
   operationContractIssue,
   operationInputIssue
-} from '../operation-input-schema'
+} from '@asyra/ai-agent-runtime/schema'
 
 it('admits only nonnegative hierarchy insertion indices and explains append semantics', () => {
   const move = basicApiContracts.find(

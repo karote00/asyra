@@ -3,7 +3,7 @@ import {
   createAiActionRegistry,
   type AiToolStoreEntry
 } from '@asyra/ai-agent-runtime'
-import { createLocalToolLibrary } from '../local-tool-library'
+import { createAiToolHostLibrary } from '@asyra/ai-agent-runtime/node'
 import { createLocalToolLibraryTools } from '../local-tool-library-tools'
 
 import { invokeLocalTool } from '../local-tool-invocation'
@@ -11,11 +11,11 @@ import {
   nativeToolInputSchema,
   operationContractIssue,
   operationInputIssue
-} from '../operation-input-schema'
-import { createLocalToolScheduler } from '../local-tool-scheduler'
+} from '@asyra/ai-agent-runtime/schema'
+import { createAiToolScheduler } from '@asyra/ai-agent-runtime'
 import { toolSemantics } from '../../src/ai/tool-contract'
 import { AiDesignToolIds } from '../../src/constants/ai-design'
-import { localToolReferences } from '../local-tool-leases'
+import { aiToolReferences } from '@asyra/ai-agent-runtime/schema'
 
 const fixture = () => {
   const registry = createAiActionRegistry()
@@ -33,8 +33,9 @@ const fixture = () => {
   let version = 0
   let storageUnavailable = false
   const signal = new AbortController().signal
-  const schedule = createLocalToolScheduler(signal)
-  const library = createLocalToolLibrary({
+  const schedule = createAiToolScheduler(signal)
+  const library = createAiToolHostLibrary({
+    saveInvocationName: 'tool_library.save_tool',
     requestId: 'author',
     registry,
     capacity: 16,
@@ -328,13 +329,13 @@ it('retries failed storage through save_tool without repeating successful produc
   const outputReferences = new Set<string>()
   const inputReferences = new Set<string>()
 
-  localToolReferences(
+  aiToolReferences(
     applied,
     owner.definitions.find((d) => d.name === AiDesignToolIds.INVOKE_TOOL)
       ?.outputSchema,
     outputReferences
   )
-  localToolReferences(
+  aiToolReferences(
     { name: proposal.name, revision: 1, receiptId: applied.receiptId },
     owner.definitions.find((d) => d.name === AiDesignToolIds.SAVE_TOOL)
       ?.inputSchema,

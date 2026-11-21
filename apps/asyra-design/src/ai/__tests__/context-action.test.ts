@@ -11,7 +11,7 @@ import {
 import {
   operationInputIssue,
   nativeToolInputSchema
-} from '../../../server/operation-input-schema'
+} from '@asyra/ai-agent-runtime/schema'
 
 describe('document context action', () => {
   it('forwards a page to the read owner and returns its receipt', async () => {

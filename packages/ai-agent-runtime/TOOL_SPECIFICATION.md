@@ -471,7 +471,6 @@ and rejects unknown steps, unavailable paths and non-step leaves. This lets a
 host export selected earlier outputs before intermediate leases close. It does
 not change saved-recipe contracts or permit literal captured request handles.
 
-
 ### Reference-preserving adapter conversion
 
 `normalizeAiToolSchemaReferences` detaches a JSON schema and relocates reachable
@@ -480,3 +479,28 @@ moves structural branches. Recursive references remain references; literal examp
 or constant data is not rewritten. The adapter must preserve that root scope when
 projecting descendants. This conversion does not replace input/output validation,
 weaken constraints or make producer and consumer shapes identical.
+
+## Optional schema and delivery implementation
+
+The `@asyra/ai-agent-runtime/schema` subpath supplies the supported validator,
+native schema conversion and external result projection. It uses the optional
+Lodash peer at the declared version; custom validators remain supported. Keep
+complete validated results for internal dependencies before selecting a public
+view. Neither retain nor delivery can bypass raw-result validation or change
+App transaction settlement. Design-specific result classification stays with
+registered App owners.
+
+### Optional implementation adapters
+
+The root exports portable result context/references, result delivery, media
+selection, capability metadata and scheduling. The schema entry supplies the
+supported validator, native input conversion, complete owner invocation and result
+projection; it declares the existing Lodash peer explicitly. The Node entry
+supplies host-library assembly, SQLite storage, Knowledge file loading, information
+pagination, batch exchange and native RPC transport. None is mandatory for a
+custom provider/validator/store composition. App syntax, transaction policy,
+content catalogs, storage paths and evaluation/report rules remain injected.
+
+Presentation visibility annotations are not internal data restrictions. Recipe
+admission preserves complete result types and runtime lifetimes; selected external
+views cannot become the source of truth for downstream inputs or validation.

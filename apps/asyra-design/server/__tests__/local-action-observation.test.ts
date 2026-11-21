@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
-import { BrowserBatchExecutionError } from '../batch-exchange'
+import { BrowserBatchExecutionError } from '@asyra/ai-agent-runtime/node'
 import { observeActionBatch } from '../local-action-observation'
-import type { AiBatchReceipt } from '../../src/ai/action-batch-protocol'
+import type { AiBatchReceipt } from '@asyra/ai-agent-runtime'
 
 describe('canonical action observation', () => {
   const batch = {

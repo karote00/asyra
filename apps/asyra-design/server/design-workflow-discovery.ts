@@ -1,6 +1,6 @@
 import { contractReadArguments } from './design-discovery-contract'
 import { AiDesignToolIds } from '../src/constants/ai-design'
-import { operationInputIssue } from './operation-input-schema'
+import { operationInputIssue } from '@asyra/ai-agent-runtime/schema'
 
 const record = (value: unknown): value is Record<string, unknown> =>
   !!value && typeof value === 'object' && !Array.isArray(value)

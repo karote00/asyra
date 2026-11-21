@@ -6,9 +6,9 @@ import { createLocalDesignWorkflow } from '../local-design-workflow'
 import { createLocalOperationTools } from '../local-operation-tools'
 import { createDesignPreparationSession } from '../design-preparation'
 import { AiActionNames } from '../../src/constants/ai-actions'
-import type { AiBatchReceipt } from '../../src/ai/action-batch-protocol'
+import type { AiBatchReceipt } from '@asyra/ai-agent-runtime'
 
-import { createConversationResults } from '../../src/ai/conversation-results'
+import { createConversationResults } from '@asyra/ai-agent-runtime'
 import { LocalToolLibraryLimits } from '../local-tool-library-limits'
 import {
   localToolFailureReply,

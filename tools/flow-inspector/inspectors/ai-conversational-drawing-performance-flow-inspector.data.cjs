@@ -127,7 +127,7 @@
         'apps/asyra-design/src/init/__tests__/init-app.test.ts',
         'apps/asyra-design/src/ai/startup.ts',
         'apps/asyra-design/src/ai/server-action-batch-provider.ts',
-        'apps/asyra-design/src/ai/action-batch-protocol.ts',
+        'packages/ai-agent-runtime/src/provider.ts',
         'apps/asyra-design/src/ai/action-batch-endpoint.ts',
         'apps/asyra-design/src/ai/context.ts',
         'apps/asyra-design/src/ai/__tests__',

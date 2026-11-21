@@ -3,7 +3,7 @@ import { expect, it, vi } from 'vitest'
 
 import { createLocalKnowledgeTools } from '../local-knowledge'
 import { AiDesignToolIds } from '../../src/constants/ai-design'
-import { operationInputIssue } from '../operation-input-schema'
+import { operationInputIssue } from '@asyra/ai-agent-runtime/schema'
 
 const advice =
   'Retain every constraint, including boundary and recovery conditions. '.repeat(

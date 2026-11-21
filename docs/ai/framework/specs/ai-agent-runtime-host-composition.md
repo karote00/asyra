@@ -2,18 +2,20 @@
 
 ## Status and authority
 
-Proposed target contract for the
+Implementation contract for the
 [ownership transfer plan](../plans/ai-agent-runtime-ownership-transfer-plan.md),
 reviewed against `30f856260a9776f87e0440b1b5b0d88e68a515de`.
-This document does not claim that new APIs or adapters are shipped. The current
+The optional APIs are implemented and locally accepted on the task branch; the
+plan records the exact acceptance evidence. The current
 [package contract](../packages/ai-agent-runtime.md) and
 [Tool Specification](../../../../packages/ai-agent-runtime/TOOL_SPECIFICATION.md)
 remain authoritative for existing behavior. Implementation must reconcile the
 affected current sections in the same slice as each transfer.
 
 The [Flow document](../plans/ai-agent-runtime-ownership-transfer/ownership-transfer.flow.json)
-owns the proposed architecture and route boundaries; this document owns the
-target behavior and acceptance cases. Executable case bindings remain pending.
+owns the architecture and route boundaries; this document owns the behavior and
+acceptance cases. Executable public-export journey selectors are bound in the
+Flow; acceptance requires their actual evidence and preserved Design verification.
 
 ## Supported behavior and ownership
 

@@ -1,5 +1,5 @@
 import { AiActionExecutionError } from '@asyra/ai-agent-runtime'
-import type { BrowserBatchFailure } from './action-batch-protocol'
+import type { BrowserBatchFailure } from '@asyra/ai-agent-runtime'
 
 type HandlerFailure = Pick<BrowserBatchFailure, 'actionName' | 'handlerMs'>
 // Weak error association: observations live no longer than the actual exception.

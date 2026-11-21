@@ -30,7 +30,7 @@ import {
   type BasicApiContract,
   type BasicApiOwner
 } from './basic-api-contracts'
-import { operationInputIssue } from './tool-schema'
+import { operationInputIssue } from '@asyra/ai-agent-runtime/schema'
 import type { createRetainedDesignContext } from '../common-apis/retained-design-context'
 
 interface MutationScopeSource {

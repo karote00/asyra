@@ -11,10 +11,10 @@ import * as workflowOwner from '../design-workflow-discovery'
 import { readCompleteInformation } from './tool-contract-assertions'
 // @vitest-environment jsdom
 import { afterAll, afterEach, expect, it, vi } from 'vitest'
-import * as nativeSchemaOwner from '../operation-input-schema'
+import * as nativeSchemaOwner from '@asyra/ai-agent-runtime/schema'
 import { basicApiContracts } from '../../src/ai/basic-api-catalog'
 import { invokeLocalTool } from '../local-tool-invocation'
-import { operationInputIssue } from '../operation-input-schema'
+import { operationInputIssue } from '@asyra/ai-agent-runtime/schema'
 import { writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 

@@ -52,14 +52,14 @@ import { createLocalDesignTools } from '../local-design-tools'
 import { createLocalDesignWorkflow } from '../local-design-workflow'
 import { createLocalOperationTools } from '../local-operation-tools'
 import { invokeLocalTool } from '../local-tool-invocation'
-import { operationInputIssue } from '../operation-input-schema'
+import { operationInputIssue } from '@asyra/ai-agent-runtime/schema'
 import {
   createDesignPreparationSession,
   prepareDesign,
   prepareDesignAsync
 } from '../design-preparation'
 import { AiActionNames } from '../../src/constants/ai-actions'
-import type { AiActionBatch } from '../../src/ai/action-batch-protocol'
+import type { AiActionBatch } from '@asyra/ai-agent-runtime'
 
 const referenceChain = structuredClone(historical_referenceChain)
 const deliveryHandoff = structuredClone(historical_deliveryHandoff)

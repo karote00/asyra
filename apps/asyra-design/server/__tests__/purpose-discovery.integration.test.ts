@@ -9,7 +9,7 @@ import { invokeLocalTool } from '../local-tool-invocation'
 import {
   nativeToolInputSchema,
   operationInputIssue
-} from '../operation-input-schema'
+} from '@asyra/ai-agent-runtime/schema'
 import recorded from '../../test-data/ai-drawing/fixtures/position-discovery-20261109.json'
 
 interface Candidate {

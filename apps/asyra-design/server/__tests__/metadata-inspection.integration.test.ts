@@ -11,10 +11,7 @@ import { createLocalDesignTools } from '../local-design-tools'
 import { createDesignPreparationSession } from '../design-preparation'
 import { createLocalOperationTools } from '../local-operation-tools'
 import { AiDesignToolIds } from '../../src/constants/ai-design'
-import type {
-  AiActionBatch,
-  AiBatchReceipt
-} from '../../src/ai/action-batch-protocol'
+import type { AiActionBatch, AiBatchReceipt } from '@asyra/ai-agent-runtime'
 
 const saved = JSON.parse(
   readFileSync(

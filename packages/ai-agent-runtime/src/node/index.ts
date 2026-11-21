@@ -9,3 +9,14 @@ export {
   ExecutionRecordCollectionError
 } from './record-collector.js'
 export { createFileRecordCollector } from './file-record-collector.js'
+
+export * from './sqlite-tool-store.js'
+export * from './knowledge-file.js'
+export * from './tool-host-library.js'
+
+export * from './batch-exchange.js'
+
+export * from './native-provider-config.js'
+export * from './native-rpc-transport.js'
+
+export * from './information-delivery.js'
