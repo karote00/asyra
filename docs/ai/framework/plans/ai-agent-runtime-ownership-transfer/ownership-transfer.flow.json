@@ -1,0 +1,1388 @@
+{
+  "schemaVersion": 1,
+  "projectId": "asyra",
+  "flowId": "ai-agent-runtime-ownership-transfer",
+  "revision": 3,
+  "definition": {
+    "title": "AI Agent Runtime ownership transfer",
+    "purpose": "Complete tool handoff ownership transfer. Executable case producers remain pending; structural validation and manual review cannot satisfy the required automated connected journey.",
+    "nodes": [
+      {
+        "id": "compose",
+        "title": "App composition and Feature lifecycle",
+        "objective": "Bind trusted context, registry, policies, owned resources and explicit adapters without starting a second session manager.",
+        "owner": "App composition root",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [
+          {
+            "flowId": "ai-agent-runtime-ownership-transfer",
+            "nodeId": "provider"
+          },
+          {
+            "flowId": "ai-agent-runtime-ownership-transfer",
+            "nodeId": "execute"
+          },
+          {
+            "flowId": "ai-agent-runtime-ownership-transfer",
+            "nodeId": "translate"
+          }
+        ],
+        "criteria": [
+          {
+            "id": "behavior",
+            "title": "C08 C12 - Permanent source-bound cases must be bound and executed before acceptance",
+            "kind": "manual"
+          }
+        ],
+        "specRefs": [
+          "docs/ai/framework/specs/ai-agent-runtime-host-composition.md"
+        ],
+        "implementationRefs": [
+          "apps/asyra-design/src/ai/startup.ts",
+          "apps/asyra-design/src/ai/runtime-input.ts",
+          "apps/asyra-design/src/features/ai-agent/index.ts"
+        ],
+        "actions": []
+      },
+      {
+        "id": "catalog",
+        "title": "Capability and contract discovery",
+        "objective": "Read the admitted registry and return exact identity, purpose, fields and selected contracts; preserve ambiguous and missing outcomes.",
+        "owner": "Optional capability discovery adapter",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [
+          {
+            "flowId": "ai-agent-runtime-ownership-transfer",
+            "nodeId": "result"
+          }
+        ],
+        "criteria": [
+          {
+            "id": "behavior",
+            "title": "C01 C02 C07 - Permanent source-bound cases must be bound and executed before acceptance",
+            "kind": "manual"
+          }
+        ],
+        "specRefs": [
+          "docs/ai/framework/specs/ai-agent-runtime-host-composition.md"
+        ],
+        "implementationRefs": [
+          "apps/asyra-design/server/capability-search.ts",
+          "apps/asyra-design/server/local-operation-tools.ts",
+          "apps/asyra-design/server/local-information-delivery.ts",
+          "packages/ai-agent-runtime/src/"
+        ],
+        "actions": []
+      },
+      {
+        "id": "knowledge",
+        "title": "Authorized Knowledge access",
+        "objective": "Resolve selected passive content with current authorization and source revisions through an injected content source.",
+        "owner": "ai-agent-runtime Knowledge owner",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [
+          {
+            "flowId": "ai-agent-runtime-ownership-transfer",
+            "nodeId": "result"
+          }
+        ],
+        "criteria": [
+          {
+            "id": "behavior",
+            "title": "C07 C08 - Permanent source-bound cases must be bound and executed before acceptance",
+            "kind": "manual"
+          }
+        ],
+        "specRefs": [
+          "docs/ai/framework/specs/ai-agent-runtime-host-composition.md"
+        ],
+        "implementationRefs": [
+          "packages/ai-agent-runtime/src/knowledge.ts",
+          "packages/ai-agent-runtime/src/knowledge-types.ts",
+          "apps/asyra-design/server/local-knowledge.ts"
+        ],
+        "actions": []
+      },
+      {
+        "id": "host",
+        "title": "Invocation admission and composition",
+        "objective": "Pin the invocation contract, resolve explicit dependencies, validate destination values and dispatch through existing invoker/recipe owners.",
+        "owner": "ai-agent-runtime host composition",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [],
+        "criteria": [
+          {
+            "id": "behavior",
+            "title": "C03 C04 C09 C10 - Permanent source-bound cases must be bound and executed before acceptance",
+            "kind": "manual"
+          }
+        ],
+        "specRefs": [
+          "docs/ai/framework/specs/ai-agent-runtime-host-composition.md"
+        ],
+        "implementationRefs": [
+          "packages/ai-agent-runtime/src/",
+          "apps/asyra-design/server/local-tool-host.ts",
+          "apps/asyra-design/server/local-tool-library.ts",
+          "apps/asyra-design/server/local-tool-leases.ts",
+          "apps/asyra-design/server/local-tool-scheduler.ts"
+        ],
+        "actions": []
+      },
+      {
+        "id": "translate",
+        "title": "Translate App-authored request syntax",
+        "objective": "Translate Design stage/apply grammar and step identities into the existing Runtime recipe format without executing mutations.",
+        "owner": "App request syntax adapter",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [
+          {
+            "flowId": "ai-agent-runtime-ownership-transfer",
+            "nodeId": "host"
+          }
+        ],
+        "criteria": [
+          {
+            "id": "behavior",
+            "title": "C03 C12 - App translation delegates to the existing recipe admission; non-Design calls bypass Design grammar",
+            "kind": "manual"
+          }
+        ],
+        "specRefs": [
+          "docs/ai/framework/specs/ai-agent-runtime-host-composition.md#authored-syntax-boundary"
+        ],
+        "implementationRefs": [
+          "apps/asyra-design/server/local-design-sequence.ts",
+          "apps/asyra-design/server/local-result-delivery.ts"
+        ],
+        "actions": []
+      },
+      {
+        "id": "execute",
+        "title": "Canonical domain execution",
+        "objective": "Run authorized domain work through its existing common APIs and transaction owner; produce complete output and owned settlement.",
+        "owner": "App canonical execution and transaction adapter",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [
+          {
+            "flowId": "ai-agent-runtime-ownership-transfer",
+            "nodeId": "host"
+          }
+        ],
+        "criteria": [
+          {
+            "id": "behavior",
+            "title": "C03 C04 C12 - Permanent source-bound cases must be bound and executed before acceptance",
+            "kind": "manual"
+          }
+        ],
+        "specRefs": [
+          "docs/ai/framework/specs/ai-agent-runtime-host-composition.md"
+        ],
+        "implementationRefs": [
+          "apps/asyra-design/src/ai/basic-api-actions.ts",
+          "apps/asyra-design/src/ai/actions.ts",
+          "apps/asyra-design/src/ai/transaction.ts",
+          "apps/asyra-design/src/common-apis/"
+        ],
+        "actions": []
+      },
+      {
+        "id": "result",
+        "title": "Validate and select results",
+        "objective": "Validate complete owner output against the pinned branch, then select and validate declared provider views and independent retention requests.",
+        "owner": "ai-agent-runtime result boundary",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [
+          {
+            "flowId": "ai-agent-runtime-ownership-transfer",
+            "nodeId": "host"
+          }
+        ],
+        "criteria": [
+          {
+            "id": "behavior",
+            "title": "C02 C04 C05 C06 C11 - Permanent source-bound cases must be bound and executed before acceptance",
+            "kind": "manual"
+          }
+        ],
+        "specRefs": [
+          "docs/ai/framework/specs/ai-agent-runtime-host-composition.md"
+        ],
+        "implementationRefs": [
+          "packages/ai-agent-runtime/src/tool-contract.ts",
+          "packages/ai-agent-runtime/src/",
+          "apps/asyra-design/src/ai/tool-contract.ts",
+          "apps/asyra-design/server/local-tool-invocation.ts",
+          "apps/asyra-design/server/local-result-delivery.ts",
+          "apps/asyra-design/server/local-tool-media.ts"
+        ],
+        "actions": []
+      },
+      {
+        "id": "retain",
+        "title": "App-scoped result storage",
+        "objective": "Save requested values and provenance, return descriptions, and resolve later selected paths under trusted conversation and document scope.",
+        "owner": "App-selected result store adapter",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [
+          {
+            "flowId": "ai-agent-runtime-ownership-transfer",
+            "nodeId": "result"
+          }
+        ],
+        "criteria": [
+          {
+            "id": "behavior",
+            "title": "C05 C06 C08 - Permanent source-bound cases must be bound and executed before acceptance",
+            "kind": "manual"
+          }
+        ],
+        "specRefs": [
+          "docs/ai/framework/specs/ai-agent-runtime-host-composition.md"
+        ],
+        "implementationRefs": [
+          "apps/asyra-design/src/ai/conversation-results.ts",
+          "apps/asyra-design/src/ai/server-action-batch-provider.ts",
+          "packages/ai-agent-runtime/src/"
+        ],
+        "actions": []
+      },
+      {
+        "id": "provider",
+        "title": "Provider transport and session continuity",
+        "objective": "Describe tools, transport explicit content and receipts, and return model calls through the same live session where supported.",
+        "owner": "Optional provider adapter",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [
+          {
+            "flowId": "ai-agent-runtime-ownership-transfer",
+            "nodeId": "catalog"
+          },
+          {
+            "flowId": "ai-agent-runtime-ownership-transfer",
+            "nodeId": "knowledge"
+          },
+          {
+            "flowId": "ai-agent-runtime-ownership-transfer",
+            "nodeId": "retain"
+          },
+          {
+            "flowId": "ai-agent-runtime-ownership-transfer",
+            "nodeId": "result"
+          }
+        ],
+        "criteria": [
+          {
+            "id": "behavior",
+            "title": "C02 C04 C06 C09 C11 - Permanent source-bound cases must be bound and executed before acceptance",
+            "kind": "manual"
+          }
+        ],
+        "specRefs": [
+          "docs/ai/framework/specs/ai-agent-runtime-host-composition.md"
+        ],
+        "implementationRefs": [
+          "packages/ai-agent-runtime/src/provider.ts",
+          "packages/ai-agent-runtime/src/providers/",
+          "packages/ai-agent-runtime/src/node/",
+          "apps/asyra-design/server/local-ai-provider.ts",
+          "apps/asyra-design/server/native-provider-config.ts",
+          "apps/asyra-design/server/operation-input-schema.ts",
+          "apps/asyra-design/server/batch-exchange.ts",
+          "apps/asyra-design/src/ai/server-action-batch-provider.ts"
+        ],
+        "actions": []
+      },
+      {
+        "id": "close",
+        "title": "Owned cleanup and terminal presentation",
+        "objective": "Settle Feature/UI state from actual execution and delivery; dispose only owned host/provider resources after active work settles.",
+        "owner": "App invocation lifecycle",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [
+          {
+            "flowId": "ai-agent-runtime-ownership-transfer",
+            "nodeId": "compose"
+          }
+        ],
+        "criteria": [
+          {
+            "id": "behavior",
+            "title": "C09 C10 C12 - Permanent source-bound cases must be bound and executed before acceptance",
+            "kind": "manual"
+          }
+        ],
+        "specRefs": [
+          "docs/ai/framework/specs/ai-agent-runtime-host-composition.md"
+        ],
+        "implementationRefs": [
+          "apps/asyra-design/src/ai/startup.ts",
+          "apps/asyra-design/src/ai/conversation.ts",
+          "apps/asyra-design/src/features/ai-agent/index.ts",
+          "packages/ai-agent-runtime/src/runtime.ts",
+          "packages/ai-agent-runtime/src/"
+        ],
+        "actions": []
+      }
+    ],
+    "criteria": [
+      {
+        "id": "integration",
+        "title": "C01-C12 executed on one source with Design preservation and no legacy paths",
+        "kind": "manual"
+      },
+      {
+        "id": "non-design-journey",
+        "title": "Connected non-Design journey - actual production path and policy variants",
+        "kind": "automated",
+        "selector": {
+          "producer": "custom",
+          "identity": "ai-agent-runtime-ownership-transfer/non-design-journey"
+        }
+      }
+    ],
+    "architecture": {
+      "schema": {
+        "id": "flow-inspector",
+        "version": 2
+      },
+      "target": {
+        "id": "ai-agent-runtime-ownership-transfer",
+        "kind": "framework",
+        "title": "AI Agent Runtime ownership transfer",
+        "subtitle": "Proposed architecture; implementation and executable case bindings pending"
+      },
+      "authority": {
+        "specPath": "docs/ai/framework/specs/ai-agent-runtime-host-composition.md",
+        "inspectorPath": "docs/ai/framework/plans/ai-agent-runtime-ownership-transfer/ownership-transfer.flow.json",
+        "semanticOwner": "AI Agent Runtime contract and App domain owners",
+        "inspectorOwner": "Ownership transfer plan coordinator"
+      },
+      "links": [
+        {
+          "id": "plan",
+          "kind": "plan",
+          "label": "Implementation plan",
+          "href": "docs/ai/framework/plans/ai-agent-runtime-ownership-transfer-plan.md"
+        },
+        {
+          "id": "spec",
+          "kind": "spec",
+          "label": "Target contract",
+          "href": "docs/ai/framework/specs/ai-agent-runtime-host-composition.md"
+        }
+      ],
+      "lanes": [
+        {
+          "id": "handoff",
+          "title": "Complete tool handoff",
+          "order": 1
+        }
+      ],
+      "steps": [
+        {
+          "id": "compose",
+          "laneId": "handoff",
+          "title": "App composition and Feature lifecycle",
+          "ownerPackage": "App composition root",
+          "purpose": "Bind trusted context, registry, policies, owned resources and explicit adapters without starting a second session manager.",
+          "failureOwnerStepId": "compose",
+          "order": 1,
+          "inputs": [],
+          "outputs": ["artifact:scope"],
+          "conditions": [
+            "AI is explicitly enabled; current Feature signal and App scope are supplied."
+          ],
+          "bypasses": ["AI disabled: no provider, storage or network work."],
+          "allowedContributors": [
+            "App policy and Feature lifecycle",
+            "Public runtime constructors"
+          ],
+          "forbiddenContributors": [
+            "Implicit Core/Preset activation",
+            "Process-global conversation state"
+          ],
+          "cacheDimensions": [],
+          "implementationBoundary": [
+            "apps/asyra-design/src/ai/startup.ts",
+            "apps/asyra-design/src/ai/runtime-input.ts",
+            "apps/asyra-design/src/features/ai-agent/index.ts"
+          ],
+          "specRefs": [
+            "docs/ai/framework/specs/ai-agent-runtime-host-composition.md"
+          ]
+        },
+        {
+          "id": "catalog",
+          "laneId": "handoff",
+          "title": "Capability and contract discovery",
+          "ownerPackage": "Optional capability discovery adapter",
+          "purpose": "Read the admitted registry and return exact identity, purpose, fields and selected contracts; preserve ambiguous and missing outcomes.",
+          "failureOwnerStepId": "catalog",
+          "order": 2,
+          "inputs": ["artifact:scope", "artifact:dispatch"],
+          "outputs": ["artifact:catalog"],
+          "conditions": [
+            "The trusted registry and owner exposure policy supply candidates; model calls pass the host boundary."
+          ],
+          "bypasses": ["Known exact operations execute without discovery."],
+          "allowedContributors": [
+            "Registered metadata",
+            "App categories and exposure policy"
+          ],
+          "forbiddenContributors": [
+            "Shadow action registry",
+            "Knowledge topic ranking",
+            "Name-based capability invention"
+          ],
+          "cacheDimensions": [],
+          "implementationBoundary": [
+            "apps/asyra-design/server/capability-search.ts",
+            "apps/asyra-design/server/local-operation-tools.ts",
+            "apps/asyra-design/server/local-information-delivery.ts",
+            "packages/ai-agent-runtime/src/"
+          ],
+          "specRefs": [
+            "docs/ai/framework/specs/ai-agent-runtime-host-composition.md"
+          ]
+        },
+        {
+          "id": "knowledge",
+          "laneId": "handoff",
+          "title": "Authorized Knowledge access",
+          "ownerPackage": "ai-agent-runtime Knowledge owner",
+          "purpose": "Resolve selected passive content with current authorization and source revisions through an injected content source.",
+          "failureOwnerStepId": "knowledge",
+          "order": 3,
+          "inputs": ["artifact:scope", "artifact:dispatch"],
+          "outputs": ["artifact:knowledge"],
+          "conditions": [
+            "Trusted principal and scope are injected; model calls pass host admission."
+          ],
+          "bypasses": ["No Knowledge requested: no content load."],
+          "allowedContributors": [
+            "Existing createAiKnowledgeAccess",
+            "Optional file loader",
+            "App source selection and authorization"
+          ],
+          "forbiddenContributors": [
+            "Advice execution",
+            "Automatic topical selection",
+            "Global permission-blind cache"
+          ],
+          "cacheDimensions": [],
+          "implementationBoundary": [
+            "packages/ai-agent-runtime/src/knowledge.ts",
+            "packages/ai-agent-runtime/src/knowledge-types.ts",
+            "apps/asyra-design/server/local-knowledge.ts"
+          ],
+          "specRefs": [
+            "docs/ai/framework/specs/ai-agent-runtime-host-composition.md"
+          ]
+        },
+        {
+          "id": "host",
+          "laneId": "handoff",
+          "title": "Invocation admission and composition",
+          "ownerPackage": "ai-agent-runtime host composition",
+          "purpose": "Pin the invocation contract, resolve explicit dependencies, validate destination values and dispatch through existing invoker/recipe owners.",
+          "failureOwnerStepId": "host",
+          "order": 4,
+          "inputs": [
+            "artifact:scope",
+            "artifact:stored",
+            "artifact:call",
+            "artifact:shutdown",
+            "artifact:internal-result",
+            "artifact:normalized-request"
+          ],
+          "outputs": [
+            "artifact:dispatch",
+            "artifact:admission",
+            "artifact:lookup",
+            "artifact:host-closed",
+            "artifact:authored-request"
+          ],
+          "conditions": [
+            "Registry revision, input references and injected validator are valid before each leaf dispatch.",
+            "Only owner-declared independent preparation overlaps; all active work settles before close.",
+            "Consume validated complete internal results through the existing recipe output map even when retain is absent and delivery is status-only.",
+            "Call an explicitly registered App syntax adapter only after authored-envelope admission; admit its existing recipe-format output before execution. Never interpret Design stages/apply in generic code.",
+            "Observe App-selected transaction policy; a completed step receipt is not proof of final canonical commit."
+          ],
+          "bypasses": [
+            "Direct calls omit recipe coordination but use the same secured invocation boundary."
+          ],
+          "allowedContributors": [
+            "Existing invoker, recipe admission and execution",
+            "Owner-declared scheduling policy",
+            "App authorization adapter"
+          ],
+          "forbiddenContributors": [
+            "Second recipe interpreter",
+            "Automatic mutation replay",
+            "Second Feature task queue",
+            "Unvalidated destination arguments"
+          ],
+          "cacheDimensions": [],
+          "implementationBoundary": [
+            "packages/ai-agent-runtime/src/",
+            "apps/asyra-design/server/local-tool-host.ts",
+            "apps/asyra-design/server/local-tool-library.ts",
+            "apps/asyra-design/server/local-tool-leases.ts",
+            "apps/asyra-design/server/local-tool-scheduler.ts"
+          ],
+          "specRefs": [
+            "docs/ai/framework/specs/ai-agent-runtime-host-composition.md"
+          ]
+        },
+        {
+          "id": "translate",
+          "laneId": "handoff",
+          "title": "Translate App-authored request syntax",
+          "ownerPackage": "App request syntax adapter",
+          "purpose": "Translate Design stage/apply grammar and step identities into the existing Runtime recipe format without executing mutations.",
+          "failureOwnerStepId": "translate",
+          "order": 5,
+          "inputs": ["artifact:authored-request"],
+          "outputs": ["artifact:normalized-request"],
+          "conditions": [
+            "Host pins and admits the authored contract first; only its explicitly registered syntax adapter may translate.",
+            "Return normalized steps/bindings or an owned translation error to the host; runtime recipe admission and destination validation remain mandatory."
+          ],
+          "bypasses": [
+            "Ordinary registered calls and existing recipe inputs need no App syntax adapter; non-Design consumers need no Design grammar."
+          ],
+          "allowedContributors": [
+            "Design sequence planner",
+            "App-owned syntax normalization"
+          ],
+          "forbiddenContributors": [
+            "Canonical mutation during translation",
+            "Design syntax interpretation in generic Runtime",
+            "A second recipe language or executor"
+          ],
+          "cacheDimensions": [],
+          "implementationBoundary": [
+            "apps/asyra-design/server/local-design-sequence.ts",
+            "apps/asyra-design/server/local-result-delivery.ts"
+          ],
+          "specRefs": [
+            "docs/ai/framework/specs/ai-agent-runtime-host-composition.md#authored-syntax-boundary"
+          ]
+        },
+        {
+          "id": "execute",
+          "laneId": "handoff",
+          "title": "Canonical domain execution",
+          "ownerPackage": "App canonical execution and transaction adapter",
+          "purpose": "Run authorized domain work through its existing common APIs and transaction owner; produce complete output and owned settlement.",
+          "failureOwnerStepId": "execute",
+          "order": 6,
+          "inputs": ["artifact:scope", "artifact:dispatch"],
+          "outputs": ["artifact:raw", "artifact:transaction-settlement"],
+          "conditions": [
+            "Actual target, permission and state checks pass at the canonical owner.",
+            "The existing transaction adapter settles the selected policy: Runtime default rollback or explicitly selected preserve-progress. Leaf receipts may precede final settlement; preserve unknown outcomes."
+          ],
+          "bypasses": [
+            "Read/prepare tools do not create a canonical mutation transaction."
+          ],
+          "allowedContributors": [
+            "App common APIs",
+            "Existing Core and Factory public APIs",
+            "Domain schema and outcome callbacks"
+          ],
+          "forbiddenContributors": [
+            "Generic host mutating SceneTree directly",
+            "AI-only transaction engine",
+            "Provider claiming canonical settlement"
+          ],
+          "cacheDimensions": [],
+          "implementationBoundary": [
+            "apps/asyra-design/src/ai/basic-api-actions.ts",
+            "apps/asyra-design/src/ai/actions.ts",
+            "apps/asyra-design/src/ai/transaction.ts",
+            "apps/asyra-design/src/common-apis/"
+          ],
+          "specRefs": [
+            "docs/ai/framework/specs/ai-agent-runtime-host-composition.md"
+          ]
+        },
+        {
+          "id": "result",
+          "laneId": "handoff",
+          "title": "Validate and select results",
+          "ownerPackage": "ai-agent-runtime result boundary",
+          "purpose": "Reuse the existing invoker/result inspector for complete owner output, return internal values to composition, and separately select validated saved and model-facing views.",
+          "failureOwnerStepId": "result",
+          "order": 7,
+          "inputs": [
+            "artifact:catalog",
+            "artifact:knowledge",
+            "artifact:admission",
+            "artifact:raw",
+            "artifact:stored",
+            "artifact:dispatch"
+          ],
+          "outputs": [
+            "artifact:store-command",
+            "artifact:delivery",
+            "artifact:internal-result"
+          ],
+          "conditions": [
+            "Execution status and settlement come from the owner, not from text parsing.",
+            "Per-request selectors respect per-tool external visibility.",
+            "Internal result inspection is the existing invocation validation boundary, not a second engine or a validation bypass based on a projected view."
+          ],
+          "bypasses": [
+            "No custom delivery: preserve declared default independently of retain."
+          ],
+          "allowedContributors": [
+            "Injected domain classifier and validator",
+            "Explicit media descriptors",
+            "Canonical raw results"
+          ],
+          "forbiddenContributors": [
+            "Accepting invalid full results because a projection passes",
+            "Inferring images from Design action names",
+            "Turning delivery failure into unexecuted mutation"
+          ],
+          "cacheDimensions": [],
+          "implementationBoundary": [
+            "packages/ai-agent-runtime/src/tool-contract.ts",
+            "packages/ai-agent-runtime/src/",
+            "apps/asyra-design/src/ai/tool-contract.ts",
+            "apps/asyra-design/server/local-tool-invocation.ts",
+            "apps/asyra-design/server/local-result-delivery.ts",
+            "apps/asyra-design/server/local-tool-media.ts"
+          ],
+          "specRefs": [
+            "docs/ai/framework/specs/ai-agent-runtime-host-composition.md"
+          ]
+        },
+        {
+          "id": "retain",
+          "laneId": "handoff",
+          "title": "App-scoped result storage",
+          "ownerPackage": "App-selected result store adapter",
+          "purpose": "Save requested values and provenance, return descriptions, and resolve later selected paths under trusted conversation and document scope.",
+          "failureOwnerStepId": "retain",
+          "order": 8,
+          "inputs": [
+            "artifact:scope",
+            "artifact:store-command",
+            "artifact:lookup"
+          ],
+          "outputs": ["artifact:stored"],
+          "conditions": [
+            "Scope and resource validity are checked on access; retention is explicit."
+          ],
+          "bypasses": [
+            "No retain or saved reference requested: no result-store operation."
+          ],
+          "allowedContributors": [
+            "App/system-context or injected storage",
+            "Shared reference/selection mechanisms"
+          ],
+          "forbiddenContributors": [
+            "Global runtime history database",
+            "Persisting request leases as durable values",
+            "Changing delivery defaults because retention is enabled"
+          ],
+          "cacheDimensions": [],
+          "implementationBoundary": [
+            "apps/asyra-design/src/ai/conversation-results.ts",
+            "apps/asyra-design/src/ai/server-action-batch-provider.ts",
+            "packages/ai-agent-runtime/src/"
+          ],
+          "specRefs": [
+            "docs/ai/framework/specs/ai-agent-runtime-host-composition.md"
+          ]
+        },
+        {
+          "id": "provider",
+          "laneId": "handoff",
+          "title": "Provider transport and session continuity",
+          "ownerPackage": "Optional provider adapter",
+          "purpose": "Describe tools, transport explicit content and receipts, and return model calls through the same live session where supported.",
+          "failureOwnerStepId": "provider",
+          "order": 9,
+          "inputs": [
+            "artifact:scope",
+            "artifact:catalog",
+            "artifact:delivery",
+            "artifact:shutdown"
+          ],
+          "outputs": [
+            "artifact:call",
+            "artifact:terminal",
+            "artifact:provider-closed"
+          ],
+          "conditions": [
+            "App selects endpoint, credentials, model and capabilities; schema transformation preserves supported semantics.",
+            "Invalid tool arguments receive a failure reply without closing a usable native session."
+          ],
+          "bypasses": [
+            "Custom/HTTP providers need not implement native session continuation."
+          ],
+          "allowedContributors": [
+            "Generic HTTP provider",
+            "Native protocol adapter",
+            "App prompt/tool registration and callbacks"
+          ],
+          "forbiddenContributors": [
+            "Design domain policy in transport",
+            "101 report or stop policy in production adapter",
+            "Silent session replacement",
+            "Truncating validated selected output"
+          ],
+          "cacheDimensions": [],
+          "implementationBoundary": [
+            "packages/ai-agent-runtime/src/provider.ts",
+            "packages/ai-agent-runtime/src/providers/",
+            "packages/ai-agent-runtime/src/node/",
+            "apps/asyra-design/server/local-ai-provider.ts",
+            "apps/asyra-design/server/native-provider-config.ts",
+            "apps/asyra-design/server/operation-input-schema.ts",
+            "apps/asyra-design/server/batch-exchange.ts",
+            "apps/asyra-design/src/ai/server-action-batch-provider.ts"
+          ],
+          "specRefs": [
+            "docs/ai/framework/specs/ai-agent-runtime-host-composition.md"
+          ]
+        },
+        {
+          "id": "close",
+          "laneId": "handoff",
+          "title": "Owned cleanup and terminal presentation",
+          "ownerPackage": "App invocation lifecycle",
+          "purpose": "Settle Feature/UI state from actual execution and delivery; dispose only owned host/provider resources after active work settles.",
+          "failureOwnerStepId": "close",
+          "order": 10,
+          "inputs": [
+            "artifact:scope",
+            "artifact:delivery",
+            "artifact:terminal",
+            "artifact:host-closed",
+            "artifact:provider-closed",
+            "artifact:transaction-settlement"
+          ],
+          "outputs": ["artifact:closed", "artifact:shutdown"],
+          "conditions": [
+            "Completion, abort or explicit owner shutdown; settlement information remains intact.",
+            "Final presentation consumes actual App transaction settlement separately from leaf receipts; never infer committed or rolled-back state from delivery status."
+          ],
+          "bypasses": [
+            "Borrowed adapters and retained conversation stores remain with their owners."
+          ],
+          "allowedContributors": [
+            "Runtime disposal APIs",
+            "App lifecycle",
+            "Provider cleanup"
+          ],
+          "forbiddenContributors": [
+            "Progress observers determining task success",
+            "Deleting App-owned history",
+            "Replaying writes to complete diagnostic reports"
+          ],
+          "cacheDimensions": [],
+          "implementationBoundary": [
+            "apps/asyra-design/src/ai/startup.ts",
+            "apps/asyra-design/src/ai/conversation.ts",
+            "apps/asyra-design/src/features/ai-agent/index.ts",
+            "packages/ai-agent-runtime/src/runtime.ts",
+            "packages/ai-agent-runtime/src/"
+          ],
+          "specRefs": [
+            "docs/ai/framework/specs/ai-agent-runtime-host-composition.md"
+          ]
+        }
+      ],
+      "routes": [
+        {
+          "id": "scope-to-catalog",
+          "from": "compose",
+          "to": "catalog",
+          "kind": "handoff",
+          "predicate": "Trusted App scope, current Feature signal and selected policies; follow the producing step conditions and explicit request selection.",
+          "producedArtifacts": ["artifact:scope"]
+        },
+        {
+          "id": "scope-to-knowledge",
+          "from": "compose",
+          "to": "knowledge",
+          "kind": "handoff",
+          "predicate": "Trusted App scope, current Feature signal and selected policies; follow the producing step conditions and explicit request selection.",
+          "producedArtifacts": ["artifact:scope"]
+        },
+        {
+          "id": "scope-to-host",
+          "from": "compose",
+          "to": "host",
+          "kind": "handoff",
+          "predicate": "Trusted App scope, current Feature signal and selected policies; follow the producing step conditions and explicit request selection.",
+          "producedArtifacts": ["artifact:scope"]
+        },
+        {
+          "id": "scope-to-execute",
+          "from": "compose",
+          "to": "execute",
+          "kind": "handoff",
+          "predicate": "Trusted App scope, current Feature signal and selected policies; follow the producing step conditions and explicit request selection.",
+          "producedArtifacts": ["artifact:scope"]
+        },
+        {
+          "id": "scope-to-retain",
+          "from": "compose",
+          "to": "retain",
+          "kind": "handoff",
+          "predicate": "Trusted App scope, current Feature signal and selected policies; follow the producing step conditions and explicit request selection.",
+          "producedArtifacts": ["artifact:scope"]
+        },
+        {
+          "id": "scope-to-provider",
+          "from": "compose",
+          "to": "provider",
+          "kind": "handoff",
+          "predicate": "Trusted App scope, current Feature signal and selected policies; follow the producing step conditions and explicit request selection.",
+          "producedArtifacts": ["artifact:scope"]
+        },
+        {
+          "id": "scope-to-close",
+          "from": "compose",
+          "to": "close",
+          "kind": "handoff",
+          "predicate": "Trusted App scope, current Feature signal and selected policies; follow the producing step conditions and explicit request selection.",
+          "producedArtifacts": ["artifact:scope"]
+        },
+        {
+          "id": "catalog-to-provider",
+          "from": "catalog",
+          "to": "provider",
+          "kind": "handoff",
+          "predicate": "Exact registry identities, contracts, discovery selections and read failures; follow the producing step conditions and explicit request selection.",
+          "producedArtifacts": ["artifact:catalog"]
+        },
+        {
+          "id": "catalog-to-result",
+          "from": "catalog",
+          "to": "result",
+          "kind": "handoff",
+          "predicate": "Exact registry identities, contracts, discovery selections and read failures; follow the producing step conditions and explicit request selection.",
+          "producedArtifacts": ["artifact:catalog"]
+        },
+        {
+          "id": "knowledge-to-result",
+          "from": "knowledge",
+          "to": "result",
+          "kind": "handoff",
+          "predicate": "Authorized content, provenance, revision and owner failure; follow the producing step conditions and explicit request selection.",
+          "producedArtifacts": ["artifact:knowledge"]
+        },
+        {
+          "id": "dispatch-to-execute",
+          "from": "host",
+          "to": "execute",
+          "kind": "handoff",
+          "predicate": "Pinned contract and resolved validated arguments for a secured leaf; follow the producing step conditions and explicit request selection.",
+          "producedArtifacts": ["artifact:dispatch"]
+        },
+        {
+          "id": "dispatch-to-catalog",
+          "from": "host",
+          "to": "catalog",
+          "kind": "handoff",
+          "predicate": "Pinned contract and resolved validated arguments for a secured leaf; follow the producing step conditions and explicit request selection.",
+          "producedArtifacts": ["artifact:dispatch"]
+        },
+        {
+          "id": "dispatch-to-knowledge",
+          "from": "host",
+          "to": "knowledge",
+          "kind": "handoff",
+          "predicate": "Pinned contract and resolved validated arguments for a secured leaf; follow the producing step conditions and explicit request selection.",
+          "producedArtifacts": ["artifact:dispatch"]
+        },
+        {
+          "id": "admission-to-result",
+          "from": "host",
+          "to": "result",
+          "kind": "handoff",
+          "predicate": "Explicit rejection or host composition result with completed predecessor settlement; follow the producing step conditions and explicit request selection.",
+          "producedArtifacts": ["artifact:admission"]
+        },
+        {
+          "id": "raw-to-result",
+          "from": "execute",
+          "to": "result",
+          "kind": "handoff",
+          "predicate": "Complete domain output, execution status, settlement and explicit content metadata; follow the producing step conditions and explicit request selection.",
+          "producedArtifacts": ["artifact:raw"]
+        },
+        {
+          "id": "store-command-to-retain",
+          "from": "result",
+          "to": "retain",
+          "kind": "handoff",
+          "predicate": "Selected save or read request with trusted origin and declared paths; follow the producing step conditions and explicit request selection.",
+          "producedArtifacts": ["artifact:store-command"]
+        },
+        {
+          "id": "stored-to-result",
+          "from": "retain",
+          "to": "result",
+          "kind": "handoff",
+          "predicate": "Saved names/descriptions or selected retained values; storage failure is distinct; follow the producing step conditions and explicit request selection.",
+          "producedArtifacts": ["artifact:stored"]
+        },
+        {
+          "id": "stored-to-host",
+          "from": "retain",
+          "to": "host",
+          "kind": "handoff",
+          "predicate": "Saved names/descriptions or selected retained values; storage failure is distinct; follow the producing step conditions and explicit request selection.",
+          "producedArtifacts": ["artifact:stored"]
+        },
+        {
+          "id": "delivery-to-provider",
+          "from": "result",
+          "to": "provider",
+          "kind": "handoff",
+          "predicate": "Validated selected output/content and separate execution/delivery state; follow the producing step conditions and explicit request selection.",
+          "producedArtifacts": ["artifact:delivery"]
+        },
+        {
+          "id": "delivery-to-close",
+          "from": "result",
+          "to": "close",
+          "kind": "handoff",
+          "predicate": "Validated selected output/content and separate execution/delivery state; follow the producing step conditions and explicit request selection.",
+          "producedArtifacts": ["artifact:delivery"]
+        },
+        {
+          "id": "call-to-host",
+          "from": "provider",
+          "to": "host",
+          "kind": "handoff",
+          "predicate": "Provider-authored call in the existing invocation/session; follow the producing step conditions and explicit request selection.",
+          "producedArtifacts": ["artifact:call"]
+        },
+        {
+          "id": "terminal-to-close",
+          "from": "provider",
+          "to": "close",
+          "kind": "handoff",
+          "predicate": "Provider completion, abort or transport/session loss without invented mutation status; follow the producing step conditions and explicit request selection.",
+          "producedArtifacts": ["artifact:terminal"]
+        },
+        {
+          "id": "dispatch-to-result",
+          "from": "host",
+          "to": "result",
+          "kind": "handoff",
+          "predicate": "Every invoked leaf hands its pinned contract and request selection to result inspection without registry re-resolution.",
+          "producedArtifacts": ["artifact:dispatch"]
+        },
+        {
+          "id": "lookup-to-retain",
+          "from": "host",
+          "to": "retain",
+          "kind": "handoff",
+          "predicate": "Only an explicit reference to a prior-turn saved value requires storage access; same-call dependencies use the existing recipe path.",
+          "producedArtifacts": ["artifact:lookup"]
+        },
+        {
+          "id": "shutdown-to-host",
+          "from": "close",
+          "to": "host",
+          "kind": "lifecycle",
+          "predicate": "App abort or explicit close; borrowed resources are excluded.",
+          "producedArtifacts": ["artifact:shutdown"]
+        },
+        {
+          "id": "host-closed-to-close",
+          "from": "host",
+          "to": "close",
+          "kind": "lifecycle",
+          "predicate": "Return actual cleanup state after awaiting owned work; never infer it from observer completion.",
+          "producedArtifacts": ["artifact:host-closed"]
+        },
+        {
+          "id": "shutdown-to-provider",
+          "from": "close",
+          "to": "provider",
+          "kind": "lifecycle",
+          "predicate": "App abort or explicit close; borrowed resources are excluded.",
+          "producedArtifacts": ["artifact:shutdown"]
+        },
+        {
+          "id": "provider-closed-to-close",
+          "from": "provider",
+          "to": "close",
+          "kind": "lifecycle",
+          "predicate": "Return actual cleanup state after awaiting owned work; never infer it from observer completion.",
+          "producedArtifacts": ["artifact:provider-closed"]
+        },
+        {
+          "id": "internal-result-to-host",
+          "from": "result",
+          "to": "host",
+          "kind": "handoff",
+          "predicate": "A successful declared step binding uses the complete validated value directly; retain and model delivery are independent. Recovery values retain their declared failure semantics.",
+          "producedArtifacts": ["artifact:internal-result"]
+        },
+        {
+          "id": "transaction-settlement-to-close",
+          "from": "execute",
+          "to": "close",
+          "kind": "settlement",
+          "predicate": "The transaction owner has settled or reported unknown; earlier leaf receipts do not substitute for this result.",
+          "producedArtifacts": ["artifact:transaction-settlement"]
+        },
+        {
+          "id": "authored-request-to-translate",
+          "from": "host",
+          "to": "translate",
+          "kind": "handoff",
+          "predicate": "Only registered App-authored syntax invokes this adapter; canonical calls bypass it.",
+          "producedArtifacts": ["artifact:authored-request"]
+        },
+        {
+          "id": "normalized-request-to-host",
+          "from": "translate",
+          "to": "host",
+          "kind": "handoff",
+          "predicate": "Return without canonical writes; host performs existing recipe admission and resolved-value validation.",
+          "producedArtifacts": ["artifact:normalized-request"]
+        }
+      ],
+      "artifacts": [
+        {
+          "id": "artifact:scope",
+          "ownerStepId": "compose",
+          "channel": "owned-handoff",
+          "consumerStepIds": [
+            "catalog",
+            "knowledge",
+            "host",
+            "execute",
+            "retain",
+            "provider",
+            "close"
+          ],
+          "title": "Trusted App scope, current Feature signal and selected policies",
+          "terminal": false
+        },
+        {
+          "id": "artifact:catalog",
+          "ownerStepId": "catalog",
+          "channel": "owned-handoff",
+          "consumerStepIds": ["provider", "result"],
+          "title": "Exact registry identities, contracts, discovery selections and read failures",
+          "terminal": false
+        },
+        {
+          "id": "artifact:knowledge",
+          "ownerStepId": "knowledge",
+          "channel": "owned-handoff",
+          "consumerStepIds": ["result"],
+          "title": "Authorized content, provenance, revision and owner failure",
+          "terminal": false
+        },
+        {
+          "id": "artifact:dispatch",
+          "ownerStepId": "host",
+          "channel": "owned-handoff",
+          "consumerStepIds": ["execute", "catalog", "knowledge", "result"],
+          "title": "Pinned invocation contract, explicit request selections and resolved validated leaf arguments",
+          "terminal": false
+        },
+        {
+          "id": "artifact:admission",
+          "ownerStepId": "host",
+          "channel": "owned-handoff",
+          "consumerStepIds": ["result"],
+          "title": "Explicit rejection or host composition result with completed predecessor settlement",
+          "terminal": false
+        },
+        {
+          "id": "artifact:raw",
+          "ownerStepId": "execute",
+          "channel": "owned-handoff",
+          "consumerStepIds": ["result"],
+          "title": "Complete domain output, execution status, settlement and explicit content metadata",
+          "terminal": false
+        },
+        {
+          "id": "artifact:store-command",
+          "ownerStepId": "result",
+          "channel": "owned-handoff",
+          "consumerStepIds": ["retain"],
+          "title": "Selected save or read request with trusted origin and declared paths",
+          "terminal": false
+        },
+        {
+          "id": "artifact:stored",
+          "ownerStepId": "retain",
+          "channel": "owned-handoff",
+          "consumerStepIds": ["result", "host"],
+          "title": "Saved names/descriptions or selected retained values; storage failure is distinct",
+          "terminal": false
+        },
+        {
+          "id": "artifact:delivery",
+          "ownerStepId": "result",
+          "channel": "owned-handoff",
+          "consumerStepIds": ["provider", "close"],
+          "title": "Validated selected output/content and separate execution/delivery state",
+          "terminal": false
+        },
+        {
+          "id": "artifact:call",
+          "ownerStepId": "provider",
+          "channel": "owned-handoff",
+          "consumerStepIds": ["host"],
+          "title": "Provider-authored call in the existing invocation/session",
+          "terminal": false
+        },
+        {
+          "id": "artifact:terminal",
+          "ownerStepId": "provider",
+          "channel": "owned-handoff",
+          "consumerStepIds": ["close"],
+          "title": "Provider completion, abort or transport/session loss without invented mutation status",
+          "terminal": false
+        },
+        {
+          "id": "artifact:closed",
+          "ownerStepId": "close",
+          "channel": "owned-handoff",
+          "consumerStepIds": [],
+          "title": "Actual terminal result and completed owned-resource cleanup",
+          "terminal": true
+        },
+        {
+          "id": "artifact:lookup",
+          "ownerStepId": "host",
+          "channel": "owned-handoff",
+          "consumerStepIds": ["retain"],
+          "title": "Selected named paths under the trusted App scope before destination admission",
+          "terminal": false
+        },
+        {
+          "id": "artifact:shutdown",
+          "ownerStepId": "close",
+          "channel": "owned-handoff",
+          "consumerStepIds": ["host", "provider"],
+          "title": "Cancel or dispose only explicitly owned resources and await active work",
+          "terminal": false
+        },
+        {
+          "id": "artifact:host-closed",
+          "ownerStepId": "host",
+          "channel": "owned-handoff",
+          "consumerStepIds": ["close"],
+          "title": "Owned host work settled and disposal acknowledged, or explicit cleanup failure",
+          "terminal": false
+        },
+        {
+          "id": "artifact:provider-closed",
+          "ownerStepId": "provider",
+          "channel": "owned-handoff",
+          "consumerStepIds": ["close"],
+          "title": "Owned provider work settled and disposal acknowledged, or explicit cleanup failure",
+          "terminal": false
+        },
+        {
+          "id": "artifact:internal-result",
+          "ownerStepId": "result",
+          "channel": "owned-handoff",
+          "consumerStepIds": ["host"],
+          "title": "Complete validated step value, pinned contract and execution outcome for existing recipe bindings",
+          "terminal": false
+        },
+        {
+          "id": "artifact:transaction-settlement",
+          "ownerStepId": "execute",
+          "channel": "owned-handoff",
+          "consumerStepIds": ["close"],
+          "title": "Actual final App transaction settlement under the selected policy",
+          "terminal": false
+        },
+        {
+          "id": "artifact:authored-request",
+          "ownerStepId": "host",
+          "channel": "owned-handoff",
+          "consumerStepIds": ["translate"],
+          "title": "Pinned authored contract and selections for its explicit syntax adapter",
+          "terminal": false
+        },
+        {
+          "id": "artifact:normalized-request",
+          "ownerStepId": "translate",
+          "channel": "owned-handoff",
+          "consumerStepIds": ["host"],
+          "title": "Existing recipe steps/bindings or owned translation rejection",
+          "terminal": false
+        }
+      ],
+      "invariants": [
+        {
+          "id": "single-authority",
+          "statement": "Reuse existing registry/invoker/recipe/Knowledge owners; App canonical authority remains unchanged.",
+          "stepIds": [
+            "compose",
+            "catalog",
+            "knowledge",
+            "host",
+            "execute",
+            "result",
+            "retain",
+            "provider",
+            "close"
+          ],
+          "artifactIds": ["artifact:dispatch", "artifact:raw"],
+          "specRefs": [
+            "docs/ai/framework/specs/ai-agent-runtime-host-composition.md#invocation-and-contracts"
+          ]
+        },
+        {
+          "id": "execution-and-delivery",
+          "statement": "Retention, delivery and observer failures never erase acknowledged canonical execution or cause automatic mutation replay.",
+          "stepIds": ["result", "retain", "provider", "close"],
+          "artifactIds": [
+            "artifact:raw",
+            "artifact:delivery",
+            "artifact:stored"
+          ],
+          "specRefs": [
+            "docs/ai/framework/specs/ai-agent-runtime-host-composition.md#failures-and-lifecycle"
+          ]
+        },
+        {
+          "id": "internal-before-delivery",
+          "statement": "Complete internal handoff does not require retention and cannot be reconstructed from a model projection.",
+          "stepIds": ["host", "result", "retain", "provider"],
+          "artifactIds": ["artifact:internal-result", "artifact:delivery"],
+          "specRefs": [
+            "docs/ai/framework/specs/ai-agent-runtime-host-composition.md#invocation-and-contracts"
+          ]
+        },
+        {
+          "id": "app-transaction-policy",
+          "statement": "The shared host preserves execution evidence and App-selected rollback/commit policy without deciding final canonical state.",
+          "stepIds": ["execute", "result", "close"],
+          "artifactIds": ["artifact:raw", "artifact:transaction-settlement"],
+          "specRefs": [
+            "docs/ai/framework/specs/ai-agent-runtime-host-composition.md#failures-and-lifecycle"
+          ]
+        },
+        {
+          "id": "app-syntax-only",
+          "statement": "App grammar translation produces existing recipe inputs and never bypasses Runtime admission or executes mutations.",
+          "stepIds": ["host", "translate", "execute"],
+          "artifactIds": [
+            "artifact:authored-request",
+            "artifact:normalized-request"
+          ],
+          "specRefs": [
+            "docs/ai/framework/specs/ai-agent-runtime-host-composition.md#authored-syntax-boundary"
+          ]
+        }
+      ],
+      "acceptanceContracts": [
+        {
+          "id": "whole-handoff",
+          "title": "Non-Design public consumer and Design preservation",
+          "stepIds": [
+            "compose",
+            "catalog",
+            "knowledge",
+            "host",
+            "execute",
+            "result",
+            "retain",
+            "provider",
+            "close"
+          ],
+          "assertions": [
+            "Bind and execute C01-C12 against actual public runtime and provider paths.",
+            "Fault injection must fail while legal conversions and partial results pass.",
+            "No aggregate pass count or manual document review proves product correctness."
+          ],
+          "specRefs": [
+            "docs/ai/framework/specs/ai-agent-runtime-host-composition.md#permanent-product-cases"
+          ]
+        },
+        {
+          "id": "rollback-policy",
+          "title": "Default rollback remains supported",
+          "stepIds": ["host", "execute", "result", "close"],
+          "assertions": [
+            "A fatal invocation failure under the default policy rolls back through the actual App transaction adapter.",
+            "Verify final state and settlement; do not misreport an earlier step receipt as final commit."
+          ],
+          "specRefs": [
+            "docs/ai/framework/specs/ai-agent-runtime-host-composition.md#failures-and-lifecycle"
+          ]
+        },
+        {
+          "id": "preserve-progress-policy",
+          "title": "Explicit preserve-progress remains an App choice",
+          "stepIds": ["host", "execute", "result", "close"],
+          "assertions": [
+            "An explicitly selected preserve-progress variant reports the actual retained state and transaction result.",
+            "Input correction and delivery/storage errors remain distinct; no automatic mutation replay or assumed commit on unknown settlement."
+          ],
+          "specRefs": [
+            "docs/ai/framework/specs/ai-agent-runtime-host-composition.md#failures-and-lifecycle"
+          ]
+        },
+        {
+          "id": "non-design-journey",
+          "title": "One connected public Runtime and provider journey",
+          "stepIds": [
+            "compose",
+            "catalog",
+            "knowledge",
+            "host",
+            "execute",
+            "result",
+            "retain",
+            "provider",
+            "close"
+          ],
+          "assertions": [
+            "Start at createAiAgentRuntime(...).run and cross the production provider, bidirectional exchange, host, secured executor and provider successor in the same fixture.",
+            "Only model endpoint, domain state and App transaction/storage adapters may be test implementations; shared invocation, validation, projection and transports are production code.",
+            "Observe provider wire contracts/content, destination arguments, state/settlement, store reads and write counts. Exercise correction within the live session, unnamed internal results, two images and later-turn reuse without fixture reinjection.",
+            "Run both transaction policy failure variants and deliberately broken handoffs on the same path; separate helper successes cannot substitute."
+          ],
+          "specRefs": [
+            "docs/ai/framework/specs/ai-agent-runtime-host-composition.md#connected-non-design-journey",
+            "docs/ai/framework/specs/ai-agent-runtime-host-composition.md#permanent-product-cases"
+          ]
+        }
+      ]
+    }
+  },
+  "current": {
+    "observations": [],
+    "notes": [],
+    "progress": [],
+    "sources": [],
+    "warnings": []
+  }
+}

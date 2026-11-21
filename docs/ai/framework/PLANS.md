@@ -4,6 +4,16 @@ Never record completed plans here.
 
 This file tracks framework planning topics and points to detailed references.
 
+## AI Agent Runtime Ownership Transfer
+
+- [AI Agent Runtime Ownership Transfer](plans/ai-agent-runtime-ownership-transfer-plan.md)
+  - Planning only. Separate shared tool handoffs from optional adapters and
+    Design policy; reuse existing Runtime owners, remove superseded App paths,
+    and verify a non-Design consumer plus preserved Design behavior.
+  - The proposed contract and Flow document do not mark implementation complete.
+    Public exports, dependency decisions and executable case bindings precede
+    production changes.
+
 ## Active Public Entry Experience Plans
 
 These plans improve how new visitors understand and verify the existing public
