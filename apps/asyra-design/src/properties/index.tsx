@@ -1,3 +1,4 @@
+import { supportsSizeEdits } from '../common-apis/element/geometry-policy'
 import React from 'react'
 import { COLUMN_WIDTH } from '../constants'
 import {
@@ -76,7 +77,14 @@ const Properties: React.FC = () => {
   )
 
   if (elementSelection.size) {
-    panelContent = <ElementPropertiesPanel title={title} />
+    panelContent = (
+      <ElementPropertiesPanel
+        title={title}
+        dimensionsUnavailable={[...elementSelection].some(
+          (id) => !supportsSizeEdits(elementDataMap[id]?.type)
+        )}
+      />
+    )
   }
 
   if (showVectorPoint) {

@@ -6,6 +6,8 @@ export interface GroupBounds {
   readonly width: number
   readonly height: number
   readonly type?: string
+  readonly scaleX?: number
+  readonly scaleY?: number
   readonly rotation?: number
 }
 
@@ -21,7 +23,10 @@ export const deriveGroupBounds = (
   let maxX = -Infinity
   let maxY = -Infinity
 
-  rectangles.forEach(({ x, y, width, height, type, rotation = 0 }) => {
+  rectangles.forEach((rectangle) => {
+    const { x, y, type, rotation = 0 } = rectangle
+    const width = rectangle.width * (rectangle.scaleX ?? 1)
+    const height = rectangle.height * (rectangle.scaleY ?? 1)
     const values = [x, y, width, height, rotation]
 
     if (values.some((value) => !Number.isFinite(value))) {

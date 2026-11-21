@@ -27,7 +27,13 @@ const ElementAppearance = ({ elementId }: { elementId: string }) => {
   )
 }
 
-const ElementPropertiesPanel = ({ title }: { title: string }) => {
+const ElementPropertiesPanel = ({
+  title,
+  dimensionsUnavailable
+}: {
+  title: string
+  dimensionsUnavailable?: boolean
+}) => {
   const elementSelection = useElementSelection()
 
   if (!elementSelection.size) {
@@ -40,7 +46,11 @@ const ElementPropertiesPanel = ({ title }: { title: string }) => {
       <Header label={title} />
       <div className="grid grid-cols-1 w-full pb-2">
         <Position />
-        <Dimension />
+        {dimensionsUnavailable ? (
+          <p>Size editing is unavailable for this selection.</p>
+        ) : (
+          <Dimension />
+        )}
         <Rotation />
       </div>
 

@@ -93,7 +93,14 @@ vi.mock('../../../contexts', () => {
 
         return undefined
       }),
+      getElementMetadata: vi.fn((id: string) => ({
+        type: id === 'group-1' ? 'group' : 'rect'
+      })),
       getElementData: vi.fn((elementId: string) => {
+        if (elementId === 'frame-1') {
+          return { type: 'frame' }
+        }
+
         if (elementId === 'rect-1') {
           return { type: 'rect' }
         }
@@ -196,6 +203,13 @@ describe('Group geometry mutation handoff', () => {
       acceptedIds: [],
       changed: false
     })
+  })
+
+  it('rejects a Frame dimension before submitting any mixed-target property writes', () => {
+    expect(() =>
+      updateElementProperties(['rect-1', 'frame-1'], { width: 30 })
+    ).toThrow(/frame/i)
+    expect(mocks.updateElementProperties).not.toHaveBeenCalled()
   })
 
   it('projects identity-safe element bounds into client coordinates', () => {

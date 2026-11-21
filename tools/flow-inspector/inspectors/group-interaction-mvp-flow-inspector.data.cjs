@@ -277,7 +277,7 @@
         'The mouse-down and drag workspace geometry is converted into the chosen parent current local coordinates through that exact identity-safe Render handle for every drag update.',
         'Create drag geometry writes only the created child after the initial identity-preserving reparent; it does not normalize ancestor Groups or rebase siblings.',
         'Every accepted child-only discrete geometry mutation or completed continuous pointer gesture updates only its explicit targets and does not invoke Preset Group normalization before the outer transaction commits.',
-        'Explicit Group/Ungroup and cross-Group identity-preserving reparent remain the only hierarchy-target boundaries in this step that may normalize Group coordinate and bounds snapshots.',
+        'Explicit Group dimension edits proportionally resize descendant boxes from current content bounds; Frame dimensions are unavailable. Group scale writes only the target transform and flows to children through Render. Group/Ungroup and cross-Group identity-preserving reparent retain their membership normalization.',
         'Pointer movement refreshes the current modifier snapshot before hover resolution.'
       ],
       bypasses: [

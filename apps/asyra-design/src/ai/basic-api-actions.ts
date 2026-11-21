@@ -1,3 +1,4 @@
+import { designPropertyTools } from './design-property-tools'
 import { CommonApiInputError } from '../common-apis/common-api-input-error'
 import { ElementPropertyInputError } from '@asyra/core'
 import {
@@ -176,7 +177,11 @@ export const createBasicApiActions = (
       context.signal.throwIfAborted()
       const args = input as Record<string, unknown>
       const owner = getOwners()[contract.owner]
-      const method = (owner as Record<string, unknown>)[contract.method]
+      const methodOwner =
+        owner === core && Object.hasOwn(designPropertyTools, contract.method)
+          ? designPropertyTools
+          : owner
+      const method = (methodOwner as Record<string, unknown>)[contract.method]
 
       if (typeof method !== 'function') {
         throw new Error(
@@ -263,7 +268,7 @@ export const createBasicApiActions = (
 
           return Reflect.apply(
             method,
-            owner,
+            methodOwner,
             contract.parameters.map((name) => resolvedArgs[name])
           )
         } catch (error) {

@@ -4911,3 +4911,23 @@ forwarding or alternate dispatch path. The App keeps authored Design translation
 canonical tool outcomes, selected image production, catalog/model/prompt choices,
 endpoint budgets, document scope, failure presentation and evaluation controls.
 Transaction settlement remains the existing App transaction adapter's decision.
+
+### Editable dimensions, local scale and execution routes
+
+The composition update accepts positive local scale factors on Rectangle, Oval,
+Vector, Text and Group. Multiply only the target transform around its local box
+center. Rendering inherits that transform. A child with local width 10 under a
+Group scaled by 2 still has width 10 in the document and spans 20 in workspace coordinates when its other ancestors have unit scale. Undo, redo and document reload use the same pose.
+
+Changing a leaf's dimensions edits its local geometry. Giving a Group a new
+width or height resizes the positions and local dimensions of its contents in
+proportion to the current content bounds. Its scale remains unchanged. A Frame
+or Workspace cannot be the target of a size edit. A Group dimension request
+that would resize a Frame is rejected before mutation. Signed Frame resizing
+applies only to the Frame itself when introduced in a future contract.
+
+The execution route published by tool search and contract lookup identifies
+ready-arguments-only actions when their individual wrapper cannot be composed.
+Pass concrete arguments in an ordinary batch. Named or previous-step inputs,
+step-time selection and individually retained or delivered outputs require a
+composable wrapper. A direct native invocation takes ordinary concrete arguments.

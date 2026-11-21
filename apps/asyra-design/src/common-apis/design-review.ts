@@ -81,9 +81,9 @@ const defaultApis: ReviewApis = {
 
   measure: (ids) => core.measureElementContentBounds(ids)
 }
-const fields = ['x', 'y', 'width', 'height', 'rotation']
+const fields = ['x', 'y', 'width', 'height', 'rotation', 'scaleX', 'scaleY']
 const reviewChunkSize = 200
-const mechanicalRuleBasis = 'local-geometry-and-text-v2'
+const mechanicalRuleBasis = 'local-geometry-and-text-v3'
 
 const createReviewObservation = () => ({
   aggregatedNodes: 0,
@@ -107,6 +107,8 @@ interface NodeVerdict {
   constrainsChildren: boolean
   parentId?: string
   rotation?: unknown
+  scaleX?: number
+  scaleY?: number
   inherited: boolean
   parentWidth?: number
   parentHeight?: number
@@ -367,6 +369,25 @@ export const createDesignReviewer = (
               }
             : undefined
 
+          const localBounds = bounds
+          const sx = computed?.scaleX ?? 1
+          const sy = computed?.scaleY ?? 1
+
+          if (bounds) {
+            const width = bounds.width * Number(sx)
+            const height = bounds.height * Number(sy)
+
+            bounds =
+              typeof sx === 'number' &&
+              sx > 0 &&
+              typeof sy === 'number' &&
+              sy > 0 &&
+              Number.isFinite(width) &&
+              Number.isFinite(height)
+                ? { ...bounds, width, height }
+                : undefined
+          }
+
           if (bounds && data.type === 'oval') {
             const rotation = computed?.rotation ?? 0
 
@@ -385,6 +406,8 @@ export const createDesignReviewer = (
             constrainsChildren: data.type === EntityTypes.FRAME,
             parentId: parent?.id,
             rotation: computed?.rotation,
+            scaleX: typeof sx === 'number' ? sx : undefined,
+            scaleY: typeof sy === 'number' ? sy : undefined,
             inherited,
             parentWidth: parent?.bounds?.width,
             parentHeight: parent?.bounds?.height,
@@ -399,8 +422,8 @@ export const createDesignReviewer = (
             node.findings.push({ kind: 'geometry-unavailable', elementId: id })
           }
 
-          if (visible && bounds && data.type === 'text') {
-            node.text = { layout: bounds, measured: false, findings: [] }
+          if (visible && localBounds && data.type === 'text') {
+            node.text = { layout: localBounds, measured: false, findings: [] }
             measureIds.push(id)
           }
 
@@ -466,10 +489,10 @@ export const createDesignReviewer = (
         )
 
         node.bounds = {
-          x: node.bounds.x + content.x,
-          y: node.bounds.y + content.y,
-          width: content.width,
-          height: content.height
+          x: node.bounds.x + content.x * (node.scaleX ?? 1),
+          y: node.bounds.y + content.y * (node.scaleY ?? 1),
+          width: content.width * (node.scaleX ?? 1),
+          height: content.height * (node.scaleY ?? 1)
         }
       }
 

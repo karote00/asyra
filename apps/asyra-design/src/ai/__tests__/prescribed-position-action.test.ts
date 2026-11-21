@@ -18,7 +18,7 @@ const fixture = () => {
     a: { type: 'rect', parentId: 'parent' },
     b: { type: 'rect', parentId: 'parent' }
   }
-  const properties = vi.fn()
+  const properties = vi.fn(() => ({ changed: true }))
   const prepare = createDesignElementEditPreparer({
     getData: (id) => records[id],
 

@@ -2378,9 +2378,21 @@ export const createLocalOperationTools = (
     }
 
     if (batchActionNames.has(action.name)) {
+      const wrapper = nativeMatches(action.name).find((candidate) =>
+        isCanonicalWrapper(candidate, action)
+      )
+
       return {
         kind: 'batch-action',
-        tool: AiDesignToolIds.EXECUTE_DESIGN
+        tool: AiDesignToolIds.EXECUTE_DESIGN,
+        ...(wrapper?.composition === 'allowed' ||
+        wrapper?.composition === 'request'
+          ? {}
+          : {
+              bindings: 'ready-arguments-only',
+              guidance:
+                'Supply literal arguments in a ready batch. A named or previous-step input, step-time selection, or selecting this individual step for retain/delivery requires a composable wrapper. Resolve the value first and submit a ready batch.'
+            })
       }
     }
 

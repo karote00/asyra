@@ -262,7 +262,7 @@ const toggleElementVisibleApi = defineBasicApi({
 
 const resetElementSizeApi = defineBasicApi({
   description:
-    'Reset an element to the App default size; use changeElementGeometry for explicit dimensions.',
+    'Reset a resizable element to the App default size. Frame and Workspace size edits are unavailable; use changeElementGeometry for explicit dimensions.',
   owner: 'element',
   method: 'resetElementSize',
   resultKind: 'mutation-receipt',
@@ -273,7 +273,7 @@ const resetElementSizeApi = defineBasicApi({
 
 const changeElementGeometryApi = defineBasicApi({
   description:
-    'Apply supplied new geometry fields through App normalization; omitted fields stay unchanged.',
+    'Set explicit dimensions on a leaf. Group dimensions proportionally resize descendants from current content bounds. Frame and Workspace size edits are unavailable. Omit an axis to preserve it.',
   owner: 'element',
   method: 'changeElementGeometry',
   resultKind: 'mutation-receipt',
@@ -312,7 +312,7 @@ const setElementPositionsApi = defineBasicApi({
 
 const updateElementPropertiesApi = defineBasicApi({
   description:
-    'Apply the same new property values to elementIds through App normalization; use patchElementProperties for independent fields or linked records.',
+    'Apply the same new property values to elementIds. Group width/height resizes contents, scaleX/scaleY are local transform values, and Frame/Workspace size edits are unavailable; use patchElementProperties for independent fields or linked records.',
   owner: 'element',
   method: 'updateElementProperties',
   effect: 'write',

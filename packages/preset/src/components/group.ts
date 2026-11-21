@@ -30,7 +30,7 @@ export const GROUP_COMPONENT_DEFINITION: ComponentDefinition = {
     {
       name: PropertyTypes.POSITION,
       type: PropertyTypes.POSITION,
-      alias: ['x', 'y', 'rotation']
+      alias: ['x', 'y', 'rotation', 'scaleX', 'scaleY']
     },
     {
       name: PropertyTypes.DIMENSION,
@@ -60,6 +60,7 @@ export const GROUP_RENDER_STRATEGY: EngineNeutralRenderStrategy = (
   graphic.x = data.x
   graphic.y = data.y
   graphic.rotation = data.rotation ?? 0
+  graphic.scale.set(data.scaleX ?? 1, data.scaleY ?? 1)
 }
 
 export interface GroupHierarchyReadCore {
@@ -68,7 +69,8 @@ export interface GroupHierarchyReadCore {
 
 export interface GroupGeometryProjectionCore extends GroupHierarchyReadCore {
   getElementComputedData: (
-    elementId: string
+    elementId: string,
+    fields?: readonly string[]
   ) => Record<string, unknown> | undefined
 }
 
@@ -133,7 +135,7 @@ export interface NormalizedGroupBounds {
   readonly bounds: GroupBounds
 }
 
-interface ElementRectangle {
+interface ElementRectangle extends GroupBounds {
   readonly id: string
   readonly x: number
   readonly y: number
@@ -215,6 +217,7 @@ const normalizeGroupBoundsInTransaction = (
     readRectangle(projection, elementId, data(elementId)?.type)
   )
   const childBounds = deriveGroupBounds(childRectangles)
+  const offset = transformOffset(groupRectangle, childBounds, false)
   const nextBounds =
     childRectangles.length === 0
       ? Object.freeze({
@@ -224,8 +227,8 @@ const normalizeGroupBoundsInTransaction = (
           height: 0
         })
       : Object.freeze({
-          x: groupRectangle.x + childBounds.x,
-          y: groupRectangle.y + childBounds.y,
+          x: groupRectangle.x + offset.x,
+          y: groupRectangle.y + offset.y,
           width: childBounds.width,
           height: childBounds.height
         })
@@ -276,7 +279,15 @@ const getComputedData = (
     return projectedValues
   }
 
-  const data = projection.core.getElementComputedData(elementId)
+  const data = projection.core.getElementComputedData(elementId, [
+    'x',
+    'y',
+    'width',
+    'height',
+    'rotation',
+    'scaleX',
+    'scaleY'
+  ])
 
   if (!data) {
     return failGroupGeometry(`element "${elementId}" has no computed data`)
@@ -339,6 +350,29 @@ const applyGeometryProjection = (
   core.updateElementProperties(getProjectedPropertyUpdates(projection), options)
 }
 
+// Parent-local translation and physical scale share Render's rotate-after-scale order.
+const transformOffset = (
+  pose: Pick<GroupBounds, 'rotation' | 'scaleX' | 'scaleY'>,
+  point: Readonly<{ x: number; y: number }>,
+  inverse: boolean
+) => {
+  const angle = pose.rotation ?? 0
+  const c = Math.cos(angle)
+  const s = Math.sin(angle)
+  const sx = pose.scaleX ?? 1
+  const sy = pose.scaleY ?? 1
+
+  return inverse
+    ? {
+        x: (c * point.x + s * point.y) / sx,
+        y: (-s * point.x + c * point.y) / sy
+      }
+    : {
+        x: c * sx * point.x - s * sy * point.y,
+        y: s * sx * point.x + c * sy * point.y
+      }
+}
+
 const readRectangle = (
   projection: GroupGeometryProjection,
   elementId: string,
@@ -350,6 +384,8 @@ const readRectangle = (
     id: elementId,
     type,
     rotation: typeof data.rotation === 'number' ? data.rotation : 0,
+    scaleX: typeof data.scaleX === 'number' ? data.scaleX : 1,
+    scaleY: typeof data.scaleY === 'number' ? data.scaleY : 1,
     x: readFiniteNumber(data, 'x', elementId),
     y: readFiniteNumber(data, 'y', elementId),
     width: readFiniteNumber(data, 'width', elementId),
@@ -369,14 +405,14 @@ const readPosition = (
   })
 }
 
-const getElementWorldPosition = (
+const createHierarchyPointTransform = (
   projection: GroupGeometryProjection,
   data: GroupHierarchyReader,
-  elementId: string
-): Readonly<{ x: number; y: number }> => {
+  elementId: string,
+  inverse: boolean
+) => {
   let currentId = elementId
-  let x = 0
-  let y = 0
+  const poses: ElementRectangle[] = []
   const visited = new Set<string>()
 
   while (currentId) {
@@ -395,14 +431,28 @@ const getElementWorldPosition = (
       break
     }
 
-    const position = readPosition(projection, currentId)
-
-    x += position.x
-    y += position.y
+    poses.push(readRectangle(projection, currentId))
     currentId = element.parentId ?? ''
   }
 
-  return Object.freeze({ x, y })
+  if (inverse) {
+    poses.reverse()
+  }
+
+  return (point: Readonly<{ x: number; y: number }>) =>
+    poses.reduce((value, pose) => {
+      if (inverse) {
+        return transformOffset(
+          pose,
+          { x: value.x - pose.x, y: value.y - pose.y },
+          true
+        )
+      }
+
+      const offset = transformOffset(pose, value, false)
+
+      return { x: pose.x + offset.x, y: pose.y + offset.y }
+    }, point)
 }
 
 const getHierarchyDepth = (
@@ -520,6 +570,87 @@ const stageInitialPropertyUpdates = (
   return Object.freeze(geometryElementIds)
 }
 
+// Derive live dimensions bottom-up before assigning proportional local boxes.
+const resizeGroupContents = (
+  projection: GroupGeometryProjection,
+  data: GroupHierarchyReader,
+  groupId: string,
+  requested: Readonly<Record<string, unknown>>
+): void => {
+  const nodes = [groupId]
+  const seen = new Set<string>()
+  const groups: string[] = []
+
+  for (const id of nodes) {
+    const node = data(id)
+
+    if (!node || seen.has(id)) {
+      return failGroupGeometry(`invalid subtree at "${id}"`)
+    }
+
+    seen.add(id)
+    if (
+      node.type === EntityTypes.FRAME ||
+      node.type === EntityTypes.WORKSPACE
+    ) {
+      throw new RangeError('Frame and Workspace size edits are unavailable')
+    }
+
+    if (node.type === EntityTypes.GROUP) {
+      groups.push(id)
+      for (const child of getContainerChildren(data, id)) {
+        nodes.push(child)
+      }
+    }
+  }
+
+  for (const id of groups.reverse()) {
+    normalizeGroupBoundsInTransaction(projection, data, id)
+  }
+
+  const current = readRectangle(projection, groupId)
+
+  const ratio = (key: 'width' | 'height') => {
+    const value = requested[key]
+
+    if (value === undefined || value === current[key]) {
+      return 1
+    }
+
+    if (
+      typeof value !== 'number' ||
+      !Number.isFinite(value) ||
+      value < 0 ||
+      current[key] === 0
+    ) {
+      throw new RangeError(
+        `Cannot resize ${groupId}.${key} from ${current[key]} to ${value}`
+      )
+    }
+
+    return value / current[key]
+  }
+
+  const sx = ratio('width')
+  const sy = ratio('height')
+
+  for (const id of nodes) {
+    const rect = readRectangle(projection, id)
+    const values = {
+      x: id === groupId ? rect.x : rect.x * sx,
+      y: id === groupId ? rect.y : rect.y * sy,
+      width: rect.width * sx,
+      height: rect.height * sy
+    }
+
+    if (!Object.values(values).every(Number.isFinite)) {
+      throw new RangeError(`Resized bounds overflow at "${id}"`)
+    }
+
+    stageGeometryValues(projection, id, values)
+  }
+}
+
 export const projectGroupGeometryPropertyUpdates = (
   core: GroupGeometryProjectionCore,
   initialUpdates: readonly ElementPropertyValuesUpdate[],
@@ -581,6 +712,14 @@ export const projectGroupGeometryPropertyUpdates = (
       ...stagedGeometryValues
     })
   })
+
+  for (const id of groupGeometryElementIds) {
+    const values = projection.updatesByElementId.get(id)
+
+    if (values && ('width' in values || 'height' in values)) {
+      resizeGroupContents(projection, data, id, values)
+    }
+  }
 
   getAffectedGroupIds(data, groupGeometryElementIds).forEach((groupId) => {
     normalizeGroupBoundsInTransaction(projection, data, groupId)
@@ -757,7 +896,7 @@ export const ungroupElement = (
   const geometryProjection = createGroupGeometryProjection(core)
   const groupPosition =
     preparedUngroup.elementIds.length > 0
-      ? readPosition(geometryProjection, groupId)
+      ? readRectangle(geometryProjection, groupId)
       : undefined
   const childPositions = preparedUngroup.elementIds.map((elementId) => ({
     elementId,
@@ -775,9 +914,11 @@ export const ungroupElement = (
         options
       )
       childPositions.forEach(({ elementId, x, y }) => {
+        const offset = transformOffset(groupPosition, { x, y }, false)
+
         stageGeometryValues(geometryProjection, elementId, {
-          x: x + groupPosition.x,
-          y: y + groupPosition.y
+          x: offset.x + groupPosition.x,
+          y: offset.y + groupPosition.y
         })
       })
       applyGeometryProjection(core, geometryProjection, options)
@@ -823,6 +964,11 @@ export const moveElementsWithGroupGeometry = (
   const beforePositions = new Map<string, Readonly<{ x: number; y: number }>>()
 
   if (Array.isArray(request?.elementIds)) {
+    const toWorldByParent = new Map<
+      string,
+      ReturnType<typeof createHierarchyPointTransform>
+    >()
+
     request.elementIds.forEach((elementId) => {
       const element = beforeData(elementId)
       const sourceIsGroup =
@@ -831,10 +977,22 @@ export const moveElementsWithGroupGeometry = (
       const targetIsGroup =
         beforeData(request.targetParentId)?.type === EntityTypes.GROUP
 
-      if (element && (sourceIsGroup || targetIsGroup)) {
+      if (element?.parentId && (sourceIsGroup || targetIsGroup)) {
+        let toWorld = toWorldByParent.get(element.parentId)
+
+        if (!toWorld) {
+          toWorld = createHierarchyPointTransform(
+            geometryProjection,
+            beforeData,
+            element.parentId,
+            false
+          )
+          toWorldByParent.set(element.parentId, toWorld)
+        }
+
         beforePositions.set(
           elementId,
-          getElementWorldPosition(geometryProjection, beforeData, elementId)
+          toWorld(readPosition(geometryProjection, elementId))
         )
       }
     })
@@ -866,16 +1024,17 @@ export const moveElementsWithGroupGeometry = (
 
       return { elementId, ...position }
     })
-    const targetOrigin =
-      afterData(targetParentId)?.type === EntityTypes.WORKSPACE
-        ? { x: 0, y: 0 }
-        : getElementWorldPosition(geometryProjection, afterData, targetParentId)
+    const toParent = createHierarchyPointTransform(
+      geometryProjection,
+      afterData,
+      targetParentId,
+      true
+    )
 
     worldPositions.forEach(({ elementId, x, y }) => {
-      stageGeometryValues(geometryProjection, elementId, {
-        x: x - targetOrigin.x,
-        y: y - targetOrigin.y
-      })
+      const local = toParent({ x, y })
+
+      stageGeometryValues(geometryProjection, elementId, local)
     })
 
     const groupIds = new Set<string>()

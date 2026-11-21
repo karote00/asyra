@@ -140,3 +140,12 @@ not model quality or live Responses service acceptance.
 
 Specification: [Responses adapter](../specs/openai-responses-adapter.md).
 Flow: `openai-responses-adapter/responses-adapter.flow.json`.
+
+## Drawing follow-up on the same branch
+
+The Taipei Dome run exposed two Design-side contracts. Keep geometry in the
+Preset geometry owner and the application tool catalog. The
+Responses adapter has no geometry policy. Verify the recorded group scale,
+ordinary arguments versus named dependencies, nested proportional resize,
+editable leaves, and Frame exclusion with focused regressions. No paid inference
+is required for these deterministic handoffs.

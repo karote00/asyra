@@ -201,7 +201,9 @@ it('reports actual text overflow from one measurement batch and selected reads',
     'y',
     'width',
     'height',
-    'rotation'
+    'rotation',
+    'scaleX',
+    'scaleY'
   ])
   expect(apis.measure).toHaveBeenCalledExactlyOnceWith(['t'])
 })
@@ -1226,4 +1228,29 @@ it('reviews non-geometric workspace descendants without masking real findings', 
   changed()
   expect((await reviewer.validate(stamp)).current).toBe(false)
   reviewer.dispose()
+})
+
+it('checks inherited Group scale against the containing Frame and preserves local text layout', async () => {
+  const { review, data, geometry } = fixture()
+
+  data.f.children = ['g']
+  data.g = { type: 'group', children: ['t'], parentId: 'f' }
+  data.t.parentId = 'g'
+  geometry.g = { x: 0, y: 0, width: 1, height: 1, scaleX: 3, scaleY: 2 }
+  const result = await review.capture('f')
+
+  expect(result.findings).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({
+        kind: 'container-overflow',
+        elementId: 'g',
+        right: 30
+      }),
+      expect.objectContaining({
+        kind: 'text-overflow',
+        elementId: 't',
+        bottom: 30
+      })
+    ])
+  )
 })

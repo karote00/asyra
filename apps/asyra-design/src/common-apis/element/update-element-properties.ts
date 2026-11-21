@@ -1,3 +1,5 @@
+import { CommonApiInputError } from '../common-api-input-error'
+import { hasSizeEdit, requireSizeEditTarget } from './geometry-policy'
 import { runTransaction, type PropertyMutationReceipt } from '@asyra/core'
 import { projectGroupGeometryPropertyUpdates } from '@asyra/preset'
 import {
@@ -24,6 +26,12 @@ export const updateElementProperties = (
 
   return measureBrowserDragPhase('canonical:updateElementProperties', () => {
     return runTransaction(() => {
+      if (hasSizeEdit(values)) {
+        for (const id of elementIds) {
+          requireSizeEditTarget(id, core.getElementData(id)?.type)
+        }
+      }
+
       const directRequest = elementIds.map((elementId) => ({
         elementId,
         values: projectTextLayoutUpdate(elementId, values)
@@ -36,14 +44,49 @@ export const updateElementProperties = (
               core.getElementData(elementId)?.type === EntityTypes.GROUP
           )
         : []
-      const request =
-        explicitGroupElementIds.length > 0
-          ? projectGroupGeometryPropertyUpdates(
-              core,
-              directRequest,
-              explicitGroupElementIds
-            )
-          : directRequest
+      let request: Parameters<typeof core.updateElementProperties>[0] =
+        directRequest
+
+      if (explicitGroupElementIds.length) {
+        try {
+          request = projectGroupGeometryPropertyUpdates(
+            core,
+            directRequest,
+            explicitGroupElementIds
+          )
+        } catch (error) {
+          if (error instanceof RangeError) {
+            throw new CommonApiInputError(error.message, {
+              operation: 'resize-group'
+            })
+          }
+
+          throw error
+        }
+
+        if ('width' in values || 'height' in values) {
+          request = request.map((update) => {
+            const { width, height } = update.values
+
+            if (
+              typeof width !== 'number' ||
+              typeof height !== 'number' ||
+              core.getElementMetadata(update.elementId)?.type !== 'text'
+            ) {
+              return update
+            }
+
+            return {
+              ...update,
+              values: {
+                ...update.values,
+                ...projectTextLayoutUpdate(update.elementId, { width, height })
+              }
+            }
+          })
+        }
+      }
+
       const result = core.updateElementProperties(request, options)
 
       return Object.freeze({

@@ -37,3 +37,12 @@ describe('Text appearance ownership', () => {
     }
   )
 })
+
+it('explains unavailable size edits while keeping position available', () => {
+  render(<ElementPropertiesPanel title="Frame" dimensionsUnavailable />)
+  expect(screen.queryByText('Dimension')).toBeNull()
+  expect(
+    screen.getByText('Size editing is unavailable for this selection.')
+  ).toBeTruthy()
+  expect(screen.getByText('Position')).toBeTruthy()
+})

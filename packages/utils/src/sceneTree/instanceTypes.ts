@@ -6,6 +6,8 @@ import type { EvnetOptions } from '../types/change.js'
 import { FillAttrs, StrokeAttrs } from '../propsManager/index.js'
 
 export interface ComputedAttrs extends Style {
+  scaleX?: number
+  scaleY?: number
   id: string
   type: EntityType
   name: string
