@@ -308,6 +308,7 @@ Render projection. Preset also exports the ID-driven Group adapters defined by
   read-only from current descendants or the current engine-neutral
   presentation projection. That projection does not write canonical data,
   create History, publish changes, or participate in persistence.
+- The official drawable components and Group register positive local scale axes on their position property. Frame leaves these axes unregistered. A Group scale is inherited through the Render hierarchy without rewriting descendant geometry. Explicit Group width or height changes derive proportional descendant boxes in the same property transaction.
 - Direct geometry updates normalize only when the explicit mutation target is
   an official Group and that operation's contract requires normalization.
   Selecting or hovering a Group remains read-only.

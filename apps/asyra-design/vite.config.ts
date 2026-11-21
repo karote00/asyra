@@ -35,7 +35,7 @@ const createActionBatchPlugin = (): Plugin => ({
     server.httpServer?.once('close', () => {
       void actionBatch.dispose()
     })
-    server.middlewares.use(createAiStatusMiddleware())
+    server.middlewares.use(createAiStatusMiddleware(actionBatch.sources))
     server.middlewares.use(createToolLibraryManagementMiddleware())
   },
 
@@ -46,7 +46,7 @@ const createActionBatchPlugin = (): Plugin => ({
     server.httpServer?.once('close', () => {
       void actionBatch.dispose()
     })
-    server.middlewares.use(createAiStatusMiddleware())
+    server.middlewares.use(createAiStatusMiddleware(actionBatch.sources))
     server.middlewares.use(createToolLibraryManagementMiddleware())
   }
 })

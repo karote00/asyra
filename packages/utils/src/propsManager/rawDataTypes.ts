@@ -16,6 +16,8 @@ export interface PropertyRawData {
 }
 
 export interface PositionComponentRawData extends PropertyRawData {
+  scaleX?: number
+  scaleY?: number
   x: number
   y: number
   xUnit: Unit

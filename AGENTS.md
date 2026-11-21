@@ -256,6 +256,16 @@ Codex UI CPU behavior.
 
 Diagnostics must stay narrow and accountable:
 
+- Store generated temporary test and diagnostic output under the main
+  repository's `tmp/<task-name>/`, including logs, screenshots, recordings,
+  scratch data and command-output files. In a linked worktree, resolve this
+  against the main repository root, not the worktree root. Do not place these
+  outputs directly in the repository root, `tmp/`, `.worktree/` or `.worktrees/`.
+- Remove temporary test outputs when they are no longer needed and no process
+  uses them. Preserve referenced evidence under its task directory with a
+  traceable path mapping when relocating historical records; update current
+  references. Never treat formal test sources or fixtures, persistent App data,
+  local `.env` files or their configuration backups as disposable test output.
 - Every diagnostic command must answer one explicit question.
 - Command output must be proportional to that question.
 - Inspect large diffs through `git diff --stat`, `git diff --name-only`, `rg`,

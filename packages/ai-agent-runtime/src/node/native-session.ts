@@ -1,36 +1,9 @@
-import { createHash } from 'node:crypto'
 import type { createNativeRpcTransport } from './native-rpc-transport.js'
+import type { ProviderContentItem } from './provider-content.js'
+import { createProviderConversations } from './provider-conversations.js'
 
 const record = (value: unknown): value is Record<string, unknown> =>
   value !== null && typeof value === 'object' && !Array.isArray(value)
-
-const canonical = (value: unknown): string => {
-  if (Array.isArray(value)) {
-    return '[' + value.map(canonical).join(',') + ']'
-  }
-
-  if (record(value)) {
-    return (
-      '{' +
-      Object.keys(value)
-        .sort()
-        .map((key) => JSON.stringify(key) + ':' + canonical(value[key]))
-        .join(',') +
-      '}'
-    )
-  }
-
-  if (
-    value === null ||
-    typeof value === 'string' ||
-    typeof value === 'boolean' ||
-    (typeof value === 'number' && Number.isFinite(value))
-  ) {
-    return JSON.stringify(value)
-  }
-
-  throw Error('Native conversation contract must be JSON')
-}
 
 export interface NativeConversationRecord {
   readonly threadId: string
@@ -48,93 +21,64 @@ export interface NativeConversationLease {
   release(): void
 }
 
-/** App/service-scoped identity storage. It never stores an executor, signal or transaction. */
+/** Native identity adapter over the shared service-owned conversation lease. */
 export const createNativeConversations = (
   storage?: NativeConversationStorage
 ) => {
-  const entries = new Map<string, NativeConversationRecord>()
-  const owner = storage ?? {
-    read: (key: string) => entries.get(key),
+  const registry = createProviderConversations<string>(
+    storage
+      ? {
+          read(key) {
+            const value = storage.read(key)
 
-    write: (key: string, value: NativeConversationRecord) => {
-      entries.set(key, value)
-    }
-  }
-  const active = new Set<string>()
-  let closed = false
+            if (!value) {
+              return
+            }
+
+            if (!value.threadId?.trim()) {
+              throw Error('Native conversation identity is invalid')
+            }
+
+            return { contract: value.contract, state: value.threadId }
+          },
+
+          write(key, value) {
+            storage.write(key, {
+              contract: value.contract,
+              threadId: value.state
+            })
+          }
+        }
+      : undefined
+  )
 
   return {
     acquire(key: string, contract: unknown): NativeConversationLease {
-      if (closed) {
-        throw Error('Native conversation registry is closed')
-      }
-
-      if (!key.trim()) {
-        throw Error('Native conversation identity is required')
-      }
-
-      if (active.has(key)) {
-        throw Error('Native conversation is busy')
-      }
-
-      const digest = createHash('sha256')
-        .update(canonical(contract))
-        .digest('hex')
-      const previous = owner.read(key)
-
-      if (
-        previous &&
-        (!previous.threadId?.trim() || previous.contract !== digest)
-      ) {
-        throw Error(
-          'Native conversation contract changed; start a new conversation'
-        )
-      }
-
-      active.add(key)
-      let released = false
-      let threadId = previous?.threadId
+      const lease = registry.acquire(key, contract)
 
       return {
         get threadId() {
-          return threadId
+          return lease.state
         },
 
         bind(id) {
-          if (released || closed) {
-            throw Error('Native conversation lease is released')
-          }
-
-          if (!id.trim() || (threadId !== undefined && id !== threadId)) {
+          lease.assertActive()
+          if (!id.trim() || (lease.state !== undefined && lease.state !== id)) {
             throw Error('Native conversation identity mismatch')
           }
 
-          owner.write(key, Object.freeze({ threadId: id, contract: digest }))
-          threadId = id
+          lease.checkpoint(id)
         },
 
-        release() {
-          if (!released) {
-            released = true
-            active.delete(key)
-          }
-        }
+        release: lease.release
       }
     },
 
-    dispose() {
-      closed = true
-      active.clear()
-      entries.clear()
-    }
+    dispose: registry.dispose
   }
 }
 
 export type NativeConversations = ReturnType<typeof createNativeConversations>
-
-export type NativeContentItem =
-  | { readonly type: 'inputText'; readonly text: string }
-  | { readonly type: 'inputImage'; readonly imageUrl: string }
 
 export interface NativeTurnResult {
   readonly threadId: string
@@ -343,7 +287,7 @@ export const createNativeSession = (
 
     reply(
       id: number | string,
-      result: { success: boolean; contentItems: readonly NativeContentItem[] }
+      result: { success: boolean; contentItems: readonly ProviderContentItem[] }
     ) {
       return transport.write(JSON.stringify({ id, result }) + '\n')
     },

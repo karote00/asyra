@@ -1,0 +1,193 @@
+{
+  "schemaVersion": 1,
+  "projectId": "asyra",
+  "flowId": "openai-responses-adapter",
+  "revision": 15,
+  "definition": {
+    "title": "Replaceable model sources and Responses adapter",
+    "purpose": "Keep one App execution pipeline and replace model protocol adapters through explicit source registration.",
+    "nodes": [
+      {
+        "id": "lifetime",
+        "title": "App source and service",
+        "owner": "App source and service",
+        "objective": "Admission -> fresh request signal -> model and tools -> drain -> continuation release",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [],
+        "criteria": [
+          {
+            "id": "behavior",
+            "title": "Formal regression and direct handoff review",
+            "kind": "manual"
+          }
+        ],
+        "specRefs": [
+          "docs/ai/framework/specs/openai-responses-adapter.md",
+          "docs/ai/framework/plans/openai-responses-adapter-plan.md"
+        ],
+        "implementationRefs": [
+          "apps/asyra-design/server/design-model-source.ts",
+          "apps/asyra-design/server/action-batch.ts",
+          "apps/asyra-design/server/design-provider-tools.ts"
+        ],
+        "actions": []
+      },
+      {
+        "id": "observation",
+        "title": "Shared Design invocation owner",
+        "owner": "Shared Design invocation owner",
+        "objective": "Provider declaration and call -> validated Host result -> selected delivery -> one causal terminal observation",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [
+          {
+            "flowId": "openai-responses-adapter",
+            "nodeId": "lifetime"
+          }
+        ],
+        "criteria": [
+          {
+            "id": "behavior",
+            "title": "Formal regression and direct handoff review",
+            "kind": "manual"
+          }
+        ],
+        "specRefs": [
+          "docs/ai/framework/specs/openai-responses-adapter.md",
+          "docs/ai/framework/plans/openai-responses-adapter-plan.md"
+        ],
+        "implementationRefs": [
+          "apps/asyra-design/server/design-provider-tools.ts",
+          "apps/asyra-design/server/local-ai-provider.ts"
+        ],
+        "actions": []
+      },
+      {
+        "id": "routing",
+        "title": "App source registry and browser",
+        "owner": "App source registry and browser",
+        "objective": "Explicit supported source and exact failure code -> same App exchange and runtime failure",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [
+          {
+            "flowId": "openai-responses-adapter",
+            "nodeId": "observation"
+          }
+        ],
+        "criteria": [
+          {
+            "id": "behavior",
+            "title": "Formal regression and direct handoff review",
+            "kind": "manual"
+          }
+        ],
+        "specRefs": [
+          "docs/ai/framework/specs/openai-responses-adapter.md",
+          "docs/ai/framework/plans/openai-responses-adapter-plan.md"
+        ],
+        "implementationRefs": [
+          "apps/asyra-design/server/ai-model-sources.ts",
+          "apps/asyra-design/src/ai/server-action-batch-provider.ts"
+        ],
+        "actions": []
+      },
+      {
+        "id": "proof",
+        "title": "Runtime and App formal tests",
+        "owner": "Runtime and App formal tests",
+        "objective": "Actual advertised contract -> model input -> canonical owner -> browser receipt -> provider delivery and next turn",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [
+          {
+            "flowId": "openai-responses-adapter",
+            "nodeId": "routing"
+          }
+        ],
+        "criteria": [
+          {
+            "id": "behavior",
+            "title": "Formal regression and direct handoff review",
+            "kind": "manual"
+          }
+        ],
+        "specRefs": [
+          "docs/ai/framework/specs/openai-responses-adapter.md",
+          "docs/ai/framework/plans/openai-responses-adapter-plan.md"
+        ],
+        "implementationRefs": [
+          "packages/ai-agent-runtime/src/node/__tests__/responses-provider.test.ts",
+          "apps/asyra-design/server/__tests__/responses-handoff.integration.test.ts"
+        ],
+        "actions": []
+      }
+    ],
+    "criteria": [
+      {
+        "id": "integrated",
+        "title": "Native preservation and Responses complete handoff",
+        "kind": "manual"
+      }
+    ]
+  },
+  "current": {
+    "observations": [
+      {
+        "nodeId": "lifetime",
+        "criterionId": "behavior",
+        "kind": "manual",
+        "status": "accepted",
+        "binding": "b75cefae893e45863e6f07bfa152189278b55bbcbeb57abc6e4971560e8754e8",
+        "actor": "Codex",
+        "summary": "Red caller/tool cancellation and pending receipt teardown reproduced; shared source and service drain now pass source and exchange regressions. Evidence: repair-lifetime-red.log, repair-service-red.log, repair-app-final.log.",
+        "at": "2026-11-21T16:20:26.570Z"
+      },
+      {
+        "nodeId": "observation",
+        "criterionId": "behavior",
+        "kind": "manual",
+        "status": "accepted",
+        "binding": "7b81bcd9d909275f7bf3f929b0918cc6afc20b193927edf1fb59124382b7eead",
+        "actor": "Codex",
+        "summary": "Shared invocation records one start and terminal event; cancelled-before-owner reports not-started. Actual Responses calls preserve exact provider payload and terminal progress, including legitimate failed/partial settlement. Native cases preserved. Evidence: repair-terminal-red.log, repair-observation-prompt-final.log, repair-canonical-final.log.",
+        "at": "2026-11-21T16:20:26.574Z"
+      },
+      {
+        "nodeId": "routing",
+        "criterionId": "behavior",
+        "kind": "manual",
+        "status": "accepted",
+        "binding": "8b0611fd503b3c65b2540012c6a0289e7fb1495939873a3ebd1726eeb3cc6cb4",
+        "actor": "Codex",
+        "summary": "Removed custom HTTP batch source/configuration/catalog and former tests of that protocol. Browser session-unavailable remains actionable. Explicit removed identities reject without network fallback. Evidence: repair-routing-red.log, repair-app-final.log, repair-browser-final.log.",
+        "at": "2026-11-21T16:20:26.575Z"
+      },
+      {
+        "nodeId": "proof",
+        "criterionId": "behavior",
+        "kind": "manual",
+        "status": "accepted",
+        "binding": "313aa9871c99479b82ea75b934abdce3ba61ae2c0144cdb3a52897c07eb5862f",
+        "actor": "Codex",
+        "summary": "Non-Design publication uses its actual owner registry; browser/Feature/runtime exchange proves canonical mutation, repair, permissions, partial completion, next-turn reuse and selected media. Actual installed native registration passes without inference. Evidence: repair-contract-red.log, repair-runtime-final.log, repair-canonical-final.log, repair-native-registration.log.",
+        "at": "2026-11-21T16:20:26.576Z"
+      },
+      {
+        "nodeId": "integration",
+        "criterionId": "integrated",
+        "kind": "manual",
+        "status": "accepted",
+        "binding": "07841551f4406ff615587b9156b03f863a2790710043af8d605bb2687ba939ea",
+        "actor": "Codex",
+        "summary": "Four current owner handoffs reviewed and focused acceptance complete. No compatibility, weakened admission or alternate executor. Type, lint and naming gates scoped to this work. No live model acceptance or 101 claim.",
+        "at": "2026-11-21T16:20:26.578Z"
+      }
+    ],
+    "notes": [],
+    "progress": [],
+    "sources": [],
+    "warnings": []
+  }
+}

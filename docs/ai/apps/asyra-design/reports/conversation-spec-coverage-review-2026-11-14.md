@@ -607,7 +607,8 @@ below without converting test counts into semantic acceptance.
   those are not additional passes.
 - Capture scheduling owner tests: eight passed, verifying no implicit measurement,
   zero deferred reads, unknown-settlement protection, cancellation and independent
-  optional context operations (`tmp/conversation-review-scheduling-focused.log`).
+  optional context operations
+  (`tmp/conversation-spec-review-20261114/conversation-review-scheduling-focused.log`).
 - Actual-native save-only retry and two armed-recorder Knowledge recovery variants:
   three selected cases passed (`tmp/conversation-recovery-review-focused.log`).
 - Initial whole-feature run `tmp/conversation-proof-cCPViv` was explicitly interrupted

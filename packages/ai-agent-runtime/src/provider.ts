@@ -133,6 +133,7 @@ export interface AiProvider {
 }
 
 export type AiProviderErrorCode =
+  | 'AI_PROVIDER_SESSION_UNAVAILABLE'
   | 'AI_PROVIDER_ABORTED'
   | 'AI_PROVIDER_DISPOSED'
   | 'AI_PROVIDER_FETCH_UNAVAILABLE'

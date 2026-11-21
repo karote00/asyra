@@ -6,7 +6,6 @@ import type { PreparedElementDescriptor } from '../../common-apis'
 import { createDeferred } from './deferred'
 
 const actionApis = (): AiActionApis => ({
-  changeElementGeometry: vi.fn(),
   createCompositionElements: vi.fn(
     (descriptors: readonly PreparedElementDescriptor[]) =>
       descriptors.map(({ id }) => id)
@@ -14,12 +13,11 @@ const actionApis = (): AiActionApis => ({
   createCompositionGroup: vi.fn(
     (descriptor: PreparedElementDescriptor) => descriptor.id
   ),
-  getElementBounds: vi.fn(),
   getElementFillColor: vi.fn(),
   getElementStrokeColor: vi.fn(),
   getElementType: vi.fn(),
   removeSubtree: vi.fn(() => ({ removed: [] })),
-  scaleVectorElementGeometry: vi.fn((id) =>
+  scaleElementAroundCenter: vi.fn((id) =>
     mutationReceipt(true, { acceptedIds: [id], changed: true })
   ),
   selectElements: vi.fn(),

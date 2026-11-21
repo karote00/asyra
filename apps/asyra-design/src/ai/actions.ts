@@ -1,3 +1,5 @@
+import { supportsSizeEdits } from '../common-apis/element/geometry-policy'
+import { scaleElementAroundCenter } from '../common-apis/element/scale'
 import { SelectionTargetUnavailableError } from '../common-apis/selection'
 import { requireMutationReceipt } from './basic-api-results'
 import type { DocumentPersistenceReceipt } from '../collaboration/protocol'
@@ -40,8 +42,6 @@ export { AiActionNames } from '../constants'
 
 export const AI_SELECTION_LIMIT = 100
 export const AI_WORKSPACE_LIMIT = 2048
-export const AI_SCALE_MIN = 0.5
-export const AI_SCALE_MAX = 2
 export const AI_TRANSIENT_CREATE_CHUNK_SIZE = 256
 
 export interface CreateAiActionsOptions {
@@ -142,7 +142,6 @@ export interface RemoveAiCompositionArgs {
 }
 
 export interface AiActionApis {
-  changeElementGeometry: typeof elementApis.changeElementGeometry
   createCompositionElements(
     descriptors: readonly PreparedElementDescriptor[],
     parent: {
@@ -154,7 +153,6 @@ export interface AiActionApis {
     descriptor: PreparedElementDescriptor,
     options?: EVENT_OPTIONS
   ): string | null
-  getElementBounds(elementId: string): AiCompositionBounds | null
   getElementFillColor(elementId: string): string | null
   getElementStrokeColor(elementId: string): string | null
   getElementType(elementId: string): string | undefined
@@ -169,7 +167,7 @@ export interface AiActionApis {
         }
     )[]
   }
-  scaleVectorElementGeometry: typeof elementApis.scaleVectorElementAroundCenter
+  scaleElementAroundCenter: typeof scaleElementAroundCenter
   setDrawingProgress(progress: AiDrawingProgressState | null): void
   setElementsVisible: typeof elementApis.setElementsVisible
   selectElements(elementIds: string[], options?: EVENT_OPTIONS): void
@@ -222,9 +220,6 @@ const createCompositionElements = (
   elementApis.createElementsInParent(descriptors, parent.id, options)
 
 const defaultApis: AiActionApis = {
-  changeElementGeometry: (elementId, geometry, options) =>
-    elementApis.changeElementGeometry(elementId, geometry, options),
-
   createCompositionElements,
 
   createCompositionGroup: (descriptor, options) => {
@@ -243,8 +238,6 @@ const defaultApis: AiActionApis = {
     )
   },
 
-  getElementBounds: (elementId) => elementApis.getElementBounds(elementId),
-
   getElementFillColor: (elementId) => fillApis.getPrimaryFillColor(elementId),
 
   getElementStrokeColor: (elementId) =>
@@ -255,8 +248,7 @@ const defaultApis: AiActionApis = {
   removeSubtree: (elementId, options) =>
     hierarchyApis.removeSubtree(elementId, options),
 
-  scaleVectorElementGeometry: (elementId, geometry, options) =>
-    elementApis.scaleVectorElementAroundCenter(elementId, geometry, options),
+  scaleElementAroundCenter,
 
   setElementsVisible: (elementIds, visible, options) =>
     elementApis.setElementsVisible(elementIds, visible, options),
@@ -442,7 +434,7 @@ const createCompositionActions = (
   const update: AiActionDefinition<UpdateCompositionElementsArgs> =
     Object.freeze({
       description:
-        'Scale existing context-exposed composition elements using scaleX/scaleY, or update fill/stroke colors. Does not change x/y position, reparent elements, or reorder layers.',
+        'Scale one editable element around its local box center using scaleX/scaleY factors, or update fill/stroke colors. Group scale is inherited by descendants. Their local dimensions stay unchanged. Frame and Workspace scaling is unavailable.',
 
       execute: async (
         args: UpdateCompositionElementsArgs,
@@ -451,10 +443,9 @@ const createCompositionActions = (
         const prepared: {
           readonly elementId: string
           readonly fillColor?: string
-          readonly geometry?: AiCompositionBounds
           readonly strokeColor?: string
           readonly targetType: string
-          readonly vectorScale?: UpdateCompositionGeometry
+          readonly scale?: UpdateCompositionGeometry
         }[] = []
         const skipped: { elementId: string; reason: string }[] = []
         const seen = new Set<string>()
@@ -485,39 +476,18 @@ const createCompositionActions = (
             }
 
             if ('geometry' in updateItem) {
-              if (targetType === 'vector') {
-                prepared.push({
+              if (!supportsSizeEdits(targetType)) {
+                skipped.push({
                   elementId: updateItem.elementId,
-                  targetType,
-                  vectorScale: updateItem.geometry
+                  reason: 'unsupported-target'
                 })
                 continue
               }
 
-              const bounds = apis.getElementBounds(updateItem.elementId)
-
-              if (targetType !== 'oval' || !bounds) {
-                skipped.push(
-                  Object.freeze({
-                    elementId: updateItem.elementId,
-                    reason: 'unsupported-target'
-                  })
-                )
-                continue
-              }
-
-              const width = bounds.width * updateItem.geometry.scaleX
-              const height = bounds.height * updateItem.geometry.scaleY
-
               prepared.push({
                 elementId: updateItem.elementId,
-                geometry: Object.freeze({
-                  height,
-                  width,
-                  x: bounds.x - (width - bounds.width) / 2,
-                  y: bounds.y - (height - bounds.height) / 2
-                }),
-                targetType
+                targetType,
+                scale: updateItem.geometry
               })
               continue
             }
@@ -567,9 +537,9 @@ const createCompositionActions = (
         while (operationIndex < prepared.length) {
           assertNotAborted(context)
           const operation = prepared[operationIndex]
-          const geometry = operation.geometry
+          const scale = operation.scale
 
-          if (geometry) {
+          if (scale) {
             operationIndex += 1
             if (
               apis.getElementType(operation.elementId) !== operation.targetType
@@ -585,56 +555,9 @@ const createCompositionActions = (
 
             const receipt = await runAiMutation(context, () =>
               measureBrowserDragPhase('ai-app:apply-update-batch', () =>
-                apis.changeElementGeometry(
+                apis.scaleElementAroundCenter(
                   operation.elementId,
-                  geometry,
-                  mutationOptions
-                )
-              )
-            )
-            const outcome = requireMutationReceipt(receipt, [
-              operation.elementId
-            ])
-
-            if (!outcome.changed || outcome.unavailableIds.length) {
-              skipped.push({
-                elementId: operation.elementId,
-                reason: outcome.unavailableIds.length
-                  ? 'unavailable-target'
-                  : 'no-change'
-              })
-              continue
-            }
-
-            appliedElementIds.push(operation.elementId)
-            await measureBrowserDragAsyncPhase(
-              'ai-app:progressive-host-yield',
-              hostYield
-            )
-            continue
-          }
-
-          const vectorScale = operation.vectorScale
-
-          if (vectorScale) {
-            operationIndex += 1
-            if (
-              apis.getElementType(operation.elementId) !== operation.targetType
-            ) {
-              skipped.push(
-                Object.freeze({
-                  elementId: operation.elementId,
-                  reason: 'missing-target'
-                })
-              )
-              continue
-            }
-
-            const receipt = await runAiMutation(context, () =>
-              measureBrowserDragPhase('ai-app:apply-update-batch', () =>
-                apis.scaleVectorElementGeometry(
-                  operation.elementId,
-                  vectorScale,
+                  scale,
                   mutationOptions
                 )
               )
@@ -686,8 +609,7 @@ const createCompositionActions = (
                 const candidateIsStroke = candidate.strokeColor !== undefined
 
                 if (
-                  candidate.geometry ||
-                  candidate.vectorScale ||
+                  candidate.scale ||
                   (!candidateIsFill && !candidateIsStroke) ||
                   candidateIsFill !== isFillBatch
                 ) {

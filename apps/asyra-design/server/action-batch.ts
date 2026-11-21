@@ -1,42 +1,44 @@
-import {
-  createNativeConversations,
-  type NativeConversations
-} from '@asyra/ai-agent-runtime/node'
+import type {
+  AiActionBatch,
+  AiJsonValue,
+  AiProviderInput,
+  AiToolProgress,
+  ExchangeConversationResults,
+  ExecuteAiBatch
+} from '@asyra/ai-agent-runtime'
 import { AiToolContractError } from '@asyra/ai-agent-runtime'
+import {
+  createBatchExchange,
+  createExecutionRecordSink,
+  createFileRecordCollector,
+  createRecordCollector,
+  ExecutionRecordCollectionError
+} from '@asyra/ai-agent-runtime/node'
+import { Buffer } from 'node:buffer'
+import { createHash, randomUUID } from 'node:crypto'
+import { existsSync, readFileSync } from 'node:fs'
+import { readFile } from 'node:fs/promises'
+import type { IncomingMessage, ServerResponse } from 'node:http'
+import {
+  ACTION_BATCH_ENDPOINT,
+  AI_BATCH_EXECUTION_HEADER,
+  AI_BATCH_MAXIMUM_REQUEST_BYTES,
+  AI_BATCH_RECEIPT_HEADER,
+  AI_EXECUTION_RECORD_ENDPOINT
+} from '../src/ai/action-batch-endpoint'
+import { admitsConversationContext } from '../src/ai/conversation-context'
 import { AiToolFailureCodes } from '../src/constants/ai-design'
+import { modelFailureCode } from './ai-model-contract'
+import {
+  createDefaultAiModelSources,
+  type AiModelSource
+} from './ai-model-sources'
+import type { EvaluationReportSessions } from './evaluation-report-sessions'
 import {
   createEvaluationReportSessions,
   evaluationReportSessionEndpoint
 } from './evaluation-report-sessions'
-import type { EvaluationReportSessions } from './evaluation-report-sessions'
-import type { ExchangeConversationResults } from '@asyra/ai-agent-runtime'
-import { admitsConversationContext } from '../src/ai/conversation-context'
-import {
-  createExecutionRecordSink,
-  createRecordCollector,
-  ExecutionRecordCollectionError,
-  createFileRecordCollector
-} from '@asyra/ai-agent-runtime/node'
-import type { AiToolProgress, ExecuteAiBatch } from '@asyra/ai-agent-runtime'
 import { admitsLocalProviderRequest } from './local-request-admission'
-import { createHash, randomUUID } from 'node:crypto'
-import { Buffer } from 'node:buffer'
-import { existsSync, readFileSync } from 'node:fs'
-import { readFile } from 'node:fs/promises'
-import type { IncomingMessage, ServerResponse } from 'node:http'
-import { createBatchExchange } from '@asyra/ai-agent-runtime/node'
-import {
-  ACTION_BATCH_ENDPOINT,
-  AI_EXECUTION_RECORD_ENDPOINT,
-  AI_BATCH_RECEIPT_HEADER,
-  AI_BATCH_EXECUTION_HEADER,
-  AI_BATCH_MAXIMUM_REQUEST_BYTES
-} from '../src/ai/action-batch-endpoint'
-import type {
-  AiActionBatch,
-  AiJsonValue,
-  AiProviderInput
-} from '@asyra/ai-agent-runtime'
 
 const sampleRoot = new URL('../samples/crdt-7076/', import.meta.url)
 const sampleInstructionUrl = new URL('instruction.txt', sampleRoot)
@@ -199,7 +201,7 @@ export type RequestModelActionBatch = (
     readonly signal?: AbortSignal
     readonly onProgress?: (event: AiToolProgress) => void
     readonly resultContext?: ExchangeConversationResults
-    readonly conversations?: NativeConversations
+    readonly sources?: readonly AiModelSource[]
     readonly reportSessions?: EvaluationReportSessions
     readonly executeBatch?: ExecuteAiBatch
   }
@@ -223,7 +225,7 @@ export const resolveActionBatchRequest = async (
     readonly requestModelActionBatch?: RequestModelActionBatch
     readonly onProgress?: (event: AiToolProgress) => void
     readonly resultContext?: ExchangeConversationResults
-    readonly conversations?: NativeConversations
+    readonly sources?: readonly AiModelSource[]
     readonly reportSessions?: EvaluationReportSessions
     readonly executeBatch?: ExecuteAiBatch
     readonly requestId?: string
@@ -280,7 +282,7 @@ export const resolveActionBatchRequest = async (
       signal: options.signal,
       onProgress: options.onProgress,
       resultContext: options.resultContext,
-      conversations: options.conversations,
+      sources: options.sources,
       ...(options.reportSessions
         ? { reportSessions: options.reportSessions }
         : {}),
@@ -290,7 +292,9 @@ export const resolveActionBatchRequest = async (
     const code = readErrorCode(error)
 
     const description =
-      code === undefined ? undefined : modelFailureDescriptions.get(code)
+      code === undefined
+        ? undefined
+        : modelFailureDescriptions.get(modelFailureCode(code))
 
     if (description) {
       throw new ActionBatchServerError(...description)
@@ -383,13 +387,14 @@ const readJsonBody = async (
 
 export const createActionBatchMiddleware = (
   options: {
+    readonly sources?: readonly AiModelSource[]
     readonly createRecordingSink?: () => ReturnType<
       typeof createExecutionRecordSink
     >
     readonly requestModelActionBatch?: RequestModelActionBatch
   } = {}
 ) => {
-  const conversations = createNativeConversations()
+  const sources = options.sources ?? createDefaultAiModelSources()
   const reportSessions = createEvaluationReportSessions()
   const exchange = createBatchExchange()
   const collector = options.createRecordingSink
@@ -399,7 +404,12 @@ export const createActionBatchMiddleware = (
           process.env.AI_EXECUTION_RECORD_DIR?.trim() || 'tmp/ai-executions'
       })
 
-  const middleware = async (
+  const controllers = new Set<AbortController>()
+  const pending = new Set<Promise<void>>()
+  let disposed = false
+  let disposal: Promise<void> | undefined
+
+  const handle = async (
     request: IncomingMessage,
     response: ServerResponse,
     next: MiddlewareNext
@@ -489,16 +499,18 @@ export const createActionBatchMiddleware = (
       return
     }
 
-    if (
-      process.env.AI_PROVIDER_BACKEND?.trim() === 'local-codex' &&
-      !admitsLocalProviderRequest(request)
-    ) {
+    if (!admitsLocalProviderRequest(request)) {
       sendJson(response, 403, { code: 'ACTION_BATCH_LOCAL_PROVIDER_FORBIDDEN' })
 
       return
     }
 
     const controller = new AbortController()
+
+    controllers.add(controller)
+    if (disposed) {
+      controller.abort('service disposed')
+    }
 
     const abort = () => controller.abort('request closed')
 
@@ -627,7 +639,7 @@ export const createActionBatchMiddleware = (
           },
 
           reportSessions,
-          conversations,
+          sources,
           requestId: randomUUID(),
           requestModelActionBatch: options.requestModelActionBatch,
           signal: controller.signal
@@ -671,16 +683,47 @@ export const createActionBatchMiddleware = (
         sendJson(response, 500, { code: 'ACTION_BATCH_INTERNAL_ERROR' })
       }
     } finally {
+      controllers.delete(controller)
       controller.abort('request settled')
       request.removeListener('aborted', abort)
     }
   }
 
+  const middleware = (...args: Parameters<typeof handle>) => {
+    if (disposed) {
+      sendJson(args[1], 503, { code: 'ACTION_BATCH_ABORTED' })
+
+      return Promise.resolve()
+    }
+
+    const task = handle(...args)
+
+    pending.add(task)
+    void task.finally(() => pending.delete(task)).catch(() => undefined)
+
+    return task
+  }
+
   return Object.assign(middleware, {
-    async dispose() {
-      conversations.dispose()
-      await reportSessions.dispose()
-      await collector.dispose()
+    sources,
+
+    dispose() {
+      disposal ??= (async () => {
+        disposed = true
+        for (const controller of controllers) {
+          controller.abort('service disposed')
+        }
+
+        await reportSessions.dispose()
+        await Promise.allSettled(pending)
+        if (!options.sources) {
+          await Promise.all(sources.map((source) => source.dispose?.()))
+        }
+
+        await collector.dispose()
+      })()
+
+      return disposal
     }
   })
 }

@@ -2,7 +2,6 @@ import { createPreparedDesignAction } from '../../src/ai/design-actions'
 // @vitest-environment node
 import { afterAll, beforeAll, expect, it, vi } from 'vitest'
 import { createServer } from 'node:http'
-import { fileURLToPath } from 'node:url'
 import { readFileSync } from 'node:fs'
 import * as files from 'node:fs/promises'
 import { applyPreset, PresetDefaults, PresetProfiles } from '@asyra/preset'
@@ -12,6 +11,7 @@ import {
 } from '@asyra/ai-agent-runtime'
 import core from '../../src/contexts'
 import { elementApis } from '../../src/common-apis'
+import sharp from 'sharp'
 import { initText } from '../../src/init/capabilities/init-text'
 import factory from '@asyra/factory'
 import { isRecord } from '@asyra/utils'
@@ -22,6 +22,8 @@ import { registerAiAgentFeature } from '../../src/features/ai-agent'
 import { createActionBatchMiddleware } from '../action-batch'
 import { requestConfiguredAiActionBatch } from '../ai-model-provider'
 import { AI_APP_PROMPT } from '../ai-domain-prompt'
+import { createDefaultAiModelSources } from '../ai-model-sources'
+import { operationContractIssue } from '@asyra/ai-agent-runtime/schema'
 import { createNativeProviderFixture } from './native-provider-fixture'
 
 // Observe real source IO only; keep its implementation and return values unchanged.
@@ -861,11 +863,18 @@ for (const { fault, title } of [
   )
 }
 
-for (const restricted of [false, true]) {
+for (const mode of ['success', 'restricted', 'partial']) {
+  const restricted = mode === 'restricted'
+  const expectedOutcome = {
+    success: 'success',
+    restricted: 'no-change',
+    partial: 'partial'
+  }[mode]
+
   it(
     restricted
-      ? 'rejects an unadvertised mutation through the real HTTP provider and preserves public failure history'
-      : 'carries actual HTTP contracts input correction and canonical settlement through later App turns',
+      ? 'rejects an unavailable mutation through Responses and continues the same App conversation'
+      : `uses provider declarations for correction canonical mutation and named reuse across Responses turns - ${mode}`,
     async () => {
       core.load({
         version: '1.0.0',
@@ -894,94 +903,168 @@ for (const restricted of [false, true]) {
       })
 
       if (!targetId) {
-        throw Error('Missing canonical HTTP target')
+        throw Error('Missing canonical Responses target')
       }
 
       factory.transact.reset()
       const actionName = 'api_element_updateElementProperties'
-      const received: {
-        body: unknown
-        authorization: string | undefined
-        x: unknown
-      }[] = []
-      const errors: string[] = []
-      const endpoint = createServer((request, response) => {
-        void (async () => {
-          const chunks: Buffer[] = []
+      const received: Record<string, unknown>[] = []
+      const errors: unknown[] = []
+      const positions: unknown[] = []
+      const progress: unknown[] = []
+      const sourceRequests: unknown[] = []
 
-          for await (const chunk of request) {
-            chunks.push(Buffer.from(chunk))
-          }
-
-          const body: unknown = JSON.parse(
-            Buffer.concat(chunks).toString('utf8')
-          )
-          const index = received.length
-
-          received.push({
-            body,
-            authorization: request.headers.authorization,
-            x: core.getElementComputedData(targetId)?.x
-          })
-          if (index > 2) {
-            throw Error('Unexpected extra HTTP model invocation')
-          }
-
-          const report = index === 2 || (restricted && index === 1)
-
-          response.setHeader('content-type', 'application/json')
-          response.end(
-            JSON.stringify({
-              batchId: `http-${index}`,
-              actions: [
+      const operation = (elementIds: unknown, x: number) => ({
+        operations: [
+          {
+            id: 'move',
+            name: `design_operations.${actionName}`,
+            arguments: { elementIds, values: { x } }
+          },
+          ...(mode === 'partial'
+            ? [
                 {
-                  id: `http-action-${index}`,
-                  name: report ? 'report_outcome' : actionName,
-                  arguments: report
-                    ? {
-                        outcome: 'completed',
-                        message: 'Observed the current document.'
-                      }
-                    : {
-                        elementIds:
-                          !restricted && index === 0 ? targetId : [targetId],
-                        values: { x: 21 }
-                      },
-                  summary: report
-                    ? 'Report current state'
-                    : 'Move the selected object'
+                  id: 'partial',
+                  name: 'api_element_setElementPositions',
+                  arguments: {
+                    positionsById: {
+                      [targetId]: { x, y: 20 },
+                      'missing-target': { x, y: 20 }
+                    }
+                  }
                 }
               ]
-            })
-          )
-        })().catch((error) => {
-          errors.push(String(error))
-          response.statusCode = 500
-          response.end()
-        })
+            : [])
+        ],
+        ...(Array.isArray(elementIds)
+          ? {
+              retain: {
+                selectedIds: {
+                  step: 'move',
+                  source: 'input',
+                  path: '/elementIds'
+                }
+              }
+            }
+          : {}),
+        delivery: 'status',
+        inspection: 'defer'
       })
 
-      await new Promise<void>((accept) =>
-        endpoint.listen(0, '127.0.0.1', accept)
-      )
-      const endpointAddress = endpoint.address()
+      const png = await sharp({
+        create: { width: 8, height: 8, channels: 4, background: '#123456' }
+      })
+        .png()
+        .toBuffer()
+      const selectedImage = `data:image/png;base64,${png.toString('base64')}`
+      const capture = vi.spyOn(core, 'captureElementSnapshot').mockReturnValue({
+        type: 'snapshot',
+        dataUrl: selectedImage,
+        width: 8,
+        height: 8,
+        bounds: { x: 0, y: 0, width: 30, height: 40 }
+      })
+      const sources = createDefaultAiModelSources({
+        fetch: async (_url, init) => {
+          try {
+            const body = JSON.parse(String(init?.body))
+            const index = received.length
 
-      if (!endpointAddress || typeof endpointAddress === 'string') {
-        throw Error('Missing model listener')
-      }
+            received.push(body)
+            positions.push(core.getElementComputedData(targetId)?.x)
+            expect(new Headers(init?.headers).get('authorization')).toBe(
+              'Bearer fixture-secret'
+            )
+            expect(JSON.stringify(body)).not.toContain('fixture-secret')
+            expect(body.instructions).toContain(AI_APP_PROMPT)
+            const declarations = body.tools.flatMap(
+              (group: { tools?: unknown[] }) => group.tools ?? []
+            )
+            const declared = declarations.find(
+              (tool: { name: string }) => tool.name === 'execute_design'
+            )
 
-      const sourceRequests: unknown[] = []
+            expect(declared).toBeDefined()
+            // Both calls use exactly the schema sent over the provider boundary.
+            let base = operation(
+              { kind: 'named', name: 'selectedIds', path: '' },
+              33
+            )
+
+            if (index === 0) {
+              base = operation(targetId, 21)
+            } else if (index === 1) {
+              base = operation([targetId], 21)
+            }
+
+            const args =
+              index === 3 && mode === 'success'
+                ? {
+                    ...base,
+                    operations: [
+                      ...base.operations,
+                      {
+                        id: 'unselected',
+                        name: 'inspect_drawing',
+                        arguments: { arguments: { elementId: targetId } }
+                      },
+                      {
+                        id: 'selected',
+                        name: 'inspect_drawing',
+                        arguments: { arguments: { elementId: targetId } }
+                      }
+                    ],
+                    delivery: {
+                      fields: { image: { step: 'selected', path: '' } }
+                    }
+                  }
+                : base
+
+            expect(
+              operationContractIssue(args, declared.parameters)
+            ).toBeUndefined()
+            const invoke = index < 2 || index === 3
+
+            return Response.json({
+              id: `response-${index}`,
+              status: 'completed',
+              output: invoke
+                ? [
+                    {
+                      type: 'function_call',
+                      namespace: 'design_operations',
+                      name: declared.name,
+                      call_id: `move-${index}`,
+                      arguments: JSON.stringify(args)
+                    }
+                  ]
+                : [completion]
+            })
+          } catch (error) {
+            errors.push(error)
+            throw error
+          }
+        }
+      })
       const middleware = createActionBatchMiddleware({
+        sources,
+
         requestModelActionBatch: (input, options) => {
           sourceRequests.push(structuredClone(input))
 
           return requestConfiguredAiActionBatch(input, {
             ...options,
+
+            onProgress: (event) => {
+              progress.push(event)
+              options.onProgress?.(event)
+            },
+
             environment: {
-              AI_PROVIDER_BACKEND: 'http',
-              AI_PROVIDER_ENDPOINT: `http://127.0.0.1:${endpointAddress.port}/model`,
-              AI_PROVIDER_MODEL: 'formal-http-model',
-              AI_PROVIDER_API_KEY: 'formal-http-secret'
+              AI_PROVIDER_BACKEND: 'openai-responses',
+              AI_PROVIDER_MODEL: 'fixture-model',
+              OPENAI_API_KEY: 'fixture-secret',
+              AI_EXECUTION_SOURCE_REVISION: 'fixture'
             }
           })
         }
@@ -994,21 +1077,26 @@ for (const restricted of [false, true]) {
       })
 
       await new Promise<void>((accept) => app.listen(0, '127.0.0.1', accept))
-      const appAddress = app.address()
+      const address = app.address()
 
-      if (!appAddress || typeof appAddress === 'string') {
+      if (!address || typeof address === 'string') {
         throw Error('Missing App listener')
       }
 
       const provider = createServerActionBatchProvider({
         fetch: (url, init) =>
-          fetch(new URL(url, `http://127.0.0.1:${appAddress.port}`), init),
+          fetch(new URL(url, `http://127.0.0.1:${address.port}`), init),
 
-        documentScope: () => 'formal-http-document'
+        documentScope: () => 'responses-document'
       })
       const input = createAiRuntimeInput({
         provider,
-        permissionRules: { [actionName]: 'allow', report_outcome: 'allow' }
+        permissionRules: {
+          [actionName]: 'allow',
+          api_element_setElementPositions: 'allow',
+          inspect_drawing: 'allow',
+          report_outcome: 'allow'
+        }
       })
       const runtime = createAiAgentRuntime({
         ...input,
@@ -1022,7 +1110,7 @@ for (const restricted of [false, true]) {
       const controller = createAiConversationController({
         feature: registration.api,
 
-        createConversationId: () => 'formal-http-conversation',
+        createConversationId: () => 'responses-canonical-conversation',
 
         getElementType: (id) => core.getElementMetadata(id)?.type
       })
@@ -1032,131 +1120,129 @@ for (const restricted of [false, true]) {
           'Move the existing object to local x 21.'
         )
 
-        expect(first.outcome, JSON.stringify(first.result)).toBe('failed')
-        expect(core.getElementComputedData(targetId)?.x).toBe(10)
-        const second = await controller.submit(
-          restricted
-            ? 'Report only; do not mutate.'
-            : 'Correct the element ID list and move to local x 21.'
-        )
-
-        expect(second.outcome, JSON.stringify(second.result)).toBe(
-          restricted ? 'no-change' : 'success'
+        expect(errors).toEqual([])
+        expect(first.outcome, JSON.stringify(first.result)).toBe(
+          expectedOutcome
         )
         expect(core.getElementComputedData(targetId)?.x).toBe(
           restricted ? 10 : 21
         )
-        const third = await controller.submit('Summarize the settled requests.')
-
-        expect(third.outcome, JSON.stringify(third.result)).toBe('no-change')
-        const evidence = await files.mkdtemp(
-          fileURLToPath(
-            new URL('../../../../tmp/conversation-http-', import.meta.url)
-          )
+        const second = await controller.submit(
+          'Reuse the saved targets and move to local x 33.'
         )
 
-        await files.writeFile(
-          `${evidence}/observations.json`,
-          JSON.stringify(
-            {
-              restricted,
-              sourceRequests,
-              received: received.map(({ body, x }) => ({ body, x })),
-              outcomes: [first.outcome, second.outcome, third.outcome]
-            },
-            null,
-            2
-          )
-        )
         expect(errors).toEqual([])
-        expect(received).toHaveLength(3)
-        expect(received.map((record) => record.x)).toEqual([
-          10,
-          10,
-          restricted ? 10 : 21
-        ])
-        expect(received.map((record) => record.authorization)).toEqual(
-          Array(3).fill('Bearer formal-http-secret')
+        expect(second.outcome, JSON.stringify(second.result)).toBe(
+          expectedOutcome
         )
-        for (const [index, { body }] of received.entries()) {
-          expect(body).toMatchObject({
-            model: 'formal-http-model',
-            protocolVersion: 1
-          })
-          if (
-            !isRecord(body) ||
-            !isRecord(body.input) ||
-            !Array.isArray(body.input.actions)
-          ) {
-            throw Error('Missing actual HTTP action declarations')
-          }
+        expect(core.getElementComputedData(targetId)?.x).toBe(
+          restricted ? 10 : 33
+        )
+        expect(received).toHaveLength(5)
+        expect(positions).toEqual(
+          restricted ? [10, 10, 10, 10, 10] : [10, 10, 21, 21, 33]
+        )
+        const serializedFirst = JSON.stringify(received[1].input)
 
-          // Producer identity proves transport fidelity; semantic assertions below
-          // and real canonical effects remain independent of that comparison.
-          expect(body.input).toEqual(sourceRequests[index])
-          expect(body.systemPrompt).toBe(AI_APP_PROMPT)
-          expect(body.systemPrompt).toContain(
-            'Knowledge is optional reference material'
+        expect(serializedFirst).toContain('not-started')
+        if (!restricted) {
+          expect(JSON.stringify(received[2].input)).toContain('selectedIds')
+          expect(JSON.stringify(received[4].input)).toContain(
+            mode === 'partial' ? 'partial' : 'completed'
           )
-          expect(JSON.stringify(body)).not.toContain('formal-http-secret')
-          const actions = body.input.actions.filter(isRecord)
-
-          expect(actions.some((action) => action.name === actionName)).toBe(
-            !restricted
-          )
-          expect(
-            actions.some((action) => action.name === 'report_outcome')
-          ).toBe(true)
-          expect(
-            actions.some((action) => action.name === 'read_knowledge')
-          ).toBe(false)
-          if (!restricted) {
-            const declaration = actions.find(
-              (action) => action.name === actionName
-            )
-
-            expect(declaration).toHaveProperty(
-              'inputSchema.properties.elementIds.anyOf',
-              [
-                expect.objectContaining({
-                  type: 'array',
-                  items: expect.objectContaining({ type: 'string' })
-                }),
-                expect.objectContaining({
-                  type: 'object',
-                  required: ['snapshotId', 'leaseId', 'total']
-                })
-              ]
-            )
-            expect(declaration).toHaveProperty('outputSchema')
-          }
         }
 
-        expect(received[0].body).toHaveProperty(
-          'input.intent',
-          'Move the existing object to local x 21.'
+        // Continuation includes the earlier tool call and its exact correlated result.
+        expect(JSON.stringify(received[3].input)).toContain('move-1')
+        expect(sourceRequests).toHaveLength(2)
+        expect(sourceRequests[1]).toHaveProperty(
+          'metadata.conversationContext.turns.0.outcome',
+          expectedOutcome
         )
-        expect(received[2].body).toHaveProperty(
-          'input.metadata.conversationContext.turns.0.outcome',
-          'failed'
-        )
-        expect(received[2].body).toHaveProperty(
-          'input.metadata.conversationContext.turns.1.outcome',
-          restricted ? 'no-change' : 'success'
-        )
+        for (const [callId, responseIndex] of Object.entries({
+          'move-0': 1,
+          'move-1': 2,
+          'move-3': 4
+        })) {
+          const terminal = progress.filter(
+            (event) =>
+              isRecord(event) &&
+              event.status === 'completed' &&
+              isRecord(event.activity) &&
+              event.activity.callId === callId
+          )
+
+          expect(terminal).toHaveLength(1)
+          // Retention selects recipe execution, whose failed partial member stops
+          // the sequence. The later resolved batch reports partial delivery.
+          // Status is independent of settlement; preserve each owner's exact pair.
+          let completedStatus = 'success'
+
+          if (mode === 'partial') {
+            completedStatus = callId === 'move-1' ? 'failed' : 'partial'
+          }
+
+          const expected =
+            callId === 'move-0' || restricted
+              ? { status: 'failed', settlement: 'not-started' }
+              : {
+                  status: completedStatus,
+                  settlement: mode === 'partial' ? 'partial' : 'completed'
+                }
+
+          expect(terminal[0]).toMatchObject({ activity: { outcome: expected } })
+          const continuation = received[responseIndex].input
+
+          if (!Array.isArray(continuation)) {
+            throw Error('Missing provider input')
+          }
+
+          const reply = continuation.find(
+            (entry) =>
+              entry.type === 'function_call_output' && entry.call_id === callId
+          )
+          const outcome = reply.output.find(
+            (entry: { type: string; text?: string }) =>
+              entry.type === 'input_text' && entry.text?.includes('toolOutcome')
+          )
+
+          expect(JSON.parse(outcome.text)).toMatchObject({
+            toolOutcome: expected
+          })
+        }
+
         expect(core.getCanonicalElementCount()).toBe(1)
+        if (mode === 'success') {
+          expect(capture).toHaveBeenCalledTimes(2)
+          const last = received[4].input
+
+          if (!Array.isArray(last)) {
+            throw Error('Missing actual provider continuation')
+          }
+
+          const output = last.find(
+            (entry) =>
+              isRecord(entry) &&
+              entry.type === 'function_call_output' &&
+              entry.call_id === 'move-3'
+          )
+
+          expect(
+            output.output.filter(
+              (entry: { type: string }) => entry.type === 'input_image'
+            )
+          ).toEqual([{ type: 'input_image', image_url: selectedImage }])
+        }
       } finally {
+        capture.mockRestore()
         await controller.dispose()
         await runtime.dispose()
         provider.dispose?.()
         registration.dispose()
         await middleware.dispose()
+        await Promise.all(sources.map((source) => source.dispose?.()))
         app.closeAllConnections()
-        endpoint.closeAllConnections()
-        await Promise.all([
-          new Promise<void>((accept) => app.close(() => accept())),
-          new Promise<void>((accept) => endpoint.close(() => accept()))
-        ])
+        await new Promise<void>((accept) => app.close(() => accept()))
       }
     },
     30000

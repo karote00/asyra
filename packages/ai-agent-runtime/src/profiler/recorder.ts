@@ -10,7 +10,7 @@ const tokenFields = [
   'totalTokens'
 ] as const
 
-type TokenUsage = Record<(typeof tokenFields)[number], number>
+export type TokenUsage = Record<(typeof tokenFields)[number], number>
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value)

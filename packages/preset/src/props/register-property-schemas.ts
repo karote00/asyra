@@ -308,6 +308,15 @@ const positionSchema: PropertySchema = {
       validate: isFiniteNumber,
       defaultValue: 0
     },
+    ...['scaleX', 'scaleY'].map((key) => ({
+      key,
+      kind: 'number' as const,
+
+      validate: (value: unknown) =>
+        typeof value === 'number' && Number.isFinite(value) && value > 0,
+
+      defaultValue: 1
+    })),
     {
       key: 'xUnit',
       kind: 'string',

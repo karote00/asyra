@@ -73,12 +73,6 @@ const vectorItemWithPointCount = (pointCount: number, role: string) => ({
 })
 
 const actionApis = () => ({
-  changeElementGeometry: vi.fn((id: string) => ({
-    value: null,
-    acceptedIds: [id],
-    unavailableIds: [],
-    changed: true
-  })),
   createCompositionElements: vi.fn<AiActionApis['createCompositionElements']>(
     (descriptors: readonly PreparedElementDescriptor[]) =>
       canonicalElementIds(descriptors.map(({ id }) => id))
@@ -86,12 +80,11 @@ const actionApis = () => ({
   createCompositionGroup: vi.fn(
     (descriptor: PreparedElementDescriptor) => descriptor.id
   ),
-  getElementBounds: vi.fn(),
   getElementFillColor: vi.fn(),
   getElementStrokeColor: vi.fn(),
   getElementType: vi.fn(),
   removeSubtree: vi.fn(),
-  scaleVectorElementGeometry: vi.fn((id: string) => ({
+  scaleElementAroundCenter: vi.fn((id: string) => ({
     value: true,
     acceptedIds: [id],
     unavailableIds: [],
@@ -1105,12 +1098,6 @@ describe('Asyra Design AI composition action execution', () => {
 
       return elementId.startsWith('eye') ? 'oval' : 'vector'
     })
-    apis.getElementBounds.mockReturnValue({
-      height: 50,
-      width: 100,
-      x: 200,
-      y: 300
-    })
     apis.getElementStrokeColor.mockReturnValue('#5B3A29')
     const action = actionByName(AiActionNames.UPDATE_COMPOSITION_ELEMENTS, apis)
 
@@ -1154,14 +1141,12 @@ describe('Asyra Design AI composition action execution', () => {
       ],
       status: 'partial'
     })
-    expect(apis.changeElementGeometry).toHaveBeenCalledOnce()
-    expect(apis.changeElementGeometry).toHaveBeenCalledWith(
+    expect(apis.scaleElementAroundCenter).toHaveBeenCalledOnce()
+    expect(apis.scaleElementAroundCenter).toHaveBeenCalledWith(
       'eye-present',
       {
-        height: 60,
-        width: 120,
-        x: 190,
-        y: 295
+        scaleX: 1.2,
+        scaleY: 1.2
       },
       mutationOptions
     )
@@ -1449,46 +1434,51 @@ describe('Asyra Design AI composition action execution', () => {
     expect(yieldToHost).toHaveBeenCalledOnce()
   })
 
-  it('scales existing vector eye topology without regenerating composition elements', async () => {
-    const apis = actionApis()
+  it.each(['vector', 'rect', 'text', 'group', 'oval'])(
+    'applies a local scale to one %s without regenerating elements',
+    async (type) => {
+      const apis = actionApis()
 
-    apis.getElementType.mockReturnValue('vector')
-    const action = actionByName(AiActionNames.UPDATE_COMPOSITION_ELEMENTS, apis)
-
-    await expect(
-      executePrepared(
-        action,
-        {
-          updates: [
-            {
-              elementId: 'vector-eye-left',
-              geometry: {
-                scaleX: 1.2,
-                scaleY: 1.2
-              }
-            }
-          ]
-        },
-        executionContext()
+      apis.getElementType.mockReturnValue(type)
+      const action = actionByName(
+        AiActionNames.UPDATE_COMPOSITION_ELEMENTS,
+        apis
       )
-    ).resolves.toEqual({
-      action: AiActionNames.UPDATE_COMPOSITION_ELEMENTS,
-      appliedElementIds: ['vector-eye-left'],
-      skipped: [],
-      status: 'complete'
-    })
-    expect(apis.scaleVectorElementGeometry).toHaveBeenCalledWith(
-      'vector-eye-left',
-      {
-        scaleX: 1.2,
-        scaleY: 1.2
-      },
-      mutationOptions
-    )
-    expect(apis.changeElementGeometry).not.toHaveBeenCalled()
-    expect(apis.createCompositionElements).not.toHaveBeenCalled()
-    expect(apis.removeSubtree).not.toHaveBeenCalled()
-  })
+
+      await expect(
+        executePrepared(
+          action,
+          {
+            updates: [
+              {
+                elementId: 'vector-eye-left',
+                geometry: {
+                  scaleX: 1.2,
+                  scaleY: 1.2
+                }
+              }
+            ]
+          },
+          executionContext()
+        )
+      ).resolves.toEqual({
+        action: AiActionNames.UPDATE_COMPOSITION_ELEMENTS,
+        appliedElementIds: ['vector-eye-left'],
+        skipped: [],
+        status: 'complete'
+      })
+      expect(apis.scaleElementAroundCenter).toHaveBeenCalledWith(
+        'vector-eye-left',
+        {
+          scaleX: 1.2,
+          scaleY: 1.2
+        },
+        mutationOptions
+      )
+      expect(apis.createCompositionElements).not.toHaveBeenCalled()
+      expect(apis.removeSubtree).not.toHaveBeenCalled()
+    }
+  )
 
   it('updates only existing pupil fills through the canonical fill boundary', async () => {
     const apis = actionApis()

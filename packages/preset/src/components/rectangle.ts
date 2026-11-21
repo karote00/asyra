@@ -21,7 +21,7 @@ export const RECTANGLE_COMPONENT_DEFINITION: ComponentDefinition = {
     {
       name: PropertyTypes.POSITION,
       type: PropertyTypes.POSITION,
-      alias: ['x', 'y', 'rotation']
+      alias: ['x', 'y', 'rotation', 'scaleX', 'scaleY']
     },
     {
       name: PropertyTypes.DIMENSION,
@@ -72,4 +72,5 @@ export const RECTANGLE_RENDER_STRATEGY: EngineNeutralRenderStrategy = (
   graphic.x = data.x
   graphic.y = data.y
   graphic.rotation = data.rotation ?? 0
+  graphic.scale.set(data.scaleX ?? 1, data.scaleY ?? 1)
 }

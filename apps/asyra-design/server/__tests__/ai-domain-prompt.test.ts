@@ -4,7 +4,6 @@ import {
   AI_APP_PROMPT,
   AI_CONVERSATION_HISTORY_INSTRUCTIONS,
   AI_OPERATION_INSTRUCTIONS,
-  AI_IMAGE_TOOL_CATALOG,
   AiImageToolIds
 } from '../ai-domain-prompt'
 import { createLocalImageTools } from '../local-image-tools'
@@ -333,9 +332,6 @@ describe('stage-owned App guidance', () => {
       expect(imageGuidance).toContain(detail)
     }
 
-    expect(AI_IMAGE_TOOL_CATALOG.map((t) => t.id).sort()).toEqual(
-      Object.values(AiImageToolIds).sort()
-    )
     expect(imageDefinitions.map((t) => t.name).sort()).toEqual(
       Object.values(AiImageToolIds).sort()
     )

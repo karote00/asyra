@@ -1012,7 +1012,9 @@ describe('local subscription AI backend', () => {
         expect(delivered).toBeDefined()
         expect(JSON.stringify(delivered)).not.toContain(nextIntent)
 
-        expect(thread.ephemeral).toBe(true)
+        // Each helper call owns a fresh source, but its thread is service-leased.
+        // The assertions above prove cold-source history restoration without replay.
+        expect(thread.ephemeral).toBe(false)
         if (server === secondServer) {
           expect(thread.baseInstructions).toContain(
             'metadata.conversationContext'
@@ -2414,7 +2416,8 @@ describe('local subscription AI backend', () => {
         ({ method }) => method === 'thread/start'
       )
 
-      expect(thread?.params.ephemeral).toBe(true)
+      // Fresh source ownership starts a leased thread; history remains in current input.
+      expect(thread?.params.ephemeral).toBe(false)
       if (server === secondServer) {
         expect(thread?.params.baseInstructions).toContain(
           'current input.intent overrides'

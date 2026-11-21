@@ -9,60 +9,6 @@ export const AiImageToolIds = Object.freeze({
   APPLY_CONTOUR_REFINEMENTS: 'apply_contour_refinements'
 } as const)
 
-export interface AiImageToolDescriptor {
-  readonly capabilities: readonly string[]
-  readonly id: (typeof AiImageToolIds)[keyof typeof AiImageToolIds]
-  readonly inputMediaTypes: readonly (
-    'image/jpeg' | 'image/png' | 'image/webp'
-  )[]
-}
-
-export const AI_IMAGE_TOOL_CATALOG: readonly AiImageToolDescriptor[] =
-  Object.freeze([
-    Object.freeze({
-      capabilities: Object.freeze(['retained-reference-validation']),
-      id: AiImageToolIds.VALIDATE_REFERENCE_IMAGES,
-      inputMediaTypes: Object.freeze([
-        'image/jpeg',
-        'image/png',
-        'image/webp'
-      ] as const)
-    }),
-    Object.freeze({
-      capabilities: Object.freeze(['explicit-solid-background-decomposition']),
-      id: AiImageToolIds.VECTORIZE_IMAGE_LAYERS,
-      inputMediaTypes: Object.freeze([
-        'image/jpeg',
-        'image/png',
-        'image/webp'
-      ] as const)
-    }),
-    Object.freeze({
-      capabilities: Object.freeze(['whole-image-raster-vectorization']),
-      id: AiImageToolIds.VTRACER,
-      inputMediaTypes: Object.freeze([
-        'image/jpeg',
-        'image/png',
-        'image/webp'
-      ] as const)
-    }),
-    Object.freeze({
-      capabilities: Object.freeze(['bounded-contour-quality-review']),
-      id: AiImageToolIds.REVIEW_VECTOR_CONTOURS,
-      inputMediaTypes: Object.freeze([])
-    }),
-    Object.freeze({
-      capabilities: Object.freeze(['receipted-local-contour-refinement']),
-      id: AiImageToolIds.APPLY_CONTOUR_REFINEMENTS,
-      inputMediaTypes: Object.freeze([])
-    }),
-    Object.freeze({
-      capabilities: Object.freeze(['read-only-vector-component-analysis']),
-      id: AiImageToolIds.ANALYZE_VECTOR_COMPONENTS,
-      inputMediaTypes: Object.freeze([])
-    })
-  ])
-
 export const AI_APP_PROMPT = `
 Operate Asyra Design through registered App actions and image tools. The original user request remains authoritative:
 preserve its scope, units, dimensions, viewpoint, style and exceptions. Quality means meeting that

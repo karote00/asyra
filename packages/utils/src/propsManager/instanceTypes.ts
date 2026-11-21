@@ -13,6 +13,8 @@ export interface BasePropertyAttrs {
 }
 
 export interface PositionAttrs extends BasePropertyAttrs, PositionData {
+  scaleX?: number
+  scaleY?: number
   rotation: number
   xUnit: Unit
   yUnit: Unit

@@ -1,3 +1,4 @@
+import { hasSizeEdit, requireSizeEditTarget } from './element/geometry-policy'
 import { DEFAULT_TEXT_DATA, TEXT_PROPERTY_SCHEMA } from '@asyra/preset'
 import core from '../contexts'
 import { elementApis } from './element'
@@ -21,7 +22,10 @@ interface DesignEditApis {
     id: string,
     fields: readonly string[]
   ): Record<string, unknown> | undefined
-  properties(id: string, values: Record<string, string | number>): void
+  properties(
+    id: string,
+    values: Record<string, string | number>
+  ): { changed: boolean }
   rename(id: string, name: string): void
   fill(id: string, color: string): boolean
   stroke(id: string, color: string): boolean
@@ -107,6 +111,10 @@ export const createDesignElementEditPreparer =
       throw new Error('The edit target is unavailable.')
     }
 
+    if (properties && hasSizeEdit(properties)) {
+      requireSizeEditTarget(elementId, target.type)
+    }
+
     const visited = new Set<string>()
     let id: string | undefined = elementId
     let data = target
@@ -167,7 +175,10 @@ export const createDesignElementEditPreparer =
         }
       }
 
-      if (computed[key] !== value) {
+      if (
+        computed[key] !== value ||
+        (target.type === 'group' && (key === 'width' || key === 'height'))
+      ) {
         patch[key] = value
       }
     }
@@ -193,8 +204,7 @@ export const createDesignElementEditPreparer =
       }
 
       if (Object.keys(patch).length) {
-        apis.properties(elementId, patch)
-        changed = true
+        changed = apis.properties(elementId, patch).changed || changed
       }
 
       if (fillColor !== undefined) {

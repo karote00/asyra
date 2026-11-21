@@ -1,3 +1,4 @@
+import { scaleElementAroundCenter } from './scale'
 import { mutationReceipt, type MutationReceipt } from '../mutation-receipt'
 import type {
   ElementPropertyPatchUpdate,
@@ -1672,52 +1673,8 @@ export const vectorApis = {
       readonly scaleY: number
     },
     options?: EVENT_OPTIONS
-  ): MutationReceipt<boolean> => {
-    const computed = getVectorComputed(elementId)
-
-    if (
-      !computed ||
-      !Number.isFinite(scale.scaleX) ||
-      !Number.isFinite(scale.scaleY) ||
-      scale.scaleX <= 0 ||
-      scale.scaleY <= 0 ||
-      typeof computed.x !== 'number' ||
-      !Number.isFinite(computed.x) ||
-      typeof computed.y !== 'number' ||
-      !Number.isFinite(computed.y) ||
-      typeof computed.width !== 'number' ||
-      !Number.isFinite(computed.width) ||
-      computed.width <= 0 ||
-      typeof computed.height !== 'number' ||
-      !Number.isFinite(computed.height) ||
-      computed.height <= 0
-    ) {
-      return mutationReceipt(false, { acceptedIds: [], changed: false }, [
-        elementId
-      ])
-    }
-
-    const width = computed.width * scale.scaleX
-    const height = computed.height * scale.scaleY
-    const x = computed.x + (computed.width - width) / 2
-    const y = computed.y + (computed.height - height) / 2
-    const updatedElementIds = runTransaction(() =>
-      core.updateElementProperties(
-        [
-          {
-            elementId,
-            values: { x, y, width, height }
-          }
-        ],
-        options
-      )
-    )
-
-    return mutationReceipt(
-      updatedElementIds.acceptedIds.includes(elementId),
-      updatedElementIds
-    )
-  },
+  ): MutationReceipt<boolean> =>
+    scaleElementAroundCenter(elementId, scale, options, 'vector'),
 
   getVectorAnchorPointAtWorkspacePos: (
     elementId: string,

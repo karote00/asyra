@@ -1,25 +1,16 @@
 import {
-  EMPTY_CONVERSATION_DRAFT,
-  type ConversationDraft,
-  type ConversationDrafts
-} from '../ai/conversation-drafts'
-import { AiToolLibraryPanel } from './ai-tool-library-panel'
-import { projectEvaluationReport } from '../ai/evaluation-window'
-import { AiConversationNavigation } from './ai-conversation-navigation'
-import { AiConnectionStatus } from './ai-connection-status'
-import {
   useCallback,
   useEffect,
   useLayoutEffect,
   useRef,
   useState,
   useSyncExternalStore,
-  type Dispatch,
-  type SetStateAction,
   type ChangeEvent,
+  type Dispatch,
   type DragEvent,
   type FormEvent,
   type ReactNode,
+  type SetStateAction,
   type SyntheticEvent
 } from 'react'
 import type {
@@ -28,12 +19,18 @@ import type {
 } from '../ai/confirmation'
 import type {
   AiActiveTurn,
-  AiSettledTurn,
   AiConversationController,
   AiConversationSnapshot,
   AiImageAttachment,
-  AiImageMediaType
+  AiImageMediaType,
+  AiSettledTurn
 } from '../ai/conversation'
+import {
+  EMPTY_CONVERSATION_DRAFT,
+  type ConversationDraft,
+  type ConversationDrafts
+} from '../ai/conversation-drafts'
+import { projectEvaluationReport } from '../ai/evaluation-window'
 import {
   canRetryAiTurn,
   formatElapsedTime,
@@ -46,6 +43,9 @@ import {
   AiDocumentInteractionTargetProps,
   CONVERSATION_PANEL_WIDTH
 } from '../constants'
+import { AiConnectionStatus } from './ai-connection-status'
+import { AiConversationNavigation } from './ai-conversation-navigation'
+import { AiToolLibraryPanel } from './ai-tool-library-panel'
 
 const ACCEPTED_IMAGE_TYPES = new Set<AiImageMediaType>([
   'image/jpeg',
@@ -429,16 +429,16 @@ const AiConversationPanelLayout = ({
       </header>
 
       <div
-        aria-label="Your AI subscription"
+        aria-label="Your AI account"
         className="shrink-0 border-b border-[#454052] bg-[#282530] px-4 py-3"
         role="note"
       >
         <p className="m-0 text-[12px] font-medium leading-5 text-[#e0d9ff]">
-          Your AI subscription
+          Your AI account
         </p>
         <p className="m-0 mt-1 text-[12px] leading-[18px] text-[#c7c4d0]">
-          Local AI uses your own subscription and counts toward its usage
-          limits. Asyra Design does not provide an AI subscription.
+          AI uses your configured account. Subscription limits or API charges
+          apply. Asyra Design does not provide AI access.
         </p>
       </div>
 

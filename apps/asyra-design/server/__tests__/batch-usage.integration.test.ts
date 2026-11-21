@@ -1353,8 +1353,12 @@ it('bounds the recorded fill and context short-name queries while retaining qual
   const { createRetainedFillAction } =
     await import('../../src/ai/retained-fill-action')
   const { createAiInspectionAction } = await import('../../src/ai/inspection')
+  const { createAiActions } = await import('../../src/ai/actions')
   const actions = [
     ...[
+      ...createAiActions().filter(
+        (owner) => owner.name === 'update_composition_elements'
+      ),
       createDocumentContextAction(),
       createRetainedFillAction({} as never),
       createAiInspectionAction()
@@ -1423,6 +1427,15 @@ it('bounds the recorded fill and context short-name queries while retaining qual
   }
 
   try {
+    const update = await read('read_design_contracts', {
+      names: ['update_composition_elements']
+    })
+
+    expect(update.apis[0].execution).toMatchObject({
+      kind: 'batch-action',
+      bindings: 'ready-arguments-only'
+    })
+    expect(update.apis[0].execution.guidance).toContain('named')
     for (const [names, budget, pages] of [
       [
         ['map_retained_fills', 'retain_design_targets', 'execute_design'],

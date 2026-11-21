@@ -28,7 +28,7 @@ const fixture = () => {
   const apis = {
     getData: vi.fn((id: string) => records[id]),
     getComputed: vi.fn(() => computed),
-    properties: vi.fn(),
+    properties: vi.fn(() => ({ changed: true })),
     rename: vi.fn(),
     fill: vi.fn(() => true),
     stroke: vi.fn(() => true)
@@ -124,4 +124,15 @@ describe('targeted canonical design edits', () => {
     ).toThrow('style failed')
     expect(apis.rename).toHaveBeenCalledExactlyOnceWith('title', 'Heading')
   })
+})
+
+it('rejects a Frame size edit before a combined rename', () => {
+  const { records, edit, apis } = fixture()
+
+  records.title.type = 'frame'
+  expect(() =>
+    edit({ elementId: 'title', name: 'Changed', properties: { width: 100 } })
+  ).toThrow(/Frame/)
+  expect(apis.rename).not.toHaveBeenCalled()
+  expect(apis.properties).not.toHaveBeenCalled()
 })

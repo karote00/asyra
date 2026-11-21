@@ -4,5 +4,5 @@ import { DefaultPositionData, PropertyTypes } from '@asyra/utils'
 export const positionPropertyComponentDefinition: PropertyComponentDefinition =
   {
     type: PropertyTypes.POSITION,
-    defaults: DefaultPositionData
+    defaults: { ...DefaultPositionData, scaleX: 1, scaleY: 1 }
   }
