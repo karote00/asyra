@@ -1,47 +1,36 @@
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import { AI_STATUS_ENDPOINT } from '../src/ai/connection-status'
-import { resolveAiModelBackendConfiguration } from './ai-model-provider'
+import {
+  createDefaultAiModelSources,
+  selectAiModelSource,
+  type AiModelSource
+} from './ai-model-sources'
 import { admitsLocalProviderRequest } from './local-request-admission'
-import { checkLocalAiProvider } from './local-ai-provider'
 
-export const readAiStatus = async (signal?: AbortSignal) => {
-  const backend = process.env.AI_PROVIDER_BACKEND?.trim() || 'http'
-
-  if (backend === 'local-codex') {
-    const model = process.env.AI_PROVIDER_MODEL?.trim()
-
-    if (!model) {
-      return { state: 'unconfigured' }
-    }
-
-    try {
-      await checkLocalAiProvider({
-        model,
-        executable: process.env.AI_PROVIDER_EXECUTABLE?.trim() || 'codex',
-        signal
-      })
-
-      return { state: 'ready' }
-    } catch {
-      return { state: 'local-unavailable' }
-    }
-  }
-
-  if (backend !== 'http') {
-    return { state: 'unconfigured' }
-  }
+export const readAiStatus = async (
+  signal?: AbortSignal,
+  registered?: readonly AiModelSource[]
+) => {
+  const sources = registered ?? createDefaultAiModelSources()
 
   try {
-    resolveAiModelBackendConfiguration()
+    const source = selectAiModelSource(
+      process.env.AI_PROVIDER_BACKEND?.trim() || 'local-codex',
+      sources
+    )
 
-    return { state: 'configured' }
+    return await source.status(process.env, signal)
   } catch {
     return { state: 'unconfigured' }
+  } finally {
+    if (!registered) {
+      await Promise.all(sources.map((source) => source.dispose?.()))
+    }
   }
 }
 
 export const createAiStatusMiddleware =
-  () =>
+  (sources?: readonly AiModelSource[]) =>
   async (
     request: IncomingMessage,
     response: ServerResponse,
@@ -76,7 +65,7 @@ export const createAiStatusMiddleware =
     response.once('close', abort)
     request.once('aborted', abort)
     try {
-      const status = await readAiStatus(controller.signal)
+      const status = await readAiStatus(controller.signal, sources)
 
       if (!response.destroyed) {
         response.end(JSON.stringify(status))

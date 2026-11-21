@@ -38,136 +38,34 @@ const batch: AiActionBatch = {
 }
 
 describe('Asyra Design configured AI model backend', () => {
-  it('requires endpoint, model, and API key before any upstream request', async () => {
-    const fetchImpl = vi.fn(
-      async (_input: string | URL | Request, _init?: RequestInit) =>
-        new Response()
-    )
+  it('rejects the removed HTTP batch source before network work', async () => {
+    const fetcher = vi.fn<typeof fetch>(async () => Response.json(batch))
 
     await expect(
       requestConfiguredAiActionBatch(input, {
         environment: {
-          AI_PROVIDER_API_KEY: 'secret',
-          AI_PROVIDER_ENDPOINT: 'https://provider.example/actions'
+          AI_PROVIDER_BACKEND: 'http',
+          AI_PROVIDER_MODEL: 'fixture',
+          AI_PROVIDER_ENDPOINT: 'https://old.example/actions',
+          AI_PROVIDER_API_KEY: 'obsolete'
         },
-        fetch: fetchImpl
+        fetch: fetcher
       })
-    ).rejects.toMatchObject({
-      code: 'AI_MODEL_BACKEND_INVALID_CONFIGURATION'
-    })
-    expect(fetchImpl).not.toHaveBeenCalled()
+    ).rejects.toMatchObject({ code: 'AI_MODEL_BACKEND_INVALID_CONFIGURATION' })
+    expect(fetcher).not.toHaveBeenCalled()
   })
 
-  it('keeps the API key in the authorization header and injects domain knowledge only on the server', async () => {
-    const fetchImpl = vi.fn(
-      async (_input: string | URL | Request, _init?: RequestInit) =>
-        new Response(JSON.stringify(batch), {
-          headers: { 'content-type': 'application/json' },
-          status: 200
-        })
-    )
-
-    await expect(
-      requestConfiguredAiActionBatch(input, {
+  it('defaults to the registered native source without an HTTP batch route', async () => {
+    vi.mocked(requestLocalAiActionBatch).mockResolvedValue(batch)
+    expect(
+      await requestConfiguredAiActionBatch(input, {
         environment: {
-          AI_PROVIDER_API_KEY: 'backend-only-secret',
-          AI_PROVIDER_ENDPOINT: 'https://provider.example/actions',
-          AI_PROVIDER_MODEL: 'configured-model'
-        },
-        fetch: fetchImpl
+          AI_PROVIDER_MODEL: 'fixture',
+          AI_EXECUTION_SOURCE_REVISION: 'fixture'
+        }
       })
-    ).resolves.toEqual(batch)
-
-    expect(fetchImpl).toHaveBeenCalledTimes(1)
-    const [endpoint, request] = fetchImpl.mock.calls[0] ?? []
-
-    expect(endpoint).toBe('https://provider.example/actions')
-    expect(new Headers(request?.headers).get('authorization')).toBe(
-      'Bearer backend-only-secret'
-    )
-
-    const body = JSON.parse(String(request?.body)) as Record<string, unknown>
-
-    expect(body).toMatchObject({
-      input,
-      model: 'configured-model',
-      protocolVersion: 1
-    })
-    expect(body.systemPrompt).toMatch(/registered App actions and image tools/i)
-    expect(body.systemPrompt).toContain(
-      'domain principles, common failure modes'
-    )
-    expect(body.systemPrompt).toContain('optional reference material')
-    expect(body.systemPrompt).toContain(
-      'shorten exploration and repeated correction'
-    )
-    expect(body.systemPrompt).toContain(
-      'Prefer a suitable existing direct tool'
-    )
-    expect(body.systemPrompt).toContain(
-      'use submit_tool for a finite recipe and invoke_tool'
-    )
-    expect(body.systemPrompt).toContain(
-      'cannot create missing primitive capabilities'
-    )
-    expect(body.systemPrompt).not.toMatch(
-      /default method reference|representative route before repeating/
-    )
-    expect(body.imageTools).toEqual([
-      {
-        capabilities: ['retained-reference-validation'],
-        id: 'validate_reference_images',
-        inputMediaTypes: ['image/jpeg', 'image/png', 'image/webp']
-      },
-      {
-        capabilities: ['explicit-solid-background-decomposition'],
-        id: 'vectorize_image_layers',
-        inputMediaTypes: ['image/jpeg', 'image/png', 'image/webp']
-      },
-      {
-        capabilities: ['whole-image-raster-vectorization'],
-        id: 'vtracer',
-        inputMediaTypes: ['image/jpeg', 'image/png', 'image/webp']
-      },
-      {
-        capabilities: ['bounded-contour-quality-review'],
-        id: 'review_vector_contours',
-        inputMediaTypes: []
-      },
-      {
-        capabilities: ['receipted-local-contour-refinement'],
-        id: 'apply_contour_refinements',
-        inputMediaTypes: []
-      },
-      {
-        capabilities: ['read-only-vector-component-analysis'],
-        id: 'analyze_vector_components',
-        inputMediaTypes: []
-      }
-    ])
-    expect(JSON.stringify(body)).not.toContain('backend-only-secret')
-  })
-
-  it('rejects malformed upstream output before returning it to Runtime', async () => {
-    const fetchImpl = vi.fn(
-      async (_input: string | URL | Request, _init?: RequestInit) =>
-        new Response(JSON.stringify({ actions: [], batchId: 'empty-batch' }), {
-          status: 200
-        })
-    )
-
-    await expect(
-      requestConfiguredAiActionBatch(input, {
-        environment: {
-          AI_PROVIDER_API_KEY: 'secret',
-          AI_PROVIDER_ENDPOINT: 'https://provider.example/actions',
-          AI_PROVIDER_MODEL: 'configured-model'
-        },
-        fetch: fetchImpl
-      })
-    ).rejects.toMatchObject({
-      code: 'AI_MODEL_BACKEND_INVALID_RESPONSE'
-    })
+    ).toEqual(batch)
+    expect(requestLocalAiActionBatch).toHaveBeenCalled()
   })
 })
 

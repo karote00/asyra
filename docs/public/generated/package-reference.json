@@ -15,8 +15,8 @@
         "./schema"
       ],
       "sourceDigests": {
-        "contract": "72f42a2f99b3fa3794a01d911a45d9ddf30bbd46dc4af45bc6aa8e976ccc299f",
-        "guide": "2709c376aa8b443ed8953a7240f831949fc611497d1abbef25dda8e8261b93ab",
+        "contract": "faded333e71684a1a59c7b684180318851336826cbf9d61f0d7a15e6151c58f5",
+        "guide": "80432edefa2af4561eab45043459043976d0222eefa61baaceba12e2a902e020",
         "manifest": "8ff77c83d4afcf8aa017e6af629bc3aba31669d54dfe19cb611856f5790e81f9"
       },
       "version": "0.5.1"

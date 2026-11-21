@@ -1623,8 +1623,9 @@ nullable values remain valid. Preparation rejection receipts retain the owner's
 specific reason before canvas dispatch. No aliases, guessed intent or silent parameter repair are applied.
 
 The invocation acknowledgement carries status `success`, `failed`, `partial`, or
-`unknown`, independent settlement and bounded issues. Native transport sends this
-as a separate `toolOutcome` text item after owner data and images; it does not
+`unknown`, independent settlement and bounded issues. The shared App tool delivery
+sends this as a separate `toolOutcome` text item after owner data and images for
+all registered model sources; protocol adapters preserve its content. It does not
 inject that field into every owner value. A returned string is not proof of usable output.
 Negative visual judgments and successful requested region captures are usable
 results; image scope is not execution completeness. Canonical status=partial or

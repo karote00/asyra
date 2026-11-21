@@ -29,6 +29,8 @@
     "server/__tests__/local-design-tools.test.ts",
     "server/__tests__/local-tool-scheduler.test.ts",
     "server/__tests__/local-design-workflow.test.ts",
-    "server/__tests__/local-knowledge.test.ts"
+    "server/__tests__/local-knowledge.test.ts",
+    "server/__tests__/ai-model-sources.test.ts",
+    "server/__tests__/design-provider-tools.test.ts"
   ]
 }

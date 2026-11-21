@@ -273,22 +273,21 @@ storage owners. They never request a real model turn or judge generated content.
 Live model evaluation is a separate, explicitly requested manual activity; its
 observations are not unit, integration or E2E pass/fail gates.
 
-### Use an HTTP model adapter
+### Use the OpenAI Responses source
 
-The existing HTTP backend remains the default. Configure all three values:
+Set the source and model in the server's local `.env`, and keep the API key there:
 
 ```dotenv
-AI_PROVIDER_BACKEND=http
-AI_PROVIDER_ENDPOINT=https://your-adapter.example/actions
-AI_PROVIDER_MODEL=your-model
-AI_PROVIDER_API_KEY=your-secret
+AI_PROVIDER_BACKEND=openai-responses
+AI_PROVIDER_MODEL=gpt-6-astra
+OPENAI_API_KEY=
 ```
 
-The endpoint must implement the App action-batch protocol, not a raw model API.
-The browser receives none of these settings. Both backends use the same
-server-prepared action batch, permission checks, and canonical transaction flow.
-A missing model, executable, or subscription login fails without falling back
-to HTTP. Check your local Codex login and version when setup fails.
+The default source is `local-codex`. Responses uses the same tool Host,
+knowledge, named results, delivery, transaction and conversation request flow.
+Only the model protocol changes. Readiness checks configuration without a paid
+model request. Unknown source identities fail without a fallback. The browser
+uses the App HTTP exchange and never receives source credentials.
 
 ## Text properties
 

@@ -153,3 +153,44 @@ The executable inventory journey in
 public built imports from `runtime.run` through the provider/exchange, host,
 canonical executor and a later turn. Its App transaction adapter tests default
 rollback and explicitly selected preserve-progress. It is not a Design shim.
+
+## Replaceable tool-calling sources
+
+The Node entry exports `PrepareToolProvider`, `ToolProviderBinding`,
+`ProviderContentItem`, `createProviderConversations`, `createResponsesConversations`
+and `createResponsesAiProvider`. Bindings provide instructions, qualified tool
+schemas, fresh turn input, canonical invocation and App-owned final decoding.
+Adapters translate the provider protocol and never implement App actions.
+
+```ts
+import {
+  createResponsesAiProvider,
+  createResponsesConversations
+} from '@asyra/ai-agent-runtime/node'
+
+const conversations = createResponsesConversations() // service lifetime
+const provider = createResponsesAiProvider({
+  apiKey: serverKey,
+  model: configuredModel,
+  conversations,
+  prepare: prepareCurrentAppTurn
+})
+// Use provider through the existing AiProvider/Runtime composition.
+// Dispose the provider after owned requests, and conversations at service shutdown.
+```
+
+`prepareCurrentAppTurn` returns the App's current `ToolProviderBinding`. Another
+source can consume the same binding through its own `AiProvider` implementation;
+tool execution, named result storage and transactions remain unchanged. The optional
+`observe` callback receives credential-free protocol bodies and normalized cumulative
+usage. Observers cannot change execution or replace a settled answer.
+
+Responses preserves namespace names, schema semantics and correlated text/image
+outputs. It uses explicit `strict: false` plus the existing strict Host validation,
+and server tool search for deferred declarations. Its `store: false` continuation
+retains full output items locally; it does not require Conversations API access.
+No SDK dependency, automatic mutation retry or fallback source is installed.
+An unresolved invocation invalidates continuation; an acknowledged output survives
+a later HTTP failure. The adapter rejects incomplete responses as final answers.
+Service restart does not restore in-memory history. External credential, durable
+storage, transaction and evaluation policies belong to the composing App.

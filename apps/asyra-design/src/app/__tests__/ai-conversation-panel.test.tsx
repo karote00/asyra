@@ -1,8 +1,3 @@
-import core from '../../contexts'
-import { createConversationDrafts } from '../../ai/conversation-drafts'
-vi.mock('../../providers/element-selection', () => ({
-  useElementSelection: () => new Set<string>()
-}))
 import {
   act,
   cleanup,
@@ -13,18 +8,23 @@ import {
   within
 } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { AiConversationPanel } from '../ai-conversation-panel'
+import { createDeferred } from '../../ai/__tests__/deferred'
+import { createAiConfirmationBroker } from '../../ai/confirmation'
 import {
   type AiConversationFeatureRequest,
   createAiConversationController
 } from '../../ai/conversation'
-import { createAiConfirmationBroker } from '../../ai/confirmation'
-import { createDeferred } from '../../ai/__tests__/deferred'
+import { createConversationDrafts } from '../../ai/conversation-drafts'
+import { documentInteractionLock } from '../../ai/document-interaction-lock'
 import {
   AI_DOCUMENT_INTERACTION_TARGET_ATTRIBUTE,
   AiDocumentInteractionTargets
 } from '../../constants'
-import { documentInteractionLock } from '../../ai/document-interaction-lock'
+import core from '../../contexts'
+import { AiConversationPanel } from '../ai-conversation-panel'
+vi.mock('../../providers/element-selection', () => ({
+  useElementSelection: () => new Set<string>()
+}))
 
 const draftOwners: ReturnType<typeof createConversationDrafts>[] = []
 
@@ -777,7 +777,7 @@ describe('AI Agent conversation panel intent boundary', () => {
     }
   )
 
-  it('discloses personal subscription usage immediately when the panel opens', () => {
+  it('discloses the configured account usage for subscription and API sources', () => {
     const harness = createPanelHarness()
 
     render(
@@ -788,13 +788,13 @@ describe('AI Agent conversation panel intent boundary', () => {
         onClose={vi.fn()}
       />
     )
-    const notice = screen.getByRole('note', { name: 'Your AI subscription' })
+    const notice = screen.getByRole('note', { name: 'Your AI account' })
 
     expect(notice.textContent).toContain(
-      'Local AI uses your own subscription and counts toward its usage limits.'
+      'AI uses your configured account. Subscription limits or API charges apply.'
     )
     expect(notice.textContent).toContain(
-      'Asyra Design does not provide an AI subscription.'
+      'Asyra Design does not provide AI access.'
     )
     expect(harness.feature.execute).not.toHaveBeenCalled()
     expect(screen.queryByTestId('ai-agent-message')).toBeNull()

@@ -45,31 +45,43 @@ request. A consumed newline resets the byte accounting; many valid prepared
 batches must not exhaust a cumulative transfer quota. Chunk boundaries, including
 split UTF-8 sequences, do not alter frame boundaries or receipt ordering.
 
-The App server selects `AI_PROVIDER_BACKEND=http` (the existing default) or
-`local-codex`. HTTP retains its endpoint, model, and API-key configuration.
+The App server resolves `AI_PROVIDER_BACKEND` through an explicit source registry:
+`local-codex` (the default) or `openai-responses`.
+The custom HTTP batch model source and its configuration are removed. Responses uses the
+server-only `OPENAI_API_KEY` and `AI_PROVIDER_MODEL`. No source fallback exists.
+`createToolCallingDesignSource` connects a new Runtime `AiProvider` to the existing
+Host and recording pipeline; adding a source does not change the request router,
+Design tools, knowledge, transaction policy, retention or final batch settlement.
+All model sources use the shared Host channel, invocation observation and request
+lifetime. Browser HTTP remains the App exchange transport. Sources are registered explicitly at service composition.
 Local Codex requires an installed compatible Codex app-server, a configured
 `AI_PROVIDER_MODEL`, and the user's own ChatGPT subscription login. The optional
 `AI_PROVIDER_EXECUTABLE` selects the installed executable; otherwise use `codex`.
 No dependency installation, login, account switching, or API fallback occurs.
 
 Opening the Agent panel immediately shows a persistent English notice below
-its header: local AI uses the user's own subscription and usage limits, and
-Asyra Design does not provide a subscription. It is visible before typing,
+its header: AI uses the configured account, subscription limits or API charges
+apply, and Asyra Design does not provide AI access. It is visible before typing,
 submission or connection readiness, outside the scrolling conversation feed.
-The notice is provider-neutral and does not imply additional provider support.
+The notice describes account usage without claiming a provider is connected.
 
 The existing same-origin action-batch endpoint remains the execution route. It may
 stream registered tool activity and sequential complete prepared batches, then a final batch or sanitized error;
 JSON responses remain supported. Model commentary and reasoning are not streamed.
 The panel uses a separate `/api/ai/status` POST for connection readiness.
-For local Codex it admits only loopback peers, loopback Host, JSON requests, and
+Every source admits only loopback peers, loopback Host, JSON requests, and
 same-origin browser requests. A hosted service cannot borrow a visitor's login.
 The exact registered sample keeps its existing provider-free behavior.
 
 ## Conversation request continuity
 
-Each local request still uses a fresh ephemeral provider thread. Conversation IDs
-alone do not restore history. The App supplies bounded `metadata.conversationContext`
+The service owns provider continuation keyed by App conversation identity and a
+stable provider contract. Each request binds fresh tool executors and cancellation.
+Local Codex resumes the registered native thread; Responses retains complete local
+protocol history with `store: false`, including reasoning and phase items. Native
+IDs and API history are never interchangeable. Changed contracts or unavailable
+continuation fail explicitly rather than replaying mutations or silently restarting.
+The App supplies bounded `metadata.conversationContext`
 with exact public intents, replies, clarification questions/choices and source indexes.
 Current intent takes precedence over conflicting history. Original source images are
 separate native image inputs; their bytes are omitted from serialized model text.
@@ -163,7 +175,7 @@ inherited MCP server by name in the request-local thread override. Empty tables
 merge with inherited configuration and do not clear it. Do not modify user config
 or retain server names across requests. Invalid configuration stops admission
 before inference; native App tools and permitted web research remain available.
-No retained cache or cross-turn conversation is introduced. The same isolation
+Native configuration snapshots are not reused across requests. The same isolation
 policy applies at child launch and thread creation: disable native hooks, legacy
 notification commands and both multi-agent variants, in addition to the existing
 App/plugin/shell isolation. User configuration files are never modified.
@@ -877,3 +889,31 @@ same-submission input reuse. Its target declaration comes from the admitted
 canonical dispatcher and region resolver. Inspection default/scope descriptions
 survive projection. Formal publication tests read the actual thread/start packet
 and execute the delivered example through the native tool-call dispatcher.
+
+## Source composition and Responses transport
+
+The shared owners are `server/design-ai-request.ts` (recording and final admission)
+and `server/design-provider-tools.ts` (current inputs, Host and selected tool
+content). `server/ai-model-sources.ts` registers source factories. The middleware
+owns the default source registry and its continuation lifetime. Injected sources
+remain owned by the caller; supply the same registry to action-batch and status
+middleware. Each source constructs a fresh turn provider and releases it after
+settlement; retained protocol state contains no expired executor or abort signal.
+
+The Responses adapter translates only the model protocol. `strict: false` retains
+optional parameter semantics; the Host still validates inputs, complete outputs,
+retention and delivery. Invalid tool arguments are returned to the same model
+turn. Errors from the Runtime provider are translated into the existing App error
+states. Local admission applies before any source can use configured credentials.
+Status checks do not invoke inference. API credentials are never sent to the browser.
+
+Optional native evaluation/reporting remains a native source capability. Ordinary
+Responses conversation turns are supported; the Responses source explicitly rejects
+native evaluation controls. This does not introduce another drawing test harness.
+
+Source disposal rejects new work, cancels active model/tool work and drains real
+request settlement before releasing continuation. Service shutdown also cancels
+pending browser receipts before disposing sources and recording. Common tool
+observation emits one start and terminal event per call; native transport retains
+only its protocol-specific observations. Session-unavailable remains distinct
+from invalid configuration through browser and runtime failure projection.
