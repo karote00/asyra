@@ -4,12 +4,12 @@ import { resolve } from 'node:path'
 import { DatabaseSync } from 'node:sqlite'
 import { spawnSync } from 'node:child_process'
 import {
-  createLocalToolStore,
-  createLocalToolStoreSession
-} from '../local-tool-store'
+  createSqliteToolStore,
+  createAiToolStoreSession
+} from '@asyra/ai-agent-runtime/node'
 
 const directories: string[] = []
-const stores: Awaited<ReturnType<typeof createLocalToolStore>>[] = []
+const stores: Awaited<ReturnType<typeof createSqliteToolStore>>[] = []
 const limits = { capacity: 4, recordBytes: 1024, totalBytes: 4096 }
 
 const create = async (directory?: string, overrides = {}) => {
@@ -21,7 +21,7 @@ const create = async (directory?: string, overrides = {}) => {
     directories.push(directory)
   }
 
-  const store = await createLocalToolStore({
+  const store = await createSqliteToolStore({
     directory,
     ...limits,
     ...overrides
@@ -240,7 +240,7 @@ it('retries a failed lazy connection without resetting persistent entries', asyn
   const connect = vi
     .fn(async () => store)
     .mockRejectedValueOnce(new Error('Unavailable'))
-  const session = createLocalToolStoreSession(connect)
+  const session = createAiToolStoreSession(connect)
 
   await expect(session.list(2)).rejects.toThrow('Unavailable')
   expect((await session.read('preserved'))?.record).toEqual({ version: 1 })
@@ -259,7 +259,7 @@ it('closes a pending lazy connection without reopening after shutdown', async ()
         resolveConnection = resolve
       })
   )
-  const session = createLocalToolStoreSession(connect)
+  const session = createAiToolStoreSession(connect)
   const read = session.read('missing')
   const close = session.close()
 

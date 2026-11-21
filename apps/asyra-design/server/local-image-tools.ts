@@ -1,4 +1,4 @@
-import { LocalToolInputError } from './local-tool-invocation'
+import { AiToolInputError } from '@asyra/ai-agent-runtime'
 export interface ReferenceIdentity {
   attachmentIndex: number
   referenceId: string
@@ -18,8 +18,8 @@ import {
   observeLocalToolExecution,
   type LocalToolObservation
 } from './local-tool-invocation'
-import { LocalToolAccess } from './local-tool-scheduler'
-import type { LocalToolOwnership } from './local-tool-leases'
+import { AiToolAccess } from '@asyra/ai-agent-runtime'
+import type { AiToolOwnership } from '@asyra/ai-agent-runtime/schema'
 import {
   ContourReviewLimits,
   CONTOUR_QUALITY_SCHEMA,
@@ -36,7 +36,7 @@ import { setImmediate as yieldToEventLoop } from 'node:timers/promises'
 import { LocalComponentAnalysisLimits as limits } from './local-component-analysis-limits'
 import { Buffer } from 'node:buffer'
 import { AiImageToolIds, AI_IMAGE_TOOL_GUIDANCE } from './ai-domain-prompt'
-import type { AiProviderInput } from '../src/ai/action-batch-protocol'
+import type { AiProviderInput } from '@asyra/ai-agent-runtime'
 import { AiActionNames } from '../src/constants/ai-actions'
 import { analyzeVectorComponents } from './local-vector-component-analysis'
 import {
@@ -141,7 +141,7 @@ const readImageRegion = (value: unknown) => {
 export const createLocalImageTools = (
   input: Pick<AiProviderInput, 'metadata'>,
   convert: (input: ConversionInput) => Promise<string> = convertImage,
-  ownership?: LocalToolOwnership,
+  ownership?: AiToolOwnership,
   observation: LocalToolObservation = {}
 ) => {
   const metadata = input.metadata
@@ -172,7 +172,7 @@ export const createLocalImageTools = (
       typeof attachment.dataUrl !== 'string' ||
       !/^data:image\/(png|jpeg|webp);base64,/.test(attachment.dataUrl)
     ) {
-      throw new LocalToolInputError(
+      throw new AiToolInputError(
         'Select an existing reference attachment index.'
       )
     }
@@ -226,9 +226,7 @@ export const createLocalImageTools = (
         const index = source.slice('attachment:'.length)
 
         if (!/^(0|[1-9][0-9]*)$/.test(index)) {
-          throw new LocalToolInputError(
-            'Invalid reference attachment identity.'
-          )
+          throw new AiToolInputError('Invalid reference attachment identity.')
         }
 
         return referenceIdentity(Number(index)).referenceId
@@ -250,9 +248,7 @@ export const createLocalImageTools = (
         const url = new URL(source)
 
         if (url.username || url.password) {
-          throw new LocalToolInputError(
-            'Source URLs cannot contain credentials.'
-          )
+          throw new AiToolInputError('Source URLs cannot contain credentials.')
         }
       }
 
@@ -458,7 +454,7 @@ export const createLocalImageTools = (
       ),
       name: AiImageToolIds.VALIDATE_REFERENCE_IMAGES,
       composition: 'control-plane' as const,
-      executionAccess: LocalToolAccess.INDEPENDENT,
+      executionAccess: AiToolAccess.INDEPENDENT,
       description:
         'Validate retained reference images in one batch without searching or downloading again. Returns stable content identity, exact dimensions, encoding and byte count. Mechanical validity does not verify the subject, viewpoint, factual accuracy or suitability for fine detail: inspect the image and retain those limitations. Use referenceId in source facts; attachmentIndex remains the image selection handle.',
       inputSchema: {
@@ -500,7 +496,7 @@ export const createLocalImageTools = (
       ),
       name: AiImageToolIds.REVIEW_VECTOR_CONTOURS,
       composition: 'allowed' as const,
-      executionAccess: LocalToolAccess.INDEPENDENT,
+      executionAccess: AiToolAccess.INDEPENDENT,
       description:
         'Measure selected contour straightness and tangent breaks before drawing. Supply quality.mode (faithful preserves source irregularities; cleanup permits bounded edits) and final drawing targetSize. Faithful reviews have no cleanup proposals. Cleanup is limited to 0.5 source pixels AND 0.5 output drawing pixels; viewport zoom is irrelevant. Returns an opaque reviewId and bounded straighten/smooth-join proposals with source-pixel locations, metrics and limitations, never coordinate arrays. You decide intent: a small kink can be an intentional corner. Up to 16 selected paths per call. Compound/unsafe contours are report-only; no proposal does not establish visual correctness.',
       inputSchema: {
@@ -651,7 +647,7 @@ export const createLocalImageTools = (
       ),
       name: AiImageToolIds.ANALYZE_VECTOR_COMPONENTS,
       composition: 'allowed' as const,
-      executionAccess: LocalToolAccess.INDEPENDENT,
+      executionAccess: AiToolAccess.INDEPENDENT,
       description: `Read-only geometric analysis of up to ${limits.pathsPerCall} plausible path candidates from a current-request vector artifact. Independent calls may be submitted concurrently within the provider in-flight limit, without a request-total quota. Prefer submitting all candidates from the same artifact in one call; the backend schedules bounded jobs. Await all relevant results before selecting conversions. Returns analysisId, contour identities, fit errors, topology limitations and eligible registered components. You decide whether a conversion improves the intended result; no automatic drawing or segmentation occurs. List the required receipt IDs in analysisIds when selecting componentMappings; independent reports may be combined. Preserve vectors when no suitable conversion exists.`,
       inputSchema: {
         type: 'object',
@@ -755,7 +751,7 @@ export const createLocalImageTools = (
           !isRecord(attachment) ||
           typeof attachment.dataUrl !== 'string'
         ) {
-          throw new LocalToolInputError(
+          throw new AiToolInputError(
             'Select an existing reference attachment index.'
           )
         }
@@ -855,7 +851,7 @@ export const createLocalImageTools = (
           const args = action.arguments
 
           if (!isRecord(args)) {
-            throw new LocalToolInputError('Invalid image reference')
+            throw new AiToolInputError('Invalid image reference')
           }
 
           const reference = replacing ? args.drawing : args
@@ -865,7 +861,7 @@ export const createLocalImageTools = (
           }
 
           if (typeof reference.imageArtifactId !== 'string') {
-            throw new LocalToolInputError('Invalid image reference')
+            throw new AiToolInputError('Invalid image reference')
           }
 
           const artifact = artifacts.get(reference.imageArtifactId)
@@ -882,13 +878,13 @@ export const createLocalImageTools = (
                 (key) => !['compositionId', 'drawing'].includes(key)
               ))
           ) {
-            throw new LocalToolInputError('Invalid replacement')
+            throw new AiToolInputError('Invalid replacement')
           }
 
           const mappings = reference.componentMappings ?? []
 
           if (!Array.isArray(mappings)) {
-            throw new LocalToolInputError('Invalid component selection')
+            throw new AiToolInputError('Invalid component selection')
           }
 
           if (mappings.length || reference.analysisIds !== undefined) {
@@ -992,7 +988,7 @@ export const createLocalImageTools = (
           args.attachmentIndexes.length > 24 ||
           new Set(args.attachmentIndexes).size !== args.attachmentIndexes.length
         ) {
-          throw new LocalToolInputError(
+          throw new AiToolInputError(
             'Provide unique existing reference attachmentIndexes.'
           )
         }
@@ -1011,7 +1007,7 @@ export const createLocalImageTools = (
           new Set(args.pathIds).size !== args.pathIds.length ||
           args.pathIds.some((id) => typeof id !== 'string')
         ) {
-          throw new LocalToolInputError('Invalid contour review request')
+          throw new AiToolInputError('Invalid contour review request')
         }
 
         const artifact = artifacts.get(args.imageArtifactId)
@@ -1103,7 +1099,7 @@ export const createLocalImageTools = (
           !Array.isArray(args.proposalIds) ||
           args.proposalIds.some((id) => typeof id !== 'string')
         ) {
-          throw new LocalToolInputError('Invalid contour refinement request')
+          throw new AiToolInputError('Invalid contour refinement request')
         }
 
         const review = contourReviews.get(args.reviewId)
@@ -1164,7 +1160,7 @@ export const createLocalImageTools = (
           !Array.isArray(args.pathIds) ||
           args.pathIds.some((id) => typeof id !== 'string')
         ) {
-          throw new LocalToolInputError('Invalid component analysis request')
+          throw new AiToolInputError('Invalid component analysis request')
         }
 
         const artifact = artifacts.get(args.imageArtifactId)
@@ -1178,7 +1174,7 @@ export const createLocalImageTools = (
           args.pathIds.length > limits.pathsPerCall ||
           new Set(args.pathIds).size !== args.pathIds.length
         ) {
-          throw new LocalToolInputError('Invalid analysis selection')
+          throw new AiToolInputError('Invalid analysis selection')
         }
 
         const pathIds = [...args.pathIds] as string[]
@@ -1238,7 +1234,7 @@ export const createLocalImageTools = (
         !isRecord(args) ||
         !Number.isSafeInteger(args.attachmentIndex)
       ) {
-        throw new LocalToolInputError('Invalid image tool request')
+        throw new AiToolInputError('Invalid image tool request')
       }
 
       let representationPlan: Record<string, unknown> | undefined

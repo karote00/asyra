@@ -3,14 +3,14 @@ import * as registeredInvocation from '../local-tool-library-tools'
 import { createLocalDesignTools } from '../local-design-tools'
 import { createLocalDesignWorkflow } from '../local-design-workflow'
 import { toolResultObject, toolSemantics } from '../../src/ai/tool-contract'
-import type { LocalToolOwnership } from '../local-tool-leases'
+import type { AiToolOwnership } from '@asyra/ai-agent-runtime/schema'
 import { createLocalToolHost } from '../local-tool-host'
-import { operationInputIssue } from '../operation-input-schema'
+import { operationInputIssue } from '@asyra/ai-agent-runtime/schema'
 import modelDelivery from '../../test-data/knowledge-evaluation/__fixtures__/model-delivery-20261028.json'
 import { beforeAll, expect, it, vi } from 'vitest'
 import { createAiToolContract } from '@asyra/ai-agent-runtime'
 import { createLocalOperationTools } from '../local-operation-tools'
-import { requireBatchSuccess } from '../batch-exchange'
+import { requireBatchSuccess } from '@asyra/ai-agent-runtime/node'
 import { readCompleteInformation } from './tool-contract-assertions'
 import recorded from './fixtures/recorded-101/batch-usage-20261026.json'
 
@@ -131,7 +131,7 @@ it.each([
   const setup = (unrelated = 0) => {
     let tools!: ReturnType<typeof createLocalOperationTools>
 
-    const build = (ownership: LocalToolOwnership) =>
+    const build = (ownership: AiToolOwnership) =>
       (tools = createLocalOperationTools(
         contracts,
         {

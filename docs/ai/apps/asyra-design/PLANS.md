@@ -4,6 +4,12 @@ Never record completed plans here.
 
 ## Current Status
 
+- Planning only: [AI Agent Runtime Ownership Transfer](../../framework/plans/ai-agent-runtime-ownership-transfer-plan.md).
+  Framework-owned follow-up to the merged conversation work. Design keeps domain
+  actions, context, permissions and Feature/transaction ownership; common host
+  mechanisms and optional adapters are planned for reuse by other Apps.
+  No product implementation or new 101 run is included in the planning task.
+
 - Implemented with focused verification: [Pen handoff type diagnostics](plans/pen-handoff-type-diagnostics-plan.md).
   Resolved the 152 scoped review diagnostics without casts or weakened checks;
   all 27 focused Pen/property browser scenarios pass.

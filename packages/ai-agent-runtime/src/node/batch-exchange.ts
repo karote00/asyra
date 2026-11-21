@@ -3,7 +3,7 @@ import type {
   AiActionBatch,
   AiBatchReceipt,
   BrowserBatchFailure
-} from '../src/ai/action-batch-protocol'
+} from '../index.js'
 
 export interface PreparedBatchFrame {
   readonly type: 'batch'

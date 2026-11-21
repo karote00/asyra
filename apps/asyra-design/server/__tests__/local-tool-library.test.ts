@@ -1,6 +1,6 @@
 import { mkdir, mkdtemp, rm } from 'node:fs/promises'
 import { resolve } from 'node:path'
-import { createLocalToolStore } from '../local-tool-store'
+import { createSqliteToolStore } from '@asyra/ai-agent-runtime/node'
 import { expect, it, vi } from 'vitest'
 import {
   admitAiRecipe,
@@ -10,9 +10,9 @@ import {
   type AiToolStore,
   type AiToolStoreEntry
 } from '@asyra/ai-agent-runtime'
-import { createLocalToolLibrary } from '../local-tool-library'
-import { createLocalToolScheduler } from '../local-tool-scheduler'
-import { operationContractIssue } from '../operation-input-schema'
+import { createAiToolHostLibrary } from '@asyra/ai-agent-runtime/node'
+import { createAiToolScheduler } from '@asyra/ai-agent-runtime'
+import { operationContractIssue } from '@asyra/ai-agent-runtime/schema'
 import { toolSemantics } from '../../src/ai/tool-contract'
 import { createLocalDesignTools } from '../local-design-tools'
 import { AiActionNames } from '../../src/constants/ai-actions'
@@ -180,8 +180,9 @@ const setup = (store = memory(), requestId = 'request-one', overrides = {}) => {
     composition: 'control-plane',
     execute
   })
-  const schedule = createLocalToolScheduler(new AbortController().signal)
-  const host = createLocalToolLibrary({
+  const schedule = createAiToolScheduler(new AbortController().signal)
+  const host = createAiToolHostLibrary({
+    saveInvocationName: 'tool_library.save_tool',
     requestId,
     registry,
     store,
@@ -589,7 +590,7 @@ for (const fault of ['before-commit', 'after-commit'] as const) {
     const directory = await mkdtemp(resolve(parentDirectory, 'nested-'))
 
     const open = () =>
-      createLocalToolStore({
+      createSqliteToolStore({
         directory,
         capacity: 16,
         recordBytes: 65536,
@@ -752,7 +753,7 @@ for (const availability of ['suspended', 'retired'] as const) {
     const directory = await mkdtemp(resolve(parentDirectory, 'publication-'))
 
     const open = () =>
-      createLocalToolStore({
+      createSqliteToolStore({
         directory,
         capacity: 16,
         recordBytes: 65536,
@@ -855,7 +856,7 @@ for (const mode of ['load', 'resume'] as const) {
     const directory = await mkdtemp(resolve(parentDirectory, 'restore-'))
 
     const open = () =>
-      createLocalToolStore({
+      createSqliteToolStore({
         directory,
         capacity: 16,
         recordBytes: 65536,
@@ -961,7 +962,7 @@ for (const acknowledgement of ['returned', 'lost'] as const) {
     const directory = await mkdtemp(resolve(parentDirectory, 'committed-'))
 
     const open = () =>
-      createLocalToolStore({
+      createSqliteToolStore({
         directory,
         capacity: 16,
         recordBytes: 65536,

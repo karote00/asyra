@@ -1,6 +1,6 @@
 import { expect, it, vi } from 'vitest'
 import { createLocalOperationTools as createOperationOwner } from '../local-operation-tools'
-import type { AiBatchReceipt } from '../../src/ai/action-batch-protocol'
+import type { AiBatchReceipt } from '@asyra/ai-agent-runtime'
 
 it('executes correction discovery through real owners and recovers only the unfinished edit', async () => {
   const hadWindow = 'window' in globalThis
@@ -17,7 +17,7 @@ it('executes correction discovery through real owners and recovers only the unfi
   const { createAiTransactionRunner } = await import('../../src/ai/transaction')
   const { createAiToolContract, createAiAgentRuntime } =
     await import('@asyra/ai-agent-runtime')
-  const { operationInputIssue } = await import('../operation-input-schema')
+  const { operationInputIssue } = await import('@asyra/ai-agent-runtime/schema')
 
   applyPreset(core, {
     profile: PresetProfiles.CUSTOM,

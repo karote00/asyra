@@ -73,9 +73,16 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@asyra/ai-agent-runtime@workspace:packages/ai-agent-runtime"
   dependencies:
+    "@types/lodash": "npm:^4"
     "@vitest/coverage-v8": "npm:^3.2.6"
+    lodash: "npm:^4.18.1"
     typescript: "npm:^5.7.2"
     vitest: "npm:^3.2.6"
+  peerDependencies:
+    lodash: ^4.18.1
+  peerDependenciesMeta:
+    lodash:
+      optional: true
   languageName: unknown
   linkType: soft
 

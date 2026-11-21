@@ -18,7 +18,7 @@ import {
   selectDesignSource
 } from '../design-budget'
 import { createLocalDesignTools } from '../local-design-tools'
-import { operationInputIssue } from '../operation-input-schema'
+import { operationInputIssue } from '@asyra/ai-agent-runtime/schema'
 
 const generic = (order = 'cell-major') => {
   const motifs = [

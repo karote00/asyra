@@ -1,6 +1,6 @@
 import { createServer } from 'node:http'
 import { waitForObservedAppReady as waitForAppReady } from './collaboration-observation'
-import { createBatchExchange } from '../server/batch-exchange'
+import { createBatchExchange } from '@asyra/ai-agent-runtime/node'
 import { createLocalOperationTools } from '../server/local-operation-tools'
 import { createLocalDesignWorkflow } from '../server/local-design-workflow'
 import { invokeLocalTool } from '../server/local-tool-invocation'
@@ -710,7 +710,7 @@ test('artifact-targeted mixed batch uses normal actions and one Undo/Redo bounda
       signal
     )
   )
-  let batch: import('../src/ai/action-batch-protocol').AiActionBatch | undefined
+  let batch: import('@asyra/ai-agent-runtime').AiActionBatch | undefined
   const operations = createLocalOperationTools(
     available,
     tools,

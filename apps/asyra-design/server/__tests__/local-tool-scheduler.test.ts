@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { createLocalToolScheduler } from '../local-tool-scheduler'
+import { createAiToolScheduler } from '@asyra/ai-agent-runtime'
 
 describe('request tool scheduling', () => {
   it('runs coordinators without a barrier while their leaves remain scheduled', async () => {
-    const schedule = createLocalToolScheduler(new AbortController().signal)
+    const schedule = createAiToolScheduler(new AbortController().signal)
     const events: string[] = []
     const parent = schedule('coordinator', async () => {
       events.push('parent')
@@ -22,7 +22,7 @@ describe('request tool scheduling', () => {
   })
 
   it('allows isolated preparation during a pending write without releasing the canvas barrier', async () => {
-    const schedule = createLocalToolScheduler(new AbortController().signal)
+    const schedule = createAiToolScheduler(new AbortController().signal)
     let finish!: () => void
     const events: string[] = []
     const pending = schedule('exclusive', async () => {
@@ -54,14 +54,14 @@ describe('request tool scheduling', () => {
     let started = false
 
     await expect(
-      createLocalToolScheduler(controller.signal)('coordinator', async () => {
+      createAiToolScheduler(controller.signal)('coordinator', async () => {
         started = true
       })
     ).rejects.toThrow()
     expect(started).toBe(false)
   })
   it('treats missing access as a barrier and continues after a recoverable failure', async () => {
-    const schedule = createLocalToolScheduler(new AbortController().signal)
+    const schedule = createAiToolScheduler(new AbortController().signal)
     let resume!: () => void
     const gate = new Promise<void>((resolve) => {
       resume = resolve
@@ -90,7 +90,7 @@ describe('request tool scheduling', () => {
 
   it('overlaps adjacent read-only analyses but serializes writes and subsequent reads', async () => {
     const controller = new AbortController()
-    const schedule = createLocalToolScheduler(controller.signal)
+    const schedule = createAiToolScheduler(controller.signal)
     const events: string[] = []
     let finish!: () => void
     const gate = new Promise<void>((resolve) => {
@@ -122,7 +122,7 @@ describe('request tool scheduling', () => {
   })
   it('does not start queued work after cancellation', async () => {
     const controller = new AbortController(),
-      schedule = createLocalToolScheduler(controller.signal)
+      schedule = createAiToolScheduler(controller.signal)
     let finish!: () => void
     const first = schedule(
       'exclusive',

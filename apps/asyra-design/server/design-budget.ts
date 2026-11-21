@@ -2,7 +2,7 @@ import { AiToolFailureCodes } from '../src/constants/ai-design'
 import { resolveMotifReference } from './design-motif-reference'
 import { facePointCount, resolveSurfaceBoundaries } from './design-face'
 import { designConstructionSchema } from './design-construction-schema'
-import { operationInputIssue } from '../src/ai/tool-schema'
+import { operationInputIssue } from '@asyra/ai-agent-runtime/schema'
 import { DesignPreparationLimits as limits } from '../src/ai/prepared-design'
 
 // Delivery shares the admission owner's limits; it does not estimate or split drafts.

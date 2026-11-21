@@ -1,15 +1,13 @@
 import { createBasicApiActions } from '../../src/ai/basic-api-actions'
-import { createConversationResults } from '../../src/ai/conversation-results'
+import { createConversationResults } from '@asyra/ai-agent-runtime'
 vi.mock('../../src/contexts', () => ({ default: {} }))
-import { resultDelivery } from '../local-result-delivery'
-import type { LocalToolImage } from '../local-tool-media'
+import { createDesignResultDelivery } from '../local-result-delivery'
+import type { AiToolImage } from '@asyra/ai-agent-runtime'
 import { readFileSync } from 'node:fs'
 import { expect, it, vi } from 'vitest'
 import { createAiInspectionAction } from '../../src/ai/inspection'
-import {
-  projectToolDelivery,
-  designActionOutcome
-} from '../../src/ai/tool-contract'
+import { projectToolDelivery } from '@asyra/ai-agent-runtime/schema'
+import { designActionOutcome } from '../../src/ai/tool-contract'
 
 vi.mock('../../src/common-apis', () => ({ inspectionApis: {} }))
 import {
@@ -232,8 +230,8 @@ it('delivers pixels selected under the recorded host receipt alias without Base6
     height: pixels.readUInt32BE(20)
   }
   const before = structuredClone(receipt)
-  const media: LocalToolImage[] = []
-  const delivery = resultDelivery(
+  const media: AiToolImage[] = []
+  const delivery = createDesignResultDelivery(
     selectedInspection.request,
     undefined,
     (items) => media.push(...items)
@@ -664,8 +662,8 @@ it.each([
         metadata: '/actionResults/0/result/image/width'
       } as Record<string, string>
     )[mode] ?? ''
-  const media: LocalToolImage[] = []
-  const delivery = resultDelivery(
+  const media: AiToolImage[] = []
+  const delivery = createDesignResultDelivery(
     {
       delivery: {
         fields: {
@@ -767,7 +765,7 @@ it('delivers the recorded failure-prefix image through native media without scan
 })
 
 it('declares and validates the actual capture observation without an approval revision', async () => {
-  const { operationInputIssue } = await import('../operation-input-schema')
+  const { operationInputIssue } = await import('@asyra/ai-agent-runtime/schema')
   const action = createAiInspectionAction()
   const owner = createLocalOperationTools(
     [createAiToolContract(action)],

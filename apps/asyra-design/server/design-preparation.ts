@@ -2,7 +2,7 @@ import { DesignInputError } from './design-input-error'
 import { inspectDesignBudget } from './design-budget'
 import { createDesignCheckResults } from './design-check-results'
 import { createHash } from 'node:crypto'
-import type { LocalToolOwnership } from './local-tool-leases'
+import type { AiToolOwnership } from '@asyra/ai-agent-runtime/schema'
 import {
   isDesignFill,
   isDesignFillTemplate,
@@ -931,7 +931,7 @@ export const prepareDesignAsync = (
 export const createDesignPreparationSession = (
   compile: typeof prepareDesign = prepareDesign,
   compileAsync: typeof prepareDesignAsync = prepareDesignAsync,
-  ownership?: LocalToolOwnership,
+  ownership?: AiToolOwnership,
   expandedNodeLimit: number = limits.expandedNodes
 ) => {
   if (

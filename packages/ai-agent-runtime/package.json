@@ -27,6 +27,11 @@
       "types": "./dist/node/index.d.ts",
       "import": "./dist/node/index.js",
       "default": "./dist/node/index.js"
+    },
+    "./schema": {
+      "types": "./dist/schema/index.d.ts",
+      "import": "./dist/schema/index.js",
+      "default": "./dist/schema/index.js"
     }
   },
   "files": [
@@ -45,8 +50,28 @@
     "test:ci": "vitest run --coverage --reporter=default --reporter=junit"
   },
   "devDependencies": {
+    "@types/lodash": "^4",
     "@vitest/coverage-v8": "^3.2.6",
+    "lodash": "^4.18.1",
     "typescript": "^5.7.2",
     "vitest": "^3.2.6"
+  },
+  "typesVersions": {
+    "*": {
+      "schema": [
+        "dist/schema/index.d.ts"
+      ],
+      "node": [
+        "dist/node/index.d.ts"
+      ]
+    }
+  },
+  "peerDependencies": {
+    "lodash": "^4.18.1"
+  },
+  "peerDependenciesMeta": {
+    "lodash": {
+      "optional": true
+    }
   }
 }

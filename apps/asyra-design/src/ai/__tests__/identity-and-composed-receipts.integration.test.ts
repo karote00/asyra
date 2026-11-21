@@ -3,7 +3,7 @@ import { createAiToolContract } from '@asyra/ai-agent-runtime'
 import { beforeAll, expect, it, vi } from 'vitest'
 import { createLocalOperationTools } from '../../../server/local-operation-tools'
 import { prepareOperationBatch } from '../../../server/local-operation-batch'
-import { operationInputIssue } from '../../../server/operation-input-schema'
+import { operationInputIssue } from '@asyra/ai-agent-runtime/schema'
 import { invokeLocalTool } from '../../../server/local-tool-invocation'
 import { applyPreset, PresetDefaults, PresetProfiles } from '@asyra/preset'
 import { idCounter, IDTypes } from '@asyra/utils'
@@ -70,7 +70,7 @@ it('executes the published identity example through the real Core and uses issue
   }
 
   const dispatch = vi.fn(
-    async (batch: import('../action-batch-protocol').AiActionBatch) => ({
+    async (batch: import('@asyra/ai-agent-runtime').AiActionBatch) => ({
       context: null,
       actionResults: await Promise.all(
         batch.actions.map(async (item) => ({
@@ -78,7 +78,7 @@ it('executes the published identity example through the real Core and uses issue
           actionName: item.name,
           result: (await action.execute(item.arguments, {
             signal: new AbortController().signal
-          })) as import('../action-batch-protocol').AiJsonValue
+          })) as import('@asyra/ai-agent-runtime').AiJsonValue
         }))
       )
     })

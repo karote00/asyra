@@ -11,7 +11,7 @@ const root = path.resolve(__dirname, '../../../..')
 function setup(
   t,
   appOwner = false,
-  appFile = 'apps/asyra-design/server/local-tool-scheduler.ts'
+  appFile = 'packages/ai-agent-runtime/src/tool-scheduler.ts'
 ) {
   const parent = path.join(root, 'tmp/flow-inspector/target-tests')
 

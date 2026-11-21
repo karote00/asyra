@@ -1,5 +1,5 @@
 import { AiToolFailureCodes } from '../src/constants/ai-design'
-import { LocalToolInputError } from './local-tool-invocation'
+import { AiToolInputError } from '@asyra/ai-agent-runtime'
 import { directResultDeliveryProperties } from './local-design-sequence'
 import {
   designRepresentationGuidance,
@@ -25,9 +25,9 @@ import {
   operationInputIssue,
   operationInputIssues,
   type OperationInputIssue
-} from './operation-input-schema'
+} from '@asyra/ai-agent-runtime/schema'
 import { AiActionNames } from '../src/constants/ai-actions'
-import { LocalToolAccess } from './local-tool-scheduler'
+import { AiToolAccess } from '@asyra/ai-agent-runtime'
 import { AiDesignToolIds } from '../src/constants/ai-design'
 import type { createLocalDesignTools } from './local-design-tools'
 import { type createLocalOperationTools } from './local-operation-tools'
@@ -285,7 +285,7 @@ export const createLocalDesignWorkflow = (
               },
               recoveryOutputSchema: stoppedOutputSchema,
               name: AiDesignToolIds.PREPARE_AND_APPLY_DESIGN,
-              executionAccess: LocalToolAccess.EXCLUSIVE,
+              executionAccess: AiToolAccess.EXCLUSIVE,
               description:
                 'Prepare and apply one ready retained part, through existing validation and canvas operations. Optional parentId attaches this part to an existing container in parent-local coordinates. The successful compositionIds list contains acknowledged roots in creation order. Bind /compositionIds/0 for a single created part; the same ID can anchor later parts; no full ID map is needed for continuation. Invalid preparation never applies. Safe capacity plans execute through ordered retained parts in this call; only actual receipts prove writes. Returns preparation findings, actual root identity and requested captures. The owner result omits duplicated context and pure work/timing diagnostics. createdTargets always carries acknowledged source-key mappings for binding and retention; select delivery fields or status when the model does not need these values. Host retain and delivery independently control storage and model output. Operation results, limitations and recovery remain complete. Use inspection=defer when no immediate visual decision is needed, then inspect at the next visual decision boundary. Does not replace existing objects or retry failures. ' +
                 designRepresentationGuidance,
@@ -353,7 +353,7 @@ export const createLocalDesignWorkflow = (
             !input.message.trim() ||
             Array.from(input.message).length > 1000))
       ) {
-        throw new LocalToolInputError(
+        throw new AiToolInputError(
           'Provide draft or repair, and optional parentId, message, inspection only.'
         )
       }
@@ -778,7 +778,7 @@ export const createLocalDesignWorkflow = (
         hasInvalidContinuation ||
         hasInvalidParentReference
       ) {
-        throw new LocalToolInputError(
+        throw new AiToolInputError(
           'Parts require unique nonempty keys and either parentId or an earlier parentPart.'
         )
       }
@@ -1003,7 +1003,7 @@ export const createLocalDesignWorkflow = (
         typeof args === 'object' &&
         ('retain' in args || 'delivery' in args)
       ) {
-        throw new LocalToolInputError(
+        throw new AiToolInputError(
           'Result delivery is handled at the host entry. Inside execute_design select retain/delivery on that enclosing call.'
         )
       }
@@ -1040,7 +1040,7 @@ export const createLocalDesignWorkflow = (
       const issue = operationInputIssue(args, inputSchema)
 
       if (issue) {
-        throw new LocalToolInputError(issue)
+        throw new AiToolInputError(issue)
       }
 
       const input = args as Record<string, unknown>

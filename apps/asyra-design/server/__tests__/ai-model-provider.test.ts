@@ -5,10 +5,7 @@ vi.mock('@asyra/ai-agent-runtime/node', async (original) => ({
   captureAiSourceIdentity: vi.fn()
 }))
 vi.mock('../local-ai-provider', () => ({ requestLocalAiActionBatch: vi.fn() }))
-import type {
-  AiActionBatch,
-  AiProviderInput
-} from '../../src/ai/action-batch-protocol'
+import type { AiActionBatch, AiProviderInput } from '@asyra/ai-agent-runtime'
 import { describe, expect, it, vi } from 'vitest'
 import { requestConfiguredAiActionBatch } from '../ai-model-provider'
 

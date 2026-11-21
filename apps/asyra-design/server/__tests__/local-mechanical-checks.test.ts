@@ -1,7 +1,7 @@
 import { expect, it, vi } from 'vitest'
 import { createDesignCheckResults } from '../design-check-results'
 import { createMechanicalChecks } from '../local-mechanical-checks'
-import { LocalToolInputError } from '../local-tool-invocation'
+import { AiToolInputError } from '@asyra/ai-agent-runtime'
 
 const fixture = () => {
   const store = createDesignCheckResults()
@@ -167,7 +167,7 @@ it('keeps findings without current receipts unresolved and rejects repairs befor
     .catch((error: unknown) => error)
 
   expect(failure).toBeInstanceOf(Error)
-  expect(failure).not.toBeInstanceOf(LocalToolInputError)
+  expect(failure).not.toBeInstanceOf(AiToolInputError)
   expect(failure).toMatchObject({
     message: 'Mechanical evidence is unavailable before repair.'
   })
@@ -194,6 +194,6 @@ it('classifies a revision changed during repair admission as a prewrite rejectio
     return new Set(['a'])
   })
   await expect(f.owner.repairSelection(input, f.signal)).rejects.toBeInstanceOf(
-    LocalToolInputError
+    AiToolInputError
   )
 })

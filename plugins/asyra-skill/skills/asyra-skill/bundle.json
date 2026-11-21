@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
-  "pluginVersion": "0.1.13",
+  "pluginVersion": "0.1.14",
   "inputs": {
     "apps/starter-app/docs/ARCHITECTURE.md": "ab6b259b417ebf36d7c37012aeaa5b522025746a818996088bd6dda43433cbb8",
     "apps/starter-app/docs/ONBOARDING.md": "4b26fcecca29027c2cba3a5756914b495019368459704f8756a8a43cb5618242",
-    "docs/public/build/ai-actions.md": "d8677a0ee295a267b87ea01933a38ba5c544e6a02f243d6fec6f401a67eb926b",
+    "docs/public/build/ai-actions.md": "26f56e906d01caeaf7446a04090675826ffe57ef159a3bb8fdd2a7d9c816dc4e",
     "docs/public/build/collaboration.md": "1186b98542d1e962add2968b9d471df34d14e67da641dadfa3731601ea13c887",
     "docs/public/build/custom-schema.md": "3eca920e7bcd70b1599c366e517a0805b755477687639c403eeab03fe94ba5e1",
     "docs/public/build/feature-session.md": "91bcc101100bc3ea991fb247e7e0bf5c0a5a08f56fa76294c5fb3bfa14eb9284",
@@ -44,16 +44,16 @@
     "@asyra/utils": "0.5.2"
   },
   "files": {
-    ".codex-plugin/plugin.json": "361e1380e2423dd8334ce554c6d69830242599980d852d87407d21ef775b38ef",
-    ".claude-plugin/plugin.json": "8b3f125cc0dbf51aa15bfaa06e8a3e40c6cf1a0f6916dc2da7fbfbe05e8daf67",
-    "bundle.config.json": "e6bb5ac9a7fff7d4b88f03d5b0244ed0a790192e8300737134810fe4f66f3e09",
+    ".codex-plugin/plugin.json": "a0a1ae1829d6861e59d76c7e47bbda4254cc7609f5c90f056c3cbae7160057d3",
+    ".claude-plugin/plugin.json": "936d2b8848b5bf9b8b13f3f2710f85460100fab8e71ef5624279239c9811976e",
+    "bundle.config.json": "4941004a943d2fcdcc2cfbda36393102634c45f92975bfe2af1cb813e119e08d",
     "README.md": "6f9124a92ade9f4d34f4ff247d3c078c76e2a266bf2ebdde5cf0d2f63224372a",
-    "CHANGELOG.md": "22c18cc3a0ca76d1ea61dd780b284b0cb32e844c1591528d69880fe4e8af278a",
+    "CHANGELOG.md": "69514fda8999898d280110e38fbe003b41d46a1caa28a51e8c699555dc959fd9",
     "assets/icon.svg": "a7fd594de4944f6cc1daf3ef674efeb10a66e839084bebcbca0414591d96fb82",
     "skills/asyra-skill/SKILL.md": "cc27d89dafd9220d996caed143b23c4bc5f3dcc6565f3463560033b4f564e163",
     "skills/asyra-skill/references/apps/starter-app/docs/ARCHITECTURE.md": "02e64d33b75092dade4e7682c4ee08927371af45b402c100db95ccade5962244",
     "skills/asyra-skill/references/apps/starter-app/docs/ONBOARDING.md": "ed9e7222f984500c1b8926fed2630f2dcb794a92a75b767457e422abeda5a139",
-    "skills/asyra-skill/references/docs/public/build/ai-actions.md": "9db1cac2de016837d45d74ea2bf975e4c20140e5918cdbb3087ceb758e5a9137",
+    "skills/asyra-skill/references/docs/public/build/ai-actions.md": "acd7cdce812b78587b5b1f2bfa947039e4cde4f1a4bc6414e4080f75bbf98d1d",
     "skills/asyra-skill/references/docs/public/build/collaboration.md": "508aab66460e75f62d276c9b0ad1c99eafb39df94c6aad5334cef1f4926e8264",
     "skills/asyra-skill/references/docs/public/build/custom-schema.md": "f7658e8c0565ac2bf53ff673e6cb5e0165d622a7070a36dfa62fd8bcf6b01510",
     "skills/asyra-skill/references/docs/public/build/feature-session.md": "b049e3e094d71f8ec5932102b2eaf1d280c5f54f8861b05dfe75e9f7214a280c",
@@ -71,5 +71,5 @@
     "skills/asyra-skill/references/docs/public/start/custom-composition.md": "ead489fa5c0918b407b064727fae78dd9d4169ec390b67622a1df99f27d92468",
     "skills/asyra-skill/references/docs/public/start/extend-with-ai.md": "a6a3f2eb807455fce4603a20883966f8c736552d5454f3a59a7c5716d5ea420b"
   },
-  "contentDigest": "3151123fb8f135b3ac308bd0b66eb2700b4167992b6c3b79d76545faa343d75c"
+  "contentDigest": "96cb20d3800faa01a2a5c500bcebcf4b2c6dbe44be42410f7abbefb62d02343f"
 }

@@ -1,6 +1,5 @@
-import { LocalToolInputError } from './local-tool-invocation'
+import { AiToolInputError } from '../index.js'
 import { randomUUID } from 'node:crypto'
-import { AiDesignToolIds } from '../src/constants/ai-design'
 import {
   AiToolContractError,
   admitAiRecipe,
@@ -23,9 +22,9 @@ import {
   type AiToolLibraryOptions,
   type AiToolPersistenceOptions,
   type AiToolSaveResult
-} from '@asyra/ai-agent-runtime'
+} from '../index.js'
 
-export interface LocalToolLibraryOptions
+export interface AiToolHostLibraryOptions
   extends
     Pick<
       AiRecipeInvokerOptions,
@@ -38,6 +37,7 @@ export interface LocalToolLibraryOptions
     >,
     Pick<AiToolLibraryOptions, 'limits' | 'capacity'>,
     Pick<AiToolPersistenceOptions, 'store' | 'check'> {
+  readonly saveInvocationName: string
   readonly requestId: string
   readonly privateDependency?: string
   readonly receiptCapacity: number
@@ -48,14 +48,14 @@ export interface LocalToolLibraryOptions
   ) => void | Promise<void>
 }
 
-export interface LocalToolInvocationResult {
+export interface AiToolHostInvocationResult {
   readonly execution: AiRecipeExecutionResult
   readonly storage?: AiToolSaveResult
   readonly receiptId?: string
 }
 
 /** A request coordinator, not a second registry, interpreter or leaf scheduler. */
-export const createLocalToolLibrary = (options: LocalToolLibraryOptions) => {
+export const createAiToolHostLibrary = (options: AiToolHostLibraryOptions) => {
   if (!options.requestId.trim()) {
     throw new TypeError('A request identity is required')
   }
@@ -163,7 +163,7 @@ export const createLocalToolLibrary = (options: LocalToolLibraryOptions) => {
     return result
   }
 
-  const rejected = (issue: string): LocalToolInvocationResult => ({
+  const rejected = (issue: string): AiToolHostInvocationResult => ({
     execution: {
       status: 'failed',
       settlement: 'not-started',
@@ -238,7 +238,7 @@ export const createLocalToolLibrary = (options: LocalToolLibraryOptions) => {
 
   const invoke = (
     input: AiInvocation & { revision?: number }
-  ): Promise<LocalToolInvocationResult> =>
+  ): Promise<AiToolHostInvocationResult> =>
     track(async () => {
       const registered = options.registry.registration(input.name, {
         requestId: options.requestId,
@@ -250,7 +250,7 @@ export const createLocalToolLibrary = (options: LocalToolLibraryOptions) => {
         !registered ||
         registered.definition.composition !== 'allowed'
       ) {
-        throw new LocalToolInputError(
+        throw new AiToolInputError(
           'Use an available data-plane tool; library controls cannot be invoked as recipes.'
         )
       }
@@ -269,13 +269,13 @@ export const createLocalToolLibrary = (options: LocalToolLibraryOptions) => {
         }
 
         if (pending.has(callId)) {
-          throw new LocalToolInputError(
+          throw new AiToolInputError(
             'An active or unsaved invocation already owns this call identity.'
           )
         }
 
         if (pending.size >= options.receiptCapacity) {
-          throw new LocalToolInputError(
+          throw new AiToolInputError(
             'Save outstanding receipts before starting another composition.'
           )
         }
@@ -330,7 +330,7 @@ export const createLocalToolLibrary = (options: LocalToolLibraryOptions) => {
             })
           }
         }).invoke({
-          name: `tool_library.${AiDesignToolIds.SAVE_TOOL}`,
+          name: options.saveInvocationName,
           input: { name: input.name, revision },
           parentCallId: input.parentCallId,
           actor: 'app-server'

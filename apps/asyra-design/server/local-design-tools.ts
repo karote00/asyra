@@ -13,18 +13,18 @@ import {
 import { inspectDesignBudget } from './design-budget'
 import { DesignGeometryError } from './design-construction'
 import { DesignKeyConflictError } from './design-face'
-import { LocalToolInputError } from './local-tool-invocation'
+import { AiToolInputError } from '@asyra/ai-agent-runtime'
 import {
   designPreparationExamples,
   designRepresentationGuidance
 } from './design-preparation-examples'
-import { LocalToolAccess } from './local-tool-scheduler'
+import { AiToolAccess } from '@asyra/ai-agent-runtime'
 import {
   operationInputIssue,
   operationInputIssues,
   formatOperationInputIssues,
   type OperationInputIssue
-} from './operation-input-schema'
+} from '@asyra/ai-agent-runtime/schema'
 import {
   designFillSchema,
   designFillTemplatesSchema,
@@ -39,10 +39,7 @@ import {
   DesignTextSizingModes,
   deliverPreparedDesign
 } from '../src/ai/prepared-design'
-import type {
-  AiActionBatch,
-  AiProviderInput
-} from '../src/ai/action-batch-protocol'
+import type { AiActionBatch, AiProviderInput } from '@asyra/ai-agent-runtime'
 import {
   createDesignPreparationSession,
   designNodeInputFields
@@ -326,7 +323,7 @@ const referenceSchema = {
   description: 'Use the artifactId returned by prepare_design in this request.'
 }
 
-export class DesignReferenceError extends LocalToolInputError {
+export class DesignReferenceError extends AiToolInputError {
   constructor() {
     super(
       'Use a valid artifactId returned by prepare_design in this request. Do not send raw design descriptors. No changes were applied by this operation.',
@@ -469,7 +466,7 @@ export const createLocalDesignTools = (
           .selectKeys(value.artifactId, missing)
           .slice(0, 3)
 
-        throw new LocalToolInputError(
+        throw new AiToolInputError(
           `Unknown exact artifact key ${JSON.stringify(missing)}.` +
             (examples.length
               ? ` Matching keys include ${examples.join(', ')}.`
@@ -742,7 +739,7 @@ export const createLocalDesignTools = (
                   ),
                   composition: 'allowed' as const,
                   name: AiDesignToolIds.PREPARE_MATERIAL_REVISION,
-                  executionAccess: LocalToolAccess.INDEPENDENT,
+                  executionAccess: AiToolAccess.INDEPENDENT,
                   description:
                     'Recompile an existing explicit world linear field from its owned source, preserving projection, geometry and creation IDs. Supply the existing field key and complete new field definition. Returns an unapplied materialRevisionId: use apply_prepared_material to update the original members only. Later prepare_design or prepare_and_apply_design accepts materialSourceId to reuse these fields with new geometry. No native-gradient guesses, canvas changes or visual approval occur here.',
                   inputSchema: {
@@ -795,7 +792,7 @@ export const createLocalDesignTools = (
             },
             name: AiDesignToolIds.PREPARE_DESIGN,
             revision: 5,
-            executionAccess: LocalToolAccess.INDEPENDENT,
+            executionAccess: AiToolAccess.INDEPENDENT,
             description:
               designRepresentationGuidance +
               ' ' +
@@ -823,7 +820,7 @@ export const createLocalDesignTools = (
             ),
             composition: 'allowed' as const,
             name: AiDesignToolIds.RETAIN_DESIGN_TARGETS,
-            executionAccess: LocalToolAccess.INDEPENDENT,
+            executionAccess: AiToolAccess.INDEPENDENT,
             description:
               'Retain a batch of artifact selections once for repeated reads or edits. Returns artifactId, targetSetId and count only. Use target={field:elementIds,artifactId,targetSetId} in later batches instead of resending keys. Members retain creation identity/order, not live group membership; canonical APIs recheck existence and locks. Artifact release invalidates its sets.',
             inputSchema: {
@@ -868,7 +865,7 @@ export const createLocalDesignTools = (
             ),
             composition: 'control-plane' as const,
             name: AiDesignToolIds.RELEASE_DESIGN_ARTIFACTS,
-            executionAccess: LocalToolAccess.EXCLUSIVE,
+            executionAccess: AiToolAccess.EXCLUSIVE,
             description:
               'Release explicitly unneeded prepared design artifact IDs from this request. This frees preparation memory only; it never changes canvas objects or Undo. Retain artifacts still needed for comparison or later use. Released IDs cannot be applied; group releases in native code instead of returning to the model for each artifact.',
             inputSchema: {
@@ -904,7 +901,7 @@ export const createLocalDesignTools = (
             composition: 'allowed' as const,
             name: AiDesignToolIds.READ_DESIGN_TEMPLATES,
             revision: 3,
-            executionAccess: LocalToolAccess.INDEPENDENT,
+            executionAccess: AiToolAccess.INDEPENDENT,
             description:
               'Read public authoring definitions from an owned prepared artifact. In execute_design, bind artifactId from the preparation step and retain this result under a name in App conversation context. Later drafts bind motifTemplates, fillTemplates, linearFields and sharedFills from that named value; no model transfer is needed. Definitions are immutable value snapshots, not live document links; each preparation creates its own shared Fill sources. Use native shared properties for persistent linkage.',
             inputSchema: {
@@ -998,7 +995,7 @@ export const createLocalDesignTools = (
           }
 
           if (session.isMaterialRevision(args.artifactId)) {
-            throw new LocalToolInputError(
+            throw new AiToolInputError(
               'Material revisions cannot create geometry; use apply_prepared_material.'
             )
           }
@@ -1049,7 +1046,7 @@ export const createLocalDesignTools = (
           Object.keys(args).length !== 1 ||
           typeof args.artifactId !== 'string'
         ) {
-          throw new LocalToolInputError('Provide artifactId.')
+          throw new AiToolInputError('Provide artifactId.')
         }
 
         const source = session.recipe(args.artifactId).recipe
@@ -1074,7 +1071,7 @@ export const createLocalDesignTools = (
           !args.targets.length ||
           args.targets.length > 128
         ) {
-          throw new LocalToolInputError('Provide a bounded targets array.')
+          throw new AiToolInputError('Provide a bounded targets array.')
         }
 
         const selections = args.targets.map((target) => {
@@ -1125,7 +1122,7 @@ export const createLocalDesignTools = (
           !Object.hasOwn(args, 'definition') ||
           Object.keys(args).length !== 3
         ) {
-          throw new LocalToolInputError(
+          throw new AiToolInputError(
             'Provide artifactId, field and definition for the available material consumer.'
           )
         }
@@ -1297,7 +1294,7 @@ export const createLocalDesignTools = (
           error instanceof DesignInputError ||
           error instanceof DesignGeometryError ||
           error instanceof DesignKeyConflictError ||
-          error instanceof LocalToolInputError
+          error instanceof AiToolInputError
         const retained = draft === undefined ? undefined : retainDraft(draft)
 
         return JSON.stringify({

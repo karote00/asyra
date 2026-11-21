@@ -189,7 +189,7 @@
           "implementationPaths": [
             "apps/asyra-design/server/local-operation-tools.ts",
             "apps/asyra-design/server/local-design-tools.ts",
-            "apps/asyra-design/server/operation-input-schema.ts"
+            "packages/ai-agent-runtime/src/schema/native-input.ts"
           ]
         },
         {
@@ -220,7 +220,7 @@
           "testName": "execution proof exports compound resources before cleanup",
           "implementationPaths": [
             "apps/asyra-design/server/local-tool-host.ts",
-            "apps/asyra-design/server/local-tool-leases.ts"
+            "packages/ai-agent-runtime/src/schema/tool-leases.ts"
           ]
         },
         {
@@ -229,7 +229,7 @@
           "testName": "execution proof composes preparation and canonical dispatch without repeated work",
           "implementationPaths": [
             "apps/asyra-design/server/local-design-workflow.ts",
-            "apps/asyra-design/server/local-tool-scheduler.ts",
+            "packages/ai-agent-runtime/src/tool-scheduler.ts",
             "apps/asyra-design/server/local-design-tools.ts",
             "apps/asyra-design/src/ai/prepared-design.ts",
             "apps/asyra-design/src/ai/prepared-design-admission.ts",
@@ -355,7 +355,7 @@
           "testName": "execution proof shares immutable tool contracts and preserves rejected output without replay",
           "implementationPaths": [
             "packages/ai-agent-runtime/src/tool-contract.ts",
-            "apps/asyra-design/server/operation-input-schema.ts"
+            "packages/ai-agent-runtime/src/schema/native-input.ts"
           ]
         },
         {
@@ -441,9 +441,9 @@
           "stepId": "compose",
           "testName": "execution proof saves nested tool evidence and reopens without product replay",
           "implementationPaths": [
-            "apps/asyra-design/server/local-tool-library.ts",
+            "packages/ai-agent-runtime/src/node/tool-host-library.ts",
             "apps/asyra-design/server/local-tool-host.ts",
-            "apps/asyra-design/server/local-tool-store.ts"
+            "packages/ai-agent-runtime/src/node/sqlite-tool-store.ts"
           ]
         },
         {
@@ -489,7 +489,7 @@
           "testName": "execution proof preserves completed writes and unresolved coverage after bounded receipt delivery rejection",
           "implementationPaths": [
             "apps/asyra-design/src/ai/server-action-batch-provider.ts",
-            "apps/asyra-design/server/batch-exchange.ts",
+            "packages/ai-agent-runtime/src/node/batch-exchange.ts",
             "apps/asyra-design/server/local-operation-tools.ts"
           ]
         },
@@ -668,7 +668,7 @@
           "stepId": "compose",
           "testName": "execution proof delivers selected operation contracts without exhaustive discovery",
           "implementationPaths": [
-            "apps/asyra-design/server/capability-search.ts",
+            "packages/ai-agent-runtime/src/capability-search.ts",
             "apps/asyra-design/server/design-workflow-discovery.ts",
             "apps/asyra-design/server/local-design-workflow.ts",
             "apps/asyra-design/server/local-operation-tools.ts",
@@ -677,7 +677,7 @@
             "apps/asyra-design/server/design-preparation-examples.ts",
             "apps/asyra-design/server/design-budget.ts",
             "apps/asyra-design/server/design-construction-schema.ts",
-            "apps/asyra-design/src/ai/tool-schema.ts"
+            "packages/ai-agent-runtime/src/schema/validation.ts"
           ]
         },
         {
@@ -714,7 +714,7 @@
             "apps/asyra-design/server/local-operation-tools.ts",
             "apps/asyra-design/server/local-query-artifacts.ts",
             "apps/asyra-design/server/local-tool-host.ts",
-            "apps/asyra-design/server/local-tool-leases.ts",
+            "packages/ai-agent-runtime/src/schema/tool-leases.ts",
             "apps/asyra-design/src/ai/runtime-input.ts",
             "apps/asyra-design/src/common-apis/retained-design-context.ts"
           ]
@@ -909,7 +909,7 @@
             "apps/asyra-design/test-data/ai-drawing/fixtures/correctable-preparation-20261106.json",
             "apps/asyra-design/server/local-tool-invocation.ts",
             "apps/asyra-design/test-data/ai-drawing/fixtures/control-admission-20261106.json",
-            "apps/asyra-design/server/local-tool-library.ts",
+            "packages/ai-agent-runtime/src/node/tool-host-library.ts",
             "apps/asyra-design/test-data/ai-drawing/fixtures/selected-prefix-recovery-20261107.json"
           ]
         },
@@ -960,7 +960,7 @@
           "stepId": "request",
           "testName": "execution proof reuses named result navigation without transferring stored values",
           "implementationPaths": [
-            "apps/asyra-design/src/ai/conversation-results.ts",
+            "packages/ai-agent-runtime/src/result-context.ts",
             "apps/asyra-design/src/ai/server-action-batch-provider.ts"
           ]
         },
@@ -1116,8 +1116,8 @@
       "expectedFailedCaseIds": ["apply.composition"],
       "mutation": {
         "file": "apps/asyra-design/server/local-design-workflow.ts",
-        "from": "executionAccess: LocalToolAccess.EXCLUSIVE,",
-        "to": "executionAccess: LocalToolAccess.INDEPENDENT,"
+        "from": "executionAccess: AiToolAccess.EXCLUSIVE,",
+        "to": "executionAccess: AiToolAccess.INDEPENDENT,"
       }
     },
     {

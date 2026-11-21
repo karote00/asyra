@@ -4,6 +4,17 @@ Never record completed plans here.
 
 This file tracks framework planning topics and points to detailed references.
 
+## AI Agent Runtime Ownership Transfer
+
+- [AI Agent Runtime Ownership Transfer](plans/ai-agent-runtime-ownership-transfer-plan.md)
+  - Implementation and local acceptance complete (2026-11-21); ready for PR
+    review. Runtime mechanisms, optional adapters and Design policy are separated
+    without old forwarding entries. The public non-Design journey and all five
+    Design conversation verification groups passed.
+  - Current Flow evidence is accepted, including explicit replacement of prior
+    unmapped failures. PR review, merge and formal archive closeout remain separate;
+    no CI monitoring or release operation is selected.
+
 ## Active Public Entry Experience Plans
 
 These plans improve how new visitors understand and verify the existing public

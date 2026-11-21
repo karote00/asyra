@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest'
-import { createConversationResults } from '../conversation-results'
+import { createConversationResults } from '@asyra/ai-agent-runtime'
 
 it('keeps image provenance with immutable values and projects only selected pixel paths', () => {
   let document = 'one'

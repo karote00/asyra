@@ -5,8 +5,7 @@ import { createLocalToolHost } from '../local-tool-host'
 import { LocalToolLibraryLimits } from '../local-tool-library-limits'
 
 it('exposes saved subtree shape through the existing host read route without dispatching work', async () => {
-  const { createConversationResults } =
-    await import('../../src/ai/conversation-results')
+  const { createConversationResults } = await import('@asyra/ai-agent-runtime')
   const context = createConversationResults(() => 1).open('shape-continuation')
 
   context.exchange({

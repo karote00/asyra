@@ -5,7 +5,7 @@ import {
   nativeToolInputSchema,
   operationContractIssue,
   operationInputIssue
-} from '../operation-input-schema'
+} from '@asyra/ai-agent-runtime/schema'
 
 it('enforces declared object property counts', () => {
   const schema = { type: 'object', minProperties: 1, maxProperties: 2 }

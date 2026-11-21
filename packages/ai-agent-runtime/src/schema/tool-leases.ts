@@ -1,9 +1,9 @@
-import { resolveLocalSchemaReference } from '../src/ai/tool-schema'
-import { LocalToolInputError } from './local-tool-invocation'
-import type { AiRecipeLeaseAdapter } from '@asyra/ai-agent-runtime'
-import { operationInputIssue } from './operation-input-schema'
+import { resolveLocalSchemaReference } from './validation.js'
+import { AiToolInputError } from '../tool-input-error.js'
+import type { AiRecipeLeaseAdapter } from '../recipe-execution.js'
+import { operationInputIssue } from './validation.js'
 
-export interface LocalToolOwnership {
+export interface AiToolOwnership {
   readonly requestId: string
   publish(
     handle: string,
@@ -24,7 +24,7 @@ const record = (value: unknown): value is Record<string, unknown> =>
   !!value && typeof value === 'object' && !Array.isArray(value)
 
 /** Inspect only declared reference fields, never opaque product payloads or names. */
-export const localToolReferences = (
+export const aiToolReferences = (
   value: unknown,
   schema: unknown,
   nonPortable?: Set<string>
@@ -157,7 +157,7 @@ interface LocalArtifactCall {
 }
 
 /** Host stores own the values; this adapter owns only exact call/request pins. */
-export const createLocalToolLeases = (options: {
+export const createAiToolLeases = (options: {
   requestId: string
   capacity: number
 }) => {
@@ -218,7 +218,7 @@ export const createLocalToolLeases = (options: {
     const item = artifacts.get(canonical(handle))
 
     if (!item) {
-      throw new LocalToolInputError('Artifact is unavailable for this request')
+      throw new AiToolInputError('Artifact is unavailable for this request')
     }
 
     if (item.state !== 'live') {
@@ -281,14 +281,14 @@ export const createLocalToolLeases = (options: {
 
       const references = [
         ...new Set(
-          localToolReferences(input.input, input.inputSchema).map(canonical)
+          aiToolReferences(input.input, input.inputSchema).map(canonical)
         )
       ]
       const selected = references.map((handle) => {
         const item = artifact(handle)
 
         if (![...item.owners].some((owner) => ancestors.has(owner))) {
-          throw new LocalToolInputError('Artifact is outside caller ownership')
+          throw new AiToolInputError('Artifact is outside caller ownership')
         }
 
         return item
@@ -315,7 +315,7 @@ export const createLocalToolLeases = (options: {
         input.toCallId === undefined ? undefined : scope(input.toCallId)
       const references = [
         ...new Set(
-          localToolReferences(input.value, input.outputSchema).map(canonical)
+          aiToolReferences(input.value, input.outputSchema).map(canonical)
         )
       ]
       const selected = references.map((handle) => {
@@ -448,7 +448,7 @@ export const createLocalToolLeases = (options: {
         !item.owners.has(callId ?? requestOwner) &&
         !item.owners.has(requestOwner)
       ) {
-        throw new LocalToolInputError('Artifact is outside caller ownership')
+        throw new AiToolInputError('Artifact is outside caller ownership')
       }
     },
 
@@ -470,7 +470,7 @@ export const createLocalToolLeases = (options: {
       }
 
       if (!allowed) {
-        throw new LocalToolInputError('Artifact is outside caller ownership')
+        throw new AiToolInputError('Artifact is outside caller ownership')
       }
 
       item.owners.add(callId)
@@ -547,7 +547,7 @@ export const createLocalToolLeases = (options: {
 
 /** Discovery considers every possible field. Preflight may consider only required
  * fields; retention still checks all fields present in the validated actual value. */
-export const localToolSchemaIsPortable = (
+export const aiToolSchemaIsPortable = (
   schema: unknown,
   referenceRoot: unknown = schema,
   requiredOnly = false
@@ -638,7 +638,7 @@ export const localToolSchemaIsPortable = (
 }
 
 /** Top-level result choices retain their declared lifetime even when conditional. */
-export const localToolResultFieldLifetimes = (schema: unknown) => {
+export const aiToolResultFieldLifetimes = (schema: unknown) => {
   const fields = new Set<string>()
   const requestScoped = new Set<string>()
   const seen = new Set<unknown>()
@@ -658,7 +658,7 @@ export const localToolResultFieldLifetimes = (schema: unknown) => {
         const path = '/' + name.replace(/~/g, '~0').replace(/\//g, '~1')
 
         fields.add(path)
-        if (!localToolSchemaIsPortable(value, schema)) {
+        if (!aiToolSchemaIsPortable(value, schema)) {
           requestScoped.add(path)
         }
       }

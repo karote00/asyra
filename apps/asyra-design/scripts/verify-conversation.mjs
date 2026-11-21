@@ -600,6 +600,15 @@ async function execute() {
     }
 
     issues.push(...validateRequiredHandoffs(expected, observations))
+    if (issues.length === 0) {
+      // Integration depends on every owner's final observations. Bind already
+      // admitted results only after the unchanged-source and complete-run gates.
+      publish(
+        project,
+        capture(project, { nodeId: 'integration' }),
+        observations
+      )
+    }
   } catch (error) {
     issues.push(error.stack ?? String(error))
     publish(

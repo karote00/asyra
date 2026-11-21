@@ -1,3 +1,4 @@
+export const DEFAULT_TOOL_LIBRARY_DIRECTORY = '.app-data/ai-tool-library'
 /** Host resource budgets, independent of model effort or document geometry. */
 export const LocalToolLibraryLimits = Object.freeze({
   entries: 256,

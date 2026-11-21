@@ -740,3 +740,67 @@ Tool delivery declarations use standard JSON Pointers: `delivery.path: ""` selec
 the whole result, while `/field` selects a child. A declared view does not change
 the raw output schema or execution outcome. Hosts validate raw data with its
 execution state, then validate the selected view with its delivery state.
+
+### Optional schema adapter
+
+`@asyra/ai-agent-runtime/schema` provides `operationContractIssue`, the supported
+JSON Schema validator, `nativeToolInputSchema` for native provider conversion,
+and the `projectToolDelivery`/`modelToolResultSchemas` external-view boundary.
+The entry requires the optional Lodash peer (`^4.18.1`); consumers selecting this
+adapter declare that dependency. Root imports do not load the adapter or Lodash.
+
+Complete result validation precedes projection. Recipes consume the validated
+complete value, independently of model delivery and named retention. Projection
+failure preserves execution settlement and cannot authorize replay. Unsupported
+schema vocabulary remains an explicit error. Design owns action-specific outcome
+classification, target validity and transaction policy.
+
+### Optional host and transport ownership
+
+The portable root owns normalized named-result resolution, selected delivery,
+App-scoped retained context, explicit media metadata, metadata-based capability
+search and request-scoped tool scheduling. It does not interpret Design stages,
+apply syntax, element IDs, coordinates or screenshot action names.
+
+The Node entry composes the existing registry/invoker/recipe/store owners in
+`createAiToolHostLibrary`. SQLite storage, lazy Knowledge file installation,
+revision-bound information pages, batch receipt exchange and native RPC transport
+are optional adapters. App composition supplies resource paths, budgets, failure
+mapping, catalogs, transaction policy and cleanup ownership. The portable
+`createExchangeAiProvider` reuses the generic HTTP provider and delegates endpoint,
+headers, App-owned result storage and evaluation metadata to App callbacks.
+The exchange adapter awaits storage acknowledgement and never clears a borrowed
+store; the App supplies an explicit release callback for owned storage. Native packet/UTF-8/RPC pending
+state is shared; Design prompts, native model configuration choices and report
+continuation policy remain with its provider composition.
+
+Canonical complete results feed subsequent steps independently of retention and
+model delivery. `x-model-visibility` affects presentation only; recipe implication
+preserves the field's actual type, constraints and lifetime. Failed input is
+returned to the same usable provider invocation; no adapter invents successful
+execution, rollback or retry permission.
+
+### Optional native conversation adapter
+
+The Node entry exports `createNativeAiProvider`, `createNativeSession` and
+`createNativeConversations`. The provider implements the ordinary `AiProvider`
+interface; `prepare` supplies fresh request tools, input projection, result decoding
+and owned cleanup. Specialized App providers can compose the same session protocol
+directly, retaining their own diagnostics and report policy.
+
+Conversation identity, native thread, current turn and App Feature session are
+separate lifetimes. A service-scoped registry binds an App conversation ID to the
+native thread and canonical contract digest. Same-conversation overlap and changed
+native contracts are rejected before model work. With Codex 0.160.0, tool schemas
+cannot be replaced on resume. Missing history is an explicit failure, never a new
+thread or replay of mutations. Request cancellation releases request resources
+without erasing the identity. Each later request starts a fresh process and resumes
+the persisted native thread with fresh executors and current App data.
+
+The default identity registry is in memory. An injected `NativeConversationStorage`
+may retain descriptors across provider instances, but its storage is App-owned.
+It does not store messages, tool values, credentials or browser history. Named
+results still use the existing App result store, scoped by document/conversation.
+Provider disposal cancels active requests, waits for owned cleanup and does not
+clear a borrowed registry. The App remains responsible for native data retention,
+credential policy, project instruction admission and its transaction decisions.

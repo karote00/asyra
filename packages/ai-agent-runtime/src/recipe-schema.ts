@@ -319,7 +319,9 @@ export const readRegisteredRecipeSchema = (
       'description',
       'title',
       'default',
-      'examples'
+      'examples',
+      // Presentation metadata cannot hide a complete value from its successor.
+      'x-model-visibility'
     ]) {
       Reflect.deleteProperty(normalized, key)
     }

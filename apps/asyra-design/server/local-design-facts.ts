@@ -1,5 +1,5 @@
-import { operationInputIssue } from './operation-input-schema'
-import { LocalToolInputError } from './local-tool-invocation'
+import { operationInputIssue } from '@asyra/ai-agent-runtime/schema'
+import { AiToolInputError } from '@asyra/ai-agent-runtime'
 
 const noteText = { type: 'string', minLength: 1, maxLength: 1000 }
 const sources = { type: 'array', uniqueItems: true, items: noteText }
@@ -68,13 +68,13 @@ export const createDesignFacts = (
     const issue = operationInputIssue(input, schema)
 
     if (issue) {
-      throw new LocalToolInputError(issue)
+      throw new AiToolInputError(issue)
     }
 
     const additions = (input as Record<string, Note[]>)[key] ?? []
 
     if (new Set(additions.map((note) => note.id)).size !== additions.length) {
-      throw new LocalToolInputError('Note IDs must be unique within an update.')
+      throw new AiToolInputError('Note IDs must be unique within an update.')
     }
 
     // Resolve the entire update before publishing any value.

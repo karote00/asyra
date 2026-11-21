@@ -1,23 +1,17 @@
-import type {
-  AiJsonValue,
-  AiToolStore,
-  AiToolStoreEntry
-} from '@asyra/ai-agent-runtime'
+import type { AiJsonValue, AiToolStore, AiToolStoreEntry } from '../index.js'
 import { randomUUID } from 'node:crypto'
 import { mkdir, open } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import { DatabaseSync } from 'node:sqlite'
 import { isDeepStrictEqual } from 'node:util'
 
-export const DEFAULT_TOOL_LIBRARY_DIRECTORY = '.app-data/ai-tool-library'
-
-interface LocalToolStoreOptions {
+interface SqliteToolStoreOptions {
   readonly directory: string
   readonly capacity: number
   readonly recordBytes: number
   readonly totalBytes: number
 }
-interface LocalToolStore extends AiToolStore {
+interface SqliteToolStore extends AiToolStore {
   close(): void
 }
 
@@ -29,9 +23,9 @@ const keyValid = (value: string) =>
   Buffer.byteLength(value) <= 1024
 
 /** Host-owned IO only. Recipe admission, eligibility and product execution stay in Runtime. */
-export const createLocalToolStore = async (
-  options: LocalToolStoreOptions
-): Promise<LocalToolStore> => {
+export const createSqliteToolStore = async (
+  options: SqliteToolStoreOptions
+): Promise<SqliteToolStore> => {
   if (
     ![options.capacity, options.recordBytes, options.totalBytes].every(
       positive
@@ -247,10 +241,10 @@ export const createLocalToolStore = async (
 }
 
 /** Lazy connection with retryable open failure; storage errors remain visible to Runtime. */
-export const createLocalToolStoreSession = (
-  connect: () => Promise<LocalToolStore>
+export const createAiToolStoreSession = (
+  connect: () => Promise<SqliteToolStore>
 ): AiToolStore & { close(): Promise<void> } => {
-  let connection: Promise<LocalToolStore> | undefined
+  let connection: Promise<SqliteToolStore> | undefined
   let closed = false
 
   const openConnection = () => {

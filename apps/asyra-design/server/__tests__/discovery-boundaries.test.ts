@@ -2,7 +2,7 @@ import { expect, it, vi } from 'vitest'
 import { basicApiContracts } from '../../src/ai/basic-api-catalog'
 import { createLocalOperationTools } from '../local-operation-tools'
 import { invokeLocalTool } from '../local-tool-invocation'
-import { operationInputIssue } from '../operation-input-schema'
+import { operationInputIssue } from '@asyra/ai-agent-runtime/schema'
 vi.mock('../../src/contexts', () => ({ default: {} }))
 
 const fixture = () => {

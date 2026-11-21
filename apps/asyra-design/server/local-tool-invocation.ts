@@ -1,4 +1,6 @@
-import type { AiBatchReceipt } from '../src/ai/action-batch-protocol'
+import { invokeAiToolOwner } from '@asyra/ai-agent-runtime/schema'
+import { AiToolInputError } from '@asyra/ai-agent-runtime'
+import type { AiBatchReceipt } from '@asyra/ai-agent-runtime'
 import { AiToolFailureCodes } from '../src/constants/ai-design'
 import {
   AiActionExecutionError,
@@ -7,8 +9,6 @@ import {
   AiExecutionError,
   createAiInvoker,
   createAiToolContract,
-  inspectAiToolResult,
-  selectAiToolResultSchema,
   type AiJsonValue,
   type AiToolContractInput,
   type AiToolOutcome,
@@ -16,17 +16,16 @@ import {
   type AiInvocationMiddleware
 } from '@asyra/ai-agent-runtime'
 import { serializeToolPayload } from '@asyra/ai-agent-runtime/node'
-import { BrowserBatchExecutionError } from './batch-exchange'
+import { BrowserBatchExecutionError } from '@asyra/ai-agent-runtime/node'
 import { designCheckSummarySchema } from './design-check-results'
 import {
   operationContractIssue,
   operationInputIssues,
-  formatOperationInputIssues,
   type OperationInputIssue
-} from './operation-input-schema'
+} from '@asyra/ai-agent-runtime/schema'
+import { modelToolResultSchemas } from '@asyra/ai-agent-runtime/schema'
 import {
   designActionOutcome,
-  modelToolResultSchemas,
   toolInternalResult,
   toolResultObject,
   toolResultString
@@ -166,17 +165,6 @@ export interface LocalToolOwner {
     name: string,
     args: unknown
   ): { code: string; message: string } | undefined
-}
-
-/** A known rejection before canonical dispatch; never use for uncertain writes. */
-export class LocalToolInputError extends AiToolContractError {
-  constructor(
-    message: string,
-    readonly code: string = AiToolFailureCodes.INPUT_INVALID,
-    readonly inputIssues?: readonly unknown[]
-  ) {
-    super('input', message)
-  }
 }
 
 const record = (value: unknown): value is Record<string, unknown> =>
@@ -583,104 +571,86 @@ export const invokeLocalTool = async (
   invocation?: object
 ): Promise<LocalToolReply> => {
   signal.throwIfAborted()
-  let stage: 'admission' | 'execution' | 'decoding' = 'admission'
+  const phaseState: { value: 'admission' | 'execution' | 'decoding' } = {
+    value: 'admission'
+  }
   let decodedResult: unknown
 
   const reportPhase = () => {
     try {
-      onPhase?.(stage)
+      onPhase?.(phaseState.value)
     } catch {
       /* Observation does not alter tool execution. */
     }
   }
 
   try {
-    reportPhase()
-    const contract = createAiToolContract(definition)
-    const issues = operationInputIssues(args, contract.inputSchema)
+    const executed = await invokeAiToolOwner({
+      definition,
+      input: args,
+      signal,
 
-    if (issues) {
-      const explanation = owner.explainInputIssue?.(definition.name, args)
+      onPhase: (value) => {
+        phaseState.value = value
+        reportPhase()
+      },
 
-      return localToolFailureReply(
-        explanation?.message ?? formatOperationInputIssues(issues),
-        explanation?.code ?? AiToolFailureCodes.INPUT_INVALID,
-        {
-          ...owner.rejectInput?.(definition.name, args, issues),
-          stage,
-          settlement: 'not-started'
-        }
-      )
-    }
+      execute: () =>
+        (owner.callInternal ?? owner.call)(definition.name, args, signal),
 
-    stage = 'execution'
-    reportPhase()
-    const text = await (owner.callInternal ?? owner.call)(
-      definition.name,
-      args,
-      signal
-    )
+      inspectOwner: (text) => {
+        let value = JSON.parse(text)
 
-    stage = 'decoding'
-    reportPhase()
-    let value = JSON.parse(text)
-
-    decodedResult = value
-    signal.throwIfAborted()
-    const resultIssue = owner.resultIssue?.(definition.name, value)
-
-    if (resultIssue) {
-      throw new Error(resultIssue)
-    }
-
-    let toolOutcome =
-      owner.resultOutcome?.(definition.name, value) ??
-      (record(value)
-        ? localToolOutcome(value)
-        : {
-            status: 'success' as const,
-            settlement: 'completed' as const,
-            issues: []
-          })
-
-    if (
-      record(value) &&
-      toolOutcome.status !== 'success' &&
-      toolOutcome.settlement === 'unknown' &&
-      !hasAcknowledgedActions(value.executionResult)
-    ) {
-      let observed: unknown
-
-      try {
-        observed = executionEvidence?.()
-      } catch {
-        // Unavailable diagnostics cannot replace the owner's failure.
-      }
-
-      if (hasAcknowledgedActions(observed)) {
-        value = { ...value, executionResult: observed }
         decodedResult = value
-        toolOutcome =
+        const resultIssue = owner.resultIssue?.(definition.name, value)
+
+        if (resultIssue) {
+          throw new Error(resultIssue)
+        }
+
+        let toolOutcome =
           owner.resultOutcome?.(definition.name, value) ??
-          localToolOutcome(value)
+          (record(value)
+            ? localToolOutcome(value)
+            : {
+                status: 'success' as const,
+                settlement: 'completed' as const,
+                issues: []
+              })
+
+        if (
+          record(value) &&
+          toolOutcome.status !== 'success' &&
+          toolOutcome.settlement === 'unknown' &&
+          !hasAcknowledgedActions(value.executionResult)
+        ) {
+          let observed: unknown
+
+          try {
+            observed = executionEvidence?.()
+          } catch {
+            // Unavailable diagnostics cannot replace the owner's failure.
+          }
+
+          if (hasAcknowledgedActions(observed)) {
+            value = { ...value, executionResult: observed }
+            decodedResult = value
+            toolOutcome =
+              owner.resultOutcome?.(definition.name, value) ??
+              localToolOutcome(value)
+          }
+        }
+
+        return { value, outcome: toolOutcome }
       }
-    }
-
-    const inspected = inspectAiToolResult(contract, value, {
-      outcome: toolOutcome,
-      validate: operationContractIssue
     })
-
-    if (inspected.status === 'invalid') {
-      throw new Error(inspected.issue)
-    }
+    const { value, outcome: toolOutcome, outputSchema } = executed
 
     const reply = {
       success: toolOutcome.status === 'success',
       text: JSON.stringify(value),
       outcome: toolOutcome
     }
-    const outputSchema = selectAiToolResultSchema(contract, toolOutcome.status)
 
     if (outputSchema !== undefined) {
       validatedOutputSchemas.set(reply, {
@@ -694,7 +664,7 @@ export const invokeLocalTool = async (
 
     return reply
   } catch (error) {
-    const inputFailure = error instanceof LocalToolInputError
+    const inputFailure = error instanceof AiToolInputError
     const registrationFailure =
       error instanceof AiToolContractError && error.stage === 'registration'
     const batchError =
@@ -758,36 +728,58 @@ export const invokeLocalTool = async (
         failureCode =
           batchError?.receipt?.failure?.code ??
           batchError?.failure.code ??
-          (stage === 'decoding'
+          (phaseState.value === 'decoding'
             ? 'TOOL_RESULT_INVALID'
             : 'TOOL_EXECUTION_FAILED')
       }
     }
 
-    return localToolFailureReply(localToolErrorMessage(error), failureCode, {
-      stage:
-        inputFailure || registrationFailure
-          ? 'admission'
-          : (batchError?.receipt?.failure?.stage ?? stage),
-      settlement:
-        (inputFailure || registrationFailure || stage === 'admission') &&
-        !hasPriorExecution
-          ? 'not-started'
-          : (batchError?.receipt?.failure?.settlement ??
-            reportedSettlement ??
-            'unknown'),
-      ...(inputFailure && error.inputIssues
-        ? { inputIssues: error.inputIssues }
-        : {}),
-      ...(batchError ? { batchFailure: batchError.failure } : {}),
-      ...(executionResult == null
-        ? {}
-        : {
-            executionResult: JSON.parse(
-              serializeToolPayload(executionResult).serialized
-            )
-          })
-    })
+    const issues = inputFailure
+      ? operationInputIssues(args, definition.inputSchema)
+      : undefined
+    let explanation: { message: string; code?: string } | undefined
+    let rejected: Record<string, unknown> | undefined
+
+    try {
+      if (inputFailure) {
+        explanation = owner.explainInputIssue?.(definition.name, args)
+        rejected = owner.rejectInput?.(definition.name, args, issues)
+      }
+    } catch {
+      // Optional rejection guidance cannot hide the original admission failure.
+    }
+
+    return localToolFailureReply(
+      explanation?.message ?? localToolErrorMessage(error),
+      explanation?.code ?? failureCode,
+      {
+        ...rejected,
+        stage:
+          inputFailure || registrationFailure
+            ? 'admission'
+            : (batchError?.receipt?.failure?.stage ?? phaseState.value),
+        settlement:
+          (inputFailure ||
+            registrationFailure ||
+            phaseState.value === 'admission') &&
+          !hasPriorExecution
+            ? 'not-started'
+            : (batchError?.receipt?.failure?.settlement ??
+              reportedSettlement ??
+              'unknown'),
+        ...(inputFailure && error.inputIssues
+          ? { inputIssues: error.inputIssues }
+          : {}),
+        ...(batchError ? { batchFailure: batchError.failure } : {}),
+        ...(executionResult == null
+          ? {}
+          : {
+              executionResult: JSON.parse(
+                serializeToolPayload(executionResult).serialized
+              )
+            })
+      }
+    )
   }
 }
 

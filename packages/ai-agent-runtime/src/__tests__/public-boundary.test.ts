@@ -20,7 +20,9 @@ it('keeps the complete root import graph portable and free of Design dependencie
     )) {
       const name = match[1]
 
-      expect(name, file).not.toMatch(/^(?:node:|@asyra\/asyra-design)/)
+      expect(name, file).not.toMatch(
+        /^(?:node:|lodash(?:\/|$)|@asyra\/asyra-design)/
+      )
       if (name.startsWith('.')) {
         visit(resolve(dirname(file), name.replace(/\.js$/, '.ts')))
       }

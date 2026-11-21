@@ -304,14 +304,12 @@ it('delivers and executes the selected boundary example with lower total bytes a
   const designs = createLocalDesignTools(actions)
   const applied: import('../../src/ai/prepared-design').PreparedDesign[] = []
   const execute = vi.fn(
-    async (
-      batch: import('../../src/ai/action-batch-protocol').AiActionBatch
-    ) => ({
+    async (batch: import('@asyra/ai-agent-runtime').AiActionBatch) => ({
       context: {},
       actionResults: batch.actions.map(
         (
           a
-        ): import('../../src/ai/action-batch-protocol').AiBatchReceipt['actionResults'][number] => {
+        ): import('@asyra/ai-agent-runtime').AiBatchReceipt['actionResults'][number] => {
           const design = admitPreparedDesignDelivery(
             (a.arguments as { design: unknown }).design
           )
@@ -484,14 +482,12 @@ it('continues only the failed retained part without resending geometry or recrea
   const operations = createLocalOperationTools(
     actions,
     designs,
-    async (
-      batch: import('../../src/ai/action-batch-protocol').AiActionBatch
-    ) => ({
+    async (batch: import('@asyra/ai-agent-runtime').AiActionBatch) => ({
       context: {},
       actionResults: batch.actions.map(
         (
           a
-        ): import('../../src/ai/action-batch-protocol').AiBatchReceipt['actionResults'][number] => {
+        ): import('@asyra/ai-agent-runtime').AiBatchReceipt['actionResults'][number] => {
           if (a.name === AiActionNames.REVIEW_DESIGN) {
             return {
               actionId: a.id,
@@ -630,9 +626,7 @@ it('recovers recorded ambiguous face keys through returned field repair without 
   ].map((name) => ({ name, description: name, inputSchema: {} }))
   const designs = createLocalDesignTools(actions)
   const execute = vi.fn(
-    async (
-      batch: import('../../src/ai/action-batch-protocol').AiActionBatch
-    ) => ({
+    async (batch: import('@asyra/ai-agent-runtime').AiActionBatch) => ({
       context: {},
       actionResults: batch.actions.map((a) => {
         const design = admitPreparedDesignDelivery(

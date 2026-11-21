@@ -4,11 +4,13 @@ import {
   modelToolDeliveryFailureSchema,
   projectToolDelivery,
   projectToolResultFields,
-  toolDeliveryFailure,
+  toolDeliveryFailure
+} from '@asyra/ai-agent-runtime/schema'
+import {
   toolInternalResult,
   toolResultObject
 } from '../../src/ai/tool-contract'
-import { operationContractIssue } from '../operation-input-schema'
+import { operationContractIssue } from '@asyra/ai-agent-runtime/schema'
 
 it('keeps missing-owner delivery failures valid without admitting undeclared evidence', () => {
   const schema = modelToolDeliveryFailureSchema({})

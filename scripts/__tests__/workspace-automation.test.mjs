@@ -1235,7 +1235,7 @@ test('collaboration follows the shared TypeScript library build convention', () 
   assert.deepEqual(collaborationTypeScript.exclude, factoryTypeScript.exclude)
 })
 
-test('AI agent runtime is an optional zero-runtime-dependency workspace package', () => {
+test('AI agent runtime isolates optional adapters behind explicit public entries', () => {
   const manifestPath = path.join(
     repositoryRoot,
     'packages/ai-agent-runtime/package.json'
@@ -1262,10 +1262,46 @@ test('AI agent runtime is an optional zero-runtime-dependency workspace package'
     factory.scripts['build:factory']
   )
   assert.deepEqual(runtime.dependencies ?? {}, {})
-  assert.deepEqual(
-    runtimeTypeScript.compilerOptions,
-    factoryTypeScript.compilerOptions
-  )
+  assert.deepEqual(runtime.peerDependencies, { lodash: '^4.18.1' })
+  assert.deepEqual(runtime.peerDependenciesMeta, { lodash: { optional: true } })
+  assert.equal(runtime.devDependencies.lodash, runtime.peerDependencies.lodash)
+  assert.equal(app.dependencies.lodash, runtime.peerDependencies.lodash)
+  const entries = {
+    '.': 'index',
+    './node': 'node/index',
+    './schema': 'schema/index'
+  }
+  const exports = {}
+  const paths = {}
+
+  for (const [subpath, entry] of Object.entries(entries)) {
+    exports[subpath] = {
+      types: `./dist/${entry}.d.ts`,
+      import: `./dist/${entry}.js`,
+      default: `./dist/${entry}.js`
+    }
+    paths[runtime.name + subpath.slice(1)] = [`./src/${entry}.ts`]
+    assert.ok(
+      fs.existsSync(
+        path.join(
+          repositoryRoot,
+          'packages/ai-agent-runtime/src',
+          `${entry}.ts`
+        )
+      ),
+      `${subpath} must have a current source entry`
+    )
+  }
+
+  assert.deepEqual(runtime.exports, exports)
+  assert.deepEqual(runtime.typesVersions, {
+    '*': { node: ['dist/node/index.d.ts'], schema: ['dist/schema/index.d.ts'] }
+  })
+  assert.deepEqual(runtimeTypeScript.compilerOptions, {
+    ...factoryTypeScript.compilerOptions,
+    lib: ['ES2022', 'DOM'],
+    paths
+  })
   assert.deepEqual(runtimeTypeScript.include, factoryTypeScript.include)
   assert.deepEqual(runtimeTypeScript.exclude, factoryTypeScript.exclude)
   assert.equal(

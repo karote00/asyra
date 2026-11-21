@@ -71,7 +71,7 @@ export function conversationGroups(root) {
         app + '/test-data/conversation-verification/runtime.vitest.config.mjs',
       environment: 'node',
       files: walk(root, 'packages/ai-agent-runtime/src').filter((file) =>
-        /\.test\.tsx?$/.test(file)
+        /\.test\.(?:tsx?|mjs)$/.test(file)
       )
     },
     {

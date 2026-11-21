@@ -22,7 +22,7 @@ import { createRetainedDesignContext } from '../../src/common-apis/retained-desi
 import { observeDesignChanges } from '../../src/common-apis/design-review'
 import { basicApiContracts } from '../../src/ai/basic-api-catalog'
 import { createAiTransactionRunner } from '../../src/ai/transaction'
-import { operationInputIssue } from '../../server/operation-input-schema'
+import { operationInputIssue } from '@asyra/ai-agent-runtime/schema'
 
 // Each heterogeneous result is checked by its explicit semantic oracle below.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -1,5 +1,12 @@
 # Asyra Skill releases
 
+## 0.1.14 - Runtime ownership and native conversation guidance candidate
+
+- Synchronize the bundled AI action guide with optional Runtime adapters,
+  complete-result handoff and native conversation continuation.
+- Preserve App-owned policy and distinguish native history from stored App
+  results. This candidate does not publish a release or update installed Skills.
+
 ## 0.1.13 - Session cancellation guidance candidate
 
 - Explain all three session cancellation policies and their concrete outcomes,

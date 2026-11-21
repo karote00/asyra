@@ -1,3 +1,48 @@
+vi.mock('@asyra/ai-agent-runtime/node', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@asyra/ai-agent-runtime/node')>()),
+  createNativeProviderConfig: vi.fn(async () => ({
+    path: 'fixture-model.json',
+    arguments: ['-c', 'model_catalog_json="fixture-model.json"'],
+    dispose: vi.fn(async () => undefined)
+  })),
+  captureAiSourceIdentity: vi.fn(async () => ({
+    sourceRevision: 'fixture-revision',
+    sourceFingerprint: 'f'.repeat(64),
+    sourceIdentityStatus: 'captured'
+  })),
+
+  createExecutionRecordSink: () => ({
+    write: (record: unknown) => retainedRecords.push(record),
+
+    writePayload: (
+      _requestId: string,
+      callId: string,
+      _phase: string,
+      value: unknown
+    ) => {
+      retainedPayloads.push({ callId, value })
+
+      return {
+        status: 'queued',
+        path: `fixture-${retainedPayloads.length - 1}.json`
+      }
+    },
+
+    flush: async () => ({ status: 'saved', path: null })
+  }),
+
+  createSqliteToolStore: vi.fn(async () => ({
+    read: async () => undefined,
+
+    list: async () => [],
+
+    write: async () => {
+      throw new Error('No durable fixture configured')
+    },
+
+    close: vi.fn()
+  }))
+}))
 import * as nativeContent from '../local-operation-tools'
 import canonicalInputRecovery from './fixtures/recorded-101/canonical-input-recovery-20261109.json'
 import positionDiscovery from '../../test-data/ai-drawing/fixtures/position-discovery-20261109.json'
@@ -5,7 +50,7 @@ import independentDelivery from './fixtures/recorded-101/independent-delivery-20
 import targetGroupCapture from './fixtures/recorded-101/target-group-capture-20261109.json'
 import { referenceRejection } from '../reference-image-download'
 import { createEvaluationReportSessions } from '../evaluation-report-sessions'
-import { operationInputIssue } from '../operation-input-schema'
+import { operationInputIssue } from '@asyra/ai-agent-runtime/schema'
 import { designContextDefinitions } from '../local-design-context'
 
 import {
@@ -16,13 +61,7 @@ import {
   readFileSync
 } from 'node:fs'
 import { ConversationContextLimits } from '../../src/ai/conversation-context'
-vi.mock('../native-provider-config', () => ({
-  createNativeProviderConfig: vi.fn(async () => ({
-    path: 'fixture-model.json',
-    arguments: ['-c', 'model_catalog_json="fixture-model.json"'],
-    dispose: vi.fn(async () => undefined)
-  }))
-}))
+
 /// <reference lib="dom" />
 /// <reference types="vite/client" />
 import { readCompleteInformation } from './tool-contract-assertions'
@@ -52,7 +91,7 @@ import type {
   AiProviderInput,
   AiBatchReceipt,
   AiActionBatch
-} from '../../src/ai/action-batch-protocol'
+} from '@asyra/ai-agent-runtime'
 import { homedir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { EventEmitter } from 'node:events'
@@ -71,7 +110,7 @@ import {
 import { basicApiContracts } from '../../src/ai/basic-api-catalog'
 import * as designTools from '../local-design-tools'
 import * as referenceTools from '../local-reference-tools'
-import * as toolStorage from '../local-tool-store'
+import * as toolStorage from '@asyra/ai-agent-runtime/node'
 import * as toolHosts from '../local-tool-host'
 import { requestConfiguredAiActionBatch } from '../ai-model-provider'
 import { convertVTracerBuffer } from '../../vtracer-tool-server.mjs'
@@ -89,48 +128,6 @@ const { spawn, retainedRecords, retainedPayloads } = vi.hoisted(() => ({
   retainedPayloads: [] as { callId: string; value: unknown }[]
 }))
 
-vi.mock('@asyra/ai-agent-runtime/node', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@asyra/ai-agent-runtime/node')>()),
-  captureAiSourceIdentity: vi.fn(async () => ({
-    sourceRevision: 'fixture-revision',
-    sourceFingerprint: 'f'.repeat(64),
-    sourceIdentityStatus: 'captured'
-  })),
-
-  createExecutionRecordSink: () => ({
-    write: (record: unknown) => retainedRecords.push(record),
-
-    writePayload: (
-      _requestId: string,
-      callId: string,
-      _phase: string,
-      value: unknown
-    ) => {
-      retainedPayloads.push({ callId, value })
-
-      return {
-        status: 'queued',
-        path: `fixture-${retainedPayloads.length - 1}.json`
-      }
-    },
-
-    flush: async () => ({ status: 'saved', path: null })
-  })
-}))
-vi.mock('../local-tool-store', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('../local-tool-store')>()),
-  createLocalToolStore: vi.fn(async () => ({
-    read: async () => undefined,
-
-    list: async () => [],
-
-    write: async () => {
-      throw new Error('No durable fixture configured')
-    },
-
-    close: vi.fn()
-  }))
-}))
 vi.mock('node:child_process', async (importOriginal) => {
   const actual = await importOriginal<typeof import('node:child_process')>()
 
@@ -1024,7 +1021,7 @@ describe('local subscription AI backend', () => {
             'Never replay prior actions'
           )
         } else {
-          expect(thread.baseInstructions).not.toContain(
+          expect(thread.baseInstructions).toContain(
             'metadata.conversationContext'
           )
         }
@@ -1065,7 +1062,7 @@ describe('local subscription AI backend', () => {
     const entries = new Map<string, AiToolStoreEntry>()
     let version = 0
 
-    vi.mocked(toolStorage.createLocalToolStore).mockImplementation(
+    vi.mocked(toolStorage.createSqliteToolStore).mockImplementation(
       async () => ({
         read: async (key) => entries.get(key),
 
@@ -1461,7 +1458,7 @@ describe('local subscription AI backend', () => {
       { sourceRequestId: 'prior', criteria: [] },
       { model: 'selected-model', executable: 'codex' }
     )
-    expect(toolStorage.createLocalToolStore).not.toHaveBeenCalled()
+    expect(toolStorage.createSqliteToolStore).not.toHaveBeenCalled()
   })
   it('closes the library after a provider startup failure', async () => {
     spawn.mockImplementationOnce(() => {
@@ -1473,7 +1470,7 @@ describe('local subscription AI backend', () => {
         executable: 'codex'
       })
     ).rejects.toMatchObject({ code: 'AI_MODEL_BACKEND_INVALID_CONFIGURATION' })
-    const store = await vi.mocked(toolStorage.createLocalToolStore).mock
+    const store = await vi.mocked(toolStorage.createSqliteToolStore).mock
       .results[0].value
 
     expect(store.close).toHaveBeenCalledOnce()
@@ -1498,7 +1495,7 @@ describe('local subscription AI backend', () => {
         })
       }
 
-      vi.mocked(toolStorage.createLocalToolStore).mockResolvedValueOnce(store)
+      vi.mocked(toolStorage.createSqliteToolStore).mockResolvedValueOnce(store)
       if (component === 'tool-host') {
         const create = toolHosts.createLocalToolHost
 
@@ -1547,7 +1544,7 @@ describe('local subscription AI backend', () => {
 
   it('preserves the classified provider failure when store cleanup also fails', async () => {
     fakeServer({ output: 'invalid JSON' })
-    vi.mocked(toolStorage.createLocalToolStore).mockResolvedValueOnce({
+    vi.mocked(toolStorage.createSqliteToolStore).mockResolvedValueOnce({
       read: async () => undefined,
 
       list: async () => [],
@@ -1797,8 +1794,8 @@ describe('local subscription AI backend', () => {
         'manage_tool'
       ])
     )
-    expect(toolStorage.createLocalToolStore).toHaveBeenCalledTimes(1)
-    const result = await vi.mocked(toolStorage.createLocalToolStore).mock
+    expect(toolStorage.createSqliteToolStore).toHaveBeenCalledTimes(1)
+    const result = await vi.mocked(toolStorage.createSqliteToolStore).mock
       .results[0].value
 
     expect(result.close).toHaveBeenCalledTimes(1)
@@ -1845,7 +1842,7 @@ describe('local subscription AI backend', () => {
     expect(names).not.toContain(action.name)
   })
   it('keeps native drawing usable when library storage cannot open', async () => {
-    vi.mocked(toolStorage.createLocalToolStore).mockRejectedValueOnce(
+    vi.mocked(toolStorage.createSqliteToolStore).mockRejectedValueOnce(
       new Error('Local directory unavailable')
     )
     const server = fakeServer()
@@ -2044,10 +2041,10 @@ describe('local subscription AI backend', () => {
   it.skipIf(!process.env.LOCAL_AI_PROTOCOL_EXECUTABLE)(
     'checks installed native registration without inference',
     async () => {
-      const configOwner = await import('../native-provider-config')
+      const configOwner = await import('@asyra/ai-agent-runtime/node')
       const realConfigOwner = await vi.importActual<
-        typeof import('../native-provider-config')
-      >('../native-provider-config')
+        typeof import('@asyra/ai-agent-runtime/node')
+      >('@asyra/ai-agent-runtime/node')
 
       vi.mocked(configOwner.createNativeProviderConfig).mockImplementationOnce(
         realConfigOwner.createNativeProviderConfig
@@ -2423,7 +2420,7 @@ describe('local subscription AI backend', () => {
           'current input.intent overrides'
         )
       } else {
-        expect(thread?.params.baseInstructions).not.toContain(
+        expect(thread?.params.baseInstructions).toContain(
           'metadata.conversationContext'
         )
       }
@@ -4113,7 +4110,7 @@ describe('local subscription AI backend', () => {
       message: 'The local AI provider could not complete the request.'
     })
     const { createNativeProviderConfig } =
-      await import('../native-provider-config')
+      await import('@asyra/ai-agent-runtime/node')
     const configuration = await vi
       .mocked(createNativeProviderConfig)
       .mock.results.at(-1)?.value
@@ -8394,8 +8391,7 @@ it('delivers the recorded retained crown image through the actual native provide
   vi.stubGlobal('window', {})
   vi.spyOn(console, 'info').mockImplementation(() => undefined)
   const { createAiInspectionAction } = await import('../../src/ai/inspection')
-  const { createConversationResults } =
-    await import('../../src/ai/conversation-results')
+  const { createConversationResults } = await import('@asyra/ai-agent-runtime')
   const context = createConversationResults(() => 1).open(
     'provider-independent-delivery'
   )
@@ -8546,8 +8542,7 @@ it('executes the recorded target-bound group and captures through provider-visib
   const { createRegionTargetsAction } =
     await import('../../src/ai/context-action')
   const { createAiInspectionAction } = await import('../../src/ai/inspection')
-  const { createConversationResults } =
-    await import('../../src/ai/conversation-results')
+  const { createConversationResults } = await import('@asyra/ai-agent-runtime')
   const context = createConversationResults(() => 1).open(
     'provider-target-result'
   )
@@ -8752,8 +8747,7 @@ it('executes the recorded target-bound group and captures through provider-visib
 
 it('delivers and executes the primary input-reuse example through the native provider packet', async () => {
   vi.spyOn(console, 'info').mockImplementation(() => undefined)
-  const { createConversationResults } =
-    await import('../../src/ai/conversation-results')
+  const { createConversationResults } = await import('@asyra/ai-agent-runtime')
   const context = createConversationResults(() => 1).open('provider-example')
   let reads = 0
   const server = fakeServer({ hold: true, manualToolReplies: true })
@@ -10403,7 +10397,7 @@ describe('bounded evaluation reporting', () => {
       const sequenceRepair =
         mode === 'recorded-sequence-input-repair' || referenceRepair
       const { createConversationResults } =
-        await import('../../src/ai/conversation-results')
+        await import('@asyra/ai-agent-runtime')
       const referenceContext = createConversationResults(() => 1).open(
         'sequence-repair'
       )

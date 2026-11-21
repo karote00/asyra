@@ -2,7 +2,10 @@ import { describe, expect, it } from 'vitest'
 import { AiActionExecutionError } from '@asyra/ai-agent-runtime'
 import { describeBatchFailure } from '../../src/ai/action-failure'
 import { summarizeAiTurn } from '../../src/ai/presentation'
-import { createBatchExchange, type PreparedBatchFrame } from '../batch-exchange'
+import {
+  createBatchExchange,
+  type PreparedBatchFrame
+} from '@asyra/ai-agent-runtime/node'
 
 const batch = { batchId: 'one', actions: [] }
 const receipt = { actionResults: [], context: {} }

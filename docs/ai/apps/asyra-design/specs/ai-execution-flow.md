@@ -59,7 +59,7 @@ failure schemas in model-facing usage or authorize replay/automatic judgment.
 ### Tool schema support boundary
 
 App tool registration and browser action observation reject unsupported or malformed
-schema constraints before publishing executable definitions. The App validator owns
+schema constraints before publishing executable definitions. The optional Runtime schema adapter owns
 its explicit keyword vocabulary; `dependentRequired` is enforced when its trigger
 is present, while unimplemented keywords are errors even in optional properties or
 unselected alternatives. Schema annotations and literal examples/defaults are not
@@ -287,7 +287,15 @@ Conversation continuity follows the bounded public history contract in
 prior user turns and public replies/questions with source-attachment indexes;
 current intent stays separate. The backend validates this data before invoking a
 provider. Historical outcomes do not authorize replay or reuse of request-owned
-evidence. Fresh ephemeral provider threads receive the same admitted context.
+evidence. The first native thread receives the admitted context. Later ordinary
+requests for that App conversation resume the same native thread with the new
+intent and current App context, without repeating projected historical turns.
+Each request binds fresh tools, signals, leases and result storage access. Native
+history does not make old canvas state or request resources current. Changed
+native declarations/configuration or unavailable native history are explicit
+session errors; the App requires a new conversation rather than silently replaying
+work. The service-owned identity registry is in memory; browser/server restart
+persistence is not implied.
 
 ## Capability discovery and composition
 
@@ -1200,13 +1208,18 @@ Retention does not extend request-owned image/query leases or make old geometry 
 
 ## Ownership and diagnostics
 
-The App provider owns orchestration and transport; preparation owners own derived
+The optional Runtime native adapter owns thread/turn protocol and transport; the
+App provider owns tool configuration, authorization and result interpretation.
+Preparation owners own derived
 artifacts; registered actions/common APIs own canonical operations; conversation
 lifecycle owns presentation. Rendering neither decides what to draw nor grants
 completion. Framework packages remain accessed through public APIs.
 
-The local provider reads effective native configuration once before creating its
-ephemeral thread and disables inherited personal MCP servers for that invocation.
+The local provider reads effective native configuration for each request before
+starting or resuming its native thread and disables inherited personal MCP servers
+for that invocation. App invocations disable project document loading explicitly,
+including cold resume; the existing Codex-home instruction-source admission is
+unchanged. One-shot evaluation/report threads retain their separate test policy.
 It preserves transport fields required by native configuration validation, omits
 unset optional values, and never records or writes the configuration itself.
 App tools, permitted web research and the configured model/effort stay unchanged.
@@ -4012,7 +4025,6 @@ retain the original source and offer existing repair replacements. They do not
 become a generic missing boundary error or receive automatically guessed names.
 Valid unique references and explicit corner boundaries remain unchanged.
 
-
 First visible content may be a small editable part. Complete planning, optional
 Knowledge, all materials, decoration and whole-structure approval are not first-
 drawing prerequisites. The agent chooses what to show first and may adjust it
@@ -4880,3 +4892,21 @@ portable data remain separate views. Normalize local schema reference graphs bef
 moving native declaration branches. Root references, array pointer segments and
 escaped keys use identical resolution rules for admission, target binding, lifetime
 classification and model projection. Missing/external/invalid references reject.
+
+### Shared schema ownership
+
+Design imports schema validation, native input conversion and pure model-result
+projection from `@asyra/ai-agent-runtime/schema`. The former App schema entrypoints
+are removed. `src/ai/tool-contract.ts` retains Design outcome classification,
+action effects and domain receipt schemas; it does not forward the moved APIs.
+
+### Host adapter composition
+
+Design uses the Runtime's optional schema entry for full owner invocation and
+result projection, the Node host library/store/Knowledge/pagination/native RPC
+adapters, and the portable exchange provider and result context. The removed App
+schema, store, library, lease, scheduler, search and batch exchange modules have no
+forwarding or alternate dispatch path. The App keeps authored Design translation,
+canonical tool outcomes, selected image production, catalog/model/prompt choices,
+endpoint budgets, document scope, failure presentation and evaluation controls.
+Transaction settlement remains the existing App transaction adapter's decision.

@@ -1,17 +1,16 @@
 import { createLocalKnowledgeTools } from '../local-knowledge'
-import {
-  toolSemantics,
-  projectToolResultFields
-} from '../../src/ai/tool-contract'
+import { projectToolResultFields } from '@asyra/ai-agent-runtime/schema'
+import { toolSemantics } from '../../src/ai/tool-contract'
 import {
   AiToolContractError,
   createAiToolContract,
   inspectAiToolResult,
   admitAiRecipe
 } from '@asyra/ai-agent-runtime'
-import { operationContractIssue } from '../operation-input-schema'
-import { requireBatchSuccess } from '../batch-exchange'
+import { operationContractIssue } from '@asyra/ai-agent-runtime/schema'
+import { requireBatchSuccess } from '@asyra/ai-agent-runtime/node'
 import { expect, it, vi } from 'vitest'
+import { AiToolInputError } from '@asyra/ai-agent-runtime'
 import {
   localToolOutcome,
   batchInputFailure,
@@ -20,7 +19,6 @@ import {
   localToolFailureSchema,
   localToolResultSchema,
   invokeLocalTool,
-  LocalToolInputError,
   observeLocalToolExecution
 } from '../local-tool-invocation'
 import { createLocalDesignTools } from '../local-design-tools'
@@ -423,7 +421,7 @@ it('keeps explicit pre-dispatch rejections recoverable without a blanket mutatio
   const reply = await invokeLocalTool(
     {
       call: async () => {
-        throw new LocalToolInputError('Target not admitted')
+        throw new AiToolInputError('Target not admitted')
       }
     },
     definition,
@@ -554,7 +552,7 @@ it('does not describe a later compound-input failure as zero prior execution', a
   const reply = await invokeLocalTool(
     {
       call: async () => {
-        throw new LocalToolInputError(
+        throw new AiToolInputError(
           'Inspection target rejected',
           'TOOL_INPUT_INVALID'
         )

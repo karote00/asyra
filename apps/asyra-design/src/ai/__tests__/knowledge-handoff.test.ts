@@ -28,7 +28,7 @@ import {
   prepareDesign
 } from '../../../server/design-preparation'
 import { localToolOutcome } from '../../../server/local-tool-invocation'
-import { operationInputIssue } from '../../../server/operation-input-schema'
+import { operationInputIssue } from '@asyra/ai-agent-runtime/schema'
 import { AiDesignToolIds } from '../../constants/ai-design'
 
 const signal = () => new AbortController().signal
@@ -647,7 +647,7 @@ it('routes recorded local material edits through actual discovery and artifact t
     // The browser exchange is recorded here. This proves resolution and
     // dispatch, not actual canvas mutation or document persistence.
     const dispatch = vi.fn(
-      async (batch: import('../action-batch-protocol').AiActionBatch) => ({
+      async (batch: import('@asyra/ai-agent-runtime').AiActionBatch) => ({
         actionResults: batch.actions.map((action) => {
           const elementIds = requiredArray(
             requiredRecord(action.arguments).elementIds

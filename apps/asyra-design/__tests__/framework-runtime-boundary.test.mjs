@@ -174,7 +174,8 @@ test('Asyra Design declares the browser-like test environment used by Vitest', (
 const independentBackendEntries = new Set([
   '@asyra/preset/group-bounds',
   '@asyra/ai-agent-runtime',
-  '@asyra/ai-agent-runtime/node'
+  '@asyra/ai-agent-runtime/node',
+  '@asyra/ai-agent-runtime/schema'
 ])
 
 test('Asyra Design backend uses App protocols and independent public capabilities', () => {
@@ -198,7 +199,8 @@ test('Asyra Design backend uses App protocols and independent public capabilitie
 
 for (const specifier of [
   '@asyra/ai-agent-runtime',
-  '@asyra/ai-agent-runtime/node'
+  '@asyra/ai-agent-runtime/node',
+  '@asyra/ai-agent-runtime/schema'
 ]) {
   test(`${specifier} does not pull other framework execution owners into the backend`, async () => {
     const entry = fileURLToPath(import.meta.resolve(specifier))
@@ -212,7 +214,14 @@ for (const specifier of [
       configFile: false,
       logLevel: 'silent',
       ssr: { noExternal: true },
-      build: { ssr: entry, write: false, minify: false }
+      build: {
+        ssr: entry,
+        write: false,
+        minify: false,
+        rollupOptions: {
+          external: specifier.endsWith('/schema') ? ['lodash'] : []
+        }
+      }
     })
     const chunks = (Array.isArray(result) ? result : [result])
       .flatMap((item) => item.output)
@@ -228,10 +237,24 @@ for (const specifier of [
     assert.deepEqual(
       chunks
         .flatMap((chunk) => [...chunk.imports, ...chunk.dynamicImports])
-        .filter((name) => !nodeBuiltins.has(name)),
+        .filter(
+          (name) =>
+            !nodeBuiltins.has(name) &&
+            !(specifier.endsWith('/schema') && name === 'lodash')
+        ),
       [],
-      'Only the Node entry may retain built-in I/O dependencies'
+      'Only declared adapter dependencies may remain external'
     )
+    if (specifier.endsWith('/schema')) {
+      assert.ok(chunks.some((chunk) => chunk.imports.includes('lodash')))
+      const manifest = JSON.parse(
+        readFileSync(path.join(runtimeDirectory, 'package.json'), 'utf8')
+      )
+
+      assert.equal(typeof manifest.peerDependencies.lodash, 'string')
+      assert.equal(manifest.peerDependenciesMeta.lodash.optional, true)
+    }
+
     if (specifier === '@asyra/ai-agent-runtime') {
       assert.deepEqual(
         chunks.flatMap((chunk) => chunk.imports),

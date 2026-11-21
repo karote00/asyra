@@ -4,7 +4,7 @@ import {
   designCheckResultsSchema
 } from '../design-check-results'
 
-import { operationInputIssue } from '../operation-input-schema'
+import { operationInputIssue } from '@asyra/ai-agent-runtime/schema'
 
 describe('retained design check results', () => {
   it('accumulates passes while returning only unresolved work by default', () => {

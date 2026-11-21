@@ -482,37 +482,50 @@ for (const [index, scenario] of executionFaultScenarios.entries()) {
   )
 }
 
-test(
-  'Design execution uses the captured runtime entry and retains setup failure without a guessed node',
-  { timeout: 60000 },
-  async (t) => {
-    const fixture = localizationFixture()
+for (const entry of ['index.ts', 'schema/index.ts', 'node/index.ts']) {
+  test(
+    `Design execution uses the captured runtime ${entry} entry and retains setup failure without a guessed node`,
+    { timeout: 60000 },
+    async (t) => {
+      const fixture = localizationFixture()
 
-    t.after(() => fixture.restore())
-    fixture.failExecutionSourceEntry()
-    const fault = await fixture.run('execution')
+      t.after(() => fixture.restore())
+      fixture.failExecutionSourceEntry(entry)
+      const fault = await fixture.run('execution')
 
-    assert.equal(fault.result.code, 1, fault.result.output)
-    assert.match(fault.record.issues.join(' '), /Captured runtime entry failed/)
-    assert.equal(
-      fault.record.cases.filter((item) => item.status === 'failed').length,
-      0
-    )
-    assert.equal(fault.record.cases.flatMap((item) => item.locations).length, 0)
-    fixture.restore()
-    const recovery = await fixture.run('execution')
+      assert.equal(fault.result.code, 1, fault.result.output)
+      assert.match(
+        fault.record.issues.join(' '),
+        entry === 'node/index.ts'
+          ? /\[vitest\] There was an error when mocking a module/
+          : /Captured runtime entry failed/
+      )
+      // The Node entry is loaded through importOriginal in the product fixture.
+      // Vitest wraps that setup error; its retained raw output must keep the cause.
+      assert.match(fault.result.output, /Captured runtime entry failed/)
+      assert.equal(
+        fault.record.cases.filter((item) => item.status === 'failed').length,
+        0
+      )
+      assert.equal(
+        fault.record.cases.flatMap((item) => item.locations).length,
+        0
+      )
+      fixture.restore()
+      const recovery = await fixture.run('execution')
 
-    assert.equal(recovery.result.code, 0, recovery.result.output)
-    assert.deepEqual(
-      recovery.record.cases
-        .filter((item) => item.resolution === 'mapped')
-        .flatMap((item) => item.locations.map((location) => location.caseId))
-        .sort(),
-      executionCaseIds
-    )
-    assert.deepEqual(fixture.reader.get(fault.record.id), fault.record)
-  }
-)
+      assert.equal(recovery.result.code, 0, recovery.result.output)
+      assert.deepEqual(
+        recovery.record.cases
+          .filter((item) => item.resolution === 'mapped')
+          .flatMap((item) => item.locations.map((location) => location.caseId))
+          .sort(),
+        executionCaseIds
+      )
+      assert.deepEqual(fixture.reader.get(fault.record.id), fault.record)
+    }
+  )
+}
 
 test(
   'ordinary Render viewport fault locates its owner and preserves recovery history',

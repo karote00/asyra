@@ -17,7 +17,7 @@ import {
   AiActionExecutionError,
   registeredRecipeOutputAt
 } from '@asyra/ai-agent-runtime'
-import { operationInputIssue } from '../../../server/operation-input-schema'
+import { operationInputIssue } from '@asyra/ai-agent-runtime/schema'
 
 const fixture = (identity = 'application', rootKey?: string) =>
   prepareDesign(

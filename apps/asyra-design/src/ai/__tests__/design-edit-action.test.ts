@@ -4,7 +4,7 @@ vi.mock('../../common-apis/design-edit', () => ({ editDesignElement: vi.fn() }))
 import { createDesignEditAction } from '../design-edit-action'
 import { observeAiAction } from '../runtime-input'
 import { DEFAULT_TEXT_DATA, TEXT_PROPERTY_SCHEMA } from '@asyra/preset'
-import { operationInputIssue } from '../tool-schema'
+import { operationInputIssue } from '@asyra/ai-agent-runtime/schema'
 
 it('rejects an empty property edit before dispatch through the common boundary', async () => {
   const edit = vi.fn()

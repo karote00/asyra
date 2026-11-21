@@ -1,3 +1,7 @@
+import {
+  createNativeConversations,
+  type NativeConversations
+} from '@asyra/ai-agent-runtime/node'
 import { AiToolContractError } from '@asyra/ai-agent-runtime'
 import { AiToolFailureCodes } from '../src/constants/ai-design'
 import {
@@ -5,7 +9,7 @@ import {
   evaluationReportSessionEndpoint
 } from './evaluation-report-sessions'
 import type { EvaluationReportSessions } from './evaluation-report-sessions'
-import type { ExchangeConversationResults } from '../src/ai/conversation-results'
+import type { ExchangeConversationResults } from '@asyra/ai-agent-runtime'
 import { admitsConversationContext } from '../src/ai/conversation-context'
 import {
   createExecutionRecordSink,
@@ -13,17 +17,14 @@ import {
   ExecutionRecordCollectionError,
   createFileRecordCollector
 } from '@asyra/ai-agent-runtime/node'
-import type {
-  AiToolProgress,
-  ExecuteAiBatch
-} from '../src/ai/action-batch-protocol'
+import type { AiToolProgress, ExecuteAiBatch } from '@asyra/ai-agent-runtime'
 import { admitsLocalProviderRequest } from './local-request-admission'
 import { createHash, randomUUID } from 'node:crypto'
 import { Buffer } from 'node:buffer'
 import { existsSync, readFileSync } from 'node:fs'
 import { readFile } from 'node:fs/promises'
 import type { IncomingMessage, ServerResponse } from 'node:http'
-import { createBatchExchange } from './batch-exchange'
+import { createBatchExchange } from '@asyra/ai-agent-runtime/node'
 import {
   ACTION_BATCH_ENDPOINT,
   AI_EXECUTION_RECORD_ENDPOINT,
@@ -35,7 +36,7 @@ import type {
   AiActionBatch,
   AiJsonValue,
   AiProviderInput
-} from '../src/ai/action-batch-protocol'
+} from '@asyra/ai-agent-runtime'
 
 const sampleRoot = new URL('../samples/crdt-7076/', import.meta.url)
 const sampleInstructionUrl = new URL('instruction.txt', sampleRoot)
@@ -61,6 +62,7 @@ type MiddlewareNext = (error?: unknown) => void
 
 export class ActionBatchServerError extends Error {
   readonly code:
+    | 'ACTION_BATCH_SESSION_UNAVAILABLE'
     | 'ACTION_BATCH_ABORTED'
     | 'ACTION_BATCH_INVALID_INPUT'
     | 'ACTION_BATCH_MODEL_CONFIGURATION_REQUIRED'
@@ -84,6 +86,13 @@ const modelFailureDescriptions = new Map<
   string,
   [ActionBatchServerError['code'], string]
 >([
+  [
+    'AI_MODEL_BACKEND_SESSION_UNAVAILABLE',
+    [
+      'ACTION_BATCH_SESSION_UNAVAILABLE',
+      'The previous AI session is unavailable or its tools changed. Start a new conversation.'
+    ]
+  ],
   [
     'AI_MODEL_BACKEND_TIMEOUT',
     ['ACTION_BATCH_MODEL_TIMEOUT', 'The AI request timed out.']
@@ -190,6 +199,7 @@ export type RequestModelActionBatch = (
     readonly signal?: AbortSignal
     readonly onProgress?: (event: AiToolProgress) => void
     readonly resultContext?: ExchangeConversationResults
+    readonly conversations?: NativeConversations
     readonly reportSessions?: EvaluationReportSessions
     readonly executeBatch?: ExecuteAiBatch
   }
@@ -213,6 +223,7 @@ export const resolveActionBatchRequest = async (
     readonly requestModelActionBatch?: RequestModelActionBatch
     readonly onProgress?: (event: AiToolProgress) => void
     readonly resultContext?: ExchangeConversationResults
+    readonly conversations?: NativeConversations
     readonly reportSessions?: EvaluationReportSessions
     readonly executeBatch?: ExecuteAiBatch
     readonly requestId?: string
@@ -269,6 +280,7 @@ export const resolveActionBatchRequest = async (
       signal: options.signal,
       onProgress: options.onProgress,
       resultContext: options.resultContext,
+      conversations: options.conversations,
       ...(options.reportSessions
         ? { reportSessions: options.reportSessions }
         : {}),
@@ -377,6 +389,7 @@ export const createActionBatchMiddleware = (
     readonly requestModelActionBatch?: RequestModelActionBatch
   } = {}
 ) => {
+  const conversations = createNativeConversations()
   const reportSessions = createEvaluationReportSessions()
   const exchange = createBatchExchange()
   const collector = options.createRecordingSink
@@ -614,6 +627,7 @@ export const createActionBatchMiddleware = (
           },
 
           reportSessions,
+          conversations,
           requestId: randomUUID(),
           requestModelActionBatch: options.requestModelActionBatch,
           signal: controller.signal
@@ -640,6 +654,7 @@ export const createActionBatchMiddleware = (
       } else if (
         error instanceof ActionBatchServerError &&
         [
+          'ACTION_BATCH_SESSION_UNAVAILABLE',
           'ACTION_BATCH_MODEL_FAILED',
           'ACTION_BATCH_MODEL_TIMEOUT',
           'ACTION_BATCH_IMAGE_CONVERSION_FAILED',
@@ -663,6 +678,7 @@ export const createActionBatchMiddleware = (
 
   return Object.assign(middleware, {
     async dispose() {
+      conversations.dispose()
       await reportSessions.dispose()
       await collector.dispose()
     }

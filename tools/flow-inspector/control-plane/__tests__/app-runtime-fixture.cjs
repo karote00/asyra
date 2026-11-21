@@ -13,7 +13,7 @@ function appRuntimeFixture(root, directory) {
     testFile: prefix + '/app-proof.test.ts',
     configFile: prefix + '/config.ts'
   }
-  const schedulerFile = 'apps/asyra-design/server/local-tool-scheduler.ts'
+  const schedulerFile = 'packages/ai-agent-runtime/src/tool-scheduler.ts'
   const validatorFile = 'apps/asyra-design/src/ai/design-fill.ts'
   const constantsFile = 'packages/utils/src/propsManager/fills.ts'
   const stepOrder = { schedule: 1, metadata: 2, validate: 3 }
@@ -55,7 +55,7 @@ function appRuntimeFixture(root, directory) {
     steps: [
       step(
         'schedule',
-        '@asyra/asyra-design',
+        '@asyra/ai-agent-runtime',
         schedulerFile,
         ['queued work'],
         ['artifact:scheduled']
@@ -198,12 +198,12 @@ function appRuntimeFixture(root, directory) {
     JSON.stringify(path.relative(directory, path.join(root, file)))
 
   const tests = `import { describe, expect, it } from 'vitest';
-import { createLocalToolScheduler } from ${relativeImport(schedulerFile)};
+import { createAiToolScheduler } from ${relativeImport(schedulerFile)};
 import { isDesignGradient } from ${relativeImport(validatorFile)};
 import { FillGradientTypes } from '@asyra/utils';
 describe('App source proof', () => {
   it('server scheduling', async () => {
-    const schedule = createLocalToolScheduler(new AbortController().signal);
+    const schedule = createAiToolScheduler(new AbortController().signal);
     const seen = [];
     let release;
     const gate = new Promise(resolve => { release = resolve; });

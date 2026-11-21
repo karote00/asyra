@@ -1,3 +1,4 @@
+import { DEFAULT_TOOL_LIBRARY_DIRECTORY } from './local-tool-library-limits'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import { createAiToolStoreManagement } from '@asyra/ai-agent-runtime'
 import {
@@ -5,17 +6,14 @@ import {
   isToolLibraryRequest
 } from '../src/ai/tool-library-management'
 import { admitsLocalProviderRequest } from './local-request-admission'
-import {
-  createLocalToolStore,
-  DEFAULT_TOOL_LIBRARY_DIRECTORY
-} from './local-tool-store'
+import { createSqliteToolStore } from '@asyra/ai-agent-runtime/node'
 import { LocalToolLibraryLimits } from './local-tool-library-limits'
 
 /** Local user controls delegate to Runtime; they never invoke the model or canvas. */
 export const createToolLibraryManagementMiddleware =
   (
     options: {
-      open?: () => ReturnType<typeof createLocalToolStore>
+      open?: () => ReturnType<typeof createSqliteToolStore>
     } = {}
   ) =>
   async (
@@ -75,13 +73,13 @@ export const createToolLibraryManagementMiddleware =
       return
     }
 
-    let store: Awaited<ReturnType<typeof createLocalToolStore>> | undefined
+    let store: Awaited<ReturnType<typeof createSqliteToolStore>> | undefined
 
     try {
       store = await (
         options.open ??
         (() =>
-          createLocalToolStore({
+          createSqliteToolStore({
             directory:
               process.env.AI_TOOL_LIBRARY_DIR?.trim() ||
               DEFAULT_TOOL_LIBRARY_DIRECTORY,

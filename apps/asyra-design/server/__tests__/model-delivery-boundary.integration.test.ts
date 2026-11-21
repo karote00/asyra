@@ -1,11 +1,11 @@
 import { expect, it, vi } from 'vitest'
-import { modelToolResultSchemas } from '../../src/ai/tool-contract'
+import { modelToolResultSchemas } from '@asyra/ai-agent-runtime/schema'
 import { createAiToolContract } from '@asyra/ai-agent-runtime'
 import saved from './fixtures/recorded-101/model-delivery-boundary-20261029.json'
 import { createLocalToolHost } from '../local-tool-host'
 import { createLocalDesignTools } from '../local-design-tools'
 import { createLocalOperationTools } from '../local-operation-tools'
-import { operationContractIssue } from '../operation-input-schema'
+import { operationContractIssue } from '@asyra/ai-agent-runtime/schema'
 import { localToolFailureSchema } from '../local-tool-invocation'
 
 vi.mock('../../src/contexts', () => ({ default: {} }))

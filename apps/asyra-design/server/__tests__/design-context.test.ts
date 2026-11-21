@@ -6,9 +6,9 @@ import {
 import {
   nativeToolInputSchema,
   operationInputIssue
-} from '../operation-input-schema'
+} from '@asyra/ai-agent-runtime/schema'
 import { AiDesignToolIds } from '../../src/constants/ai-design'
-import { LocalToolInputError } from '../local-tool-invocation'
+import { AiToolInputError } from '@asyra/ai-agent-runtime'
 
 const signal = () => new AbortController().signal
 
@@ -77,7 +77,7 @@ it('rejects invalid note updates atomically and returns detached values', async 
       { facts: [{ id: 'first', statement: 'Changed' }, { id: 'broken' }] },
       signal()
     )
-  ).rejects.toBeInstanceOf(LocalToolInputError)
+  ).rejects.toBeInstanceOf(AiToolInputError)
   await expect(
     owner.call(
       facts,
@@ -89,7 +89,7 @@ it('rejects invalid note updates atomically and returns detached values', async 
       },
       signal()
     )
-  ).rejects.toBeInstanceOf(LocalToolInputError)
+  ).rejects.toBeInstanceOf(AiToolInputError)
   const value = (await owner.call(facts, {}, signal())) as {
     facts: { statement: string }[]
   }
@@ -126,7 +126,7 @@ it('replaces authored facts without an evidence gate and rejects retired correct
       },
       signal()
     )
-  ).rejects.toBeInstanceOf(LocalToolInputError)
+  ).rejects.toBeInstanceOf(AiToolInputError)
   expect(await owner.call(facts, {}, signal())).toEqual(updated)
 })
 

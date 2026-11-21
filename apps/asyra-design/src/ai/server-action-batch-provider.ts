@@ -1,19 +1,11 @@
-import {
-  createConversationResults,
-  type ResultContextCommand
-} from './conversation-results'
+import { createConversationResults } from '@asyra/ai-agent-runtime'
+import { createExchangeAiProvider } from '@asyra/ai-agent-runtime'
+
 import { readEvaluationWindow } from './evaluation-window'
 import { AiToolFailureCodes } from '../constants/ai-design'
-import {
-  AiToolContractError,
-  isExecutionActivity
-} from '@asyra/ai-agent-runtime'
+
 import {
   AiProviderError,
-  createGenericHttpAiProvider,
-  type AiActionBatch,
-  type AiBatchReceipt,
-  type AiFetchResponse,
   type GenericHttpAiProvider,
   type GenericHttpAiProviderOptions
 } from '@asyra/ai-agent-runtime'
@@ -24,10 +16,7 @@ import {
   AI_BATCH_EXECUTION_HEADER,
   AI_BATCH_MAXIMUM_REQUEST_BYTES
 } from './action-batch-endpoint'
-import type {
-  AiToolProgress,
-  BrowserBatchFailureEnvelope
-} from './action-batch-protocol'
+
 import { describeBatchFailure } from './action-failure'
 
 /** Local manual evaluation only; the evaluator supplies one immutable window before Send. */
@@ -47,6 +36,14 @@ const backendFailureDescriptions = new Map<
   unknown,
   ConstructorParameters<typeof AiProviderError>[0]
 >([
+  [
+    'ACTION_BATCH_SESSION_UNAVAILABLE',
+    {
+      code: 'AI_PROVIDER_INVALID_CONFIGURATION',
+      message:
+        'The previous AI session is unavailable or its tools changed. Start a new conversation.'
+    }
+  ],
   [
     'ACTION_BATCH_MODEL_TIMEOUT',
     {
@@ -85,324 +82,6 @@ const backendFailure = (code: unknown): AiProviderError =>
     }
   )
 
-const isResponse = (value: AiFetchResponse): value is Response =>
-  'headers' in value && typeof (value.headers as Headers)?.get === 'function'
-
-/** Delivery cannot undo execution or turn missing output into usable data. */
-const encodeReceipt = (
-  receipt: AiBatchReceipt | BrowserBatchFailureEnvelope
-): string => {
-  const body = JSON.stringify(receipt)
-  const bytes = new TextEncoder().encode(body).byteLength
-
-  if (bytes <= AI_BATCH_MAXIMUM_REQUEST_BYTES) {
-    return body
-  }
-
-  if ('batchFailure' in receipt) {
-    throw backendFailure('ACTION_BATCH_MODEL_INVALID_RESPONSE')
-  }
-
-  const previous = receipt.failure
-  let settlement: NonNullable<AiBatchReceipt['failure']>['settlement'] =
-    'completed'
-
-  if (previous) {
-    settlement = previous.settlement
-    if (settlement !== 'unknown' && receipt.actionResults.length) {
-      settlement = 'partial'
-    }
-  }
-
-  const failure: AiBatchReceipt = {
-    actionResults: [],
-    context: {},
-    failure: {
-      code: 'ACTION_BATCH_RECEIPT_TOO_LARGE',
-      message:
-        'Execution returned, but its output exceeds the receipt transport budget. Output is unavailable. Do not replay completed actions.',
-      stage: 'delivery',
-      actionName:
-        previous?.actionName ??
-        (receipt.actionResults.length === 1
-          ? receipt.actionResults[0].actionName
-          : null),
-      actionId:
-        previous?.actionId ??
-        (receipt.actionResults.length === 1
-          ? receipt.actionResults[0].actionId
-          : null),
-      actionExecutionMs: previous?.actionExecutionMs ?? null,
-      settlement,
-      contextFresh: false,
-      observedResult: {
-        bytes,
-        limit: AI_BATCH_MAXIMUM_REQUEST_BYTES,
-        returnedActionCount: receipt.actionResults.length,
-        ...(previous
-          ? {
-              originalFailure: {
-                code: previous.code,
-                stage: previous.stage,
-                settlement: previous.settlement
-              }
-            }
-          : {})
-      }
-    }
-  }
-  const encodedFailure = JSON.stringify(failure)
-
-  if (
-    new TextEncoder().encode(encodedFailure).byteLength >
-    AI_BATCH_MAXIMUM_REQUEST_BYTES
-  ) {
-    throw backendFailure('ACTION_BATCH_MODEL_INVALID_RESPONSE')
-  }
-
-  return encodedFailure
-}
-
-const readActivityStream = async (
-  response: Response,
-  signal: AbortSignal,
-  onProgress?: (event: AiToolProgress) => void,
-  executeBatch?: (batch: AiActionBatch) => Promise<AiBatchReceipt>,
-  sendReceipt?: (
-    token: string,
-    receipt: AiBatchReceipt | BrowserBatchFailureEnvelope
-  ) => Promise<void>,
-  resultContext?: ReturnType<
-    ReturnType<typeof createConversationResults>['open']
-  >
-): Promise<AiActionBatch> => {
-  const reader = response.body?.getReader()
-
-  if (!reader) {
-    throw backendFailure('ACTION_BATCH_MODEL_INVALID_RESPONSE')
-  }
-
-  const cancel = () => {
-    void reader.cancel().catch(() => undefined)
-  }
-
-  signal.addEventListener('abort', cancel, { once: true })
-  const decoder = new TextDecoder()
-  let buffer = ''
-  let bytes = 0
-  let batch: AiActionBatch | undefined
-
-  const consume = async (line: string) => {
-    // Stop can happen between frames already buffered in the same network chunk.
-    signal.throwIfAborted()
-    let event: Record<string, unknown>
-
-    try {
-      event = JSON.parse(line)
-    } catch {
-      throw backendFailure('ACTION_BATCH_MODEL_INVALID_RESPONSE')
-    }
-
-    if (
-      event &&
-      typeof event === 'object' &&
-      event.type === 'activity' &&
-      batch
-    ) {
-      return
-    }
-
-    if (!event || typeof event !== 'object' || batch) {
-      throw backendFailure('ACTION_BATCH_MODEL_INVALID_RESPONSE')
-    }
-
-    if (event.type === 'conversation-results') {
-      if (
-        !sendReceipt ||
-        typeof event.receiptToken !== 'string' ||
-        !/^[a-f0-9-]{36}$/.test(event.receiptToken)
-      ) {
-        throw backendFailure('ACTION_BATCH_MODEL_INVALID_RESPONSE')
-      }
-
-      let context: AiBatchReceipt['context']
-
-      try {
-        if (!resultContext) {
-          throw Error('No App conversation for result storage')
-        }
-
-        context = {
-          ok: true,
-          values: resultContext.exchange(event.command as ResultContextCommand)
-        }
-      } catch (error) {
-        context = {
-          ok: false,
-          code:
-            error instanceof AiToolContractError && error.stage === 'input'
-              ? AiToolFailureCodes.INPUT_INVALID
-              : AiToolFailureCodes.EXECUTION_FAILED,
-          error:
-            error instanceof Error
-              ? error.message
-              : 'Result context unavailable'
-        }
-      }
-
-      await sendReceipt(event.receiptToken, { context, actionResults: [] })
-
-      return
-    }
-
-    if (event.type === 'batch') {
-      if (
-        !executeBatch ||
-        !sendReceipt ||
-        typeof event.receiptToken !== 'string' ||
-        !/^[a-f0-9-]{36}$/.test(event.receiptToken) ||
-        !event.batch ||
-        typeof event.batch !== 'object'
-      ) {
-        throw backendFailure('ACTION_BATCH_MODEL_INVALID_RESPONSE')
-      }
-
-      const started = performance.now()
-      let receipt: AiBatchReceipt
-
-      try {
-        receipt = await executeBatch(event.batch as AiActionBatch)
-      } catch (error) {
-        signal.throwIfAborted()
-        await sendReceipt(event.receiptToken, {
-          batchFailure: describeBatchFailure(
-            error,
-            (event.batch as AiActionBatch).batchId,
-            Math.max(0, performance.now() - started)
-          )
-        })
-
-        return
-      }
-
-      if (signal.aborted) {
-        throw backendFailure('ACTION_BATCH_ABORTED')
-      }
-
-      await sendReceipt(event.receiptToken, receipt)
-
-      return
-    }
-
-    if (event.type === 'error') {
-      throw backendFailure(event.code)
-    }
-
-    if (event.type === 'result') {
-      if (!event.batch || typeof event.batch !== 'object') {
-        throw backendFailure('ACTION_BATCH_MODEL_INVALID_RESPONSE')
-      }
-
-      batch = event.batch as AiActionBatch
-
-      return
-    }
-
-    if (event.type !== 'activity') {
-      throw backendFailure('ACTION_BATCH_MODEL_INVALID_RESPONSE')
-    }
-
-    // Progress is observational; a rejected frame cannot retire execution.
-    if (
-      typeof event.tool !== 'string' ||
-      event.tool.length > 256 ||
-      !/^[a-zA-Z0-9_-]+(?:\.[a-zA-Z0-9_-]+)*$/.test(event.tool) ||
-      (event.status !== 'running' && event.status !== 'completed')
-    ) {
-      return
-    }
-
-    const activity = event.activity as AiToolProgress['activity']
-
-    if (activity !== undefined && !isExecutionActivity(activity)) {
-      return
-    }
-
-    if (!signal.aborted) {
-      try {
-        onProgress?.({
-          ...(activity ? { activity } : {}),
-          tool: event.tool,
-          status: event.status,
-          ...(typeof event.message === 'string' &&
-          Array.from(event.message).length <= 1000
-            ? { message: event.message }
-            : {})
-        })
-      } catch {
-        /* Observation cannot change execution. */
-      }
-    }
-  }
-
-  try {
-    while (!signal.aborted) {
-      const { value, done } = await reader.read()
-
-      if (done) {
-        break
-      }
-
-      let offset = 0
-
-      while (offset < value.byteLength) {
-        const newline = value.indexOf(10, offset)
-        const end = newline < 0 ? value.byteLength : newline
-        const segment = value.subarray(offset, end)
-
-        bytes += segment.byteLength
-        if (bytes > 64 * 1024 * 1024) {
-          throw backendFailure('ACTION_BATCH_MODEL_INVALID_RESPONSE')
-        }
-
-        buffer += decoder.decode(segment, { stream: true })
-        offset = end + 1
-        if (newline >= 0) {
-          buffer += decoder.decode()
-          if (buffer.trim()) {
-            await consume(buffer)
-          }
-
-          buffer = ''
-          bytes = 0
-        }
-      }
-    }
-
-    buffer += decoder.decode()
-    if (buffer.trim()) {
-      await consume(buffer)
-    }
-
-    if (signal.aborted) {
-      throw new AiProviderError({
-        code: 'AI_PROVIDER_ABORTED',
-        message: 'The request was stopped.'
-      })
-    }
-
-    if (!batch) {
-      throw backendFailure('ACTION_BATCH_MODEL_INVALID_RESPONSE')
-    }
-
-    return batch
-  } finally {
-    signal.removeEventListener('abort', cancel)
-    await reader.cancel().catch(() => undefined)
-    reader.releaseLock()
-  }
-}
-
 export const createServerActionBatchProvider = (
   options: Pick<GenericHttpAiProviderOptions, 'fetch'> & {
     documentScope?: () => unknown
@@ -411,141 +90,39 @@ export const createServerActionBatchProvider = (
   const results = createConversationResults(
     options.documentScope ?? (() => undefined)
   )
-  let disposed = false
-  const attempts = new Set<GenericHttpAiProvider>()
 
-  const requestActionBatch: GenericHttpAiProvider['requestActionBatch'] =
-    async (input, requestOptions) => {
-      if (disposed) {
-        throw new AiProviderError({
-          code: 'AI_PROVIDER_DISPOSED',
-          message: 'The provider is disposed.'
-        })
-      }
+  return createExchangeAiProvider({
+    results,
 
-      const meta = input.metadata as Record<string, never> | undefined
-      const context =
-        typeof meta?.conversationId === 'string'
-          ? results.open(meta.conversationId)
-          : undefined
-      const names = context?.names()
+    releaseResults: () => results.clear(),
 
-      if (context && names?.length) {
-        input = {
-          ...input,
-          metadata: {
-            ...meta,
-            conversationResultNames: names,
-            conversationResults: context.describe()
-          }
-        }
-      }
+    ...options,
+    endpoint: ACTION_BATCH_ENDPOINT,
+    executionHeader: AI_BATCH_EXECUTION_HEADER,
+    receiptHeader: AI_BATCH_RECEIPT_HEADER,
+    errorHeader: 'x-ai-error-code',
+    maximumReceiptBytes: AI_BATCH_MAXIMUM_REQUEST_BYTES,
+    maximumFrameBytes: 64 * 1024 * 1024,
+    backendFailure,
+    contextInputFailureCode: AiToolFailureCodes.INPUT_INVALID,
+    contextExecutionFailureCode: AiToolFailureCodes.EXECUTION_FAILED,
+    describeBatchFailure,
 
+    prepareInput(input) {
       const evaluationWindow = browserEvaluationWindow()
 
-      if (evaluationWindow) {
-        input = {
-          ...input,
-          metadata: {
-            ...((input.metadata as Record<string, never>) ?? {}),
-            evaluationWindow: { ...evaluationWindow }
-          }
-        }
-      }
-
-      const provider = createGenericHttpAiProvider({
-        endpoint: ACTION_BATCH_ENDPOINT,
-        timeoutMs: null,
-        headers: {
-          accept: 'application/x-ndjson, application/json',
-          ...(requestOptions.executeBatch
-            ? { [AI_BATCH_EXECUTION_HEADER]: '1' }
-            : {})
-        },
-
-        fetch: async (...args) => {
-          const response = await (options.fetch ?? globalThis.fetch)(...args)
-
-          if (!response.ok && isResponse(response)) {
-            throw backendFailure(response.headers.get('x-ai-error-code'))
-          }
-
-          if (
-            isResponse(response) &&
-            response.headers
-              .get('content-type')
-              ?.includes('application/x-ndjson')
-          ) {
-            const batch = await readActivityStream(
-              response,
-              args[1].signal,
-              requestOptions.onProgress,
-              requestOptions.executeBatch,
-              async (token, receipt) => {
-                const acknowledged = await (options.fetch ?? globalThis.fetch)(
-                  ACTION_BATCH_ENDPOINT,
-                  {
-                    method: 'POST',
-                    signal: args[1].signal,
-                    headers: {
-                      'content-type': 'application/json',
-                      [AI_BATCH_RECEIPT_HEADER]: token
-                    },
-                    body: encodeReceipt(receipt)
-                  }
-                )
-
-                if (!acknowledged.ok) {
-                  const code = isResponse(acknowledged)
-                    ? acknowledged.headers.get('x-ai-error-code')
-                    : null
-                  const diagnostic =
-                    code && /^ACTION_BATCH_[A-Z_]{1,80}$/.test(code)
-                      ? ` (${code})`
-                      : ''
-
-                  throw new AiProviderError({
-                    code: 'AI_PROVIDER_HTTP_STATUS',
-                    status: acknowledged.status,
-                    message: `The action receipt was not acknowledged${diagnostic}. Execution must not be replayed automatically.`
-                  })
-                }
-              },
-              context
-            )
-
-            return {
-              ok: true,
-              status: 200,
-
-              json: async () => batch
+      return evaluationWindow
+        ? {
+            ...input,
+            metadata: {
+              ...((input.metadata as Record<string, never>) ?? {}),
+              evaluationWindow: { ...evaluationWindow }
             }
           }
-
-          return response
-        }
-      })
-
-      attempts.add(provider)
-      try {
-        return await measureBrowserDragAsyncPhase(
-          'ai-provider:server-response-handoff',
-          () => provider.requestActionBatch(input, requestOptions)
-        )
-      } finally {
-        attempts.delete(provider)
-        provider.dispose()
-      }
-    }
-
-  return Object.freeze({
-    dispose: () => {
-      disposed = true
-      results.clear()
-      attempts.forEach((provider) => provider.dispose())
-      attempts.clear()
+        : input
     },
 
-    requestActionBatch
+    measure: (work) =>
+      measureBrowserDragAsyncPhase('ai-provider:server-response-handoff', work)
   })
 }

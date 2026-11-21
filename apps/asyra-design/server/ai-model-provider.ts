@@ -1,17 +1,13 @@
+import type { NativeConversations } from '@asyra/ai-agent-runtime/node'
 import type { EvaluationReportSessions } from './evaluation-report-sessions'
-import type { ExchangeConversationResults } from '../src/ai/conversation-results'
+import type { ExchangeConversationResults } from '@asyra/ai-agent-runtime'
 import { captureAiSourceIdentity } from '@asyra/ai-agent-runtime/node'
-import type {
-  AiToolProgress,
-  ExecuteAiBatch
-} from '../src/ai/action-batch-protocol'
-import type {
-  AiActionBatch,
-  AiProviderInput
-} from '../src/ai/action-batch-protocol'
+import type { AiToolProgress, ExecuteAiBatch } from '@asyra/ai-agent-runtime'
+import type { AiActionBatch, AiProviderInput } from '@asyra/ai-agent-runtime'
 import { AI_APP_PROMPT, AI_IMAGE_TOOL_CATALOG } from './ai-domain-prompt'
 
 export type AiModelBackendErrorCode =
+  | 'AI_MODEL_BACKEND_SESSION_UNAVAILABLE'
   | 'AI_MODEL_BACKEND_TIMEOUT'
   | 'AI_MODEL_BACKEND_IMAGE_CONVERSION_FAILED'
   | 'AI_MODEL_BACKEND_ABORTED'
@@ -48,6 +44,7 @@ interface AiModelBackendOptions {
   readonly fetch?: typeof fetch
   readonly onProgress?: (event: AiToolProgress) => void
   readonly resultContext?: ExchangeConversationResults
+  readonly conversations?: NativeConversations
   readonly reportSessions?: EvaluationReportSessions
   readonly executeBatch?: ExecuteAiBatch
   readonly signal?: AbortSignal
@@ -180,6 +177,7 @@ export const requestConfiguredAiActionBatch = async (
       signal: options.signal,
       onProgress: options.onProgress,
       resultContext: options.resultContext,
+      conversations: options.conversations,
       ...(options.reportSessions
         ? { reportSessions: options.reportSessions }
         : {}),

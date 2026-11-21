@@ -2,7 +2,7 @@ import capacityFixture from './fixtures/recorded-101/pattern-budget-recovery-202
 import {
   nativeToolInputSchema,
   operationInputIssue
-} from '../operation-input-schema'
+} from '@asyra/ai-agent-runtime/schema'
 import { inspectDesignBudget } from '../design-budget'
 import { invokeLocalTool } from '../local-tool-invocation'
 import { designPreparationExamples } from '../design-preparation-examples'
@@ -22,10 +22,7 @@ import { createLocalImageTools } from '../local-image-tools'
 import { createLocalOperationTools } from '../local-operation-tools'
 import { AiActionNames } from '../../src/constants/ai-actions'
 import type { PreparedDesignDelivery } from '../../src/ai/prepared-design'
-import type {
-  AiActionBatch,
-  AiBatchReceipt
-} from '../../src/ai/action-batch-protocol'
+import type { AiActionBatch, AiBatchReceipt } from '@asyra/ai-agent-runtime'
 
 const actions = [
   {

@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "projectId": "conversation-verification",
   "flowId": "conversation",
-  "revision": 668,
+  "revision": 786,
   "definition": {
     "title": "Spec-derived AI conversation verification",
     "purpose": "Reconcile independently reviewed handoffs against actual execution; passing selected cases never establish complete feature coverage.",
@@ -1715,6 +1715,42 @@
           "producer": "playwright",
           "identity": "{\"config\":\"apps/asyra-design/playwright.conversation.config.ts\",\"cwd\":\"apps/asyra-design\",\"file\":\"apps/asyra-design/e2e/recorded-document-reload.spec.ts\",\"title\":\"reloads the recorded Taipei101 through the authoritative document session\",\"project\":\"chromium\"}"
         }
+      },
+      {
+        "id": "browser-prefix-failure-projection",
+        "title": "execution proof preserves raw browser prefixes at the host failure boundary",
+        "kind": "automated",
+        "selector": {
+          "producer": "vitest",
+          "identity": "{\"config\":\"apps/asyra-design/vite.config.ts\",\"cwd\":\"apps/asyra-design\",\"file\":\"apps/asyra-design/server/__tests__/execution-flow-proof.test.ts\",\"title\":\"execution proof preserves raw browser prefixes at the host failure boundary\",\"project\":\"\"}"
+        }
+      },
+      {
+        "id": "complete-owner-model-cost",
+        "title": "compares complete model result contracts against the same owner declarations with internal fields included",
+        "kind": "automated",
+        "selector": {
+          "producer": "vitest",
+          "identity": "{\"config\":\"apps/asyra-design/vite.config.ts\",\"cwd\":\"apps/asyra-design\",\"file\":\"apps/asyra-design/server/__tests__/model-delivery-cost.test.ts\",\"title\":\"compares complete model result contracts against the same owner declarations with internal fields included\",\"project\":\"\"}"
+        }
+      },
+      {
+        "id": "retained-mapping-capacity",
+        "title": "preserves completed mapping when receipt retention fails from capacity",
+        "kind": "automated",
+        "selector": {
+          "producer": "vitest",
+          "identity": "{\"config\":\"apps/asyra-design/vite.config.ts\",\"cwd\":\"apps/asyra-design\",\"file\":\"apps/asyra-design/src/ai/__tests__/retained-fill-action.test.ts\",\"title\":\"preserves completed mapping when receipt retention fails from capacity\",\"project\":\"\"}"
+        }
+      },
+      {
+        "id": "retained-mapping-cancel",
+        "title": "preserves completed mapping when receipt retention fails from cancel",
+        "kind": "automated",
+        "selector": {
+          "producer": "vitest",
+          "identity": "{\"config\":\"apps/asyra-design/vite.config.ts\",\"cwd\":\"apps/asyra-design\",\"file\":\"apps/asyra-design/src/ai/__tests__/retained-fill-action.test.ts\",\"title\":\"preserves completed mapping when receipt retention fails from cancel\",\"project\":\"\"}"
+        }
       }
     ]
   },
@@ -1725,2116 +1761,2168 @@
         "criterionId": "case-5",
         "kind": "automated",
         "status": "passed",
-        "binding": "cde4dbbf49c3ea92f5c9aca92017af736e4c4cd308aeb095d27afe7ec6119f8c",
+        "binding": "37b7e79d7c1b3ae4419edbff65e3e8c40742d82328e02733ed4d320203489c3e",
         "actor": "vitest",
-        "executionId": "b3a8d241-fa2b-41b6-b212-a50813a3cd79",
+        "executionId": "4cff8a07-1225-4e6d-9109-83258e77ae0d",
         "caseId": "b1e5bd214d1ac33d627d4c95f1cbd1e4a5b452c16d943673b41a751d4ecaa110",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:11:07.533Z"
+        "at": "2026-11-21T09:41:19.862Z"
       },
       {
         "nodeId": "admission",
         "criterionId": "case-2",
         "kind": "automated",
         "status": "passed",
-        "binding": "96cec7f9cc2000e8792d897a5714259e69fe2117954c96c7bc3422c6ab9557e0",
+        "binding": "cde9dffd352a1b7bd4c092eace29fbab98271dc52243fa67a13b9f8bb909ce7e",
         "actor": "vitest",
-        "executionId": "ec3c9823-a9c3-4966-92c1-e865ed07fdc7",
+        "executionId": "23acb833-81b6-4d4b-8e0a-aa7a621c647b",
         "caseId": "fb49b708d3abfed93de391993db169f40def9655f436194fcf3825e1ccc2ec2c",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:14:26.438Z"
+        "at": "2026-11-21T09:44:40.352Z"
       },
       {
         "nodeId": "composition",
         "criterionId": "case-1",
         "kind": "automated",
         "status": "passed",
-        "binding": "bceee2583218850daabb7ac6db2cfe560b091248f029c26b6f736b8babe4142a",
+        "binding": "72706545fe29e4964eefcd3ff960106ace583c16433f680c0bcc95f4c2a6c73f",
         "actor": "vitest",
-        "executionId": "ec3c9823-a9c3-4966-92c1-e865ed07fdc7",
+        "executionId": "23acb833-81b6-4d4b-8e0a-aa7a621c647b",
         "caseId": "42844a8129d30d9f7a3ce8e67147c86723c13f681dcbc7868f51204bd40638d3",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:14:26.439Z"
+        "at": "2026-11-21T09:44:40.352Z"
       },
       {
         "nodeId": "composition",
         "criterionId": "case-2",
         "kind": "automated",
         "status": "passed",
-        "binding": "bceee2583218850daabb7ac6db2cfe560b091248f029c26b6f736b8babe4142a",
+        "binding": "72706545fe29e4964eefcd3ff960106ace583c16433f680c0bcc95f4c2a6c73f",
         "actor": "vitest",
-        "executionId": "ec3c9823-a9c3-4966-92c1-e865ed07fdc7",
+        "executionId": "23acb833-81b6-4d4b-8e0a-aa7a621c647b",
         "caseId": "6700bcf80526bcea0ffdbbff2ee7e90d8414696bda11e168622eb4e97b16e5c4",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:14:26.439Z"
+        "at": "2026-11-21T09:44:40.353Z"
       },
       {
         "nodeId": "composition",
         "criterionId": "case-3",
         "kind": "automated",
         "status": "passed",
-        "binding": "bceee2583218850daabb7ac6db2cfe560b091248f029c26b6f736b8babe4142a",
+        "binding": "72706545fe29e4964eefcd3ff960106ace583c16433f680c0bcc95f4c2a6c73f",
         "actor": "vitest",
-        "executionId": "ec3c9823-a9c3-4966-92c1-e865ed07fdc7",
+        "executionId": "23acb833-81b6-4d4b-8e0a-aa7a621c647b",
         "caseId": "64d9c12e4ad029be4b9cd72cd21a1e6ec0488053d0202965c541c66f85dcb509",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:14:26.440Z"
+        "at": "2026-11-21T09:44:40.354Z"
       },
       {
         "nodeId": "request",
         "criterionId": "case-1",
         "kind": "automated",
         "status": "passed",
-        "binding": "14cfdbf773b06b6b7e379106c21b6ed765e943fc576083de4403e099dc0597d6",
+        "binding": "d0fcb3d7891072396f5eaa433b170f2431b5de26b1c8456315ad8c7f1759f42e",
         "actor": "vitest",
-        "executionId": "6a1bb83c-aa72-4d1b-b3ea-1a5e3ea61443",
+        "executionId": "5ff596bd-041a-4ebc-a22d-89ed7d5a071a",
         "caseId": "6a1612ae653c7df5eb620a3a6daa5810495385521d91a5841a5459a4913d86df",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:14:15.847Z"
+        "at": "2026-11-21T09:44:24.216Z"
       },
       {
         "nodeId": "request",
         "criterionId": "case-2",
         "kind": "automated",
         "status": "passed",
-        "binding": "14cfdbf773b06b6b7e379106c21b6ed765e943fc576083de4403e099dc0597d6",
+        "binding": "d0fcb3d7891072396f5eaa433b170f2431b5de26b1c8456315ad8c7f1759f42e",
         "actor": "vitest",
-        "executionId": "6a1bb83c-aa72-4d1b-b3ea-1a5e3ea61443",
+        "executionId": "5ff596bd-041a-4ebc-a22d-89ed7d5a071a",
         "caseId": "a39fe6f68d202719053fe2a55ffbedfa0cc88a89e0b11c26dc7fa260ed1869c8",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:14:15.849Z"
+        "at": "2026-11-21T09:44:24.218Z"
       },
       {
         "nodeId": "request",
         "criterionId": "case-3",
         "kind": "automated",
         "status": "passed",
-        "binding": "14cfdbf773b06b6b7e379106c21b6ed765e943fc576083de4403e099dc0597d6",
+        "binding": "d0fcb3d7891072396f5eaa433b170f2431b5de26b1c8456315ad8c7f1759f42e",
         "actor": "vitest",
-        "executionId": "6a1bb83c-aa72-4d1b-b3ea-1a5e3ea61443",
+        "executionId": "5ff596bd-041a-4ebc-a22d-89ed7d5a071a",
         "caseId": "cd376916c05f838aa5647b9e6813fbfd4eab05d18c4ee0b854affaf4582dae7c",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:14:15.851Z"
+        "at": "2026-11-21T09:44:24.221Z"
       },
       {
         "nodeId": "instructions",
         "criterionId": "case-1",
         "kind": "automated",
         "status": "passed",
-        "binding": "cde4dbbf49c3ea92f5c9aca92017af736e4c4cd308aeb095d27afe7ec6119f8c",
+        "binding": "37b7e79d7c1b3ae4419edbff65e3e8c40742d82328e02733ed4d320203489c3e",
         "actor": "vitest",
-        "executionId": "6a1bb83c-aa72-4d1b-b3ea-1a5e3ea61443",
+        "executionId": "5ff596bd-041a-4ebc-a22d-89ed7d5a071a",
         "caseId": "1c0693c109f5b60fd36d2b141fdebafc4448c6835bd16239941375cb8f13dc42",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:14:15.856Z"
+        "at": "2026-11-21T09:44:24.225Z"
       },
       {
         "nodeId": "results",
         "criterionId": "case-2",
         "kind": "automated",
         "status": "passed",
-        "binding": "25a407984e5c7c744cc076f21f4500d1e7b794772442cb079b95212821f5e9d5",
+        "binding": "790f1eba5d6528e7920d15328fdda3b19fd1383f2389fd631757af518abc3af6",
         "actor": "vitest",
-        "executionId": "6a1bb83c-aa72-4d1b-b3ea-1a5e3ea61443",
+        "executionId": "5ff596bd-041a-4ebc-a22d-89ed7d5a071a",
         "caseId": "b773358a9549c8ebbc46f53906d0b5d67f540658375b4d4c6a290e554b974800",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:14:15.943Z"
+        "at": "2026-11-21T09:44:24.311Z"
       },
       {
         "nodeId": "retention",
         "criterionId": "case-2",
         "kind": "automated",
         "status": "passed",
-        "binding": "b18a32ea2990cf01227c6a9161aae5ec5b3d6fe4fd2b9b047d2bec92dca375c5",
+        "binding": "c88f44d98dc94421c9d746a0a3c013b79f6536b4cbdbcd00837b8528f744b818",
         "actor": "vitest",
-        "executionId": "6a1bb83c-aa72-4d1b-b3ea-1a5e3ea61443",
+        "executionId": "5ff596bd-041a-4ebc-a22d-89ed7d5a071a",
         "caseId": "36168b2f2df63dd0d041764d11452dc967340ac46196d8e12ce689872144e710",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:14:15.945Z"
+        "at": "2026-11-21T09:44:24.313Z"
       },
       {
         "nodeId": "retention",
         "criterionId": "case-3",
         "kind": "automated",
         "status": "passed",
-        "binding": "b18a32ea2990cf01227c6a9161aae5ec5b3d6fe4fd2b9b047d2bec92dca375c5",
+        "binding": "c88f44d98dc94421c9d746a0a3c013b79f6536b4cbdbcd00837b8528f744b818",
         "actor": "vitest",
-        "executionId": "6a1bb83c-aa72-4d1b-b3ea-1a5e3ea61443",
+        "executionId": "5ff596bd-041a-4ebc-a22d-89ed7d5a071a",
         "caseId": "5cb2b41695f40825dab09fa75e924743ff239b25ccbacd0d727471ecebafdde8",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:14:15.947Z"
+        "at": "2026-11-21T09:44:24.315Z"
       },
       {
         "nodeId": "lifecycle",
         "criterionId": "case-1",
         "kind": "automated",
         "status": "passed",
-        "binding": "0199fe58fbd60fe579ba7ae394d30de9333f2c80c1bb2781c93bf071b60fbcc4",
+        "binding": "1608f378edea28862d2c791d38d13cd18e7b59733c4238f9ad2a659e3da5dbe0",
         "actor": "vitest",
-        "executionId": "6a1bb83c-aa72-4d1b-b3ea-1a5e3ea61443",
+        "executionId": "5ff596bd-041a-4ebc-a22d-89ed7d5a071a",
         "caseId": "f0424b22f136c60d5667b5bf4f25715ccaaf9f7fa5693d9f83593bf2e670f0c8",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:14:15.953Z"
+        "at": "2026-11-21T09:44:24.321Z"
       },
       {
         "nodeId": "lifecycle",
         "criterionId": "case-2",
         "kind": "automated",
         "status": "passed",
-        "binding": "0199fe58fbd60fe579ba7ae394d30de9333f2c80c1bb2781c93bf071b60fbcc4",
+        "binding": "1608f378edea28862d2c791d38d13cd18e7b59733c4238f9ad2a659e3da5dbe0",
         "actor": "vitest",
-        "executionId": "6a1bb83c-aa72-4d1b-b3ea-1a5e3ea61443",
+        "executionId": "5ff596bd-041a-4ebc-a22d-89ed7d5a071a",
         "caseId": "cdf959cb4039ddf7f2441b15d2ec52e92e4b234f74e47c501ca50f2c42c24d58",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:14:15.955Z"
+        "at": "2026-11-21T09:44:24.323Z"
       },
       {
         "nodeId": "composition",
         "criterionId": "native-partial-repair",
         "kind": "automated",
         "status": "passed",
-        "binding": "bceee2583218850daabb7ac6db2cfe560b091248f029c26b6f736b8babe4142a",
+        "binding": "72706545fe29e4964eefcd3ff960106ace583c16433f680c0bcc95f4c2a6c73f",
         "actor": "playwright",
-        "executionId": "e1318927-05d1-4066-bddb-dd7fe8ae1caa",
+        "executionId": "131a1cab-cf4a-45e2-b978-46960094ea2f",
         "caseId": "bc0b22b749d4624b2f05c7d5ed133bc0a3dc3a1c12f947f457b742a5f7614810",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:40:43.415Z"
+        "at": "2026-11-21T10:08:57.181Z"
       },
       {
         "nodeId": "canonical",
         "criterionId": "case-1",
         "kind": "automated",
         "status": "passed",
-        "binding": "fd6d28b4c303ac7b7f2211146309cc092ffbc0ca66ca1227eed524ef926318b2",
+        "binding": "68780bab1f482e98f703217c107333e91bde72825ba6436458441e51bdfb6aa3",
         "actor": "playwright",
-        "executionId": "e1318927-05d1-4066-bddb-dd7fe8ae1caa",
+        "executionId": "131a1cab-cf4a-45e2-b978-46960094ea2f",
         "caseId": "c81bd9b6ba8cd0f5f85d8c8bc699794b93f082f4b66001982a9ad19eaad90028",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:40:43.416Z"
+        "at": "2026-11-21T10:08:57.182Z"
       },
       {
         "nodeId": "canonical",
         "criterionId": "incremental-stream",
         "kind": "automated",
         "status": "passed",
-        "binding": "fd6d28b4c303ac7b7f2211146309cc092ffbc0ca66ca1227eed524ef926318b2",
+        "binding": "68780bab1f482e98f703217c107333e91bde72825ba6436458441e51bdfb6aa3",
         "actor": "playwright",
-        "executionId": "e1318927-05d1-4066-bddb-dd7fe8ae1caa",
+        "executionId": "131a1cab-cf4a-45e2-b978-46960094ea2f",
         "caseId": "69f72a5ae9a252e93ff1f62b06ebda5ebc76947d18281a238f58ba6f914cb0b6",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:40:43.417Z"
+        "at": "2026-11-21T10:08:57.182Z"
       },
       {
         "nodeId": "canonical",
         "criterionId": "saved-regroup",
         "kind": "automated",
         "status": "passed",
-        "binding": "fd6d28b4c303ac7b7f2211146309cc092ffbc0ca66ca1227eed524ef926318b2",
+        "binding": "68780bab1f482e98f703217c107333e91bde72825ba6436458441e51bdfb6aa3",
         "actor": "playwright",
-        "executionId": "e1318927-05d1-4066-bddb-dd7fe8ae1caa",
+        "executionId": "131a1cab-cf4a-45e2-b978-46960094ea2f",
         "caseId": "6e907b6e693421c617cdaaf025a77c00c9cc52bd213e914ab0b4075161bfd2ed",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:40:43.417Z"
+        "at": "2026-11-21T10:08:57.183Z"
       },
       {
         "nodeId": "instructions",
         "criterionId": "frontend-provider-bundle",
         "kind": "automated",
         "status": "passed",
-        "binding": "cde4dbbf49c3ea92f5c9aca92017af736e4c4cd308aeb095d27afe7ec6119f8c",
+        "binding": "37b7e79d7c1b3ae4419edbff65e3e8c40742d82328e02733ed4d320203489c3e",
         "actor": "node",
-        "executionId": "52fe388b-23f2-49c8-8a9a-f9ec479eb68b",
+        "executionId": "2fe42c2c-0fdb-4356-9fd2-cbc5078e9bbb",
         "caseId": "b6b80a237e24f2751d2cbce3663f791d50fdb3a107ade1977f2472ddb2b5524f",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:21:36.214Z"
+        "at": "2026-11-21T09:51:07.315Z"
       },
       {
         "nodeId": "evidence",
         "criterionId": "case-1",
         "kind": "automated",
         "status": "passed",
-        "binding": "b4b4e14a3acdf2b1b2b59e559435f240d2182eb0cc20357f51dadb71971ce7cf",
+        "binding": "bc99e6c43c96813770529e0c34004fcfd600c54731160fc4c7b66b5cb11771c4",
         "actor": "node",
-        "executionId": "52fe388b-23f2-49c8-8a9a-f9ec479eb68b",
+        "executionId": "2fe42c2c-0fdb-4356-9fd2-cbc5078e9bbb",
         "caseId": "866a234c9d1693edfda90220ba74c6d05fc4cc14cbb8f916c44e45b1799355bb",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:21:36.224Z"
+        "at": "2026-11-21T09:51:07.325Z"
       },
       {
         "nodeId": "evidence",
         "criterionId": "case-2",
         "kind": "automated",
         "status": "passed",
-        "binding": "b4b4e14a3acdf2b1b2b59e559435f240d2182eb0cc20357f51dadb71971ce7cf",
+        "binding": "bc99e6c43c96813770529e0c34004fcfd600c54731160fc4c7b66b5cb11771c4",
         "actor": "node",
-        "executionId": "52fe388b-23f2-49c8-8a9a-f9ec479eb68b",
+        "executionId": "2fe42c2c-0fdb-4356-9fd2-cbc5078e9bbb",
         "caseId": "419a0a2e519a6675b4e76fa73f7909a0bdc83afafaf36c69e4d424bdd26af664",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:21:36.225Z"
+        "at": "2026-11-21T09:51:07.326Z"
       },
       {
         "nodeId": "evidence",
         "criterionId": "cli-interruption",
         "kind": "automated",
         "status": "passed",
-        "binding": "b4b4e14a3acdf2b1b2b59e559435f240d2182eb0cc20357f51dadb71971ce7cf",
+        "binding": "bc99e6c43c96813770529e0c34004fcfd600c54731160fc4c7b66b5cb11771c4",
         "actor": "node",
-        "executionId": "52fe388b-23f2-49c8-8a9a-f9ec479eb68b",
+        "executionId": "2fe42c2c-0fdb-4356-9fd2-cbc5078e9bbb",
         "caseId": "989ed903d374029f3f9a49a0df0bad54dbe801b9d627d1ff477b45a9d32ee8ea",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:21:36.226Z"
+        "at": "2026-11-21T09:51:07.327Z"
       },
       {
         "nodeId": "results",
         "criterionId": "workflow-denied-write",
         "kind": "automated",
         "status": "passed",
-        "binding": "25a407984e5c7c744cc076f21f4500d1e7b794772442cb079b95212821f5e9d5",
+        "binding": "790f1eba5d6528e7920d15328fdda3b19fd1383f2389fd631757af518abc3af6",
         "actor": "playwright",
-        "executionId": "e1318927-05d1-4066-bddb-dd7fe8ae1caa",
+        "executionId": "131a1cab-cf4a-45e2-b978-46960094ea2f",
         "caseId": "3dac2440ab2af9418b9d82d3569f396e2e0478cb8f20035c61c8f71cf9924813",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:40:43.418Z"
+        "at": "2026-11-21T10:08:57.183Z"
       },
       {
         "nodeId": "admission",
         "criterionId": "browser-denied-write",
         "kind": "automated",
         "status": "passed",
-        "binding": "96cec7f9cc2000e8792d897a5714259e69fe2117954c96c7bc3422c6ab9557e0",
+        "binding": "cde9dffd352a1b7bd4c092eace29fbab98271dc52243fa67a13b9f8bb909ce7e",
         "actor": "playwright",
-        "executionId": "e1318927-05d1-4066-bddb-dd7fe8ae1caa",
+        "executionId": "131a1cab-cf4a-45e2-b978-46960094ea2f",
         "caseId": "d090eef4a902cbfbb60fb537b2e2c94e3ce663a81eeef578b9a1879cc527ba11",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:40:43.415Z"
+        "at": "2026-11-21T10:08:57.180Z"
       },
       {
         "nodeId": "request",
         "criterionId": "native-draft-clarification",
         "kind": "automated",
         "status": "passed",
-        "binding": "14cfdbf773b06b6b7e379106c21b6ed765e943fc576083de4403e099dc0597d6",
+        "binding": "d0fcb3d7891072396f5eaa433b170f2431b5de26b1c8456315ad8c7f1759f42e",
         "actor": "playwright",
-        "executionId": "e1318927-05d1-4066-bddb-dd7fe8ae1caa",
+        "executionId": "131a1cab-cf4a-45e2-b978-46960094ea2f",
         "caseId": "5c869acd5edfe3a1cdf503c84676715f394e5fb6890cf0bd197862b4fa9fa0c6",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:40:43.414Z"
+        "at": "2026-11-21T10:08:57.179Z"
       },
       {
         "nodeId": "request",
         "criterionId": "native-draft-association-corruption",
         "kind": "automated",
         "status": "passed",
-        "binding": "14cfdbf773b06b6b7e379106c21b6ed765e943fc576083de4403e099dc0597d6",
+        "binding": "d0fcb3d7891072396f5eaa433b170f2431b5de26b1c8456315ad8c7f1759f42e",
         "actor": "playwright",
-        "executionId": "e1318927-05d1-4066-bddb-dd7fe8ae1caa",
+        "executionId": "131a1cab-cf4a-45e2-b978-46960094ea2f",
         "caseId": "1e8b1c8c19ff0088923178a7eebab6bb61a1aa759912c8efe6c470a130f6244f",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:40:43.414Z"
+        "at": "2026-11-21T10:08:57.179Z"
       },
       {
         "nodeId": "canonical",
         "criterionId": "native-partial-canonical-result",
         "kind": "automated",
         "status": "passed",
-        "binding": "fd6d28b4c303ac7b7f2211146309cc092ffbc0ca66ca1227eed524ef926318b2",
+        "binding": "68780bab1f482e98f703217c107333e91bde72825ba6436458441e51bdfb6aa3",
         "actor": "vitest",
-        "executionId": "b3a8d241-fa2b-41b6-b212-a50813a3cd79",
+        "executionId": "4cff8a07-1225-4e6d-9109-83258e77ae0d",
         "caseId": "cd223818709fca97524f1eab4446c506c7d674f3528efbaef092223cdf5eb63e",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:11:07.703Z"
+        "at": "2026-11-21T09:41:20.028Z"
       },
       {
         "nodeId": "composition",
         "criterionId": "native-staged-template-repair",
         "kind": "automated",
         "status": "passed",
-        "binding": "bceee2583218850daabb7ac6db2cfe560b091248f029c26b6f736b8babe4142a",
+        "binding": "72706545fe29e4964eefcd3ff960106ace583c16433f680c0bcc95f4c2a6c73f",
         "actor": "playwright",
-        "executionId": "e1318927-05d1-4066-bddb-dd7fe8ae1caa",
+        "executionId": "131a1cab-cf4a-45e2-b978-46960094ea2f",
         "caseId": "a73df0e29459657a801d37429f1cb24bf347dab1f0fa849334f7e58484f18ff0",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:40:43.416Z"
+        "at": "2026-11-21T10:08:57.181Z"
       },
       {
         "nodeId": "instructions",
         "criterionId": "case-2",
         "kind": "automated",
         "status": "passed",
-        "binding": "cde4dbbf49c3ea92f5c9aca92017af736e4c4cd308aeb095d27afe7ec6119f8c",
+        "binding": "37b7e79d7c1b3ae4419edbff65e3e8c40742d82328e02733ed4d320203489c3e",
         "actor": "vitest",
-        "executionId": "b3a8d241-fa2b-41b6-b212-a50813a3cd79",
+        "executionId": "4cff8a07-1225-4e6d-9109-83258e77ae0d",
         "caseId": "2cc1ef9f1e30b7d4a6a0175fce4108ddadc8b660f41121cd3bc5e23f81d7a51f",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:11:07.518Z"
+        "at": "2026-11-21T09:41:19.848Z"
       },
       {
         "nodeId": "instructions",
         "criterionId": "case-3",
         "kind": "automated",
         "status": "passed",
-        "binding": "cde4dbbf49c3ea92f5c9aca92017af736e4c4cd308aeb095d27afe7ec6119f8c",
+        "binding": "37b7e79d7c1b3ae4419edbff65e3e8c40742d82328e02733ed4d320203489c3e",
         "actor": "vitest",
-        "executionId": "b3a8d241-fa2b-41b6-b212-a50813a3cd79",
+        "executionId": "4cff8a07-1225-4e6d-9109-83258e77ae0d",
         "caseId": "9f6bb77a1aad49501a7f5efec96c0f87dcaca91b905c20d48b22ac648afe70ea",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:11:07.523Z"
+        "at": "2026-11-21T09:41:19.853Z"
       },
       {
         "nodeId": "instructions",
         "criterionId": "case-4",
         "kind": "automated",
         "status": "passed",
-        "binding": "cde4dbbf49c3ea92f5c9aca92017af736e4c4cd308aeb095d27afe7ec6119f8c",
+        "binding": "37b7e79d7c1b3ae4419edbff65e3e8c40742d82328e02733ed4d320203489c3e",
         "actor": "vitest",
-        "executionId": "b3a8d241-fa2b-41b6-b212-a50813a3cd79",
+        "executionId": "4cff8a07-1225-4e6d-9109-83258e77ae0d",
         "caseId": "9058f6fa18bf911d1d768b8d912529a0fdb6b239c50ba825ab7ecff6a587e48a",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:11:07.528Z"
+        "at": "2026-11-21T09:41:19.858Z"
       },
       {
         "nodeId": "instructions",
         "criterionId": "native-assessment",
         "kind": "automated",
         "status": "passed",
-        "binding": "cde4dbbf49c3ea92f5c9aca92017af736e4c4cd308aeb095d27afe7ec6119f8c",
+        "binding": "37b7e79d7c1b3ae4419edbff65e3e8c40742d82328e02733ed4d320203489c3e",
         "actor": "vitest",
-        "executionId": "b3a8d241-fa2b-41b6-b212-a50813a3cd79",
+        "executionId": "4cff8a07-1225-4e6d-9109-83258e77ae0d",
         "caseId": "c513092f01bb90aa5089a11442ebc4e9830034c60515c375e2156cb6b6e35544",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:11:07.538Z"
+        "at": "2026-11-21T09:41:19.868Z"
       },
       {
         "nodeId": "instructions",
         "criterionId": "ordinary-no-executor",
         "kind": "automated",
         "status": "passed",
-        "binding": "cde4dbbf49c3ea92f5c9aca92017af736e4c4cd308aeb095d27afe7ec6119f8c",
+        "binding": "37b7e79d7c1b3ae4419edbff65e3e8c40742d82328e02733ed4d320203489c3e",
         "actor": "vitest",
-        "executionId": "b3a8d241-fa2b-41b6-b212-a50813a3cd79",
+        "executionId": "4cff8a07-1225-4e6d-9109-83258e77ae0d",
         "caseId": "a70556fa37472f332831f46d9cd5b5508dd125374a5cabdec7c0feddfa797fb1",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:11:07.543Z"
+        "at": "2026-11-21T09:41:19.872Z"
       },
       {
         "nodeId": "instructions",
         "criterionId": "http-real-contract-state",
         "kind": "automated",
         "status": "passed",
-        "binding": "cde4dbbf49c3ea92f5c9aca92017af736e4c4cd308aeb095d27afe7ec6119f8c",
+        "binding": "37b7e79d7c1b3ae4419edbff65e3e8c40742d82328e02733ed4d320203489c3e",
         "actor": "vitest",
-        "executionId": "b3a8d241-fa2b-41b6-b212-a50813a3cd79",
+        "executionId": "4cff8a07-1225-4e6d-9109-83258e77ae0d",
         "caseId": "217866053a50c640bcb8b808e703f275703d1b19ccacfe49182f6ed3096726bd",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:11:07.548Z"
+        "at": "2026-11-21T09:41:19.877Z"
       },
       {
         "nodeId": "instructions",
         "criterionId": "http-disabled-capability",
         "kind": "automated",
         "status": "passed",
-        "binding": "cde4dbbf49c3ea92f5c9aca92017af736e4c4cd308aeb095d27afe7ec6119f8c",
+        "binding": "37b7e79d7c1b3ae4419edbff65e3e8c40742d82328e02733ed4d320203489c3e",
         "actor": "vitest",
-        "executionId": "b3a8d241-fa2b-41b6-b212-a50813a3cd79",
+        "executionId": "4cff8a07-1225-4e6d-9109-83258e77ae0d",
         "caseId": "c4e73213488b6bf8709ebb66b07d2147ed5eb4a4d9c9c0a29fefff6e4b194223",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:11:07.553Z"
+        "at": "2026-11-21T09:41:19.882Z"
       },
       {
         "nodeId": "discovery",
         "criterionId": "case-1",
         "kind": "automated",
         "status": "passed",
-        "binding": "d4e4f40a3fa3db45b50843a831fc82018d323d40f6168a4fb3e57c560008e266",
+        "binding": "5a848f245dd1c439f69e71dbe2aa73f428c8ccfa056f417cb9c5c945a00a8b1d",
         "actor": "vitest",
-        "executionId": "b3a8d241-fa2b-41b6-b212-a50813a3cd79",
+        "executionId": "4cff8a07-1225-4e6d-9109-83258e77ae0d",
         "caseId": "8bcec80aceeb5a6c079aa613386a23a5ab5032090868e532413c144aafadb881",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:11:07.564Z"
+        "at": "2026-11-21T09:41:19.892Z"
       },
       {
         "nodeId": "discovery",
         "criterionId": "case-2",
         "kind": "automated",
         "status": "passed",
-        "binding": "d4e4f40a3fa3db45b50843a831fc82018d323d40f6168a4fb3e57c560008e266",
+        "binding": "5a848f245dd1c439f69e71dbe2aa73f428c8ccfa056f417cb9c5c945a00a8b1d",
         "actor": "vitest",
-        "executionId": "b3a8d241-fa2b-41b6-b212-a50813a3cd79",
+        "executionId": "4cff8a07-1225-4e6d-9109-83258e77ae0d",
         "caseId": "9cf35a048ed3bbfb8c37b4debf848aef838c28ba4c555e961674265783b078c0",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:11:07.569Z"
+        "at": "2026-11-21T09:41:19.897Z"
       },
       {
         "nodeId": "knowledge",
         "criterionId": "case-1",
         "kind": "automated",
         "status": "passed",
-        "binding": "1733e374353084774e01a2dcfc4a0738262e0d15fbddf789cc54444237e66c80",
+        "binding": "452ffae94eca70ddb0126dccf81b9c19fb9abaf3dddadfa41eeb5a7afc33aa50",
         "actor": "vitest",
-        "executionId": "b3a8d241-fa2b-41b6-b212-a50813a3cd79",
+        "executionId": "4cff8a07-1225-4e6d-9109-83258e77ae0d",
         "caseId": "5b3d774333f9f1b1a678070e9d800b794df4b3d387630c6453c6816b04c3b078",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:11:07.613Z"
+        "at": "2026-11-21T09:41:19.941Z"
       },
       {
         "nodeId": "knowledge",
         "criterionId": "case-2",
         "kind": "automated",
         "status": "passed",
-        "binding": "1733e374353084774e01a2dcfc4a0738262e0d15fbddf789cc54444237e66c80",
+        "binding": "452ffae94eca70ddb0126dccf81b9c19fb9abaf3dddadfa41eeb5a7afc33aa50",
         "actor": "vitest",
-        "executionId": "b3a8d241-fa2b-41b6-b212-a50813a3cd79",
+        "executionId": "4cff8a07-1225-4e6d-9109-83258e77ae0d",
         "caseId": "05ecb8576daa46781ee8094387ac34652923fbb2f6d6879dbfdff04d4342e1d9",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:11:07.618Z"
+        "at": "2026-11-21T09:41:19.946Z"
       },
       {
         "nodeId": "knowledge",
         "criterionId": "case-3",
         "kind": "automated",
         "status": "passed",
-        "binding": "1733e374353084774e01a2dcfc4a0738262e0d15fbddf789cc54444237e66c80",
+        "binding": "452ffae94eca70ddb0126dccf81b9c19fb9abaf3dddadfa41eeb5a7afc33aa50",
         "actor": "vitest",
-        "executionId": "b3a8d241-fa2b-41b6-b212-a50813a3cd79",
+        "executionId": "4cff8a07-1225-4e6d-9109-83258e77ae0d",
         "caseId": "8158708741a2a48cc91a972432db3ef01488ba99518a2ccbcddece1b5510f6bb",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:11:07.623Z"
+        "at": "2026-11-21T09:41:19.951Z"
       },
       {
         "nodeId": "knowledge",
         "criterionId": "case-4",
         "kind": "automated",
         "status": "passed",
-        "binding": "1733e374353084774e01a2dcfc4a0738262e0d15fbddf789cc54444237e66c80",
+        "binding": "452ffae94eca70ddb0126dccf81b9c19fb9abaf3dddadfa41eeb5a7afc33aa50",
         "actor": "vitest",
-        "executionId": "b3a8d241-fa2b-41b6-b212-a50813a3cd79",
+        "executionId": "4cff8a07-1225-4e6d-9109-83258e77ae0d",
         "caseId": "5d8086d9b8808aae48134349c83f3a4e0e2d80eaf20135ca7558a8dd47e9571c",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:11:07.628Z"
+        "at": "2026-11-21T09:41:19.956Z"
       },
       {
         "nodeId": "knowledge",
         "criterionId": "case-5",
         "kind": "automated",
         "status": "passed",
-        "binding": "1733e374353084774e01a2dcfc4a0738262e0d15fbddf789cc54444237e66c80",
+        "binding": "452ffae94eca70ddb0126dccf81b9c19fb9abaf3dddadfa41eeb5a7afc33aa50",
         "actor": "vitest",
-        "executionId": "b3a8d241-fa2b-41b6-b212-a50813a3cd79",
+        "executionId": "4cff8a07-1225-4e6d-9109-83258e77ae0d",
         "caseId": "afe52b2eef35e6007708c2d3f523bc5409472fbcd176280f61d758a04bad7137",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:11:07.633Z"
+        "at": "2026-11-21T09:41:19.961Z"
       },
       {
         "nodeId": "knowledge",
         "criterionId": "native-compaction",
         "kind": "automated",
         "status": "passed",
-        "binding": "1733e374353084774e01a2dcfc4a0738262e0d15fbddf789cc54444237e66c80",
+        "binding": "452ffae94eca70ddb0126dccf81b9c19fb9abaf3dddadfa41eeb5a7afc33aa50",
         "actor": "vitest",
-        "executionId": "b3a8d241-fa2b-41b6-b212-a50813a3cd79",
+        "executionId": "4cff8a07-1225-4e6d-9109-83258e77ae0d",
         "caseId": "75eb67f8ee3bb58e19f7bb40b8d14888091e78e6aa6056c92b54ce7cfe501cf1",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:11:07.638Z"
+        "at": "2026-11-21T09:41:19.966Z"
       },
       {
         "nodeId": "knowledge",
         "criterionId": "unavailable-library",
         "kind": "automated",
         "status": "passed",
-        "binding": "1733e374353084774e01a2dcfc4a0738262e0d15fbddf789cc54444237e66c80",
+        "binding": "452ffae94eca70ddb0126dccf81b9c19fb9abaf3dddadfa41eeb5a7afc33aa50",
         "actor": "vitest",
-        "executionId": "b3a8d241-fa2b-41b6-b212-a50813a3cd79",
+        "executionId": "4cff8a07-1225-4e6d-9109-83258e77ae0d",
         "caseId": "f3ebc318855c6a77535acc93f32f338c8dbc531d7c793da589b42ed4f27eef4e",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:11:07.643Z"
+        "at": "2026-11-21T09:41:19.970Z"
       },
       {
         "nodeId": "knowledge",
         "criterionId": "portable-advice-continuity",
         "kind": "automated",
         "status": "passed",
-        "binding": "1733e374353084774e01a2dcfc4a0738262e0d15fbddf789cc54444237e66c80",
+        "binding": "452ffae94eca70ddb0126dccf81b9c19fb9abaf3dddadfa41eeb5a7afc33aa50",
         "actor": "vitest",
-        "executionId": "b3a8d241-fa2b-41b6-b212-a50813a3cd79",
+        "executionId": "4cff8a07-1225-4e6d-9109-83258e77ae0d",
         "caseId": "abd3fce73d0cbe02e6d7f75280f8e8ede21d7053f6d182eaa718bf85ea6ad86d",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:11:07.648Z"
+        "at": "2026-11-21T09:41:19.975Z"
       },
       {
         "nodeId": "knowledge",
         "criterionId": "portable-advice-corruption",
         "kind": "automated",
         "status": "passed",
-        "binding": "1733e374353084774e01a2dcfc4a0738262e0d15fbddf789cc54444237e66c80",
+        "binding": "452ffae94eca70ddb0126dccf81b9c19fb9abaf3dddadfa41eeb5a7afc33aa50",
         "actor": "vitest",
-        "executionId": "b3a8d241-fa2b-41b6-b212-a50813a3cd79",
+        "executionId": "4cff8a07-1225-4e6d-9109-83258e77ae0d",
         "caseId": "ab36b3c3fa8fdffb181790b30536b9bd19970335803e9a5ef42b6f1ef057f6b0",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:11:07.653Z"
+        "at": "2026-11-21T09:41:19.980Z"
       },
       {
         "nodeId": "admission",
         "criterionId": "case-1",
         "kind": "automated",
         "status": "passed",
-        "binding": "96cec7f9cc2000e8792d897a5714259e69fe2117954c96c7bc3422c6ab9557e0",
+        "binding": "cde9dffd352a1b7bd4c092eace29fbab98271dc52243fa67a13b9f8bb909ce7e",
         "actor": "vitest",
-        "executionId": "b3a8d241-fa2b-41b6-b212-a50813a3cd79",
+        "executionId": "4cff8a07-1225-4e6d-9109-83258e77ae0d",
         "caseId": "c845e7cabf92085c5943847011115acc060c8865db4163073142a900cb8bed77",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:11:07.673Z"
+        "at": "2026-11-21T09:41:19.999Z"
       },
       {
         "nodeId": "admission",
         "criterionId": "assessment-rejects-invented-call",
         "kind": "automated",
         "status": "passed",
-        "binding": "96cec7f9cc2000e8792d897a5714259e69fe2117954c96c7bc3422c6ab9557e0",
+        "binding": "cde9dffd352a1b7bd4c092eace29fbab98271dc52243fa67a13b9f8bb909ce7e",
         "actor": "vitest",
-        "executionId": "b3a8d241-fa2b-41b6-b212-a50813a3cd79",
+        "executionId": "4cff8a07-1225-4e6d-9109-83258e77ae0d",
         "caseId": "f1b2141fa73f59f3b93842042d512c0491a8231ade5ff629f1cd0a91300c3486",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:11:07.683Z"
+        "at": "2026-11-21T09:41:20.009Z"
       },
       {
         "nodeId": "admission",
         "criterionId": "ordinary-unavailable-drawing",
         "kind": "automated",
         "status": "passed",
-        "binding": "96cec7f9cc2000e8792d897a5714259e69fe2117954c96c7bc3422c6ab9557e0",
+        "binding": "cde9dffd352a1b7bd4c092eace29fbab98271dc52243fa67a13b9f8bb909ce7e",
         "actor": "vitest",
-        "executionId": "b3a8d241-fa2b-41b6-b212-a50813a3cd79",
+        "executionId": "4cff8a07-1225-4e6d-9109-83258e77ae0d",
         "caseId": "61d66dcc3c6e82821261cc8af6ffece219f53e95c48cb0dfe6b3f2253dc03b05",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:11:07.688Z"
+        "at": "2026-11-21T09:41:20.014Z"
       },
       {
         "nodeId": "composition",
         "criterionId": "native-save-only-recovery",
         "kind": "automated",
         "status": "passed",
-        "binding": "bceee2583218850daabb7ac6db2cfe560b091248f029c26b6f736b8babe4142a",
+        "binding": "72706545fe29e4964eefcd3ff960106ace583c16433f680c0bcc95f4c2a6c73f",
         "actor": "vitest",
-        "executionId": "b3a8d241-fa2b-41b6-b212-a50813a3cd79",
+        "executionId": "4cff8a07-1225-4e6d-9109-83258e77ae0d",
         "caseId": "41943c41cc60f6e1dedc73a3f786096d6e890f4cd37891baf5c0c2a7d3fba469",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:11:07.698Z"
+        "at": "2026-11-21T09:41:20.023Z"
       },
       {
         "nodeId": "results",
         "criterionId": "case-1",
         "kind": "automated",
         "status": "passed",
-        "binding": "25a407984e5c7c744cc076f21f4500d1e7b794772442cb079b95212821f5e9d5",
+        "binding": "790f1eba5d6528e7920d15328fdda3b19fd1383f2389fd631757af518abc3af6",
         "actor": "vitest",
-        "executionId": "b3a8d241-fa2b-41b6-b212-a50813a3cd79",
+        "executionId": "4cff8a07-1225-4e6d-9109-83258e77ae0d",
         "caseId": "4d0fce426707cce369b0a93bdd9a200600a248d1044f8e119c3b03083f34a633",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:11:07.718Z"
+        "at": "2026-11-21T09:41:20.043Z"
       },
       {
         "nodeId": "retention",
         "criterionId": "case-1",
         "kind": "automated",
         "status": "passed",
-        "binding": "b18a32ea2990cf01227c6a9161aae5ec5b3d6fe4fd2b9b047d2bec92dca375c5",
+        "binding": "c88f44d98dc94421c9d746a0a3c013b79f6536b4cbdbcd00837b8528f744b818",
         "actor": "vitest",
-        "executionId": "b3a8d241-fa2b-41b6-b212-a50813a3cd79",
+        "executionId": "4cff8a07-1225-4e6d-9109-83258e77ae0d",
         "caseId": "a6cc58d7ed54ed0c76bd28bfde29752f51ff5ca30578600ce74c4c6aa13398e2",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:11:07.733Z"
+        "at": "2026-11-21T09:41:20.058Z"
       },
       {
         "nodeId": "retention",
         "criterionId": "altered-saved-transfer",
         "kind": "automated",
         "status": "passed",
-        "binding": "b18a32ea2990cf01227c6a9161aae5ec5b3d6fe4fd2b9b047d2bec92dca375c5",
+        "binding": "c88f44d98dc94421c9d746a0a3c013b79f6536b4cbdbcd00837b8528f744b818",
         "actor": "vitest",
-        "executionId": "b3a8d241-fa2b-41b6-b212-a50813a3cd79",
+        "executionId": "4cff8a07-1225-4e6d-9109-83258e77ae0d",
         "caseId": "26add57069b2b61d5abd4b662d44b86737263122f4b4c805526d88dc245975c2",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:11:07.738Z"
+        "at": "2026-11-21T09:41:20.062Z"
       },
       {
         "nodeId": "media",
         "criterionId": "case-1",
         "kind": "automated",
         "status": "passed",
-        "binding": "434a3001591ef49bdbccb1ef809676728c1493603ca4046bb83cb721647e1d8d",
+        "binding": "3316dacd37f448082aa1507dc30b36089f50b6d72545bd870a0041554b96a4ba",
         "actor": "vitest",
-        "executionId": "b3a8d241-fa2b-41b6-b212-a50813a3cd79",
+        "executionId": "4cff8a07-1225-4e6d-9109-83258e77ae0d",
         "caseId": "1621bffcc6bbbc168e23ee1b549cd89a48cb6a434e681b91acf474c5b57aa3cf",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:11:07.748Z"
+        "at": "2026-11-21T09:41:20.072Z"
       },
       {
         "nodeId": "media",
         "criterionId": "case-2",
         "kind": "automated",
         "status": "passed",
-        "binding": "434a3001591ef49bdbccb1ef809676728c1493603ca4046bb83cb721647e1d8d",
+        "binding": "3316dacd37f448082aa1507dc30b36089f50b6d72545bd870a0041554b96a4ba",
         "actor": "vitest",
-        "executionId": "b3a8d241-fa2b-41b6-b212-a50813a3cd79",
+        "executionId": "4cff8a07-1225-4e6d-9109-83258e77ae0d",
         "caseId": "dcab9aa02bc3623f56638aaac44bd67c782289e8bab250599b9b601f3f9213b9",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:11:07.752Z"
+        "at": "2026-11-21T09:41:20.077Z"
       },
       {
         "nodeId": "lifecycle",
         "criterionId": "case-3",
         "kind": "automated",
         "status": "passed",
-        "binding": "0199fe58fbd60fe579ba7ae394d30de9333f2c80c1bb2781c93bf071b60fbcc4",
+        "binding": "1608f378edea28862d2c791d38d13cd18e7b59733c4238f9ad2a659e3da5dbe0",
         "actor": "vitest",
-        "executionId": "b3a8d241-fa2b-41b6-b212-a50813a3cd79",
+        "executionId": "4cff8a07-1225-4e6d-9109-83258e77ae0d",
         "caseId": "a35a7ed68ac7ef9c1e3348adf34ab8a0cc73b131ce60fb728edb36a422df60fa",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:11:07.772Z"
+        "at": "2026-11-21T09:41:20.096Z"
       },
       {
         "nodeId": "lifecycle",
         "criterionId": "case-4",
         "kind": "automated",
         "status": "passed",
-        "binding": "0199fe58fbd60fe579ba7ae394d30de9333f2c80c1bb2781c93bf071b60fbcc4",
+        "binding": "1608f378edea28862d2c791d38d13cd18e7b59733c4238f9ad2a659e3da5dbe0",
         "actor": "vitest",
-        "executionId": "b3a8d241-fa2b-41b6-b212-a50813a3cd79",
+        "executionId": "4cff8a07-1225-4e6d-9109-83258e77ae0d",
         "caseId": "9ee2e6e09b93d93792e420b54f48665124add2f255fdb3ed4640db44b1a8bb0e",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:11:07.777Z"
+        "at": "2026-11-21T09:41:20.101Z"
       },
       {
         "nodeId": "lifecycle",
         "criterionId": "case-5",
         "kind": "automated",
         "status": "passed",
-        "binding": "0199fe58fbd60fe579ba7ae394d30de9333f2c80c1bb2781c93bf071b60fbcc4",
+        "binding": "1608f378edea28862d2c791d38d13cd18e7b59733c4238f9ad2a659e3da5dbe0",
         "actor": "vitest",
-        "executionId": "b3a8d241-fa2b-41b6-b212-a50813a3cd79",
+        "executionId": "4cff8a07-1225-4e6d-9109-83258e77ae0d",
         "caseId": "f3fdf29a97c25504d355e1e054ebcab93d6dbb5b3661dd35b3b0b634f10338ca",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:11:07.782Z"
+        "at": "2026-11-21T09:41:20.106Z"
       },
       {
         "nodeId": "lifecycle",
         "criterionId": "native-report-continuity",
         "kind": "automated",
         "status": "passed",
-        "binding": "0199fe58fbd60fe579ba7ae394d30de9333f2c80c1bb2781c93bf071b60fbcc4",
+        "binding": "1608f378edea28862d2c791d38d13cd18e7b59733c4238f9ad2a659e3da5dbe0",
         "actor": "vitest",
-        "executionId": "b3a8d241-fa2b-41b6-b212-a50813a3cd79",
+        "executionId": "4cff8a07-1225-4e6d-9109-83258e77ae0d",
         "caseId": "72bbf811f4d547226a6717dbf765b24585ea87bea04d8e3181d2f89bd93313e1",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:11:07.787Z"
+        "at": "2026-11-21T09:41:20.111Z"
       },
       {
         "nodeId": "composition",
         "criterionId": "native-real-mechanical-iteration",
         "kind": "automated",
         "status": "passed",
-        "binding": "bceee2583218850daabb7ac6db2cfe560b091248f029c26b6f736b8babe4142a",
+        "binding": "72706545fe29e4964eefcd3ff960106ace583c16433f680c0bcc95f4c2a6c73f",
         "actor": "playwright",
-        "executionId": "e1318927-05d1-4066-bddb-dd7fe8ae1caa",
+        "executionId": "131a1cab-cf4a-45e2-b978-46960094ea2f",
         "caseId": "f7e686c29091b7b8c560bcf6c89427b1023f2786c3f77ebb0ca8f4d29bf9b58a",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:40:43.416Z"
+        "at": "2026-11-21T10:08:57.181Z"
       },
       {
         "nodeId": "canonical",
         "criterionId": "native-canonical-sequence",
         "kind": "automated",
         "status": "passed",
-        "binding": "fd6d28b4c303ac7b7f2211146309cc092ffbc0ca66ca1227eed524ef926318b2",
+        "binding": "68780bab1f482e98f703217c107333e91bde72825ba6436458441e51bdfb6aa3",
         "actor": "playwright",
-        "executionId": "e1318927-05d1-4066-bddb-dd7fe8ae1caa",
+        "executionId": "131a1cab-cf4a-45e2-b978-46960094ea2f",
         "caseId": "fc92e9391965bb06ba6bc62059b5ebb0eb59ae3c1e988b05f2fdb7958b238219",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:40:43.418Z"
+        "at": "2026-11-21T10:08:57.183Z"
       },
       {
         "nodeId": "results",
         "criterionId": "native-mechanical-verdict-corruption",
         "kind": "automated",
         "status": "passed",
-        "binding": "25a407984e5c7c744cc076f21f4500d1e7b794772442cb079b95212821f5e9d5",
+        "binding": "790f1eba5d6528e7920d15328fdda3b19fd1383f2389fd631757af518abc3af6",
         "actor": "playwright",
-        "executionId": "e1318927-05d1-4066-bddb-dd7fe8ae1caa",
+        "executionId": "131a1cab-cf4a-45e2-b978-46960094ea2f",
         "caseId": "2be8ec02acc03abbac3c5ecc6bdab5e870ab0347e1fe9d706169c7087bdf17f8",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:40:43.418Z"
+        "at": "2026-11-21T10:08:57.184Z"
       },
       {
         "nodeId": "media",
         "criterionId": "native-canonical-media-corruption",
         "kind": "automated",
         "status": "passed",
-        "binding": "434a3001591ef49bdbccb1ef809676728c1493603ca4046bb83cb721647e1d8d",
+        "binding": "3316dacd37f448082aa1507dc30b36089f50b6d72545bd870a0041554b96a4ba",
         "actor": "playwright",
-        "executionId": "e1318927-05d1-4066-bddb-dd7fe8ae1caa",
+        "executionId": "131a1cab-cf4a-45e2-b978-46960094ea2f",
         "caseId": "725180f4f30c4f27ccf9f88661c8c43cad9651952a3d232a0c9132d8b3384a2e",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:40:43.419Z"
+        "at": "2026-11-21T10:08:57.184Z"
       },
       {
         "nodeId": "admission",
         "criterionId": "knowledge-owner-recovery",
         "kind": "automated",
         "status": "passed",
-        "binding": "96cec7f9cc2000e8792d897a5714259e69fe2117954c96c7bc3422c6ab9557e0",
+        "binding": "cde9dffd352a1b7bd4c092eace29fbab98271dc52243fa67a13b9f8bb909ce7e",
         "actor": "vitest",
-        "executionId": "b3a8d241-fa2b-41b6-b212-a50813a3cd79",
+        "executionId": "4cff8a07-1225-4e6d-9109-83258e77ae0d",
         "caseId": "685532aee4e54ba04d9dc2a712fa2bc1a094483c5d7cd1c18a42293a31232c0a",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:11:07.678Z"
+        "at": "2026-11-21T09:41:20.004Z"
       },
       {
         "nodeId": "integration",
         "criterionId": "spec-coverage-review",
         "kind": "manual",
         "status": "accepted",
-        "binding": "bd407b9af8918fbc96b446ee09d6b7f1289d721a7c5fdca500226376137e6b4e",
-        "actor": "codex-closeout-review",
-        "summary": "Reviewed current spec, changed owners and direct consumers against source-bound complete execution z1Oq2M and exact prior-failure correction evidence. Knowledge and actual native data/status are included. Original failures remain retained; the extra navigation diagnostic failure has no established cause. Accept bounded implementation evidence, not a zero-bug claim or the blocked security/full-local gate. See conversation-closeout-2026-11-18.md.",
-        "at": "2026-11-18T09:49:57.718Z"
+        "binding": "0b02a6b2c4cf934ea64a3850d77e98fe876272d17cb6e42948d1be081d85e8df",
+        "actor": "Codex owner review",
+        "summary": "Reviewed the current native continuation delta against the accepted Runtime/Design spec and unchanged canonical owners: identity and contract admission, fresh context/executors, independent retention/delivery, Knowledge authorization, actual native text/images, cancellation and report cleanup. Permanent complete App and non-Design paths include correction, partial execution, process restart, attachment corruption and saved reuse. Superseded fresh-thread and unscoped trace oracles were replaced without weakening their semantic assertions. All five complete groups passed on identical source/compiled snapshots; no remaining in-scope authority conflict or product defect was found. Evidence: tmp/conversation-proof-ERrXSj.",
+        "at": "2026-11-21T10:10:23.251Z"
       },
       {
         "nodeId": "instructions",
         "criterionId": "single-native-result-selector",
         "kind": "automated",
         "status": "passed",
-        "binding": "cde4dbbf49c3ea92f5c9aca92017af736e4c4cd308aeb095d27afe7ec6119f8c",
+        "binding": "37b7e79d7c1b3ae4419edbff65e3e8c40742d82328e02733ed4d320203489c3e",
         "actor": "vitest",
-        "executionId": "b3a8d241-fa2b-41b6-b212-a50813a3cd79",
+        "executionId": "4cff8a07-1225-4e6d-9109-83258e77ae0d",
         "caseId": "0af9140a64afedb6fca9302a3dc5938ad47f854b6cd289a413ea1e9c650e29e0",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:11:07.558Z"
+        "at": "2026-11-21T09:41:19.887Z"
       },
       {
         "nodeId": "discovery",
         "criterionId": "current-result-controls",
         "kind": "automated",
         "status": "passed",
-        "binding": "d4e4f40a3fa3db45b50843a831fc82018d323d40f6168a4fb3e57c560008e266",
+        "binding": "5a848f245dd1c439f69e71dbe2aa73f428c8ccfa056f417cb9c5c945a00a8b1d",
         "actor": "vitest",
-        "executionId": "b3a8d241-fa2b-41b6-b212-a50813a3cd79",
+        "executionId": "4cff8a07-1225-4e6d-9109-83258e77ae0d",
         "caseId": "5a688db7683bfe31f5b90b974f72118fcc48b769718a2db72591a605783d1bde",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:11:07.573Z"
+        "at": "2026-11-21T09:41:19.902Z"
       },
       {
         "nodeId": "results",
         "criterionId": "retired-application-rejection",
         "kind": "automated",
         "status": "passed",
-        "binding": "25a407984e5c7c744cc076f21f4500d1e7b794772442cb079b95212821f5e9d5",
+        "binding": "790f1eba5d6528e7920d15328fdda3b19fd1383f2389fd631757af518abc3af6",
         "actor": "vitest",
-        "executionId": "b3a8d241-fa2b-41b6-b212-a50813a3cd79",
+        "executionId": "4cff8a07-1225-4e6d-9109-83258e77ae0d",
         "caseId": "35e15323031218fdb94b3dff0c8c8b08153fcefbc4f89455d1c5ff1316afb220",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:11:07.723Z"
+        "at": "2026-11-21T09:41:20.048Z"
       },
       {
         "nodeId": "retention",
         "criterionId": "unconditional-created-targets",
         "kind": "automated",
         "status": "passed",
-        "binding": "b18a32ea2990cf01227c6a9161aae5ec5b3d6fe4fd2b9b047d2bec92dca375c5",
+        "binding": "c88f44d98dc94421c9d746a0a3c013b79f6536b4cbdbcd00837b8528f744b818",
         "actor": "vitest",
-        "executionId": "b3a8d241-fa2b-41b6-b212-a50813a3cd79",
+        "executionId": "4cff8a07-1225-4e6d-9109-83258e77ae0d",
         "caseId": "e5010e9ba029d527b8983d158594da10c482d140ae5c31d62cbe866233e10644",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:11:07.743Z"
+        "at": "2026-11-21T09:41:20.067Z"
       },
       {
         "nodeId": "results",
         "criterionId": "large-native-output",
         "kind": "automated",
         "status": "passed",
-        "binding": "25a407984e5c7c744cc076f21f4500d1e7b794772442cb079b95212821f5e9d5",
+        "binding": "790f1eba5d6528e7920d15328fdda3b19fd1383f2389fd631757af518abc3af6",
         "actor": "vitest",
-        "executionId": "b3a8d241-fa2b-41b6-b212-a50813a3cd79",
+        "executionId": "4cff8a07-1225-4e6d-9109-83258e77ae0d",
         "caseId": "81222ec6b49c6de9b54df836675403b49665e4542d0eb15763a8f59ef69ada84",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:11:07.728Z"
+        "at": "2026-11-21T09:41:20.053Z"
       },
       {
         "nodeId": "request",
         "criterionId": "initial-parent-coordinates",
         "kind": "automated",
         "status": "passed",
-        "binding": "14cfdbf773b06b6b7e379106c21b6ed765e943fc576083de4403e099dc0597d6",
+        "binding": "d0fcb3d7891072396f5eaa433b170f2431b5de26b1c8456315ad8c7f1759f42e",
         "actor": "vitest",
-        "executionId": "b3a8d241-fa2b-41b6-b212-a50813a3cd79",
+        "executionId": "4cff8a07-1225-4e6d-9109-83258e77ae0d",
         "caseId": "186c5a3248c9017406124adf39660be9be77b021575118543f835f30120c3a79",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:11:07.508Z"
+        "at": "2026-11-21T09:41:19.838Z"
       },
       {
         "nodeId": "request",
         "criterionId": "history-original-type",
         "kind": "automated",
         "status": "passed",
-        "binding": "14cfdbf773b06b6b7e379106c21b6ed765e943fc576083de4403e099dc0597d6",
+        "binding": "d0fcb3d7891072396f5eaa433b170f2431b5de26b1c8456315ad8c7f1759f42e",
         "actor": "vitest",
-        "executionId": "b3a8d241-fa2b-41b6-b212-a50813a3cd79",
+        "executionId": "4cff8a07-1225-4e6d-9109-83258e77ae0d",
         "caseId": "d7e31e53840e8a6551cc7e1cf19b7a3effc61bc5000972e24c3b657ecf563dfa",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:11:07.513Z"
+        "at": "2026-11-21T09:41:19.842Z"
       },
       {
         "nodeId": "discovery",
         "criterionId": "complete-owner-union",
         "kind": "automated",
         "status": "passed",
-        "binding": "d4e4f40a3fa3db45b50843a831fc82018d323d40f6168a4fb3e57c560008e266",
+        "binding": "5a848f245dd1c439f69e71dbe2aa73f428c8ccfa056f417cb9c5c945a00a8b1d",
         "actor": "vitest",
-        "executionId": "b3a8d241-fa2b-41b6-b212-a50813a3cd79",
+        "executionId": "4cff8a07-1225-4e6d-9109-83258e77ae0d",
         "caseId": "44b57b45ede605d032f5643abd12bb90fb7cae4500c73091527fd90d600e8af8",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:11:07.578Z"
+        "at": "2026-11-21T09:41:19.907Z"
       },
       {
         "nodeId": "knowledge",
         "criterionId": "corpus-execution-undefined",
         "kind": "automated",
         "status": "passed",
-        "binding": "1733e374353084774e01a2dcfc4a0738262e0d15fbddf789cc54444237e66c80",
+        "binding": "452ffae94eca70ddb0126dccf81b9c19fb9abaf3dddadfa41eeb5a7afc33aa50",
         "actor": "vitest",
-        "executionId": "b3a8d241-fa2b-41b6-b212-a50813a3cd79",
+        "executionId": "4cff8a07-1225-4e6d-9109-83258e77ae0d",
         "caseId": "e6bcb243023a47327fc2205dc33f8284315a2b766e5f0fd9f2e1412a8eafa846",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:11:07.658Z"
+        "at": "2026-11-21T09:41:19.985Z"
       },
       {
         "nodeId": "knowledge",
         "criterionId": "corpus-execution-unknown-operation",
         "kind": "automated",
         "status": "passed",
-        "binding": "1733e374353084774e01a2dcfc4a0738262e0d15fbddf789cc54444237e66c80",
+        "binding": "452ffae94eca70ddb0126dccf81b9c19fb9abaf3dddadfa41eeb5a7afc33aa50",
         "actor": "vitest",
-        "executionId": "b3a8d241-fa2b-41b6-b212-a50813a3cd79",
+        "executionId": "4cff8a07-1225-4e6d-9109-83258e77ae0d",
         "caseId": "2868ec9728098607fd1c348e1d22123aac06d212ea12cc2feb88bbb9b9ab2bcd",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:11:07.663Z"
+        "at": "2026-11-21T09:41:19.990Z"
       },
       {
         "nodeId": "knowledge",
         "criterionId": "corpus-execution-invalid-arguments",
         "kind": "automated",
         "status": "passed",
-        "binding": "1733e374353084774e01a2dcfc4a0738262e0d15fbddf789cc54444237e66c80",
+        "binding": "452ffae94eca70ddb0126dccf81b9c19fb9abaf3dddadfa41eeb5a7afc33aa50",
         "actor": "vitest",
-        "executionId": "b3a8d241-fa2b-41b6-b212-a50813a3cd79",
+        "executionId": "4cff8a07-1225-4e6d-9109-83258e77ae0d",
         "caseId": "b32c202c81e7a7adf38927ca522b5e96b2cea896f5877671341b4844dedef6ac",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:11:07.668Z"
+        "at": "2026-11-21T09:41:19.994Z"
       },
       {
         "nodeId": "canonical",
         "criterionId": "native-receipt-rejection",
         "kind": "automated",
         "status": "passed",
-        "binding": "fd6d28b4c303ac7b7f2211146309cc092ffbc0ca66ca1227eed524ef926318b2",
+        "binding": "68780bab1f482e98f703217c107333e91bde72825ba6436458441e51bdfb6aa3",
         "actor": "vitest",
-        "executionId": "b3a8d241-fa2b-41b6-b212-a50813a3cd79",
+        "executionId": "4cff8a07-1225-4e6d-9109-83258e77ae0d",
         "caseId": "8b57b915d6057096b84da7e0b1e4ab8d4495a34b0145ce91724fdf6aa675d8c7",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:11:07.708Z"
+        "at": "2026-11-21T09:41:20.033Z"
       },
       {
         "nodeId": "media",
         "criterionId": "saved-native-image",
         "kind": "automated",
         "status": "passed",
-        "binding": "434a3001591ef49bdbccb1ef809676728c1493603ca4046bb83cb721647e1d8d",
+        "binding": "3316dacd37f448082aa1507dc30b36089f50b6d72545bd870a0041554b96a4ba",
         "actor": "vitest",
-        "executionId": "b3a8d241-fa2b-41b6-b212-a50813a3cd79",
+        "executionId": "4cff8a07-1225-4e6d-9109-83258e77ae0d",
         "caseId": "599f7e2f6fe2b2971e47f9cb24469df0ff36640dd90abc8e1742296d7c4dbe58",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:11:07.757Z"
+        "at": "2026-11-21T09:41:20.082Z"
       },
       {
         "nodeId": "media",
         "criterionId": "saved-image",
         "kind": "automated",
         "status": "passed",
-        "binding": "434a3001591ef49bdbccb1ef809676728c1493603ca4046bb83cb721647e1d8d",
+        "binding": "3316dacd37f448082aa1507dc30b36089f50b6d72545bd870a0041554b96a4ba",
         "actor": "vitest",
-        "executionId": "b3a8d241-fa2b-41b6-b212-a50813a3cd79",
+        "executionId": "4cff8a07-1225-4e6d-9109-83258e77ae0d",
         "caseId": "9baf49279c2fde72c764699b03aee255ab0aefdfe791f4f77b5b1a2f131e275e",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:11:07.762Z"
+        "at": "2026-11-21T09:41:20.087Z"
       },
       {
         "nodeId": "media",
         "criterionId": "saved-bytes",
         "kind": "automated",
         "status": "passed",
-        "binding": "434a3001591ef49bdbccb1ef809676728c1493603ca4046bb83cb721647e1d8d",
+        "binding": "3316dacd37f448082aa1507dc30b36089f50b6d72545bd870a0041554b96a4ba",
         "actor": "vitest",
-        "executionId": "b3a8d241-fa2b-41b6-b212-a50813a3cd79",
+        "executionId": "4cff8a07-1225-4e6d-9109-83258e77ae0d",
         "caseId": "a067b711a102a79ddb17e1777822c47bab54889c27622136cee1fa0bb3252861",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:11:07.768Z"
+        "at": "2026-11-21T09:41:20.092Z"
       },
       {
         "nodeId": "lifecycle",
         "criterionId": "report-recording-failure-native",
         "kind": "automated",
         "status": "passed",
-        "binding": "0199fe58fbd60fe579ba7ae394d30de9333f2c80c1bb2781c93bf071b60fbcc4",
+        "binding": "1608f378edea28862d2c791d38d13cd18e7b59733c4238f9ad2a659e3da5dbe0",
         "actor": "vitest",
-        "executionId": "b3a8d241-fa2b-41b6-b212-a50813a3cd79",
+        "executionId": "4cff8a07-1225-4e6d-9109-83258e77ae0d",
         "caseId": "bb92c65c1879ca607afeaa0af26a87779b0c3d292cff6c974e6e5648939dfb0b",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:11:07.792Z"
+        "at": "2026-11-21T09:41:20.116Z"
       },
       {
         "nodeId": "lifecycle",
         "criterionId": "report-recording-failure-http",
         "kind": "automated",
         "status": "passed",
-        "binding": "0199fe58fbd60fe579ba7ae394d30de9333f2c80c1bb2781c93bf071b60fbcc4",
+        "binding": "1608f378edea28862d2c791d38d13cd18e7b59733c4238f9ad2a659e3da5dbe0",
         "actor": "vitest",
-        "executionId": "b3a8d241-fa2b-41b6-b212-a50813a3cd79",
+        "executionId": "4cff8a07-1225-4e6d-9109-83258e77ae0d",
         "caseId": "b222fff13db717df211c2dda69bc33fe806a2b2fd65099e934efb5a19957ad3b",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:11:07.797Z"
+        "at": "2026-11-21T09:41:20.121Z"
       },
       {
         "nodeId": "instructions",
         "criterionId": "knowledge-publication-contract",
         "kind": "automated",
         "status": "passed",
-        "binding": "cde4dbbf49c3ea92f5c9aca92017af736e4c4cd308aeb095d27afe7ec6119f8c",
+        "binding": "37b7e79d7c1b3ae4419edbff65e3e8c40742d82328e02733ed4d320203489c3e",
         "actor": "node",
-        "executionId": "52fe388b-23f2-49c8-8a9a-f9ec479eb68b",
+        "executionId": "2fe42c2c-0fdb-4356-9fd2-cbc5078e9bbb",
         "caseId": "0aeda4e11d590b44b06490cf1ca4fd36ca86563eeb72878be395997c2a502f35",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:21:36.216Z"
+        "at": "2026-11-21T09:51:07.316Z"
       },
       {
         "nodeId": "instructions",
         "criterionId": "recorder-duration-contract",
         "kind": "automated",
         "status": "passed",
-        "binding": "cde4dbbf49c3ea92f5c9aca92017af736e4c4cd308aeb095d27afe7ec6119f8c",
+        "binding": "37b7e79d7c1b3ae4419edbff65e3e8c40742d82328e02733ed4d320203489c3e",
         "actor": "node",
-        "executionId": "52fe388b-23f2-49c8-8a9a-f9ec479eb68b",
+        "executionId": "2fe42c2c-0fdb-4356-9fd2-cbc5078e9bbb",
         "caseId": "19a5ca5b2e262b091472148d1d1046d9a1df97964b26bc23efb528d4669865a5",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:21:36.217Z"
+        "at": "2026-11-21T09:51:07.317Z"
       },
       {
         "nodeId": "discovery",
         "criterionId": "single-wrapper-contract",
         "kind": "automated",
         "status": "passed",
-        "binding": "d4e4f40a3fa3db45b50843a831fc82018d323d40f6168a4fb3e57c560008e266",
+        "binding": "5a848f245dd1c439f69e71dbe2aa73f428c8ccfa056f417cb9c5c945a00a8b1d",
         "actor": "node",
-        "executionId": "52fe388b-23f2-49c8-8a9a-f9ec479eb68b",
+        "executionId": "2fe42c2c-0fdb-4356-9fd2-cbc5078e9bbb",
         "caseId": "b84a067eb9f19b1cc6708d6627742d92e12ced1ccb87c29b3d066fa1cbe499d8",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:21:36.218Z"
+        "at": "2026-11-21T09:51:07.318Z"
       },
       {
         "nodeId": "retention",
         "criterionId": "saved-descriptor-authority",
         "kind": "automated",
         "status": "passed",
-        "binding": "b18a32ea2990cf01227c6a9161aae5ec5b3d6fe4fd2b9b047d2bec92dca375c5",
+        "binding": "c88f44d98dc94421c9d746a0a3c013b79f6536b4cbdbcd00837b8528f744b818",
         "actor": "node",
-        "executionId": "52fe388b-23f2-49c8-8a9a-f9ec479eb68b",
+        "executionId": "2fe42c2c-0fdb-4356-9fd2-cbc5078e9bbb",
         "caseId": "411b90dae0331f926599967494145438fe036714603e8fc760545c353f8add5a",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:21:36.220Z"
+        "at": "2026-11-21T09:51:07.321Z"
       },
       {
         "nodeId": "retention",
         "criterionId": "request-snapshot-authority",
         "kind": "automated",
         "status": "passed",
-        "binding": "b18a32ea2990cf01227c6a9161aae5ec5b3d6fe4fd2b9b047d2bec92dca375c5",
+        "binding": "c88f44d98dc94421c9d746a0a3c013b79f6536b4cbdbcd00837b8528f744b818",
         "actor": "node",
-        "executionId": "52fe388b-23f2-49c8-8a9a-f9ec479eb68b",
+        "executionId": "2fe42c2c-0fdb-4356-9fd2-cbc5078e9bbb",
         "caseId": "fe78d1a179c7bb740fa5f0482c8e58b5b123f4667525c77c32790090ffb38834",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:21:36.221Z"
+        "at": "2026-11-21T09:51:07.322Z"
       },
       {
         "nodeId": "lifecycle",
         "criterionId": "report-recording-failure-client",
         "kind": "automated",
         "status": "passed",
-        "binding": "0199fe58fbd60fe579ba7ae394d30de9333f2c80c1bb2781c93bf071b60fbcc4",
+        "binding": "1608f378edea28862d2c791d38d13cd18e7b59733c4238f9ad2a659e3da5dbe0",
         "actor": "node",
-        "executionId": "52fe388b-23f2-49c8-8a9a-f9ec479eb68b",
+        "executionId": "2fe42c2c-0fdb-4356-9fd2-cbc5078e9bbb",
         "caseId": "3c83813359488edaaa2c7c17b5cff945401df47edd36983ea271479301ee8171",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:21:36.223Z"
+        "at": "2026-11-21T09:51:07.324Z"
       },
       {
         "nodeId": "canonical",
         "criterionId": "receipt-original-request",
         "kind": "automated",
         "status": "passed",
-        "binding": "fd6d28b4c303ac7b7f2211146309cc092ffbc0ca66ca1227eed524ef926318b2",
+        "binding": "68780bab1f482e98f703217c107333e91bde72825ba6436458441e51bdfb6aa3",
         "actor": "vitest",
-        "executionId": "b3a8d241-fa2b-41b6-b212-a50813a3cd79",
+        "executionId": "4cff8a07-1225-4e6d-9109-83258e77ae0d",
         "caseId": "2e2c79588711bfaf53df4206f34b6d96dc6f751bc7f4948898cf9c98933bc898",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:11:07.713Z"
+        "at": "2026-11-21T09:41:20.038Z"
       },
       {
         "nodeId": "request",
         "criterionId": "full-title-tooltip",
         "kind": "automated",
         "status": "passed",
-        "binding": "14cfdbf773b06b6b7e379106c21b6ed765e943fc576083de4403e099dc0597d6",
+        "binding": "d0fcb3d7891072396f5eaa433b170f2431b5de26b1c8456315ad8c7f1759f42e",
         "actor": "vitest",
-        "executionId": "6a1bb83c-aa72-4d1b-b3ea-1a5e3ea61443",
+        "executionId": "5ff596bd-041a-4ebc-a22d-89ed7d5a071a",
         "caseId": "206cbd21fcab98727e6a340be67b46cbb4c8fe02756d1920a13533f278f9c5fc",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:14:15.854Z"
+        "at": "2026-11-21T09:44:24.223Z"
       },
       {
         "nodeId": "canonical",
         "criterionId": "receipt-identity-owner-coverage",
         "kind": "automated",
         "status": "passed",
-        "binding": "fd6d28b4c303ac7b7f2211146309cc092ffbc0ca66ca1227eed524ef926318b2",
+        "binding": "68780bab1f482e98f703217c107333e91bde72825ba6436458441e51bdfb6aa3",
         "actor": "vitest",
-        "executionId": "6a1bb83c-aa72-4d1b-b3ea-1a5e3ea61443",
+        "executionId": "5ff596bd-041a-4ebc-a22d-89ed7d5a071a",
         "caseId": "418dfcb43e00e28a155ff3590123c7a7c1ff23709cdf6bcb294fe9cec0e13d2b",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:14:15.858Z"
+        "at": "2026-11-21T09:44:24.227Z"
       },
       {
         "nodeId": "canonical",
         "criterionId": "receipt-target-element-setElementLock",
         "kind": "automated",
         "status": "passed",
-        "binding": "fd6d28b4c303ac7b7f2211146309cc092ffbc0ca66ca1227eed524ef926318b2",
+        "binding": "68780bab1f482e98f703217c107333e91bde72825ba6436458441e51bdfb6aa3",
         "actor": "vitest",
-        "executionId": "6a1bb83c-aa72-4d1b-b3ea-1a5e3ea61443",
+        "executionId": "5ff596bd-041a-4ebc-a22d-89ed7d5a071a",
         "caseId": "a17fafcb4a45b2de62e3830826b2ee4f453c0729074fba6ebbf895d8e611ce7e",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:14:15.860Z"
+        "at": "2026-11-21T09:44:24.229Z"
       },
       {
         "nodeId": "canonical",
         "criterionId": "receipt-target-element-toggleElementLock",
         "kind": "automated",
         "status": "passed",
-        "binding": "fd6d28b4c303ac7b7f2211146309cc092ffbc0ca66ca1227eed524ef926318b2",
+        "binding": "68780bab1f482e98f703217c107333e91bde72825ba6436458441e51bdfb6aa3",
         "actor": "vitest",
-        "executionId": "6a1bb83c-aa72-4d1b-b3ea-1a5e3ea61443",
+        "executionId": "5ff596bd-041a-4ebc-a22d-89ed7d5a071a",
         "caseId": "6b7f581303ef8367639d5efae2b23ac74f43bf27d17c05214471389c46737ce3",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:14:15.862Z"
+        "at": "2026-11-21T09:44:24.231Z"
       },
       {
         "nodeId": "canonical",
         "criterionId": "receipt-target-element-toggleElementVisible",
         "kind": "automated",
         "status": "passed",
-        "binding": "fd6d28b4c303ac7b7f2211146309cc092ffbc0ca66ca1227eed524ef926318b2",
+        "binding": "68780bab1f482e98f703217c107333e91bde72825ba6436458441e51bdfb6aa3",
         "actor": "vitest",
-        "executionId": "6a1bb83c-aa72-4d1b-b3ea-1a5e3ea61443",
+        "executionId": "5ff596bd-041a-4ebc-a22d-89ed7d5a071a",
         "caseId": "d47b6e3ff968346ab1c0811b9995d05b62eaa8b213610cb44b49cd3b2eb0c127",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:14:15.864Z"
+        "at": "2026-11-21T09:44:24.233Z"
       },
       {
         "nodeId": "canonical",
         "criterionId": "receipt-target-element-resetElementSize",
         "kind": "automated",
         "status": "passed",
-        "binding": "fd6d28b4c303ac7b7f2211146309cc092ffbc0ca66ca1227eed524ef926318b2",
+        "binding": "68780bab1f482e98f703217c107333e91bde72825ba6436458441e51bdfb6aa3",
         "actor": "vitest",
-        "executionId": "6a1bb83c-aa72-4d1b-b3ea-1a5e3ea61443",
+        "executionId": "5ff596bd-041a-4ebc-a22d-89ed7d5a071a",
         "caseId": "caea61eb8c4cb76975af6500b8be0fbd2b59b9ad5881d634f62239fb465c137c",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:14:15.866Z"
+        "at": "2026-11-21T09:44:24.235Z"
       },
       {
         "nodeId": "canonical",
         "criterionId": "receipt-target-element-changeElementGeometry",
         "kind": "automated",
         "status": "passed",
-        "binding": "fd6d28b4c303ac7b7f2211146309cc092ffbc0ca66ca1227eed524ef926318b2",
+        "binding": "68780bab1f482e98f703217c107333e91bde72825ba6436458441e51bdfb6aa3",
         "actor": "vitest",
-        "executionId": "6a1bb83c-aa72-4d1b-b3ea-1a5e3ea61443",
+        "executionId": "5ff596bd-041a-4ebc-a22d-89ed7d5a071a",
         "caseId": "6821786b85c282f1228c0654ea78ae8227593554f02c5c5e536135dd5ff0e721",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:14:15.868Z"
+        "at": "2026-11-21T09:44:24.237Z"
       },
       {
         "nodeId": "canonical",
         "criterionId": "receipt-target-fill-updateGradientHandleAtClientPosition",
         "kind": "automated",
         "status": "passed",
-        "binding": "fd6d28b4c303ac7b7f2211146309cc092ffbc0ca66ca1227eed524ef926318b2",
+        "binding": "68780bab1f482e98f703217c107333e91bde72825ba6436458441e51bdfb6aa3",
         "actor": "vitest",
-        "executionId": "6a1bb83c-aa72-4d1b-b3ea-1a5e3ea61443",
+        "executionId": "5ff596bd-041a-4ebc-a22d-89ed7d5a071a",
         "caseId": "44ce535949e9a7433563d3ba5093c6bfd42050f9ecfaccbe0aa49a760a0b169f",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:14:15.870Z"
+        "at": "2026-11-21T09:44:24.239Z"
       },
       {
         "nodeId": "canonical",
         "criterionId": "receipt-target-stroke-addStroke",
         "kind": "automated",
         "status": "passed",
-        "binding": "fd6d28b4c303ac7b7f2211146309cc092ffbc0ca66ca1227eed524ef926318b2",
+        "binding": "68780bab1f482e98f703217c107333e91bde72825ba6436458441e51bdfb6aa3",
         "actor": "vitest",
-        "executionId": "6a1bb83c-aa72-4d1b-b3ea-1a5e3ea61443",
+        "executionId": "5ff596bd-041a-4ebc-a22d-89ed7d5a071a",
         "caseId": "a51f22edf6595bb653137c89300099185abfb434c907c20436df8d6546ee84d4",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:14:15.872Z"
+        "at": "2026-11-21T09:44:24.241Z"
       },
       {
         "nodeId": "canonical",
         "criterionId": "receipt-target-stroke-removeStroke",
         "kind": "automated",
         "status": "passed",
-        "binding": "fd6d28b4c303ac7b7f2211146309cc092ffbc0ca66ca1227eed524ef926318b2",
+        "binding": "68780bab1f482e98f703217c107333e91bde72825ba6436458441e51bdfb6aa3",
         "actor": "vitest",
-        "executionId": "6a1bb83c-aa72-4d1b-b3ea-1a5e3ea61443",
+        "executionId": "5ff596bd-041a-4ebc-a22d-89ed7d5a071a",
         "caseId": "e86a57f380e345f68ac6424c1003982bc256cc4a2a3764f44fd7781b7c27dfb4",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:14:15.874Z"
+        "at": "2026-11-21T09:44:24.243Z"
       },
       {
         "nodeId": "canonical",
         "criterionId": "receipt-target-element-updateVectorAnchorPointPosition",
         "kind": "automated",
         "status": "passed",
-        "binding": "fd6d28b4c303ac7b7f2211146309cc092ffbc0ca66ca1227eed524ef926318b2",
+        "binding": "68780bab1f482e98f703217c107333e91bde72825ba6436458441e51bdfb6aa3",
         "actor": "vitest",
-        "executionId": "6a1bb83c-aa72-4d1b-b3ea-1a5e3ea61443",
+        "executionId": "5ff596bd-041a-4ebc-a22d-89ed7d5a071a",
         "caseId": "07fe9053dcfcca4fc37ab3d3c900f92ca26ff54d6acb9858c49153486bf67620",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:14:15.876Z"
+        "at": "2026-11-21T09:44:24.245Z"
       },
       {
         "nodeId": "canonical",
         "criterionId": "receipt-target-element-updateVectorAnchorPointType",
         "kind": "automated",
         "status": "passed",
-        "binding": "fd6d28b4c303ac7b7f2211146309cc092ffbc0ca66ca1227eed524ef926318b2",
+        "binding": "68780bab1f482e98f703217c107333e91bde72825ba6436458441e51bdfb6aa3",
         "actor": "vitest",
-        "executionId": "6a1bb83c-aa72-4d1b-b3ea-1a5e3ea61443",
+        "executionId": "5ff596bd-041a-4ebc-a22d-89ed7d5a071a",
         "caseId": "7a1153062186d788a7e9a9f7d14a89226b81471cbb9b2eb012d76e25e747d04c",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:14:15.878Z"
+        "at": "2026-11-21T09:44:24.247Z"
       },
       {
         "nodeId": "canonical",
         "criterionId": "receipt-target-element-setVectorAnchorPointHandleMode",
         "kind": "automated",
         "status": "passed",
-        "binding": "fd6d28b4c303ac7b7f2211146309cc092ffbc0ca66ca1227eed524ef926318b2",
+        "binding": "68780bab1f482e98f703217c107333e91bde72825ba6436458441e51bdfb6aa3",
         "actor": "vitest",
-        "executionId": "6a1bb83c-aa72-4d1b-b3ea-1a5e3ea61443",
+        "executionId": "5ff596bd-041a-4ebc-a22d-89ed7d5a071a",
         "caseId": "2502c73a6f53f969c3d57c31e2f616fd9bb39d4050209504cb564d786f1bbec8",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:14:15.880Z"
+        "at": "2026-11-21T09:44:24.249Z"
       },
       {
         "nodeId": "canonical",
         "criterionId": "receipt-target-element-updateVectorAnchorPointHandlePosition",
         "kind": "automated",
         "status": "passed",
-        "binding": "fd6d28b4c303ac7b7f2211146309cc092ffbc0ca66ca1227eed524ef926318b2",
+        "binding": "68780bab1f482e98f703217c107333e91bde72825ba6436458441e51bdfb6aa3",
         "actor": "vitest",
-        "executionId": "6a1bb83c-aa72-4d1b-b3ea-1a5e3ea61443",
+        "executionId": "5ff596bd-041a-4ebc-a22d-89ed7d5a071a",
         "caseId": "7633cf0daaffc360f52bbedad55705bc0df8b82994a62801bedb0b8fb89e2886",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:14:15.882Z"
+        "at": "2026-11-21T09:44:24.251Z"
       },
       {
         "nodeId": "canonical",
         "criterionId": "receipt-target-element-updateVectorAnchorPointHandles",
         "kind": "automated",
         "status": "passed",
-        "binding": "fd6d28b4c303ac7b7f2211146309cc092ffbc0ca66ca1227eed524ef926318b2",
+        "binding": "68780bab1f482e98f703217c107333e91bde72825ba6436458441e51bdfb6aa3",
         "actor": "vitest",
-        "executionId": "6a1bb83c-aa72-4d1b-b3ea-1a5e3ea61443",
+        "executionId": "5ff596bd-041a-4ebc-a22d-89ed7d5a071a",
         "caseId": "9f87e2c03f03eb155279b5cf1c371a5f53a51c99422c04cfeabfb78d7c762cff",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:14:15.884Z"
+        "at": "2026-11-21T09:44:24.253Z"
       },
       {
         "nodeId": "canonical",
         "criterionId": "receipt-target-element-appendVectorAnchorPoint",
         "kind": "automated",
         "status": "passed",
-        "binding": "fd6d28b4c303ac7b7f2211146309cc092ffbc0ca66ca1227eed524ef926318b2",
+        "binding": "68780bab1f482e98f703217c107333e91bde72825ba6436458441e51bdfb6aa3",
         "actor": "vitest",
-        "executionId": "6a1bb83c-aa72-4d1b-b3ea-1a5e3ea61443",
+        "executionId": "5ff596bd-041a-4ebc-a22d-89ed7d5a071a",
         "caseId": "b6da11196ec0dc17ab5ce50e185dcd540ac517c3224494e9a7baedd85bd00efd",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:14:15.886Z"
+        "at": "2026-11-21T09:44:24.255Z"
       },
       {
         "nodeId": "canonical",
         "criterionId": "receipt-target-element-connectVectorAnchorEndpoints",
         "kind": "automated",
         "status": "passed",
-        "binding": "fd6d28b4c303ac7b7f2211146309cc092ffbc0ca66ca1227eed524ef926318b2",
+        "binding": "68780bab1f482e98f703217c107333e91bde72825ba6436458441e51bdfb6aa3",
         "actor": "vitest",
-        "executionId": "6a1bb83c-aa72-4d1b-b3ea-1a5e3ea61443",
+        "executionId": "5ff596bd-041a-4ebc-a22d-89ed7d5a071a",
         "caseId": "789848bddbc46dd71266327c9f19f6da9f971f8b1b765b48eb616be4ea9a7e50",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:14:15.888Z"
+        "at": "2026-11-21T09:44:24.257Z"
       },
       {
         "nodeId": "canonical",
         "criterionId": "receipt-target-element-connectVectorAnchorPoints",
         "kind": "automated",
         "status": "passed",
-        "binding": "fd6d28b4c303ac7b7f2211146309cc092ffbc0ca66ca1227eed524ef926318b2",
+        "binding": "68780bab1f482e98f703217c107333e91bde72825ba6436458441e51bdfb6aa3",
         "actor": "vitest",
-        "executionId": "6a1bb83c-aa72-4d1b-b3ea-1a5e3ea61443",
+        "executionId": "5ff596bd-041a-4ebc-a22d-89ed7d5a071a",
         "caseId": "fbf9dd3e89b37053955fb904e36f5f439d4414b48f95619b1bb6aef49d6dfd90",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:14:15.890Z"
+        "at": "2026-11-21T09:44:24.259Z"
       },
       {
         "nodeId": "canonical",
         "criterionId": "receipt-target-element-removeLastSinglePointSubpath",
         "kind": "automated",
         "status": "passed",
-        "binding": "fd6d28b4c303ac7b7f2211146309cc092ffbc0ca66ca1227eed524ef926318b2",
+        "binding": "68780bab1f482e98f703217c107333e91bde72825ba6436458441e51bdfb6aa3",
         "actor": "vitest",
-        "executionId": "6a1bb83c-aa72-4d1b-b3ea-1a5e3ea61443",
+        "executionId": "5ff596bd-041a-4ebc-a22d-89ed7d5a071a",
         "caseId": "b75e56377643f433b2c84836036fa53c72b2c7975ee7e6f80c9ecfab566d6a5e",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:14:15.892Z"
+        "at": "2026-11-21T09:44:24.261Z"
       },
       {
         "nodeId": "canonical",
         "criterionId": "receipt-target-element-removeVectorAnchorPoint",
         "kind": "automated",
         "status": "passed",
-        "binding": "fd6d28b4c303ac7b7f2211146309cc092ffbc0ca66ca1227eed524ef926318b2",
+        "binding": "68780bab1f482e98f703217c107333e91bde72825ba6436458441e51bdfb6aa3",
         "actor": "vitest",
-        "executionId": "6a1bb83c-aa72-4d1b-b3ea-1a5e3ea61443",
+        "executionId": "5ff596bd-041a-4ebc-a22d-89ed7d5a071a",
         "caseId": "6951e420ba7b17886e37985142266159122b2e0c1d9b41f1aec9772b96b6c91a",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:14:15.894Z"
+        "at": "2026-11-21T09:44:24.263Z"
       },
       {
         "nodeId": "canonical",
         "criterionId": "receipt-target-element-splitVectorSegmentAtWorkspacePos",
         "kind": "automated",
         "status": "passed",
-        "binding": "fd6d28b4c303ac7b7f2211146309cc092ffbc0ca66ca1227eed524ef926318b2",
+        "binding": "68780bab1f482e98f703217c107333e91bde72825ba6436458441e51bdfb6aa3",
         "actor": "vitest",
-        "executionId": "6a1bb83c-aa72-4d1b-b3ea-1a5e3ea61443",
+        "executionId": "5ff596bd-041a-4ebc-a22d-89ed7d5a071a",
         "caseId": "d38ce311011cb326e20adb1554c5b7e91fc32d333c0bbb4d43f9d94929ff7dd4",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:14:15.896Z"
+        "at": "2026-11-21T09:44:24.265Z"
       },
       {
         "nodeId": "canonical",
         "criterionId": "receipt-target-element-setVectorClosed",
         "kind": "automated",
         "status": "passed",
-        "binding": "fd6d28b4c303ac7b7f2211146309cc092ffbc0ca66ca1227eed524ef926318b2",
+        "binding": "68780bab1f482e98f703217c107333e91bde72825ba6436458441e51bdfb6aa3",
         "actor": "vitest",
-        "executionId": "6a1bb83c-aa72-4d1b-b3ea-1a5e3ea61443",
+        "executionId": "5ff596bd-041a-4ebc-a22d-89ed7d5a071a",
         "caseId": "1be01578db5b9059ce8d4d05c16a256c28afc6c2c1acb699be22b0815f41825b",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:14:15.898Z"
+        "at": "2026-11-21T09:44:24.267Z"
       },
       {
         "nodeId": "canonical",
         "criterionId": "receipt-target-element-scaleVectorElementAroundCenter",
         "kind": "automated",
         "status": "passed",
-        "binding": "fd6d28b4c303ac7b7f2211146309cc092ffbc0ca66ca1227eed524ef926318b2",
+        "binding": "68780bab1f482e98f703217c107333e91bde72825ba6436458441e51bdfb6aa3",
         "actor": "vitest",
-        "executionId": "6a1bb83c-aa72-4d1b-b3ea-1a5e3ea61443",
+        "executionId": "5ff596bd-041a-4ebc-a22d-89ed7d5a071a",
         "caseId": "20936f928fdd15a554d5ac9d5ed7db4526b0935f0309b4c25b76c4fc812dd0c4",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:14:15.901Z"
+        "at": "2026-11-21T09:44:24.269Z"
       },
       {
         "nodeId": "canonical",
         "criterionId": "receipt-target-fill-addFills",
         "kind": "automated",
         "status": "passed",
-        "binding": "fd6d28b4c303ac7b7f2211146309cc092ffbc0ca66ca1227eed524ef926318b2",
+        "binding": "68780bab1f482e98f703217c107333e91bde72825ba6436458441e51bdfb6aa3",
         "actor": "vitest",
-        "executionId": "6a1bb83c-aa72-4d1b-b3ea-1a5e3ea61443",
+        "executionId": "5ff596bd-041a-4ebc-a22d-89ed7d5a071a",
         "caseId": "1ea251506382a9e0f763ae545503818aafbb5f6c719f96358d85d0df2f8bd756",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:14:15.902Z"
+        "at": "2026-11-21T09:44:24.271Z"
       },
       {
         "nodeId": "canonical",
         "criterionId": "receipt-target-fill-updateFillsAtIndex",
         "kind": "automated",
         "status": "passed",
-        "binding": "fd6d28b4c303ac7b7f2211146309cc092ffbc0ca66ca1227eed524ef926318b2",
+        "binding": "68780bab1f482e98f703217c107333e91bde72825ba6436458441e51bdfb6aa3",
         "actor": "vitest",
-        "executionId": "6a1bb83c-aa72-4d1b-b3ea-1a5e3ea61443",
+        "executionId": "5ff596bd-041a-4ebc-a22d-89ed7d5a071a",
         "caseId": "66fd65b939a8016c059bd721e7b2dcfa266d3be83197ede9d3f4daca7abcacd5",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:14:15.904Z"
+        "at": "2026-11-21T09:44:24.273Z"
       },
       {
         "nodeId": "canonical",
         "criterionId": "receipt-target-fill-detachFillsAtIndex",
         "kind": "automated",
         "status": "passed",
-        "binding": "fd6d28b4c303ac7b7f2211146309cc092ffbc0ca66ca1227eed524ef926318b2",
+        "binding": "68780bab1f482e98f703217c107333e91bde72825ba6436458441e51bdfb6aa3",
         "actor": "vitest",
-        "executionId": "6a1bb83c-aa72-4d1b-b3ea-1a5e3ea61443",
+        "executionId": "5ff596bd-041a-4ebc-a22d-89ed7d5a071a",
         "caseId": "cdd6d2222df3c1ea4e0902a5401416bbb4a34b9c321d0a6a8789114e5b1c6150",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:14:15.907Z"
+        "at": "2026-11-21T09:44:24.275Z"
       },
       {
         "nodeId": "canonical",
         "criterionId": "receipt-target-fill-shareFillAtIndex",
         "kind": "automated",
         "status": "passed",
-        "binding": "fd6d28b4c303ac7b7f2211146309cc092ffbc0ca66ca1227eed524ef926318b2",
+        "binding": "68780bab1f482e98f703217c107333e91bde72825ba6436458441e51bdfb6aa3",
         "actor": "vitest",
-        "executionId": "6a1bb83c-aa72-4d1b-b3ea-1a5e3ea61443",
+        "executionId": "5ff596bd-041a-4ebc-a22d-89ed7d5a071a",
         "caseId": "f589757f74c622ebd05a044176f5f50bd60a59f1c496325a1596b23a72a780a9",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:14:15.909Z"
+        "at": "2026-11-21T09:44:24.277Z"
       },
       {
         "nodeId": "canonical",
         "criterionId": "receipt-target-element-setElementPositions",
         "kind": "automated",
         "status": "passed",
-        "binding": "fd6d28b4c303ac7b7f2211146309cc092ffbc0ca66ca1227eed524ef926318b2",
+        "binding": "68780bab1f482e98f703217c107333e91bde72825ba6436458441e51bdfb6aa3",
         "actor": "vitest",
-        "executionId": "6a1bb83c-aa72-4d1b-b3ea-1a5e3ea61443",
+        "executionId": "5ff596bd-041a-4ebc-a22d-89ed7d5a071a",
         "caseId": "1dfb04902af877d471f0fb203906f2055f338fa44f6c4a7e1c8816eeeef1b825",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:14:15.910Z"
+        "at": "2026-11-21T09:44:24.279Z"
       },
       {
         "nodeId": "canonical",
         "criterionId": "receipt-target-fill-removeFills",
         "kind": "automated",
         "status": "passed",
-        "binding": "fd6d28b4c303ac7b7f2211146309cc092ffbc0ca66ca1227eed524ef926318b2",
+        "binding": "68780bab1f482e98f703217c107333e91bde72825ba6436458441e51bdfb6aa3",
         "actor": "vitest",
-        "executionId": "6a1bb83c-aa72-4d1b-b3ea-1a5e3ea61443",
+        "executionId": "5ff596bd-041a-4ebc-a22d-89ed7d5a071a",
         "caseId": "24cfaa596989bddfffa9e4093e0abccd721e1f8d0b8d92f916183acc99eb4ee7",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:14:15.912Z"
+        "at": "2026-11-21T09:44:24.281Z"
       },
       {
         "nodeId": "canonical",
         "criterionId": "receipt-target-fill-updateFillFieldsBatch",
         "kind": "automated",
         "status": "passed",
-        "binding": "fd6d28b4c303ac7b7f2211146309cc092ffbc0ca66ca1227eed524ef926318b2",
+        "binding": "68780bab1f482e98f703217c107333e91bde72825ba6436458441e51bdfb6aa3",
         "actor": "vitest",
-        "executionId": "6a1bb83c-aa72-4d1b-b3ea-1a5e3ea61443",
+        "executionId": "5ff596bd-041a-4ebc-a22d-89ed7d5a071a",
         "caseId": "df2e89e728a4ce87071e82351e4fa087f2c51fae82828286368bc5ce9279ba49",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:14:15.914Z"
+        "at": "2026-11-21T09:44:24.283Z"
       },
       {
         "nodeId": "canonical",
         "criterionId": "receipt-target-stroke-updateStrokeFieldsBatch",
         "kind": "automated",
         "status": "passed",
-        "binding": "fd6d28b4c303ac7b7f2211146309cc092ffbc0ca66ca1227eed524ef926318b2",
+        "binding": "68780bab1f482e98f703217c107333e91bde72825ba6436458441e51bdfb6aa3",
         "actor": "vitest",
-        "executionId": "6a1bb83c-aa72-4d1b-b3ea-1a5e3ea61443",
+        "executionId": "5ff596bd-041a-4ebc-a22d-89ed7d5a071a",
         "caseId": "88fbd00dfe9a179721a3f248f1aefbe9ce2f0667e6c8a3f5f904d3c66b00c930",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:14:15.917Z"
+        "at": "2026-11-21T09:44:24.285Z"
       },
       {
         "nodeId": "canonical",
         "criterionId": "receipt-target-element-setVectorElementPositions",
         "kind": "automated",
         "status": "passed",
-        "binding": "fd6d28b4c303ac7b7f2211146309cc092ffbc0ca66ca1227eed524ef926318b2",
+        "binding": "68780bab1f482e98f703217c107333e91bde72825ba6436458441e51bdfb6aa3",
         "actor": "vitest",
-        "executionId": "6a1bb83c-aa72-4d1b-b3ea-1a5e3ea61443",
+        "executionId": "5ff596bd-041a-4ebc-a22d-89ed7d5a071a",
         "caseId": "8a01a774f2b38479d4e6774cc8906a5a5404a9b2f46769b838196c9a563c71aa",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:14:15.918Z"
+        "at": "2026-11-21T09:44:24.287Z"
       },
       {
         "nodeId": "canonical",
         "criterionId": "receipt-created-identity",
         "kind": "automated",
         "status": "passed",
-        "binding": "fd6d28b4c303ac7b7f2211146309cc092ffbc0ca66ca1227eed524ef926318b2",
+        "binding": "68780bab1f482e98f703217c107333e91bde72825ba6436458441e51bdfb6aa3",
         "actor": "vitest",
-        "executionId": "6a1bb83c-aa72-4d1b-b3ea-1a5e3ea61443",
+        "executionId": "5ff596bd-041a-4ebc-a22d-89ed7d5a071a",
         "caseId": "4e526021b4b3c75b291db931c33870590f0a7c9b9e3b6e363bc9bfae2992b422",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:14:15.920Z"
+        "at": "2026-11-21T09:44:24.289Z"
       },
       {
         "nodeId": "canonical",
         "criterionId": "receipt-target-declaration",
         "kind": "automated",
         "status": "passed",
-        "binding": "fd6d28b4c303ac7b7f2211146309cc092ffbc0ca66ca1227eed524ef926318b2",
+        "binding": "68780bab1f482e98f703217c107333e91bde72825ba6436458441e51bdfb6aa3",
         "actor": "vitest",
-        "executionId": "6a1bb83c-aa72-4d1b-b3ea-1a5e3ea61443",
+        "executionId": "5ff596bd-041a-4ebc-a22d-89ed7d5a071a",
         "caseId": "fb364d76eddc48b8ddef8db6506951f5566f5e3772f9fa5ca0ae2a2680ab7ac7",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:14:15.922Z"
+        "at": "2026-11-21T09:44:24.291Z"
       },
       {
         "nodeId": "canonical",
         "criterionId": "receipt-empty-fill-addFills",
         "kind": "automated",
         "status": "passed",
-        "binding": "fd6d28b4c303ac7b7f2211146309cc092ffbc0ca66ca1227eed524ef926318b2",
+        "binding": "68780bab1f482e98f703217c107333e91bde72825ba6436458441e51bdfb6aa3",
         "actor": "vitest",
-        "executionId": "6a1bb83c-aa72-4d1b-b3ea-1a5e3ea61443",
+        "executionId": "5ff596bd-041a-4ebc-a22d-89ed7d5a071a",
         "caseId": "7c5635b7a1354c9d76aa39a8bd269ab015fd4e34c9f71c6965baf9efe89b3e4f",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:14:15.924Z"
+        "at": "2026-11-21T09:44:24.293Z"
       },
       {
         "nodeId": "canonical",
         "criterionId": "receipt-empty-fill-shareFillAtIndex",
         "kind": "automated",
         "status": "passed",
-        "binding": "fd6d28b4c303ac7b7f2211146309cc092ffbc0ca66ca1227eed524ef926318b2",
+        "binding": "68780bab1f482e98f703217c107333e91bde72825ba6436458441e51bdfb6aa3",
         "actor": "vitest",
-        "executionId": "6a1bb83c-aa72-4d1b-b3ea-1a5e3ea61443",
+        "executionId": "5ff596bd-041a-4ebc-a22d-89ed7d5a071a",
         "caseId": "831b928be4c8dc0575c6b666d64fcfd2e110dda5e03bf2adf4bae2d4425a94ed",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:14:15.926Z"
+        "at": "2026-11-21T09:44:24.295Z"
       },
       {
         "nodeId": "canonical",
         "criterionId": "receipt-empty-element-setElementPositions",
         "kind": "automated",
         "status": "passed",
-        "binding": "fd6d28b4c303ac7b7f2211146309cc092ffbc0ca66ca1227eed524ef926318b2",
+        "binding": "68780bab1f482e98f703217c107333e91bde72825ba6436458441e51bdfb6aa3",
         "actor": "vitest",
-        "executionId": "6a1bb83c-aa72-4d1b-b3ea-1a5e3ea61443",
+        "executionId": "5ff596bd-041a-4ebc-a22d-89ed7d5a071a",
         "caseId": "630237a233f690e3abd4d85b2a7d73ba1a7e43d0786b2872ca268cf8be60de3a",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:14:15.928Z"
+        "at": "2026-11-21T09:44:24.297Z"
       },
       {
         "nodeId": "canonical",
         "criterionId": "receipt-empty-fill-updateFillFieldsBatch",
         "kind": "automated",
         "status": "passed",
-        "binding": "fd6d28b4c303ac7b7f2211146309cc092ffbc0ca66ca1227eed524ef926318b2",
+        "binding": "68780bab1f482e98f703217c107333e91bde72825ba6436458441e51bdfb6aa3",
         "actor": "vitest",
-        "executionId": "6a1bb83c-aa72-4d1b-b3ea-1a5e3ea61443",
+        "executionId": "5ff596bd-041a-4ebc-a22d-89ed7d5a071a",
         "caseId": "3c74bd49458b5ecd1edd407efd834d63acfdd3183b29a02b5934d5eead5d5ed1",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:14:15.930Z"
+        "at": "2026-11-21T09:44:24.299Z"
       },
       {
         "nodeId": "canonical",
         "criterionId": "receipt-partial",
         "kind": "automated",
         "status": "passed",
-        "binding": "fd6d28b4c303ac7b7f2211146309cc092ffbc0ca66ca1227eed524ef926318b2",
+        "binding": "68780bab1f482e98f703217c107333e91bde72825ba6436458441e51bdfb6aa3",
         "actor": "vitest",
-        "executionId": "6a1bb83c-aa72-4d1b-b3ea-1a5e3ea61443",
+        "executionId": "5ff596bd-041a-4ebc-a22d-89ed7d5a071a",
         "caseId": "aeebc52d1ec56a06d159161140d6f94f9abcfeaa06ba82e8d900487c42608a16",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:14:15.933Z"
+        "at": "2026-11-21T09:44:24.301Z"
       },
       {
         "nodeId": "canonical",
         "criterionId": "receipt-no-change",
         "kind": "automated",
         "status": "passed",
-        "binding": "fd6d28b4c303ac7b7f2211146309cc092ffbc0ca66ca1227eed524ef926318b2",
+        "binding": "68780bab1f482e98f703217c107333e91bde72825ba6436458441e51bdfb6aa3",
         "actor": "vitest",
-        "executionId": "6a1bb83c-aa72-4d1b-b3ea-1a5e3ea61443",
+        "executionId": "5ff596bd-041a-4ebc-a22d-89ed7d5a071a",
         "caseId": "1046cd8329ebee514c603bfa90f8cff9c312d962d0887aa183f3b7183bf07df8",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:14:15.934Z"
+        "at": "2026-11-21T09:44:24.303Z"
       },
       {
         "nodeId": "canonical",
         "criterionId": "receipt-failed",
         "kind": "automated",
         "status": "passed",
-        "binding": "fd6d28b4c303ac7b7f2211146309cc092ffbc0ca66ca1227eed524ef926318b2",
+        "binding": "68780bab1f482e98f703217c107333e91bde72825ba6436458441e51bdfb6aa3",
         "actor": "vitest",
-        "executionId": "6a1bb83c-aa72-4d1b-b3ea-1a5e3ea61443",
+        "executionId": "5ff596bd-041a-4ebc-a22d-89ed7d5a071a",
         "caseId": "104a11cb6cb576395e9900b6c8face0bb9eafe462e6f467d02aa618c7a60ca02",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:14:15.937Z"
+        "at": "2026-11-21T09:44:24.305Z"
       },
       {
         "nodeId": "canonical",
         "criterionId": "receipt-omitted-unavailable",
         "kind": "automated",
         "status": "passed",
-        "binding": "fd6d28b4c303ac7b7f2211146309cc092ffbc0ca66ca1227eed524ef926318b2",
+        "binding": "68780bab1f482e98f703217c107333e91bde72825ba6436458441e51bdfb6aa3",
         "actor": "vitest",
-        "executionId": "6a1bb83c-aa72-4d1b-b3ea-1a5e3ea61443",
+        "executionId": "5ff596bd-041a-4ebc-a22d-89ed7d5a071a",
         "caseId": "1b494511505679d28c478d4050ba36ea7e67a2b074c7f12d980d547965b719a7",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:14:15.939Z"
+        "at": "2026-11-21T09:44:24.307Z"
       },
       {
         "nodeId": "canonical",
         "criterionId": "receipt-omitted-accepted",
         "kind": "automated",
         "status": "passed",
-        "binding": "fd6d28b4c303ac7b7f2211146309cc092ffbc0ca66ca1227eed524ef926318b2",
+        "binding": "68780bab1f482e98f703217c107333e91bde72825ba6436458441e51bdfb6aa3",
         "actor": "vitest",
-        "executionId": "6a1bb83c-aa72-4d1b-b3ea-1a5e3ea61443",
+        "executionId": "5ff596bd-041a-4ebc-a22d-89ed7d5a071a",
         "caseId": "6645c2072e2e7d03eefa91353842f8abc13ad17a64ddc9bb157e3897030f7d3a",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:14:15.941Z"
+        "at": "2026-11-21T09:44:24.309Z"
       },
       {
         "nodeId": "retention",
         "criterionId": "saved-image-provenance",
         "kind": "automated",
         "status": "passed",
-        "binding": "b18a32ea2990cf01227c6a9161aae5ec5b3d6fe4fd2b9b047d2bec92dca375c5",
+        "binding": "c88f44d98dc94421c9d746a0a3c013b79f6536b4cbdbcd00837b8528f744b818",
         "actor": "vitest",
-        "executionId": "6a1bb83c-aa72-4d1b-b3ea-1a5e3ea61443",
+        "executionId": "5ff596bd-041a-4ebc-a22d-89ed7d5a071a",
         "caseId": "e61a24631034fd412d83d0a59fcd89922399b722cff5a3790eafc8305dbf7a37",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:14:15.949Z"
+        "at": "2026-11-21T09:44:24.317Z"
       },
       {
         "nodeId": "retention",
         "criterionId": "saved-image-capacity",
         "kind": "automated",
         "status": "passed",
-        "binding": "b18a32ea2990cf01227c6a9161aae5ec5b3d6fe4fd2b9b047d2bec92dca375c5",
+        "binding": "c88f44d98dc94421c9d746a0a3c013b79f6536b4cbdbcd00837b8528f744b818",
         "actor": "vitest",
-        "executionId": "6a1bb83c-aa72-4d1b-b3ea-1a5e3ea61443",
+        "executionId": "5ff596bd-041a-4ebc-a22d-89ed7d5a071a",
         "caseId": "4db68fdf8ba3a51a667bf528545cc743d4e44f40b35688e149df2b2e9a95f625",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:14:15.951Z"
+        "at": "2026-11-21T09:44:24.319Z"
       },
       {
         "nodeId": "discovery",
         "criterionId": "independent-discovery-none",
         "kind": "automated",
         "status": "passed",
-        "binding": "d4e4f40a3fa3db45b50843a831fc82018d323d40f6168a4fb3e57c560008e266",
+        "binding": "5a848f245dd1c439f69e71dbe2aa73f428c8ccfa056f417cb9c5c945a00a8b1d",
         "actor": "vitest",
-        "executionId": "b3a8d241-fa2b-41b6-b212-a50813a3cd79",
+        "executionId": "4cff8a07-1225-4e6d-9109-83258e77ae0d",
         "caseId": "0bd8001cbefa95f79b70f159d9e5cb633ee52c31bf362a22417b2259e24006c6",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:11:07.583Z"
+        "at": "2026-11-21T09:41:19.912Z"
       },
       {
         "nodeId": "discovery",
         "criterionId": "independent-discovery-weaken-input",
         "kind": "automated",
         "status": "passed",
-        "binding": "d4e4f40a3fa3db45b50843a831fc82018d323d40f6168a4fb3e57c560008e266",
+        "binding": "5a848f245dd1c439f69e71dbe2aa73f428c8ccfa056f417cb9c5c945a00a8b1d",
         "actor": "vitest",
-        "executionId": "b3a8d241-fa2b-41b6-b212-a50813a3cd79",
+        "executionId": "4cff8a07-1225-4e6d-9109-83258e77ae0d",
         "caseId": "bfb8d6548e431a4f5543c7fe0467f3ff2864c01d892e30f47fe64f8f38257bba",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:11:07.588Z"
+        "at": "2026-11-21T09:41:19.917Z"
       },
       {
         "nodeId": "discovery",
         "criterionId": "independent-discovery-open-result",
         "kind": "automated",
         "status": "passed",
-        "binding": "d4e4f40a3fa3db45b50843a831fc82018d323d40f6168a4fb3e57c560008e266",
+        "binding": "5a848f245dd1c439f69e71dbe2aa73f428c8ccfa056f417cb9c5c945a00a8b1d",
         "actor": "vitest",
-        "executionId": "b3a8d241-fa2b-41b6-b212-a50813a3cd79",
+        "executionId": "4cff8a07-1225-4e6d-9109-83258e77ae0d",
         "caseId": "5835ce7581d8e98503f31c0209b68dfdaa9c12c802973aeec2e258969e5af30a",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:11:07.593Z"
+        "at": "2026-11-21T09:41:19.922Z"
       },
       {
         "nodeId": "discovery",
         "criterionId": "independent-scope-inventory",
         "kind": "automated",
         "status": "passed",
-        "binding": "d4e4f40a3fa3db45b50843a831fc82018d323d40f6168a4fb3e57c560008e266",
+        "binding": "5a848f245dd1c439f69e71dbe2aa73f428c8ccfa056f417cb9c5c945a00a8b1d",
         "actor": "vitest",
-        "executionId": "b3a8d241-fa2b-41b6-b212-a50813a3cd79",
+        "executionId": "4cff8a07-1225-4e6d-9109-83258e77ae0d",
         "caseId": "cbc1cc1375cc09a1db6765f80fe5fac5e3526f50aba43b1311acf91dd8dea607",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:11:07.598Z"
+        "at": "2026-11-21T09:41:19.927Z"
       },
       {
         "nodeId": "discovery",
         "criterionId": "independent-scope-none",
         "kind": "automated",
         "status": "passed",
-        "binding": "d4e4f40a3fa3db45b50843a831fc82018d323d40f6168a4fb3e57c560008e266",
+        "binding": "5a848f245dd1c439f69e71dbe2aa73f428c8ccfa056f417cb9c5c945a00a8b1d",
         "actor": "vitest",
-        "executionId": "b3a8d241-fa2b-41b6-b212-a50813a3cd79",
+        "executionId": "4cff8a07-1225-4e6d-9109-83258e77ae0d",
         "caseId": "9cc877efee9f6e3e7205fe6d39cddbf387f718a3ac220e442585126629c119a3",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:11:07.603Z"
+        "at": "2026-11-21T09:41:19.931Z"
       },
       {
         "nodeId": "discovery",
         "criterionId": "independent-scope-omit-parts",
         "kind": "automated",
         "status": "passed",
-        "binding": "d4e4f40a3fa3db45b50843a831fc82018d323d40f6168a4fb3e57c560008e266",
+        "binding": "5a848f245dd1c439f69e71dbe2aa73f428c8ccfa056f417cb9c5c945a00a8b1d",
         "actor": "vitest",
-        "executionId": "b3a8d241-fa2b-41b6-b212-a50813a3cd79",
+        "executionId": "4cff8a07-1225-4e6d-9109-83258e77ae0d",
         "caseId": "bbae212c6302828b7bd5adfcb0809d7024edbd4bdee498efad149f319e9b005d",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:11:07.608Z"
+        "at": "2026-11-21T09:41:19.936Z"
       },
       {
         "nodeId": "admission",
         "criterionId": "unicode-native-continuation",
         "kind": "automated",
         "status": "passed",
-        "binding": "96cec7f9cc2000e8792d897a5714259e69fe2117954c96c7bc3422c6ab9557e0",
+        "binding": "cde9dffd352a1b7bd4c092eace29fbab98271dc52243fa67a13b9f8bb909ce7e",
         "actor": "vitest",
-        "executionId": "b3a8d241-fa2b-41b6-b212-a50813a3cd79",
+        "executionId": "4cff8a07-1225-4e6d-9109-83258e77ae0d",
         "caseId": "a357b1037ccb94325d54c5ebf395b82149614f56c54959b29825cb358ba654a3",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:11:07.693Z"
+        "at": "2026-11-21T09:41:20.019Z"
       },
       {
         "nodeId": "results",
         "criterionId": "canonical-receipt-authority",
         "kind": "automated",
         "status": "passed",
-        "binding": "25a407984e5c7c744cc076f21f4500d1e7b794772442cb079b95212821f5e9d5",
+        "binding": "790f1eba5d6528e7920d15328fdda3b19fd1383f2389fd631757af518abc3af6",
         "actor": "node",
-        "executionId": "52fe388b-23f2-49c8-8a9a-f9ec479eb68b",
+        "executionId": "2fe42c2c-0fdb-4356-9fd2-cbc5078e9bbb",
         "caseId": "efe55c7dfb17f5c1792a4988ecfacce468d8d99d1a900a6aab00b294900c4819",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:21:36.219Z"
+        "at": "2026-11-21T09:51:07.320Z"
       },
       {
         "nodeId": "media",
         "criterionId": "no-correction-quota",
         "kind": "automated",
         "status": "passed",
-        "binding": "434a3001591ef49bdbccb1ef809676728c1493603ca4046bb83cb721647e1d8d",
+        "binding": "3316dacd37f448082aa1507dc30b36089f50b6d72545bd870a0041554b96a4ba",
         "actor": "node",
-        "executionId": "52fe388b-23f2-49c8-8a9a-f9ec479eb68b",
+        "executionId": "2fe42c2c-0fdb-4356-9fd2-cbc5078e9bbb",
         "caseId": "c278e474ce0da66f4833a3c56529527afa6eec90b26f76ffef214ff834d57f61",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:21:36.222Z"
+        "at": "2026-11-21T09:51:07.323Z"
       },
       {
         "nodeId": "evidence",
         "criterionId": "entry-none",
         "kind": "automated",
         "status": "passed",
-        "binding": "b4b4e14a3acdf2b1b2b59e559435f240d2182eb0cc20357f51dadb71971ce7cf",
+        "binding": "bc99e6c43c96813770529e0c34004fcfd600c54731160fc4c7b66b5cb11771c4",
         "actor": "node",
-        "executionId": "52fe388b-23f2-49c8-8a9a-f9ec479eb68b",
+        "executionId": "2fe42c2c-0fdb-4356-9fd2-cbc5078e9bbb",
         "caseId": "f279109dbbcf95694877516dfafdfb9e52e94391421367af8b65d6733f2975cc",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:21:36.227Z"
+        "at": "2026-11-21T09:51:07.328Z"
       },
       {
         "nodeId": "evidence",
         "criterionId": "entry-failed-suite",
         "kind": "automated",
         "status": "passed",
-        "binding": "b4b4e14a3acdf2b1b2b59e559435f240d2182eb0cc20357f51dadb71971ce7cf",
+        "binding": "bc99e6c43c96813770529e0c34004fcfd600c54731160fc4c7b66b5cb11771c4",
         "actor": "node",
-        "executionId": "52fe388b-23f2-49c8-8a9a-f9ec479eb68b",
+        "executionId": "2fe42c2c-0fdb-4356-9fd2-cbc5078e9bbb",
         "caseId": "92d952edaeac7102719c73ba7f0f9fbd126ffbe9a6e778022ff8795700015894",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:21:36.229Z"
+        "at": "2026-11-21T09:51:07.329Z"
       },
       {
         "nodeId": "evidence",
         "criterionId": "entry-missing-case",
         "kind": "automated",
         "status": "passed",
-        "binding": "b4b4e14a3acdf2b1b2b59e559435f240d2182eb0cc20357f51dadb71971ce7cf",
+        "binding": "bc99e6c43c96813770529e0c34004fcfd600c54731160fc4c7b66b5cb11771c4",
         "actor": "node",
-        "executionId": "52fe388b-23f2-49c8-8a9a-f9ec479eb68b",
+        "executionId": "2fe42c2c-0fdb-4356-9fd2-cbc5078e9bbb",
         "caseId": "20d128606bfb43a9cd37d41c8bb29faf6b4452cf7408016964384437abf4fdec",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:21:36.229Z"
+        "at": "2026-11-21T09:51:07.330Z"
       },
       {
         "nodeId": "evidence",
         "criterionId": "entry-duplicate-case",
         "kind": "automated",
         "status": "passed",
-        "binding": "b4b4e14a3acdf2b1b2b59e559435f240d2182eb0cc20357f51dadb71971ce7cf",
+        "binding": "bc99e6c43c96813770529e0c34004fcfd600c54731160fc4c7b66b5cb11771c4",
         "actor": "node",
-        "executionId": "52fe388b-23f2-49c8-8a9a-f9ec479eb68b",
+        "executionId": "2fe42c2c-0fdb-4356-9fd2-cbc5078e9bbb",
         "caseId": "b59037f1706aa571bb803885c17113c40b5ff4ce64808e1e82f515bbdabefb2e",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:21:36.231Z"
+        "at": "2026-11-21T09:51:07.331Z"
       },
       {
         "nodeId": "evidence",
         "criterionId": "entry-exit-failure",
         "kind": "automated",
         "status": "passed",
-        "binding": "b4b4e14a3acdf2b1b2b59e559435f240d2182eb0cc20357f51dadb71971ce7cf",
+        "binding": "bc99e6c43c96813770529e0c34004fcfd600c54731160fc4c7b66b5cb11771c4",
         "actor": "node",
-        "executionId": "52fe388b-23f2-49c8-8a9a-f9ec479eb68b",
+        "executionId": "2fe42c2c-0fdb-4356-9fd2-cbc5078e9bbb",
         "caseId": "a1d1555bd46ebfb941f75efc819193be41114c98a929201856c867c2c4d08bdd",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:21:36.231Z"
+        "at": "2026-11-21T09:51:07.332Z"
       },
       {
         "nodeId": "evidence",
         "criterionId": "entry-runtime-error",
         "kind": "automated",
         "status": "passed",
-        "binding": "b4b4e14a3acdf2b1b2b59e559435f240d2182eb0cc20357f51dadb71971ce7cf",
+        "binding": "bc99e6c43c96813770529e0c34004fcfd600c54731160fc4c7b66b5cb11771c4",
         "actor": "node",
-        "executionId": "52fe388b-23f2-49c8-8a9a-f9ec479eb68b",
+        "executionId": "2fe42c2c-0fdb-4356-9fd2-cbc5078e9bbb",
         "caseId": "f6d2f4bb3e4c392a9aa75481cef59723c06d31dec6c164be79de3c1af5f8f7e6",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:21:36.232Z"
+        "at": "2026-11-21T09:51:07.333Z"
       },
       {
         "nodeId": "evidence",
         "criterionId": "entry-failed-summary",
         "kind": "automated",
         "status": "passed",
-        "binding": "b4b4e14a3acdf2b1b2b59e559435f240d2182eb0cc20357f51dadb71971ce7cf",
+        "binding": "bc99e6c43c96813770529e0c34004fcfd600c54731160fc4c7b66b5cb11771c4",
         "actor": "node",
-        "executionId": "52fe388b-23f2-49c8-8a9a-f9ec479eb68b",
+        "executionId": "2fe42c2c-0fdb-4356-9fd2-cbc5078e9bbb",
         "caseId": "c51744d2077789c71d3080f88772965b66d1bc5a0b78b047f9ea09bf207b116e",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:21:36.233Z"
+        "at": "2026-11-21T09:51:07.333Z"
       },
       {
         "nodeId": "evidence",
         "criterionId": "entry-missing-file",
         "kind": "automated",
         "status": "passed",
-        "binding": "b4b4e14a3acdf2b1b2b59e559435f240d2182eb0cc20357f51dadb71971ce7cf",
+        "binding": "bc99e6c43c96813770529e0c34004fcfd600c54731160fc4c7b66b5cb11771c4",
         "actor": "node",
-        "executionId": "52fe388b-23f2-49c8-8a9a-f9ec479eb68b",
+        "executionId": "2fe42c2c-0fdb-4356-9fd2-cbc5078e9bbb",
         "caseId": "4b0a28f55a6c0f17570194ed4d5ec4f7541b749be7e6fa6e0d1413f3372a26b4",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:21:36.234Z"
+        "at": "2026-11-21T09:51:07.334Z"
       },
       {
         "nodeId": "evidence",
         "criterionId": "entry-skipped-case",
         "kind": "automated",
         "status": "passed",
-        "binding": "b4b4e14a3acdf2b1b2b59e559435f240d2182eb0cc20357f51dadb71971ce7cf",
+        "binding": "bc99e6c43c96813770529e0c34004fcfd600c54731160fc4c7b66b5cb11771c4",
         "actor": "node",
-        "executionId": "52fe388b-23f2-49c8-8a9a-f9ec479eb68b",
+        "executionId": "2fe42c2c-0fdb-4356-9fd2-cbc5078e9bbb",
         "caseId": "faf8296c9fe9f4153478f2c2fb95f103a912666d7d6789763e56a3ce74e720e3",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:21:36.235Z"
+        "at": "2026-11-21T09:51:07.335Z"
       },
       {
         "nodeId": "evidence",
         "criterionId": "entry-truncated-report",
         "kind": "automated",
         "status": "passed",
-        "binding": "b4b4e14a3acdf2b1b2b59e559435f240d2182eb0cc20357f51dadb71971ce7cf",
+        "binding": "bc99e6c43c96813770529e0c34004fcfd600c54731160fc4c7b66b5cb11771c4",
         "actor": "node",
-        "executionId": "52fe388b-23f2-49c8-8a9a-f9ec479eb68b",
+        "executionId": "2fe42c2c-0fdb-4356-9fd2-cbc5078e9bbb",
         "caseId": "176dacbcd0b7684576a377c98ba7fa1c0005d0c648bff8e2ebd45c7fa5bd6715",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:21:36.236Z"
+        "at": "2026-11-21T09:51:07.336Z"
       },
       {
         "nodeId": "evidence",
         "criterionId": "entry-changed-knowledge-source",
         "kind": "automated",
         "status": "passed",
-        "binding": "b4b4e14a3acdf2b1b2b59e559435f240d2182eb0cc20357f51dadb71971ce7cf",
+        "binding": "bc99e6c43c96813770529e0c34004fcfd600c54731160fc4c7b66b5cb11771c4",
         "actor": "node",
-        "executionId": "52fe388b-23f2-49c8-8a9a-f9ec479eb68b",
+        "executionId": "2fe42c2c-0fdb-4356-9fd2-cbc5078e9bbb",
         "caseId": "8f7bc3cef3e74c8d3dc374865a2b6b4997fb6acd17dfeff44211ad532903531a",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:21:36.237Z"
+        "at": "2026-11-21T09:51:07.337Z"
       },
       {
         "nodeId": "evidence",
         "criterionId": "entry-publication-failure",
         "kind": "automated",
         "status": "passed",
-        "binding": "b4b4e14a3acdf2b1b2b59e559435f240d2182eb0cc20357f51dadb71971ce7cf",
+        "binding": "bc99e6c43c96813770529e0c34004fcfd600c54731160fc4c7b66b5cb11771c4",
         "actor": "node",
-        "executionId": "52fe388b-23f2-49c8-8a9a-f9ec479eb68b",
+        "executionId": "2fe42c2c-0fdb-4356-9fd2-cbc5078e9bbb",
         "caseId": "60c41226dc77e004fb60abb85bcb70318a9fc6fda6858674a1a1a037dde6ee16",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:21:36.238Z"
+        "at": "2026-11-21T09:51:07.338Z"
       },
       {
         "nodeId": "evidence",
         "criterionId": "entry-dropped-observation",
         "kind": "automated",
         "status": "passed",
-        "binding": "b4b4e14a3acdf2b1b2b59e559435f240d2182eb0cc20357f51dadb71971ce7cf",
+        "binding": "bc99e6c43c96813770529e0c34004fcfd600c54731160fc4c7b66b5cb11771c4",
         "actor": "node",
-        "executionId": "52fe388b-23f2-49c8-8a9a-f9ec479eb68b",
+        "executionId": "2fe42c2c-0fdb-4356-9fd2-cbc5078e9bbb",
         "caseId": "248c3b2021fc7cb5e560c57eb8bc0589d59496849fd29331d63d1a614200cf67",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:21:36.239Z"
+        "at": "2026-11-21T09:51:07.339Z"
       },
       {
         "nodeId": "evidence",
         "criterionId": "entry-missing-semantic-review",
         "kind": "automated",
         "status": "passed",
-        "binding": "b4b4e14a3acdf2b1b2b59e559435f240d2182eb0cc20357f51dadb71971ce7cf",
+        "binding": "bc99e6c43c96813770529e0c34004fcfd600c54731160fc4c7b66b5cb11771c4",
         "actor": "node",
-        "executionId": "52fe388b-23f2-49c8-8a9a-f9ec479eb68b",
+        "executionId": "2fe42c2c-0fdb-4356-9fd2-cbc5078e9bbb",
         "caseId": "9a6d2b3a469da8bd4951d413af714c4c51d7fef9249ee984cfbfe7a4b4734cc9",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:21:36.240Z"
+        "at": "2026-11-21T09:51:07.339Z"
       },
       {
         "nodeId": "evidence",
         "criterionId": "entry-missing-knowledge-handoff",
         "kind": "automated",
         "status": "passed",
-        "binding": "b4b4e14a3acdf2b1b2b59e559435f240d2182eb0cc20357f51dadb71971ce7cf",
+        "binding": "bc99e6c43c96813770529e0c34004fcfd600c54731160fc4c7b66b5cb11771c4",
         "actor": "node",
-        "executionId": "52fe388b-23f2-49c8-8a9a-f9ec479eb68b",
+        "executionId": "2fe42c2c-0fdb-4356-9fd2-cbc5078e9bbb",
         "caseId": "7bbf55e33393858b5d8eea7dfabac9e6e1bdaa1bdb4d2c6d00b0634bce07e220",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:21:36.240Z"
+        "at": "2026-11-21T09:51:07.340Z"
       },
       {
         "nodeId": "integration",
         "criterionId": "calculation-parameters-control",
         "kind": "automated",
         "status": "passed",
-        "binding": "706473d453ed2435e4519d688253e2bd3c01ede46021358076b0d190a4eebd72",
+        "binding": "8644318ee103b75ed2e00ba55c4854bdfa2d5972564b17bb0737f621bb1ba8d0",
         "actor": "vitest",
-        "executionId": "a7c22377-07bb-4834-863e-fb29ab7aae5e",
+        "executionId": "a8e635b4-2a6b-4d97-a889-2b59f76a9eba",
         "caseId": "de345ad0e99845f74bcf2ed384bf3e1023bb1bcf6ef1aaff44cb0b794b8750b4",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:45:13.707Z"
+        "at": "2026-11-21T10:09:00.406Z"
       },
       {
         "nodeId": "integration",
         "criterionId": "calculation-parameters-rejection",
         "kind": "automated",
         "status": "passed",
-        "binding": "706473d453ed2435e4519d688253e2bd3c01ede46021358076b0d190a4eebd72",
+        "binding": "8644318ee103b75ed2e00ba55c4854bdfa2d5972564b17bb0737f621bb1ba8d0",
         "actor": "vitest",
-        "executionId": "a7c22377-07bb-4834-863e-fb29ab7aae5e",
+        "executionId": "a8e635b4-2a6b-4d97-a889-2b59f76a9eba",
         "caseId": "142f19b64193257c2efb7d0333449b8d2732170e34be9c628a7fd2994c43d964",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:45:13.710Z"
+        "at": "2026-11-21T10:09:00.415Z"
       },
       {
         "nodeId": "integration",
         "criterionId": "unavailable-storage-reply",
         "kind": "automated",
         "status": "passed",
-        "binding": "706473d453ed2435e4519d688253e2bd3c01ede46021358076b0d190a4eebd72",
+        "binding": "8644318ee103b75ed2e00ba55c4854bdfa2d5972564b17bb0737f621bb1ba8d0",
         "actor": "vitest",
-        "executionId": "74b8c32e-4839-4335-a798-76522dd03d48",
+        "executionId": "a8e635b4-2a6b-4d97-a889-2b59f76a9eba",
         "caseId": "2c34a668ec4cc5c105a1f747937aaabfbad60bfc14e3d1d6a777dbd96ca1dd76",
-        "summary": "Exact storage reply correction passed; unchanged source and criterion binding.",
+        "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:45:35.430Z"
+        "at": "2026-11-21T10:09:00.424Z"
       },
       {
         "nodeId": "integration",
         "criterionId": "local-storage-reply",
         "kind": "automated",
         "status": "passed",
-        "binding": "706473d453ed2435e4519d688253e2bd3c01ede46021358076b0d190a4eebd72",
+        "binding": "8644318ee103b75ed2e00ba55c4854bdfa2d5972564b17bb0737f621bb1ba8d0",
         "actor": "vitest",
-        "executionId": "74b8c32e-4839-4335-a798-76522dd03d48",
+        "executionId": "a8e635b4-2a6b-4d97-a889-2b59f76a9eba",
         "caseId": "b69fa2ab039b41deb1c90dd9ad600484d777e8607f49562b394ba116959eb594",
-        "summary": "Exact storage reply correction passed; unchanged source and criterion binding.",
+        "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:45:35.431Z"
+        "at": "2026-11-21T10:09:00.433Z"
       },
       {
         "nodeId": "integration",
         "criterionId": "recorded-document-durable-reload",
         "kind": "automated",
         "status": "passed",
-        "binding": "706473d453ed2435e4519d688253e2bd3c01ede46021358076b0d190a4eebd72",
+        "binding": "8644318ee103b75ed2e00ba55c4854bdfa2d5972564b17bb0737f621bb1ba8d0",
         "actor": "playwright",
-        "executionId": "82b9f179-bba9-454d-8856-869cb66a8c3c",
+        "executionId": "a8e635b4-2a6b-4d97-a889-2b59f76a9eba",
         "caseId": "61e2eb7df2e7d7bb857b6878d9bc6a375e93f49c36ceedcc0725662361832ec8",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-18T09:48:46.983Z"
+        "at": "2026-11-21T10:09:00.442Z"
+      },
+      {
+        "nodeId": "integration",
+        "criterionId": "browser-prefix-failure-projection",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "8644318ee103b75ed2e00ba55c4854bdfa2d5972564b17bb0737f621bb1ba8d0",
+        "actor": "vitest",
+        "executionId": "a8e635b4-2a6b-4d97-a889-2b59f76a9eba",
+        "caseId": "ff70de5960535d23c73b2af4727bf4d84b39c4882fb8cf672b39ded2e73ca859",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-21T10:09:00.450Z"
+      },
+      {
+        "nodeId": "integration",
+        "criterionId": "complete-owner-model-cost",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "8644318ee103b75ed2e00ba55c4854bdfa2d5972564b17bb0737f621bb1ba8d0",
+        "actor": "vitest",
+        "executionId": "a8e635b4-2a6b-4d97-a889-2b59f76a9eba",
+        "caseId": "41644b7e57b0d8bc6df95cbce7a94a144928932ea78bb25e075d73922131dd00",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-21T10:09:00.459Z"
+      },
+      {
+        "nodeId": "integration",
+        "criterionId": "retained-mapping-capacity",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "8644318ee103b75ed2e00ba55c4854bdfa2d5972564b17bb0737f621bb1ba8d0",
+        "actor": "vitest",
+        "executionId": "a8e635b4-2a6b-4d97-a889-2b59f76a9eba",
+        "caseId": "db673cb39a63f14785e8621ee6121b4e3382019cf81ab5f6e257f1c13471e4fa",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-21T10:09:00.468Z"
+      },
+      {
+        "nodeId": "integration",
+        "criterionId": "retained-mapping-cancel",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "8644318ee103b75ed2e00ba55c4854bdfa2d5972564b17bb0737f621bb1ba8d0",
+        "actor": "vitest",
+        "executionId": "a8e635b4-2a6b-4d97-a889-2b59f76a9eba",
+        "caseId": "b1161ef96214d5fb0da715b6ba5e39bcd67b4efc1a2940d8c614ebcb8a93bc9c",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-21T10:09:00.478Z"
       }
     ],
     "notes": [],
@@ -3842,51 +3930,51 @@
     "sources": [
       {
         "nodeId": "request",
-        "revision": "9165883554616cddf382e2d53d80c0d5d2ea7138cb2dcaee43c359e71ac24ced"
+        "revision": "a6ba966bf757c2517f18ecbd4a41cde9f74eafeafa7cfa1c46b1ed5365700767"
       },
       {
         "nodeId": "instructions",
-        "revision": "9165883554616cddf382e2d53d80c0d5d2ea7138cb2dcaee43c359e71ac24ced"
+        "revision": "a6ba966bf757c2517f18ecbd4a41cde9f74eafeafa7cfa1c46b1ed5365700767"
       },
       {
         "nodeId": "discovery",
-        "revision": "9165883554616cddf382e2d53d80c0d5d2ea7138cb2dcaee43c359e71ac24ced"
+        "revision": "a6ba966bf757c2517f18ecbd4a41cde9f74eafeafa7cfa1c46b1ed5365700767"
       },
       {
         "nodeId": "knowledge",
-        "revision": "9165883554616cddf382e2d53d80c0d5d2ea7138cb2dcaee43c359e71ac24ced"
+        "revision": "a6ba966bf757c2517f18ecbd4a41cde9f74eafeafa7cfa1c46b1ed5365700767"
       },
       {
         "nodeId": "admission",
-        "revision": "9165883554616cddf382e2d53d80c0d5d2ea7138cb2dcaee43c359e71ac24ced"
+        "revision": "a6ba966bf757c2517f18ecbd4a41cde9f74eafeafa7cfa1c46b1ed5365700767"
       },
       {
         "nodeId": "composition",
-        "revision": "9165883554616cddf382e2d53d80c0d5d2ea7138cb2dcaee43c359e71ac24ced"
+        "revision": "a6ba966bf757c2517f18ecbd4a41cde9f74eafeafa7cfa1c46b1ed5365700767"
       },
       {
         "nodeId": "canonical",
-        "revision": "9165883554616cddf382e2d53d80c0d5d2ea7138cb2dcaee43c359e71ac24ced"
+        "revision": "a6ba966bf757c2517f18ecbd4a41cde9f74eafeafa7cfa1c46b1ed5365700767"
       },
       {
         "nodeId": "results",
-        "revision": "9165883554616cddf382e2d53d80c0d5d2ea7138cb2dcaee43c359e71ac24ced"
+        "revision": "a6ba966bf757c2517f18ecbd4a41cde9f74eafeafa7cfa1c46b1ed5365700767"
       },
       {
         "nodeId": "retention",
-        "revision": "9165883554616cddf382e2d53d80c0d5d2ea7138cb2dcaee43c359e71ac24ced"
+        "revision": "a6ba966bf757c2517f18ecbd4a41cde9f74eafeafa7cfa1c46b1ed5365700767"
       },
       {
         "nodeId": "media",
-        "revision": "9165883554616cddf382e2d53d80c0d5d2ea7138cb2dcaee43c359e71ac24ced"
+        "revision": "a6ba966bf757c2517f18ecbd4a41cde9f74eafeafa7cfa1c46b1ed5365700767"
       },
       {
         "nodeId": "lifecycle",
-        "revision": "9165883554616cddf382e2d53d80c0d5d2ea7138cb2dcaee43c359e71ac24ced"
+        "revision": "a6ba966bf757c2517f18ecbd4a41cde9f74eafeafa7cfa1c46b1ed5365700767"
       },
       {
         "nodeId": "evidence",
-        "revision": "9165883554616cddf382e2d53d80c0d5d2ea7138cb2dcaee43c359e71ac24ced"
+        "revision": "a6ba966bf757c2517f18ecbd4a41cde9f74eafeafa7cfa1c46b1ed5365700767"
       }
     ],
     "warnings": []

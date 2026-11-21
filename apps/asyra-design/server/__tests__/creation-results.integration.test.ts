@@ -16,10 +16,7 @@ import { createLocalDesignTools } from '../local-design-tools'
 import { createLocalOperationTools } from '../local-operation-tools'
 import { createDesignPreparationSession } from '../design-preparation'
 import { AiDesignToolIds } from '../../src/constants'
-import type {
-  AiActionBatch,
-  AiBatchReceipt
-} from '../../src/ai/action-batch-protocol'
+import type { AiActionBatch, AiBatchReceipt } from '@asyra/ai-agent-runtime'
 import saved from './fixtures/recorded-101/vector-delivery-20261025.json'
 
 beforeAll(() => {

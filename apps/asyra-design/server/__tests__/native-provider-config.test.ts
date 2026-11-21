@@ -1,7 +1,7 @@
 import { afterEach, expect, it, vi } from 'vitest'
 import { access, mkdir, readFile, rm } from 'node:fs/promises'
 import { resolve } from 'node:path'
-import { createNativeProviderConfig } from '../native-provider-config'
+import { createNativeProviderConfig } from '@asyra/ai-agent-runtime/node'
 
 const { execute } = vi.hoisted(() => ({ execute: vi.fn() }))
 

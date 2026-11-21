@@ -1190,7 +1190,7 @@
       "wordCount": 525
     },
     {
-      "contentSha256": "d8677a0ee295a267b87ea01933a38ba5c544e6a02f243d6fec6f401a67eb926b",
+      "contentSha256": "26f56e906d01caeaf7446a04090675826ffe57ef159a3bb8fdd2a7d9c816dc4e",
       "description": "Expose bounded action schemas and permissions so AI intent uses the same canonical transaction paths as people.",
       "headings": [
         {
@@ -1248,6 +1248,14 @@
         {
           "depth": 2,
           "title": "Sequential backend operations"
+        },
+        {
+          "depth": 3,
+          "title": "Composing dependent tools without adopting Design"
+        },
+        {
+          "depth": 3,
+          "title": "Continuing native conversations"
         }
       ],
       "id": "build/ai-actions",
@@ -1258,7 +1266,7 @@
       "path": "build/ai-actions.md",
       "section": "Extend",
       "title": "Build registered AI actions",
-      "wordCount": 713
+      "wordCount": 1186
     },
     {
       "contentSha256": "45dbd214f148ec37a72b7352baaa4632267c78b6a0132902532639c160d4c5cd",
@@ -1864,7 +1872,7 @@
       "wordCount": 818
     },
     {
-      "contentSha256": "cf8444e4e1a59b845cccd592ea8eed85841bc8530f9aff884f67a20870056e09",
+      "contentSha256": "2709c376aa8b443ed8953a7240f831949fc611497d1abbef25dda8e8261b93ab",
       "description": "Optional registry, schema, permission, and execution boundary for app-approved AI actions.",
       "headings": [
         {
@@ -1918,6 +1926,10 @@
         {
           "depth": 2,
           "title": "Canonical sources and release inventory"
+        },
+        {
+          "depth": 2,
+          "title": "Optional complete tool host"
         }
       ],
       "id": "reference/packages/ai-agent-runtime",
@@ -1928,7 +1940,7 @@
       "path": "reference/packages/ai-agent-runtime.md",
       "section": "Reference",
       "title": "@asyra/ai-agent-runtime",
-      "wordCount": 771
+      "wordCount": 1043
     },
     {
       "contentSha256": "d89bff16e1372b77541c570df2d78a8ec84f4159d0e20f3919e77bc44b621cd5",

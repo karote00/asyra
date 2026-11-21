@@ -14,18 +14,18 @@ import {
 import { AiDesignToolIds } from '../src/constants/ai-design'
 import {
   modelToolResultSchemas,
-  modelToolDeliveryFailureSchema,
+  modelToolDeliveryFailureSchema
+} from '@asyra/ai-agent-runtime/schema'
+import {
   toolResultObject,
   toolResultString,
   toolSemantics
 } from '../src/ai/tool-contract'
-import type { createLocalToolLibrary } from './local-tool-library'
-import {
-  LocalToolInputError,
-  type LocalToolDefinition
-} from './local-tool-invocation'
-import { LocalToolAccess } from './local-tool-scheduler'
-import { operationInputIssue } from './operation-input-schema'
+import type { createAiToolHostLibrary } from '@asyra/ai-agent-runtime/node'
+import { AiToolInputError } from '@asyra/ai-agent-runtime'
+import { type LocalToolDefinition } from './local-tool-invocation'
+import { AiToolAccess } from '@asyra/ai-agent-runtime'
+import { operationInputIssue } from '@asyra/ai-agent-runtime/schema'
 
 const object = (
   properties: Record<string, unknown>,
@@ -62,7 +62,7 @@ const saved = {
 
 const libraryControlResult = (result: unknown): string => {
   if (record(result) && result.code === 'input-invalid') {
-    throw new LocalToolInputError(String(result.message ?? result.issue))
+    throw new AiToolInputError(String(result.message ?? result.issue))
   }
 
   return JSON.stringify(result)
@@ -320,7 +320,7 @@ export const registeredToolInvocationSchemas = (
 
 /** Native controls carry data only; Runtime owns admission, execution and saving. */
 export const createLocalToolLibraryTools = (
-  resolve: () => ReturnType<typeof createLocalToolLibrary>,
+  resolve: () => ReturnType<typeof createAiToolHostLibrary>,
   context: () => Pick<
     AiInvocation,
     'parentCallId' | 'actor' | 'purpose' | 'purposeSource'
@@ -375,12 +375,12 @@ export const createLocalToolLibraryTools = (
       : {}),
     recoveryOutputSchema: outputSchema,
     composition: 'control-plane' as const,
-    executionAccess: LocalToolAccess.COORDINATOR
+    executionAccess: AiToolAccess.COORDINATOR
   })
 
   const definitions: (LocalToolDefinition & {
     type: 'function'
-    executionAccess: LocalToolAccess
+    executionAccess: AiToolAccess
   })[] = [
     definition(
       AiDesignToolIds.SUBMIT_TOOL,
@@ -612,7 +612,7 @@ export const createLocalToolLibraryTools = (
       const issue = operationInputIssue(input, selected.inputSchema)
 
       if (issue || !record(input)) {
-        throw new LocalToolInputError(
+        throw new AiToolInputError(
           issue ?? 'A control input object is required'
         )
       }
@@ -630,7 +630,7 @@ export const createLocalToolLibraryTools = (
           })
 
           if (!result.ok) {
-            throw new LocalToolInputError(
+            throw new AiToolInputError(
               result.message,
               undefined,
               'issues' in result ? result.issues : undefined

@@ -1,9 +1,9 @@
 import { createHash } from 'node:crypto'
 import { expect, it, vi } from 'vitest'
+import { parseKnowledgeFile } from '@asyra/ai-agent-runtime/node'
 import {
   createLocalKnowledgeTools,
   createDesignKnowledge,
-  parseKnowledgeFile,
   projectKnowledgeSources
 } from '../local-knowledge'
 import { AiDesignToolIds } from '../../src/constants/ai-design'

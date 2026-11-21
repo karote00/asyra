@@ -135,13 +135,12 @@ it.each([undefined, 'alter-saved-input'] as const)(
         }
       ]
     }
-    const fixtures: Awaited<ReturnType<typeof createNativeProviderFixture>>[] =
-      []
+    const steps: Parameters<typeof createNativeProviderFixture>[0] = []
 
     let constructionIdentity: string | undefined
 
     const acquiredSelection = () => {
-      const blocks = fixtures[0].successorContent('purpose')
+      const blocks = fixture.successorContent('purpose')
 
       if (!Array.isArray(blocks)) {
         throw Error('Missing actual discovery successor')
@@ -198,83 +197,81 @@ it.each([undefined, 'alter-saved-input'] as const)(
     }
 
     for (let turn = 0; turn < 2; turn++) {
-      fixtures.push(
-        await createNativeProviderFixture([
-          ...(turn === 0
-            ? [
-                {
-                  type: 'function_call',
-                  id: 'purpose',
-                  call_id: 'purpose',
-                  namespace: 'design_operations',
-                  name: 'search_design_tools',
-                  arguments: JSON.stringify({
-                    query: 'prepare and apply editable design',
-                    inputFields: ['draft']
-                  })
-                },
-                () => ({
-                  type: 'function_call',
-                  id: 'contract',
-                  call_id: 'contract',
-                  namespace: 'design_operations',
-                  name: 'read_design_contracts',
-                  arguments: JSON.stringify(acquiredSelection())
+      steps.push(
+        ...(turn === 0
+          ? [
+              {
+                type: 'function_call',
+                id: 'purpose',
+                call_id: 'purpose',
+                namespace: 'design_operations',
+                name: 'search_design_tools',
+                arguments: JSON.stringify({
+                  query: 'prepare and apply editable design',
+                  inputFields: ['draft']
                 })
-              ]
-            : []),
-          () => {
-            if (!constructionIdentity) {
-              throw Error('No acquired construction identity')
-            }
+              },
+              () => ({
+                type: 'function_call',
+                id: 'contract',
+                call_id: 'contract',
+                namespace: 'design_operations',
+                name: 'read_design_contracts',
+                arguments: JSON.stringify(acquiredSelection())
+              })
+            ]
+          : []),
+        () => {
+          if (!constructionIdentity) {
+            throw Error('No acquired construction identity')
+          }
 
-            return {
-              type: 'function_call',
-              id: 'stage',
-              call_id: 'stage',
-              namespace: 'design_operations',
-              name: 'execute_design',
-              arguments: JSON.stringify({
-                operations: [
-                  {
-                    id: 'create',
-                    name: constructionIdentity,
-                    arguments: {
-                      inspection: 'defer',
-                      draft:
-                        turn === 0
-                          ? draft
-                          : { kind: 'named', name: 'facadeSource', path: '' }
-                    }
+          return {
+            type: 'function_call',
+            id: 'stage-' + turn,
+            call_id: 'stage-' + turn,
+            namespace: 'design_operations',
+            name: 'execute_design',
+            arguments: JSON.stringify({
+              operations: [
+                {
+                  id: 'create',
+                  name: constructionIdentity,
+                  arguments: {
+                    inspection: 'defer',
+                    draft:
+                      turn === 0
+                        ? draft
+                        : { kind: 'named', name: 'facadeSource', path: '' }
                   }
-                ],
-                ...(turn === 0
-                  ? {
-                      retain: {
-                        facadeSource: {
-                          step: 'create',
-                          source: 'input',
-                          path: '/draft'
-                        }
+                }
+              ],
+              ...(turn === 0
+                ? {
+                    retain: {
+                      facadeSource: {
+                        step: 'create',
+                        source: 'input',
+                        path: '/draft'
                       }
                     }
-                  : {}),
-                delivery: 'status',
-                inspection: 'defer'
-              })
-            }
-          },
-          completion
-        ])
+                  }
+                : {}),
+              delivery: 'status',
+              inspection: 'defer'
+            })
+          }
+        },
+        completion
       )
     }
 
+    const fixture = await createNativeProviderFixture(steps)
     let requests = 0
     const middleware = createActionBatchMiddleware({
       requestModelActionBatch: (input, options) => {
-        const fixture = fixtures[requests++]
-
-        if (!fixture) {
+        requests++
+        if (requests > 2) {
           throw Error('Unexpected extra provider request')
         }
 
@@ -374,17 +371,17 @@ it.each([undefined, 'alter-saved-input'] as const)(
         first.outcome,
         JSON.stringify({ result: first.result, transportErrors })
       ).toBe('success')
-      const firstReply = fixtures[0].successorOutput('stage')
+      const firstReply = fixture.successorOutput('stage-0')
 
-      expect(fixtures[0].toolReply('purpose').success).toBe(true)
+      expect(fixture.toolReply('purpose').success).toBe(true)
       expect(constructionIdentity).toBe(
         'design_workflow.prepare_and_apply_design'
       )
-      const acquired = fixtures[0].successorOutput('contract')
+      const acquired = fixture.successorOutput('contract')
 
       expect(acquired).toContain('prepare_and_apply_design')
       expect(acquired).toContain('draft')
-      expect(fixtures[0].toolReply('contract').success).toBe(true)
+      expect(fixture.toolReply('contract').success).toBe(true)
       expect(firstReply).toContain('facadeSource')
       expect(firstReply).not.toContain('#246080')
       const second = await controller.submit(
@@ -416,11 +413,15 @@ it.each([undefined, 'alter-saved-input'] as const)(
       }
 
       expect(requests).toBe(2)
-      expect(fixtures.map((fixture) => fixture.toolCalls().length)).toEqual([
-        3, 1
-      ])
-      expect(JSON.stringify(fixtures[1].requests[0])).toContain('facadeSource')
-      const nativeInput = fixtures[1].requests[0].input
+      expect(fixture.toolCalls()).toHaveLength(4)
+      expect(
+        fixture.appPackets().filter((p) => p.method === 'thread/start')
+      ).toHaveLength(1)
+      expect(
+        fixture.appPackets().filter((p) => p.method === 'thread/resume')
+      ).toHaveLength(1)
+      expect(JSON.stringify(fixture.requests[4])).toContain('facadeSource')
+      const nativeInput = fixture.requests[4].input
 
       if (!Array.isArray(nativeInput)) {
         throw Error('Missing native input')
@@ -433,7 +434,7 @@ it.each([undefined, 'alter-saved-input'] as const)(
             ? item.content.filter(isRecord)
             : []
         )
-        .find(
+        .findLast(
           (item) =>
             item.type === 'input_text' &&
             typeof item.text === 'string' &&
@@ -474,9 +475,7 @@ it.each([undefined, 'alter-saved-input'] as const)(
       await middleware.dispose()
       server.closeAllConnections()
       await new Promise<void>((accept) => server.close(() => accept()))
-      for (const fixture of fixtures) {
-        await fixture.dispose()
-      }
+      await fixture.dispose()
     }
   },
   90000
@@ -575,70 +574,65 @@ for (const { fault, title } of [
         ]
       })
 
-      const fixtures = [
-        await createNativeProviderFixture([
-          execute('save-advice', {
-            operations: [
-              {
-                id: 'advice',
-                name: 'design_knowledge.read_knowledge',
-                arguments: { ids: ['colors'] }
-              }
-            ],
-            retain: {
-              colorAdvice: { step: 'advice', path: '/documents/0/text' }
-            },
-            delivery: 'status',
-            inspection: 'defer'
-          }),
-          final('saved', 'Saved color advice for the next stage.')
-        ]),
-        await createNativeProviderFixture([
-          execute('use-advice', {
-            operations: [
-              {
-                id: 'create',
-                name: 'prepare_and_apply_design',
-                arguments: {
-                  inspection: 'defer',
-                  draft: {
-                    type: 'frame',
-                    name: 'Guidance sheet',
-                    width: 600,
-                    height: 900,
-                    children: [
-                      {
-                        type: 'text',
-                        key: 'guidance',
-                        name: 'Color guidance',
-                        width: 580,
-                        height: 880,
-                        text: { kind: 'named', name: 'colorAdvice', path: '' },
-                        fontSize: 16
-                      }
-                    ]
-                  }
+      const fixture = await createNativeProviderFixture([
+        execute('save-advice', {
+          operations: [
+            {
+              id: 'advice',
+              name: 'design_knowledge.read_knowledge',
+              arguments: { ids: ['colors'] }
+            }
+          ],
+          retain: {
+            colorAdvice: { step: 'advice', path: '/documents/0/text' }
+          },
+          delivery: 'status',
+          inspection: 'defer'
+        }),
+        final('saved', 'Saved color advice for the next stage.'),
+        execute('use-advice', {
+          operations: [
+            {
+              id: 'create',
+              name: 'prepare_and_apply_design',
+              arguments: {
+                inspection: 'defer',
+                draft: {
+                  type: 'frame',
+                  name: 'Guidance sheet',
+                  width: 600,
+                  height: 900,
+                  children: [
+                    {
+                      type: 'text',
+                      key: 'guidance',
+                      name: 'Color guidance',
+                      width: 580,
+                      height: 880,
+                      text: { kind: 'named', name: 'colorAdvice', path: '' },
+                      fontSize: 16
+                    }
+                  ]
                 }
               }
-            ],
-            delivery: 'status',
-            inspection: 'defer'
-          }),
-          fault === 'fail-canonical-child'
-            ? final(
-                'interrupted',
-                'The frame was created but its text child failed. The existing frame must not be recreated.',
-                'unsupported'
-              )
-            : final('created', 'Created an editable color-guidance note.')
-        ])
-      ]
+            }
+          ],
+          delivery: 'status',
+          inspection: 'defer'
+        }),
+        fault === 'fail-canonical-child'
+          ? final(
+              'interrupted',
+              'The frame was created but its text child failed. The existing frame must not be recreated.',
+              'unsupported'
+            )
+          : final('created', 'Created an editable color-guidance note.')
+      ])
       let requests = 0
       const middleware = createActionBatchMiddleware({
         requestModelActionBatch: (input, options) => {
-          const fixture = fixtures[requests++]
-
-          if (!fixture) {
+          requests++
+          if (requests > 2) {
             throw Error('Unexpected provider request')
           }
 
@@ -738,11 +732,11 @@ for (const { fault, title } of [
 
         expect(first.outcome, JSON.stringify(first.result)).toBe('no-change')
         expect(
-          fixtures[0].toolReply('save-advice').success,
-          fixtures[0].successorOutput('save-advice')
+          fixture.toolReply('save-advice').success,
+          fixture.successorOutput('save-advice')
         ).toBe(true)
         expect(readCount()).toBe(1)
-        const saved = fixtures[0].successorOutput('save-advice')
+        const saved = fixture.successorOutput('save-advice')
 
         expect(saved).toContain('colorAdvice')
         expect(saved).not.toContain(JSON.stringify(body).slice(1, -1))
@@ -760,9 +754,9 @@ for (const { fault, title } of [
           expect(names).toEqual(['Workspace', 'Guidance sheet'])
           expect(creations).toHaveBeenCalledTimes(2)
           expect(readCount()).toBe(1)
-          expect(fixtures[1].toolCalls()).toHaveLength(1)
-          const reply = fixtures[1].toolReply('use-advice')
-          const output = fixtures[1].successorOutput('use-advice')
+          expect(fixture.toolCalls()).toHaveLength(2)
+          const reply = fixture.toolReply('use-advice')
+          const output = fixture.successorOutput('use-advice')
 
           expect(reply.success).toBe(false)
           expect(output).toContain('"settlement":"partial"')
@@ -776,8 +770,8 @@ for (const { fault, title } of [
         }
 
         expect(
-          fixtures[1].toolReply('use-advice').success,
-          fixtures[1].successorOutput('use-advice')
+          fixture.toolReply('use-advice').success,
+          fixture.successorOutput('use-advice')
         ).toBe(true)
         expect(second.outcome, JSON.stringify(second.result)).toBe('success')
         const notes = [...core.deps.sceneTree.getAllElements().values()].filter(
@@ -805,13 +799,15 @@ for (const { fault, title } of [
 
         expect(readCount()).toBe(1)
         expect(requests).toBe(2)
-        expect(fixtures.map((fixture) => fixture.toolCalls().length)).toEqual([
-          1, 1
-        ])
-        expect(fixtures.map((fixture) => fixture.requests.length)).toEqual([
-          2, 2
-        ])
-        expect(JSON.stringify(fixtures[1].requests)).not.toContain(
+        expect(fixture.toolCalls()).toHaveLength(2)
+        expect(fixture.requests).toHaveLength(4)
+        expect(
+          fixture.appPackets().filter((p) => p.method === 'thread/start')
+        ).toHaveLength(1)
+        expect(
+          fixture.appPackets().filter((p) => p.method === 'thread/resume')
+        ).toHaveLength(1)
+        expect(JSON.stringify(fixture.requests)).not.toContain(
           JSON.stringify(body).slice(1, -1)
         )
         const stored = transfers
@@ -856,9 +852,7 @@ for (const { fault, title } of [
         await middleware.dispose()
         server.closeAllConnections()
         await new Promise<void>((accept) => server.close(() => accept()))
-        for (const fixture of fixtures) {
-          await fixture.dispose()
-        }
+        await fixture.dispose()
 
         reads.mockClear()
       }

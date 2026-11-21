@@ -2056,3 +2056,30 @@ it.each([
     expect(admitAiRecipe(plan, environment, 'inline').ok).toBe(false)
   }
 )
+
+it('keeps presentation visibility separate from internal binding types and lifetimes', () => {
+  const source = readRegisteredRecipeSchema({
+    type: 'object',
+    properties: {
+      id: { type: 'string', minLength: 1 },
+      cost: { type: 'number', minimum: 1, 'x-model-visibility': 'internal' },
+      handle: {
+        type: 'string',
+        'x-runtime-value': 'request-artifact',
+        'x-model-visibility': 'internal'
+      }
+    },
+    required: ['id', 'cost', 'handle'],
+    additionalProperties: false
+  })
+
+  expect(recipeSchemaAt(source, '/cost')).toMatchObject({
+    type: 'number',
+    minimum: 1
+  })
+  expect(recipeSchemaAt(source, '/handle')).toMatchObject({
+    type: 'string',
+    'x-runtime-value': 'request-artifact'
+  })
+  expect(() => recipeSchemaAt(source, '/missing')).toThrow()
+})
