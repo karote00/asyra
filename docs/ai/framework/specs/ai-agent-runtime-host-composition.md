@@ -140,6 +140,30 @@ or close, await active owned work and release its resources once. Borrowed
 resources survive. Progress observers cannot cancel or poison successful work.
 No speculative global cache or second authoritative state tree is introduced.
 
+## Native conversation continuation
+
+The optional Node adapter distinguishes App conversation identity, native thread,
+request/turn bindings and process lifetime. A resumed conversation retains native
+history while each turn uses current App context, executors, signals, permissions
+and result-store scope. Never retain a disposed request host or reauthorize stale
+targets from history. Same-conversation overlap is rejected rather than queued by
+a second Feature scheduler. Different conversations remain isolated.
+
+The service owns the conversation registry; the App decides its scope and storage.
+Native history persistence does not persist App documents, named values or assets.
+A browser reload requires the App's own restored state; the in-memory result store
+makes no durable-storage promise. On a successful native resume, send the new
+request and current state without replaying projected App history. A missing
+native history or changed native contract is explicit failure requiring an App
+conversation restart; never silently replay mutations or substitute another thread.
+Native declarations/instructions and model configuration bind the conversation;
+request context and saved names are refreshed independently.
+
+Cancelling a turn preserves conversation identity while App transaction policy
+settles actual state. Await owned work and release its request resources. Report
+questions, deadlines and recording remain evaluation-owned; the reusable native
+adapter contains no Design or evaluation rules.
+
 ## Permanent product cases
 
 Use a non-Design order/inventory fixture with trusted App-owned state, an injected

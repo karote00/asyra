@@ -1,4 +1,4 @@
-import { readFileSync, appendFileSync, mkdtempSync } from 'node:fs'
+import { readFileSync, appendFileSync, mkdirSync, mkdtempSync } from 'node:fs'
 import { spawn } from 'node:child_process'
 import { createInterface } from 'node:readline'
 import process from 'node:process'
@@ -8,7 +8,12 @@ import process from 'node:process'
 // engine still performs declaration discovery and successor-request serialization.
 const configuration = JSON.parse(readFileSync(process.argv[2], 'utf8'))
 const args = process.argv.slice(3)
-const nativeDirectory = mkdtempSync(configuration.directory + '/native-state-')
+const nativeDirectory =
+  args[0] === 'app-server'
+    ? configuration.directory + '/native-state'
+    : mkdtempSync(configuration.directory + '/native-probe-')
+
+mkdirSync(nativeDirectory, { recursive: true })
 let inputReader
 const native = spawn(
   configuration.executable,
@@ -50,7 +55,11 @@ native.on('spawn', () => processRecord({ status: 'started' }))
 native.stdout.pipe(process.stdout)
 if (args[0] === 'app-server') {
   createInterface({ input: native.stdout }).on('line', (line) =>
-    appendFileSync(configuration.nativeProtocol, line + '\n')
+    appendFileSync(
+      configuration.nativeProtocol,
+      JSON.stringify({ ...JSON.parse(line), nativeProcessId: native.pid }) +
+        '\n'
+    )
   )
 }
 
@@ -82,7 +91,11 @@ if (args[0] !== 'app-server') {
     .on('line', (line) => {
       const message = JSON.parse(line)
 
-      appendFileSync(configuration.protocol, line + '\n')
+      // Trace identity is recorded only; native wire payloads remain unchanged.
+      appendFileSync(
+        configuration.protocol,
+        JSON.stringify({ ...message, nativeProcessId: native.pid }) + '\n'
+      )
       if (message.method === 'account/read') {
         process.stdout.write(
           JSON.stringify({
@@ -101,13 +114,19 @@ if (args[0] !== 'app-server') {
         return
       }
 
-      if (message.method === 'thread/start') {
+      if (
+        message.method === 'thread/start' ||
+        message.method === 'thread/resume'
+      ) {
         message.params.modelProvider = 'offline_fixture'
         if (configuration.fault === 'omit-instructions') {
           message.params.baseInstructions = 'Incomplete fixture instructions'
         }
 
-        if (configuration.fault === 'alter-tool-schema') {
+        if (
+          message.method === 'thread/start' &&
+          configuration.fault === 'alter-tool-schema'
+        ) {
           const tool = message.params.dynamicTools
             .flatMap((group) => group.tools ?? [])
             .find((entry) => entry.name === 'execute_design')

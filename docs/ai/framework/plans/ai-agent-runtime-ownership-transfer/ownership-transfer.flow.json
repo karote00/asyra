@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "projectId": "asyra",
   "flowId": "ai-agent-runtime-ownership-transfer",
-  "revision": 28,
+  "revision": 57,
   "definition": {
     "title": "AI Agent Runtime ownership transfer",
     "purpose": "Complete tool handoff ownership transfer through public optional adapters, independently verified by a connected inventory journey and preserved Design acceptance.",
@@ -32,6 +32,11 @@
           {
             "id": "behavior",
             "title": "C08 C12 - Reviewed owner contract and executed permanent case handoffs",
+            "kind": "manual"
+          },
+          {
+            "id": "continuation",
+            "title": "Session continuation follow-up - current turn bindings and explicit lifetime",
             "kind": "manual"
           }
         ],
@@ -251,6 +256,11 @@
             "id": "behavior",
             "title": "C05 C06 C08 - Reviewed owner contract and executed permanent case handoffs",
             "kind": "manual"
+          },
+          {
+            "id": "continuation",
+            "title": "Session continuation follow-up - current turn bindings and explicit lifetime",
+            "kind": "manual"
           }
         ],
         "specRefs": [
@@ -294,6 +304,11 @@
             "id": "behavior",
             "title": "C02 C04 C06 C09 C11 - Reviewed owner contract and executed permanent case handoffs",
             "kind": "manual"
+          },
+          {
+            "id": "continuation",
+            "title": "Session continuation follow-up - current turn bindings and explicit lifetime",
+            "kind": "manual"
           }
         ],
         "specRefs": [
@@ -308,7 +323,9 @@
           "packages/ai-agent-runtime/src/schema/native-input.ts",
           "packages/ai-agent-runtime/src/node/batch-exchange.ts",
           "apps/asyra-design/src/ai/server-action-batch-provider.ts",
-          "packages/ai-agent-runtime/src/__tests__/"
+          "packages/ai-agent-runtime/src/__tests__/",
+          "apps/asyra-design/server/ai-model-provider.ts",
+          "apps/asyra-design/server/action-batch.ts"
         ],
         "actions": []
       },
@@ -329,6 +346,11 @@
           {
             "id": "behavior",
             "title": "C09 C10 C12 - Reviewed owner contract and executed permanent case handoffs",
+            "kind": "manual"
+          },
+          {
+            "id": "continuation",
+            "title": "Session continuation follow-up - current turn bindings and explicit lifetime",
             "kind": "manual"
           }
         ],
@@ -408,20 +430,20 @@
       },
       {
         "id": "reject-wrong-revision",
-        "title": "the complete handoff oracle rejects deliberate corruption: wrong-revision",
+        "title": "native inventory oracle rejects actual provider handoff corruption: wrong-revision",
         "kind": "automated",
         "selector": {
           "producer": "vitest",
-          "identity": "{\"file\":\"packages/ai-agent-runtime/src/__tests__/host-journey.test.mjs\",\"title\":\"the complete handoff oracle rejects deliberate corruption: wrong-revision\",\"cwd\":\"packages/ai-agent-runtime\",\"config\":\"apps/asyra-design/test-data/conversation-verification/runtime.vitest.config.mjs\",\"project\":\"\"}"
+          "identity": "{\"file\":\"packages/ai-agent-runtime/src/__tests__/native-inventory-journey.test.mjs\",\"title\":\"native inventory oracle rejects actual provider handoff corruption: wrong-revision\",\"cwd\":\"packages/ai-agent-runtime\",\"config\":\"apps/asyra-design/test-data/conversation-verification/runtime.vitest.config.mjs\",\"project\":\"\"}"
         }
       },
       {
         "id": "reject-wrong-settlement",
-        "title": "the complete handoff oracle rejects deliberate corruption: wrong-settlement",
+        "title": "native inventory oracle rejects actual provider handoff corruption: wrong-settlement",
         "kind": "automated",
         "selector": {
           "producer": "vitest",
-          "identity": "{\"file\":\"packages/ai-agent-runtime/src/__tests__/host-journey.test.mjs\",\"title\":\"the complete handoff oracle rejects deliberate corruption: wrong-settlement\",\"cwd\":\"packages/ai-agent-runtime\",\"config\":\"apps/asyra-design/test-data/conversation-verification/runtime.vitest.config.mjs\",\"project\":\"\"}"
+          "identity": "{\"file\":\"packages/ai-agent-runtime/src/__tests__/native-inventory-journey.test.mjs\",\"title\":\"native inventory oracle rejects actual provider handoff corruption: wrong-settlement\",\"cwd\":\"packages/ai-agent-runtime\",\"config\":\"apps/asyra-design/test-data/conversation-verification/runtime.vitest.config.mjs\",\"project\":\"\"}"
         }
       },
       {
@@ -458,6 +480,47 @@
         "selector": {
           "producer": "vitest",
           "identity": "{\"file\":\"packages/ai-agent-runtime/src/__tests__/host-journey.test.mjs\",\"title\":\"uses App-owned result storage and leaves borrowed storage alive after provider disposal\",\"cwd\":\"packages/ai-agent-runtime\",\"config\":\"apps/asyra-design/test-data/conversation-verification/runtime.vitest.config.mjs\",\"project\":\"\"}"
+        }
+      },
+      {
+        "id": "native-continuation",
+        "title": "Pinned native two-turn and restart journey with live tool/media successors",
+        "kind": "manual"
+      },
+      {
+        "id": "native-handoff",
+        "title": "native inventory completes real runtime exchange, host, Knowledge, correction, images and cross-turn reuse",
+        "kind": "automated",
+        "selector": {
+          "producer": "vitest",
+          "identity": "{\"file\":\"packages/ai-agent-runtime/src/__tests__/native-inventory-journey.test.mjs\",\"title\":\"native inventory completes real runtime exchange, host, Knowledge, correction, images and cross-turn reuse\",\"cwd\":\"packages/ai-agent-runtime\",\"config\":\"apps/asyra-design/test-data/conversation-verification/runtime.vitest.config.mjs\",\"project\":\"\"}"
+        }
+      },
+      {
+        "id": "native-media-corruption",
+        "title": "native inventory oracle rejects actual provider handoff corruption: missing-image",
+        "kind": "automated",
+        "selector": {
+          "producer": "vitest",
+          "identity": "{\"file\":\"packages/ai-agent-runtime/src/__tests__/native-inventory-journey.test.mjs\",\"title\":\"native inventory oracle rejects actual provider handoff corruption: missing-image\",\"cwd\":\"packages/ai-agent-runtime\",\"config\":\"apps/asyra-design/test-data/conversation-verification/runtime.vitest.config.mjs\",\"project\":\"\"}"
+        }
+      },
+      {
+        "id": "native-cancel",
+        "title": "native provider cancels one request then resumes with fresh resources and no replay",
+        "kind": "automated",
+        "selector": {
+          "producer": "vitest",
+          "identity": "{\"file\":\"packages/ai-agent-runtime/src/__tests__/native-provider.test.mjs\",\"title\":\"native provider cancels one request then resumes with fresh resources and no replay\",\"cwd\":\"packages/ai-agent-runtime\",\"config\":\"apps/asyra-design/test-data/conversation-verification/runtime.vitest.config.mjs\",\"project\":\"\"}"
+        }
+      },
+      {
+        "id": "native-contract",
+        "title": "native provider rejects changed tools before model work and preserves borrowed conversation storage",
+        "kind": "automated",
+        "selector": {
+          "producer": "vitest",
+          "identity": "{\"file\":\"packages/ai-agent-runtime/src/__tests__/native-provider.test.mjs\",\"title\":\"native provider rejects changed tools before model work and preserves borrowed conversation storage\",\"cwd\":\"packages/ai-agent-runtime\",\"config\":\"apps/asyra-design/test-data/conversation-verification/runtime.vitest.config.mjs\",\"project\":\"\"}"
         }
       }
     ],
@@ -872,7 +935,9 @@
           ],
           "conditions": [
             "App selects endpoint, credentials, model and capabilities; schema transformation preserves supported semantics.",
-            "Invalid tool arguments receive a failure reply without closing a usable native session."
+            "Invalid tool arguments receive a failure reply without closing a usable native session.",
+            "Conversation identity outlives request executors; every turn binds fresh App state and cancellation.",
+            "Resume requires identical native tool/instruction/config contract; missing history and changed contracts are explicit errors."
           ],
           "bypasses": [
             "Custom/HTTP providers need not implement native session continuation."
@@ -897,7 +962,9 @@
             "packages/ai-agent-runtime/src/node/native-provider-config.ts",
             "packages/ai-agent-runtime/src/schema/native-input.ts",
             "packages/ai-agent-runtime/src/node/batch-exchange.ts",
-            "apps/asyra-design/src/ai/server-action-batch-provider.ts"
+            "apps/asyra-design/src/ai/server-action-batch-provider.ts",
+            "apps/asyra-design/server/ai-model-provider.ts",
+            "apps/asyra-design/server/action-batch.ts"
           ],
           "specRefs": [
             "docs/ai/framework/specs/ai-agent-runtime-host-composition.md"
@@ -925,7 +992,8 @@
           ],
           "conditions": [
             "Completion, abort or explicit owner shutdown; settlement information remains intact.",
-            "Final presentation consumes actual App transaction settlement separately from leaf receipts; never infer committed or rolled-back state from delivery status."
+            "Final presentation consumes actual App transaction settlement separately from leaf receipts; never infer committed or rolled-back state from delivery status.",
+            "Request cleanup does not erase native conversation identity; App service disposal owns the registry."
           ],
           "bypasses": [
             "Borrowed adapters and retained conversation stores remain with their owners."
@@ -1672,266 +1740,368 @@
         "criterionId": "behavior",
         "kind": "manual",
         "status": "accepted",
-        "binding": "51b8acd64fd9665de0ae90c985e163e396ad72fd972a7dbef518391a163f3713",
+        "binding": "a55d76a8fd0be5bd8434e61c5aeed0380275c2bde359c18a7226b4a87ddd84b5",
         "actor": "Codex owner review",
-        "summary": "Public host assembly reuses registry, invoker, recipe admission, persistence and owner leases. Inventory journey and Design host suites verify direct/composed dispatch and rejection without replay.",
-        "at": "2026-11-21T06:07:00.427Z"
+        "summary": "The native provider invokes injected host dispatch. It does not duplicate the recipe interpreter, validation, ordering or execution policy. Actual inventory direct and composed calls exercise the public owners. Evidence: tmp/conversation-proof-ERrXSj.",
+        "at": "2026-11-21T10:10:23.111Z"
       },
       {
         "nodeId": "translate",
         "criterionId": "behavior",
         "kind": "manual",
         "status": "accepted",
-        "binding": "cb1b75a49d8249ec937e64528cfb8d391c6d5ee40e0f911b13275733f65c751b",
+        "binding": "b562d3febd7e254ef4f204ab6ce9baa0cbf568a43f1fd400cc2ad6799a826238",
         "actor": "Codex owner review",
-        "summary": "Design authored stages, apply and canvas grouping remain in local-result-delivery and Design planners. The inventory consumer imports public Runtime exports and uses ordinary recipes without Design grammar.",
-        "at": "2026-11-21T06:07:00.432Z"
+        "summary": "Design syntax translation remains in the App. The native inventory consumer contains no Design imports or authored grammar; complete owner results feed ordinary recipe bindings. Evidence: tmp/conversation-proof-ERrXSj.",
+        "at": "2026-11-21T10:10:23.116Z"
       },
       {
         "nodeId": "execute",
         "criterionId": "behavior",
         "kind": "manual",
         "status": "accepted",
-        "binding": "0dcf83cb5850726d06ff7b996b36a8e73fd979828a22464c116e990db69c8bcf",
+        "binding": "e095d82eddee74f5bb0e4da9286fa9ac0033b0d46d30636d6a62f029a5a703e3",
         "actor": "Codex owner review",
-        "summary": "Canonical executors, permissions and transaction adapters remain App-owned. Inventory failure variants assert actual rollback and preserve-progress state; existing Design canonical/browser cases pass.",
-        "at": "2026-11-21T06:07:00.436Z"
+        "summary": "Canonical operations, permissions and transaction settlement remain App-owned. The real Core partial-child failure and inventory rollback/preserve-progress assertions still pass; no native status invents commit or rollback. Evidence: tmp/conversation-proof-ERrXSj.",
+        "at": "2026-11-21T10:10:23.120Z"
       },
       {
         "nodeId": "result",
         "criterionId": "behavior",
         "kind": "manual",
         "status": "accepted",
-        "binding": "c8b7dedc606f895d48160c1278a2962184509c6069e1601fcd7693d965e7b5d9",
+        "binding": "71209dec89774c57fdcf25cd6530266d0b50915c66a7fe20263cddf4169cc911",
         "actor": "Codex owner review",
-        "summary": "Schema entry pins and validates complete owner output before selecting external views. Internal visibility cannot remove successor values; schema/native/result tests and corruption cases preserve type and lifetime rejection.",
-        "at": "2026-11-21T06:07:00.439Z"
+        "summary": "Complete values remain available before delivery selection. The inventory receipt consumes private predecessor unitCost without model round trips; actual native successors receive selected text and two valid images. Corrupted delivery is detected. Evidence: tmp/conversation-proof-ERrXSj.",
+        "at": "2026-11-21T10:10:23.124Z"
       },
       {
         "nodeId": "catalog",
         "criterionId": "behavior",
         "kind": "manual",
         "status": "accepted",
-        "binding": "88420bdcfc0115c2fa4c137536af7c99b2258433d8ad094f630aeb428d03d497",
+        "binding": "2ff6dd73829730fa9749507b0e0dfa8d5c10af4677cdf2a9cfd9900757e77be8",
         "actor": "Codex owner review",
-        "summary": "Portable purpose/field matching and optional information pagination take App catalogs and budgets. Arbitrary inventory tool names resolve by metadata; Design discovery and contract acquisition regressions pass.",
-        "at": "2026-11-21T06:07:00.443Z"
+        "summary": "Existing immutable registry, metadata discovery and schema projection remain unchanged. Native inventory observes the actual advertised revision; corruption of that provider reply is detected. Evidence: tmp/conversation-proof-ERrXSj.",
+        "at": "2026-11-21T10:10:23.128Z"
       },
       {
         "nodeId": "knowledge",
         "criterionId": "behavior",
         "kind": "manual",
         "status": "accepted",
-        "binding": "73325b735e7f2f2c46713e6442a20dc789dc3bc77165394e5208d24cdeb84a3c",
+        "binding": "f9c26dacab3bea6ac3f5d660eae44d0458605e6640c8831daaf0caea662e19c1",
         "actor": "Codex owner review",
-        "summary": "Runtime retains Knowledge access ownership; optional file loader owns only parsing and lazy resource lifetime. Inventory discovery/read/redisplay and existing authorization/revision cases pass; Design content stays App-owned.",
-        "at": "2026-11-21T06:07:00.446Z"
+        "summary": "Knowledge authorization and current source ownership remain unchanged. Real App and non-Design native journeys retain and consume saved Knowledge without rereading; native input includes its actual selected result. Evidence: tmp/conversation-proof-ERrXSj.",
+        "at": "2026-11-21T10:10:23.132Z"
       },
       {
         "nodeId": "retain",
         "criterionId": "behavior",
         "kind": "manual",
         "status": "accepted",
-        "binding": "09efe5f24b82b84f6a7bf51ce0b9bfc24d062b46936349587985527eab628c65",
+        "binding": "f8d57b8cc5d405a885fcfce65c1313849cf4c1fa7570bc35b036a8456d608b6b",
         "actor": "Codex owner review",
-        "summary": "App injects the result store and explicitly owns release. Full values, named paths and selected images cross turns without a new producer. Borrowed stores survive provider disposal; async exchange is awaited.",
-        "at": "2026-11-21T06:07:00.450Z"
+        "summary": "Existing App result storage retains named values/images across native process lifetimes. Current saved descriptors and scopes are rebound, not recovered from disposed hosts. Borrowed registry/store ownership remains explicit. Evidence: tmp/conversation-proof-ERrXSj.",
+        "at": "2026-11-21T10:10:23.137Z"
       },
       {
         "nodeId": "provider",
         "criterionId": "behavior",
         "kind": "manual",
         "status": "accepted",
-        "binding": "e221bf4a47377a2d68f4294e5206072c249e5a8ece2b4e098698e6f8f45a1282",
+        "binding": "3b0d9351b19eed5dc6c6ee6907754972fb8254ebfd84db96de2bc894de300687",
         "actor": "Codex owner review",
-        "summary": "Production HTTP exchange carries actual contracts, execution receipts and selected images. Extracted native RPC transport is exercised by existing offline CLI handoffs; App prompts, endpoints, model settings and evaluation policy stay App-owned.",
-        "at": "2026-11-21T06:07:00.453Z"
+        "summary": "Pinned real CLI proves cold resume, cancellation continuity and immutable native declarations. Shared session validates thread/turn correlation; changed contracts and lost history reject explicitly. App project-document isolation and source validation remain enforced. Browser proves two isolated threads and three resumes with current input plus native history. Evidence: tmp/conversation-proof-ERrXSj.",
+        "at": "2026-11-21T10:10:23.145Z"
       },
       {
         "nodeId": "compose",
         "criterionId": "behavior",
         "kind": "manual",
         "status": "accepted",
-        "binding": "925c994a1823571a8cf32f23a273f6e942b598f45f7b58ef7204a00f6cdea563",
+        "binding": "9fbae295d89bdceedcb070ae357451941f8b313a32e6c74031c1c2917ced0bd6",
         "actor": "Codex owner review",
-        "summary": "Portable root imports exclude Node and Lodash; schema is a documented optional Lodash peer at the existing version. Non-Design consumer uses the same public built host/provider/runtime route, and Design imports current entries only.",
-        "at": "2026-11-21T06:07:00.457Z"
+        "summary": "Feature remains the scheduler and transaction owner. Service registry binds identity only; current App context and fresh request executors enter each turn. Real controller/HTTP/native/Core browser and server journeys preserve attachment isolation and cancellation. Evidence: tmp/conversation-proof-ERrXSj.",
+        "at": "2026-11-21T10:10:23.153Z"
       },
       {
         "nodeId": "close",
         "criterionId": "behavior",
         "kind": "manual",
         "status": "accepted",
-        "binding": "6185e381643e42406ef0976eee0b73835a0ffbf025002048759e21c5af4418c1",
+        "binding": "a4304622e1c5712dc19a17e5e27f0d6fe96ed8e49a8f42e027666df44479e392",
         "actor": "Codex owner review",
-        "summary": "Owned native/SQLite/Knowledge/queue cleanup retains existing cancellation semantics. Borrowed result storage survives disposal and explicit owned release occurs once; full native, lifecycle and browser suites pass.",
-        "at": "2026-11-21T06:07:00.461Z"
+        "summary": "Native request processes and fresh host resources are disposed after work; conversation identity remains. Generic provider disposal awaits active owned work and preserves borrowed storage. Report policy stays with evaluation; existing report and cleanup regressions pass. Evidence: tmp/conversation-proof-ERrXSj.",
+        "at": "2026-11-21T10:10:23.162Z"
       },
       {
         "nodeId": "integration",
         "criterionId": "non-design-journey",
         "kind": "automated",
         "status": "passed",
-        "binding": "10a641c82615a2b7a73e9d75715d4289966bec6d72ce2855fc910b018362b709",
+        "binding": "7cff138b7f6641c998b6f0d6411b8ffa1e86d0f07563e10deb36d614b267df69",
         "actor": "vitest",
-        "executionId": "a207930b-7f2c-49d9-a0ac-06202ed03a76",
+        "executionId": "8ad2140f-f54e-4b7f-816a-78aaa6bff477",
         "caseId": "60532ee579488d80565542907e403303e486189a38eaba0c5fb67d1959a5cccb",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-21T06:07:45.404Z"
+        "at": "2026-11-21T10:10:23.218Z"
       },
       {
         "nodeId": "integration",
         "criterionId": "internal-values",
         "kind": "automated",
         "status": "passed",
-        "binding": "10a641c82615a2b7a73e9d75715d4289966bec6d72ce2855fc910b018362b709",
+        "binding": "7cff138b7f6641c998b6f0d6411b8ffa1e86d0f07563e10deb36d614b267df69",
         "actor": "vitest",
-        "executionId": "a207930b-7f2c-49d9-a0ac-06202ed03a76",
+        "executionId": "8ad2140f-f54e-4b7f-816a-78aaa6bff477",
         "caseId": "919345c7c0a40696503d619dcf17a630a43a1d6184b71bc67dae38d4caf41a37",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-21T06:07:45.405Z"
+        "at": "2026-11-21T10:10:23.219Z"
       },
       {
         "nodeId": "integration",
         "criterionId": "selected-media",
         "kind": "automated",
         "status": "passed",
-        "binding": "10a641c82615a2b7a73e9d75715d4289966bec6d72ce2855fc910b018362b709",
+        "binding": "7cff138b7f6641c998b6f0d6411b8ffa1e86d0f07563e10deb36d614b267df69",
         "actor": "vitest",
-        "executionId": "a207930b-7f2c-49d9-a0ac-06202ed03a76",
+        "executionId": "8ad2140f-f54e-4b7f-816a-78aaa6bff477",
         "caseId": "2349807cf52a8630c9914372b3f90fa60317805803210a9492dbd181139bf66c",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-21T06:07:45.405Z"
+        "at": "2026-11-21T10:10:23.220Z"
       },
       {
         "nodeId": "integration",
         "criterionId": "reject-missing-id",
         "kind": "automated",
         "status": "passed",
-        "binding": "10a641c82615a2b7a73e9d75715d4289966bec6d72ce2855fc910b018362b709",
+        "binding": "7cff138b7f6641c998b6f0d6411b8ffa1e86d0f07563e10deb36d614b267df69",
         "actor": "vitest",
-        "executionId": "a207930b-7f2c-49d9-a0ac-06202ed03a76",
+        "executionId": "8ad2140f-f54e-4b7f-816a-78aaa6bff477",
         "caseId": "8ba58b9c36c17da89da3a007bde956150eff60ca276d53715b1f8552e91664c7",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-21T06:07:45.405Z"
+        "at": "2026-11-21T10:10:23.221Z"
       },
       {
         "nodeId": "integration",
         "criterionId": "reject-invalid-result",
         "kind": "automated",
         "status": "passed",
-        "binding": "10a641c82615a2b7a73e9d75715d4289966bec6d72ce2855fc910b018362b709",
+        "binding": "7cff138b7f6641c998b6f0d6411b8ffa1e86d0f07563e10deb36d614b267df69",
         "actor": "vitest",
-        "executionId": "a207930b-7f2c-49d9-a0ac-06202ed03a76",
+        "executionId": "8ad2140f-f54e-4b7f-816a-78aaa6bff477",
         "caseId": "7188546dfbdacc42c406f1067e50311870f295d11e615c4cde7b711a91951336",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-21T06:07:45.405Z"
+        "at": "2026-11-21T10:10:23.221Z"
       },
       {
         "nodeId": "integration",
         "criterionId": "reject-missing-image",
         "kind": "automated",
         "status": "passed",
-        "binding": "10a641c82615a2b7a73e9d75715d4289966bec6d72ce2855fc910b018362b709",
+        "binding": "7cff138b7f6641c998b6f0d6411b8ffa1e86d0f07563e10deb36d614b267df69",
         "actor": "vitest",
-        "executionId": "a207930b-7f2c-49d9-a0ac-06202ed03a76",
+        "executionId": "8ad2140f-f54e-4b7f-816a-78aaa6bff477",
         "caseId": "e0faedd4fab4394661e0a596cddf7cc2102a855c637bcfb7daa6d4d850646755",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-21T06:07:45.405Z"
+        "at": "2026-11-21T10:10:23.222Z"
       },
       {
         "nodeId": "integration",
         "criterionId": "reject-wrong-revision",
         "kind": "automated",
         "status": "passed",
-        "binding": "10a641c82615a2b7a73e9d75715d4289966bec6d72ce2855fc910b018362b709",
+        "binding": "7cff138b7f6641c998b6f0d6411b8ffa1e86d0f07563e10deb36d614b267df69",
         "actor": "vitest",
-        "executionId": "a207930b-7f2c-49d9-a0ac-06202ed03a76",
-        "caseId": "7bf34b7a001518406acb593346c772943dafff04fb4a2f21675fddf0ce3a5d0c",
+        "executionId": "8ad2140f-f54e-4b7f-816a-78aaa6bff477",
+        "caseId": "7e223c3b07830bd4241a5c3d086e661664a4367fda5a26b31f384684cea1b203",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-21T06:07:45.405Z"
+        "at": "2026-11-21T10:10:23.223Z"
       },
       {
         "nodeId": "integration",
         "criterionId": "reject-wrong-settlement",
         "kind": "automated",
         "status": "passed",
-        "binding": "10a641c82615a2b7a73e9d75715d4289966bec6d72ce2855fc910b018362b709",
+        "binding": "7cff138b7f6641c998b6f0d6411b8ffa1e86d0f07563e10deb36d614b267df69",
         "actor": "vitest",
-        "executionId": "a207930b-7f2c-49d9-a0ac-06202ed03a76",
-        "caseId": "7b1601484950f708b8397a318cc0e04cafbc58b95bbf079367ab5ec2383680c9",
+        "executionId": "8ad2140f-f54e-4b7f-816a-78aaa6bff477",
+        "caseId": "51eb05e31766380474e40a0e5678a599cce176c415c593a517063118dfa1eb51",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-21T06:07:45.405Z"
+        "at": "2026-11-21T10:10:23.224Z"
       },
       {
         "nodeId": "integration",
         "criterionId": "reject-omitted-case",
         "kind": "automated",
         "status": "passed",
-        "binding": "10a641c82615a2b7a73e9d75715d4289966bec6d72ce2855fc910b018362b709",
+        "binding": "7cff138b7f6641c998b6f0d6411b8ffa1e86d0f07563e10deb36d614b267df69",
         "actor": "vitest",
-        "executionId": "a207930b-7f2c-49d9-a0ac-06202ed03a76",
+        "executionId": "8ad2140f-f54e-4b7f-816a-78aaa6bff477",
         "caseId": "691295d13291d53fb21e4750f06a70fddb699862a2fe3ba039b005b98eb6bfaf",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-21T06:07:45.405Z"
+        "at": "2026-11-21T10:10:23.225Z"
       },
       {
         "nodeId": "integration",
         "criterionId": "settlement-undefined",
         "kind": "automated",
         "status": "passed",
-        "binding": "10a641c82615a2b7a73e9d75715d4289966bec6d72ce2855fc910b018362b709",
+        "binding": "7cff138b7f6641c998b6f0d6411b8ffa1e86d0f07563e10deb36d614b267df69",
         "actor": "vitest",
-        "executionId": "a207930b-7f2c-49d9-a0ac-06202ed03a76",
+        "executionId": "8ad2140f-f54e-4b7f-816a-78aaa6bff477",
         "caseId": "8e1d32c14bf1327797b3500f051687c7a5e5156547d3a87706687806bd3c36b7",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-21T06:07:45.405Z"
+        "at": "2026-11-21T10:10:23.226Z"
       },
       {
         "nodeId": "integration",
         "criterionId": "settlement-preserve-progress",
         "kind": "automated",
         "status": "passed",
-        "binding": "10a641c82615a2b7a73e9d75715d4289966bec6d72ce2855fc910b018362b709",
+        "binding": "7cff138b7f6641c998b6f0d6411b8ffa1e86d0f07563e10deb36d614b267df69",
         "actor": "vitest",
-        "executionId": "a207930b-7f2c-49d9-a0ac-06202ed03a76",
+        "executionId": "8ad2140f-f54e-4b7f-816a-78aaa6bff477",
         "caseId": "525b91cafb4d930cf2cb536ac30f2e2bf3cf29021b28f87a29c776de6acdf260",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-21T06:07:45.405Z"
+        "at": "2026-11-21T10:10:23.226Z"
       },
       {
         "nodeId": "integration",
         "criterionId": "store-lifetime",
         "kind": "automated",
         "status": "passed",
-        "binding": "10a641c82615a2b7a73e9d75715d4289966bec6d72ce2855fc910b018362b709",
+        "binding": "7cff138b7f6641c998b6f0d6411b8ffa1e86d0f07563e10deb36d614b267df69",
         "actor": "vitest",
-        "executionId": "a207930b-7f2c-49d9-a0ac-06202ed03a76",
+        "executionId": "8ad2140f-f54e-4b7f-816a-78aaa6bff477",
         "caseId": "9b19646bdb9747ac212283759659f743b0e22d1b196c6b7d320f26afe85bfbf2",
         "summary": "Test passed",
         "details": [],
-        "at": "2026-11-21T06:07:45.405Z"
+        "at": "2026-11-21T10:10:23.227Z"
       },
       {
         "nodeId": "integration",
         "criterionId": "integration",
         "kind": "manual",
         "status": "accepted",
-        "binding": "08f4ca7fb4ca83439ba853c1fc63a2c02657caf0fb5f1bddf8ce7737105da602",
-        "actor": "Codex whole-flow review",
-        "summary": "All C01-C12 boundaries reviewed against the current contract. Twelve public-export inventory journeys passed, including corruption controls, actual rollback/preserve-progress, private internal bindings, cross-turn Knowledge/media and borrowed storage lifetime. Complete unchanged-source Design verification passed all five groups; exact prior failures were remapped and rerun, with no unresolved warning. No legacy forwarding entry, Design syntax in Runtime or weakened validation remains in the transfer.",
-        "at": "2026-11-21T06:07:45.417Z"
+        "binding": "d3bec57a9f18ae16f04d0d2ee1ee57a05ef7bdf044196866e85beb2e6c4deffa",
+        "actor": "Codex owner review",
+        "summary": "Reviewed C01-C12 and native continuation against the current owners. Actual runtime/exchange/host/native inventory, fault injection and preserved Design reports all pass on unchanged source. Fixture oracles now distinguish process, thread, current turn and native history. No domain policy, compatibility route or validation relaxation was introduced. Evidence: tmp/conversation-proof-ERrXSj.",
+        "at": "2026-11-21T10:10:23.240Z"
+      },
+      {
+        "nodeId": "retain",
+        "criterionId": "continuation",
+        "kind": "manual",
+        "status": "accepted",
+        "binding": "f8d57b8cc5d405a885fcfce65c1313849cf4c1fa7570bc35b036a8456d608b6b",
+        "actor": "Codex owner review",
+        "summary": "Existing App result storage retains named values/images across native process lifetimes. Current saved descriptors and scopes are rebound, not recovered from disposed hosts. Borrowed registry/store ownership remains explicit. Evidence: tmp/conversation-proof-ERrXSj.",
+        "at": "2026-11-21T10:10:23.140Z"
+      },
+      {
+        "nodeId": "provider",
+        "criterionId": "continuation",
+        "kind": "manual",
+        "status": "accepted",
+        "binding": "3b0d9351b19eed5dc6c6ee6907754972fb8254ebfd84db96de2bc894de300687",
+        "actor": "Codex owner review",
+        "summary": "Pinned real CLI proves cold resume, cancellation continuity and immutable native declarations. Shared session validates thread/turn correlation; changed contracts and lost history reject explicitly. App project-document isolation and source validation remain enforced. Browser proves two isolated threads and three resumes with current input plus native history. Evidence: tmp/conversation-proof-ERrXSj.",
+        "at": "2026-11-21T10:10:23.149Z"
+      },
+      {
+        "nodeId": "compose",
+        "criterionId": "continuation",
+        "kind": "manual",
+        "status": "accepted",
+        "binding": "9fbae295d89bdceedcb070ae357451941f8b313a32e6c74031c1c2917ced0bd6",
+        "actor": "Codex owner review",
+        "summary": "Feature remains the scheduler and transaction owner. Service registry binds identity only; current App context and fresh request executors enter each turn. Real controller/HTTP/native/Core browser and server journeys preserve attachment isolation and cancellation. Evidence: tmp/conversation-proof-ERrXSj.",
+        "at": "2026-11-21T10:10:23.157Z"
+      },
+      {
+        "nodeId": "close",
+        "criterionId": "continuation",
+        "kind": "manual",
+        "status": "accepted",
+        "binding": "a4304622e1c5712dc19a17e5e27f0d6fe96ed8e49a8f42e027666df44479e392",
+        "actor": "Codex owner review",
+        "summary": "Native request processes and fresh host resources are disposed after work; conversation identity remains. Generic provider disposal awaits active owned work and preserves borrowed storage. Report policy stays with evaluation; existing report and cleanup regressions pass. Evidence: tmp/conversation-proof-ERrXSj.",
+        "at": "2026-11-21T10:10:23.166Z"
+      },
+      {
+        "nodeId": "integration",
+        "criterionId": "native-handoff",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "7cff138b7f6641c998b6f0d6411b8ffa1e86d0f07563e10deb36d614b267df69",
+        "actor": "vitest",
+        "executionId": "8ad2140f-f54e-4b7f-816a-78aaa6bff477",
+        "caseId": "fee374ea85fa6ddc391d2aaeb370aaa07670db194d6fd2aae44582e7fc88dbee",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-21T10:10:23.227Z"
+      },
+      {
+        "nodeId": "integration",
+        "criterionId": "native-media-corruption",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "7cff138b7f6641c998b6f0d6411b8ffa1e86d0f07563e10deb36d614b267df69",
+        "actor": "vitest",
+        "executionId": "8ad2140f-f54e-4b7f-816a-78aaa6bff477",
+        "caseId": "8d05aed4886d0aff10e00066e0243e136a1804ff654066fd87eb634a83c172f4",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-21T10:10:23.228Z"
+      },
+      {
+        "nodeId": "integration",
+        "criterionId": "native-cancel",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "7cff138b7f6641c998b6f0d6411b8ffa1e86d0f07563e10deb36d614b267df69",
+        "actor": "vitest",
+        "executionId": "8ad2140f-f54e-4b7f-816a-78aaa6bff477",
+        "caseId": "d32cd05a656c5bde5cd41e6dd876fdbc2efd7bea34b9a9bd536068fc7b675ac7",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-21T10:10:23.229Z"
+      },
+      {
+        "nodeId": "integration",
+        "criterionId": "native-contract",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "7cff138b7f6641c998b6f0d6411b8ffa1e86d0f07563e10deb36d614b267df69",
+        "actor": "vitest",
+        "executionId": "8ad2140f-f54e-4b7f-816a-78aaa6bff477",
+        "caseId": "d8a713f5c23fb1e68b5342ebbd9c49f803a8c3524c23945d1db18012b2697868",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-21T10:10:23.230Z"
+      },
+      {
+        "nodeId": "integration",
+        "criterionId": "native-continuation",
+        "kind": "manual",
+        "status": "accepted",
+        "binding": "d3bec57a9f18ae16f04d0d2ee1ee57a05ef7bdf044196866e85beb2e6c4deffa",
+        "actor": "Codex owner review",
+        "summary": "Reviewed C01-C12 and native continuation against the current owners. Actual runtime/exchange/host/native inventory, fault injection and preserved Design reports all pass on unchanged source. Fixture oracles now distinguish process, thread, current turn and native history. No domain policy, compatibility route or validation relaxation was introduced. Evidence: tmp/conversation-proof-ERrXSj.",
+        "at": "2026-11-21T10:10:23.245Z"
       }
     ],
     "notes": [],
@@ -1939,43 +2109,43 @@
     "sources": [
       {
         "nodeId": "compose",
-        "revision": "3aaa86cb5515235dc3141dacbf39d3b168eb24a82f09c192bf709366c8d4be25"
+        "revision": "a6ba966bf757c2517f18ecbd4a41cde9f74eafeafa7cfa1c46b1ed5365700767"
       },
       {
         "nodeId": "catalog",
-        "revision": "3aaa86cb5515235dc3141dacbf39d3b168eb24a82f09c192bf709366c8d4be25"
+        "revision": "a6ba966bf757c2517f18ecbd4a41cde9f74eafeafa7cfa1c46b1ed5365700767"
       },
       {
         "nodeId": "knowledge",
-        "revision": "3aaa86cb5515235dc3141dacbf39d3b168eb24a82f09c192bf709366c8d4be25"
+        "revision": "a6ba966bf757c2517f18ecbd4a41cde9f74eafeafa7cfa1c46b1ed5365700767"
       },
       {
         "nodeId": "host",
-        "revision": "3aaa86cb5515235dc3141dacbf39d3b168eb24a82f09c192bf709366c8d4be25"
+        "revision": "a6ba966bf757c2517f18ecbd4a41cde9f74eafeafa7cfa1c46b1ed5365700767"
       },
       {
         "nodeId": "translate",
-        "revision": "3aaa86cb5515235dc3141dacbf39d3b168eb24a82f09c192bf709366c8d4be25"
+        "revision": "a6ba966bf757c2517f18ecbd4a41cde9f74eafeafa7cfa1c46b1ed5365700767"
       },
       {
         "nodeId": "execute",
-        "revision": "3aaa86cb5515235dc3141dacbf39d3b168eb24a82f09c192bf709366c8d4be25"
+        "revision": "a6ba966bf757c2517f18ecbd4a41cde9f74eafeafa7cfa1c46b1ed5365700767"
       },
       {
         "nodeId": "result",
-        "revision": "3aaa86cb5515235dc3141dacbf39d3b168eb24a82f09c192bf709366c8d4be25"
+        "revision": "a6ba966bf757c2517f18ecbd4a41cde9f74eafeafa7cfa1c46b1ed5365700767"
       },
       {
         "nodeId": "retain",
-        "revision": "3aaa86cb5515235dc3141dacbf39d3b168eb24a82f09c192bf709366c8d4be25"
+        "revision": "a6ba966bf757c2517f18ecbd4a41cde9f74eafeafa7cfa1c46b1ed5365700767"
       },
       {
         "nodeId": "provider",
-        "revision": "3aaa86cb5515235dc3141dacbf39d3b168eb24a82f09c192bf709366c8d4be25"
+        "revision": "a6ba966bf757c2517f18ecbd4a41cde9f74eafeafa7cfa1c46b1ed5365700767"
       },
       {
         "nodeId": "close",
-        "revision": "3aaa86cb5515235dc3141dacbf39d3b168eb24a82f09c192bf709366c8d4be25"
+        "revision": "a6ba966bf757c2517f18ecbd4a41cde9f74eafeafa7cfa1c46b1ed5365700767"
       }
     ],
     "warnings": []

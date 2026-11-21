@@ -216,3 +216,34 @@ The schema entry's existing Lodash peer must be explicitly declared by consumers
 Node adapters are separate imports and do not enter the portable root's browser
 graph. The permanent inventory journey under the Runtime tests is an executable
 example of these actual public APIs, including correction, two images and reuse.
+
+### Continuing native conversations
+
+For a Node-hosted native model, use `createNativeAiProvider` from
+`@asyra/ai-agent-runtime/node` as the provider behind the same exchange endpoint.
+It implements `AiProvider`; you do not need another Feature or recipe scheduler.
+Provide an executable, model, configuration directory and a `prepare(input,
+context)` callback. That callback binds the current host and returns:
+
+- `thread`: stable native instructions and dynamic tool declarations.
+- `input(resumed)`: the new request and current App state; include admitted prior
+  history only when `resumed` is false.
+- `invoke(call)`: dispatch through the registered host and return explicit text
+  and image content items. Correctable input failures remain model-visible replies.
+- `decode(result)`: interpret the completed native turn as an `AiActionBatch`.
+- `dispose()`: release only this request's owned resources.
+
+Pass the same `metadata.conversationId` on later requests to continue that native
+thread. Native history is retained across request process restarts; executors,
+signals and transaction handles are rebound each time. Use existing named result
+storage for values needed by later steps. Native history does not replace it.
+
+The registry defaults to service memory. Inject `createNativeConversations(storage)`
+when your App needs durable identity mapping; keep the native history available
+in the corresponding provider home. This does not persist the App UI conversation
+or named result store automatically. Codex 0.160.0 restores the original tool
+contract on resume, so changing tools/configuration requires a new conversation.
+The adapter rejects stale contracts and missing history instead of silently
+starting over. Keep model credentials, instructions, tool policy and transaction
+settlement in the App. See the permanent `native-inventory-journey` Runtime test
+for the complete exchange, Knowledge, correction, media and cross-turn reuse path.

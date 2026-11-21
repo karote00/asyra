@@ -20,3 +20,7 @@ export * from './native-provider-config.js'
 export * from './native-rpc-transport.js'
 
 export * from './information-delivery.js'
+
+export * from './native-session.js'
+
+export * from './native-provider.js'

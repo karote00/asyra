@@ -3,8 +3,9 @@
 ## Status and task contract
 
 Implementation authorized on 2026-11-21. The existing Lodash dependency transfer
-is approved. All implementation stages and local feature acceptance are complete.
-The integrated change is ready for pull-request review; remote CI is not monitored.
+is approved. The original transfer and all four session continuation steps are
+implemented and locally accepted in the same worktree and PR #368. The follow-up
+has independent current-source acceptance below. Remote CI is not monitored.
 Parent source: `origin/main` at `30f856260a9776f87e0440b1b5b0d88e68a515de`, including
 the merged Design conversation work in PR #365. Branch:
 `codex/ai-agent-runtime-ownership-transfer`. The implementation task base is the
@@ -31,6 +32,79 @@ Core/Feature/transaction implementations, other Apps' product features, provider
 model settings and unrelated CI repairs. New dependencies or tool upgrades still
 require approval. A necessary change outside this boundary stops that slice for
 replanning; it does not expand this task automatically.
+
+## Session continuation follow-up
+
+Authorized scope: the existing optional native adapter, Design provider/exchange
+composition, conversation input projection, their formal tests and current
+contract/Flow/adoption documents. Keep this branch and PR #368. No 101, paid
+model run, full repository suite, new dependency, CLI upgrade, transaction-policy
+change, browser-history database or new feature scheduler. Preserve current
+parameter correction, complete result validation, independent retain/delivery,
+Knowledge authorization and cancellation settlement.
+
+The review found that the report-only thread outlives disposed tool owners;
+ordinary requests still start fresh ephemeral threads. The in-memory App result
+store is not durable browser history. Codex 0.160.0 exposes dynamic tools on
+thread/start, not on turn/start or thread/resume. Updated-contract handling and
+cold resume must therefore be proved against the actual pinned binary before
+production integration. Never assume the latest upstream documentation describes
+that binary. Native conversation identity is separate from a turn/request and
+from an App Feature session.
+
+### Step 1 - Prove the pinned native session contract
+
+Owner: provider. Add permanent offline CLI cases for two turns, fresh tool
+execution bindings, invalid-input correction, cancellation then continuation,
+and process restart/resume. Observe the actual model request history, tools and
+selected media. Prove whether tool declarations can change on resume; if they
+cannot, explicitly reject a changed contract and require a new App conversation
+rather than reuse stale definitions or silently replace a thread. Keep all fixture
+state inside the project. Existing App transaction results remain authoritative.
+This is a feasibility checkpoint; unresolved native behavior blocks Step 2.
+
+### Step 2 - Extract native conversation ownership
+
+Owner: provider/close. Provide an optional Node native session adapter for thread
+creation/resume, turn correlation, transport and media replies. App injection owns
+credentials, model/configuration, tools, instructions, result interpretation and
+transaction policy. Conversation bindings retain thread identity and the admitted
+contract; each request attaches fresh executors, signals and current context.
+Process resources can close between turns; native history must remain available
+when resume is promised. Lost history is an explicit error, never implicit replay.
+Report policy stays in the test owner and uses the same native lifecycle.
+New identifiers are neutral; existing provider wire method names remain exact.
+
+### Step 3 - Bind App conversations and current data
+
+Owner: compose/retain. Bind conversation IDs through the service-owned native
+session registry, not a process-global singleton. Resume with only the new request
+and current App context; do not repeat projected history already in the thread.
+Keep reference attachments available through current request resources and preserve
+association. Saved names/values use the existing App result exchange with document
+scope validation. Browser reload persistence remains an explicit App storage
+integration, not an implied guarantee of native resume. Request cancellation
+releases request tools without erasing conversation identity. Same-conversation
+overlap is rejected at the adapter boundary; Feature remains the scheduling owner.
+
+### Step 4 - Prove the complete consumer handoff
+
+Owner: provider integration. Use a non-Design inventory consumer through public
+built runtime exports, production exchange/host/native transport and the real
+pinned CLI with a deterministic offline model endpoint. Observe the real successor
+request after Knowledge, rejected/corrected quantity, reservation and receipt
+media. A later request consumes saved allocation without fixture reinjection.
+Change App state between turns and prove fresh execution. Inject corruption at
+actual producer/wire boundaries, not by editing the final evidence array.
+Preserve existing Design provider/report/exchange tests on the same source.
+
+Required gates: naming before identifiers; focused native/session, host journey,
+Design provider/report/context/exchange tests; package build/type check; affected
+App type/lint checks; public export/ownership and Flow contract checks. At final
+integration run the package and AI conversation feature validation once, not the
+repository suite. Before push, run the applicable Git-policy gates. Review the
+diff and direct consumers after each step; only in-scope failures reopen a step.
+Do not infer complete handoff from test totals.
 
 ## Authorities and reviewed sources
 
@@ -530,3 +604,122 @@ passed. The final scoped review found no remaining in-scope correction. No
 whole-repository test, release, compatibility shim or CI monitoring was added.
 PR review and merge remain separate from this completed local implementation;
 the named coordinating owner retains the plan's formal archive closeout.
+
+## Session continuation implementation evidence
+
+Step 1 is proved against installed Codex CLI 0.160.0 using a local deterministic
+model endpoint. Permanent tests show correction followed by completion, native
+process restart/resume, interruption followed by another turn, and the persistence
+of the original dynamic tools when an unsupported replacement field is supplied
+on resume. No account or paid model is used. The adapter therefore rejects changed
+contracts instead of pretending to refresh native declarations.
+
+Step 2 adds the optional native provider/session and service-scoped conversation
+registry. Complete invocation values, recipe execution and transaction settlement
+still use their existing owners. The new native provider does not interpret Design
+syntax or own App authorization. Request cancellation and provider disposal await
+owned work; borrowed identity storage remains alive. Lost native history and wrong
+thread identity are explicit errors before tool execution. Registry tests first
+failed against the missing exports; the implementation then passed them.
+
+Step 3 routes normal Design conversation IDs through that registry. The formal App
+regression first observed two starts instead of one start and one resume. The same
+real-CLI test now observes one thread across two requests, current selection in the
+new turn and no replayed history summary. Cold resume exposed native project AGENTS
+loading; the App now disables project-document loading while preserving its existing
+instruction-source validation. Global Codex-home instruction admission is unchanged.
+Standalone evaluation/report policy remains test-owned. The existing Design native
+handoff/report suite and provider tests passed together (335 passed; the standalone
+run's one opt-in case is admitted by the complete feature command).
+
+Step 4 uses a second, non-Design consumer through public built Runtime exports,
+exchange streaming, host/recipe invocation, canonical executor, transaction owner
+and actual native model requests. It proves correction, complete predecessor data,
+two selected images, Knowledge, a later request with changed App state and saved
+value/image reuse without rerunning producers. Revision, image and settlement
+faults are injected at their actual producer/wire boundaries. Two older checks
+that only changed the evidence array were deleted and replaced with these cases.
+
+The first concurrent Design type check overlapped the verifier's mandatory clean
+of Runtime build output and reported unavailable exports. After prerequisite builds
+completed, the unchanged source passed the complete Design typecheck command.
+No type assertion, validation relaxation or fallback was introduced. Full feature
+acceptance below must use the runner's independent case collection, actual reports
+and unchanged source/compiled snapshots; focused counts do not close this follow-up.
+
+### Complete-feature correction - fixture identity ownership
+
+The first follow-up feature run, `tmp/conversation-proof-3UlzmG`, recorded five
+failures in `conversation-production-handoff.integration.test.ts`. Those older
+cross-turn cases created separate native launchers and native homes for each turn.
+The new contract correctly rejects that changed executable/history owner. Stop
+this run before additional broad acceptance; retain its failure and cancellation
+evidence. Consolidate each case into one offline endpoint/native home with a
+multi-turn script, keep the real controller/HTTP/exchange/Core path and every
+geometry, Knowledge, partial-settlement and corruption assertion. Verify one
+thread/start and one thread/resume, unique call identities and current-turn input
+selection in accumulated native history. No product fallback or relaxed contract
+is needed. Run the exact failing file and its fixture consumers before restarting
+the full feature command on unchanged source.
+
+The consolidated test then exposed a trace-reader assumption: native RPC IDs are
+process-local and repeat after cold resume. The product completed both turns;
+the fixture rejected the correct second reply as ambiguous. Native/App trace rows
+now include the observed native process ID, without adding anything to actual
+wire payloads. Reply lookup requires both process identity and RPC ID. Old rows
+without identity are rejected, not accepted through a fallback. The same failing
+Knowledge and partial-receipt cases permanently exercise that correction.
+
+### Final fixture lifecycle correction
+
+`tmp/conversation-proof-aoNAgC` passed server (3,808), App (1,622) and Runtime
+(561), with no skipped cases. Node's independent collection then caught the old
+proxy probe-isolation regression. Review distinguishes command probes, which need
+request-local scratch state, from App-server processes, which need conversation
+history. Keep persistent state only for App-server and restore isolated probe
+scratch directories; this is the current two-lifetime contract, not a legacy
+fallback. Add a permanent restart/isolation case and preserve the probe oracle.
+Run the full direct native/proxy consumer set before restarting final acceptance.
+The interrupted full run is not completion evidence.
+
+### Browser continuity oracle correction
+
+`tmp/conversation-proof-gwsz8K` passed server, App, Runtime and all Node verification
+files; 335 browser cases passed and two continuity cases failed. Their old oracle
+flattened all native history as one current request and required five independent
+threads. Replace that superseded contract with independent assertions for current
+message attachments, the exact accumulated original-conversation messages,
+clarification question/reply identity, no historical summary replay, two isolated
+conversation threads, three resumes and the unchanged attachment-corruption oracle.
+Keep UI draft isolation, document/undo invariance and media values exact. Current
+attachments are still delivered per turn; this task does not promise image-byte
+deduplication. Production code is unchanged by this correction. Run the entire
+native browser handoff file before final full-feature verification.
+
+## Session continuation acceptance - 2026-11-21
+
+All four follow-up steps are complete. Current complete execution is retained at
+`tmp/conversation-proof-ERrXSj`: server 3,808, App 1,622, Runtime 561, Node 718
+and browser 337 cases passed (7,046 total), with no failed or skipped assertions.
+The eight real browser handoff cases also passed independently with no retries.
+Actual provider inputs, same-thread identities, fresh state, saved values, images,
+Knowledge, partial settlement and deliberate corruptions were reviewed; counts
+alone were not the acceptance oracle.
+
+The runner returned code 2 after successful execution because its independent
+manual spec review was still stale. After checking every current source and
+compiled hash against the unchanged before/after snapshots, the coordinating owner
+completed the bounded contract review and published it through Flow's supported
+API. The Runtime complete report was independently readmitted using the separately
+collected case list, then published to the ownership Flow. Both Flows now evaluate
+to `done`; `tmp/ownership-transfer/session-acceptance.json` records that closure.
+Original failed/interrupted runs remain retained and described above.
+
+Runtime build, complete Design type checks, fixture types, focused lint, naming,
+security audit, public documentation generation/validation and Flow document checks
+passed. Current production code has no compatibility route or relaxed validator.
+Browser-history persistence remains App-owned; native identity defaults to service
+memory. Codex 0.160.0 cannot replace native tool declarations during resume, so a
+changed native contract explicitly requires a new conversation. Current attachment
+bytes may be present again in each turn; no image-byte deduplication is claimed.
+No 101, paid model, whole-repository suite or remote CI monitoring was performed.

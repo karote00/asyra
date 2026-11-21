@@ -215,7 +215,7 @@ export const createNativeProviderFixture = async (
       .map((line) => {
         const packet: unknown = JSON.parse(line)
 
-        if (!isRecord(packet)) {
+        if (!isRecord(packet) || typeof packet.nativeProcessId !== 'number') {
           throw Error('Malformed recorded App packet')
         }
 
@@ -230,7 +230,7 @@ export const createNativeProviderFixture = async (
       .map((line) => {
         const packet: unknown = JSON.parse(line)
 
-        if (!isRecord(packet)) {
+        if (!isRecord(packet) || typeof packet.nativeProcessId !== 'number') {
           throw Error('Malformed recorded native packet')
         }
 
@@ -278,6 +278,7 @@ export const createNativeProviderFixture = async (
       const replies = packets().filter(
         (packet) =>
           packet.id === calls[0].id &&
+          packet.nativeProcessId === calls[0].nativeProcessId &&
           isRecord(packet.result) &&
           Array.isArray(packet.result.contentItems)
       )

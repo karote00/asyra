@@ -165,20 +165,48 @@ for (const fault of [undefined, 'swap-attachment-association'] as const) {
         await send.click()
         await settle(5)
 
-        const receivedImages = fixture.requests.map((request) => {
+        // Native history contains previous turns. Select the actual current App
+        // message, then independently verify accumulated history below.
+        const appMessages = (request: Record<string, unknown>) => {
           if (!Array.isArray(request.input)) {
             throw Error('Missing actual native input')
           }
 
           return request.input
             .filter(isRecord)
-            .flatMap((message) =>
-              Array.isArray(message.content) ? message.content : []
+            .filter(
+              (message) =>
+                message.role === 'user' &&
+                Array.isArray(message.content) &&
+                message.content.some(
+                  (item) =>
+                    isRecord(item) &&
+                    item.type === 'input_text' &&
+                    typeof item.text === 'string' &&
+                    item.text.startsWith('{"input":')
+                )
             )
-            .filter(isRecord)
+        }
+
+        const currentContent = (request: Record<string, unknown>) => {
+          const messages = appMessages(request)
+          const current = messages[messages.length - 1]
+
+          if (!current || !Array.isArray(current.content)) {
+            throw Error('Missing current App message')
+          }
+
+          return current.content.filter(isRecord)
+        }
+
+        expect(
+          fixture.requests.map((request) => appMessages(request).length)
+        ).toEqual([1, 1, 2, 3, 4])
+        const receivedImages = fixture.requests.map((request) =>
+          currentContent(request)
             .filter((item) => item.type === 'input_image')
             .map((item) => item.image_url)
-        })
+        )
         const originalImages = swatches.map(
           (bytes) => 'data:image/png;base64,' + bytes.toString('base64')
         )
@@ -215,22 +243,38 @@ for (const fault of [undefined, 'swap-attachment-association'] as const) {
           return { intent: input.intent, metadata: input.metadata }
         }
 
-        const inputs = fixture.requests.map((request) => {
-          if (!Array.isArray(request.input)) {
-            throw Error('Missing model input')
-          }
-
-          return envelope(
-            request.input
-              .filter(isRecord)
-              .flatMap((message) =>
-                Array.isArray(message.content) ? message.content : []
-              )
-              .filter(isRecord)
+        const inputs = fixture.requests.map((request) =>
+          envelope(
+            currentContent(request)
               .filter((item) => item.type === 'input_text')
               .map((item) => item.text)
           )
-        })
+        )
+        const historicalInputs = appMessages(fixture.requests[4]).map(
+          (message) => {
+            if (!Array.isArray(message.content)) {
+              throw Error('Missing historical App content')
+            }
+
+            return envelope(
+              message.content
+                .filter(isRecord)
+                .filter((item) => item.type === 'input_text')
+                .map((item) => item.text)
+            )
+          }
+        )
+
+        expect(historicalInputs.map((input) => input.intent)).toEqual([
+          'Reference advice',
+          'Compare the two attached swatches.',
+          'Use the blue swatch.',
+          'Keep the same references and explain.'
+        ])
+        expect(JSON.stringify(fixture.requests[4].input)).toContain(question)
+        expect(JSON.stringify(fixture.requests[4].input)).not.toContain(
+          'Separate note'
+        )
         const published = fixture
           .appPackets()
           .filter((packet) => packet.method === 'turn/start')
@@ -270,12 +314,7 @@ for (const fault of [undefined, 'swap-attachment-association'] as const) {
             metadata.conversationContext,
             'Source attachment association'
           ).toEqual({
-            turns: [
-              expect.objectContaining({
-                intent: 'Reference advice',
-                attachmentIndexes: []
-              })
-            ],
+            turns: [],
             attachmentIndexes: [0, 1]
           })
         }
@@ -327,32 +366,22 @@ for (const fault of [undefined, 'swap-attachment-association'] as const) {
             throw Error('Missing settled turns')
           }
 
-          expect(turns).toHaveLength(index - 1)
-          expect(turns[1]).toMatchObject({
-            turnId: inputs[2].metadata.turnId,
-            intent: 'Compare the two attached swatches.',
-            attachmentIndexes: [0, 1],
-            question: { message: question, choices: [] }
-          })
-          expect(JSON.stringify(turns)).not.toContain('Separate note')
+          expect(turns).toEqual([])
         }
 
         expect(inputs[3].metadata.replyTo).toEqual({
           turnId: inputs[2].metadata.turnId,
           intent: 'Compare the two attached swatches.'
         })
-        expect(inputs[4].metadata.conversationContext).toMatchObject({
-          turns: [
-            expect.anything(),
-            expect.anything(),
-            expect.objectContaining({
-              turnId: inputs[3].metadata.turnId,
-              intent: 'Use the blue swatch.',
-              replyToTurnId: inputs[2].metadata.turnId,
-              attachmentIndexes: []
-            })
-          ]
-        })
+        expect(historicalInputs.map((input) => input.metadata.turnId)).toEqual([
+          inputs[0].metadata.turnId,
+          inputs[2].metadata.turnId,
+          inputs[3].metadata.turnId,
+          inputs[4].metadata.turnId
+        ])
+        expect(historicalInputs[2].metadata.replyTo).toEqual(
+          inputs[3].metadata.replyTo
+        )
         await expect(
           page.getByRole('img', { name: 'red-swatch.png', exact: true })
         ).toHaveCount(1)
@@ -375,7 +404,7 @@ for (const fault of [undefined, 'swap-attachment-association'] as const) {
           .appPackets()
           .filter((packet) => packet.method === 'turn/start')
 
-        expect(starts).toHaveLength(6)
+        expect(starts).toHaveLength(3)
         expect(probes).toHaveLength(1)
         expect(turns).toHaveLength(5)
         const threads = turns.map((packet) => {
@@ -389,7 +418,18 @@ for (const fault of [undefined, 'swap-attachment-association'] as const) {
           return packet.params.threadId
         })
 
-        expect(new Set(threads).size).toBe(5)
+        expect(new Set(threads).size).toBe(2)
+        expect([threads[2], threads[3], threads[4]]).toEqual([
+          threads[0],
+          threads[0],
+          threads[0]
+        ])
+        expect(threads[1]).not.toBe(threads[0])
+        expect(
+          fixture
+            .appPackets()
+            .filter((packet) => packet.method === 'thread/resume')
+        ).toHaveLength(3)
         await page.screenshot({
           path: testInfo.outputPath('reference-follow-up.png')
         })

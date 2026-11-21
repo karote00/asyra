@@ -3,9 +3,11 @@ import { StringDecoder } from 'node:string_decoder'
 
 export const startNativeProcess = (
   executable: string,
-  args: readonly string[]
+  args: readonly string[],
+  options: { cwd?: string; env?: NodeJS.ProcessEnv } = {}
 ) =>
   spawn(executable, [...args], {
+    ...options,
     stdio: ['pipe', 'pipe', 'pipe'],
     shell: false,
     windowsHide: true

@@ -316,11 +316,11 @@
     },
     {
       "id": "build/ai-actions",
-      "pageSha256": "e1738205837b0e3cb495cb300448373951ab21685ebc0147f486ff0eaba1b38c",
+      "pageSha256": "26f56e906d01caeaf7446a04090675826ffe57ef159a3bb8fdd2a7d9c816dc4e",
       "sources": [
         {
           "path": "docs/ai/framework/packages/ai-agent-runtime.md",
-          "sha256": "8cdaf68d33ae011e1358f8bf1d1ba6164c3c6d8f3fdd5b7e0c750e06b014637f"
+          "sha256": "72f42a2f99b3fa3794a01d911a45d9ddf30bbd46dc4af45bc6aa8e976ccc299f"
         },
         {
           "path": "docs/ai/framework/golden-paths/compose-ai-agent-runtime.md",
@@ -334,7 +334,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/ai-agent-runtime.md",
-          "sha256": "8cdaf68d33ae011e1358f8bf1d1ba6164c3c6d8f3fdd5b7e0c750e06b014637f"
+          "sha256": "72f42a2f99b3fa3794a01d911a45d9ddf30bbd46dc4af45bc6aa8e976ccc299f"
         },
         {
           "path": "docs/ai/framework/packages/feature-system.md",
@@ -586,7 +586,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/ai-agent-runtime.md",
-          "sha256": "8cdaf68d33ae011e1358f8bf1d1ba6164c3c6d8f3fdd5b7e0c750e06b014637f"
+          "sha256": "72f42a2f99b3fa3794a01d911a45d9ddf30bbd46dc4af45bc6aa8e976ccc299f"
         },
         {
           "path": "packages/ai-agent-runtime/package.json",

@@ -1021,7 +1021,7 @@ describe('local subscription AI backend', () => {
             'Never replay prior actions'
           )
         } else {
-          expect(thread.baseInstructions).not.toContain(
+          expect(thread.baseInstructions).toContain(
             'metadata.conversationContext'
           )
         }
@@ -2420,7 +2420,7 @@ describe('local subscription AI backend', () => {
           'current input.intent overrides'
         )
       } else {
-        expect(thread?.params.baseInstructions).not.toContain(
+        expect(thread?.params.baseInstructions).toContain(
           'metadata.conversationContext'
         )
       }

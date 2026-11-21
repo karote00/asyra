@@ -1,5 +1,8 @@
 import {
   createNativeRpcTransport,
+  createNativeSession,
+  type NativeConversationLease,
+  type NativeConversations,
   startNativeProcess
 } from '@asyra/ai-agent-runtime/node'
 import { DEFAULT_TOOL_LIBRARY_DIRECTORY } from './local-tool-library-limits'
@@ -99,6 +102,8 @@ const localProviderConfig = Object.freeze({
   // not truncate it again or omit the separate outcome. Context management is
   // still native; this only disables its implicit per-tool text cutoff.
   tool_output_token_limit: Number.MAX_SAFE_INTEGER,
+  // Cold resume reconstructs a local environment; never load repository instructions.
+  project_doc_max_bytes: 0,
   'features.shell_tool': false,
   'features.unified_exec': false,
   'features.apply_patch_freeform': false,
@@ -342,6 +347,7 @@ const runLocalAiProvider = async (
       phase: 'input' | 'output',
       value: unknown
     ) => void
+    readonly conversations?: NativeConversations
     readonly reportSessions?: EvaluationReportSessions
     readonly recordFollowup?: (
       callId: string,
@@ -1124,6 +1130,7 @@ const runLocalAiProvider = async (
     ReturnType<typeof providerErrorDiagnostic>
   >()
   let terminalError: Error | undefined
+  let conversationLease: NativeConversationLease | undefined
   let threadId: string | undefined
   let turnId: string | undefined
   let finalText: string | undefined
@@ -1165,6 +1172,7 @@ const runLocalAiProvider = async (
 
   const fail = (error: Error) => {
     terminalError ??= error
+    session?.fail(terminalError)
     rejectEvaluation(terminalError)
     transport?.abortPending(terminalError)
     rejectCompletion(terminalError)
@@ -1264,6 +1272,7 @@ const runLocalAiProvider = async (
   }
 
   const receive = (value: unknown) => {
+    session?.observe(value)
     if (!isRecord(value)) {
       return protocolFailure()
     }
@@ -1329,6 +1338,7 @@ const runLocalAiProvider = async (
         return protocolFailure()
       }
 
+      const replyId = value.id
       const toolName = String(params.tool)
       let message: string | undefined
 
@@ -1628,15 +1638,7 @@ const runLocalAiProvider = async (
               outcome: { status, settlement }
             }
           })
-          writeProtocol(
-            JSON.stringify({
-              id: value.id,
-              result: {
-                success,
-                contentItems
-              }
-            }) + '\n'
-          )
+          session.reply(replyId, { success, contentItems })
           usage?.trace('provider_transport_event', {
             method: 'tool-result-submitted',
             tool: toolName,
@@ -2104,6 +2106,10 @@ const runLocalAiProvider = async (
   options.signal?.addEventListener('abort', abort, { once: true })
   const request = transport.request
 
+  const session = createNativeSession(transport, {
+    error: () => failure('AI_MODEL_BACKEND_INVALID_RESPONSE')
+  })
+
   let finishTurnWait: (() => void) | undefined
 
   try {
@@ -2197,7 +2203,8 @@ const runLocalAiProvider = async (
         : [
             { role: 'base', source: 'app-contract', text: AI_APP_PROMPT },
             ...(isRecord(input.metadata) &&
-            isRecord(input.metadata.conversationContext)
+            (isRecord(input.metadata.conversationContext) ||
+              typeof input.metadata.conversationId === 'string')
               ? [
                   {
                     role: 'base',
@@ -2265,29 +2272,57 @@ const runLocalAiProvider = async (
         ? Buffer.byteLength(JSON.stringify(eagerDefinitions), 'utf8')
         : 0
     })
-    await request(
-      'thread/start',
-      {
-        model: options.model,
-        modelProvider: 'openai',
-        ephemeral: true,
-        allowProviderModelFallback: false,
-        environments: [],
-        dynamicTools: nativeDefinitions,
-        runtimeWorkspaceRoots: [],
-        selectedCapabilityRoots: [],
-        approvalPolicy: 'never',
-        sandbox: 'read-only',
-        baseInstructions,
-        developerInstructions,
-        config: {
-          model_reasoning_effort: 'medium',
-          ...localProviderConfig,
-          web_search: options.assessmentOnly ? 'disabled' : 'live',
-          mcp_servers: disabledServers
-        }
-      },
-      (thread) => {
+    const threadParameters = {
+      model: options.model,
+      modelProvider: 'openai',
+      ephemeral: true,
+      allowProviderModelFallback: false,
+      environments: [],
+      dynamicTools: nativeDefinitions,
+      runtimeWorkspaceRoots: [],
+      selectedCapabilityRoots: [],
+      approvalPolicy: 'never',
+      sandbox: 'read-only',
+      baseInstructions,
+      developerInstructions,
+      config: {
+        model_reasoning_effort: 'medium',
+        ...localProviderConfig,
+        web_search: options.assessmentOnly ? 'disabled' : 'live',
+        mcp_servers: disabledServers
+      }
+    }
+
+    if (
+      !evaluation &&
+      !options.assessmentOnly &&
+      !options.checkOnly &&
+      options.conversations &&
+      isRecord(input.metadata) &&
+      typeof input.metadata.conversationId === 'string'
+    ) {
+      try {
+        conversationLease = options.conversations.acquire(
+          input.metadata.conversationId,
+          {
+            executable: options.executable,
+            ...threadParameters
+          }
+        )
+      } catch (error) {
+        throw new AiModelBackendError(
+          'AI_MODEL_BACKEND_SESSION_UNAVAILABLE',
+          error instanceof Error
+            ? error.message
+            : 'Native conversation unavailable'
+        )
+      }
+    }
+
+    const resumed = conversationLease?.threadId !== undefined
+
+    await session
+      .open(threadParameters, conversationLease, (thread) => {
         if (
           !isRecord(thread) ||
           !isRecord(thread.thread) ||
@@ -2312,8 +2347,42 @@ const runLocalAiProvider = async (
         }
 
         threadId = thread.thread.id
+      })
+      .catch((error) => {
+        if (resumed && !options.signal?.aborted) {
+          throw new AiModelBackendError(
+            'AI_MODEL_BACKEND_SESSION_UNAVAILABLE',
+            'The previous native conversation could not be resumed.'
+          )
+        }
+
+        throw error
+      })
+    usage?.trace('provider_transport_event', {
+      method: resumed ? 'conversation/resumed' : 'conversation/started',
+      nativeThreadId: threadId
+    })
+    if (
+      resumed &&
+      isRecord(inputItems[0]) &&
+      typeof inputItems[0].text === 'string'
+    ) {
+      const projected: unknown = JSON.parse(inputItems[0].text)
+
+      if (
+        isRecord(projected) &&
+        isRecord(projected.input) &&
+        isRecord(projected.input.metadata) &&
+        isRecord(projected.input.metadata.conversationContext)
+      ) {
+        projected.input.metadata.conversationContext = {
+          ...projected.input.metadata.conversationContext,
+          turns: []
+        }
+        inputItems[0] = { ...inputItems[0], text: JSON.stringify(projected) }
       }
-    )
+    }
+
     if (options.checkOnly) {
       return
     }
@@ -2342,16 +2411,17 @@ const runLocalAiProvider = async (
     if (evaluation) {
       options.retainEvaluationExchange?.('evaluation-work', 'input', {
         threadId,
+        environments: [],
         input: inputItems,
         ...(!options.assessmentOnly ? { summary: 'concise' } : {}),
         effort: 'medium'
       })
     }
 
-    await request(
-      'turn/start',
+    await session.startTurn(
       {
         threadId,
+        environments: [],
         input: inputItems,
         ...(!options.assessmentOnly ? { summary: 'concise' } : {}),
         effort: 'medium'
@@ -2501,8 +2571,7 @@ const runLocalAiProvider = async (
         input: reportInput,
         effort: 'medium'
       })
-      await request(
-        'turn/start',
+      await session.startTurn(
         { threadId, effort: 'medium', input: reportInput },
         (started) => {
           if (
@@ -2594,10 +2663,10 @@ const runLocalAiProvider = async (
             })
             void completion.catch(() => undefined)
             try {
-              await request(
-                'turn/start',
+              await session.startTurn(
                 {
                   threadId: nativeThreadId,
+                  environments: [],
                   effort: 'medium',
                   input: [
                     {
@@ -2744,6 +2813,18 @@ const runLocalAiProvider = async (
 
     options.signal?.removeEventListener('abort', abort)
     if (!retainedSession) {
+      if (conversationLease && completedTurnId && !terminalError) {
+        try {
+          await session.unload()
+        } catch (error) {
+          usage?.trace('host_observation', {
+            operation: 'native-unload',
+            status: 'failed',
+            message: localToolErrorMessage(error)
+          })
+        }
+      }
+
       stop()
     }
 
@@ -2805,6 +2886,7 @@ const runLocalAiProvider = async (
         }
       }
     } finally {
+      conversationLease?.release()
       finishCleanup?.()
       // The initial execution is sealed below. Follow-ups have their own public
       // exchange records; never append provider events to a finished drawing.
@@ -2816,6 +2898,7 @@ const runLocalAiProvider = async (
 }
 
 interface LocalAiProviderOptions {
+  readonly conversations?: NativeConversations
   readonly reportSessions?: EvaluationReportSessions
   readonly toolLibraryDirectory?: string
   readonly model: string

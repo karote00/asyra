@@ -287,7 +287,15 @@ Conversation continuity follows the bounded public history contract in
 prior user turns and public replies/questions with source-attachment indexes;
 current intent stays separate. The backend validates this data before invoking a
 provider. Historical outcomes do not authorize replay or reuse of request-owned
-evidence. Fresh ephemeral provider threads receive the same admitted context.
+evidence. The first native thread receives the admitted context. Later ordinary
+requests for that App conversation resume the same native thread with the new
+intent and current App context, without repeating projected historical turns.
+Each request binds fresh tools, signals, leases and result storage access. Native
+history does not make old canvas state or request resources current. Changed
+native declarations/configuration or unavailable native history are explicit
+session errors; the App requires a new conversation rather than silently replaying
+work. The service-owned identity registry is in memory; browser/server restart
+persistence is not implied.
 
 ## Capability discovery and composition
 
@@ -1200,13 +1208,18 @@ Retention does not extend request-owned image/query leases or make old geometry 
 
 ## Ownership and diagnostics
 
-The App provider owns orchestration and transport; preparation owners own derived
+The optional Runtime native adapter owns thread/turn protocol and transport; the
+App provider owns tool configuration, authorization and result interpretation.
+Preparation owners own derived
 artifacts; registered actions/common APIs own canonical operations; conversation
 lifecycle owns presentation. Rendering neither decides what to draw nor grants
 completion. Framework packages remain accessed through public APIs.
 
-The local provider reads effective native configuration once before creating its
-ephemeral thread and disables inherited personal MCP servers for that invocation.
+The local provider reads effective native configuration for each request before
+starting or resuming its native thread and disables inherited personal MCP servers
+for that invocation. App invocations disable project document loading explicitly,
+including cold resume; the existing Codex-home instruction-source admission is
+unchanged. One-shot evaluation/report threads retain their separate test policy.
 It preserves transport fields required by native configuration validation, omits
 unset optional values, and never records or writes the configuration itself.
 App tools, permitted web research and the configured model/effort stay unchanged.

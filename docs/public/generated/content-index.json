@@ -1190,7 +1190,7 @@
       "wordCount": 525
     },
     {
-      "contentSha256": "e1738205837b0e3cb495cb300448373951ab21685ebc0147f486ff0eaba1b38c",
+      "contentSha256": "26f56e906d01caeaf7446a04090675826ffe57ef159a3bb8fdd2a7d9c816dc4e",
       "description": "Expose bounded action schemas and permissions so AI intent uses the same canonical transaction paths as people.",
       "headings": [
         {
@@ -1252,6 +1252,10 @@
         {
           "depth": 3,
           "title": "Composing dependent tools without adopting Design"
+        },
+        {
+          "depth": 3,
+          "title": "Continuing native conversations"
         }
       ],
       "id": "build/ai-actions",
@@ -1262,7 +1266,7 @@
       "path": "build/ai-actions.md",
       "section": "Extend",
       "title": "Build registered AI actions",
-      "wordCount": 915
+      "wordCount": 1186
     },
     {
       "contentSha256": "45dbd214f148ec37a72b7352baaa4632267c78b6a0132902532639c160d4c5cd",

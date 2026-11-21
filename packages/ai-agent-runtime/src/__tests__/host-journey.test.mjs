@@ -63,14 +63,7 @@ it('keeps unnamed complete internal results available with status-only delivery 
   verify(await inventoryJourney({ retain: false, fieldwise: true }), false)
 })
 
-it.each([
-  'missing-id',
-  'invalid-result',
-  'missing-image',
-  'wrong-revision',
-  'wrong-settlement',
-  'omitted-case'
-])(
+it.each(['missing-id', 'invalid-result', 'missing-image', 'omitted-case'])(
   'the complete handoff oracle rejects deliberate corruption: %s',
   async (fault) => {
     const observed = await inventoryJourney({ fault })

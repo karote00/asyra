@@ -195,6 +195,11 @@ describe('crdt-7076 action-batch backend sample', () => {
     }
     const cases = [
       {
+        backendCode: 'AI_MODEL_BACKEND_SESSION_UNAVAILABLE',
+        responseCode: 'ACTION_BATCH_SESSION_UNAVAILABLE',
+        status: 502
+      },
+      {
         backendCode: 'AI_MODEL_BACKEND_INVALID_CONFIGURATION',
         responseCode: 'ACTION_BATCH_MODEL_CONFIGURATION_REQUIRED',
         status: 503

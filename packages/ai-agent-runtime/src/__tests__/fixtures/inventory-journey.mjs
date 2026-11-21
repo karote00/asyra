@@ -335,10 +335,6 @@ export async function inventoryJourney({
           inputSchema: nativeToolInputSchema(definition.inputSchema)
         }))
 
-        if (fault === 'wrong-revision') {
-          pinned[1].revision++
-        }
-
         evidence.contracts.push(pinned)
         if (currentTurn === 1) {
           const candidates = pinned.map((definition) => ({
@@ -691,10 +687,6 @@ export async function inventoryJourney({
           signal: controller.signal
         })
       )
-    }
-
-    if (fault === 'wrong-settlement') {
-      evidence.settles = ['rolled-back']
     }
 
     return { evidence, outcomes, state: [...state], scriptError }

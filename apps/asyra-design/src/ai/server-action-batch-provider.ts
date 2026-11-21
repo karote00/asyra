@@ -37,6 +37,14 @@ const backendFailureDescriptions = new Map<
   ConstructorParameters<typeof AiProviderError>[0]
 >([
   [
+    'ACTION_BATCH_SESSION_UNAVAILABLE',
+    {
+      code: 'AI_PROVIDER_INVALID_CONFIGURATION',
+      message:
+        'The previous AI session is unavailable or its tools changed. Start a new conversation.'
+    }
+  ],
+  [
     'ACTION_BATCH_MODEL_TIMEOUT',
     {
       code: 'AI_PROVIDER_TIMEOUT',
