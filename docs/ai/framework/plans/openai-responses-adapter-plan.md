@@ -139,7 +139,7 @@ inference, commit or push was performed. This proves the bounded source handoff,
 not model quality or live Responses service acceptance.
 
 Specification: [Responses adapter](../specs/openai-responses-adapter.md).
-Flow: `openai-responses-adapter/responses-adapter.flow.json`.
+[Responses adapter Flow](openai-responses-adapter/responses-adapter.flow.json)
 
 ## Drawing follow-up on the same branch
 

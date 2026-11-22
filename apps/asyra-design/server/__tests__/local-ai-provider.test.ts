@@ -2581,7 +2581,9 @@ describe('local subscription AI backend', () => {
       'adds no detail or polish requirement'
     )
     expect(base).toContain('You choose visual intent, design parameters')
-    expect(base).toContain('Prefer a suitable existing direct tool')
+    expect(base).toContain(
+      'Use the declared execution route for a suitable existing operation'
+    )
     expect(base).toContain(
       'use submit_tool for a finite recipe and invoke_tool'
     )
@@ -9835,9 +9837,14 @@ it.each([
         `${query}: ${containing?.map((entry) => entry.name).join(', ')}`
       ).toBeGreaterThanOrEqual(0)
       if (expected === 'api_hierarchy_groupElements') {
-        expect(
-          (containing?.[index] as { description?: string })?.description
-        ).toContain('Group existing elements')
+        expect(containing?.[index]).toMatchObject({
+          capability: {
+            purpose: expect.stringContaining('Group existing elements'),
+            inputFields: ['elementIds']
+          },
+          execution: { kind: 'batch-action', tool: 'execute_design' }
+        })
+        expect(containing?.[index]).not.toHaveProperty('description')
       }
     } finally {
       vi.unstubAllGlobals()

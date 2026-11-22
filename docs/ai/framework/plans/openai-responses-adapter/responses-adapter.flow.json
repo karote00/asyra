@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "projectId": "asyra",
   "flowId": "openai-responses-adapter",
-  "revision": 26,
+  "revision": 32,
   "definition": {
     "title": "Replaceable model sources and Responses adapter",
     "purpose": "Keep one App execution pipeline and replace model protocol adapters through explicit source registration.",
@@ -24,7 +24,7 @@
         ],
         "specRefs": [
           "docs/ai/framework/specs/openai-responses-adapter.md",
-          "docs/ai/framework/plans/openai-responses-adapter-plan.md"
+          "docs/ai/apps/asyra-design/specs/local-ai-provider.md"
         ],
         "implementationRefs": [
           "apps/asyra-design/server/design-model-source.ts",
@@ -58,7 +58,7 @@
         ],
         "specRefs": [
           "docs/ai/framework/specs/openai-responses-adapter.md",
-          "docs/ai/framework/plans/openai-responses-adapter-plan.md"
+          "docs/ai/apps/asyra-design/API_SURFACES.md"
         ],
         "implementationRefs": [
           "apps/asyra-design/server/design-provider-tools.ts",
@@ -90,7 +90,7 @@
         ],
         "specRefs": [
           "docs/ai/framework/specs/openai-responses-adapter.md",
-          "docs/ai/framework/plans/openai-responses-adapter-plan.md"
+          "docs/ai/apps/asyra-design/specs/local-ai-provider.md"
         ],
         "implementationRefs": [
           "apps/asyra-design/server/ai-model-sources.ts",
@@ -120,7 +120,7 @@
         ],
         "specRefs": [
           "docs/ai/framework/specs/openai-responses-adapter.md",
-          "docs/ai/framework/plans/openai-responses-adapter-plan.md"
+          "docs/ai/apps/asyra-design/specs/local-ai-provider.md"
         ],
         "implementationRefs": [
           "packages/ai-agent-runtime/src/node/__tests__/responses-provider.test.ts",
@@ -144,50 +144,50 @@
         "criterionId": "behavior",
         "kind": "manual",
         "status": "accepted",
-        "binding": "143e19af1a3a462db8a10acae86d3b81fb527bbd987f55a5915e3dd5f3cd9074",
+        "binding": "0a3bbe6ce032aa2bfb01bdc18805ecae9ca213270a9da1e4fb643c98c0341254",
         "actor": "Codex",
-        "summary": "Formal offline regressions reproduced a lost receipt on service restart and an undispatched operation running under another turn. Source recreation with SQLite now preserves ownership, exact output and at-most-once invocation; crossed turn and unknown settlement are rejected before dispatch.",
-        "at": "2026-11-22T09:19:56.170Z"
+        "summary": "Responses continuation and App integration tests passed for interleaved conversations, process restart, submitted outputs, failure recovery and protection from duplicate dispatch.",
+        "at": "2026-11-22T12:20:21.598Z"
       },
       {
         "nodeId": "observation",
         "criterionId": "behavior",
         "kind": "manual",
         "status": "accepted",
-        "binding": "409516def61b94d12a68f90e5507dd03ba657b2e2430eb73c80e152583e69cc0",
+        "binding": "7b100f35be65aeaabda2f65c89425ca0a322b7dba9e06b5cb0cab974e2f99a15",
         "actor": "Codex",
-        "summary": "The provider wire fixture verified three declared app functions, actual final-response actions and the advertised digest. A qualified standalone control retained its ordinary Host admission; mixed and private calls were rejected. The retained Dome source reproduced a single 960 by 1280 view with exact original retention.",
-        "at": "2026-11-22T11:24:02.427Z"
+        "summary": "Provider handoff tests verified three advertised Design entries, Host execution, terminal receipts and bounded reference image delivery. The live Dome run used two references and retained their source images.",
+        "at": "2026-11-22T12:20:21.601Z"
       },
       {
         "nodeId": "routing",
         "criterionId": "behavior",
         "kind": "manual",
         "status": "accepted",
-        "binding": "2e37f29ffe41176cd39d2857ad7c47733c0f7b20ac889e1a5b7bc7ef016a79d7",
+        "binding": "da89af5b7b145bb91849d0fac13a8d0e9d19028439913d8ab0b9916c57459ece",
         "actor": "Codex",
-        "at": "2026-11-22T11:25:00.934Z",
-        "summary": "Source selection and native continuation passed. The offline Responses successor distinguishes undeclared direct calls from recoverable Host admission failures and accepts a valid call without starting another conversation."
+        "summary": "Native and Responses handoff suites passed. The native search tests verified the selected group operation, its input fields, its declared execution route and on-demand usage.",
+        "at": "2026-11-22T12:20:21.602Z"
       },
       {
         "nodeId": "proof",
         "criterionId": "behavior",
         "kind": "manual",
         "status": "accepted",
-        "binding": "1f573e2aee9359152a46edf353e72e503711aecee9aeeaf04810e67be38b073e",
+        "binding": "178aebdb132d12a7b6d4552e8ab3738bdec086e105fe86073251a6bc44fceb49",
         "actor": "Codex",
-        "summary": "Focused native, Responses and Core fixtures exercised search to import, provider media and source identity, standalone control routing, correction, restart and known execution without discovery. The recorded Dome draft created one group and 411 vectors.",
-        "at": "2026-11-22T11:25:18.370Z"
+        "summary": "Runtime, Design server, browser component and Chromium cases passed. The Dome recording independently shows a completed model turn with twelve Responses requests and a saved drawing.",
+        "at": "2026-11-22T12:20:21.604Z"
       },
       {
         "nodeId": "integration",
         "criterionId": "integrated",
         "kind": "manual",
         "status": "accepted",
-        "binding": "be5a63c5cd6bb7e0105eb02c4071146bece89bf4cc9813b91da6328bde08fd42",
+        "binding": "628a89767d98b7f5cd3bfe84123432669617d9751ffeb897a95e6d3ffa8d474a",
         "actor": "Codex",
-        "summary": "Scoped offline Host, source and adapter checks passed. The implemented wire tools array measured 16,020 bytes including provider web search. No hosted inference or billing measurement.",
-        "at": "2026-11-22T11:25:18.373Z"
+        "summary": "Validated 1,102 feature and browser cases across both sources and six TypeScript configurations. The recorded GPT-6.2 Astra drawing completed in four minutes and thirteen seconds.",
+        "at": "2026-11-22T12:20:21.605Z"
       }
     ],
     "notes": [],
