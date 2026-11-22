@@ -308,7 +308,13 @@ positive purpose evidence. Exact identity resolution remains unchanged.
 Descriptive query `inputFields` optionally requires declared leaf names or slash-
 separated paths. Open records do not prove arbitrary property support. Candidates
 return purpose, boundaries, top-level input fields and requested matching paths;
-this navigation is not an executable contract or value validation. Natural-language
+this navigation is not an executable contract or value validation. Purpose search
+delivers each purpose once, with the execution and selected-usage routes. Result
+contracts belong to the selected read. If no candidate covers the full query
+vocabulary, the first page previews related matches and identifies terms absent
+from all matching candidates' declared purposes in scope. This is lexical
+evidence, not a claim of capability absence. The existing cursor reaches every
+remaining candidate at its original rank. Natural-language
 queries remain supported, including custom tools with opaque names. Input enum/const choices and schema descriptions remain secondary search evidence;
 examples and incidental schema prose do not establish purpose or field acceptance. Ordinary plural normalization never rewrites identities.
 
@@ -433,7 +439,7 @@ executable adapter. No match preserves truthful empty coverage and navigation.
 `read_design_contracts` resolves exact semantic `owner.method` identities or
 registered names and independently scoped contracts through `names` and `scopes`.
 Category browsing cannot acquire schemas; search has no `includeSchemas` option.
-Each declaration carries purpose, category, input and result meaning.
+Selected contracts carry the complete input and result meaning. Search candidates give the purpose, input boundary and route to that contract.
 Capability lookup does not search external subjects, images or source pages.
 Research uses native web research, followed by reference import when needed.
 Unknown subject terms never imply an unavailable drawing capability. Menus omit

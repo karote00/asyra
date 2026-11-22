@@ -552,3 +552,62 @@ it('observes credential-free protocol bodies and cumulative usage without making
   expect(JSON.stringify(observations)).not.toContain('private-key')
   await provider.dispose?.()
 })
+
+it('distinguishes empty and flat discovery outputs and omits inconsistent write accounting', async () => {
+  const flat = {
+    type: 'function',
+    name: 'reserve',
+    description: 'Café inventory'
+  }
+  const events: unknown[] = []
+  const provider = createResponsesAiProvider({
+    model: 'm',
+    apiKey: 'test',
+
+    prepare: async () =>
+      makeBinding({ observe: (event) => events.push(event) }),
+
+    fetch: async () =>
+      Response.json({
+        id: 'one',
+        status: 'completed',
+        output: [
+          { type: 'tool_search_output', id: 'empty', tools: [] },
+          { type: 'tool_search_output', id: 'flat', tools: [flat] },
+          message
+        ],
+        usage: {
+          input_tokens: 10,
+          output_tokens: 4,
+          total_tokens: 14,
+          input_tokens_details: { cached_tokens: 9, cache_write_tokens: 7 }
+        }
+      })
+  })
+
+  try {
+    await expect(
+      provider.requestActionBatch(input, { signal: signal() })
+    ).resolves.toEqual(final)
+    expect(events[1]).toMatchObject({
+      discovery: {
+        responseId: 'one',
+        searches: [
+          { itemId: 'empty', bytes: 0, definitions: [] },
+          {
+            itemId: 'flat',
+            definitions: [
+              {
+                name: 'reserve',
+                bytes: Buffer.byteLength(JSON.stringify(flat))
+              }
+            ]
+          }
+        ]
+      }
+    })
+    expect(events[1]).not.toHaveProperty('usage.response.cacheWriteTokens')
+  } finally {
+    await provider.dispose?.()
+  }
+})

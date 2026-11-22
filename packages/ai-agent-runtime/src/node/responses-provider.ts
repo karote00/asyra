@@ -12,7 +12,8 @@ import {
 } from './provider-conversations.js'
 import type {
   PrepareToolProvider,
-  ToolProviderBinding
+  ToolProviderBinding,
+  ToolProviderObservation
 } from './tool-provider.js'
 
 type RequestOptions = Parameters<AiProvider['requestActionBatch']>[1]
@@ -30,6 +31,64 @@ function invalid(message: string): never {
 
 const identity = (value: unknown): value is string =>
   typeof value === 'string' && value.trim().length > 0
+
+// Measure only definitions actually returned by server-side tool search.
+const returnedToolSearches = (response: Record<string, unknown>) => {
+  if (!Array.isArray(response.output) || !identity(response.id)) {
+    return undefined
+  }
+
+  const searches = response.output.flatMap((item: unknown) => {
+    if (
+      !record(item) ||
+      item.type !== 'tool_search_output' ||
+      !Array.isArray(item.tools)
+    ) {
+      return []
+    }
+
+    const definitions: { name: string; namespace?: string; bytes: number }[] =
+      []
+
+    const measure = (tool: unknown, namespace?: string) => {
+      if (record(tool) && identity(tool.name)) {
+        definitions.push({
+          name: tool.name,
+          namespace,
+          bytes: Buffer.byteLength(JSON.stringify(tool))
+        })
+      }
+    }
+
+    for (const tool of item.tools) {
+      if (
+        record(tool) &&
+        tool.type === 'namespace' &&
+        identity(tool.name) &&
+        Array.isArray(tool.tools)
+      ) {
+        for (const child of tool.tools) {
+          measure(child, tool.name)
+        }
+      } else {
+        measure(
+          tool,
+          record(tool) && identity(tool.namespace) ? tool.namespace : undefined
+        )
+      }
+    }
+
+    return [
+      {
+        itemId: identity(item.id) ? item.id : undefined,
+        bytes: definitions.reduce((sum, entry) => sum + entry.bytes, 0),
+        definitions
+      }
+    ]
+  })
+
+  return searches.length ? { responseId: response.id, searches } : undefined
+}
 
 /** Optional HTTP transport. The injected owner, not this adapter, validates and executes tools. */
 export const createResponsesAiProvider = (options: {
@@ -81,11 +140,13 @@ export const createResponsesAiProvider = (options: {
       totalTokens: 0
     }
 
-    const observe = (
-      event: Parameters<NonNullable<ToolProviderBinding['observe']>>[0]
-    ) => {
+    const observe = (event: ToolProviderObservation) => {
       try {
-        binding?.observe?.(event)
+        binding?.observe?.(
+          event.direction === 'response' && record(event.value)
+            ? { ...event, discovery: returnedToolSearches(event.value) }
+            : event
+        )
       } catch {
         /* Diagnostic failure cannot interrupt execution. */
       }
@@ -250,7 +311,7 @@ export const createResponsesAiProvider = (options: {
           invalid('Responses did not return a complete response.')
         }
 
-        let usage: { total: TokenUsage } | undefined
+        let usage: ToolProviderObservation['usage']
 
         if (record(value.usage)) {
           const raw = value.usage
@@ -286,7 +347,30 @@ export const createResponsesAiProvider = (options: {
             total.totalTokens += totalTokens
             total.cachedInputTokens += cachedInputTokens
             total.reasoningOutputTokens += reasoningOutputTokens
-            usage = { total: { ...total } }
+            const written = inputDetails.cache_write_tokens
+            const writes = inputDetails.cache_write_tokens_details
+            const validWrites =
+              valid(written) && written <= inputTokens - cachedInputTokens
+            const short = record(writes) ? writes.ttl_30m_tokens : undefined
+            const long = record(writes) ? writes.ttl_12h_tokens : undefined
+            const byLifetime =
+              valid(short) && valid(long) && short + long === written
+
+            usage = {
+              total: { ...total },
+              response: {
+                id: value.id,
+                inputTokens,
+                outputTokens,
+                totalTokens,
+                cachedInputTokens,
+                reasoningOutputTokens,
+                ...(validWrites ? { cacheWriteTokens: written } : {}),
+                ...(validWrites && byLifetime
+                  ? { cacheWrite30mTokens: short, cacheWrite12hTokens: long }
+                  : {})
+              }
+            }
           }
         }
 

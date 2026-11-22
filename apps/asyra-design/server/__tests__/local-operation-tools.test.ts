@@ -2286,7 +2286,7 @@ it('searches current API descriptions and names without loading every schema or 
   expect(found.complete).toBe(found.count <= 16)
   expect(found.apis[0]).toMatchObject({
     name: custom.name,
-    description: custom.description,
+    capability: { purpose: custom.description },
     match: { metadataTerms: ['quasar', 'handle'], unmatchedTerms: [] }
   })
   expect(found.apis[0].inputSchema).toBeUndefined()
@@ -3317,7 +3317,9 @@ it('resolves mixed action and native names without discarding known matches or d
       ...action,
       execution: {
         kind: 'batch-action',
-        tool: AiDesignToolIds.EXECUTE_DESIGN
+        tool: AiDesignToolIds.EXECUTE_DESIGN,
+        bindings: 'ready-arguments-only',
+        guidance: expect.stringContaining('ready batch')
       }
     })
   ])

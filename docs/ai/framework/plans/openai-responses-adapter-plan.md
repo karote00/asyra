@@ -149,3 +149,31 @@ Responses adapter has no geometry policy. Verify the recorded group scale,
 ordinary arguments versus named dependencies, nested proportional resize,
 editable leaves, and Frame exclusion with focused regressions. No paid inference
 is required for these deterministic handoffs.
+
+## Offline discovery cost follow-up
+
+Replay the two Dome path-operation searches through the real Responses request,
+Design catalog, Host and subsequent provider input with a scripted transport.
+Distinguish related candidates from a full vocabulary match and retain navigation
+to all matches and exact usage. Remove repeated candidate payload without
+changing execution admission, complete selected usage, user drawings, images
+or conversation history. Measure model-visible bytes on both sides.
+
+For server tool search, preserve protocol history and record the actual returned
+definition identities and serialized sizes correlated to the response, without
+persisting schema contents in transport diagnostics. Test the persisted trace and
+the following request independently. Local measurements do not establish token
+savings or the contents of a past server-side search. No live inference.
+
+The original first pages measured 18,010 and 18,523 UTF-8 bytes. The same
+queries now deliver 2,743 and 2,656 bytes through the model transport fixture.
+The vector query's remaining candidates are reachable once each, and the
+selected operation still supplies its usage contract. Partial matches retain
+the reference-research route. Two Core property descriptions now put their
+actual purpose before their Group size restriction so the grouping operation
+ranks first even under opaque identities. The observed drawing
+input used four fill templates, two motif templates and nine surface grids.
+The final selected execution receipt was 1,660 bytes in the retained text
+payload. Preserve that host expansion and selected delivery. Provider response
+receipts now distinguish reported cache reads and writes from model output;
+definition byte counts cannot partition billed tokens among individual tools.

@@ -2486,9 +2486,11 @@ export const createLocalOperationTools = (
       registeredName: tool.registeredName,
       revision: tool.revision,
       capability: capabilityBoundary(metadataText(tool)),
-      description: inputScopes?.selection
-        ? 'Select the next ready part with inputScopes for its complete execution guide.'
-        : tool.description,
+      ...(!candidate && {
+        description: inputScopes?.selection
+          ? 'Select the next ready part with inputScopes for its complete execution guide.'
+          : tool.description
+      }),
       effect: tool.effect,
       composition: tool.composition,
       execution: nativeExecution(tool),
@@ -3866,6 +3868,10 @@ export const createLocalOperationTools = (
                       }),
                       category: { type: 'string' },
                       catalogSize: toolResultCount,
+                      undeclaredPurposeTerms: {
+                        type: 'array',
+                        items: { type: 'string' }
+                      },
                       count: toolResultCount,
                       offset: toolResultCount,
                       complete: { type: 'boolean' },
@@ -4507,8 +4513,29 @@ export const createLocalOperationTools = (
           )
         }
 
-        const searchCapabilities = (purpose: string) => {
-          const terms = [...capabilityQueryTerms(purpose)]
+        const searchActionMenu = (api: (typeof apis)[number]) => {
+          const contract = getBasicApiContract(api.name)
+          const operation = contract?.operation ?? api.name
+
+          return {
+            name: api.name,
+            operation,
+            category: contract?.category ?? 'design',
+            effect:
+              contract?.effect ?? ('effect' in api ? api.effect : undefined),
+            revision: 'revision' in api ? api.revision : undefined,
+            execution: actionExecution(api),
+            usage: {
+              tool: AiDesignToolIds.READ_DESIGN_CONTRACTS,
+              arguments: contractReadArguments({
+                names: [operation],
+                view: 'usage'
+              })
+            }
+          }
+        }
+
+        const searchCapabilities = (terms: string[]) => {
           const inventory = nativeInventory()
 
           updateSearchCorpus([...apis, ...inventory])
@@ -4619,7 +4646,7 @@ export const createLocalOperationTools = (
 
         const candidatesFor = (missing: string[]) => {
           if (typeof args.purpose === 'string') {
-            return searchCapabilities(args.purpose)
+            return searchCapabilities([...capabilityQueryTerms(args.purpose)])
               .slice(0, 6)
               .map((entry) =>
                 'api' in entry
@@ -4676,7 +4703,7 @@ export const createLocalOperationTools = (
             }))
         }
 
-        const pageBoundary = (count: number) => {
+        const pageBoundary = (count: number, pageSize = definitionPageSize) => {
           const offset = Number(args.offset ?? 0)
 
           if (offset > count) {
@@ -4685,7 +4712,7 @@ export const createLocalOperationTools = (
             )
           }
 
-          const end = Math.min(offset + definitionPageSize, count)
+          const end = Math.min(offset + pageSize, count)
           const continuation: Record<string, unknown> = {
             ...args,
             offset: end,
@@ -4841,7 +4868,8 @@ export const createLocalOperationTools = (
           })
         }
 
-        const candidates = searchCapabilities(String(args.query)).filter(
+        const terms = [...capabilityQueryTerms(String(args.query))]
+        const candidates = searchCapabilities(terms).filter(
           (entry) =>
             args.category === undefined ||
             ('api' in entry
@@ -4849,16 +4877,38 @@ export const createLocalOperationTools = (
                 args.category
               : args.category === nativeCategory)
         )
+        // A partial vocabulary match is navigation, not evidence that the
+        // operation exists. Keep all results reachable at their original rank.
+        const partial =
+          candidates.length > 0 &&
+          candidates.every((entry) => entry.match.unmatchedTerms.length > 0)
+        const pageSize = partial && !args.offset ? 3 : definitionPageSize
         const inventory = candidates
-        const page = pageBoundary(inventory.length)
-        const selected = inventory.slice(
-          page.offset,
-          page.offset + definitionPageSize
-        )
+        const page = pageBoundary(inventory.length, pageSize)
+        const selected = inventory.slice(page.offset, page.offset + pageSize)
 
         return JSON.stringify({
           catalogSize: apis.length,
-          guidance: discoveryGuidance,
+          ...(partial
+            ? {
+                guidance: {
+                  capabilities:
+                    'Check the declared operation before execution.',
+                  references:
+                    'This catalog does not search reference material. Use native web research for external sources.'
+                },
+                undeclaredPurposeTerms: terms.filter(
+                  (term) =>
+                    !candidates.some((entry) =>
+                      metadataText(
+                        'api' in entry ? entry.api : entry.tool
+                      ).purpose.has(term)
+                    )
+                ),
+                message:
+                  'Partial matches only. No candidate matched all query terms. Check the declared purpose and unmatched terms before executing.'
+              }
+            : { guidance: discoveryGuidance }),
           ...(inventory.length
             ? {}
             : {
@@ -4874,8 +4924,7 @@ export const createLocalOperationTools = (
             'api' in entry
               ? [
                   {
-                    ...details(entry.api, false),
-                    description: entry.capability.purpose,
+                    ...searchActionMenu(entry.api),
                     rank: entry.rank,
                     capability: entry.capability,
                     match: entry.match,
@@ -4891,7 +4940,6 @@ export const createLocalOperationTools = (
               ? [
                   {
                     ...nativeMenu(entry.tool, true),
-                    description: entry.capability.purpose,
                     rank: entry.rank,
                     capability: entry.capability,
                     match: entry.match

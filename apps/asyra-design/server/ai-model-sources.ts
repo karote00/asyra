@@ -147,8 +147,42 @@ export const createToolCallingDesignSource = (configuration: {
                   protocol: configuration.id,
                   value: event.value
                 })
+                for (const search of event.discovery?.searches ?? []) {
+                  const correlation = {
+                    direction: event.direction,
+                    callId: event.discovery?.responseId,
+                    actionId: search.itemId
+                  }
+
+                  usage.trace('provider_transport_event', {
+                    ...correlation,
+                    part: 'tool-search-output',
+                    count: search.definitions.length,
+                    bytes: search.bytes
+                  })
+                  for (const definition of search.definitions) {
+                    usage.trace('provider_transport_event', {
+                      ...correlation,
+                      part: 'discovered-definition',
+                      namespace: definition.namespace,
+                      tool: definition.name,
+                      bytes: definition.bytes
+                    })
+                  }
+                }
+
                 if (event.usage) {
                   usage.update(event.usage)
+                  if (event.usage.response) {
+                    const { id, ...tokens } = event.usage.response
+
+                    usage.trace('provider_transport_event', {
+                      direction: event.direction,
+                      callId: id,
+                      part: 'response-usage',
+                      ...tokens
+                    })
+                  }
                 }
               },
 

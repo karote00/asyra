@@ -12,6 +12,32 @@ export interface ProviderToolGroup {
     readonly deferLoading?: boolean
   }[]
 }
+export interface ToolProviderObservation {
+  readonly direction: 'request' | 'response'
+  readonly value: unknown
+  readonly discovery?: {
+    readonly responseId: string
+    readonly searches: readonly {
+      readonly itemId?: string
+      readonly bytes: number
+      readonly definitions: readonly {
+        readonly name: string
+        readonly namespace?: string
+        readonly bytes: number
+      }[]
+    }[]
+  }
+  readonly usage?: {
+    readonly total: TokenUsage
+    readonly response?: TokenUsage & {
+      readonly id: string
+      readonly cacheWriteTokens?: number
+      readonly cacheWrite30mTokens?: number
+      readonly cacheWrite12hTokens?: number
+    }
+  }
+}
+
 export interface ToolProviderBinding {
   readonly instructions: string
   readonly tools: readonly ProviderToolGroup[]
@@ -27,11 +53,7 @@ export interface ToolProviderBinding {
     readonly id: string
     readonly text: string
   }): AiActionBatch | Promise<AiActionBatch>
-  observe?(event: {
-    readonly direction: 'request' | 'response'
-    readonly value: unknown
-    readonly usage?: { readonly total: TokenUsage }
-  }): void
+  observe?(event: ToolProviderObservation): void
   dispose?(): void | Promise<void>
 }
 

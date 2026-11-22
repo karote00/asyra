@@ -67,3 +67,10 @@ Formal transport fixtures use the provider's actual declarations and the same
 authoritative owner contracts. Integration proves canonical execution, partial
 completion, selected images and cross-turn saved-result reuse through the shared
 Host and browser exchange, not only helper or knowledge-only execution.
+
+Offline diagnostics correlate the individual Responses usage receipt and each
+returned server tool-search definition with the response identifier. Definition
+bytes measure serialized UTF-8 JSON, not model tokens. Record identities and
+sizes separately from model content, including cache-write counts and lifetimes
+when the provider supplies consistent figures. Keep full protocol items in
+continuation; never append diagnostic records to the model input.
