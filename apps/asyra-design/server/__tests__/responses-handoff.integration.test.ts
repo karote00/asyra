@@ -303,9 +303,7 @@ it('cancels and drains an outstanding browser receipt when the App service close
   }
 })
 
-it('replays the Dome searches through Responses with compact partial matches and attributable server discovery', async () => {
-  const { createDefaultAiModelSources } = await import('../ai-model-sources')
-  const { createAiToolContract } = await import('@asyra/ai-agent-runtime')
+async function createDrawingRuntime() {
   const hadWindow = 'window' in globalThis
 
   if (!hadWindow) {
@@ -318,6 +316,16 @@ it('replays the Dome searches through Responses with compact partial matches and
         vi.unstubAllGlobals()
       }
     })
+
+  return createAiRuntimeInput({
+    permissionRules: {},
+    provider: { requestActionBatch: vi.fn() }
+  })
+}
+
+it('replays the Dome searches through Responses with compact partial matches and attributable usage', async () => {
+  const { createDefaultAiModelSources } = await import('../ai-model-sources')
+  const { createAiToolContract } = await import('@asyra/ai-agent-runtime')
   const queries = [
     {
       query:
@@ -325,10 +333,7 @@ it('replays the Dome searches through Responses with compact partial matches and
     },
     { query: 'boolean subtract intersect vector paths', category: 'vector' }
   ]
-  const runtime = createAiRuntimeInput({
-    permissionRules: {},
-    provider: { requestActionBatch: vi.fn() }
-  })
+  const runtime = await createDrawingRuntime()
   const menus: {
     undeclaredPurposeTerms?: string[]
     message?: string
@@ -339,7 +344,6 @@ it('replays the Dome searches through Responses with compact partial matches and
   }[] = []
   const sizes: number[] = []
   let step = 0
-  let selectedBytes = 0
   let exactName = ''
   const candidateNames: string[] = []
   let categoryCount = 0
@@ -362,23 +366,7 @@ it('replays the Dome searches through Responses with compact partial matches and
       let output
 
       if (n === 0) {
-        const group = body.tools.find(
-          (tool: { name?: string }) => tool.name === 'design_knowledge'
-        )
-        const definition = group.tools[0]
-
-        selectedBytes = Buffer.byteLength(JSON.stringify(definition))
-        output = [
-          {
-            type: 'tool_search_output',
-            id: 'discovery-item',
-            execution: 'server',
-            tools: [
-              { type: 'namespace', name: group.name, tools: [definition] }
-            ]
-          },
-          call('search_design_tools', queries[0])
-        ]
+        output = [call('search_design_tools', queries[0])]
       } else {
         const content = body.input.at(-1).output[0].text
         const result = JSON.parse(content)
@@ -415,14 +403,6 @@ it('replays the Dome searches through Responses with compact partial matches and
               ]
         } else {
           expect(result.apis[0].usageGuide).toBeDefined()
-          expect(JSON.stringify(body.input)).not.toContain(
-            'discovered-definition'
-          )
-          expect(
-            body.input.some(
-              (item: { id?: string }) => item.id === 'discovery-item'
-            )
-          ).toBe(false)
           expect(body.previous_response_id).toBe('response-' + (n - 1))
           output = [
             {
@@ -518,18 +498,6 @@ it('replays the Dome searches through Responses with compact partial matches and
         })
       })
     )
-    expect(captureRecord.mock.calls.flat()).toContainEqual(
-      expect.objectContaining({
-        stage: 'provider_transport_event',
-        evidence: expect.objectContaining({
-          part: 'discovered-definition',
-          namespace: 'design_knowledge',
-          bytes: selectedBytes,
-          callId: 'response-0',
-          tool: expect.any(String)
-        })
-      })
-    )
   } finally {
     await Promise.all(sources.map((source) => source.dispose?.()))
     await Promise.all(
@@ -568,10 +536,18 @@ it('recovers the acknowledged output after service restart without mixing pointe
           ? [
               {
                 type: 'function_call',
-                namespace: 'design_knowledge',
-                name: 'discover_knowledge',
+                namespace: 'design_operations',
+                name: 'execute_design',
                 call_id: 'owned-by-a',
-                arguments: JSON.stringify({ query: 'button' })
+                arguments: JSON.stringify({
+                  operations: [
+                    {
+                      id: 'advice',
+                      name: 'design_knowledge.discover_knowledge',
+                      arguments: { ids: ['illustration.architecture'] }
+                    }
+                  ]
+                })
               }
             ]
           : [
@@ -599,6 +575,10 @@ it('recovers the acknowledged output after service restart without mixing pointe
     source.request(
       { ...input, metadata: { conversationId: id, turnId } },
       {
+        executeBatch: async () => {
+          throw Error('Unexpected canvas mutation')
+        },
+
         environment: {
           OPENAI_API_KEY: 'fixture',
           AI_PROVIDER_MODEL: 'fixture',
@@ -621,6 +601,7 @@ it('recovers the acknowledged output after service restart without mixing pointe
       previous_response_id: 'checkpoint-1',
       input: requests[1].input
     })
+    expect(JSON.stringify(requests[1].input)).toContain('untrusted-advice')
     expect(requests[4].previous_response_id).toBe('checkpoint-3')
     expect(requests[5].previous_response_id).toBe('checkpoint-4')
     expect(JSON.stringify(requests[4])).not.toContain('owned-by-a')
@@ -634,7 +615,15 @@ it('recovers the acknowledged output after service restart without mixing pointe
           item.stage === 'tool_started'
       )
 
-    expect(starts).toHaveLength(1)
+    expect(
+      starts.filter(
+        (item) =>
+          typeof item === 'object' &&
+          item !== null &&
+          'callId' in item &&
+          item.callId === 'owned-by-a'
+      )
+    ).toHaveLength(1)
     const { DatabaseSync } = await import('node:sqlite')
     const db = new DatabaseSync(join(directory, 'checkpoints.sqlite'), {
       readOnly: true
@@ -651,7 +640,15 @@ it('recovers the acknowledged output after service restart without mixing pointe
       expect(rows[0]).toMatchObject({
         conversation_id: 'a',
         call_id: 'owned-by-a',
-        arguments: JSON.stringify({ query: 'button' })
+        arguments: JSON.stringify({
+          operations: [
+            {
+              id: 'advice',
+              name: 'design_knowledge.discover_knowledge',
+              arguments: { ids: ['illustration.architecture'] }
+            }
+          ]
+        })
       })
       expect(JSON.parse(String(rows[0].output))).toEqual(
         Array.isArray(requests[1].input) && requests[1].input[0].output
@@ -763,5 +760,325 @@ it('preserves an uncertain dispatch on disk and rejects stale claims across serv
     first.close()
     second.close()
     rmSync(directory, { recursive: true, force: true })
+  }
+})
+
+it('publishes the three Design entries, resolves the Dome reference by purpose, and delivers a bounded overview with its original identity', async () => {
+  const { createHash } = await import('node:crypto')
+  const { default: sharp } = await import('sharp')
+  const { default: dome } = await import('./fixtures/dome-responses.json')
+  const { createDefaultAiModelSources, selectAiModelSource } =
+    await import('../ai-model-sources')
+  const download = await import('../reference-image-download')
+  const raw = await sharp({
+    create: { width: 3024, height: 4032, channels: 3, background: '#3399aa' }
+  })
+    .jpeg()
+    .toBuffer()
+  const sha = createHash('sha256').update(raw).digest('hex')
+  const fetchImage = vi
+    .spyOn(download, 'downloadReferenceImage')
+    .mockImplementation(async (url) => {
+      expect(url).toBe(dome.reference.references[0].imageUrl)
+
+      return new Response(new Uint8Array(raw), {
+        headers: { 'content-type': 'image/jpeg' }
+      })
+    })
+  const runtime = await createDrawingRuntime()
+  const { createAiToolContract } = await import('@asyra/ai-agent-runtime')
+  const requests: {
+    tools: { type: string; tools?: { name: string }[] }[]
+    input: { output: { text: string; type: string; image_url: string }[] }[]
+  }[] = []
+  let route = ''
+  let digest = ''
+  const source = selectAiModelSource(
+    'openai-responses',
+    createDefaultAiModelSources({
+      continuationDatabase: ':memory:',
+
+      fetch: async (_url, init) => {
+        const body = JSON.parse(String(init?.body))
+
+        requests.push(body)
+        const n = requests.length
+
+        if (n === 1) {
+          const user = body.input.find(
+            (item: { role: string }) => item.role === 'user'
+          )
+          const appActions = JSON.parse(user.content[0].text).input.actions
+          const nativeTools = body.tools
+            .filter((entry: { type: string }) => entry.type === 'namespace')
+            .map(
+              (group: {
+                type: string
+                name: string
+                description: string
+                tools: {
+                  type: string
+                  name: string
+                  description: string
+                  parameters: unknown
+                  defer_loading?: boolean
+                }[]
+              }) => ({
+                type: group.type,
+                name: group.name,
+                description: group.description,
+                tools: group.tools.map((tool) => ({
+                  type: tool.type,
+                  name: tool.name,
+                  description: tool.description,
+                  inputSchema: tool.parameters,
+                  deferLoading: !!tool.defer_loading
+                }))
+              })
+            )
+
+          digest = createHash('sha256')
+            .update(JSON.stringify({ nativeTools, appActions }))
+            .digest('hex')
+        }
+
+        if (n === 3) {
+          const menu = JSON.parse(body.input[0].output[0].text)
+
+          route = menu.tools[0].execution.operation
+          expect(route).toBe('design_references.import_reference_image')
+        }
+
+        const args = [
+          dome.reference,
+          {
+            query: 'import public image from URL',
+            inputFields: ['sourceUrl', 'imageUrl']
+          },
+          {
+            operations: [
+              { id: 'reference', name: route, arguments: dome.reference }
+            ]
+          }
+        ][n - 1]
+        const output =
+          n === 4
+            ? [
+                {
+                  type: 'message',
+                  role: 'assistant',
+                  content: [
+                    { type: 'output_text', text: JSON.stringify(final) }
+                  ]
+                }
+              ]
+            : [
+                {
+                  type: 'function_call',
+                  call_id: 'call-' + n,
+                  namespace:
+                    n === 1 ? 'design_references' : 'design_operations',
+                  name: [
+                    'import_reference_image',
+                    'search_design_tools',
+                    'execute_design'
+                  ][n - 1],
+                  arguments: JSON.stringify(args)
+                }
+              ]
+
+        return Response.json({
+          id: 'response-' + n,
+          status: 'completed',
+          output
+        })
+      }
+    })
+  )
+
+  captureRecord.mockClear()
+  try {
+    await source.request(
+      {
+        ...input,
+        actions: runtime.actionDefinitions.map((a) => createAiToolContract(a))
+      },
+      {
+        environment: {
+          OPENAI_API_KEY: 'fixture',
+          AI_PROVIDER_MODEL: 'fixture',
+          AI_EXECUTION_SOURCE_REVISION: 'fixture'
+        },
+
+        executeBatch: async () => {
+          throw Error('Reference acquisition must not mutate the canvas')
+        }
+      }
+    )
+    process.stdout.write(
+      JSON.stringify({
+        measurement: 'dome-responses-tools-utf8',
+        bytes: Buffer.byteLength(JSON.stringify(requests[0].tools))
+      }) + '\n'
+    )
+    for (const body of requests) {
+      expect(
+        body.tools
+          .flatMap(
+            (g: { tools?: { name: string }[] }) =>
+              g.tools?.map((t) => t.name) ?? []
+          )
+          .sort()
+      ).toEqual([
+        'execute_design',
+        'read_design_contracts',
+        'search_design_tools'
+      ])
+      expect(body.tools.map((t: { type: string }) => t.type)).toEqual([
+        'namespace',
+        'web_search'
+      ])
+    }
+
+    expect(requests[1].input[0].output[0].text).toContain('TOOL_NOT_FOUND')
+    const parts = requests[3].input[0].output
+    const receipt = JSON.parse(parts[0].text).execution.value
+
+    expect(receipt.references[0]).toMatchObject({
+      sha256: sha,
+      attachmentIndex: 0,
+      image: { width: 3024, height: 4032 },
+      source: { url: dome.reference.references[0].sourceUrl }
+    })
+    const pixels = parts.filter(
+      (part: { type: string }) => part.type === 'input_image'
+    )
+
+    expect(pixels).toHaveLength(1)
+    const overview = Buffer.from(pixels[0].image_url.split(',')[1], 'base64')
+
+    expect(await sharp(overview).metadata()).toMatchObject({
+      width: 960,
+      height: 1280
+    })
+    expect(receipt.actionResults[0].result.image).toMatchObject({
+      width: 960,
+      height: 1280
+    })
+    expect(fetchImage).toHaveBeenCalledOnce()
+    expect(captureRecord.mock.calls.flat()).toContainEqual(
+      expect.objectContaining({
+        stage: 'capabilities_advertised',
+        evidence: expect.objectContaining({
+          toolCount: 3,
+          eagerToolCount: 3,
+          contractDigest: digest
+        })
+      })
+    )
+  } finally {
+    fetchImage.mockRestore()
+    await source.dispose?.()
+    await Promise.all(runtime.ownedResources?.map((r) => r.dispose()) ?? [])
+  }
+})
+
+it('runs a standalone registered invocation through the published entry and rejects private or mixed calls', async () => {
+  const { createDefaultAiModelSources, selectAiModelSource } =
+    await import('../ai-model-sources')
+  const runtime = await createDrawingRuntime()
+  const { createAiToolContract } = await import('@asyra/ai-agent-runtime')
+  const invocation = {
+    namespace: 'tool_library',
+    tool: 'invoke_tool',
+    arguments: {
+      name: 'design_operations.record_design_facts',
+      revision: 2,
+      input: {}
+    }
+  }
+  const inputs = [
+    { invocation },
+    { invocation, operations: [] },
+    {
+      invocation: {
+        ...invocation,
+        namespace: 'host_operations',
+        tool: 'execute_design'
+      }
+    }
+  ]
+  const receipts: string[] = []
+  let count = 0
+  const source = selectAiModelSource(
+    'openai-responses',
+    createDefaultAiModelSources({
+      continuationDatabase: ':memory:',
+
+      fetch: async (_url, init) => {
+        const body = JSON.parse(String(init?.body))
+
+        if (count) {
+          receipts.push(body.input[0].output[0].text)
+        }
+
+        const args = inputs[count++]
+
+        return Response.json({
+          id: 'control-' + count,
+          status: 'completed',
+          output: args
+            ? [
+                {
+                  type: 'function_call',
+                  namespace: 'design_operations',
+                  name: 'execute_design',
+                  call_id: 'step-' + count,
+                  arguments: JSON.stringify(args)
+                }
+              ]
+            : [
+                {
+                  type: 'message',
+                  role: 'assistant',
+                  content: [
+                    { type: 'output_text', text: JSON.stringify(final) }
+                  ]
+                }
+              ]
+        })
+      }
+    })
+  )
+
+  try {
+    await source.request(
+      {
+        ...input,
+        actions: runtime.actionDefinitions.map((a) => createAiToolContract(a))
+      },
+      {
+        executeBatch: async () => {
+          throw Error('Unexpected canvas mutation')
+        },
+
+        environment: {
+          OPENAI_API_KEY: 'fixture',
+          AI_PROVIDER_MODEL: 'fixture',
+          AI_EXECUTION_SOURCE_REVISION: 'fixture'
+        }
+      }
+    )
+    expect(JSON.parse(receipts[0])).toMatchObject({
+      execution: { status: 'success', value: { facts: [] } }
+    })
+    for (const text of receipts.slice(1)) {
+      expect(JSON.parse(text)).toMatchObject({
+        toolOutcome: { status: 'failed', settlement: 'not-started' }
+      })
+    }
+  } finally {
+    await source.dispose?.()
+    await Promise.all(runtime.ownedResources?.map((r) => r.dispose()) ?? [])
   }
 })

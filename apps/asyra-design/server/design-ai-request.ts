@@ -246,6 +246,7 @@ export const requestRecordedDesignAi = async <T extends DesignAiRequestOptions>(
       input,
       {
         ...turnOptions,
+        modelSource: source.id,
         evaluation,
 
         workStopped: () => workState.stopped

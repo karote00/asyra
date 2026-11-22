@@ -192,3 +192,54 @@ the continuation checkpoint before the next model request.
 An ambiguous mutation must never be retried automatically. Verify recovery,
 isolation, input size, and exact-once delivery of acknowledged effects across
 service restart. Use focused runtime and App tests without model inference.
+
+## Publish three Design entries and bound reference overview pixels
+
+In the five successful Responses from the recorded Taipei Dome drawing, the
+model imported a reference, searched twice, read one usage contract and ran a
+decided drawing. A sixth request failed after the drawing receipt. Offline
+replay at 29e77d23f, including the final receipt submission, reduced advertised
+tools from 250,936 to 15,564 UTF-8 bytes per request. Known work took the same
+six requests. Purpose-based import took seven, or eight with an additional
+contract read. The Host produced one group and 411 vectors. A downloaded
+3024 by 4032 JPEG occupied 4,539,934 bytes before transport encoding.
+
+1. Design publishes only search_design_tools, read_design_contracts and
+   execute_design to Responses. Keep the complete Host registry and existing
+   invocation admission. Web research remains a provider capability. Route standalone native library controls through the published execution entry
+   without allowing them inside a recipe or exposing the private dispatcher. Align
+   instruction text, advertised counts, digests and evidence with publication.
+2. Preserve the admitted public raster, its dimensions, source, digest and
+   attachment index for App image operations. Bound the overview delivered to
+   OpenAI to a 1280-pixel longest edge, with preserved orientation, aspect and
+   transparency. Keep small sources unchanged. Reuse a derived overview within
+   the acquisition lifetime. Canvas captures and user attachments have separate
+   owners. The per-image limit does not bound the total cost of a turn.
+3. Prove known work without lookup, purpose discovery followed by execution,
+   rejection of undeclared direct calls, and the provider-visible receipt and
+   image. Use the recorded Dome inputs, a portable raster fixture and an offline
+   comparison with the retained original. Run focused source, Host and runtime
+   checks without model inference.
+
+OpenAI documents model-dependent image sizing and patch costs.
+<a href="https://developers.openai.com/api/docs/guides/images-vision" target="_blank" rel="noopener noreferrer">OpenAI vision</a>.
+Google exposes image resolution as a cost/detail trade-off.
+<a href="https://ai.google.dev/gemini-api/docs/media-resolution" target="_blank" rel="noopener noreferrer">Gemini media resolution</a>.
+For the retained Dome source, WebP at quality 85 with longest edges of 768,
+1280 and 1536 produced 151,496, 401,696 and 568,320 bytes respectively.
+1280 is an App overview policy, not a vendor token guarantee. Preserve originals
+for source-space work; no offline byte count establishes a billed price.
+
+The implemented tools array, including provider web search and the standalone
+invocation form, measured 16,020 bytes with the drawing action set, down from
+250,936 bytes (93.6%). The production Core applied the recorded draft in one
+call and created one group and 411 vectors. Its successor received both retained
+names. Purpose-based search found the importer first and its result fed the
+Host invocation without a contract read. The provider received one overview,
+the source digest, dimensions, index and attribution. Offline import of the
+recorded photo reproduced a 960 by 1280 WebP of 401,696 bytes while retaining
+the exact 4,539,934-byte original. Standalone tool-library execution kept its
+leaf validation and rejected mixed and private calls before execution. The
+advertised contract digest was checked against the three functions and the
+actual final-response actions sent to the provider. All model turns in these
+regressions used an offline scripted transport.

@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "projectId": "asyra",
   "flowId": "openai-responses-adapter",
-  "revision": 21,
+  "revision": 26,
   "definition": {
     "title": "Replaceable model sources and Responses adapter",
     "purpose": "Keep one App execution pipeline and replace model protocol adapters through explicit source registration.",
@@ -40,7 +40,7 @@
         "id": "observation",
         "title": "Shared Design invocation owner",
         "owner": "Shared Design invocation owner",
-        "objective": "Provider declaration and call -> validated Host result -> selected delivery -> one causal terminal observation",
+        "objective": "Design Responses publication of three available entries -> full Host registry execution -> original reference retained and selected bounded overview delivered with source identity -> one terminal observation; native publication remains source-owned",
         "required": true,
         "applicable": true,
         "dependsOn": [
@@ -62,7 +62,9 @@
         ],
         "implementationRefs": [
           "apps/asyra-design/server/design-provider-tools.ts",
-          "apps/asyra-design/server/local-ai-provider.ts"
+          "apps/asyra-design/server/local-ai-provider.ts",
+          "apps/asyra-design/server/local-reference-tools.ts",
+          "apps/asyra-design/server/design-ai-request.ts"
         ],
         "actions": []
       },
@@ -152,40 +154,40 @@
         "criterionId": "behavior",
         "kind": "manual",
         "status": "accepted",
-        "binding": "7e450914c402400add72513f59f9fe6d8bd831e0d5139af0c861d0e442494633",
+        "binding": "409516def61b94d12a68f90e5507dd03ba657b2e2430eb73c80e152583e69cc0",
         "actor": "Codex",
-        "summary": "Responses runtime and the Design source exchange preserve selected text, image and settlement. The restart fixture checks the exact provider output against the committed App receipt and counts one invocation after a failed submission.",
-        "at": "2026-11-22T09:19:56.173Z"
+        "summary": "The provider wire fixture verified three declared app functions, actual final-response actions and the advertised digest. A qualified standalone control retained its ordinary Host admission; mixed and private calls were rejected. The retained Dome source reproduced a single 960 by 1280 view with exact original retention.",
+        "at": "2026-11-22T11:24:02.427Z"
       },
       {
         "nodeId": "routing",
         "criterionId": "behavior",
         "kind": "manual",
         "status": "accepted",
-        "binding": "6b14cf97dc47361bdbba7275b360d78d3a44d419355ad036dbf13cebf9fa3468",
+        "binding": "2e37f29ffe41176cd39d2857ad7c47733c0f7b20ac889e1a5b7bc7ef016a79d7",
         "actor": "Codex",
-        "summary": "Source registry and status tests cover explicit source selection. Missing stored response and stale execution claims reach explicit session errors. The native offline CLI fixture resumes its thread through the service-owned source.",
-        "at": "2026-11-22T09:19:56.175Z"
+        "at": "2026-11-22T11:25:00.934Z",
+        "summary": "Source selection and native continuation passed. The offline Responses successor distinguishes undeclared direct calls from recoverable Host admission failures and accepts a valid call without starting another conversation."
       },
       {
         "nodeId": "proof",
         "criterionId": "behavior",
         "kind": "manual",
         "status": "accepted",
-        "binding": "e4819711282d228703a10c6971cd4c334773f1d0f2df0e0a8b89a00f201f740c",
+        "binding": "1f573e2aee9359152a46edf353e72e503711aecee9aeeaf04810e67be38b073e",
         "actor": "Codex",
-        "summary": "The non-Design Host fixture and three canonical Design Responses cases exercise real owner validation, permission refusal, partial settlements, named reuse, selected images and mutation receipts across source recreation.",
-        "at": "2026-11-22T09:19:56.176Z"
+        "summary": "Focused native, Responses and Core fixtures exercised search to import, provider media and source identity, standalone control routing, correction, restart and known execution without discovery. The recorded Dome draft created one group and 411 vectors.",
+        "at": "2026-11-22T11:25:18.370Z"
       },
       {
         "nodeId": "integration",
         "criterionId": "integrated",
         "kind": "manual",
         "status": "accepted",
-        "binding": "a6fffbd24aa83dcd89291479be477e973565ccd5a9591c5c1c241892a248a80f",
+        "binding": "be5a63c5cd6bb7e0105eb02c4071146bece89bf4cc9813b91da6328bde08fd42",
         "actor": "Codex",
-        "summary": "Scoped offline runtime, source, canonical exchange and native continuation checks passed. Contract, checkpoint, atomic receipt and request payload reviewed. No hosted inference or billing measurement.",
-        "at": "2026-11-22T09:19:56.177Z"
+        "summary": "Scoped offline Host, source and adapter checks passed. The implemented wire tools array measured 16,020 bytes including provider web search. No hosted inference or billing measurement.",
+        "at": "2026-11-22T11:25:18.373Z"
       }
     ],
     "notes": [],

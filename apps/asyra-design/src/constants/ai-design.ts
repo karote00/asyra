@@ -25,6 +25,12 @@ export const AiDesignToolIds = Object.freeze({
   REPAIR_DESIGN_CHECKS: 'repair_design_checks'
 } as const)
 
+export const isDesignProviderEntry = (namespace: string, name: string) =>
+  namespace === 'design_operations' &&
+  (name === AiDesignToolIds.SEARCH_DESIGN_TOOLS ||
+    name === AiDesignToolIds.READ_DESIGN_CONTRACTS ||
+    name === AiDesignToolIds.EXECUTE_DESIGN)
+
 export const AiInspectionLimits = Object.freeze({
   maxEdge: 1024
 } as const)

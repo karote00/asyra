@@ -27,7 +27,10 @@ import { AsyncLocalStorage } from 'node:async_hooks'
 import { createHash, randomUUID } from 'node:crypto'
 import { readEvaluationWindow } from '../src/ai/evaluation-window'
 import { AiActionNames } from '../src/constants/ai-actions'
-import { AiDesignToolIds } from '../src/constants/ai-design'
+import {
+  AiDesignToolIds,
+  isDesignProviderEntry
+} from '../src/constants/ai-design'
 import { createDesignPreparationSession } from './design-preparation'
 import {
   workflowInvocationExample,
@@ -83,8 +86,13 @@ const failure = (code: AiModelBackendError['code']) =>
     'The AI provider could not complete the request.'
   )
 
+type PublishedAction = Pick<
+  AiProviderInput['actions'][number],
+  'name' | 'description' | 'inputSchema'
+>
+
 const turnInput = (
-  input: AiProviderInput,
+  input: Omit<AiProviderInput, 'actions'> & { actions: PublishedAction[] },
   references: ReturnType<
     ReturnType<typeof createLocalImageTools>['validateReferences']
   >
@@ -135,11 +143,6 @@ const turnInput = (
       text: JSON.stringify({
         input: {
           ...input,
-          actions: input.actions.map(({ name, description, inputSchema }) => ({
-            name,
-            description,
-            inputSchema
-          })),
           metadata
         },
         protocolVersion: 1
@@ -150,6 +153,7 @@ const turnInput = (
 }
 
 export interface DesignProviderToolOptions {
+  readonly modelSource?: string
   readonly executeBatch?: ExecuteAiBatch
   readonly signal?: AbortSignal
   readonly resultContext?: ExchangeConversationResults
@@ -175,6 +179,7 @@ export const createDesignProviderTools = async (
   options: DesignProviderToolOptions,
   usage?: ReturnType<typeof createAiExecutionProfiler>
 ) => {
+  const responses = options.modelSource === 'openai-responses'
   const evaluation = options.evaluation
   let progressSequence = 0
 
@@ -321,7 +326,9 @@ export const createDesignProviderTools = async (
         return index
       },
       undefined,
-      ownerObservation
+      ownerObservation,
+      undefined,
+      responses ? 'overview' : 'original'
     )
     const designs = createLocalDesignTools(
       input.actions,
@@ -431,6 +438,7 @@ export const createDesignProviderTools = async (
             {
               observation: ownerObservation,
               ownership,
+              standaloneInvocations: responses,
               requestSignal: options.signal,
               resolveSources: imageTools.resolveSources,
               validateReferences: imageTools.validateReferences,
@@ -558,6 +566,7 @@ export const createDesignProviderTools = async (
 
   if (!options.assessmentOnly && !options.checkOnly) {
     host = createLocalToolHost({
+      standaloneInvocations: responses,
       resultContext:
         isRecord(input.metadata) &&
         typeof input.metadata.conversationId === 'string'
@@ -738,8 +747,9 @@ export const createDesignProviderTools = async (
   const scopeInstructions = mainScope
     ? '\nMain tool scope: ' + JSON.stringify(mainScope)
     : ''
-  const nativeDefinitions = activeToolGroups.flatMap(
-    ({ name, description, owner }) =>
+
+  const nativeDefinitions = activeToolGroups
+    .flatMap(({ name, description, owner }) =>
       owner && owner.definitions.length
         ? [
             {
@@ -750,12 +760,16 @@ export const createDesignProviderTools = async (
                 .filter(
                   (definition) => definition.providerExposure !== 'registry'
                 )
-                .map(({ name, description, inputSchema }) => {
+                .filter(
+                  (definition) =>
+                    !responses || isDesignProviderEntry(name, definition.name)
+                )
+                .map(({ name: toolName, description, inputSchema }) => {
                   const example = workflowInvocationExample(inputSchema)
 
                   return {
                     type: 'function',
-                    name,
+                    name: toolName,
                     description,
                     inputSchema: {
                       ...workflowUsageParameters(
@@ -763,16 +777,14 @@ export const createDesignProviderTools = async (
                       ),
                       ...(example ? { examples: [example] } : {})
                     },
-                    deferLoading:
-                      name !== AiDesignToolIds.READ_DESIGN_CONTRACTS &&
-                      name !== AiDesignToolIds.SEARCH_DESIGN_TOOLS &&
-                      name !== AiDesignToolIds.EXECUTE_DESIGN
+                    deferLoading: !isDesignProviderEntry(name, toolName)
                   }
                 })
             }
           ]
         : []
-  )
+    )
+    .filter((group) => group.tools.length > 0)
   const advertisedContractDigests = new Map(
     nativeDefinitions.flatMap((group) =>
       group.tools.map(
@@ -806,6 +818,7 @@ export const createDesignProviderTools = async (
   )
   const operationNames = new Set(operations?.actionNames)
   let inputItems: Record<string, unknown>[]
+  let appActions: PublishedAction[]
 
   try {
     const attachmentIndexes =
@@ -831,13 +844,16 @@ export const createDesignProviderTools = async (
       : []
 
     options.signal?.throwIfAborted()
+    appActions = preparation
+      .modelActions(input.actions)
+      .filter((action) => !operationNames.has(action.name))
+      .map(({ name, description, inputSchema }) => ({
+        name,
+        description,
+        inputSchema
+      }))
     inputItems = turnInput(
-      {
-        ...input,
-        actions: preparation
-          .modelActions(input.actions)
-          .filter((action) => !operationNames.has(action.name))
-      },
+      { ...input, actions: appActions },
       attachmentReferences
     )
   } catch (error) {
@@ -899,14 +915,14 @@ export const createDesignProviderTools = async (
             (operations
               ? ' input.actions lists final-response actions, not the complete capability catalog. Drawing operations are supplied separately as callable tools; their absence from input.actions does not mean drawing is unavailable. Use backend operation tools to apply changes, inspect actual receipts, and continue with registered operations. Do not repeat an executed operation in the final batch. End with report_outcome: {outcome:"completed"|"unsupported",message:string}.'
               : ' Return the prepared action batch without invoking backend operation tools. Use report_outcome only for an unsupported request.') +
-            ` The ${AiDesignToolIds.SEARCH_DESIGN_TOOLS}, ${AiDesignToolIds.READ_DESIGN_CONTRACTS} and ${AiDesignToolIds.EXECUTE_DESIGN} entries are available directly when drawing operations are enabled; domain tools use native deferred discovery. Discover tools by operation purpose using ${AiDesignToolIds.SEARCH_DESIGN_TOOLS} query; read exact contracts using ${AiDesignToolIds.READ_DESIGN_CONTRACTS} names. Categories and their continuations remain available when an intentional complete inventory is useful. Native discovery provides callable declarations. Read bounded tool results directly, preserving complete selected restrictions and following returned continuations when needed. Reuse App-owned artifacts, target references and recipes for intermediate geometry and data binding. Runtime owns admitted finite iteration; do not coordinate each deterministic check/repair through a new model turn. Use compact mutation receipts and prepared artifact target references when individual acknowledgements are unnecessary. Known current contracts need no lookup. Use execute_design for decided sequences. Name steps for binding, retention or selected delivery, including earlier images. Use the returned action names and current target selectors. ${localToolResultInstructions}`
+            ` The ${AiDesignToolIds.SEARCH_DESIGN_TOOLS}, ${AiDesignToolIds.READ_DESIGN_CONTRACTS} and ${AiDesignToolIds.EXECUTE_DESIGN} entries are available directly when drawing operations are enabled. ${responses ? 'Submit known Host operations through execute_design. For standalone native or registered routes send their invocation through execute_design. Look up uncertain operations by purpose or input fields and read a contract only when more detail is needed. Large imported references are shown as bounded overviews; the App retains original pixels for image operations.' : 'Domain tools use native deferred discovery.'} Discover tools by operation purpose using ${AiDesignToolIds.SEARCH_DESIGN_TOOLS} query; read exact contracts using ${AiDesignToolIds.READ_DESIGN_CONTRACTS} names. Categories and their continuations remain available when an intentional complete inventory is useful. Read bounded tool results directly, preserving complete selected restrictions and following returned continuations when needed. Reuse App-owned artifacts, target references and recipes for intermediate geometry and data binding. Runtime owns admitted finite iteration; do not coordinate each deterministic check/repair through a new model turn. Use compact mutation receipts and prepared artifact target references when individual acknowledgements are unnecessary. Known current contracts need no lookup. Use execute_design for decided sequences. Name steps for binding, retention or selected delivery, including earlier images. Use the returned action names and current target selectors. ${localToolResultInstructions}`
       },
       ...(libraryUnavailable
         ? [
             {
               role: 'developer',
               source: 'tool-library-status',
-              text: 'Saved tools could not be loaded. Native tools remain available; saving returns explicit status, and save-only retry must not repeat document edits.'
+              text: 'Saved tools could not be loaded. Registered App capabilities remain available; saving returns explicit status, and save-only retry must not repeat document edits.'
             }
           ]
         : [])
@@ -929,14 +945,17 @@ export const createDesignProviderTools = async (
     callId: 'advertised-contracts',
     definitions: {
       nativeTools: nativeDefinitions,
-      appActions: input.actions,
+      appActions,
       appOwnedInstructionBlocks
     },
     contractDigest: toolContractDigest({
       nativeTools: nativeDefinitions,
-      appActions: input.actions
+      appActions
     }),
-    toolCount: toolBindings.size,
+    toolCount: nativeDefinitions.reduce(
+      (count, group) => count + group.tools.length,
+      0
+    ),
     toolDefinitionBytes,
     eagerToolCount: eagerDefinitions.length,
     eagerToolDefinitionBytes: eagerDefinitions.length

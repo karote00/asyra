@@ -1,4 +1,7 @@
-import { AiToolFailureCodes } from '../src/constants/ai-design'
+import {
+  AiToolFailureCodes,
+  isDesignProviderEntry
+} from '../src/constants/ai-design'
 import { requireSupportedToolSchemas } from '@asyra/ai-agent-runtime/schema'
 import type { AiToolImage } from '@asyra/ai-agent-runtime'
 import type { ExchangeConversationResults } from '@asyra/ai-agent-runtime'
@@ -41,6 +44,7 @@ import {
   createDesignSequencePlanner,
   designStageOutcomes,
   sequenceDefinition,
+  standaloneInvocationSchema,
   resultReceiptSchema
 } from './local-design-sequence'
 import {
@@ -102,6 +106,7 @@ type Reply = Awaited<ReturnType<typeof invokeLocalTool>> & {
 
 /** One request host: registered metadata, guarded leaves and actual store ownership. */
 export const createLocalToolHost = (options: {
+  standaloneInvocations?: boolean
   requestId: string
   resultContext?: ExchangeConversationResults
   signal: AbortSignal
@@ -543,7 +548,27 @@ export const createLocalToolHost = (options: {
     return library.describe(names?.[0] ?? name)
   }
 
-  const sequence = sequenceDefinition(batch)
+  const standaloneOwners = new Map<string, LocalToolDefinition>()
+
+  if (options.standaloneInvocations) {
+    for (const group of [
+      ...groups,
+      { name: 'tool_library', owner: controls }
+    ]) {
+      for (const definition of group.owner.definitions) {
+        if (
+          definition.providerExposure !== 'registry' &&
+          definition.composition !== 'allowed' &&
+          definition.composition !== 'request' &&
+          !isDesignProviderEntry(group.name, definition.name)
+        ) {
+          standaloneOwners.set(group.name + '.' + definition.name, definition)
+        }
+      }
+    }
+  }
+
+  const sequence = sequenceDefinition(batch, [...standaloneOwners.values()])
 
   const planSequence = createDesignSequencePlanner(
     batch,
@@ -1896,6 +1921,53 @@ export const createLocalToolHost = (options: {
               'UNKNOWN_TOOL',
               { settlement: 'not-started' }
             )
+          }
+
+          // The three-entry publication transports standalone controls without
+          // making control-plane tools eligible as recipe dependencies.
+          if (
+            !internal &&
+            options.standaloneInvocations &&
+            call.name ===
+              'design_operations.' + AiDesignToolIds.EXECUTE_DESIGN &&
+            call.input &&
+            typeof call.input === 'object' &&
+            'invocation' in call.input
+          ) {
+            const issue = operationInputIssue(
+              call.input,
+              standaloneInvocationSchema
+            )
+            const target = call.input.invocation
+
+            if (
+              issue ||
+              !target ||
+              typeof target !== 'object' ||
+              !('namespace' in target) ||
+              typeof target.namespace !== 'string' ||
+              !('tool' in target) ||
+              typeof target.tool !== 'string' ||
+              !('arguments' in target)
+            ) {
+              return localToolFailureReply(
+                issue ?? 'Invalid standalone invocation.',
+                AiToolFailureCodes.INPUT_INVALID,
+                { settlement: 'not-started' }
+              )
+            }
+
+            const name = target.namespace + '.' + target.tool
+
+            if (!standaloneOwners.has(name)) {
+              return localToolFailureReply(
+                'Use a published standalone owner or submit a composable operation through operations.',
+                AiToolFailureCodes.INPUT_INVALID,
+                { settlement: 'not-started' }
+              )
+            }
+
+            call = { ...call, name, input: target.arguments }
           }
 
           if (

@@ -48,7 +48,9 @@ describe('stage-owned App guidance', () => {
       'You choose visual intent, design parameters'
     )
     expect(AI_APP_PROMPT).toContain('instead of manually\nexpanding values')
-    expect(AI_APP_PROMPT).toContain('Prefer a suitable existing direct tool')
+    expect(AI_APP_PROMPT).toContain(
+      'Use the declared execution route for a suitable existing operation'
+    )
     expect(AI_APP_PROMPT).toContain(
       'delegate the sequence in one execute_design call with bound outputs'
     )
@@ -213,7 +215,12 @@ describe('stage-owned App guidance', () => {
   it('preserves original user intent, verified facts and original resolution', () => {
     expect(general).toContain('original user request remains authoritative')
     expect(general).toContain('rough, ugly, simple')
-    expect(general).toContain('Never reduce source-image resolution')
+    expect(general).toContain(
+      'Preserve source-image dimensions and document scale'
+    )
+    expect(general).toContain(
+      'A delivered overview may have fewer pixels than its retained source'
+    )
     expect(general).toContain(
       'Preserve adopted source statements and their limitations'
     )

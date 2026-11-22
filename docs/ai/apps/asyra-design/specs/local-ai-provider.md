@@ -569,7 +569,7 @@ The provider uses native live web search without App-specific source restriction
 No site-specific search adapter or candidate-ID import path is registered. The
 model chooses research methods and passes original imageUrl/sourceUrl pairs to
 the safe importer; arbitrary public source domains are admitted, not a domain list. Original raster dimensions are preserved through import,
-vectorization input, and native model image delivery. MIME/signature, byte bounds
+vectorization input, and native Codex model image delivery. For the OpenAI Responses source, the App delivers a bounded overview of an oversized imported raster and retains the original. MIME/signature, byte bounds
 and decoder safety remain; there is no separate four-megapixel source ceiling; exceeding a guard reports failure,
 never resizes the source. SVG input is explicitly unsupported by this raster
 importer and is never replaced by a publisher raster thumbnail. Tool receipts

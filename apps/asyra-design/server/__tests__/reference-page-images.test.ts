@@ -444,3 +444,70 @@ it.each([true, false])(
     expect(download).toHaveBeenCalledTimes(2)
   }
 )
+
+it.each([
+  { width: 63, height: 42, orientation: 1, viewWidth: 63, viewHeight: 42 },
+  { width: 1800, height: 900, orientation: 6, viewWidth: 640, viewHeight: 1280 }
+])(
+  'retains source bytes and reuses correctly oriented reference pixels at $width by $height',
+  async ({ width, height, orientation, viewWidth, viewHeight }) => {
+    const bytes = await sharp({
+      create: {
+        width,
+        height,
+        channels: 4,
+        background: { r: 30, g: 60, b: 90, alpha: 0.5 }
+      }
+    })
+      .withMetadata({ orientation })
+      .png()
+      .toBuffer()
+    const add = vi.fn(() => 0)
+    const download = vi.fn(
+      async () =>
+        new Response(new Uint8Array(bytes), {
+          headers: { 'content-type': 'image/png' }
+        })
+    )
+    const refs = createLocalReferenceTools(
+      add,
+      download,
+      {},
+      undefined,
+      'overview'
+    )
+    const args = { sourceUrl, imageUrl: 'https://publisher.example/photo.png' }
+    const requestSignal = signal()
+
+    const request = () =>
+      refs.call('import_reference_image', args, requestSignal).then(JSON.parse)
+
+    const [first, second] = await Promise.all([request(), request()])
+
+    expect(add).toHaveBeenCalledTimes(1)
+    expect(add).toHaveBeenCalledWith(
+      expect.objectContaining({
+        dataUrl: 'data:image/png;base64,' + bytes.toString('base64')
+      })
+    )
+    expect(download).toHaveBeenCalledTimes(1)
+    const view = first.actionResults[0].result.image
+
+    expect(second.actionResults[0].result.image).toEqual(view)
+    expect(first.references[0].image).toMatchObject({
+      width: orientation === 6 ? height : width,
+      height: orientation === 6 ? width : height
+    })
+    expect(view).toMatchObject({ width: viewWidth, height: viewHeight })
+    const emitted = Buffer.from(view.dataUrl.split(',')[1], 'base64')
+
+    expect(await sharp(emitted).metadata()).toMatchObject({
+      width: viewWidth,
+      height: viewHeight,
+      hasAlpha: true
+    })
+    if (width <= 1280) {
+      expect(emitted).toEqual(bytes)
+    }
+  }
+)

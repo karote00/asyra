@@ -132,7 +132,10 @@ import {
   createLocalDesignContext,
   designContextDefinitions
 } from './local-design-context'
-import { AiDesignToolIds } from '../src/constants/ai-design'
+import {
+  isDesignProviderEntry,
+  AiDesignToolIds
+} from '../src/constants/ai-design'
 import { AiReferenceToolIds } from './ai-domain-prompt'
 import { Buffer } from 'node:buffer'
 import { createHash, randomBytes, randomUUID } from 'node:crypto'
@@ -826,31 +829,32 @@ const usageInvocation = (descriptor: Record<string, unknown>) => {
     }
   }
 
-  if (execution.kind === 'registered-tool') {
-    return {
-      illustrative: true,
-      invocation: {
-        namespace: execution.namespace,
-        tool: execution.tool,
-        arguments: {
-          ...(isRecord(execution.arguments) ? execution.arguments : {}),
-          input: example
-        }
-      }
-    }
-  }
+  if (
+    execution.kind === 'registered-tool' ||
+    execution.kind === 'native-tool'
+  ) {
+    let args = example
 
-  if (execution.kind === 'native-tool') {
+    if (execution.kind === 'registered-tool') {
+      args = {
+        ...(isRecord(execution.arguments) ? execution.arguments : {}),
+        input: example
+      }
+    } else if (typeof execution.argumentField === 'string') {
+      args = { [execution.argumentField]: example }
+    }
+
+    const invocation = {
+      namespace: execution.namespace,
+      tool: execution.tool,
+      arguments: args
+    }
+
     return {
       illustrative: true,
-      invocation: {
-        namespace: execution.namespace,
-        tool: execution.tool,
-        arguments:
-          typeof execution.argumentField === 'string'
-            ? { [execution.argumentField]: example }
-            : example
-      }
+      invocation: execution.via
+        ? { tool: execution.via, arguments: { invocation } }
+        : invocation
     }
   }
 
@@ -997,6 +1001,7 @@ export const createLocalOperationTools = (
     ownership?: AiToolOwnership
     requestSignal?: AbortSignal
     reviewTargetId?: string
+    standaloneInvocations?: boolean
     getNativeTools?: () => NativeToolDescriptor[]
     getNativeToolsRevision?: () => number
     resolveSources?: (sources: string[]) => string[]
@@ -2328,7 +2333,7 @@ export const createLocalOperationTools = (
     return nativeCatalogRevision
   }
 
-  const nativeExecution = (tool: NativeToolDescriptor) => {
+  const ownerExecution = (tool: NativeToolDescriptor) => {
     if (tool.execution) {
       return tool.execution
     }
@@ -2355,6 +2360,19 @@ export const createLocalOperationTools = (
           operation: tool.registeredName ?? `${tool.namespace}.${tool.name}`
         }
       : { kind: 'native-tool', namespace: tool.namespace, tool: tool.name }
+  }
+
+  const nativeExecution = (tool: NativeToolDescriptor) => {
+    const route = ownerExecution(tool)
+    const standalone =
+      options.standaloneInvocations &&
+      (route.kind === 'registered-tool' ||
+        (route.kind === 'native-tool' &&
+          !isDesignProviderEntry(tool.namespace, tool.name)))
+
+    return standalone
+      ? { ...route, via: AiDesignToolIds.EXECUTE_DESIGN }
+      : route
   }
 
   const isCanonicalWrapper = (

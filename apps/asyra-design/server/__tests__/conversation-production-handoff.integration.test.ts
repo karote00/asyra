@@ -58,6 +58,7 @@ beforeAll(async () => {
     profile: PresetProfiles.CUSTOM,
     defaults: [
       PresetDefaults.BASIC_SHAPES,
+      PresetDefaults.VECTOR,
       PresetDefaults.CONTAINERS,
       PresetDefaults.SELECTION
     ]
@@ -1420,3 +1421,112 @@ it('delivers actual nested selection coordinates and parent identity in the init
     factory.transact.reset()
   }
 }, 60000)
+
+it('applies the recorded Dome drawing through the published execute_design entry without discovery', async () => {
+  const { default: dome } = await import('./fixtures/dome-responses.json')
+  const { createConversationResults } = await import('@asyra/ai-agent-runtime')
+  const ledger = createConversationResults(() => 1)
+  const saved = ledger.open('dome')
+  const before = new Set(core.deps.sceneTree.getAllElements().keys())
+  const png = await sharp({
+    create: { width: 8, height: 8, channels: 4, background: '#123456' }
+  })
+    .png()
+    .toBuffer()
+  const capture = vi.spyOn(core, 'captureElementSnapshot').mockReturnValue({
+    type: 'snapshot',
+    dataUrl: 'data:image/png;base64,' + png.toString('base64'),
+    width: 8,
+    height: 8,
+    bounds: { x: 0, y: 0, width: 25229, height: 10680 }
+  })
+  const requests: { input: { output: { text: string }[] }[] }[] = []
+  const sources = createDefaultAiModelSources({
+    continuationDatabase: ':memory:',
+
+    fetch: async (_url, init) => {
+      const body = JSON.parse(String(init?.body))
+
+      requests.push(body)
+
+      return Response.json({
+        id: 'dome-' + requests.length,
+        status: 'completed',
+        output:
+          requests.length === 1
+            ? [
+                {
+                  type: 'function_call',
+                  namespace: 'design_operations',
+                  name: 'execute_design',
+                  call_id: 'draw',
+                  arguments: JSON.stringify(dome.drawing)
+                }
+              ]
+            : [completion]
+      })
+    }
+  })
+  const provider = {
+    requestActionBatch: (
+      input: Parameters<typeof requestConfiguredAiActionBatch>[0],
+      opts: Parameters<typeof requestConfiguredAiActionBatch>[1]
+    ) =>
+      requestConfiguredAiActionBatch(input, {
+        ...opts,
+        sources,
+
+        resultContext: async (command) => saved.exchange(command),
+
+        environment: {
+          AI_PROVIDER_BACKEND: 'openai-responses',
+          AI_PROVIDER_MODEL: 'fixture',
+          OPENAI_API_KEY: 'fixture',
+          AI_EXECUTION_SOURCE_REVISION: 'fixture'
+        }
+      })
+  }
+  const input = createAiRuntimeInput({
+    provider,
+    permissionRules: {
+      apply_prepared_design: 'allow',
+      inspect_drawing: 'allow',
+      report_outcome: 'allow'
+    }
+  })
+  const runtime = createAiAgentRuntime(input)
+  const registration = registerAiAgentFeature(runtime)
+  const controller = createAiConversationController({
+    feature: registration.api,
+
+    createConversationId: () => 'dome',
+
+    getElementType: (id) => core.getElementMetadata(id)?.type
+  })
+
+  try {
+    const answer = await controller.submit('Draw the entire Taipei Dome.')
+
+    expect(answer.outcome, JSON.stringify(answer.result).slice(-2400)).toBe(
+      'success'
+    )
+    expect(requests).toHaveLength(2)
+    expect(JSON.parse(requests[1].input[0].output[0].text)).toMatchObject({
+      toolOutcome: { status: 'success' },
+      saved: [{ name: 'domeDraft' }, { name: 'domeIDs' }]
+    })
+    const created = [...core.deps.sceneTree.getAllElements()]
+      .filter(([id]) => !before.has(id))
+      .map(([, e]) => e.get('type'))
+
+    expect(created.filter((t) => t === 'vector')).toHaveLength(411)
+    expect(created.filter((t) => t === 'group')).toHaveLength(1)
+  } finally {
+    capture.mockRestore()
+    await controller.dispose()
+    await runtime.dispose()
+    registration.dispose()
+    await Promise.all(sources.map((s) => s.dispose?.()))
+    ledger.clear()
+  }
+}, 30000)

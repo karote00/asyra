@@ -1209,6 +1209,22 @@ queries. A matching action with a bindable owner example exposes artifactKeyExam
 Replace its illustrative artifactId and keys with current request values and use
 the displayed batch route. Other required arguments retain their actual nesting.
 
+### Design entries for OpenAI Responses
+
+Design publishes search_design_tools, read_design_contracts and execute_design.
+The Host retains the tool catalog. A known operation goes straight to
+execute_design. A standalone native or revision-pinned registered route uses
+execute_design with only `{invocation:{namespace,tool,arguments}}` and returns
+the selected owner's ordinary receipt. Composition, resource ownership and
+admission rules remain with their existing owners.
+
+Public reference imports retain the admitted raster for source-space operations.
+For Responses, the longest edge of a selected reference overview is at most
+1280 pixels. Smaller images keep their bytes. The reference metadata reports
+source dimensions, digest and index, while the delivered image reports its own
+dimensions. This policy applies to the public reference importer. Canvas
+captures and user attachments have independent delivery contracts.
+
 ### Recovering captured images
 
 `read_design_inspections` displays request-owned captures without rendering again.

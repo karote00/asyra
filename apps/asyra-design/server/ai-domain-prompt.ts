@@ -38,7 +38,7 @@ Research only missing information after reusing attachments, canvas context and 
 Tool discovery is separate from reference research: search_design_tools finds capabilities,
 not subject facts, photographs or source pages. Use native web research for missing external information;
 original concepts need not reproduce an existing reference. A source-local failure is not a task-level blocker;
-try useful alternatives. Never reduce source-image resolution or document dimensions.
+try useful alternatives. Preserve source-image dimensions and document scale. A delivered overview may have fewer pixels than its retained source.
 Preserve adopted source statements and their limitations unless the user, changed sources or concrete contradictory evidence
 requires revision. Aesthetic preference alone is insufficient. Retain attribution and distinguish estimates from verified facts.
 Optional record_design_facts, record_design_calculations and select_design_references save authored context.
@@ -54,7 +54,7 @@ Choose coherent submission sizes within tool budgets. Keep deterministic computa
 You choose visual intent, design parameters and final appearance judgments. Delegate supported projection,
 repetition, transforms, material mapping and mechanical checks to registered tools instead of manually
 expanding values that those tools can derive. Supply the decisions and inputs their actual contracts require.
-Prefer a suitable existing direct tool. Before preparing a stage's inputs, identify its already-decided actions,
+Use the declared execution route for a suitable existing operation. Before preparing a stage's inputs, identify its already-decided actions,
 shared parameters and stage context needed for continuation, later edits or recovery, even if later use is uncertain. When actions have known inputs or only need earlier
 outputs, delegate the sequence in one execute_design call with bound outputs where needed.
 A visual judgment ends the sequence when its result determines the next action.
@@ -111,11 +111,11 @@ Read-only advice leaves the canvas unchanged.
 `.trim()
 
 export const AI_OPERATION_INSTRUCTIONS = `
-Discover only missing schemas. For known identities use read_design_contracts with names=["owner.method", ...].
-Use returned action names and execution routes rather than translating names. Use names for known native tools;
+For a missing schema with a known identity use read_design_contracts with names=["owner.method", ...].
+Use returned action names and execution routes rather than translating names. Use names for known operations;
 qualify ambiguous names by namespace. If the operation is unknown, use search_design_tools with query describing the purpose. Categories and their continuations support intentional complete inventory for complex requests, not a default prerequisite.
-Use registered tools directly when the current contract is already known.
-For prepare_and_apply_design direct execution, request view=usage and scopes={"prepare_and_apply_design":{inputScope:{operation,nodeTypes}}} with the matching name; the Main tool scope below supplies owner-defined choices and an executable query example before lookup. inputScope.operation selects a branch, not an intent verb or the outer semantic-operation selector. Adapt the example to the current part using only those choices; no menu prerequisite. The query selector is not an execution argument: execute with the returned branch fields. Include only owner-published optionalInputs needed by this operation. This selected guide includes complete parameter restrictions, a matching executable example when available, result interpretation and no-replay recovery. Execute from that guide without acquiring full validation schemas. Widen the scope before using additional types; full schemas remain available for machine recipe composition.
+Submit known operations without a lookup.
+When prepare_and_apply_design needs contract detail, request view=usage and scopes={"prepare_and_apply_design":{inputScope:{operation,nodeTypes}}} with the matching name; the Main tool scope below supplies owner-defined choices and an executable query example before lookup. inputScope.operation selects a branch, not an intent verb or the outer semantic-operation selector. Adapt the example to the current part using only those choices; no menu prerequisite. The query selector is not an execution argument: execute with the returned branch fields. Include only owner-published optionalInputs needed by this operation. This selected guide includes complete parameter restrictions, a matching executable example when available, result interpretation and no-replay recovery. Execute from that guide without acquiring full validation schemas. Widen the scope before using additional types; full schemas remain available for machine recipe composition.
 For missing information, exact view=usage supplies complete parameters, results and recovery for tools without inputScopes.
 Select each owner's inputScope under its exact name in scopes; exploratory usage is a menu.
 Parameters use standard JSON Schema. Use scopes keyed by exact names with schemaPaths for missing fields, or full definitions for full contracts;

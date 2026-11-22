@@ -1925,7 +1925,9 @@ Native API lookup can recover complete registered descriptions and schemas when
 native declarations abbreviate them, using the same revision and refresh policy as
 action lookup. Reference imports reuse acquired original bytes within the request.
 Explicit delivery selects images independently of acquisition; repeated selections
-redisplay the cached original without refresh or redownload. Failed sources remain
+redisplay the cached view without refresh or redownload. OpenAI Responses receives a
+maximum 1280-pixel longest-edge overview of an oversized imported public image.
+The App uses the original raster and dimensions for source-space operations. Failed sources remain
 recoverable under their typed owner outcome. Recording-only initial fit runs in the browser independently of
 screenshot capture so a slow capture cannot postpone viewport navigation.
 

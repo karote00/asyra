@@ -33,7 +33,9 @@ payload from the next request while the App retains its operation receipt.
 No Conversations API permission is required. Disposal releases runtime resources;
 the App owns the lifetime of its durable checkpoint.
 
-Tool publication preserves qualified identities, descriptions and input schema
+The Design Responses source publishes only search_design_tools, read_design_contracts and execute_design from the available Host registry. A known operation can execute directly through the Host. Unknown capabilities can be located by purpose and input fields. Standalone native and registered routes carry their ordinary invocation through execute_design. They remain ineligible for composition when the owner forbids it. OpenAI web search remains independent. Published counts and contract evidence describe the actual provider subset. Downloaded public references retain their original App bytes, identity and dimensions. Responses receives an aspect-preserving overview of at most 1280 pixels per side; its media dimensions describe the delivered pixels.
+
+Generic runtime tool publication preserves qualified identities, descriptions and input schema
 semantics. Optional fields stay optional; explicit `strict: false` prevents the
 API from rewriting them. Host validation remains mandatory. Deferred functions
 use the API's tool-search facility. Model call IDs correlate every returned text,
