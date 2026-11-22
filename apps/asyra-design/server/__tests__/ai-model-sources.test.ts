@@ -305,7 +305,10 @@ it.each(['caller', 'source'] as const)(
       })
     }
 
-    const sources = createDefaultAiModelSources({ fetch: fetcher })
+    const sources = createDefaultAiModelSources({
+      continuationDatabase: ':memory:',
+      fetch: fetcher
+    })
     const source = selectAiModelSource('openai-responses', sources)
     const controller = new AbortController()
     const task = source.request(input, {
@@ -480,6 +483,8 @@ it.each(['not JSON', '{"batchId":"invalid","actions":[]}'])(
   async (text) => {
     const { createDefaultAiModelSources } = await import('../ai-model-sources')
     const sources = createDefaultAiModelSources({
+      continuationDatabase: ':memory:',
+
       fetch: async () =>
         Response.json({
           id: 'invalid-final',

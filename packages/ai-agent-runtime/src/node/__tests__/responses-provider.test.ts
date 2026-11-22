@@ -4,8 +4,10 @@ import { createAiActionRegistry } from '../../action-registry.js'
 import { invokeAiToolOwner } from '../../schema/owner-invocation.js'
 import { createAiToolLeases } from '../../schema/tool-leases.js'
 import { operationContractIssue } from '../../schema/validation.js'
-import { createProviderConversations } from '../provider-conversations.js'
-import { createResponsesAiProvider } from '../responses-provider.js'
+import {
+  createResponsesAiProvider,
+  createResponsesConversations
+} from '../responses-provider.js'
 import { createAiToolHostLibrary } from '../tool-host-library.js'
 import type { ToolProviderBinding } from '../tool-provider.js'
 
@@ -115,7 +117,17 @@ it('publishes exact schemas and returns correlated outputs before continuing the
   ).toEqual(final)
   expect(invoke).toHaveBeenCalledTimes(1)
   expect(requests[0]).toMatchObject({
-    store: false,
+    store: true,
+    input: [
+      {
+        role: 'developer',
+        content: [{ type: 'input_text', text: 'Manage inventory' }]
+      },
+      {
+        role: 'user',
+        content: [{ type: 'input_text', text: 'Reserve product one' }]
+      }
+    ],
     tools: [
       {
         type: 'namespace',
@@ -132,25 +144,28 @@ it('publishes exact schemas and returns correlated outputs before continuing the
       { type: 'tool_search' }
     ]
   })
-  expect(requests[1].input).toEqual(
-    expect.arrayContaining([
-      reasoning,
-      {
-        type: 'function_call_output',
-        call_id: 'c1',
-        output: [
-          { type: 'input_text', text: '{"id":"one"}' },
-          {
-            type: 'input_text',
-            text: '{"toolOutcome":{"status":"success","settlement":"completed"}}'
-          }
-        ]
-      }
-    ])
-  )
-  expect(requests[2].input).toEqual(
-    expect.arrayContaining([reasoning, message])
-  )
+  expect(requests[0]).not.toHaveProperty('instructions')
+  expect(requests[1].previous_response_id).toBe('response')
+  expect(requests[1].input).toEqual([
+    {
+      type: 'function_call_output',
+      call_id: 'c1',
+      output: [
+        { type: 'input_text', text: '{"id":"one"}' },
+        {
+          type: 'input_text',
+          text: '{"toolOutcome":{"status":"success","settlement":"completed"}}'
+        }
+      ]
+    }
+  ])
+  expect(requests[2].previous_response_id).toBe('response')
+  expect(requests[2].input).toEqual([
+    {
+      role: 'user',
+      content: [{ type: 'input_text', text: 'Reserve product one' }]
+    }
+  ])
   expect(prepare).toHaveBeenCalledTimes(2)
   await provider.dispose?.()
 })
@@ -442,7 +457,7 @@ it('runs a non-Design action through the real host, preserving validation and se
 })
 
 it('aborts network work and releases the service lease for a later turn', async () => {
-  const registry = createProviderConversations<readonly unknown[]>()
+  const registry = createResponsesConversations()
   let entered!: () => void
   const started = new Promise<void>((resolve) => {
     entered = resolve
@@ -609,5 +624,160 @@ it('distinguishes empty and flat discovery outputs and omits inconsistent write 
     expect(events[1]).not.toHaveProperty('usage.response.cacheWriteTokens')
   } finally {
     await provider.dispose?.()
+  }
+})
+
+it('keeps transient guidance outside the reusable developer prefix and never resends an old image', async () => {
+  const requests: Record<string, unknown>[] = []
+  let turn = 0
+  const image = 'data:image/png;base64,Zmlyc3Q='
+  const provider = createResponsesAiProvider({
+    apiKey: 'fixture',
+    model: 'fixture',
+
+    prepare: async () => {
+      turn++
+
+      return makeBinding({
+        requestInstructions:
+          turn === 1 ? 'Library temporarily unavailable' : undefined,
+
+        invoke: async () => ({
+          contentItems: [{ type: 'inputImage', imageUrl: image }]
+        })
+      })
+    },
+
+    fetch: async (_url, init) => {
+      requests.push(JSON.parse(String(init?.body)))
+
+      return Response.json({
+        id: 'r' + requests.length,
+        status: 'completed',
+        output: requests.length === 1 ? [call('image')] : [message]
+      })
+    }
+  })
+
+  try {
+    await provider.requestActionBatch(input, { signal: signal() })
+    await provider.requestActionBatch(input, { signal: signal() })
+    expect(requests.map((r) => r.previous_response_id)).toEqual([
+      undefined,
+      'r1',
+      'r2'
+    ])
+    expect(requests.map((r) => r.instructions)).toEqual([
+      'Library temporarily unavailable',
+      'Library temporarily unavailable',
+      undefined
+    ])
+    expect(
+      requests.map((r) => JSON.stringify(r.input).includes(image))
+    ).toEqual([false, true, false])
+    expect(
+      requests.map((r) => JSON.stringify(r.input).includes('Manage inventory'))
+    ).toEqual([true, false, false])
+  } finally {
+    await provider.dispose?.()
+  }
+})
+
+it('reports a missing stored response without dispatching or replaying a mutation', async () => {
+  let calls = 0
+  const invoke = vi.fn(makeBinding().invoke)
+  const provider = createResponsesAiProvider({
+    apiKey: 'fixture',
+    model: 'fixture',
+
+    prepare: async () => makeBinding({ invoke }),
+
+    fetch: async () =>
+      ++calls === 1
+        ? reply([call('mutate')])
+        : Response.json(
+            { error: { code: 'previous_response_not_found' } },
+            { status: 400 }
+          )
+  })
+
+  try {
+    await expect(
+      provider.requestActionBatch(input, { signal: signal() })
+    ).rejects.toMatchObject({ code: 'AI_PROVIDER_SESSION_UNAVAILABLE' })
+    expect(calls).toBe(2)
+    expect(invoke).toHaveBeenCalledTimes(1)
+  } finally {
+    await provider.dispose?.()
+  }
+})
+
+it('resumes undispatched work only with its original turn executor', async () => {
+  const { createProviderConversations } =
+    await import('../provider-conversations.js')
+
+  type Checkpoint = import('../responses-provider.js').ResponsesCheckpoint
+  type Entry =
+    import('../provider-conversations.js').ProviderConversationRecord<Checkpoint>
+  let entry: Entry | undefined
+  let interrupt = true
+  const storage = {
+    read: () => entry,
+
+    write: (_key: string, next: Entry) => {
+      if (interrupt && next.state.executing) {
+        interrupt = false
+        throw Error('Interrupted before claiming the operation')
+      }
+
+      entry = next
+    }
+  }
+  const invoke = vi.fn(makeBinding().invoke)
+  const fetcher = vi
+    .fn()
+    .mockResolvedValueOnce(reply([call('planned')]))
+    .mockResolvedValueOnce(reply([message]))
+
+  const service = () =>
+    createResponsesAiProvider({
+      apiKey: 'fixture',
+      model: 'fixture',
+      conversations: createProviderConversations(storage),
+      fetch: fetcher,
+
+      prepare: async () => makeBinding({ invoke })
+    })
+
+  const initial = service()
+  const request = {
+    ...input,
+    metadata: { ...input.metadata, turnId: 'original' }
+  }
+
+  await expect(
+    initial.requestActionBatch(request, { signal: signal() })
+  ).rejects.toThrow('Interrupted')
+  await initial.dispose?.()
+  const restored = service()
+
+  try {
+    await expect(
+      restored.requestActionBatch(
+        {
+          ...request,
+          metadata: { ...request.metadata, turnId: 'different' }
+        },
+        { signal: signal() }
+      )
+    ).rejects.toMatchObject({ code: 'AI_PROVIDER_SESSION_UNAVAILABLE' })
+    expect(invoke).not.toHaveBeenCalled()
+    expect(fetcher).toHaveBeenCalledTimes(1)
+    await expect(
+      restored.requestActionBatch(request, { signal: signal() })
+    ).resolves.toEqual(final)
+    expect(invoke).toHaveBeenCalledTimes(1)
+  } finally {
+    await restored.dispose?.()
   }
 })

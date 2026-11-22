@@ -8,6 +8,7 @@ import {
 } from '../provider.js'
 import {
   createProviderConversations,
+  type ProviderConversationStorage,
   type ProviderConversations
 } from './provider-conversations.js'
 import type {
@@ -17,10 +18,33 @@ import type {
 } from './tool-provider.js'
 
 type RequestOptions = Parameters<AiProvider['requestActionBatch']>[1]
-export type ResponsesConversations = ProviderConversations<readonly unknown[]>
+interface ResponsesCall {
+  namespace: string
+  name: string
+  callId: string
+  arguments: string
+}
 
-export const createResponsesConversations = () =>
-  createProviderConversations<readonly unknown[]>()
+export interface ResponsesCheckpoint {
+  responseId: string
+  turn: string
+  callIds: readonly string[]
+  pending: readonly ResponsesCall[]
+  outputs: readonly {
+    type: 'function_call_output'
+    call_id: string
+    output: readonly (
+      | { type: 'input_text'; text: string }
+      | { type: 'input_image'; image_url: string }
+    )[]
+  }[]
+  executing?: string
+}
+export type ResponsesConversations = ProviderConversations<ResponsesCheckpoint>
+
+export const createResponsesConversations = (
+  storage?: ProviderConversationStorage<ResponsesCheckpoint>
+) => createProviderConversations<ResponsesCheckpoint>(storage)
 
 const record = (value: unknown): value is Record<string, unknown> =>
   value !== null && typeof value === 'object' && !Array.isArray(value)
@@ -31,6 +55,64 @@ function invalid(message: string): never {
 
 const identity = (value: unknown): value is string =>
   typeof value === 'string' && value.trim().length > 0
+
+/** Validate an App checkpoint before using its IDs or submitting its receipts. */
+export function isResponsesCheckpoint(
+  value: unknown
+): value is ResponsesCheckpoint {
+  if (
+    !record(value) ||
+    !identity(value.responseId) ||
+    !identity(value.turn) ||
+    !Array.isArray(value.callIds) ||
+    !value.callIds.every(identity) ||
+    !Array.isArray(value.pending) ||
+    !Array.isArray(value.outputs)
+  ) {
+    return false
+  }
+
+  const calls = new Set(value.callIds)
+  const claimed = new Set<string>()
+
+  const claim = (id: unknown) => {
+    if (!identity(id) || !calls.has(id) || claimed.has(id)) {
+      return false
+    }
+
+    claimed.add(id)
+
+    return true
+  }
+
+  return (
+    calls.size === value.callIds.length &&
+    value.pending.every(
+      (call: unknown) =>
+        record(call) &&
+        claim(call.callId) &&
+        identity(call.namespace) &&
+        identity(call.name) &&
+        typeof call.arguments === 'string'
+    ) &&
+    (value.executing === undefined ||
+      (identity(value.executing) &&
+        value.executing === value.pending[0]?.callId)) &&
+    value.outputs.every(
+      (entry: unknown) =>
+        record(entry) &&
+        entry.type === 'function_call_output' &&
+        claim(entry.call_id) &&
+        Array.isArray(entry.output) &&
+        entry.output.every(
+          (part: unknown) =>
+            record(part) &&
+            ((part.type === 'input_text' && typeof part.text === 'string') ||
+              (part.type === 'input_image' && identity(part.image_url)))
+        )
+    )
+  )
+}
 
 // Measure only definitions actually returned by server-side tool search.
 const returnedToolSearches = (response: Record<string, unknown>) => {
@@ -216,40 +298,125 @@ export const createResponsesAiProvider = (options: {
         }
       }
 
-      const history: unknown[] = [
-        ...(lease?.state ?? []),
-        {
+      let checkpoint = lease?.state
+
+      if (checkpoint?.executing) {
+        throw new AiProviderError({
+          code: 'AI_PROVIDER_SESSION_UNAVAILABLE',
+          message:
+            'Tool settlement is unknown; inspect the committed operation before continuing.'
+        })
+      }
+
+      const turn =
+        record(input.metadata) && identity(input.metadata.turnId)
+          ? input.metadata.turnId
+          : createHash('sha256').update(JSON.stringify(input)).digest('hex')
+
+      if (checkpoint?.pending.length && checkpoint.turn !== turn) {
+        throw new AiProviderError({
+          code: 'AI_PROVIDER_SESSION_UNAVAILABLE',
+          message: 'Resume the original turn to execute its outstanding tools.'
+        })
+      }
+
+      const calls = new Set(checkpoint?.callIds)
+      const recovering =
+        checkpoint?.turn === turn &&
+        (checkpoint.pending.length || checkpoint.outputs.length)
+      let newInput: unknown[] = []
+
+      if (!recovering) {
+        newInput.push({
           role: 'user',
           content: binding
-            .input(lease?.state !== undefined)
+            .input(!!checkpoint)
             .map((item) =>
               item.type === 'inputText'
                 ? { type: 'input_text', text: item.text }
                 : { type: 'input_image', image_url: item.imageUrl }
             )
-        }
-      ]
-      const calls = new Set<string>()
+        })
+      }
 
-      // Complete protocol items, including encrypted reasoning and phase, are retained.
-      for (const item of history) {
-        if (
-          record(item) &&
-          item.type === 'function_call' &&
-          identity(item.call_id)
-        ) {
-          calls.add(item.call_id)
-        }
+      if (!checkpoint && binding.instructions) {
+        newInput.unshift({
+          role: 'developer',
+          content: [{ type: 'input_text', text: binding.instructions }]
+        })
       }
 
       while (true) {
         controller.signal.throwIfAborted()
+        while (checkpoint && checkpoint.pending.length) {
+          const call: ResponsesCall = checkpoint.pending[0]
+
+          unresolved = true
+          lease?.checkpoint({ ...checkpoint, executing: call.callId })
+          let args: unknown
+          let problem: { code: string; message: string } | undefined
+
+          try {
+            args = JSON.parse(call.arguments)
+          } catch {
+            problem = {
+              code: 'TOOL_ARGUMENTS_INVALID',
+              message:
+                'Arguments must be valid JSON. Correct the input and retry; no tool was executed.'
+            }
+          }
+
+          if (!names.has(`${call.namespace}.${call.name}`)) {
+            problem = {
+              code: 'TOOL_NOT_FOUND',
+              message: 'Use a declared tool identity; no tool was executed.'
+            }
+          }
+
+          const reply = problem
+            ? {
+                contentItems: [
+                  {
+                    type: 'inputText' as const,
+                    text: JSON.stringify({
+                      ...problem,
+                      toolOutcome: {
+                        status: 'failed',
+                        settlement: 'not-started'
+                      }
+                    })
+                  }
+                ]
+              }
+            : await binding.invoke({ ...call, arguments: args })
+
+          const output = reply.contentItems.map((item) =>
+            item.type === 'inputText'
+              ? { type: 'input_text' as const, text: item.text }
+              : { type: 'input_image' as const, image_url: item.imageUrl }
+          )
+
+          checkpoint = {
+            ...checkpoint,
+            pending: checkpoint.pending.slice(1),
+            outputs: [
+              ...checkpoint.outputs,
+              { type: 'function_call_output', call_id: call.callId, output }
+            ]
+          }
+          lease?.checkpoint(checkpoint)
+          unresolved = false
+          controller.signal.throwIfAborted()
+        }
+
         const body = {
           model: options.model,
-          store: false,
-          instructions: binding.instructions,
-          input: history,
-          include: ['reasoning.encrypted_content'],
+          store: true,
+          ...(checkpoint && { previous_response_id: checkpoint.responseId }),
+          ...(binding.requestInstructions && {
+            instructions: binding.requestInstructions
+          }),
+          input: [...(checkpoint?.outputs ?? []), ...newInput],
           tools: [
             ...tools,
             ...(binding.tools.some((group) =>
@@ -285,7 +452,30 @@ export const createResponsesAiProvider = (options: {
         }
 
         if (!response.ok) {
-          await response.body?.cancel()
+          if (
+            checkpoint &&
+            (response.status === 400 || response.status === 404)
+          ) {
+            const failure: unknown = await response
+              .json()
+              .catch(() => undefined)
+
+            if (
+              record(failure) &&
+              record(failure.error) &&
+              (failure.error.code === 'previous_response_not_found' ||
+                failure.error.param === 'previous_response_id')
+            ) {
+              throw new AiProviderError({
+                code: 'AI_PROVIDER_SESSION_UNAVAILABLE',
+                message:
+                  'Stored response is unavailable. Inspect the last operation before starting again.'
+              })
+            }
+          } else {
+            await response.body?.cancel()
+          }
+
           throw new AiProviderError({
             code: 'AI_PROVIDER_HTTP_STATUS',
             status: response.status,
@@ -376,12 +566,7 @@ export const createResponsesAiProvider = (options: {
 
         observe({ direction: 'response', value, ...(usage ? { usage } : {}) })
         const output = value.output
-        const pending: {
-          namespace: string
-          name: string
-          callId: string
-          arguments: string
-        }[] = []
+        const pending: ResponsesCall[] = []
         const text: string[] = []
 
         for (const item of output) {
@@ -444,13 +629,20 @@ export const createResponsesAiProvider = (options: {
           }
         }
 
-        history.push(...output)
+        checkpoint = {
+          responseId: value.id,
+          turn,
+          callIds: [...calls],
+          pending,
+          outputs: []
+        }
+        newInput = []
         if (!pending.length) {
           if (!text.length) {
             invalid('Responses completed without a final answer.')
           }
 
-          lease?.checkpoint(history.slice())
+          lease?.checkpoint(checkpoint)
           const result = await binding.decode({
             id: value.id,
             text: text.join('')
@@ -461,59 +653,7 @@ export const createResponsesAiProvider = (options: {
           return result
         }
 
-        unresolved = true
-        for (const call of pending) {
-          controller.signal.throwIfAborted()
-          let args: unknown
-          let problem: { code: string; message: string } | undefined
-
-          try {
-            args = JSON.parse(call.arguments)
-          } catch {
-            problem = {
-              code: 'TOOL_ARGUMENTS_INVALID',
-              message:
-                'Arguments must be valid JSON. Correct the input and retry; no tool was executed.'
-            }
-          }
-
-          if (!names.has(`${call.namespace}.${call.name}`)) {
-            problem = {
-              code: 'TOOL_NOT_FOUND',
-              message: 'Use a declared tool identity; no tool was executed.'
-            }
-          }
-
-          const reply = problem
-            ? {
-                contentItems: [
-                  {
-                    type: 'inputText' as const,
-                    text: JSON.stringify({
-                      ...problem,
-                      toolOutcome: {
-                        status: 'failed',
-                        settlement: 'not-started'
-                      }
-                    })
-                  }
-                ]
-              }
-            : await binding.invoke({ ...call, arguments: args })
-
-          history.push({
-            type: 'function_call_output',
-            call_id: call.callId,
-            output: reply.contentItems.map((item) =>
-              item.type === 'inputText'
-                ? { type: 'input_text', text: item.text }
-                : { type: 'input_image', image_url: item.imageUrl }
-            )
-          })
-        }
-
-        unresolved = false
-        lease?.checkpoint(history.slice())
+        lease?.checkpoint(checkpoint)
       }
     } catch (error) {
       if (unresolved) {

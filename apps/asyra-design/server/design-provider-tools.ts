@@ -899,8 +899,17 @@ export const createDesignProviderTools = async (
             (operations
               ? ' input.actions lists final-response actions, not the complete capability catalog. Drawing operations are supplied separately as callable tools; their absence from input.actions does not mean drawing is unavailable. Use backend operation tools to apply changes, inspect actual receipts, and continue with registered operations. Do not repeat an executed operation in the final batch. End with report_outcome: {outcome:"completed"|"unsupported",message:string}.'
               : ' Return the prepared action batch without invoking backend operation tools. Use report_outcome only for an unsupported request.') +
-            ` ${libraryUnavailable ? 'Saved tools could not be loaded. Native tools remain available; saving returns explicit status, and save-only retry must not repeat document edits.' : ''} The ${AiDesignToolIds.SEARCH_DESIGN_TOOLS}, ${AiDesignToolIds.READ_DESIGN_CONTRACTS} and ${AiDesignToolIds.EXECUTE_DESIGN} entries are available directly when drawing operations are enabled; domain tools use native deferred discovery. Discover tools by operation purpose using ${AiDesignToolIds.SEARCH_DESIGN_TOOLS} query; read exact contracts using ${AiDesignToolIds.READ_DESIGN_CONTRACTS} names. Categories and their continuations remain available when an intentional complete inventory is useful. Native discovery provides callable declarations. Read bounded tool results directly, preserving complete selected restrictions and following returned continuations when needed. Reuse App-owned artifacts, target references and recipes for intermediate geometry and data binding. Runtime owns admitted finite iteration; do not coordinate each deterministic check/repair through a new model turn. Use compact mutation receipts and prepared artifact target references when individual acknowledgements are unnecessary. Known current contracts need no lookup. Use execute_design for decided sequences. Name steps for binding, retention or selected delivery, including earlier images. Use the returned action names and current target selectors. ${localToolResultInstructions}`
-      }
+            ` The ${AiDesignToolIds.SEARCH_DESIGN_TOOLS}, ${AiDesignToolIds.READ_DESIGN_CONTRACTS} and ${AiDesignToolIds.EXECUTE_DESIGN} entries are available directly when drawing operations are enabled; domain tools use native deferred discovery. Discover tools by operation purpose using ${AiDesignToolIds.SEARCH_DESIGN_TOOLS} query; read exact contracts using ${AiDesignToolIds.READ_DESIGN_CONTRACTS} names. Categories and their continuations remain available when an intentional complete inventory is useful. Native discovery provides callable declarations. Read bounded tool results directly, preserving complete selected restrictions and following returned continuations when needed. Reuse App-owned artifacts, target references and recipes for intermediate geometry and data binding. Runtime owns admitted finite iteration; do not coordinate each deterministic check/repair through a new model turn. Use compact mutation receipts and prepared artifact target references when individual acknowledgements are unnecessary. Known current contracts need no lookup. Use execute_design for decided sequences. Name steps for binding, retention or selected delivery, including earlier images. Use the returned action names and current target selectors. ${localToolResultInstructions}`
+      },
+      ...(libraryUnavailable
+        ? [
+            {
+              role: 'developer',
+              source: 'tool-library-status',
+              text: 'Saved tools could not be loaded. Native tools remain available; saving returns explicit status, and save-only retry must not repeat document edits.'
+            }
+          ]
+        : [])
     ].map((block) => ({
       ...block,
       sha256: createHash('sha256').update(block.text).digest('hex')
@@ -1351,7 +1360,9 @@ export const createDesignProviderTools = async (
     toolBindings,
     advertisedContractDigests,
     inputItems,
-    instructions,
+
+    instructions: () => appOwnedInstructionBlocks,
+
     inputForTurn,
     invoke,
     settle,

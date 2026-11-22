@@ -1,3 +1,4 @@
+import { createResponsesCheckpointStore } from './responses-checkpoint-store'
 import type { AiProvider, AiProviderInput } from '@asyra/ai-agent-runtime'
 import {
   createResponsesAiProvider,
@@ -186,8 +187,12 @@ export const createToolCallingDesignSource = (configuration: {
                 }
               },
 
+              requestInstructions: tools
+                .instructions()
+                .find((block) => block.source === 'tool-library-status')?.text,
               instructions: tools
                 .instructions()
+                .filter((block) => block.source !== 'tool-library-status')
                 .map((block) => block.text)
                 .join('\n\n'),
               tools: tools.nativeDefinitions,
@@ -269,9 +274,15 @@ export const createToolCallingDesignSource = (configuration: {
 }
 
 export const createDefaultAiModelSources = (
-  configuration: { readonly fetch?: typeof fetch } = {}
+  configuration: {
+    readonly fetch?: typeof fetch
+    readonly continuationDatabase?: string
+  } = {}
 ): readonly AiModelSource[] => {
-  const conversations = createResponsesConversations()
+  const store = createResponsesCheckpointStore(
+    configuration.continuationDatabase
+  )
+  const conversations = createResponsesConversations(store)
 
   return [
     createNativeModelSource(),
@@ -292,7 +303,10 @@ export const createDefaultAiModelSources = (
         })
       },
 
-      dispose: () => conversations.dispose()
+      dispose: () => {
+        conversations.dispose()
+        store.close()
+      }
     })
   ]
 }

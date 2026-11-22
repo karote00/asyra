@@ -964,88 +964,107 @@ for (const mode of ['success', 'restricted', 'partial']) {
         height: 8,
         bounds: { x: 0, y: 0, width: 30, height: 40 }
       })
-      const sources = createDefaultAiModelSources({
-        fetch: async (_url, init) => {
-          try {
-            const body = JSON.parse(String(init?.body))
-            const index = received.length
+      const root = '../../tmp/responses-continuation'
 
-            received.push(body)
-            positions.push(core.getElementComputedData(targetId)?.x)
-            expect(new Headers(init?.headers).get('authorization')).toBe(
-              'Bearer fixture-secret'
-            )
-            expect(JSON.stringify(body)).not.toContain('fixture-secret')
-            expect(body.instructions).toContain(AI_APP_PROMPT)
-            const declarations = body.tools.flatMap(
-              (group: { tools?: unknown[] }) => group.tools ?? []
-            )
-            const declared = declarations.find(
-              (tool: { name: string }) => tool.name === 'execute_design'
-            )
+      await files.mkdir(root, { recursive: true })
+      const directory = await files.mkdtemp(root + '/canvas-')
 
-            expect(declared).toBeDefined()
-            // Both calls use exactly the schema sent over the provider boundary.
-            let base = operation(
-              { kind: 'named', name: 'selectedIds', path: '' },
-              33
-            )
+      const openSources = () =>
+        createDefaultAiModelSources({
+          continuationDatabase: directory + '/state.sqlite',
 
-            if (index === 0) {
-              base = operation(targetId, 21)
-            } else if (index === 1) {
-              base = operation([targetId], 21)
-            }
+          fetch: async (_url, init) => {
+            try {
+              const body = JSON.parse(String(init?.body))
+              const index = received.length
 
-            const args =
-              index === 3 && mode === 'success'
-                ? {
-                    ...base,
-                    operations: [
-                      ...base.operations,
-                      {
-                        id: 'unselected',
-                        name: 'inspect_drawing',
-                        arguments: { arguments: { elementId: targetId } }
-                      },
-                      {
-                        id: 'selected',
-                        name: 'inspect_drawing',
-                        arguments: { arguments: { elementId: targetId } }
+              received.push(body)
+              positions.push(core.getElementComputedData(targetId)?.x)
+              expect(new Headers(init?.headers).get('authorization')).toBe(
+                'Bearer fixture-secret'
+              )
+              expect(JSON.stringify(body)).not.toContain('fixture-secret')
+              if (index === 0) {
+                expect(body.input[0].role).toBe('developer')
+                expect(body.input[0].content[0].text).toContain(AI_APP_PROMPT)
+              } else {
+                expect(body.previous_response_id).toBe(
+                  'response-' + (index - 1)
+                )
+                expect(JSON.stringify(body.input)).not.toContain(AI_APP_PROMPT)
+              }
+
+              const declarations = body.tools.flatMap(
+                (group: { tools?: unknown[] }) => group.tools ?? []
+              )
+              const declared = declarations.find(
+                (tool: { name: string }) => tool.name === 'execute_design'
+              )
+
+              expect(declared).toBeDefined()
+              // Both calls use exactly the schema sent over the provider boundary.
+              let base = operation(
+                { kind: 'named', name: 'selectedIds', path: '' },
+                33
+              )
+
+              if (index === 0) {
+                base = operation(targetId, 21)
+              } else if (index === 1) {
+                base = operation([targetId], 21)
+              }
+
+              const args =
+                index === 3 && mode === 'success'
+                  ? {
+                      ...base,
+                      operations: [
+                        ...base.operations,
+                        {
+                          id: 'unselected',
+                          name: 'inspect_drawing',
+                          arguments: { arguments: { elementId: targetId } }
+                        },
+                        {
+                          id: 'selected',
+                          name: 'inspect_drawing',
+                          arguments: { arguments: { elementId: targetId } }
+                        }
+                      ],
+                      delivery: {
+                        fields: { image: { step: 'selected', path: '' } }
                       }
-                    ],
-                    delivery: {
-                      fields: { image: { step: 'selected', path: '' } }
                     }
-                  }
-                : base
+                  : base
 
-            expect(
-              operationContractIssue(args, declared.parameters)
-            ).toBeUndefined()
-            const invoke = index < 2 || index === 3
+              expect(
+                operationContractIssue(args, declared.parameters)
+              ).toBeUndefined()
+              const invoke = index < 2 || index === 3
 
-            return Response.json({
-              id: `response-${index}`,
-              status: 'completed',
-              output: invoke
-                ? [
-                    {
-                      type: 'function_call',
-                      namespace: 'design_operations',
-                      name: declared.name,
-                      call_id: `move-${index}`,
-                      arguments: JSON.stringify(args)
-                    }
-                  ]
-                : [completion]
-            })
-          } catch (error) {
-            errors.push(error)
-            throw error
+              return Response.json({
+                id: `response-${index}`,
+                status: 'completed',
+                output: invoke
+                  ? [
+                      {
+                        type: 'function_call',
+                        namespace: 'design_operations',
+                        name: declared.name,
+                        call_id: `move-${index}`,
+                        arguments: JSON.stringify(args)
+                      }
+                    ]
+                  : [completion]
+              })
+            } catch (error) {
+              errors.push(error)
+              throw error
+            }
           }
-        }
-      })
+        })
+
+      let sources = openSources()
       const middleware = createActionBatchMiddleware({
         sources,
 
@@ -1054,6 +1073,7 @@ for (const mode of ['success', 'restricted', 'partial']) {
 
           return requestConfiguredAiActionBatch(input, {
             ...options,
+            sources,
 
             onProgress: (event) => {
               progress.push(event)
@@ -1127,6 +1147,8 @@ for (const mode of ['success', 'restricted', 'partial']) {
         expect(core.getElementComputedData(targetId)?.x).toBe(
           restricted ? 10 : 21
         )
+        await Promise.all(sources.map((source) => source.dispose?.()))
+        sources = openSources()
         const second = await controller.submit(
           'Reuse the saved targets and move to local x 33.'
         )
@@ -1152,8 +1174,9 @@ for (const mode of ['success', 'restricted', 'partial']) {
           )
         }
 
-        // Continuation includes the earlier tool call and its exact correlated result.
-        expect(JSON.stringify(received[3].input)).toContain('move-1')
+        // The stored response owns the earlier call and its exact correlated result.
+        expect(received[3].previous_response_id).toBe('response-2')
+        expect(JSON.stringify(received[3].input)).not.toContain('move-1')
         expect(sourceRequests).toHaveLength(2)
         expect(sourceRequests[1]).toHaveProperty(
           'metadata.conversationContext.turns.0.outcome',
@@ -1241,6 +1264,7 @@ for (const mode of ['success', 'restricted', 'partial']) {
         registration.dispose()
         await middleware.dispose()
         await Promise.all(sources.map((source) => source.dispose?.()))
+        await files.rm(directory, { recursive: true, force: true })
         app.closeAllConnections()
         await new Promise<void>((accept) => app.close(() => accept()))
       }

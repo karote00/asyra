@@ -39,6 +39,7 @@ export interface ToolProviderObservation {
 }
 
 export interface ToolProviderBinding {
+  readonly requestInstructions?: string
   readonly instructions: string
   readonly tools: readonly ProviderToolGroup[]
   readonly webSearch?: boolean

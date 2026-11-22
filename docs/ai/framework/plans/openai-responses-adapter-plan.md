@@ -130,7 +130,7 @@ with partial settlement. Both preserve accepted work and reach the same model.
 Assertions distinguish these legitimate owner contracts rather than deriving status
 from settlement. Cancellation before dispatch instead reports not-started, never
 unknown execution. The two old native ephemeral-thread expectations now match
-source-owned leases while retaining the history, attachment and no-replay assertions.
+source-owned leases while retaining the continuation, attachment and no-replay assertions.
 
 Runtime, App server and full source-integration TypeScript checks pass. Scoped
 lint has no errors (one existing native-test console warning); naming, formatting,
@@ -156,10 +156,9 @@ Replay the two Dome path-operation searches through the real Responses request,
 Design catalog, Host and subsequent provider input with a scripted transport.
 Distinguish related candidates from a full vocabulary match and retain navigation
 to all matches and exact usage. Remove repeated candidate payload without
-changing execution admission, complete selected usage, user drawings, images
-or conversation history. Measure model-visible bytes on both sides.
+changing execution admission, complete selected usage, user drawings or selected images. Measure model-visible bytes on both sides.
 
-For server tool search, preserve protocol history and record the actual returned
+For server tool search, preserve protocol ordering and record the actual returned
 definition identities and serialized sizes correlated to the response, without
 persisting schema contents in transport diagnostics. Test the persisted trace and
 the following request independently. Local measurements do not establish token
@@ -177,3 +176,19 @@ The final selected execution receipt was 1,660 bytes in the retained text
 payload. Preserve that host expansion and selected delivery. Provider response
 receipts now distinguish reported cache reads and writes from model output;
 definition byte counts cannot partition billed tokens among individual tools.
+
+## Incremental Responses continuation
+
+Use stored Responses over HTTP. Publish stable developer instructions once at
+the start of the input. Send request-specific guidance for the current request.
+Link each successor to its last accepted response and submit only new content
+or the correlated tool receipts. Preserve the current callable catalog, Host
+validation, selected media, cancellation and settlement semantics.
+
+First prove request boundaries with an offline scripted transport. Then connect
+the service-owned checkpoint to durable App storage. Record execution intent
+before dispatch. Commit the actual correlated operation receipt together with
+the continuation checkpoint before the next model request.
+An ambiguous mutation must never be retried automatically. Verify recovery,
+isolation, input size, and exact-once delivery of acknowledged effects across
+service restart. Use focused runtime and App tests without model inference.

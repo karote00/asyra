@@ -18,10 +18,20 @@ policy, or implement another Host, result store or knowledge loader.
 The service owns conversation leases. Each lease binds an App identity to one
 provider configuration and prevents simultaneous turns. A fresh turn receives
 fresh execution callbacks and cancellation. Native continuation keeps its stable
-thread identity; Responses continuation keeps complete protocol history, including
-assistant phase and encrypted reasoning items. Responses uses `store: false` and
-never requires additional Conversations API permission. Disposal clears owned
-state; external storage lifetime belongs to its injected owner.
+thread identity; Responses submits stable instructions as initial developer input and uses
+`store: true` with `previous_response_id` for each successor. Only new content
+and outstanding correlated receipts are submitted. Current request guidance
+remains request-scoped. Missing remote state is explicit and cannot trigger
+automatic mutation replay. The App owns a durable SQLite checkpoint containing the stored response ID,
+issued call IDs and outstanding calls and receipts. Persist the dispatch claim
+before a tool runs and its exact correlated text and media before continuing.
+An interrupted dispatch with unknown settlement blocks re-execution. A clean
+restart can forward an acknowledged receipt and resume without another tool
+invocation. The App commits the operation identity, arguments and delivered result
+atomically with the checkpoint. Acceptance by the successor removes the pending
+payload from the next request while the App retains its operation receipt.
+No Conversations API permission is required. Disposal releases runtime resources;
+the App owns the lifetime of its durable checkpoint.
 
 Tool publication preserves qualified identities, descriptions and input schema
 semantics. Optional fields stay optional; explicit `strict: false` prevents the
@@ -72,5 +82,4 @@ Offline diagnostics correlate the individual Responses usage receipt and each
 returned server tool-search definition with the response identifier. Definition
 bytes measure serialized UTF-8 JSON, not model tokens. Record identities and
 sizes separately from model content, including cache-write counts and lifetimes
-when the provider supplies consistent figures. Keep full protocol items in
-continuation; never append diagnostic records to the model input.
+when the provider supplies consistent figures. Keep diagnostic records outside model input.

@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "projectId": "asyra",
   "flowId": "openai-responses-adapter",
-  "revision": 15,
+  "revision": 21,
   "definition": {
     "title": "Replaceable model sources and Responses adapter",
     "purpose": "Keep one App execution pipeline and replace model protocol adapters through explicit source registration.",
@@ -11,7 +11,7 @@
         "id": "lifetime",
         "title": "App source and service",
         "owner": "App source and service",
-        "objective": "Admission -> fresh request signal -> model and tools -> drain -> continuation release",
+        "objective": "App admission and fresh request -> stable developer input or stored response pointer plus new content -> validated Host output checkpoint -> accepted successor; unresolved effects block replay",
         "required": true,
         "applicable": true,
         "dependsOn": [],
@@ -29,7 +29,10 @@
         "implementationRefs": [
           "apps/asyra-design/server/design-model-source.ts",
           "apps/asyra-design/server/action-batch.ts",
-          "apps/asyra-design/server/design-provider-tools.ts"
+          "apps/asyra-design/server/design-provider-tools.ts",
+          "packages/ai-agent-runtime/src/node/responses-provider.ts",
+          "apps/asyra-design/server/ai-model-sources.ts",
+          "apps/asyra-design/server/responses-checkpoint-store.ts"
         ],
         "actions": []
       },
@@ -139,50 +142,50 @@
         "criterionId": "behavior",
         "kind": "manual",
         "status": "accepted",
-        "binding": "b75cefae893e45863e6f07bfa152189278b55bbcbeb57abc6e4971560e8754e8",
+        "binding": "143e19af1a3a462db8a10acae86d3b81fb527bbd987f55a5915e3dd5f3cd9074",
         "actor": "Codex",
-        "summary": "Red caller/tool cancellation and pending receipt teardown reproduced; shared source and service drain now pass source and exchange regressions. Evidence: repair-lifetime-red.log, repair-service-red.log, repair-app-final.log.",
-        "at": "2026-11-21T16:20:26.570Z"
+        "summary": "Formal offline regressions reproduced a lost receipt on service restart and an undispatched operation running under another turn. Source recreation with SQLite now preserves ownership, exact output and at-most-once invocation; crossed turn and unknown settlement are rejected before dispatch.",
+        "at": "2026-11-22T09:19:56.170Z"
       },
       {
         "nodeId": "observation",
         "criterionId": "behavior",
         "kind": "manual",
         "status": "accepted",
-        "binding": "7b81bcd9d909275f7bf3f929b0918cc6afc20b193927edf1fb59124382b7eead",
+        "binding": "7e450914c402400add72513f59f9fe6d8bd831e0d5139af0c861d0e442494633",
         "actor": "Codex",
-        "summary": "Shared invocation records one start and terminal event; cancelled-before-owner reports not-started. Actual Responses calls preserve exact provider payload and terminal progress, including legitimate failed/partial settlement. Native cases preserved. Evidence: repair-terminal-red.log, repair-observation-prompt-final.log, repair-canonical-final.log.",
-        "at": "2026-11-21T16:20:26.574Z"
+        "summary": "Responses runtime and the Design source exchange preserve selected text, image and settlement. The restart fixture checks the exact provider output against the committed App receipt and counts one invocation after a failed submission.",
+        "at": "2026-11-22T09:19:56.173Z"
       },
       {
         "nodeId": "routing",
         "criterionId": "behavior",
         "kind": "manual",
         "status": "accepted",
-        "binding": "8b0611fd503b3c65b2540012c6a0289e7fb1495939873a3ebd1726eeb3cc6cb4",
+        "binding": "6b14cf97dc47361bdbba7275b360d78d3a44d419355ad036dbf13cebf9fa3468",
         "actor": "Codex",
-        "summary": "Removed custom HTTP batch source/configuration/catalog and former tests of that protocol. Browser session-unavailable remains actionable. Explicit removed identities reject without network fallback. Evidence: repair-routing-red.log, repair-app-final.log, repair-browser-final.log.",
-        "at": "2026-11-21T16:20:26.575Z"
+        "summary": "Source registry and status tests cover explicit source selection. Missing stored response and stale execution claims reach explicit session errors. The native offline CLI fixture resumes its thread through the service-owned source.",
+        "at": "2026-11-22T09:19:56.175Z"
       },
       {
         "nodeId": "proof",
         "criterionId": "behavior",
         "kind": "manual",
         "status": "accepted",
-        "binding": "313aa9871c99479b82ea75b934abdce3ba61ae2c0144cdb3a52897c07eb5862f",
+        "binding": "e4819711282d228703a10c6971cd4c334773f1d0f2df0e0a8b89a00f201f740c",
         "actor": "Codex",
-        "summary": "Non-Design publication uses its actual owner registry; browser/Feature/runtime exchange proves canonical mutation, repair, permissions, partial completion, next-turn reuse and selected media. Actual installed native registration passes without inference. Evidence: repair-contract-red.log, repair-runtime-final.log, repair-canonical-final.log, repair-native-registration.log.",
-        "at": "2026-11-21T16:20:26.576Z"
+        "summary": "The non-Design Host fixture and three canonical Design Responses cases exercise real owner validation, permission refusal, partial settlements, named reuse, selected images and mutation receipts across source recreation.",
+        "at": "2026-11-22T09:19:56.176Z"
       },
       {
         "nodeId": "integration",
         "criterionId": "integrated",
         "kind": "manual",
         "status": "accepted",
-        "binding": "07841551f4406ff615587b9156b03f863a2790710043af8d605bb2687ba939ea",
+        "binding": "a6fffbd24aa83dcd89291479be477e973565ccd5a9591c5c1c241892a248a80f",
         "actor": "Codex",
-        "summary": "Four current owner handoffs reviewed and focused acceptance complete. No compatibility, weakened admission or alternate executor. Type, lint and naming gates scoped to this work. No live model acceptance or 101 claim.",
-        "at": "2026-11-21T16:20:26.578Z"
+        "summary": "Scoped offline runtime, source, canonical exchange and native continuation checks passed. Contract, checkpoint, atomic receipt and request payload reviewed. No hosted inference or billing measurement.",
+        "at": "2026-11-22T09:19:56.177Z"
       }
     ],
     "notes": [],

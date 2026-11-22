@@ -112,7 +112,10 @@ it('keeps Responses continuation and named results across the real browser/serve
   vi.stubEnv('AI_PROVIDER_BACKEND', 'openai-responses')
   vi.stubEnv('AI_PROVIDER_MODEL', 'fixture-model')
   vi.stubEnv('OPENAI_API_KEY', 'fixture-secret')
-  const sources = createDefaultAiModelSources({ fetch: scriptedFetch })
+  const sources = createDefaultAiModelSources({
+    continuationDatabase: ':memory:',
+    fetch: scriptedFetch
+  })
   const middleware = createActionBatchMiddleware({ sources })
   const server = createServer((request, response) => {
     void middleware(request, response, () => {
@@ -185,7 +188,8 @@ it('keeps Responses continuation and named results across the real browser/serve
       )
     ).toEqual(final)
     expect(requests).toHaveLength(4)
-    expect(JSON.stringify(requests[2].input)).toContain('call-1')
+    expect(requests[2].previous_response_id).toBe('response-2')
+    expect(JSON.stringify(requests[2].input)).not.toContain('call-1')
     expect(JSON.stringify(requests[2].input)).not.toContain(
       'duplicate-history-marker'
     )
@@ -350,6 +354,8 @@ it('replays the Dome searches through Responses with compact partial matches and
 
   captureRecord.mockClear()
   const sources = createDefaultAiModelSources({
+    continuationDatabase: ':memory:',
+
     fetch: async (_url, init) => {
       const body = JSON.parse(String(init?.body))
       const n = step++
@@ -416,7 +422,8 @@ it('replays the Dome searches through Responses with compact partial matches and
             body.input.some(
               (item: { id?: string }) => item.id === 'discovery-item'
             )
-          ).toBe(true)
+          ).toBe(false)
+          expect(body.previous_response_id).toBe('response-' + (n - 1))
           output = [
             {
               type: 'message',
@@ -529,5 +536,232 @@ it('replays the Dome searches through Responses with compact partial matches and
       runtime.ownedResources?.map((resource) => resource.dispose()) ?? []
     )
     captureRecord.mockClear()
+  }
+})
+
+it('recovers the acknowledged output after service restart without mixing pointers or invoking the tool again', async () => {
+  const { mkdirSync, mkdtempSync, rmSync } = await import('node:fs')
+  const { resolve, join } = await import('node:path')
+  const { createDefaultAiModelSources, selectAiModelSource } =
+    await import('../ai-model-sources')
+  const root = resolve('../../tmp/responses-continuation')
+
+  mkdirSync(root, { recursive: true })
+  const directory = mkdtempSync(join(root, 'restart-'))
+  const requests: Record<string, unknown>[] = []
+
+  const fetcher: typeof fetch = async (_url, init) => {
+    const body = JSON.parse(String(init?.body))
+
+    requests.push(body)
+    const index = requests.length
+
+    if (index === 2) {
+      return Response.json({}, { status: 503 })
+    }
+
+    return Response.json({
+      id: 'checkpoint-' + index,
+      status: 'completed',
+      output:
+        index === 1
+          ? [
+              {
+                type: 'function_call',
+                namespace: 'design_knowledge',
+                name: 'discover_knowledge',
+                call_id: 'owned-by-a',
+                arguments: JSON.stringify({ query: 'button' })
+              }
+            ]
+          : [
+              {
+                type: 'message',
+                role: 'assistant',
+                content: [{ type: 'output_text', text: JSON.stringify(final) }]
+              }
+            ]
+    })
+  }
+
+  const open = () =>
+    selectAiModelSource(
+      'openai-responses',
+      createDefaultAiModelSources({
+        fetch: fetcher,
+        continuationDatabase: join(directory, 'checkpoints.sqlite')
+      })
+    )
+
+  let source = open()
+
+  const ask = (id: string, turnId: string) =>
+    source.request(
+      { ...input, metadata: { conversationId: id, turnId } },
+      {
+        environment: {
+          OPENAI_API_KEY: 'fixture',
+          AI_PROVIDER_MODEL: 'fixture',
+          AI_EXECUTION_SOURCE_REVISION: 'fixture'
+        }
+      }
+    )
+
+  captureRecord.mockClear()
+  try {
+    await expect(ask('a', 'a-one')).rejects.toThrow()
+    await ask('b', 'b-one')
+    await source.dispose?.()
+    source = open()
+    await ask('a', 'a-one')
+    await ask('b', 'b-two')
+    await ask('a', 'a-two')
+    expect(requests[2]).not.toHaveProperty('previous_response_id')
+    expect(requests[3]).toMatchObject({
+      previous_response_id: 'checkpoint-1',
+      input: requests[1].input
+    })
+    expect(requests[4].previous_response_id).toBe('checkpoint-3')
+    expect(requests[5].previous_response_id).toBe('checkpoint-4')
+    expect(JSON.stringify(requests[4])).not.toContain('owned-by-a')
+    const starts = captureRecord.mock.calls
+      .flat()
+      .filter(
+        (item) =>
+          typeof item === 'object' &&
+          item !== null &&
+          'stage' in item &&
+          item.stage === 'tool_started'
+      )
+
+    expect(starts).toHaveLength(1)
+    const { DatabaseSync } = await import('node:sqlite')
+    const db = new DatabaseSync(join(directory, 'checkpoints.sqlite'), {
+      readOnly: true
+    })
+
+    try {
+      const rows = db
+        .prepare(
+          'SELECT conversation_id, call_id, arguments, output FROM operation_receipts'
+        )
+        .all()
+
+      expect(rows).toHaveLength(1)
+      expect(rows[0]).toMatchObject({
+        conversation_id: 'a',
+        call_id: 'owned-by-a',
+        arguments: JSON.stringify({ query: 'button' })
+      })
+      expect(JSON.parse(String(rows[0].output))).toEqual(
+        Array.isArray(requests[1].input) && requests[1].input[0].output
+      )
+    } finally {
+      db.close()
+    }
+  } finally {
+    await source.dispose?.()
+    rmSync(directory, { recursive: true, force: true })
+  }
+})
+
+it('preserves an uncertain dispatch on disk and rejects stale claims across service instances', async () => {
+  const { mkdirSync, mkdtempSync, rmSync } = await import('node:fs')
+  const { resolve, join } = await import('node:path')
+  const { createResponsesCheckpointStore } =
+    await import('../responses-checkpoint-store')
+  const { createResponsesAiProvider, createResponsesConversations } =
+    await import('@asyra/ai-agent-runtime/node')
+  const root = resolve('../../tmp/responses-continuation')
+
+  mkdirSync(root, { recursive: true })
+  const directory = mkdtempSync(join(root, 'dispatch-'))
+  const path = join(directory, 'state.sqlite')
+  const first = createResponsesCheckpointStore(path)
+  const second = createResponsesCheckpointStore(path)
+  const tools = [
+    {
+      name: 'app',
+      description: 'App mutations',
+      tools: [
+        {
+          name: 'write',
+          description: 'Write once',
+          inputSchema: { type: 'object' }
+        }
+      ]
+    }
+  ]
+  const write = vi.fn(async () => {
+    throw Error('Connection lost after commit')
+  })
+  const fetcher = vi.fn(async () =>
+    Response.json({
+      id: 'stored',
+      status: 'completed',
+      output: [
+        {
+          type: 'function_call',
+          namespace: 'app',
+          name: 'write',
+          call_id: 'claimed',
+          arguments: '{}'
+        }
+      ]
+    })
+  )
+
+  const provider = (store: typeof first) =>
+    createResponsesAiProvider({
+      model: 'fixture',
+      apiKey: 'fixture',
+      conversations: createResponsesConversations(store),
+      fetch: fetcher,
+
+      prepare: async () => ({
+        tools,
+        instructions: 'Write',
+
+        input: () => [{ type: 'inputText', text: 'Write once' }],
+
+        invoke: write,
+
+        decode: () => final
+      })
+    })
+
+  const request = {
+    ...input,
+    metadata: { conversationId: 'same', turnId: 'once' }
+  }
+  const previous = provider(first)
+  const next = provider(second)
+
+  try {
+    await expect(
+      previous.requestActionBatch(request, {
+        signal: new AbortController().signal
+      })
+    ).rejects.toThrow('Connection lost')
+    first.close()
+    const record = second.read('same')
+
+    expect(record?.state.executing).toBe('claimed')
+    if (!record) {
+      throw Error('Missing durable execution claim')
+    }
+
+    expect(() => second.write('same', record)).toThrow('changed')
+    await expect(
+      next.requestActionBatch(request, { signal: new AbortController().signal })
+    ).rejects.toMatchObject({ code: 'AI_PROVIDER_SESSION_UNAVAILABLE' })
+    expect(write).toHaveBeenCalledTimes(1)
+    expect(fetcher).toHaveBeenCalledTimes(1)
+  } finally {
+    await previous.dispose?.()
+    await next.dispose?.()
+    first.close()
+    second.close()
+    rmSync(directory, { recursive: true, force: true })
   }
 })

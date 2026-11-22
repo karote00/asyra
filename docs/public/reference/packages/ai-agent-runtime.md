@@ -187,10 +187,12 @@ usage. Observers cannot change execution or replace a settled answer.
 
 Responses preserves namespace names, schema semantics and correlated text/image
 outputs. It uses explicit `strict: false` plus the existing strict Host validation,
-and server tool search for deferred declarations. Its `store: false` continuation
-retains full output items locally; it does not require Conversations API access.
+and server tool search for deferred declarations. Stored Responses use
+`previous_response_id` with incremental input. Stable
+instructions appear in the initial developer message. The adapter needs no
+Conversations API access.
 No SDK dependency, automatic mutation retry or fallback source is installed.
 An unresolved invocation invalidates continuation; an acknowledged output survives
 a later HTTP failure. The adapter rejects incomplete responses as final answers.
-Service restart does not restore in-memory history. External credential, durable
+Service restart requires a durable App checkpoint. External credential, durable
 storage, transaction and evaluation policies belong to the composing App.

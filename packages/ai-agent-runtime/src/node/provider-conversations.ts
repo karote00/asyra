@@ -37,7 +37,11 @@ export interface ProviderConversationRecord<T> {
 }
 export interface ProviderConversationStorage<T> {
   read(key: string): ProviderConversationRecord<T> | undefined
-  write(key: string, record: ProviderConversationRecord<T>): void
+  write(
+    key: string,
+    record: ProviderConversationRecord<T>,
+    expected?: ProviderConversationRecord<T>
+  ): void
 }
 
 /** Service-owned continuation only. Turn callbacks and abort signals are never retained. */
@@ -89,7 +93,7 @@ export const createProviderConversations = <T>(
 
       active.add(key)
       let released = false
-      let state = previous?.state
+      let current = previous
 
       const assertActive = () => {
         if (released || closed) {
@@ -105,13 +109,15 @@ export const createProviderConversations = <T>(
         assertActive,
 
         get state() {
-          return state
+          return current?.state
         },
 
         checkpoint(value: T) {
           assertActive()
-          owner.write(key, Object.freeze({ contract: digest, state: value }))
-          state = value
+          const next = Object.freeze({ contract: digest, state: value })
+
+          owner.write(key, next, current)
+          current = next
         },
 
         invalidate() {
