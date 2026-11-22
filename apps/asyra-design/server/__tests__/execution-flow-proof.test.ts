@@ -9663,8 +9663,7 @@ it('execution proof preserves incremental UI publications without unrelated hier
 })
 
 it('execution proof preserves retained images during direct response reprojection', async () => {
-  const { localToolContent, localToolResultInstructions } =
-    await import('../local-operation-tools')
+  const { localToolContent } = await import('../local-operation-tools')
   const imageBytes = await sharp({
     create: { width: 2, height: 2, channels: 3, background: '#345678' }
   })
@@ -9696,9 +9695,6 @@ it('execution proof preserves retained images during direct response reprojectio
   }
 
   expect(JSON.parse(text.text).toolOutcome).toEqual(receipt.toolOutcome)
-  expect(localToolResultInstructions).not.toMatch(
-    /bindChecks|dataEvidence|define_design_criteria/
-  )
   const selected = structuredClone(selectedInspection.response)
   const captured = selected.fields.receipt.find(
     (entry) => entry.actionName === 'inspect_drawing'

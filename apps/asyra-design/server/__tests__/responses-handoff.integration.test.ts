@@ -1082,3 +1082,190 @@ it('runs a standalone registered invocation through the published entry and reje
     await Promise.all(runtime.ownedResources?.map((r) => r.dispose()) ?? [])
   }
 })
+
+it.each([true, false])(
+  'hands the selected square to the Host with discovery=%s',
+  async (discover) => {
+    const { default: square } = await import('./fixtures/selected-square.json')
+    const { createDefaultAiModelSources, selectAiModelSource } =
+      await import('../ai-model-sources')
+    const { createConversationResults, createAiToolContract } =
+      await import('@asyra/ai-agent-runtime')
+    const { operationInputIssue } =
+      await import('@asyra/ai-agent-runtime/schema')
+    const runtime = await createDrawingRuntime()
+    const toolCalls: string[] = []
+    let requests = 0
+    let bytes = 0
+    const results = createConversationResults(() => 1).open(
+      square.metadata.conversationId
+    )
+    const edit = square.execute.operations[0]
+    const { readFileSync } = await import('node:fs')
+    const data = readFileSync(
+      new URL('./fixtures/selected-square.png', import.meta.url)
+    ).toString('base64')
+    const capture = {
+      ...square.capture,
+      image: {
+        ...square.capture.image,
+        dataUrl: 'data:image/png;base64,' + data
+      }
+    }
+    let applied = 0
+    const sources = createDefaultAiModelSources({
+      continuationDatabase: ':memory:',
+
+      fetch: async (_url, init) => {
+        const body = JSON.parse(String(init?.body))
+        const first = ++requests === 1
+
+        if (first) {
+          bytes = Buffer.byteLength(String(init?.body))
+          const entries = body.tools.find(
+            (group: { name?: string }) => group.name === 'design_operations'
+          ).tools
+
+          expect(
+            entries.map((entry: { name: string }) => entry.name).sort()
+          ).toEqual([
+            'execute_design',
+            'read_design_contracts',
+            'search_design_tools'
+          ])
+          for (const [name, args] of [
+            ['search_design_tools', square.query],
+            ['execute_design', square.execute]
+          ] as const) {
+            expect(
+              operationInputIssue(
+                args,
+                entries.find((entry: { name: string }) => entry.name === name)
+                  .parameters
+              )
+            ).toBeUndefined()
+          }
+        }
+
+        const previous = toolCalls.at(-1)
+        let output
+
+        if (previous === 'execute_design') {
+          const receipt = JSON.parse(body.input[0].output[0].text)
+
+          expect(receipt.execution.status).toBe('success')
+          output = [
+            {
+              type: 'message',
+              role: 'assistant',
+              content: [{ type: 'output_text', text: JSON.stringify(final) }]
+            }
+          ]
+        } else {
+          let args: unknown = square.execute
+          let name = 'execute_design'
+
+          if (first && discover) {
+            name = 'search_design_tools'
+            args = square.query
+          } else if (discover) {
+            const menu = JSON.parse(body.input[0].output[0].text)
+            const result = menu.apis.find(
+              (a: { name: string }) => a.name === edit.name
+            )
+
+            expect(result.execution.tool).toBe(name)
+            expect(result.operationParameters).toBeDefined()
+            expect(
+              operationInputIssue(edit.arguments, result.operationParameters)
+            ).toBeUndefined()
+            expect(
+              operationInputIssue(
+                { updates: [{ color: '#0000FF' }] },
+                result.operationParameters
+              )
+            ).toBeTruthy()
+          }
+
+          toolCalls.push(name)
+          output = [
+            {
+              type: 'function_call',
+              namespace: 'design_operations',
+              name,
+              call_id: 'call-' + requests,
+              arguments: JSON.stringify(args)
+            }
+          ]
+        }
+
+        return Response.json({
+          id: 'response-' + requests,
+          status: 'completed',
+          output
+        })
+      }
+    })
+
+    try {
+      const source = selectAiModelSource('openai-responses', sources)
+
+      await source.request(
+        {
+          ...input,
+          intent: square.intent,
+          context: square.context,
+          metadata: square.metadata,
+          actions: runtime.actionDefinitions.map((a) => createAiToolContract(a))
+        },
+        {
+          environment: {
+            OPENAI_API_KEY: 'fixture',
+            AI_PROVIDER_MODEL: 'gpt-6.2-astra',
+            AI_EXECUTION_SOURCE_REVISION: 'fixture'
+          },
+
+          resultContext: async (command) => results.exchange(command),
+
+          executeBatch: async (batch) => ({
+            context: square.context,
+            actionResults: batch.actions.map((a) => {
+              if (a.name === edit.name) {
+                expect(a.arguments).toEqual(edit.arguments)
+                applied++
+              } else {
+                expect(a.name).toBe('inspect_drawing')
+              }
+
+              return {
+                actionId: a.id,
+                actionName: a.name,
+                result: a.name === edit.name ? square.receipt : capture
+              }
+            })
+          })
+        }
+      )
+      expect(applied).toBe(1)
+      expect(requests).toBe(discover ? 3 : 2)
+      expect(toolCalls).toEqual(
+        discover
+          ? ['search_design_tools', 'execute_design']
+          : ['execute_design']
+      )
+      expect(requests).toBeLessThan(square.previousExchanges)
+      expect(bytes).toBeLessThan(square.previousBytes / 2)
+      process.stdout.write(
+        JSON.stringify({
+          measurement: 'square-offline-replay',
+          discover,
+          requests,
+          bytes
+        }) + '\n'
+      )
+    } finally {
+      await Promise.all(sources.map((s) => s.dispose?.()))
+      await Promise.all(runtime.ownedResources?.map((r) => r.dispose()) ?? [])
+    }
+  }
+)

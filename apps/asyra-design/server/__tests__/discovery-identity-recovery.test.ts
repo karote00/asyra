@@ -222,6 +222,9 @@ it.each(
     expect(value.tools[0].rank).toBe(1)
     expect(value.tools[0].match.unmatchedTerms).toEqual([])
     expect(value.tools[0].usageGuide).toBeUndefined()
+    expect(value.tools[0].operationParameters).toEqual(
+      createLocalReferenceTools(vi.fn(), vi.fn()).definitions[0].inputSchema
+    )
     const read = owner.definitions.find(
       (d) => d.name === 'read_design_contracts'
     )

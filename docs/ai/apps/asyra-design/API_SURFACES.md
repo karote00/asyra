@@ -1187,7 +1187,7 @@ its actual delivery mode and fields before invoking it; use host target bindings
 for known artifacts or current regions. Preserve complete/truncated semantics.
 No separate evidence protocol or judgment submission is required.
 
-Use search_design_tools for owner capability metadata and read_design_contracts for selected exact identities. Missing identities retain their successful siblings; purpose search is a separate request step. design_operations.execute_design accepts one ordered operations array.
+Use search_design_tools for capability metadata and the ordinary argument schema of compact executable matches. Use read_design_contracts for additional selected input, result and recovery details. Missing identities retain their successful siblings; purpose search is a separate request step. design_operations.execute_design accepts one ordered operations array.
 Each operation specifies a name and ordinary arguments. Optional id identifies
 an output for later arguments using {kind:"step",step:"id",path:"/field"}.
 A known operation can specify an artifact or region target; selectAt:"step"

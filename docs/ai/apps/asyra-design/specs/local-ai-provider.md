@@ -466,8 +466,7 @@ language.
 Supply native tool definitions once. In operation mode, the text input retains
 only action schemas needed by final-response controls; registered operations use
 their native tool schemas. Provider instructions explicitly distinguish this final
-response list from the complete capabilities, name the eager discovery/execution
-entries without enumerating deferred schemas, and permit tool calls before the final JSON.
+response list from the available tools and permit tool calls before the final JSON. The callable declarations identify the entries.
 Native web research is allowed for public references, concepts and methods;
 App execution remains bounded to registered operations. Finding an external tool
 does not install or authorize it. Unavailable raster generation does not imply
@@ -812,9 +811,11 @@ criteria govern evaluation; it does not impose a high-detail drawing style.
 ### Narrow API discovery
 
 `search_design_tools` searches admitted purpose, category and input-field metadata.
-It returns candidate applicability without schemas or execution. `read_design_contracts`
-retrieves exact qualified identities and selected scopes; search results never imply
-contract acquisition. No-match results preserve truthful coverage and navigation.
+Candidate pages carry the admitted route and ordinary argument schema for compact
+executable matches, with more room for a unique complete or exact match. Oversized contracts keep their execution route and scoped read. Partial-only matches and category inventory remain navigation.
+A returned schema describes the named candidate. When a route wraps ordinary arguments,
+`parameterField` names the slot alongside the route’s admitted arguments. Search does not execute the operation. Known operations execute directly. Use `read_design_contracts` for exact
+identities, complex owner scopes, results and recovery when those are needed. No-match results preserve truthful coverage and navigation.
 These are separate inputs and owners, not mutually exclusive modes of one tool.
 Registration, contract revision and mutation permission checks remain authoritative.
 

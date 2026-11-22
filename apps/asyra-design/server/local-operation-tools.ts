@@ -797,6 +797,16 @@ const usageInputPaths = (schema: unknown, wrapper = false): string[] => {
   ]
 }
 
+const invocationInputField = (execution: Record<string, unknown>) => {
+  if (execution.kind === 'registered-tool') {
+    return 'input'
+  }
+
+  return typeof execution.argumentField === 'string'
+    ? execution.argumentField
+    : undefined
+}
+
 /** Examples are owner-authored data, never invented runtime credentials. */
 const usageInvocation = (descriptor: Record<string, unknown>) => {
   const schema = descriptor.inputSchema
@@ -833,16 +843,13 @@ const usageInvocation = (descriptor: Record<string, unknown>) => {
     execution.kind === 'registered-tool' ||
     execution.kind === 'native-tool'
   ) {
-    let args = example
-
-    if (execution.kind === 'registered-tool') {
-      args = {
-        ...(isRecord(execution.arguments) ? execution.arguments : {}),
-        input: example
-      }
-    } else if (typeof execution.argumentField === 'string') {
-      args = { [execution.argumentField]: example }
-    }
+    const field = invocationInputField(execution)
+    const args = field
+      ? {
+          ...(isRecord(execution.arguments) ? execution.arguments : {}),
+          [field]: example
+        }
+      : example
 
     const invocation = {
       namespace: execution.namespace,
@@ -2490,12 +2497,50 @@ export const createLocalOperationTools = (
 
   const discoveryGuidance = {
     capabilities:
-      'Find an operation by what it does: category menus, semantic operations or capability terms such as fill, hierarchy, bounds and inspection. Menus include execution routes; exact names retrieve input/output contracts. Search ranks declared purpose and fields without acquiring contracts; use purpose terms or categories for related capabilities. Known tools need no repeated lookup.',
+      'Find an operation by what it does: category menus, semantic operations or capability terms such as fill, hierarchy, bounds and inspection. Menus include execution routes; exact names retrieve input/output contracts. Choose by purpose and boundaries. When operationParameters is present, use those ordinary arguments with the declared execution route, placing them in parameterField when present; read a contract only for missing details. Known tools need no repeated lookup.',
     references:
       'This catalog does not search subjects, photographs or design reference material. Use native web research for missing external facts/images, then import_reference_image for a selected source. A subject word may be absent from this capability catalog; do not infer a missing drawing capability or automatically repeat it as a tool query.'
   }
 
-  const nativeMenu = (tool: NativeToolDescriptor, candidate = false) => {
+  // The admitted schema object is immutable for its owner's revision. Search only
+  // projects candidates on the requested page and never acquires a result schema.
+  const parameterSizes = new WeakMap<object, number>()
+
+  const candidateParameters = (
+    schema: unknown,
+    exact: boolean,
+    execution: Record<string, unknown>
+  ) => {
+    if (!isRecord(schema) || workflowInputScopes(schema)) {
+      return {}
+    }
+
+    let bytes = parameterSizes.get(schema)
+
+    if (bytes === undefined) {
+      bytes = Buffer.byteLength(JSON.stringify(schema))
+      parameterSizes.set(schema, bytes)
+    }
+
+    // Preserve the compact menu even when a single owner has extensive documentation.
+    if (bytes > (exact ? 2048 : 512)) {
+      return {}
+    }
+
+    const parameterField = invocationInputField(execution)
+
+    return {
+      operationParameters: schema,
+      ...(parameterField ? { parameterField } : {})
+    }
+  }
+
+  const nativeMenu = (
+    tool: NativeToolDescriptor,
+    candidate = false,
+    parameterMatch?: { exact: boolean }
+  ) => {
+    const execution = nativeExecution(tool)
     const inputScopes = workflowInputScopes(tool.inputSchema)
 
     return {
@@ -2511,7 +2556,10 @@ export const createLocalOperationTools = (
       }),
       effect: tool.effect,
       composition: tool.composition,
-      execution: nativeExecution(tool),
+      execution,
+      ...(parameterMatch && !inputScopes
+        ? candidateParameters(tool.inputSchema, parameterMatch.exact, execution)
+        : {}),
       usage: {
         tool: AiDesignToolIds.READ_DESIGN_CONTRACTS,
         arguments: contractReadArguments({
@@ -4531,9 +4579,15 @@ export const createLocalOperationTools = (
           )
         }
 
-        const searchActionMenu = (api: (typeof apis)[number]) => {
+        const searchActionMenu = (
+          api: (typeof apis)[number],
+          includeParameters = false,
+          uniqueMatch = false
+        ) => {
           const contract = getBasicApiContract(api.name)
           const operation = contract?.operation ?? api.name
+
+          const execution = actionExecution(api)
 
           return {
             name: api.name,
@@ -4542,7 +4596,16 @@ export const createLocalOperationTools = (
             effect:
               contract?.effect ?? ('effect' in api ? api.effect : undefined),
             revision: 'revision' in api ? api.revision : undefined,
-            execution: actionExecution(api),
+            execution,
+            ...(includeParameters && execution.kind !== 'unavailable'
+              ? candidateParameters(
+                  api.inputSchema,
+                  uniqueMatch ||
+                    args.query === api.name ||
+                    args.query === operation,
+                  execution
+                )
+              : {}),
             usage: {
               tool: AiDesignToolIds.READ_DESIGN_CONTRACTS,
               arguments: contractReadArguments({
@@ -4897,9 +4960,11 @@ export const createLocalOperationTools = (
         )
         // A partial vocabulary match is navigation, not evidence that the
         // operation exists. Keep all results reachable at their original rank.
-        const partial =
-          candidates.length > 0 &&
-          candidates.every((entry) => entry.match.unmatchedTerms.length > 0)
+        const complete = candidates.filter(
+          (entry) => entry.match.unmatchedTerms.length === 0
+        )
+        const uniqueMatch = complete.length === 1 ? complete[0] : undefined
+        const partial = candidates.length > 0 && complete.length === 0
         const pageSize = partial && !args.offset ? 3 : definitionPageSize
         const inventory = candidates
         const page = pageBoundary(inventory.length, pageSize)
@@ -4942,7 +5007,11 @@ export const createLocalOperationTools = (
             'api' in entry
               ? [
                   {
-                    ...searchActionMenu(entry.api),
+                    ...searchActionMenu(
+                      entry.api,
+                      !partial,
+                      entry === uniqueMatch
+                    ),
                     rank: entry.rank,
                     capability: entry.capability,
                     match: entry.match,
@@ -4957,7 +5026,20 @@ export const createLocalOperationTools = (
             'tool' in entry
               ? [
                   {
-                    ...nativeMenu(entry.tool, true),
+                    ...nativeMenu(
+                      entry.tool,
+                      true,
+                      partial
+                        ? undefined
+                        : {
+                            exact:
+                              entry === uniqueMatch ||
+                              args.query === entry.tool.name ||
+                              args.query === entry.tool.registeredName ||
+                              args.query ===
+                                entry.tool.namespace + '.' + entry.tool.name
+                          }
+                    ),
                     rank: entry.rank,
                     capability: entry.capability,
                     match: entry.match
@@ -5557,7 +5639,7 @@ export const createLocalOperationTools = (
               ...definition,
               name: AiDesignToolIds.SEARCH_DESIGN_TOOLS,
               description:
-                'Find tools by intended capability and optional required input fields. Returns ranked candidate metadata, applicability boundaries and exact contract-read routes; never executes or selects a tool for you. query searches declared purpose, fields and identities; category optionally narrows the search. Omit both for categories. Follow next.arguments for more candidates. Use read_design_contracts for exact contracts. Independent searches and contract reads can be composed through execute_design.',
+                'Find tools by intended capability and optional required input fields. Returns ranked candidates with complete ordinary argument schemas for compact executable matches and exact read routes for further details. Search never executes an operation. query searches declared purpose, fields and identities; category optionally narrows the search. Omit both for categories. Follow next.arguments for more candidates. Use read_design_contracts for exact contracts. Independent searches and contract reads can be composed through execute_design.',
               inputSchema: discoveryInputSchema(
                 AiDesignToolIds.SEARCH_DESIGN_TOOLS,
                 categoryChoices
@@ -5916,13 +5998,6 @@ export const createLocalOperationTools = (
 
   return deliveredOwner
 }
-
-export const localToolResultInstructions =
-  informationDeliveryInstructions +
-  `
-Call registered tools directly with their JSON arguments. Use native tool discovery to obtain a missing callable declaration; use the App's read_design_contracts for its selected usage and constraints. Tool replies directly contain structured receipt text and any images; inspect these results without manually forwarding or transforming them.
-Use existing resultKey/fromResult, artifactId, snapshotId and inspectionId references only where the selected tool advertises them. Missing or stale retained data requires that owner's read/refresh recovery. Never repeat a completed mutation or image capture merely to recover its output. Interpret the separate toolOutcome acknowledgement and partial results independently from transport completion; preserve completed steps and recover only remaining work.
-For visual decisions inspect the delivered images against the request. read_design_inspections redisplays existing inspectionIds or the latest captured target/view without recapturing; inspect_drawing captures current pixels. Redisplay reuses those image bytes; it does not refresh their captured document state or certify quality.`
 
 /** Separate validated original reference rasters and bounded canvas snapshots from text. */
 export const localToolContent = async (

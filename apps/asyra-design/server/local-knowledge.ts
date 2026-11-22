@@ -185,6 +185,14 @@ const loadFiles = async (): Promise<readonly KnowledgeFile[]> => {
       })
     )),
     {
+      id: 'design.representation',
+      revision: 1,
+      markdown: await readFile(
+        new URL('../knowledge/design.representation.md', import.meta.url),
+        'utf8'
+      )
+    },
+    {
       id: 'design.docs-page',
       revision: 1,
       markdown: await readFile(

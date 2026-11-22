@@ -1,0 +1,110 @@
+{
+  "intent": "把紅色方塊改成藍色。",
+  "context": {
+    "workspaceId": "workspace",
+    "primaryTool": "select",
+    "systemMode": "design",
+    "elementCount": 1,
+    "selectedElementCount": 1,
+    "selectedElements": [
+      {
+        "id": "rect-actor-cbb404c5-d625-42d7-b235-864e6c3389d4-1",
+        "type": "rect",
+        "parentId": "workspace",
+        "coordinateSpace": "parent-local",
+        "visible": true,
+        "locked": false,
+        "bounds": {
+          "x": 560,
+          "y": 400,
+          "width": 100,
+          "height": 100
+        }
+      }
+    ]
+  },
+  "metadata": {
+    "aiTargets": {
+      "compositionId": null,
+      "roleToElementIds": {}
+    },
+    "conversationId": "conversation-8b6bc193-e003-47d6-b872-0c3a6687b40a",
+    "turnId": "conversation-8b6bc193-e003-47d6-b872-0c3a6687b40a:turn:1",
+    "sourceRequestId": "20bac761-1a0a-4766-91c3-d11e5d4dd2cb"
+  },
+  "query": {
+    "query": "set solid fill color elementIds"
+  },
+  "execute": {
+    "operations": [
+      {
+        "id": "blue",
+        "name": "api_fill_updatePrimaryFillColors",
+        "arguments": {
+          "updates": [
+            {
+              "elementId": "rect-actor-cbb404c5-d625-42d7-b235-864e6c3389d4-1",
+              "color": "#0000FF"
+            }
+          ]
+        }
+      }
+    ],
+    "retain": {
+      "squareColor": {
+        "step": "blue",
+        "source": "input",
+        "path": "/updates/0"
+      }
+    },
+    "message": "將選取方塊的填色改為藍色。"
+  },
+  "receipt": {
+    "value": [
+      "changed"
+    ],
+    "status": "complete",
+    "settlement": "completed",
+    "mutationScope": {
+      "complete": true,
+      "elementIds": [
+        "rect-actor-cbb404c5-d625-42d7-b235-864e6c3389d4-1"
+      ],
+      "removedElementIds": []
+    },
+    "toolOutcome": {
+      "status": "success",
+      "settlement": "completed"
+    }
+  },
+  "previousBytes": 42860,
+  "previousExchanges": 4,
+  "capture": {
+    "available": true,
+    "settlement": "completed",
+    "elementId": "rect-actor-cbb404c5-d625-42d7-b235-864e6c3389d4-1",
+    "image": {
+      "type": "snapshot",
+      "width": 400,
+      "height": 400,
+      "bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 100,
+        "height": 100
+      }
+    },
+    "partial": false,
+    "imageScope": "overview",
+    "background": "#ffffff",
+    "evidence": {
+      "sessionId": "624d7641-405e-4ba4-b32b-7b9e6802fd89",
+      "receiptId": "00075344-366a-4706-8fa6-b02181e4ed0c",
+      "revision": 0
+    },
+    "toolOutcome": {
+      "status": "success",
+      "settlement": "completed"
+    }
+  }
+}

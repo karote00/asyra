@@ -63,6 +63,87 @@ it('separates purpose search from exact scoped reads without a retired entry', a
   expect(result.apis[1].definition.coverage).toBe('partial')
   expect(dispatch).not.toHaveBeenCalled()
 })
+it('hands off the complete grouping input by identity and keeps partial-only searches navigable', async () => {
+  const { call, dispatch } = fixture()
+  const grouping = basicApiContracts.find(
+    (action) => action.operation === 'hierarchy.groupElements'
+  )
+
+  if (!grouping) {
+    throw Error('Missing grouping owner')
+  }
+
+  const search = async (query: string) => {
+    const reply = await call('search_design_tools', { query })
+
+    expect(reply.success, reply.text).toBe(true)
+
+    return JSON.parse(reply.text)
+  }
+
+  const exact = await search(grouping.operation)
+  const candidate = exact.apis.find(
+    (item: { name: string }) => item.name === grouping.name
+  )
+
+  expect(candidate.operationParameters).toEqual(grouping.inputSchema)
+  expect(candidate.execution).toMatchObject({
+    kind: 'batch-action',
+    tool: 'execute_design'
+  })
+  expect(
+    operationInputIssue(
+      { elementIds: ['a', 'b'] },
+      candidate.operationParameters
+    )
+  ).toBeUndefined()
+  expect(
+    operationInputIssue({ elementIds: 42 }, candidate.operationParameters)
+  ).toBeTruthy()
+  const partial = await search('group elements unregisteredword')
+
+  expect(partial.undeclaredPurposeTerms).toContain('unregisteredword')
+  expect(partial.apis.length).toBeGreaterThan(0)
+  for (const item of [...partial.apis, ...partial.tools]) {
+    expect(item.operationParameters).toBeUndefined()
+    expect(item.usage.tool).toBe('read_design_contracts')
+  }
+
+  expect(dispatch).not.toHaveBeenCalled()
+})
+
+it('measures a candidate input once per admitted schema while preserving repeat search results', async () => {
+  const { call } = fixture()
+  const grouping = basicApiContracts.find(
+    (action) => action.operation === 'hierarchy.groupElements'
+  )
+
+  if (!grouping) {
+    throw Error('Missing grouping owner')
+  }
+
+  const serialize = vi.spyOn(JSON, 'stringify')
+
+  const search = () => call('search_design_tools', { query: 'group elements' })
+
+  const measurements = () =>
+    serialize.mock.calls.filter(([value]) => value === grouping.inputSchema)
+      .length
+
+  try {
+    const first = await search()
+
+    expect(first.success, first.text).toBe(true)
+    expect(measurements()).toBe(1)
+    const again = await search()
+
+    expect(again.text).toEqual(first.text)
+    expect(measurements()).toBe(1)
+  } finally {
+    serialize.mockRestore()
+  }
+})
+
 it('publishes distinct input and request-composition contracts', () => {
   const { owner } = fixture()
 

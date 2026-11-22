@@ -159,6 +159,21 @@ it('refreshes discovery after recipe registration, revision and removal without 
   const first = (await lookup()).tools[0]
 
   expect(first.execution).toEqual(tools[0].execution)
+  const found = JSON.parse(
+    await owner.call(
+      'search_design_tools',
+      { query: 'repeat-fill' },
+      new AbortController().signal
+    )
+  )
+
+  expect(
+    found.tools.find((tool: { name: string }) => tool.name === 'repeat-fill')
+  ).toMatchObject({
+    execution: tools[0].execution,
+    operationParameters: tools[0].inputSchema,
+    parameterField: 'input'
+  })
   expect(first.outputSchema).toEqual({ type: 'number' })
   expect((await lookup()).tools[0].definition.state).toBe('included')
   expect(getNativeTools).toHaveBeenCalledTimes(2)
@@ -3600,6 +3615,12 @@ it('retrieves usage and exact schema fragments without consuming full definition
   ).apis[0]
 
   expect(menu.usageGuide).toBeUndefined()
+  expect(menu.operationParameters).toBeUndefined()
+  expect(menu.execution).toMatchObject({
+    kind: 'batch-action',
+    tool: 'execute_design'
+  })
+  expect(menu.usage.arguments.names).toContain(action.name)
   expect(JSON.stringify(menu).length).toBeLessThan(
     JSON.stringify(full).length / 2
   )

@@ -25,11 +25,29 @@ export const AiDesignToolIds = Object.freeze({
   REPAIR_DESIGN_CHECKS: 'repair_design_checks'
 } as const)
 
+const entryDescriptions = new Map<string, string>([
+  [
+    AiDesignToolIds.SEARCH_DESIGN_TOOLS,
+    'Search by purpose, category or input fields. Choose by capability and route; compact matches include ordinary argument schemas. Follow next for more candidates.'
+  ],
+  [
+    AiDesignToolIds.READ_DESIGN_CONTRACTS,
+    'Read selected contracts by exact identity; scopes maps each selected identity to schema paths or an input scope. Request missing constraints, results or examples.'
+  ],
+  [
+    AiDesignToolIds.EXECUTE_DESIGN,
+    'Execute known operations directly. Supply operations with name and arguments; use stages for dependent work. Omitted delivery returns the last result and its images whether or not retain is present. Use invocation alone for standalone routes. Read the host contract for advanced bindings, iteration and result selection.'
+  ]
+])
+
+export const designProviderEntryDescription = (
+  namespace: string,
+  name: string
+) =>
+  namespace === 'design_operations' ? entryDescriptions.get(name) : undefined
+
 export const isDesignProviderEntry = (namespace: string, name: string) =>
-  namespace === 'design_operations' &&
-  (name === AiDesignToolIds.SEARCH_DESIGN_TOOLS ||
-    name === AiDesignToolIds.READ_DESIGN_CONTRACTS ||
-    name === AiDesignToolIds.EXECUTE_DESIGN)
+  designProviderEntryDescription(namespace, name) !== undefined
 
 export const AiInspectionLimits = Object.freeze({
   maxEdge: 1024

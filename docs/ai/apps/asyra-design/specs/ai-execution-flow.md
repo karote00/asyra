@@ -3791,16 +3791,13 @@ selection and invalid/stale revisions. No extra preliminary lookup or larger lim
 
 ### Next-part operation selection
 
-The initial provider Main tool scope must include the canonical owner's selection
-conditions before the first scoped query, together with its existing legal choices
-and example. Forward the existing selection verbatim, once; deferred tool schema
-registration is not a substitute. This adds no discovery request and preloads no
-child schema. Bounded scope-error recovery retains legal choices and its executable
-correction example without repeating the complete selection prose. Preserve explicit independent geometry, translated mixed components,
-root/container distinctions and optional-input choices without forcing adoption.
-DoD: inspect the actual native thread/start request and compare selection with the
-owner declaration; execute direct selected examples, preserve bounded delivery
-under unrelated catalog growth, budget failures, partial receipts and no replay.
+The preparation owner publishes its legal choices, selection conditions and executable
+scope example when selected. The initial provider instructions describe discovery and
+direct execution. They do not preload preparation scope for unrelated edits.
+A known scope is usable immediately. Bounded scope-error recovery retains legal
+choices and a correction example. Inspect actual provider publication, read the
+selected owner and execute the returned example. Preserve independent geometry,
+translated components, root/container distinctions, optional inputs and no replay.
 
 The first selection reply and direct selected usage distinguish the draft root from
 its children. Every draft guide already includes group/frame root contracts;

@@ -1,0 +1,134 @@
+{
+  "schemaVersion": 1,
+  "projectId": "asyra",
+  "flowId": "on-demand-design-contracts",
+  "revision": 3,
+  "definition": {
+    "title": "On-demand Design contracts",
+    "purpose": "Publish current execution routes and resolve unknown ordinary arguments in one search.",
+    "nodes": [
+      {
+        "id": "publication",
+        "title": "Design provider tools",
+        "objective": "Current turn and admitted owners to compact declarations and stable instructions. Preserve native and Responses validation and final response.",
+        "owner": "Design provider tools",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [],
+        "criteria": [
+          {
+            "id": "handoff",
+            "title": "Current turn and admitted owners to compact declarations and stable instructions. Preserve native and Responses validation and final response.",
+            "kind": "manual"
+          }
+        ],
+        "specRefs": [
+          "docs/ai/apps/asyra-design/specs/local-ai-provider.md",
+          "docs/ai/apps/asyra-design/plans/on-demand-design-contracts.md"
+        ],
+        "implementationRefs": [
+          "apps/asyra-design/server/design-provider-tools.ts",
+          "apps/asyra-design/server/ai-domain-prompt.ts"
+        ],
+        "actions": []
+      },
+      {
+        "id": "discovery",
+        "title": "Design operation discovery",
+        "objective": "Ranked candidate page to complete ordinary parameters and its own admitted execution route. Partial and complex candidates keep scoped retrieval. No mutation during search.",
+        "owner": "Design operation discovery",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [
+          {
+            "flowId": "on-demand-design-contracts",
+            "nodeId": "publication"
+          }
+        ],
+        "criteria": [
+          {
+            "id": "handoff",
+            "title": "Ranked candidate page to complete ordinary parameters and its own admitted execution route. Partial and complex candidates keep scoped retrieval. No mutation during search.",
+            "kind": "manual"
+          }
+        ],
+        "specRefs": [
+          "docs/ai/apps/asyra-design/specs/local-ai-provider.md",
+          "docs/ai/apps/asyra-design/plans/on-demand-design-contracts.md"
+        ],
+        "implementationRefs": [
+          "apps/asyra-design/server/local-operation-tools.ts"
+        ],
+        "actions": []
+      },
+      {
+        "id": "proof",
+        "title": "Design provider integration",
+        "objective": "Captured rectangle and original query to model-visible contract, Host mutation and final receipt. Known operations bypass discovery. Offline model chooses the returned operation.",
+        "owner": "Design provider integration",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [
+          {
+            "flowId": "on-demand-design-contracts",
+            "nodeId": "discovery"
+          }
+        ],
+        "criteria": [
+          {
+            "id": "handoff",
+            "title": "Captured rectangle and original query to model-visible contract, Host mutation and final receipt. Known operations bypass discovery. Offline model chooses the returned operation.",
+            "kind": "manual"
+          }
+        ],
+        "specRefs": [
+          "docs/ai/apps/asyra-design/specs/local-ai-provider.md",
+          "docs/ai/apps/asyra-design/plans/on-demand-design-contracts.md"
+        ],
+        "implementationRefs": [
+          "apps/asyra-design/server/__tests__/responses-handoff.integration.test.ts"
+        ],
+        "actions": []
+      }
+    ],
+    "criteria": []
+  },
+  "current": {
+    "observations": [
+      {
+        "nodeId": "publication",
+        "criterionId": "handoff",
+        "kind": "manual",
+        "status": "accepted",
+        "binding": "54528d40d289b4cc08896034ee09b9b51e9de4c4747dd795e4180ffb1b9e0e57",
+        "actor": "Codex",
+        "summary": "Production provider, native offline protocol and scoped workflow examples passed. Cold developer text is 3,112 bytes. The actual turn and final-control schemas remain intact.",
+        "at": "2026-11-22T14:00:33.683Z"
+      },
+      {
+        "nodeId": "discovery",
+        "criterionId": "handoff",
+        "kind": "manual",
+        "status": "accepted",
+        "binding": "0b46f34e2a11d18d08ce6ef22eefc0f1a9d4cf3dc7d0e0aff4b71ac72bbe12cd",
+        "actor": "Codex",
+        "summary": "All 278 focused discovery, operation and Responses tests passed. Complete ordinary argument validation, saved invocation wrapping, partial queries, large scoped reads and opaque reference import names retain their admitted routes.",
+        "at": "2026-11-22T14:00:33.686Z"
+      },
+      {
+        "nodeId": "proof",
+        "criterionId": "handoff",
+        "kind": "manual",
+        "status": "accepted",
+        "binding": "743656e317329cbe0e23434c25631650b7b8456a2e305f778ed9604d70047b0d",
+        "actor": "Codex",
+        "summary": "The offline Responses browser replay persisted one blue rectangle. Cold wire bytes fell from 42,860 to 16,425. The scripted search path required three exchanges and the known path required two.",
+        "at": "2026-11-22T14:00:33.687Z"
+      }
+    ],
+    "notes": [],
+    "progress": [],
+    "sources": [],
+    "warnings": []
+  }
+}

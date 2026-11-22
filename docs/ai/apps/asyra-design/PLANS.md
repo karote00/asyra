@@ -4,6 +4,8 @@ Never record completed plans here.
 
 ## Current Status
 
+- [On-demand Design contracts](plans/on-demand-design-contracts.md) covers initial publication and immediately usable search results.
+
 - Planning only: [AI Agent Runtime Ownership Transfer](../../framework/plans/ai-agent-runtime-ownership-transfer-plan.md).
   Framework-owned follow-up to the merged conversation work. Design keeps domain
   actions, context, permissions and Feature/transaction ownership; common host
