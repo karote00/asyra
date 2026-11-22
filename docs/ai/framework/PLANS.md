@@ -4,15 +4,6 @@ Never record completed plans here.
 
 This file tracks framework planning topics and points to detailed references.
 
-## Replaceable AI Sources and OpenAI Responses Adapter
-
-- [Plan](plans/openai-responses-adapter-plan.md) - source-neutral entry, shared
-  conversation leases and optional Responses transport. The follow-up unifies
-  request disposal, invocation progress and error projection, removes the custom
-  HTTP batch source, and verifies real provider contracts through canonical App
-  execution. Focused acceptance is complete; Claude/Gemini implementations,
-  live model acceptance, 101 and remote publication remain excluded.
-
 ## AI Agent Runtime Ownership Transfer
 
 - [AI Agent Runtime Ownership Transfer](plans/ai-agent-runtime-ownership-transfer-plan.md)

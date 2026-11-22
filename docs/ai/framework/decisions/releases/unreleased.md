@@ -262,3 +262,9 @@ Decision:
 - [reusable-tool-composition-plan](/docs/ai/framework/plans/completed/reusable-tool-composition-plan.md): Close the five-correction scope. Retain documented diagnostic and model/reference-selection limits; no universal quality or latency claim.
 
 Consequences: Historical plan and acceptance records remain intact. Closeout changes documentation only; no package version, Changeset, template, tag or publication is created. Evaluation, efficiency and retrieval plans remain open.
+
+## 2026-11-22 - Close the OpenAI Responses adapter plan
+
+The Design app shares its Host pipeline across both model sources. OpenAI publishes three Design entries and uses stored continuation. The Taipei Dome run completed in 4 minutes 13 seconds with a USD 1.62 observed credit decrease. The [completed adapter plan](../../plans/completed/openai-responses-adapter-plan.md) records acceptance and limitations.
+
+Record: `docs/ai/framework/plans/completed/openai-responses-adapter-plan.md`.

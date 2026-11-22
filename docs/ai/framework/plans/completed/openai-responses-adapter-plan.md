@@ -138,8 +138,8 @@ local links and Flow admission are checked. No full repository suite, 101, paid
 inference, commit or push was performed. This proves the bounded source handoff,
 not model quality or live Responses service acceptance.
 
-Specification: [Responses adapter](../specs/openai-responses-adapter.md).
-[Responses adapter Flow](openai-responses-adapter/responses-adapter.flow.json)
+Specification: [Responses adapter](../../specs/openai-responses-adapter.md).
+[Responses adapter Flow](../openai-responses-adapter/responses-adapter.flow.json)
 
 ## Drawing follow-up on the same branch
 
@@ -243,3 +243,16 @@ leaf validation and rejected mixed and private calls before execution. The
 advertised contract digest was checked against the three functions and the
 actual final-response actions sent to the provider. All model turns in these
 regressions used an offline scripted transport.
+
+## Closeout
+
+Completed: 2026-11-22
+Reviewed source: 7689b110e7eedd7e33acc5a707928f24f2bc858f
+
+Outcome: Native Codex and OpenAI Responses use the same Design execution and result handoff. The Responses adapter continues a stored turn, publishes the three Design entries, and delivers a bounded overview while keeping the original reference available.
+
+Decision: Close the adapter plan on the accepted Taipei Dome run. The drawing completed in 4 minutes 13 seconds over 12 Responses requests. The owner observed a USD 1.62 credit decrease (18.68 to 17.06). Receipts and the estimated search charge give a separate estimate of USD 1.6268444.
+
+Exit criteria: 774 server cases, 278 browser-side cases, 47 runtime and geometry cases, and three Chromium cases passed. Twenty workflow checks and six TypeScript configurations passed. Scoped ESLint reported zero errors and three console warnings in diagnostics. Naming and source formatting passed. Three stale test expectations were corrected to verify the published search metadata and execution route.
+
+The local evidence is under `tmp/openai-responses-closeout/` and `tmp/dome-three-entries-live/taipei-dome-1795347430204/` in the main checkout.
