@@ -12,6 +12,7 @@ import {
   resolveConversationInputs
 } from './local-result-delivery'
 import { runtimeOperationSchema } from './local-operation-batch'
+import { randomUUID } from 'node:crypto'
 import { AsyncLocalStorage } from 'node:async_hooks'
 import {
   AiToolContractError,
@@ -43,6 +44,8 @@ import { createAiToolHostLibrary } from '@asyra/ai-agent-runtime/node'
 import {
   operationGroupName,
   createDesignSequencePlanner,
+  deliveryCorrectionSchema,
+  DeliverySelectionError,
   designStageOutcomes,
   sequenceDefinition,
   standaloneInvocationSchema,
@@ -153,6 +156,8 @@ export const createLocalToolHost = (options: {
     requestId: options.requestId,
     capacity: options.artifactCapacity
   })
+  const pendingDeliveries = new Map<string, Record<string, unknown>>()
+  const authoredSequences = new WeakMap<object, Record<string, unknown>>()
   const schedule = createAiToolScheduler(options.signal)
   const ownership: AiToolOwnership = {
     requestId: options.requestId,
@@ -726,7 +731,7 @@ export const createLocalToolHost = (options: {
         }
 
         if (!source) {
-          throw new AiToolInputError(
+          throw new DeliverySelectionError(
             'Selected result requires a step output',
             AiToolFailureCodes.INPUT_INVALID
           )
@@ -780,7 +785,7 @@ export const createLocalToolHost = (options: {
                 localToolErrorMessage(error)
 
               throw error instanceof RecipeReferenceError
-                ? new AiToolInputError(message)
+                ? new DeliverySelectionError(message)
                 : new AiToolContractError('registration', message)
             }
           }
@@ -1509,6 +1514,37 @@ export const createLocalToolHost = (options: {
       try {
         selection = selectInvocation(call)
       } catch (error) {
+        if (
+          error instanceof DeliverySelectionError &&
+          typeof call.input === 'object' &&
+          call.input
+        ) {
+          const authored = authoredSequences.get(call.input)
+
+          if (authored && pendingDeliveries.size < options.artifactCapacity) {
+            const retryDelivery = randomUUID()
+
+            pendingDeliveries.set(retryDelivery, structuredClone(authored))
+
+            return localToolFailureReply(
+              localToolErrorMessage(error),
+              error.code,
+              {
+                stage: 'admission',
+                settlement: 'not-started',
+                inputIssues: [
+                  {
+                    path: '/delivery',
+                    correction: { retryDelivery },
+                    message:
+                      'Use this request handle with corrected delivery; operations have not started.'
+                  }
+                ]
+              }
+            )
+          }
+        }
+
         return localToolFailureReply(
           localToolErrorMessage(error),
           error instanceof AiToolInputError
@@ -2048,14 +2084,41 @@ export const createLocalToolHost = (options: {
             typeof call.input === 'object'
           ) {
             try {
-              call = {
-                ...call,
-                input: await resolveConversationInputs(
-                  call.input as Record<string, unknown>,
-                  options.resultContext,
-                  planSequence.authoredInput
+              let authored = call.input as Record<string, unknown>
+
+              if (Object.hasOwn(authored, 'retryDelivery')) {
+                const issue = operationInputIssue(
+                  authored,
+                  deliveryCorrectionSchema
                 )
+
+                if (issue) {
+                  throw new AiToolInputError(issue)
+                }
+
+                const id = authored.retryDelivery
+                const pending =
+                  typeof id === 'string' && pendingDeliveries.get(id)
+
+                if (!pending || typeof id !== 'string') {
+                  throw new AiToolInputError(
+                    'Delivery correction is unavailable in this request.'
+                  )
+                }
+
+                // Claim synchronously before any read or dispatch; a concurrent correction cannot replay it.
+                pendingDeliveries.delete(id)
+                authored = { ...pending, delivery: authored.delivery }
               }
+
+              const resolved = await resolveConversationInputs(
+                authored,
+                options.resultContext,
+                planSequence.authoredInput
+              )
+
+              authoredSequences.set(resolved, authored)
+              call = { ...call, input: resolved }
             } catch (error) {
               return localToolFailureReply(
                 localToolErrorMessage(error),
@@ -2163,6 +2226,7 @@ export const createLocalToolHost = (options: {
     dispose() {
       closed = true
       closing ??= Promise.allSettled([...active]).then(async () => {
+        pendingDeliveries.clear()
         await library.dispose()
         await leases.dispose()
       })

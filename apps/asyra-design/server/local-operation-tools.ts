@@ -280,6 +280,38 @@ const usageResultFields = (schemas: {
   }
 }
 
+const selectResultFields = (
+  schemas: Parameters<typeof usageResultFields>[0],
+  paths: string[] = []
+) => {
+  const fields = usageResultFields(schemas)
+
+  fields.fields = [...new Set([...fields.fields, ...paths])]
+  const guaranteed: string[] = []
+  const portable: string[] = []
+
+  for (const path of schemas.outputSchema === undefined ? [] : fields.fields) {
+    try {
+      const schema = registeredRecipeOutputAt(
+        runtimeOperationSchema(schemas.outputSchema),
+        path
+      )
+
+      guaranteed.push(path)
+      if (aiToolSchemaIsPortable(schema)) {
+        portable.push(path)
+      }
+    } catch (error) {
+      if (!(error instanceof RecipeReferenceError)) {
+        throw error
+      }
+      // Only conditional or absent paths are not binding guarantees.
+    }
+  }
+
+  return { fields, guaranteed, portable }
+}
+
 const followupResultFields = {
   batchId: { type: 'string' },
   context: toolInternalResult({}),
@@ -1550,7 +1582,10 @@ export const createLocalOperationTools = (
     const { inputSchema } = descriptor
     let contract = descriptor as Parameters<typeof modelToolResultSchemas>[0]
 
-    if (args.view === 'usage' && args.inputScope !== undefined) {
+    if (
+      (args.view === 'usage' || args.view === 'parameters') &&
+      args.inputScope !== undefined
+    ) {
       try {
         contract = {
           ...contract,
@@ -1738,9 +1773,9 @@ export const createLocalOperationTools = (
         refresh: true,
         refreshReason: 'context-loss',
         ...(args.inputScope ? { inputScope: args.inputScope } : {}),
-        ...(args.view === 'usage'
+        ...(args.view !== undefined
           ? {
-              view: 'usage',
+              view: args.view,
               ...(args.includeResultSchema !== undefined
                 ? { includeResultSchema: args.includeResultSchema }
                 : {})
@@ -1891,7 +1926,26 @@ export const createLocalOperationTools = (
       }
     }
 
-    if (
+    if (args.view === 'parameters') {
+      const route = descriptor.execution
+
+      if (!isRecord(route)) {
+        throw new AiToolInputError('No executable route for this owner.')
+      }
+
+      const parameters = projection.inputSchema
+
+      projection = {
+        ...reference,
+        execution: route,
+        ...candidateParameters(parameters, route),
+        ...(route.kind === 'host-operation' && {
+          deliveryFields: selectResultFields(modelToolResultSchemas(contract))
+            .guaranteed
+        })
+      }
+      coverage = 'parameters'
+    } else if (
       args.view === 'usage' &&
       (args.inputScope !== undefined ||
         selectedBatch ||
@@ -1953,40 +2007,6 @@ export const createLocalOperationTools = (
             }
           }
         : localToolFailureSchema
-
-      const selectResultFields = (
-        schemas: typeof results,
-        paths: string[] = []
-      ) => {
-        const fields = usageResultFields(schemas)
-
-        fields.fields = [...new Set([...fields.fields, ...paths])]
-        const guaranteed: string[] = []
-        const portable: string[] = []
-
-        for (const path of schemas.outputSchema === undefined
-          ? []
-          : fields.fields) {
-          try {
-            const schema = registeredRecipeOutputAt(
-              runtimeOperationSchema(schemas.outputSchema),
-              path
-            )
-
-            guaranteed.push(path)
-            if (aiToolSchemaIsPortable(schema)) {
-              portable.push(path)
-            }
-          } catch (error) {
-            if (!(error instanceof RecipeReferenceError)) {
-              throw error
-            }
-            // Only conditional or absent paths are not binding guarantees.
-          }
-        }
-
-        return { fields, guaranteed, portable }
-      }
 
       const invocationSelection = selectResultFields(results)
       // Named actions execute the canonical wrapper; invoke_tool wraps its leaf.
@@ -2177,7 +2197,10 @@ export const createLocalOperationTools = (
             })
           }
         : undefined
-    let nextAction = 'use-response-or-recover-requested-scope'
+    let nextAction =
+      args.view === 'parameters'
+        ? 'execute-with-delivered-contract'
+        : 'use-response-or-recover-requested-scope'
 
     if (args.view === 'usage') {
       nextAction = 'select-exact-tool'
@@ -2210,9 +2233,9 @@ export const createLocalOperationTools = (
           arguments: contractReadArguments({
             ...selector,
             ...(args.inputScope ? { inputScope: args.inputScope } : {}),
-            ...(args.view === 'usage'
+            ...(args.view !== undefined
               ? {
-                  view: 'usage',
+                  view: args.view,
                   ...(args.includeResultSchema !== undefined
                     ? { includeResultSchema: args.includeResultSchema }
                     : {})
@@ -2544,6 +2567,44 @@ export const createLocalOperationTools = (
     }
   }
 
+  const scopeMenus = new WeakMap<
+    NativeToolDescriptor,
+    ReturnType<typeof scopeMenu>
+  >()
+
+  function scopeMenu(tool: NativeToolDescriptor) {
+    const guidance = workflowQueryGuidance(
+      tool.namespace + '.' + tool.name,
+      tool.inputSchema
+    )
+
+    if (!guidance) {
+      return undefined
+    }
+
+    return {
+      scopeRead: {
+        ...guidance.example,
+        arguments: { ...guidance.example.arguments, view: 'parameters' }
+      },
+      deliveryFields: selectResultFields(modelToolResultSchemas(tool))
+        .guaranteed,
+      inputScopes: {
+        operations: guidance.inputScopes.operations,
+        nodeTypes: guidance.inputScopes.nodeTypes,
+        optionalInputs: guidance.inputScopes.optionalInputs
+      }
+    }
+  }
+
+  const selectedScope = (tool: NativeToolDescriptor) => {
+    if (!scopeMenus.has(tool)) {
+      scopeMenus.set(tool, scopeMenu(tool))
+    }
+
+    return scopeMenus.get(tool)
+  }
+
   const nativeMenu = (
     tool: NativeToolDescriptor,
     candidate = false,
@@ -2576,14 +2637,7 @@ export const createLocalOperationTools = (
           view: 'usage'
         })
       },
-      inputScopes:
-        candidate && inputScopes
-          ? {
-              operations: inputScopes.operations,
-              nodeTypes: inputScopes.nodeTypes,
-              optionalInputs: inputScopes.optionalInputs
-            }
-          : inputScopes
+      ...(candidate && inputScopes ? selectedScope(tool) : { inputScopes })
     }
   }
 
@@ -3978,7 +4032,7 @@ export const createLocalOperationTools = (
               executionAccess: AiToolAccess.INDEPENDENT,
               composition: 'request' as const,
               description:
-                'Read authoritative contracts for exact names, semantic identities or namespace-qualified identities. names selects identities; scopes maps each selected identity to its own schemaPaths or inputScope. view=usage returns actionable parameters and results; full returns validation schemas. Use search_design_tools for purpose search or category browsing. Known independent reads can run together through execute_design. Ambiguous names return choices without substituting tools. Reuse resultKey with fromResult to restore selected saved contracts. No discovery prerequisite for already-known operations.',
+                'Read authoritative contracts for exact names, semantic identities or namespace-qualified identities. names selects identities; scopes maps each selected identity to its own schemaPaths or inputScope. view=parameters returns executable arguments and the route; view=usage returns detailed usage and results; full returns validation schemas. Use search_design_tools for purpose search or category browsing. Known independent reads can run together through execute_design. Ambiguous names return choices without substituting tools. Reuse resultKey with fromResult to restore selected saved contracts. No discovery prerequisite for already-known operations.',
               inputSchema: discoveryInputSchema(
                 AiDesignToolIds.READ_DESIGN_RESOURCES,
                 categoryChoices
@@ -5060,18 +5114,23 @@ export const createLocalOperationTools = (
         const candidateSummary = (
           entry: (typeof inventory)[number],
           detailed: boolean
-        ) => ({
-          rank: entry.rank,
-          capability: detailed
-            ? entry.capability
-            : { purpose: entry.capability.purpose },
-          ...(args.inputFields
-            ? { match: { inputFields: entry.match.inputFields } }
-            : {}),
-          ...(detailed || (entry === leader && !byIdentity)
-            ? { match: entry.match }
-            : {})
-        })
+        ) => {
+          const match = {
+            ...(partial && { unmatchedTerms: entry.match.unmatchedTerms }),
+            ...(Array.isArray(args.inputFields) && {
+              inputFields: entry.match.inputFields
+            }),
+            ...((detailed || (entry === leader && !byIdentity)) && entry.match)
+          }
+
+          return {
+            rank: entry.rank,
+            capability: detailed
+              ? entry.capability
+              : { purpose: entry.capability.purpose },
+            ...(Object.keys(match).length && { match })
+          }
+        }
 
         return JSON.stringify({
           catalogSize: apis.length,
@@ -5092,7 +5151,7 @@ export const createLocalOperationTools = (
             : {}),
           guidance: {
             capabilities:
-              'Use operationParameters with the declared route. For other candidates read_design_resources accepts the operation or namespace-qualified tool name.',
+              'Use operationParameters with the declared route. For other candidates read_design_resources with names and view=parameters. Use scopeRead for selected workflow branches.',
             ...(!inventory.length || partial
               ? {
                   references:
@@ -5149,6 +5208,9 @@ export const createLocalOperationTools = (
               : {
                   name: entry.tool.name,
                   namespace: entry.tool.namespace,
+                  ...(workflowInputScopes(entry.tool.inputSchema)
+                    ? selectedScope(entry.tool)
+                    : {}),
                   effect: entry.tool.effect
                 }
 

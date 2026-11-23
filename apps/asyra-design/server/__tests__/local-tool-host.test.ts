@@ -3944,3 +3944,83 @@ it.each(['invalid', 'throws'])(
     }
   }
 )
+
+it('claims a pre-dispatch delivery correction once within its request and revalidates delivery', async () => {
+  const first = fixture(memory(), 'origin', true)
+  const other = fixture(memory(), 'other', true)
+  const name = 'design_operations.execute_design'
+  const invalid = {
+    fields: { missing: { step: 'part', path: '/missingResult' } }
+  }
+
+  try {
+    const rejected = await first.invoke(name, {
+      operations: [
+        {
+          id: 'part',
+          name: 'design_workflow.prepare_and_apply_design',
+          arguments: {
+            draft: {
+              type: 'group',
+              name: 'Part',
+              children: [
+                {
+                  type: 'rect',
+                  key: 'face',
+                  name: 'Face',
+                  width: 10,
+                  height: 15
+                }
+              ]
+            },
+            inspection: 'defer'
+          }
+        }
+      ],
+      delivery: invalid
+    })
+
+    expect(
+      rejected.inputIssues,
+      JSON.stringify(rejected).slice(0, 1000)
+    ).toBeDefined()
+    const correction = rejected.inputIssues[0].correction
+    const retry = { ...correction, delivery: 'status' }
+
+    expect((await other.invoke(name, retry)).toolOutcome.settlement).toBe(
+      'not-started'
+    )
+    expect(
+      (await first.invoke(name, { ...retry, operations: [] })).toolOutcome
+        .settlement
+    ).toBe('not-started')
+    const second = await first.invoke(name, {
+      ...correction,
+      delivery: {
+        fields: { missing: { step: 'unknown', path: '/missingResult' } }
+      }
+    })
+
+    expect(second.toolOutcome.settlement).toBe('not-started')
+    const corrected = {
+      ...second.inputIssues[0].correction,
+      delivery: 'status'
+    }
+
+    expect(corrected.retryDelivery).not.toBe(correction.retryDelivery)
+    expect((await first.invoke(name, retry)).toolOutcome.settlement).toBe(
+      'not-started'
+    )
+    const results = await Promise.all([
+      first.invoke(name, corrected),
+      first.invoke(name, corrected)
+    ])
+
+    expect(results.map((r) => r.toolOutcome.settlement).sort()).toEqual([
+      'completed',
+      'not-started'
+    ])
+  } finally {
+    await Promise.all([first.host.dispose(), other.host.dispose()])
+  }
+})

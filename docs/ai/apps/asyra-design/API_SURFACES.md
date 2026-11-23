@@ -1215,6 +1215,8 @@ the displayed batch route. Other required arguments retain their actual nesting.
 
 ### Design entries for OpenAI Responses
 
+A selected scope's `scopeRead` gives an executable `read_design_resources` selector. Read several known operations with `{names, view: "parameters"}` to get their ordinary input contracts and execution routes in one call. For a retained pre-dispatch delivery rejection, submit `{workflow: {retryDelivery, delivery}}` to the Responses execution entry. Use the handle from the rejection in the same request; a retry claims it once.
+
 Asyra Design publishes `search_design_tools`, `read_design_resources` and `execute_design` for Design operations. The independent knowledge namespace publishes `discover_knowledge` and `read_knowledge`. Tool categories and spelling candidates use only the admitted Design catalog. Knowledge discovery matches visible metadata, supports context and topic scope, and suggests visible IDs. A known ID reads directly.
 The Host retains the tool catalog. A known operation goes straight to
 execute_design. A standalone native or revision-pinned registered route uses

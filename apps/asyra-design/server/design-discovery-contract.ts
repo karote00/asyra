@@ -73,7 +73,12 @@ export const discoveryInputSchema = (name: string, categories: string[]) => ({
             description:
               'Exact action, semantic operation or namespace-qualified tool identities.'
           },
-          view: { type: 'string', enum: ['usage', 'full'] },
+          view: {
+            type: 'string',
+            enum: ['parameters', 'usage', 'full'],
+            description:
+              'Use parameters for executable arguments. For scoped workflows use the published scopeRead.'
+          },
           includeResultSchema: {
             type: 'boolean',
             description:

@@ -4,6 +4,23 @@
 
 On the reviewed adapter source f1441f5a9, a fresh selected rectangle generated 42,860 request bytes and four model exchanges. The recorded purpose query was `set solid fill color elementIds`. The chosen action was the sixth candidate. Preserve choice among candidates and direct execution of an already-known operation. The current scope includes Design publication, the Responses discovery protocol, its continuation and offline regressions. Model inference, billing, cache policy and editing behavior are outside this revision.
 
+## Recorded discovery and pre-dispatch recovery
+
+Scope: classify observed provider submissions from the recorded payloads, expose executable owner scope and output choices at discovery, and correct a rejected delivery selection without resending the work. Preserve the five-entry publication, on-demand lookup, independent knowledge, media, and ordinary/direct execution. Offline acceptance uses the selected rectangle and the recorded Dome submission. No live model invocation.
+
+1. Read the original provider call, Host receipt and nested operations in the recorded exchange. Distinguish requested operations from successful execution, corrections and inspection. Keep the reason for a model's choice unknown unless recorded.
+2. On a workflow match return the owner's usable scope selector, legal choices and guaranteed delivery fields. Offer compact executable scoped reads with independently resolvable schema references. Partial matches continue to expose their capability boundaries.
+3. A Host rejection on a delivery field before dispatch may retain that submission for a delivery-only correction within the request. Re-enter full admission with a fresh delivery selection. A consumed, foreign or unavailable handle cannot dispatch. Preserve existing geometry draft repair, ordinary status receipts and partial completion.
+4. Replay search, correction, duplicate submission and Core edits with scripted Responses. Compare actual bytes and requests without inferring inference cost or a model decision.
+
+### Offline acceptance for recorded discovery and recovery
+
+The recorded square used nine Responses exchanges and five outer tool submissions. The scripted replay of those search choices used six exchanges to set and verify blue and three to move the same rectangle to (33,45), totaling 24,300 serialized request bytes. The update and read-back parameters arrived together in a 3,014-byte resource result. The coordinate search returned a directly executable result in 2,241 bytes. With both operations known the same edits used five exchanges and 7,568 bytes. With a clear purpose lookup they used seven exchanges and 17,626 bytes. Scripted routes measure the adapter and Host with a real scene, not the probability of a model selecting a route.
+
+The Dome archive contains 22 Responses exchanges and 24 outer tool calls. Seven execution submissions include four preparation attempts, two inspections and one reference import. One scoped owner contract measured 99,568 bytes in full and 18,156 bytes for executable parameters. The 11,304-byte original building submission failed before dispatch on its delivery selection. In the recorded run the provider authored a new 10,716-byte submission. In the replay a 143-byte correction applied the original submission once and created 1,030 elements. Reusing its handle made no scene changes. A separate roof repair applied two geometry changes and added 4,043 elements. Inspection delivered an image item through the adapter using a deterministic capture fixture. These measurements do not establish live inference, visual equivalence between the two building drafts, or billing savings.
+
+Use `node apps/asyra-design/test-data/ai-drawing/recorded-submissions.mjs <recording-directory>` to reconstruct outer provider submissions and correlate them with settlement evidence from a retained recording.
+
 ## Current revision: cold submission and conditional context
 
 At publication, keep a short authority and verification contract plus the five-entry index. Preserve actual targets. Project final controls compactly and keep correlation identifiers on the Host. Provide prior turns by scoped resource read and preserve saved value reads. Publish the ordinary execution envelope and keep detailed selectors, stages and policies on the authoritative Host contract. Every submission still passes full owner validation. Offer authorized hosted research through the loader; activation belongs to the current turn and must survive a pending checkpoint. CLI transport remains independent.

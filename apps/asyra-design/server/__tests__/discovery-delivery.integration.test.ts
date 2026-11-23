@@ -1,3 +1,4 @@
+import domeSubmission from './fixtures/dome-delivery-rejection.json'
 import { contractReadFixture } from './contract-read-fixture'
 import { toolSemantics } from '../../src/ai/tool-contract'
 import type {
@@ -336,6 +337,87 @@ const setup = (
     replies
   }
 }
+
+it('selects the Dome workflow scope and its delivery fields from a discovery candidate', async () => {
+  const run = setup()
+  const name = 'prepare_and_apply_design'
+  const menu = (await run.call('search_design_tools', { query: name })).value
+    .tools[0]
+
+  expect(
+    menu.scopeRead.arguments.scopes[menu.scopeRead.arguments.names[0]]
+      .inputScope.operation
+  ).toBe('draft')
+  expect(menu.inputScopes.nodeTypes).toContain('surface-grid')
+  expect(menu.deliveryFields).not.toContain('/storage')
+  const args = menu.scopeRead.arguments
+  const selected = (
+    await run.call('read_design_resources', {
+      ...args,
+      scopes: {
+        [args.names[0]]: {
+          inputScope: {
+            operation: 'draft',
+            nodeTypes: [
+              'vector',
+              'vector-pattern',
+              'surface-grid',
+              'group',
+              'text'
+            ]
+          }
+        }
+      }
+    })
+  ).value
+
+  expect(selected.tools, JSON.stringify(selected).slice(0, 1200)).toBeDefined()
+  expect(selected.tools[0].operationParameters).toBeDefined()
+  expect(menu.deliveryFields).toEqual(expect.any(Array))
+  expect(Buffer.byteLength(JSON.stringify(selected))).toBeLessThan(20329)
+  expect(selected.tools[0].definition.nextAction).toBe(
+    'execute-with-delivered-contract'
+  )
+  const full = (
+    await run.call('read_design_resources', {
+      names: args.names,
+      view: 'full',
+      scopes: selected.tools[0].definition.recover.arguments.scopes
+    })
+  ).value
+  const vector =
+    domeSubmission.workflow.operations[0].arguments.draft.children.find(
+      (child) => child.type === 'vector'
+    )
+
+  expect(vector).toBeDefined()
+  const valid = {
+    draft: {
+      type: 'group',
+      name: 'Building',
+      children: [vector]
+    }
+  }
+
+  expect(operationInputIssue(valid, full.tools[0].inputSchema)).toBeUndefined()
+  for (const input of [valid, { draft: { type: 'unknown' } }, {}]) {
+    expect(
+      Boolean(operationInputIssue(input, selected.tools[0].operationParameters))
+    ).toBe(Boolean(operationInputIssue(input, full.tools[0].inputSchema)))
+  }
+
+  expect(
+    operationInputIssue({}, selected.tools[0].operationParameters)
+  ).toBeDefined()
+  process.stdout.write(
+    JSON.stringify({
+      measurement: 'dome-scoped-contract',
+      parameters: Buffer.byteLength(JSON.stringify(selected)),
+      full: Buffer.byteLength(JSON.stringify(full)),
+      fields: menu.deliveryFields
+    }) + '\n'
+  )
+})
 
 it('finds the recorded compound material purpose and follows its exact acquisition route', async () => {
   const { call, compile, created, deliveries } = setup()

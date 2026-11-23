@@ -1456,11 +1456,35 @@ it('delivers actual nested selection coordinates and parent identity in the init
   }
 }, 60000)
 
+function loadDrawingWorkspace() {
+  core.load({
+    version: '1.0.0',
+    props: {},
+    sceneTree: {
+      workspace: 'workspace',
+      workspaceList: ['workspace'],
+      elements: {
+        workspace: {
+          id: 'workspace',
+          type: 'workspace',
+          name: 'Workspace',
+          parentId: '',
+          children: [],
+          visible: true,
+          lock: false
+        }
+      }
+    }
+  })
+}
+
 it('applies the recorded Dome drawing through the published execute_design entry without discovery', async () => {
   const { default: dome } = await import('./fixtures/dome-responses.json')
   const { createConversationResults } = await import('@asyra/ai-agent-runtime')
   const ledger = createConversationResults(() => 1)
   const saved = ledger.open('dome')
+
+  loadDrawingWorkspace()
   const before = new Set(core.deps.sceneTree.getAllElements().keys())
   const png = await sharp({
     create: { width: 8, height: 8, channels: 4, background: '#123456' }
@@ -1565,7 +1589,220 @@ it('applies the recorded Dome drawing through the published execute_design entry
   }
 }, 30000)
 
-it.each(['known', 'purpose', 'method', 'latest'])(
+it('corrects only delivery on the recorded Dome submission and cannot dispatch twice', async () => {
+  const { default: dome } =
+    await import('./fixtures/dome-delivery-rejection.json')
+  const { createConversationResults } = await import('@asyra/ai-agent-runtime')
+  const ledger = createConversationResults(() => 1)
+  const saved = ledger.open('dome')
+
+  loadDrawingWorkspace()
+  const before = new Set(core.deps.sceneTree.getAllElements().keys())
+  const png = await sharp({
+    create: { width: 8, height: 8, channels: 4, background: '#123456' }
+  })
+    .png()
+    .toBuffer()
+  const capture = vi.spyOn(core, 'captureElementSnapshot').mockReturnValue({
+    type: 'snapshot',
+    dataUrl: 'data:image/png;base64,' + png.toString('base64'),
+    width: 8,
+    height: 8,
+    bounds: { x: 0, y: 0, width: 25229, height: 10680 }
+  })
+  const requests: { input: { output: { text: string }[] }[] }[] = []
+  let correction: { retryDelivery: string } | undefined
+  const { default: roof } = await import('./fixtures/dome-roof-repair.json')
+  let correctionBytes = 0
+  let appliedCount = 0
+  let rootId: string
+  let completeCount = 0
+  const sources = createDefaultAiModelSources({
+    continuationDatabase: ':memory:',
+
+    fetch: async (_url, init) => {
+      const body = JSON.parse(String(init?.body))
+
+      requests.push(body)
+
+      if (requests.length === 1) {
+        return requestEntries('design_operations.execute_design')
+      }
+
+      const count = core.deps.sceneTree.getAllElements().size
+      let args: unknown = dome
+
+      if (requests.length === 3) {
+        const rejected = JSON.parse(body.input[0].output[0].text)
+
+        expect(count).toBe(before.size)
+        expect(rejected.toolOutcome.settlement).toBe('not-started')
+        correction = rejected.inputIssues?.[0]?.correction
+        expect(correction).toMatchObject({ retryDelivery: expect.any(String) })
+      }
+
+      if (requests.length === 3 || requests.length === 4) {
+        args = {
+          workflow: {
+            ...correction,
+            delivery: {
+              fields: { roots: { step: 'arena', path: '/compositionIds' } }
+            }
+          }
+        }
+        correctionBytes = Buffer.byteLength(JSON.stringify(args))
+        expect(correctionBytes).toBeLessThan(220)
+      }
+
+      if (requests.length === 4) {
+        const applied = JSON.parse(body.input[0].output[0].text)
+
+        expect(
+          applied.toolOutcome.status,
+          JSON.stringify(applied).slice(0, 800)
+        ).toBe('success')
+        expect(applied.fields.roots).toHaveLength(1)
+        rootId = applied.fields.roots[0]
+        appliedCount = count
+        expect(count).toBeGreaterThan(before.size)
+      }
+
+      if (requests.length === 5) {
+        expect(
+          JSON.parse(body.input[0].output[0].text).toolOutcome.settlement
+        ).toBe('not-started')
+        expect(count).toBe(appliedCount)
+        const work = structuredClone(roof.draft)
+
+        work.workflow.operations[0].arguments.parentId = rootId
+        args = work
+      }
+
+      if (requests.length === 6) {
+        const rejected = JSON.parse(body.input[0].output[0].text)
+
+        expect(rejected.toolOutcome.settlement).toBe('not-started')
+        const retained = rejected.failure.execution.recovery.find(
+          (r: { value?: { draftId?: string } }) => r.value?.draftId
+        )
+
+        expect(retained?.value.draftId).toEqual(expect.any(String))
+        const work = structuredClone(roof.repair)
+
+        work.workflow.operations[0].arguments.parentId = rootId
+        work.workflow.operations[0].arguments.repair.draftId =
+          retained.value.draftId
+        args = work
+        expect(count).toBe(appliedCount)
+      }
+
+      if (requests.length === 7) {
+        expect(
+          JSON.parse(body.input[0].output[0].text).toolOutcome.status
+        ).toBe('success')
+        completeCount = count
+        expect(completeCount).toBeGreaterThan(appliedCount)
+        args = {
+          operations: [
+            {
+              name: 'design_operations.inspect_drawing',
+              arguments: { arguments: { elementId: rootId } }
+            }
+          ]
+        }
+      }
+
+      if (requests.length === 8) {
+        expect(
+          body.input[0].output.some(
+            (part: { type: string }) => part.type === 'input_image'
+          )
+        ).toBe(true)
+        expect(count).toBe(completeCount)
+      }
+
+      return Response.json({
+        id: 'dome-' + requests.length,
+        status: 'completed',
+        output:
+          requests.length === 8
+            ? [completion]
+            : [
+                {
+                  type: 'function_call',
+                  namespace: 'design_operations',
+                  name: 'execute_design',
+                  call_id: 'draw-' + requests.length,
+                  arguments: JSON.stringify(args)
+                }
+              ]
+      })
+    }
+  })
+  const provider = {
+    requestActionBatch: (
+      input: Parameters<typeof requestConfiguredAiActionBatch>[0],
+      opts: Parameters<typeof requestConfiguredAiActionBatch>[1]
+    ) =>
+      requestConfiguredAiActionBatch(input, {
+        ...opts,
+        sources,
+
+        resultContext: async (command) => saved.exchange(command),
+
+        environment: {
+          AI_PROVIDER_BACKEND: 'openai-responses',
+          AI_PROVIDER_MODEL: 'fixture',
+          OPENAI_API_KEY: 'fixture',
+          AI_EXECUTION_SOURCE_REVISION: 'fixture'
+        }
+      })
+  }
+  const input = createAiRuntimeInput({
+    provider,
+    permissionRules: {
+      apply_prepared_design: 'allow',
+      inspect_drawing: 'allow',
+      report_outcome: 'allow'
+    }
+  })
+  const runtime = createAiAgentRuntime(input)
+  const registration = registerAiAgentFeature(runtime)
+  const controller = createAiConversationController({
+    feature: registration.api,
+
+    createConversationId: () => 'dome',
+
+    getElementType: (id) => core.getElementMetadata(id)?.type
+  })
+
+  try {
+    const answer = await controller.submit('Draw the entire Taipei Dome.')
+
+    expect(answer.outcome, JSON.stringify(answer.result).slice(-2400)).toBe(
+      'success'
+    )
+    expect(requests).toHaveLength(8)
+    process.stdout.write(
+      JSON.stringify({
+        measurement: 'dome-delivery-replay',
+        originalBytes: Buffer.byteLength(JSON.stringify(dome)),
+        correctionBytes,
+        bodyCreated: appliedCount - before.size,
+        roofCreated: completeCount - appliedCount
+      }) + '\n'
+    )
+  } finally {
+    capture.mockRestore()
+    await controller.dispose()
+    await runtime.dispose()
+    registration.dispose()
+    await Promise.all(sources.map((s) => s.dispose?.()))
+    ledger.clear()
+  }
+}, 30000)
+
+it.each(['known', 'purpose', 'method', 'latest', 'recorded-square'])(
   'edits color and position through the real Host using %s discovery',
   async (lookup) => {
     const { fillApis } = await import('../../src/common-apis')
@@ -1616,6 +1853,13 @@ it.each(['known', 'purpose', 'method', 'latest'])(
     if (lookup === 'latest') {
       queries[0] = { query: 'set solid fill color element', category: 'fill' }
       queries[1] = { query: 'set absolute position element x y' }
+    }
+
+    if (lookup === 'recorded-square') {
+      queries[0] = { query: 'set solid fill color selected element' }
+      queries[1] = {
+        query: 'set element absolute position parent local x y move'
+      }
     }
 
     const searchBytes: number[] = []
@@ -1676,6 +1920,53 @@ it.each(['known', 'purpose', 'method', 'latest'])(
               }
             }
           ]
+        } else if (
+          lookup === 'recorded-square' &&
+          turn === 1 &&
+          reply?.catalogSize
+        ) {
+          const names = [
+            'fill.updatePrimaryFillColors',
+            'fill.getPrimaryFillColor'
+          ]
+
+          for (const operation of names) {
+            expect(
+              reply.apis.find(
+                (entry: { operation: string }) => entry.operation === operation
+              )?.operationParameters
+            ).toBeUndefined()
+          }
+
+          output = [
+            {
+              type: 'tool_search_call',
+              execution: 'client',
+              status: 'completed',
+              call_id: 'load-reader',
+              arguments: { names: ['design_operations.read_design_resources'] }
+            }
+          ]
+        } else if (
+          lookup === 'recorded-square' &&
+          turn === 1 &&
+          body.input[0].call_id === 'load-reader'
+        ) {
+          output = [
+            {
+              type: 'function_call',
+              namespace: 'design_operations',
+              name: 'read_design_resources',
+              call_id: 'parameters',
+              arguments: JSON.stringify({
+                names: [
+                  'fill.updatePrimaryFillColors',
+                  'fill.getPrimaryFillColor'
+                ],
+                view: 'parameters'
+              })
+            }
+          ]
         } else if (lookup !== 'known' && !reply) {
           output = [
             {
@@ -1700,7 +1991,31 @@ it.each(['known', 'purpose', 'method', 'latest'])(
                   arguments: { positionsById: { [target]: { x: 33, y: 45 } } }
                 }
 
-          if (reply) {
+          const readback = {
+            name: 'fill.getPrimaryFillColor',
+            arguments: { elementId: target }
+          }
+          const pair = lookup === 'recorded-square' && turn === 1
+
+          if (pair) {
+            for (const item of [operation, readback]) {
+              const entry = reply.apis.find(
+                (api: { name: string; operation: string }) =>
+                  api.name === item.name || api.operation === item.name
+              )
+
+              expect(entry?.operationParameters).toBeDefined()
+              expect(
+                operationContractIssue(
+                  item.arguments,
+                  entry.operationParameters
+                )
+              ).toBeUndefined()
+              item.name = entry.operation
+            }
+
+            searchBytes.push(Buffer.byteLength(JSON.stringify(reply)))
+          } else if (reply) {
             const candidate = reply.apis[0]
             const bytes = Buffer.byteLength(JSON.stringify(reply))
             const fillBaseline = lookup === 'method' ? 13401 : 2320
@@ -1737,7 +2052,7 @@ it.each(['known', 'purpose', 'method', 'latest'])(
           }
 
           const args = {
-            operations: [operation],
+            operations: pair ? [operation, readback] : [operation],
             inspection: 'defer',
             delivery: 'status'
           }
@@ -1769,6 +2084,7 @@ it.each(['known', 'purpose', 'method', 'latest'])(
           release_design_context: 'allow',
           inspect_drawing: 'allow',
           api_fill_updatePrimaryFillColors: 'allow',
+          api_fill_getPrimaryFillColor: 'allow',
           api_element_setElementPositions: 'allow',
           report_outcome: 'allow'
         },
@@ -1843,6 +2159,9 @@ it.each(['known', 'purpose', 'method', 'latest'])(
           ? ['design_operations.execute_design']
           : [
               'design_operations.execute_design',
+              ...(lookup === 'recorded-square'
+                ? ['design_operations.read_design_resources']
+                : []),
               'design_operations.search_design_tools'
             ]
       )
@@ -1855,7 +2174,9 @@ it.each(['known', 'purpose', 'method', 'latest'])(
         execution: 'client',
         call_id: 'load'
       })
-      expect(firstTurn).toBe(lookup === 'known' ? 3 : 4)
+      const searchTurns = lookup === 'recorded-square' ? 6 : 4
+
+      expect(firstTurn).toBe(lookup === 'known' ? 3 : searchTurns)
       expect(bodies.length - firstTurn).toBe(lookup === 'known' ? 2 : 3)
     } finally {
       await runtime.dispose()

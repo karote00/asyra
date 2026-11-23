@@ -811,6 +811,10 @@ criteria govern evaluation; it does not impose a high-detail drawing style.
 
 `search_design_tools` searches admitted purpose, category and input-field metadata.
 A unique exact method name selects its admitted owner. Ambiguous identities remain choices.
+Exact parameter reads accept multiple selected names with `view: "parameters"`. Each result contains the execution route and ordinary arguments from its registered owner. Scoped workflows offer a ready scope read with legal operation and node choices. Guaranteed fields describe the successful owner result. Optional paths are checked when delivered; malformed and absent paths remain errors.
+
+On a named-step delivery field rejected during Host admission, the request may return a single-use `retryDelivery` handle in the input issue. The caller submits that handle and a replacement delivery selection through the same executor. The Host claims the retained authored submission, resolves its inputs again, and validates before dispatch. A foreign or consumed handle cannot execute. Geometry failures retain their existing draft repair path. After any write or uncertain settlement the Host does not issue a delivery correction.
+
 A clear purpose candidate can carry its route and complete ordinary arguments even when some query terms are unmatched. Search excludes discovery and scope-menu annotations from ordinary arguments. Every executable owner participates, including workflow and saved tools. Large schemas use lossless compaction; larger serialized replies use the published content continuation. Alternative candidates give an identity and a purpose summary for an exact read. Preserve category, required field filters, workflow scopes and paging.
 A returned schema describes the named candidate. When a route wraps ordinary arguments,
 `parameterField` names the slot alongside the route’s admitted arguments. Search does not execute the operation. Known operations execute directly. Use `read_design_resources` for exact

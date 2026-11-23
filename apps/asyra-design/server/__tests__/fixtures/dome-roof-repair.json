@@ -1,0 +1,461 @@
+{
+  "draft": {
+    "workflow": {
+      "operations": [
+        {
+          "name": "design_workflow.prepare_and_apply_design",
+          "id": "skin",
+          "arguments": {
+            "inspection": "defer",
+            "parentId": "design-6a905516-5ba6-4faa-8b66-f66cc804b3fa-0",
+            "draft": {
+              "type": "group",
+              "name": "Titanium skin · interlocking diamond courses and entrance lettering",
+              "projection": {
+                "azimuth": 0,
+                "elevation": 0,
+                "scale": 24.5,
+                "originX": 0,
+                "originY": 0
+              },
+              "motifTemplates": {
+                "tile": [
+                  {
+                    "key": "fold",
+                    "name": "Folded shingle · sunlit arris",
+                    "fill": {
+                      "gradientType": "linear",
+                      "gradientHandles": [
+                        {
+                          "x": 0,
+                          "y": 0
+                        },
+                        {
+                          "x": 1,
+                          "y": 1
+                        }
+                      ],
+                      "gradientStops": [
+                        {
+                          "position": 0,
+                          "color": "#F3F3E6",
+                          "opacity": 0.19
+                        },
+                        {
+                          "position": 0.9,
+                          "color": "#F3F3E6",
+                          "opacity": 0.008
+                        }
+                      ]
+                    },
+                    "vertices": [
+                      {
+                        "u": 0,
+                        "v": 0.5
+                      },
+                      {
+                        "u": 0.5,
+                        "v": 0
+                      },
+                      {
+                        "u": 1,
+                        "v": 0.5
+                      },
+                      {
+                        "u": 0.5,
+                        "v": 1
+                      }
+                    ]
+                  },
+                  {
+                    "key": "lap",
+                    "name": "Shingle lap · recessed edge",
+                    "fill": {
+                      "gradientType": "linear",
+                      "gradientHandles": [
+                        {
+                          "x": 0,
+                          "y": 0
+                        },
+                        {
+                          "x": 1,
+                          "y": 0
+                        }
+                      ],
+                      "gradientStops": [
+                        {
+                          "position": 0,
+                          "color": "#485754",
+                          "opacity": 0.2
+                        },
+                        {
+                          "position": 1,
+                          "color": "#596A69",
+                          "opacity": 0.07
+                        }
+                      ]
+                    },
+                    "vertices": [
+                      {
+                        "u": 0,
+                        "v": 0.5
+                      },
+                      {
+                        "u": 0.5,
+                        "v": 0.95
+                      },
+                      {
+                        "u": 1,
+                        "v": 0.5
+                      },
+                      {
+                        "u": 0.5,
+                        "v": 1
+                      }
+                    ]
+                  }
+                ]
+              },
+              "children": [
+                {
+                  "type": "surface-grid",
+                  "key": "tile01",
+                  "name": "Western shoulder scales",
+                  "rows": 10,
+                  "columns": 16,
+                  "order": "cell-major",
+                  "boundary": [
+                    {
+                      "x": 59,
+                      "y": 0,
+                      "z": -90
+                    },
+                    {
+                      "x": 75,
+                      "y": 0,
+                      "z": -159
+                    },
+                    {
+                      "x": 104,
+                      "y": 0,
+                      "z": -246
+                    },
+                    {
+                      "x": 32,
+                      "y": 0,
+                      "z": -163
+                    }
+                  ],
+                  "motifs": {
+                    "template": "tile"
+                  }
+                },
+                {
+                  "type": "surface-grid",
+                  "key": "tile02",
+                  "name": "Southwest shoulder scales",
+                  "rows": 10,
+                  "columns": 27,
+                  "order": "cell-major",
+                  "boundary": [
+                    {
+                      "x": 75,
+                      "y": 0,
+                      "z": -159
+                    },
+                    {
+                      "x": 186,
+                      "y": 0,
+                      "z": -235
+                    },
+                    {
+                      "x": 216,
+                      "y": 0,
+                      "z": -290
+                    },
+                    {
+                      "x": 104,
+                      "y": 0,
+                      "z": -246
+                    }
+                  ],
+                  "motifs": {
+                    "template": "tile"
+                  }
+                },
+                {
+                  "type": "surface-grid",
+                  "key": "tile03",
+                  "name": "Southwest light-facing scales",
+                  "rows": 10,
+                  "columns": 34,
+                  "order": "cell-major",
+                  "boundary": [
+                    {
+                      "x": 186,
+                      "y": 0,
+                      "z": -235
+                    },
+                    {
+                      "x": 335,
+                      "y": 0,
+                      "z": -279
+                    },
+                    {
+                      "x": 368,
+                      "y": 0,
+                      "z": -326
+                    },
+                    {
+                      "x": 216,
+                      "y": 0,
+                      "z": -290
+                    }
+                  ],
+                  "motifs": {
+                    "template": "tile"
+                  }
+                },
+                {
+                  "type": "surface-grid",
+                  "key": "tile04",
+                  "name": "Southern standing laps",
+                  "rows": 10,
+                  "columns": 36,
+                  "order": "cell-major",
+                  "boundary": [
+                    {
+                      "x": 335,
+                      "y": 0,
+                      "z": -279
+                    },
+                    {
+                      "x": 505,
+                      "y": 0,
+                      "z": -301
+                    },
+                    {
+                      "x": 541,
+                      "y": 0,
+                      "z": -345
+                    },
+                    {
+                      "x": 368,
+                      "y": 0,
+                      "z": -326
+                    }
+                  ],
+                  "motifs": {
+                    "template": "tile"
+                  }
+                },
+                {
+                  "type": "surface-grid",
+                  "key": "tile05",
+                  "name": "Southern shingle courses",
+                  "rows": 10,
+                  "columns": 32,
+                  "order": "cell-major",
+                  "boundary": [
+                    {
+                      "x": 505,
+                      "y": 0,
+                      "z": -301
+                    },
+                    {
+                      "x": 674,
+                      "y": 0,
+                      "z": -306
+                    },
+                    {
+                      "x": 691,
+                      "y": 0,
+                      "z": -347
+                    },
+                    {
+                      "x": 541,
+                      "y": 0,
+                      "z": -345
+                    }
+                  ],
+                  "motifs": {
+                    "template": "tile"
+                  }
+                },
+                {
+                  "type": "surface-grid",
+                  "key": "tile06",
+                  "name": "Eastern shingle courses",
+                  "rows": 10,
+                  "columns": 26,
+                  "order": "cell-major",
+                  "boundary": [
+                    {
+                      "x": 674,
+                      "y": 0,
+                      "z": -306
+                    },
+                    {
+                      "x": 805,
+                      "y": 0,
+                      "z": -290
+                    },
+                    {
+                      "x": 817,
+                      "y": 0,
+                      "z": -328
+                    },
+                    {
+                      "x": 691,
+                      "y": 0,
+                      "z": -347
+                    }
+                  ],
+                  "motifs": {
+                    "template": "tile"
+                  }
+                },
+                {
+                  "type": "surface-grid",
+                  "key": "tile07",
+                  "name": "East shoulder scales",
+                  "rows": 10,
+                  "columns": 19,
+                  "order": "cell-major",
+                  "boundary": [
+                    {
+                      "x": 805,
+                      "y": 0,
+                      "z": -290
+                    },
+                    {
+                      "x": 891,
+                      "y": 0,
+                      "z": -254
+                    },
+                    {
+                      "x": 901,
+                      "y": 0,
+                      "z": -293
+                    },
+                    {
+                      "x": 817,
+                      "y": 0,
+                      "z": -328
+                    }
+                  ],
+                  "motifs": {
+                    "template": "tile"
+                  }
+                },
+                {
+                  "type": "surface-grid",
+                  "key": "tile08",
+                  "name": "Northeast shoulder scales",
+                  "rows": 10,
+                  "columns": 12,
+                  "order": "cell-major",
+                  "boundary": [
+                    {
+                      "x": 891,
+                      "y": 0,
+                      "z": -254
+                    },
+                    {
+                      "x": 920,
+                      "y": 0,
+                      "z": -196
+                    },
+                    {
+                      "x": 941,
+                      "y": 0,
+                      "z": -227
+                    },
+                    {
+                      "x": 901,
+                      "y": 0,
+                      "z": -293
+                    }
+                  ],
+                  "motifs": {
+                    "template": "tile"
+                  }
+                },
+                {
+                  "type": "text",
+                  "key": "nameplate",
+                  "name": "Entrance sign · raised metal letters",
+                  "x": 17690,
+                  "y": 9290,
+                  "width": 1830,
+                  "height": 220,
+                  "fontSize": 124,
+                  "fontFamily": "Georgia",
+                  "letterSpacing": 12,
+                  "text": "TAIPEI DOME",
+                  "fill": "#D5DBD5"
+                },
+                {
+                  "type": "text",
+                  "key": "gate",
+                  "name": "Gate 1 entrance identifier",
+                  "x": 18020,
+                  "y": 10200,
+                  "width": 760,
+                  "height": 155,
+                  "fontSize": 84,
+                  "letterSpacing": 7,
+                  "text": "GATE 1",
+                  "fill": "#E3E5D9"
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "delivery": {
+        "fields": {
+          "root": {
+            "step": "skin",
+            "path": "/compositionIds"
+          }
+        }
+      }
+    }
+  },
+  "repair": {
+    "workflow": {
+      "operations": [
+        {
+          "id": "tiles",
+          "name": "design_workflow.prepare_and_apply_design",
+          "arguments": {
+            "parentId": "design-6a905516-5ba6-4faa-8b66-f66cc804b3fa-0",
+            "repair": {
+              "draftId": "4014a5a0-8a00-4360-86e4-d2ec0e167d12",
+              "replacements": [
+                {
+                  "path": "/children/0/boundary/1/x",
+                  "value": 95
+                },
+                {
+                  "path": "/children/1/boundary/0/x",
+                  "value": 95
+                }
+              ]
+            },
+            "inspection": "defer"
+          }
+        }
+      ],
+      "delivery": {
+        "fields": {
+          "root": {
+            "step": "tiles",
+            "path": "/compositionIds"
+          }
+        }
+      }
+    }
+  }
+}

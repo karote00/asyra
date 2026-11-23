@@ -200,6 +200,16 @@ const batchOperationProperties = (batch?: LocalToolDefinition) => {
   return schema?.properties?.operations?.items?.properties
 }
 
+export class DeliverySelectionError extends AiToolInputError {}
+
+const sequenceDelivery = {
+  anyOf: [{ const: 'status' }, object({ fields: selection }, ['fields'])]
+}
+export const deliveryCorrectionSchema = object(
+  { retryDelivery: toolResultString, delivery: sequenceDelivery },
+  ['retryDelivery', 'delivery']
+)
+
 // A standalone invocation uses the selected owner's ordinary input and public receipt.
 export const standaloneInvocationSchema = object(
   {
@@ -235,7 +245,11 @@ export function sequenceEntryParameters(input: unknown) {
         {
           workflow: {
             type: 'object',
-            anyOf: [{ required: ['operations'] }, { required: ['stages'] }]
+            anyOf: [
+              { required: ['operations'] },
+              { required: ['stages'] },
+              { required: ['retryDelivery'] }
+            ]
           }
         },
         ['workflow']
@@ -304,7 +318,7 @@ export const sequenceDefinition = (
 
   return {
     name: AiDesignToolIds.EXECUTE_DESIGN,
-    revision: 13,
+    revision: 14,
     description:
       'Execute decided work in one host call. For staged work use stages:[{id,operations,iteration?,apply}]: each stage prepares, checks/repairs when declared, and immediately applies before continuing. All operation IDs are globally unique; later stages bind earlier results. Independent preparation can overlap pending application only when the host proves safe access and resolved inputs. Use top-level retain to preserve useful stage context even without a known later consumer. Alternatively execute an ordered list of operations in one host call. Use the returned action name or an exact registered tool name and its ordinary arguments. Known operations with concrete arguments share a canvas exchange. When the action route says ready-arguments-only, submit concrete inputs and use the batch receipt. Individual step bindings, step-time selection and per-step retain/delivery require a composable wrapper. Name a step with id and put {kind:"step",step:"id",path:"/field"} in a later argument to bind its result. Request sequences check a declared optional result path at execution: if absent or empty, stop before its dependent operation without replaying completed work. Unknown paths and incompatible types reject before dispatch. Pass known IDs in arguments. A previous output and an artifact selector may fill separate argument slots of one action. Omit a target-bound argument and use target={field,artifactId,keys|keyPrefix} or {field,query:{scope:"region",bounds,filter}}. Set selectAt:"step" to resolve a region after earlier writes. An optional iteration declares stateSchema, initial state, check, repairs, next and maxIterations; {kind:"state",path:""} reads current state. Return to the agent for visual decisions. Bind decided steps directly. To save portable values in App conversation context send retain:{alias:{step:"id",path:"/field"}}; saving only adds saved names, producing operations, selected input/result paths and bounded shapes; it never changes delivery. Use that index to bind later fields directly; unused saves are valid. To retain selected authored parameters after a successful step, add source:"input" to its selector (paths address the operation ordinary arguments for every tool, without an /arguments wrapper). Request handles cannot be saved with retain; bind them within the current request. Whole-result retention requires wholeResultAllowed; guaranteedResultFields are safe named result selections. No dummy computation is needed. Use {kind:"named",name:"alias",path:""} in later arguments, including future turns. Within the same submission, an input alias resolves the declared authored parameters before execution; an output alias becomes a step dependency. Neither requires a model read or a prior call. Delivery alone selects model-visible results, independently of retention. Select an earlier step explicitly when its result or images are needed; omitted delivery returns the final public result and its images for ordinary sequences and stages, whether or not retain is present. For decisions use delivery:{fields:{label:{step:"id",path:"/field"}}}; omit step for the final result (ready batch: batch receipt). Read saved conversation values independently with read_design_resources(savedFields). Use delivery:"status" if no values are needed. Never replay acknowledged work.' +
       (standalone
@@ -423,18 +437,14 @@ export const sequenceDefinition = (
       ],
       oneOf: [
         ...(standalone ? [standaloneInvocationSchema] : []),
+        deliveryCorrectionSchema,
         {
           ...object(
             {
               operations: { type: 'array', minItems: 1, items: stepSchema },
               stages: { type: 'array', minItems: 1, items: stageSchema },
               retain: selection,
-              delivery: {
-                anyOf: [
-                  { const: 'status' },
-                  object({ fields: selection }, ['fields'])
-                ]
-              },
+              delivery: sequenceDelivery,
               iteration: iterationSchema,
               inspection: operationInspectionSchema,
               message: { type: 'string', minLength: 1, maxLength: 1000 }
@@ -572,10 +582,13 @@ export function createDesignSequencePlanner(
 
     const selectedSteps = new Set<string>()
 
-    for (const selectors of [
-      input.retain,
-      record(input.delivery) ? input.delivery.fields : undefined
-    ]) {
+    for (const [selectors, SelectionError] of [
+      [input.retain, AiToolInputError],
+      [
+        record(input.delivery) ? input.delivery.fields : undefined,
+        DeliverySelectionError
+      ]
+    ] as const) {
       if (!record(selectors)) {
         continue
       }
@@ -586,7 +599,7 @@ export function createDesignSequencePlanner(
         }
 
         if (typeof selector.step !== 'string' || !ids.includes(selector.step)) {
-          throw new AiToolInputError(
+          throw new SelectionError(
             'Unknown selected step',
             AiToolFailureCodes.INPUT_INVALID
           )
@@ -599,7 +612,7 @@ export function createDesignSequencePlanner(
             try {
               resultAt(operation.arguments, selector.path)
             } catch (error) {
-              throw new AiToolInputError(
+              throw new SelectionError(
                 'Invalid authored input selection for ' +
                   selector.step +
                   ': ' +

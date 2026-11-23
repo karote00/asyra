@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "projectId": "asyra",
   "flowId": "on-demand-design-contracts",
-  "revision": 18,
+  "revision": 21,
   "definition": {
     "title": "On-demand Design contracts",
     "purpose": "Publish five owner-scoped entries with independent tool and knowledge lookup, direct saved-field delivery, and one submission for decided dependencies.",
@@ -40,7 +40,7 @@
       {
         "id": "discovery",
         "title": "Design operation discovery",
-        "objective": "Design registry lookup excludes knowledge. Unique exact methods select one owner. Every clearly matched executable owner delivers complete ordinary arguments independently of discovery metadata, schema size and workflow scopes; alternatives summarize purpose and remain individually readable. Resource reads accept named fields and deliver saved media through the App conversation context. Execution accepts work and binds prior results. Expose scoped historical turns and full host constraints on demand. Validate every execution at the canonical Host.",
+        "objective": "Design registry lookup excludes knowledge. Unique exact methods select one owner. Every clearly matched executable owner delivers complete ordinary arguments independently of discovery metadata, schema size and workflow scopes; alternatives summarize purpose and remain individually readable. Resource reads accept named fields and deliver saved media through the App conversation context. Execution accepts work and binds prior results. Expose scoped historical turns and full host constraints on demand. Validate every execution at the canonical Host. Publish executable scoped reads and guaranteed delivery fields from the selected owner. The request Host retains only a delivery selection rejected before dispatch and consumes its correction once under full admission.",
         "owner": "Design operation discovery",
         "required": true,
         "applicable": true,
@@ -53,7 +53,7 @@
         "criteria": [
           {
             "id": "handoff",
-            "title": "Design registry lookup excludes knowledge. Unique exact methods select one owner. Every clearly matched executable owner delivers complete ordinary arguments independently of discovery metadata, schema size and workflow scopes; alternatives summarize purpose and remain individually readable. Resource reads accept named fields and deliver saved media through the App conversation context. Execution accepts work and binds prior results. Expose scoped historical turns and full host constraints on demand. Validate every execution at the canonical Host.",
+            "title": "Design registry lookup excludes knowledge. Unique exact methods select one owner. Every clearly matched executable owner delivers complete ordinary arguments independently of discovery metadata, schema size and workflow scopes; alternatives summarize purpose and remain individually readable. Resource reads accept named fields and deliver saved media through the App conversation context. Execution accepts work and binds prior results. Expose scoped historical turns and full host constraints on demand. Validate every execution at the canonical Host. Publish executable scoped reads and guaranteed delivery fields from the selected owner. The request Host retains only a delivery selection rejected before dispatch and consumes its correction once under full admission.",
             "kind": "manual"
           }
         ],
@@ -67,14 +67,16 @@
           "apps/asyra-design/server/local-design-sequence.ts",
           "apps/asyra-design/server/local-knowledge.ts",
           "apps/asyra-design/server/local-design-resources.ts",
-          "apps/asyra-design/server/catalog-spelling.ts"
+          "apps/asyra-design/server/catalog-spelling.ts",
+          "apps/asyra-design/server/local-tool-host.ts",
+          "apps/asyra-design/server/local-design-sequence.ts"
         ],
         "actions": []
       },
       {
         "id": "proof",
         "title": "Design provider integration",
-        "objective": "Independent registry enumeration checks every searchable action and registered tool against its actual input owner. Offline Responses capture checks the three recorded search menus, validates their ordinary arguments and applies both edits through Host and Core. Known operations still reuse one execute definition. Measure UTF-8 result bytes and exchanges. Exercise conditional web research, scoped history and compact cold requests through real provider preparation and scripted transport.",
+        "objective": "Independent registry enumeration checks every searchable action and registered tool against its actual input owner. Offline Responses capture checks the three recorded search menus, validates their ordinary arguments and applies both edits through Host and Core. Known operations still reuse one execute definition. Measure UTF-8 result bytes and exchanges. Exercise conditional web research, scoped history and compact cold requests through real provider preparation and scripted transport. Classify recorded submissions from their outer arguments and verify rectangle edits and a Dome delivery correction against actual provider receipts and Core mutations.",
         "owner": "Design provider integration",
         "required": true,
         "applicable": true,
@@ -87,7 +89,7 @@
         "criteria": [
           {
             "id": "handoff",
-            "title": "Independent registry enumeration checks every searchable action and registered tool against its actual input owner. Offline Responses capture checks the three recorded search menus, validates their ordinary arguments and applies both edits through Host and Core. Known operations still reuse one execute definition. Measure UTF-8 result bytes and exchanges. Exercise conditional web research, scoped history and compact cold requests through real provider preparation and scripted transport.",
+            "title": "Independent registry enumeration checks every searchable action and registered tool against its actual input owner. Offline Responses capture checks the three recorded search menus, validates their ordinary arguments and applies both edits through Host and Core. Known operations still reuse one execute definition. Measure UTF-8 result bytes and exchanges. Exercise conditional web research, scoped history and compact cold requests through real provider preparation and scripted transport. Classify recorded submissions from their outer arguments and verify rectangle edits and a Dome delivery correction against actual provider receipts and Core mutations.",
             "kind": "manual"
           }
         ],
@@ -101,7 +103,8 @@
           "apps/asyra-design/server/__tests__/created-targets.integration.test.ts",
           "apps/asyra-design/server/__tests__/conversation-production-handoff.integration.test.ts",
           "apps/asyra-design/server/__tests__/design-provider-tools.test.ts",
-          "packages/ai-agent-runtime/src/node/__tests__/responses-provider.test.ts"
+          "packages/ai-agent-runtime/src/node/__tests__/responses-provider.test.ts",
+          "apps/asyra-design/test-data/ai-drawing/recorded-submissions.mjs"
         ],
         "actions": []
       }
@@ -125,20 +128,20 @@
         "status": "accepted",
         "nodeId": "discovery",
         "criterionId": "handoff",
-        "binding": "dad91bbc263159d84ca9c65a9564fdc890725a496d6fa53117873d160fd3afb0",
+        "binding": "3017f231c399565f69998f7a1022f11e5ef284a56266c5dbad40ecf18bcf4dbf",
         "actor": "Codex",
-        "summary": "Exact reads returned the canonical advanced input and deferred final control. The full Host rejected invalid nested arguments before edits. Scoped history returned the selected turn with guidance and saved fields remained separately readable.",
-        "at": "2026-11-23T08:52:24.113Z"
+        "summary": "The recorded square pair used a single parameters read and the coordinate search returned executable inputs. The scoped Dome definition measured 18,156 bytes against 99,568 bytes in full; both accepted the recorded vector and rejected invalid inputs.",
+        "at": "2026-11-23T16:17:19.697Z"
       },
       {
         "kind": "manual",
         "status": "accepted",
         "nodeId": "proof",
         "criterionId": "handoff",
-        "binding": "944a35d701d9191737e323e64aaf9eb876e443cfee7c0da5e1be904279211be4",
+        "binding": "2d7cf073c7832ff3a5543730525a9ad2e90d53cb6db537f67525c57014f28a4e",
         "actor": "Codex",
-        "summary": "Offline production Host/Core applied blue then (33,45) with one search per edit, and retained a known executor across turns. Dependent window creation and ordering shared one Host submission. Hosted research activated for one turn and known URLs imported without activating it.",
-        "at": "2026-11-23T08:52:24.114Z"
+        "summary": "Scripted Responses applied blue and (33,45) through Core. A 143-byte delivery correction applied the 11,304-byte Dome submission once, producing 1,030 elements. Roof repair added 4,043 elements and inspection returned an image item. Archive checks distinguish submissions and settlement.",
+        "at": "2026-11-23T16:17:19.700Z"
       }
     ],
     "notes": [],
