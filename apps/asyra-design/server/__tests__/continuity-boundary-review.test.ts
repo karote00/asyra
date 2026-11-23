@@ -264,7 +264,7 @@ it.each(['result', 'input'])(
 
     try {
       const read = await first.invoke({
-        name: 'design_operations.read_design_contracts',
+        name: 'design_operations.read_design_resources',
         input: { names, view: 'full' }
       })
 
@@ -273,7 +273,7 @@ it.each(['result', 'input'])(
       definitions = JSON.parse(read.text).tools
       expect(resultKey).toEqual(expect.any(String))
       const reused = await first.invoke({
-        name: 'design_operations.read_design_contracts',
+        name: 'design_operations.read_design_resources',
         input: { names, fromResult: resultKey }
       })
 
@@ -284,7 +284,7 @@ it.each(['result', 'input'])(
           operations: [
             {
               id: 'read',
-              name: 'design_operations.read_design_contracts',
+              name: 'design_operations.read_design_resources',
               arguments: { names, fromResult: resultKey }
             }
           ],
@@ -308,7 +308,7 @@ it.each(['result', 'input'])(
           operations: [
             {
               id: 'contracts',
-              name: 'design_operations.read_design_contracts',
+              name: 'design_operations.read_design_resources',
               arguments: { names, view: 'full' }
             }
           ],
@@ -331,7 +331,7 @@ it.each(['result', 'input'])(
         })
       ).toEqual({ contracts: definitions })
       const expired = await next.invoke({
-        name: 'design_operations.read_design_contracts',
+        name: 'design_operations.read_design_resources',
         input: { names, fromResult: resultKey }
       })
 

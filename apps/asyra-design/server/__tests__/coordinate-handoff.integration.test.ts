@@ -175,7 +175,7 @@ it.each([
           try {
             if (attachment) {
               advertised = await host.invoke({
-                name: 'design_operations.read_design_contracts',
+                name: 'design_operations.read_design_resources',
                 input: { names: ['read_design_attachment'], view: 'full' }
               })
             }

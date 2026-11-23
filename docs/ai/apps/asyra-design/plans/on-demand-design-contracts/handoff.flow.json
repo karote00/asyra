@@ -2,15 +2,15 @@
   "schemaVersion": 1,
   "projectId": "asyra",
   "flowId": "on-demand-design-contracts",
-  "revision": 3,
+  "revision": 18,
   "definition": {
     "title": "On-demand Design contracts",
-    "purpose": "Publish current execution routes and resolve unknown ordinary arguments in one search.",
+    "purpose": "Publish five owner-scoped entries with independent tool and knowledge lookup, direct saved-field delivery, and one submission for decided dependencies.",
     "nodes": [
       {
         "id": "publication",
         "title": "Design provider tools",
-        "objective": "Current turn and admitted owners to compact declarations and stable instructions. Preserve native and Responses validation and final response.",
+        "objective": "Design provides a five-line index of authorized entries. Responses sends a client loader, resolves exact selected schemas from the local publication and forwards correlated results on the stored chain. The native CLI retains its publication rules. Publish compact controls and execution envelopes; separate allowed research from per-turn activation. Keep tracking and historical turns off the initial wire.",
         "owner": "Design provider tools",
         "required": true,
         "applicable": true,
@@ -18,7 +18,7 @@
         "criteria": [
           {
             "id": "handoff",
-            "title": "Current turn and admitted owners to compact declarations and stable instructions. Preserve native and Responses validation and final response.",
+            "title": "Design provides a five-line index of authorized entries. Responses sends a client loader, resolves exact selected schemas from the local publication and forwards correlated results on the stored chain. The native CLI retains its publication rules. Publish compact controls and execution envelopes; separate allowed research from per-turn activation. Keep tracking and historical turns off the initial wire.",
             "kind": "manual"
           }
         ],
@@ -28,14 +28,19 @@
         ],
         "implementationRefs": [
           "apps/asyra-design/server/design-provider-tools.ts",
-          "apps/asyra-design/server/ai-domain-prompt.ts"
+          "apps/asyra-design/server/ai-domain-prompt.ts",
+          "packages/ai-agent-runtime/src/node/responses-provider.ts",
+          "apps/asyra-design/server/ai-model-sources.ts",
+          "apps/asyra-design/src/constants/ai-design.ts",
+          "packages/ai-agent-runtime/src/node/responses-tool-search.ts",
+          "packages/ai-agent-runtime/src/node/tool-provider.ts"
         ],
         "actions": []
       },
       {
         "id": "discovery",
         "title": "Design operation discovery",
-        "objective": "Ranked candidate page to complete ordinary parameters and its own admitted execution route. Partial and complex candidates keep scoped retrieval. No mutation during search.",
+        "objective": "Design registry lookup excludes knowledge. Unique exact methods select one owner. Every clearly matched executable owner delivers complete ordinary arguments independently of discovery metadata, schema size and workflow scopes; alternatives summarize purpose and remain individually readable. Resource reads accept named fields and deliver saved media through the App conversation context. Execution accepts work and binds prior results. Expose scoped historical turns and full host constraints on demand. Validate every execution at the canonical Host.",
         "owner": "Design operation discovery",
         "required": true,
         "applicable": true,
@@ -48,7 +53,7 @@
         "criteria": [
           {
             "id": "handoff",
-            "title": "Ranked candidate page to complete ordinary parameters and its own admitted execution route. Partial and complex candidates keep scoped retrieval. No mutation during search.",
+            "title": "Design registry lookup excludes knowledge. Unique exact methods select one owner. Every clearly matched executable owner delivers complete ordinary arguments independently of discovery metadata, schema size and workflow scopes; alternatives summarize purpose and remain individually readable. Resource reads accept named fields and deliver saved media through the App conversation context. Execution accepts work and binds prior results. Expose scoped historical turns and full host constraints on demand. Validate every execution at the canonical Host.",
             "kind": "manual"
           }
         ],
@@ -57,14 +62,19 @@
           "docs/ai/apps/asyra-design/plans/on-demand-design-contracts.md"
         ],
         "implementationRefs": [
-          "apps/asyra-design/server/local-operation-tools.ts"
+          "apps/asyra-design/server/local-operation-tools.ts",
+          "apps/asyra-design/server/local-tool-host.ts",
+          "apps/asyra-design/server/local-design-sequence.ts",
+          "apps/asyra-design/server/local-knowledge.ts",
+          "apps/asyra-design/server/local-design-resources.ts",
+          "apps/asyra-design/server/catalog-spelling.ts"
         ],
         "actions": []
       },
       {
         "id": "proof",
         "title": "Design provider integration",
-        "objective": "Captured rectangle and original query to model-visible contract, Host mutation and final receipt. Known operations bypass discovery. Offline model chooses the returned operation.",
+        "objective": "Independent registry enumeration checks every searchable action and registered tool against its actual input owner. Offline Responses capture checks the three recorded search menus, validates their ordinary arguments and applies both edits through Host and Core. Known operations still reuse one execute definition. Measure UTF-8 result bytes and exchanges. Exercise conditional web research, scoped history and compact cold requests through real provider preparation and scripted transport.",
         "owner": "Design provider integration",
         "required": true,
         "applicable": true,
@@ -77,7 +87,7 @@
         "criteria": [
           {
             "id": "handoff",
-            "title": "Captured rectangle and original query to model-visible contract, Host mutation and final receipt. Known operations bypass discovery. Offline model chooses the returned operation.",
+            "title": "Independent registry enumeration checks every searchable action and registered tool against its actual input owner. Offline Responses capture checks the three recorded search menus, validates their ordinary arguments and applies both edits through Host and Core. Known operations still reuse one execute definition. Measure UTF-8 result bytes and exchanges. Exercise conditional web research, scoped history and compact cold requests through real provider preparation and scripted transport.",
             "kind": "manual"
           }
         ],
@@ -86,7 +96,12 @@
           "docs/ai/apps/asyra-design/plans/on-demand-design-contracts.md"
         ],
         "implementationRefs": [
-          "apps/asyra-design/server/__tests__/responses-handoff.integration.test.ts"
+          "apps/asyra-design/server/__tests__/api-delivery-audit.integration.test.ts",
+          "apps/asyra-design/server/__tests__/responses-handoff.integration.test.ts",
+          "apps/asyra-design/server/__tests__/created-targets.integration.test.ts",
+          "apps/asyra-design/server/__tests__/conversation-production-handoff.integration.test.ts",
+          "apps/asyra-design/server/__tests__/design-provider-tools.test.ts",
+          "packages/ai-agent-runtime/src/node/__tests__/responses-provider.test.ts"
         ],
         "actions": []
       }
@@ -96,34 +111,34 @@
   "current": {
     "observations": [
       {
+        "kind": "manual",
+        "status": "accepted",
         "nodeId": "publication",
         "criterionId": "handoff",
-        "kind": "manual",
-        "status": "accepted",
-        "binding": "54528d40d289b4cc08896034ee09b9b51e9de4c4747dd795e4180ffb1b9e0e57",
+        "binding": "286e1fdcc8e34f3e16b0666386242a2502be49bbfe67e1cab86af4acb307cc15",
         "actor": "Codex",
-        "summary": "Production provider, native offline protocol and scoped workflow examples passed. Cold developer text is 3,112 bytes. The actual turn and final-control schemas remain intact.",
-        "at": "2026-11-22T14:00:33.683Z"
+        "summary": "Recorded square replay measured 2,677 cold request bytes and 2,953 bytes loading search and execution at matched identifier lengths. Only selected schemas and current image pixels were submitted.",
+        "at": "2026-11-23T08:52:24.111Z"
       },
       {
+        "kind": "manual",
+        "status": "accepted",
         "nodeId": "discovery",
         "criterionId": "handoff",
-        "kind": "manual",
-        "status": "accepted",
-        "binding": "0b46f34e2a11d18d08ce6ef22eefc0f1a9d4cf3dc7d0e0aff4b71ac72bbe12cd",
+        "binding": "dad91bbc263159d84ca9c65a9564fdc890725a496d6fa53117873d160fd3afb0",
         "actor": "Codex",
-        "summary": "All 278 focused discovery, operation and Responses tests passed. Complete ordinary argument validation, saved invocation wrapping, partial queries, large scoped reads and opaque reference import names retain their admitted routes.",
-        "at": "2026-11-22T14:00:33.686Z"
+        "summary": "Exact reads returned the canonical advanced input and deferred final control. The full Host rejected invalid nested arguments before edits. Scoped history returned the selected turn with guidance and saved fields remained separately readable.",
+        "at": "2026-11-23T08:52:24.113Z"
       },
       {
-        "nodeId": "proof",
-        "criterionId": "handoff",
         "kind": "manual",
         "status": "accepted",
-        "binding": "743656e317329cbe0e23434c25631650b7b8456a2e305f778ed9604d70047b0d",
+        "nodeId": "proof",
+        "criterionId": "handoff",
+        "binding": "944a35d701d9191737e323e64aaf9eb876e443cfee7c0da5e1be904279211be4",
         "actor": "Codex",
-        "summary": "The offline Responses browser replay persisted one blue rectangle. Cold wire bytes fell from 42,860 to 16,425. The scripted search path required three exchanges and the known path required two.",
-        "at": "2026-11-22T14:00:33.687Z"
+        "summary": "Offline production Host/Core applied blue then (33,45) with one search per edit, and retained a known executor across turns. Dependent window creation and ordering shared one Host submission. Hosted research activated for one turn and known URLs imported without activating it.",
+        "at": "2026-11-23T08:52:24.114Z"
       }
     ],
     "notes": [],

@@ -33,12 +33,12 @@ payload from the next request while the App retains its operation receipt.
 No Conversations API permission is required. Disposal releases runtime resources;
 the App owns the lifetime of its durable checkpoint.
 
-The Design Responses source publishes only search_design_tools, read_design_contracts and execute_design from the available Host registry. A known operation can execute directly through the Host. Unknown capabilities can be located by purpose and input fields. Standalone native and registered routes carry their ordinary invocation through execute_design. They remain ineligible for composition when the owner forbids it. OpenAI web search remains independent. Published counts and contract evidence describe the actual provider subset. Downloaded public references retain their original App bytes, identity and dimensions. Responses receives an aspect-preserving overview of at most 1280 pixels per side; its media dimensions describe the delivered pixels.
+The Design Responses source publishes the available App entries from the Host registry. Design operations expose `search_design_tools`, `read_design_resources` and `execute_design`. Advice exposes `discover_knowledge` and `read_knowledge` in its own namespace. The App owns these choices; the Responses adapter keeps their declarations local until requested. The initial developer input lists the available qualified entries and their purposes, one per line. Each HTTP request declares a small client-executed tool search. It accepts exact names and returns selected namespaces in a correlated tool_search_output. A later function call uses its native namespace and the same Host. The stored response chain keeps loaded tools callable across user turns. Explicit searches can reacquire definitions. Unknown names return an empty selection. Apps can independently supply eager functions. A known operation can execute directly through the Host. Unknown capabilities can be located by purpose and input fields. Standalone native and registered routes carry their ordinary invocation through execute_design. They remain ineligible for composition when the owner forbids it. Authorized hosted web search is requested through the client loader by exact name. Its native declaration is sent on the following requests of that turn; the next user turn starts with research inactive. Changing activation leaves the authorized conversation contract intact. Published counts and contract evidence describe the actual provider subset. Downloaded public references retain their original App bytes, identity and dimensions. Responses receives an aspect-preserving overview of at most 1280 pixels per side; its media dimensions describe the delivered pixels.
 
 Generic runtime tool publication preserves qualified identities, descriptions and input schema
 semantics. Optional fields stay optional; explicit `strict: false` prevents the
 API from rewriting them. Host validation remains mandatory. Deferred functions
-use the API's tool-search facility. Model call IDs correlate every returned text,
+use native client-executed search. Checkpoint pending search call IDs and selected identities under the same binding digest, reconstructing outstanding tool_search_output from trusted schemas on retry. Model call IDs correlate every returned text,
 image and outcome with exactly one invocation. A syntactically invalid argument
 or unavailable name is a recoverable tool output, not a transport failure.
 
@@ -81,7 +81,7 @@ completion, selected images and cross-turn saved-result reuse through the shared
 Host and browser exchange, not only helper or knowledge-only execution.
 
 Offline diagnostics correlate the individual Responses usage receipt and each
-returned server tool-search definition with the response identifier. Definition
+outgoing client tool-search definition with the response identifier. Definition
 bytes measure serialized UTF-8 JSON, not model tokens. Record identities and
 sizes separately from model content, including cache-write counts and lifetimes
 when the provider supplies consistent figures. Keep diagnostic records outside model input.

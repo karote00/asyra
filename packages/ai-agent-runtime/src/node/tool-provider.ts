@@ -39,6 +39,8 @@ export interface ToolProviderObservation {
 }
 
 export interface ToolProviderBinding {
+  /** Identity of admission rules resolved locally behind a compact declaration. */
+  readonly executionContractDigest?: string
   readonly requestInstructions?: string
   readonly instructions: string
   readonly tools: readonly ProviderToolGroup[]

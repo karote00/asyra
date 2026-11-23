@@ -1145,7 +1145,7 @@ export const workflowQueryGuidance = (name: string, input: unknown) => {
       choices.operations.map((key) => [key, meanings[key]])
     ),
     example: {
-      tool: AiDesignToolIds.READ_DESIGN_CONTRACTS,
+      tool: AiDesignToolIds.READ_DESIGN_RESOURCES,
       arguments: contractReadArguments({
         names: [name],
         view: 'usage',

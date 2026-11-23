@@ -1,3 +1,4 @@
+import { requestEntries } from './responses-search-fixture'
 import providerHandoffs from './fixtures/recorded-101/provider-handoffs-20261109.json'
 import targetGroupCapture from './fixtures/recorded-101/target-group-capture-20261109.json'
 import independentDelivery from './fixtures/recorded-101/independent-delivery-20261109.json'
@@ -813,6 +814,63 @@ const fixture = async (
   let root = ''
   let count = 0
   let ops!: ReturnType<typeof createLocalOperationTools>
+
+  const dispatchBatch: Parameters<typeof createLocalOperationTools>[2] = async (
+    batch
+  ) => {
+    exchanges.push(batch.actions.map((a) => a.name))
+    const actionResults = []
+
+    for (const action of batch.actions) {
+      const owner = owners.find((x) => x.name === action.name)
+
+      if (!owner) {
+        throw new Error('Missing registered action: ' + action.name)
+      }
+
+      if (
+        [
+          'apply_prepared_design',
+          order.name,
+          recorded.remove.operations[0].name
+        ].includes(action.name)
+      ) {
+        calls.push(action.name)
+      }
+
+      if (action.name === order.name && failOrder) {
+        throw Error('Unavailable anchor')
+      }
+
+      const result = (
+        owner.effect === 'read'
+          ? await owner.execute(action.arguments, { signal } as never)
+          : await txn.run(
+              'Window section',
+              (runMutation) =>
+                owner.execute(action.arguments, {
+                  signal,
+                  runMutation
+                } as never),
+              { signal }
+            )
+      ) as Record<string, unknown>
+
+      if (action.name === 'apply_prepared_design') {
+        root = String(result.compositionId)
+        count = Number(result.appliedElementCount)
+      }
+
+      actionResults.push({
+        actionId: action.id,
+        actionName: action.name,
+        result: result as never
+      })
+    }
+
+    return { context: {}, actionResults }
+  }
+
   const host = createLocalToolHost({
     requestId: 'window-rails',
     resultContext,
@@ -836,69 +894,12 @@ const fixture = async (
         actions,
         createDesignPreparationSession(undefined, undefined, ownership)
       )
-      ops = createLocalOperationTools(
-        actions,
-        prep,
-        async (batch) => {
-          exchanges.push(batch.actions.map((a) => a.name))
-          const actionResults = []
+      ops = createLocalOperationTools(actions, prep, dispatchBatch, {
+        ownership,
+        validateReferences,
 
-          for (const action of batch.actions) {
-            const owner = owners.find((x) => x.name === action.name)
-
-            if (!owner) {
-              throw new Error('Missing registered action: ' + action.name)
-            }
-
-            if (
-              [
-                'apply_prepared_design',
-                order.name,
-                recorded.remove.operations[0].name
-              ].includes(action.name)
-            ) {
-              calls.push(action.name)
-            }
-
-            if (action.name === order.name && failOrder) {
-              throw Error('Unavailable anchor')
-            }
-
-            const result = (
-              owner.effect === 'read'
-                ? await owner.execute(action.arguments, { signal } as never)
-                : await txn.run(
-                    'Window section',
-                    (runMutation) =>
-                      owner.execute(action.arguments, {
-                        signal,
-                        runMutation
-                      } as never),
-                    { signal }
-                  )
-            ) as Record<string, unknown>
-
-            if (action.name === 'apply_prepared_design') {
-              root = String(result.compositionId)
-              count = Number(result.appliedElementCount)
-            }
-
-            actionResults.push({
-              actionId: action.id,
-              actionName: action.name,
-              result: result as never
-            })
-          }
-
-          return { context: {}, actionResults }
-        },
-        {
-          ownership,
-          validateReferences,
-
-          getNativeTools: () => host.definitions()
-        }
-      )
+        getNativeTools: () => host.definitions()
+      })
 
       return [
         { name: 'design_operations', description: 'Operations', owner: ops },
@@ -922,6 +923,7 @@ const fixture = async (
 
     host,
     owners,
+    dispatchBatch,
     prep,
     calls,
     exchanges,
@@ -1156,6 +1158,144 @@ it.each([
   },
   60000
 )
+
+it('delivers the recorded dependent window creation and ordering in one offline Responses call', async () => {
+  const { createDefaultAiModelSources, selectAiModelSource } =
+    await import('../ai-model-sources')
+  const sample = latest
+  const order = sample.order.operations[0]
+  const anchor = order.arguments.request.anchorId
+  const f = await fixture(false, 'existing-parent', anchor)
+  const request = {
+    operations: [
+      {
+        id: 'create',
+        name: 'design_workflow.prepare_and_apply_design',
+        arguments: sample.create
+      },
+      {
+        name: order.name,
+        arguments: {
+          request: { ...order.arguments.request, elementIds: [created] }
+        }
+      }
+    ],
+    inspection: 'defer',
+    delivery: {
+      fields: { created: { step: 'create', path: '/compositionIds/0' } }
+    }
+  }
+
+  let requests = 0
+  let bytes = 0
+  const source = selectAiModelSource(
+    'openai-responses',
+    createDefaultAiModelSources({
+      continuationDatabase: ':memory:',
+
+      fetch: async (_url, init) => {
+        const body = JSON.parse(String(init?.body))
+
+        requests++
+        if (requests === 1) {
+          bytes = Buffer.byteLength(String(init?.body))
+
+          return requestEntries('design_operations.execute_design')
+        }
+
+        if (requests === 2) {
+          const executor = body.input[0].tools
+            .flatMap((g: { tools?: { name: string }[] }) => g.tools ?? [])
+            .find((t: { name: string }) => t.name === 'execute_design')
+          const { operationInputIssue } =
+            await import('@asyra/ai-agent-runtime/schema')
+
+          expect(
+            operationInputIssue({ workflow: request }, executor.parameters)
+          ).toBeUndefined()
+
+          return Response.json({
+            id: 'window-create',
+            status: 'completed',
+            output: [
+              {
+                type: 'function_call',
+                namespace: 'design_operations',
+                name: 'execute_design',
+                call_id: 'window',
+                arguments: JSON.stringify({ workflow: request })
+              }
+            ]
+          })
+        }
+
+        const receipt = JSON.parse(body.input[0].output[0].text)
+
+        expect(receipt).toMatchObject({
+          toolOutcome: { status: 'success' },
+          fields: { created: f.root() }
+        })
+        const final = {
+          batchId: 'answer',
+          actions: [
+            {
+              id: 'answer',
+              name: 'report_outcome',
+              arguments: { outcome: 'completed', message: 'Ordered' },
+              summary: 'Ordered'
+            }
+          ]
+        }
+
+        return Response.json({
+          id: 'window-ordered',
+          status: 'completed',
+          output: [
+            {
+              type: 'message',
+              role: 'assistant',
+              content: [{ type: 'output_text', text: JSON.stringify(final) }]
+            }
+          ]
+        })
+      }
+    })
+  )
+
+  try {
+    await source.request(
+      {
+        intent: 'Create and order the window trim.',
+        context: {},
+        actions: f.owners.map(createAiToolContract),
+        attempt: 1
+      },
+      {
+        environment: {
+          OPENAI_API_KEY: 'fixture',
+          AI_PROVIDER_MODEL: 'gpt-6.2-astra',
+          AI_EXECUTION_SOURCE_REVISION: 'fixture'
+        },
+        executeBatch: f.dispatchBatch
+      }
+    )
+    expect(requests).toBe(3)
+    expect(f.count()).toBe(7809)
+    expect(f.calls).toEqual(['apply_prepared_design', order.name])
+    expect(f.siblings()).toEqual(
+      order.arguments.request.placement === 'after'
+        ? [anchor, f.root()]
+        : [f.root(), anchor]
+    )
+    process.stdout.write(
+      JSON.stringify({ measurement: 'dependent-window', requests, bytes }) +
+        '\n'
+    )
+  } finally {
+    await source.dispose?.()
+    await f.dispose()
+  }
+}, 60000)
 
 it.each([recorded, latest])(
   'finds and executes recorded artifact-key deletion (case %#)',
@@ -1465,8 +1605,8 @@ it('binds the recorded replacement roots and reuses an App name in a new request
     })
     expect(second.siblings()).toEqual([anchor, second.root(), root])
     expect(second.calls).toEqual(['apply_prepared_design', order.name])
-    const read = await second.call('design_operations.execute_design', {
-      delivery: { fields: { id: { name: 'ornament', path: '' } } }
+    const read = await second.call('design_operations.read_design_resources', {
+      savedFields: { id: { name: 'ornament', path: '' } }
     })
 
     expect(read.fields).toEqual({ id: root })
@@ -2354,7 +2494,7 @@ it('publishes direct host retention fields in the recorded scoped discovery requ
   try {
     for (const optionalInputs of [['retain'], []]) {
       const replyReply = await f.host.invoke({
-        name: 'design_operations.read_design_contracts',
+        name: 'design_operations.read_design_resources',
         input: {
           names: ['prepare_and_apply_design'],
           view: 'usage',
@@ -2883,7 +3023,7 @@ it.each([false, true])(
     const f = await fixture()
 
     try {
-      let reply = await f.call('design_operations.read_design_contracts', {
+      let reply = await f.call('design_operations.read_design_resources', {
         names: ['prepare_and_apply_design'],
         view: 'usage',
         includeResultSchema: machine,
@@ -2906,7 +3046,7 @@ it.each([false, true])(
 
         while (!reply.contentDelivery.lastPage) {
           reply = await f.call(
-            'design_operations.read_design_contracts',
+            'design_operations.read_design_resources',
             reply.contentDelivery.next.arguments
           )
           text += reply.contentDelivery.text
@@ -3300,7 +3440,7 @@ it.each(['map_retained_fills', 'design_operations.map_retained_fills'])(
     const f = await fixture()
 
     try {
-      let reply = await f.call('design_operations.read_design_contracts', {
+      let reply = await f.call('design_operations.read_design_resources', {
         names: [name],
         view: 'usage'
       })
@@ -3308,7 +3448,7 @@ it.each(['map_retained_fills', 'design_operations.map_retained_fills'])(
 
       while (reply.contentDelivery && !reply.contentDelivery.lastPage) {
         reply = await f.call(
-          'design_operations.read_design_contracts',
+          'design_operations.read_design_resources',
           reply.contentDelivery.next.arguments
         )
         text += reply.contentDelivery.text
@@ -4098,7 +4238,7 @@ it('delivers the actual capture host envelope and executes its acquired example'
             })
           ).text,
         query,
-        'read_design_contracts'
+        'read_design_resources'
       )
     )
 
@@ -4452,7 +4592,7 @@ it('exposes a conditional group identity selector and binds it to the recorded b
           })
         ).text,
       { names: ['api_hierarchy_groupElements'], view: 'usage' },
-      'read_design_contracts'
+      'read_design_resources'
     )
     const usage = JSON.parse(text).apis[0].usageGuide
     const path = '/actionResults/0/result/value/groupId'
@@ -4655,7 +4795,7 @@ it.each(['defer', 'immediate'] as const)(
             })
           ).text,
         { names: [operation.name], view: 'usage' },
-        'read_design_contracts'
+        'read_design_resources'
       )
       const usage = JSON.parse(text).apis[0].usageGuide
       const paths = Object.keys(usage.stepResults.structures ?? {})

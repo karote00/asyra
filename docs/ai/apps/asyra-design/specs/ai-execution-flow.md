@@ -28,7 +28,7 @@ canonical locks and host/external security boundaries remain enforced.
 
 ### Native discovery bootstrap
 
-When drawing operations are available, canonical `search_design_tools`, `read_design_contracts` and
+When drawing operations are available, canonical `search_design_tools`, `read_design_resources` and
 `execute_design` are directly available in the initial native registration. Other native domain
 tools remain deferred. Initial metadata counts and bytes derive from actual
 registration; unrelated catalog growth must not enlarge the bootstrap. No-operation
@@ -354,13 +354,7 @@ constraints and acceptance criteria, not a complete geometry inventory. Ready
 coherent retained parts may be emitted in a shared coordinate system; keep unresolved detail pending
 without weakening the final acceptance contract.
 
-Always-present App instructions explain Knowledge value before tool names: domain
-principles, common failure modes and mappings to supported App capabilities can
-reduce repeated derivation, exploration and correction attempts, including for
-familiar tasks. Uncertain methods or adjustments that repeatedly miss their target
-are useful occasions to consult relevant advice about a cause or supported tool.
-Native namespace metadata exposes that purpose before deferred tool loading.
-This adds no detail or polish requirement and introduces no lookup gate.
+The resident instruction assigns design decisions to the agent. The entry index identifies optional advice discovery and direct topic reads. Knowledge entry contracts and selected documents explain the domain principles, failure modes and supported capabilities relevant to a decision. Consulting advice is optional.
 Domain knowledge is optional reference material, not a default method or an
 additional acceptance standard. Global guidance does not prescribe representative
 sampling, construction order or refinement sequence. Exact tool contracts and
@@ -436,7 +430,7 @@ limits remain specific to canvas inspection.
 current admitted catalog. Empty input returns categories and counts. Purpose,
 category and declared input-field filters select metadata, never schemas or an
 executable adapter. No match preserves truthful empty coverage and navigation.
-`read_design_contracts` resolves exact semantic `owner.method` identities or
+`read_design_resources` resolves exact semantic `owner.method` identities or
 registered names and independently scoped contracts through `names` and `scopes`.
 Category browsing cannot acquire schemas; search has no `includeSchemas` option.
 Selected contracts carry the complete input and result meaning. Search candidates give the purpose, input boundary and route to that contract.
@@ -453,7 +447,7 @@ partial and repeated contract reads obey the same admitted catalog owner.
 Use exact names for an action schema fragment, or a qualified native name
 for its wrapper fragment; their field paths are intentionally different.
 Lookup indexes live only for that admitted request registry. Known semantic
-operations are selected together through read_design_contracts.names. Unknown entries preserve other matches; ambiguous native or
+operations are selected together through read_design_resources.names. Unknown entries preserve other matches; ambiguous native or
 action identities return explicit candidates rather than choosing a route.
 Plural lookup does not rescan the catalog or perform a canvas exchange.
 Known operations
@@ -2214,7 +2208,7 @@ repeat/rehydrate, cancellation and stale-content recovery without write replay.
 
 Existing read tools accept fromResult to redisplay exact selected content already
 resolved in this request. read_knowledge uses a previous contextKey and ids;
-read_design_contracts uses a returned resultKey and names. This mode returns actual
+read_design_resources uses a returned resultKey and names. This mode returns actual
 text/contracts, not omission markers, and cannot combine with fresh-query modes
 (rehydrate/reuseFrom or refresh/view/scopes). Normal reads and
 refresh remain available to obtain a different current composition or scope.
@@ -3639,8 +3633,7 @@ outweigh the requested operation through repeated substrings. Examples/default
 values are not capability declarations. Existing request-owned catalog generation
 owns descriptor traversal and corpus reuse; no second registry or cache owner.
 
-All search matches remain metadata, including unique or exact-name matches.
-Returned usage routes select exact read_design_contracts names. Exact reads do not
+An unambiguous identity or leading purpose match delivers ordinary executable arguments when available. Other candidates carry their identity and purpose for exact read_design_resources selection. Exact reads do not
 fall back to lexical search. Short/semantic action names select the primary action;
 qualified native names select native envelopes. Ambiguous native namespaces return
 choices without choosing one. Missing names preserve other matches and candidates.
@@ -4330,8 +4323,8 @@ A later operation uses `{kind:"named", name:"alias", path:""}` in its arguments
 without model retrieval. Same-call aliases with a producer step compile to step
 bindings. For a decision use `delivery: {fields: {label: {step, path}}}`.
 Omitting step selects the final projected result (the existing receipt on the
-ready canvas route). Read a field of a saved snapshot with no operations and
-`delivery: {fields: {label: {name:"alias", path:"/field"}}}`.
+ready canvas route). Read a previously saved snapshot through
+`read_design_resources({savedFields:{label:{name:"alias",path:"/field"}}})`. Select `view:"shape"` for paths and types. Bind a known value directly in a later operation.
 
 Names survive subsequent requests in the same open App document and
 conversation. The browser owns bounded immutable JSON snapshots.
@@ -4424,8 +4417,8 @@ remove those fields from native discovery while retaining the original scope
 declaration. Invalid scopes still fail; nested direct delivery options still fail
 before writes.
 
-The single `execute_design` host entry, `search_design_tools` and `read_design_contracts` are eager native
-declarations. Domain-specific operations remain deferred; acquiring their contracts
+On the local Codex transport, the single `execute_design` host entry, `search_design_tools` and `read_design_resources` are eager native
+declarations. The separate knowledge namespace publishes discover_knowledge and read_knowledge directly. Other domain operations remain deferred; acquiring their contracts
 does not require searching again for the host entry. Optional authored facts,
 calculations and reference notes are ordinary composable context. They are not
 prerequisites for drawing or verification.
@@ -4687,7 +4680,7 @@ run, and selected delivery must carry every caller-selected image.
 
 Purpose lookup ranks the admitted metadata corpus using purpose and input-field
 applicability. Candidate responses are metadata only, even for one complete match.
-Exact contract acquisition remains read_design_contracts. Search does not execute
+Exact contract acquisition remains read_design_resources. Search does not execute
 or acquire a tool; qualified identity ambiguity is never resolved by relevance.
 
 Applied creation mapping is portable source-key to acknowledged document-ID
@@ -4838,7 +4831,7 @@ they do not borrow an unrelated generic admission receipt as their output contra
 
 Purpose search returns candidate metadata through `search_design_tools`; optional
 category and declared input-field filters refine the same search. Exact contract
-reads use `read_design_contracts` with names and independently keyed scopes. No
+reads use `read_design_resources` with names and independently keyed scopes. No
 search result silently becomes acquired execution usage. Both reads and read-only
 Knowledge can execute as request steps through execute_design. Lifecycle controls
 remain outside composition. Durable recipes cannot retain these request owners.
@@ -4847,7 +4840,7 @@ The mixed-selector public discovery entry is removed without an alias.
 ### Provider instruction and evaluation continuity
 
 Purpose discovery uses `search_design_tools` with `query`; exact contract reads
-use `read_design_contracts` with `names` and optional scoped selection. Provider
+use `read_design_resources` with `names` and optional scoped selection. Provider
 instruction assembly and delivered declarations must agree. Known current IDs
 and contracts require no preliminary read. Type filters match the registered
 metadata identity exactly, including custom types; a zero-match result is legal.

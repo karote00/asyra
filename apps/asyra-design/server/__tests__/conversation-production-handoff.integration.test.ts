@@ -1,3 +1,4 @@
+import { requestEntries } from './responses-search-fixture'
 import { createPreparedDesignAction } from '../../src/ai/design-actions'
 // @vitest-environment node
 import { afterAll, beforeAll, expect, it, vi } from 'vitest'
@@ -142,60 +143,74 @@ it.each([undefined, 'alter-saved-input'] as const)(
 
     let constructionIdentity: string | undefined
 
-    const acquiredSelection = () => {
-      const blocks = fixture.successorContent('purpose')
+    const searchReply = (callId: string) => {
+      const blocks = fixture.successorContent(callId)
 
       if (!Array.isArray(blocks)) {
-        throw Error('Missing actual discovery successor')
+        throw Error('Missing native search reply')
       }
 
-      const values: unknown[] = blocks
-        .filter(isRecord)
-        .flatMap((block) =>
-          block.type === 'input_text' && typeof block.text === 'string'
-            ? [JSON.parse(block.text)]
-            : []
-        )
-      const page = values
-        .filter(isRecord)
-        .find((value) => Array.isArray(value.tools))
+      for (const block of blocks.filter(isRecord)) {
+        if (block.type !== 'input_text' || typeof block.text !== 'string') {
+          continue
+        }
 
-      if (!page || !Array.isArray(page.tools)) {
-        throw Error('Missing candidate page')
+        const value = JSON.parse(block.text)
+
+        if (value.contentDelivery || Array.isArray(value.tools)) {
+          return value
+        }
       }
 
-      const candidate = page.tools
-        .filter(isRecord)
-        .find(
-          (value) =>
-            value.registeredName === 'design_workflow.prepare_and_apply_design'
-        )
+      throw Error('Missing search result')
+    }
 
-      expect(candidate, JSON.stringify(page)).toBeDefined()
-      if (
-        !candidate ||
-        typeof candidate.registeredName !== 'string' ||
-        !isRecord(candidate.usage) ||
-        !isRecord(candidate.usage.arguments)
-      ) {
-        throw Error('Missing executable candidate usage selector')
+    let searchContinuation = false
+
+    const selectWorkflow = () => {
+      let menu = searchReply('purpose')
+
+      if (menu.contentDelivery) {
+        const first = menu.contentDelivery
+        const last = searchReply('more-candidates').contentDelivery
+
+        expect(first.startByte).toBe(0)
+        expect(last.startByte).toBe(Buffer.byteLength(first.text))
+        expect(last.revision).toBe(first.revision)
+        expect(last.next).toBeNull()
+        const text = first.text + last.text
+
+        expect(Buffer.byteLength(text)).toBe(last.totalBytes)
+        menu = JSON.parse(text)
       }
 
-      expect(candidate).not.toHaveProperty('inputSchema')
-      expect(candidate.usage.tool).toBe('read_design_contracts')
-      expect(candidate.usage.arguments.names).toEqual([
-        candidate.registeredName
-      ])
-      constructionIdentity = candidate.registeredName
+      const candidate = menu.tools.find(
+        (tool: { namespace: string; name: string }) =>
+          tool.namespace === 'design_workflow' &&
+          tool.name === 'prepare_and_apply_design'
+      )
+
+      expect(candidate.capability.purpose).toBeTruthy()
+      const identity = candidate.namespace + '.' + candidate.name
+
+      constructionIdentity = identity
 
       return {
-        ...candidate.usage.arguments,
-        includeResultSchema: true,
-        scopes: {
-          [constructionIdentity]: {
-            inputScope: { operation: 'draft', nodeTypes: ['group', 'rect'] }
+        type: 'function_call',
+        id: 'contract',
+        call_id: 'contract',
+        namespace: 'design_operations',
+        name: 'read_design_resources',
+        arguments: JSON.stringify({
+          names: [constructionIdentity],
+          view: 'usage',
+          includeResultSchema: true,
+          scopes: {
+            [identity]: {
+              inputScope: { operation: 'draft', nodeTypes: ['group', 'rect'] }
+            }
           }
-        }
+        })
       }
     }
 
@@ -214,14 +229,27 @@ it.each([undefined, 'alter-saved-input'] as const)(
                   inputFields: ['draft']
                 })
               },
-              () => ({
-                type: 'function_call',
-                id: 'contract',
-                call_id: 'contract',
-                namespace: 'design_operations',
-                name: 'read_design_contracts',
-                arguments: JSON.stringify(acquiredSelection())
-              })
+              () => {
+                const first = searchReply('purpose')
+
+                if (!first.contentDelivery) {
+                  return selectWorkflow()
+                }
+
+                searchContinuation = true
+                const next = first.contentDelivery.next
+
+                steps.splice(2, 0, selectWorkflow)
+
+                return {
+                  type: 'function_call',
+                  id: 'more-candidates',
+                  call_id: 'more-candidates',
+                  namespace: 'design_operations',
+                  name: next.tool,
+                  arguments: JSON.stringify(next.arguments)
+                }
+              }
             ]
           : []),
         () => {
@@ -416,15 +444,17 @@ it.each([undefined, 'alter-saved-input'] as const)(
       }
 
       expect(requests).toBe(2)
-      expect(fixture.toolCalls()).toHaveLength(4)
+      expect(fixture.toolCalls()).toHaveLength(searchContinuation ? 5 : 4)
       expect(
         fixture.appPackets().filter((p) => p.method === 'thread/start')
       ).toHaveLength(1)
       expect(
         fixture.appPackets().filter((p) => p.method === 'thread/resume')
       ).toHaveLength(1)
-      expect(JSON.stringify(fixture.requests[4])).toContain('facadeSource')
-      const nativeInput = fixture.requests[4].input
+      const successor = fixture.requests.at(-2)
+
+      expect(JSON.stringify(successor)).toContain('facadeSource')
+      const nativeInput = successor?.input
 
       if (!Array.isArray(nativeInput)) {
         throw Error('Missing native input')
@@ -970,6 +1000,9 @@ for (const mode of ['success', 'restricted', 'partial']) {
       await files.mkdir(root, { recursive: true })
       const directory = await files.mkdtemp(root + '/canvas-')
 
+      let declared:
+        { name: string; parameters: Record<string, unknown> } | undefined
+
       const openSources = () =>
         createDefaultAiModelSources({
           continuationDatabase: directory + '/state.sqlite',
@@ -979,15 +1012,18 @@ for (const mode of ['success', 'restricted', 'partial']) {
               const body = JSON.parse(String(init?.body))
               const index = received.length
 
-              received.push(body)
-              positions.push(core.getElementComputedData(targetId)?.x)
               expect(new Headers(init?.headers).get('authorization')).toBe(
                 'Bearer fixture-secret'
               )
               expect(JSON.stringify(body)).not.toContain('fixture-secret')
-              if (index === 0) {
+              if (!body.previous_response_id) {
                 expect(body.input[0].role).toBe('developer')
                 expect(body.input[0].content[0].text).toContain(AI_APP_PROMPT)
+
+                return requestEntries('design_operations.execute_design')
+              } else if (index === 0) {
+                expect(body.previous_response_id).toBe('load-entries')
+                declared = body.input[0].tools[0].tools[0]
               } else {
                 expect(body.previous_response_id).toBe(
                   'response-' + (index - 1)
@@ -995,14 +1031,12 @@ for (const mode of ['success', 'restricted', 'partial']) {
                 expect(JSON.stringify(body.input)).not.toContain(AI_APP_PROMPT)
               }
 
-              const declarations = body.tools.flatMap(
-                (group: { tools?: unknown[] }) => group.tools ?? []
-              )
-              const declared = declarations.find(
-                (tool: { name: string }) => tool.name === 'execute_design'
-              )
+              received.push(body)
+              positions.push(core.getElementComputedData(targetId)?.x)
+              if (!declared || declared.name !== 'execute_design') {
+                throw Error('Missing loaded execute contract')
+              }
 
-              expect(declared).toBeDefined()
               // Both calls use exactly the schema sent over the provider boundary.
               let base = operation(
                 { kind: 'named', name: 'selectedIds', path: '' },
@@ -1039,7 +1073,7 @@ for (const mode of ['success', 'restricted', 'partial']) {
                   : base
 
               expect(
-                operationContractIssue(args, declared.parameters)
+                operationContractIssue({ workflow: args }, declared.parameters)
               ).toBeUndefined()
               const invoke = index < 2 || index === 3
 
@@ -1053,7 +1087,7 @@ for (const mode of ['success', 'restricted', 'partial']) {
                         namespace: 'design_operations',
                         name: declared.name,
                         call_id: `move-${index}`,
-                        arguments: JSON.stringify(args)
+                        arguments: JSON.stringify({ workflow: args })
                       }
                     ]
                   : [completion]
@@ -1281,7 +1315,7 @@ it('delivers one public result selector to the actual native successor', async (
       id: 'read-current-application',
       call_id: 'read-current-application',
       namespace: 'design_operations',
-      name: 'read_design_contracts',
+      name: 'read_design_resources',
       arguments: JSON.stringify({
         names: ['apply_prepared_design'],
         view: 'usage'
@@ -1460,7 +1494,7 @@ it('applies the recorded Dome drawing through the published execute_design entry
                   namespace: 'design_operations',
                   name: 'execute_design',
                   call_id: 'draw',
-                  arguments: JSON.stringify(dome.drawing)
+                  arguments: JSON.stringify({ workflow: dome.drawing })
                 }
               ]
             : [completion]
@@ -1530,3 +1564,303 @@ it('applies the recorded Dome drawing through the published execute_design entry
     ledger.clear()
   }
 }, 30000)
+
+it.each(['known', 'purpose', 'method', 'latest'])(
+  'edits color and position through the real Host using %s discovery',
+  async (lookup) => {
+    const { fillApis } = await import('../../src/common-apis')
+
+    core.load({
+      version: '1.0.0',
+      props: {},
+      sceneTree: {
+        workspace: 'workspace',
+        workspaceList: ['workspace'],
+        elements: {
+          workspace: {
+            id: 'workspace',
+            type: 'workspace',
+            name: 'Workspace',
+            parentId: '',
+            children: [],
+            visible: true,
+            lock: false
+          }
+        }
+      }
+    })
+    const target = elementApis.createElement({
+      type: 'rect',
+      workspacePosition: { x: 10, y: 20 },
+      width: 40,
+      height: 40
+    })
+
+    if (!target) {
+      throw Error('Missing test rectangle')
+    }
+
+    fillApis.updatePrimaryFillColor(target, '#FF0000')
+    expect(fillApis.getPrimaryFillColor(target)).toBe('#FF0000')
+    const bodies: string[] = []
+    const declarations: string[] = []
+    const receipts: unknown[] = []
+    let parameters: Record<string, unknown> | undefined
+    const queries = [
+      lookup === 'method'
+        ? { query: 'updatePrimaryFillColors' }
+        : { query: 'set solid fill color for element by id', category: 'fill' },
+      { query: 'move element to absolute position x y' }
+    ]
+
+    if (lookup === 'latest') {
+      queries[0] = { query: 'set solid fill color element', category: 'fill' }
+      queries[1] = { query: 'set absolute position element x y' }
+    }
+
+    const searchBytes: number[] = []
+    let turn = 1
+    const sources = createDefaultAiModelSources({
+      continuationDatabase: ':memory:',
+
+      fetch: async (_, init) => {
+        const raw = String(init?.body)
+        const body = JSON.parse(raw)
+        const previous = bodies.length
+
+        bodies.push(raw)
+        if (previous) {
+          expect(body.previous_response_id).toBe('r' + previous)
+        }
+
+        const groups = [
+          ...body.tools,
+          ...body.input.flatMap((i: { type?: string; tools?: unknown[] }) =>
+            i.type === 'tool_search_output' ? (i.tools ?? []) : []
+          )
+        ]
+
+        for (const group of groups) {
+          for (const tool of group.tools ?? []) {
+            declarations.push(group.name + '.' + tool.name)
+            if (tool.name === 'execute_design') {
+              parameters = tool.parameters
+            }
+          }
+        }
+
+        let output
+
+        const reply =
+          body.input[0].type === 'function_call_output'
+            ? JSON.parse(body.input[0].output[0].text)
+            : undefined
+
+        if (reply && !reply.apis) {
+          receipts.push(JSON.parse(body.input[0].output[0].text))
+          output = [completion]
+        } else if (!parameters) {
+          output = [
+            {
+              type: 'tool_search_call',
+              execution: 'client',
+              status: 'completed',
+              call_id: 'load',
+              arguments: {
+                names: [
+                  ...(lookup === 'known'
+                    ? []
+                    : ['design_operations.search_design_tools']),
+                  'design_operations.execute_design'
+                ]
+              }
+            }
+          ]
+        } else if (lookup !== 'known' && !reply) {
+          output = [
+            {
+              type: 'function_call',
+              namespace: 'design_operations',
+              name: 'search_design_tools',
+              call_id: 'lookup' + turn,
+              arguments: JSON.stringify(queries[turn - 1])
+            }
+          ]
+        } else {
+          const operation =
+            turn === 1
+              ? {
+                  name: 'api_fill_updatePrimaryFillColors',
+                  arguments: {
+                    updates: [{ elementId: target, color: '#0000FF' }]
+                  }
+                }
+              : {
+                  name: 'api_element_setElementPositions',
+                  arguments: { positionsById: { [target]: { x: 33, y: 45 } } }
+                }
+
+          if (reply) {
+            const candidate = reply.apis[0]
+            const bytes = Buffer.byteLength(JSON.stringify(reply))
+            const fillBaseline = lookup === 'method' ? 13401 : 2320
+            const baseline = turn === 2 ? 14191 : fillBaseline
+
+            searchBytes.push(bytes)
+            expect(candidate.name).toBe(operation.name)
+            expect(candidate.operationParameters).toBeDefined()
+            expect(candidate.operationParameters).not.toHaveProperty(
+              'x-design-discovery'
+            )
+            expect(
+              operationContractIssue(
+                operation.arguments,
+                candidate.operationParameters
+              )
+            ).toBeUndefined()
+            expect(
+              operationContractIssue({}, candidate.operationParameters)
+            ).toBeTruthy()
+            expect(candidate.execution.tool).toBe('execute_design')
+            expect(bytes).toBeLessThan(baseline)
+            if (lookup === 'method' && turn === 1) {
+              expect(reply.count).toBe(1)
+            }
+
+            for (const other of [...reply.apis.slice(1), ...reply.tools]) {
+              expect(other.capability.purpose).toBeTruthy()
+              expect(other.operationParameters).toBeUndefined()
+              expect(other.usage).toBeUndefined()
+            }
+
+            operation.name = candidate.name
+          }
+
+          const args = {
+            operations: [operation],
+            inspection: 'defer',
+            delivery: 'status'
+          }
+
+          expect(
+            operationContractIssue({ workflow: args }, parameters)
+          ).toBeUndefined()
+          output = [
+            {
+              type: 'function_call',
+              namespace: 'design_operations',
+              name: 'execute_design',
+              call_id: 'edit' + turn,
+              arguments: JSON.stringify({ workflow: args })
+            }
+          ]
+        }
+
+        return Response.json({
+          id: 'r' + bodies.length,
+          status: 'completed',
+          output
+        })
+      }
+    })
+    const runtime = createAiAgentRuntime(
+      createAiRuntimeInput({
+        permissionRules: {
+          release_design_context: 'allow',
+          inspect_drawing: 'allow',
+          api_fill_updatePrimaryFillColors: 'allow',
+          api_element_setElementPositions: 'allow',
+          report_outcome: 'allow'
+        },
+        provider: {
+          requestActionBatch: (request, options) =>
+            requestConfiguredAiActionBatch(request, {
+              ...options,
+              sources,
+              environment: {
+                OPENAI_API_KEY: 'fixture',
+                AI_PROVIDER_MODEL: 'fixture',
+                AI_PROVIDER_BACKEND: 'openai-responses',
+                AI_EXECUTION_SOURCE_REVISION: 'fixture'
+              }
+            })
+        }
+      })
+    )
+
+    const ask = (intent: string) =>
+      runtime.run({
+        intent,
+        signal: new AbortController().signal,
+        metadata: { conversationId: 'color-move', turnId: 'turn' + turn }
+      })
+
+    try {
+      await ask('Change the red square to blue.')
+      expect(fillApis.getPrimaryFillColor(target)).toBe('#0000FF')
+      const firstTurn = bodies.length
+
+      turn++
+      await ask('Move the same square to (33, 45).')
+      expect(core.getElementComputedData(target)).toMatchObject({
+        x: 33,
+        y: 45
+      })
+      expect(fillApis.getPrimaryFillColor(target)).toBe('#0000FF')
+      expect(receipts).toHaveLength(2)
+      for (const receipt of receipts) {
+        expect(receipt, JSON.stringify(receipt)).toMatchObject({
+          toolOutcome: { status: 'success', settlement: 'completed' }
+        })
+      }
+
+      const sizes = bodies.map((raw) => Buffer.byteLength(raw))
+
+      process.stdout.write(
+        JSON.stringify({
+          measurement: 'color-move',
+          lookup,
+          searchBytes,
+          sizes,
+          total: sizes.reduce((a, b) => a + b, 0),
+          firstTurn,
+          secondTurn: bodies.length - firstTurn
+        }) + '\n'
+      )
+      const index = JSON.parse(bodies[0])
+        .input[0].content[0].text.split('\n')
+        .filter((line: string) => /^design_(operations|knowledge)\./.test(line))
+
+      expect(index.map((line: string) => line.split(' - ')[0]).sort()).toEqual([
+        'design_knowledge.discover_knowledge',
+        'design_knowledge.read_knowledge',
+        'design_operations.execute_design',
+        'design_operations.read_design_resources',
+        'design_operations.search_design_tools'
+      ])
+      expect(declarations.sort()).toEqual(
+        lookup === 'known'
+          ? ['design_operations.execute_design']
+          : [
+              'design_operations.execute_design',
+              'design_operations.search_design_tools'
+            ]
+      )
+      expect(JSON.parse(bodies[0]).tools).toEqual([
+        expect.objectContaining({ type: 'tool_search', execution: 'client' })
+      ])
+      expect(JSON.parse(bodies[1]).input[0]).toMatchObject({
+        type: 'tool_search_output',
+        status: 'completed',
+        execution: 'client',
+        call_id: 'load'
+      })
+      expect(firstTurn).toBe(lookup === 'known' ? 3 : 4)
+      expect(bodies.length - firstTurn).toBe(lookup === 'known' ? 2 : 3)
+    } finally {
+      await runtime.dispose()
+      await Promise.all(sources.map((source) => source.dispose?.()))
+    }
+  },
+  30000
+)

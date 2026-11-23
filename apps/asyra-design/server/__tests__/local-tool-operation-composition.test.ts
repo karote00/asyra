@@ -273,7 +273,7 @@ it('composes actual canonical basic operations and hands creation identities thr
     ])
     expect(app.select).toHaveBeenCalledExactlyOnceWith(['created-id'])
     const semantic = await app.invoke(
-      'design_operations.read_design_contracts',
+      'design_operations.read_design_resources',
       { names: ['element.createElements'] }
     )
 
@@ -287,7 +287,7 @@ it('composes actual canonical basic operations and hands creation identities thr
         arguments: { name: proposal.steps[0].tool, revision: 9 }
       },
       definition: {
-        tool: 'read_design_contracts',
+        tool: 'read_design_resources',
         arguments: { names: [proposal.steps[0].tool] }
       }
     })
@@ -298,7 +298,7 @@ it('composes actual canonical basic operations and hands creation identities thr
             await app.invoke('design_operations.' + requestedTool, input)
           ),
         { names: [proposal.steps[0].tool] },
-        'read_design_contracts'
+        'read_design_resources'
       )
     )
 
@@ -1679,7 +1679,7 @@ it('continues only an unresolved suffix using acknowledged document identities i
       ],
       output: literal(null)
     }
-    const found = await app.invoke('design_operations.read_design_contracts', {
+    const found = await app.invoke('design_operations.read_design_resources', {
       names: ['selection.selectElements']
     })
 
@@ -1707,7 +1707,7 @@ it('continues only an unresolved suffix using acknowledged document identities i
     expect(app.select).toHaveBeenCalledTimes(2)
     expect(app.select).toHaveBeenLastCalledWith(['created-id'])
     const available = await app.invoke(
-      'design_operations.read_design_contracts',
+      'design_operations.read_design_resources',
       { names: [next.name] }
     )
 
@@ -1868,7 +1868,7 @@ it.each([false, true])(
         operations: [
           {
             id: 'ordering',
-            name: 'design_operations.read_design_contracts',
+            name: 'design_operations.read_design_resources',
             arguments: {
               names: recordedInputRejection.lookup.operations,
               ...(scoped

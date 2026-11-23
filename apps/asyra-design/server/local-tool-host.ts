@@ -1,3 +1,4 @@
+import { withConversationResourceReads } from './local-design-resources'
 import {
   AiToolFailureCodes,
   isDesignProviderEntry
@@ -5,7 +6,7 @@ import {
 import { requireSupportedToolSchemas } from '@asyra/ai-agent-runtime/schema'
 import type { AiToolImage } from '@asyra/ai-agent-runtime'
 import type { ExchangeConversationResults } from '@asyra/ai-agent-runtime'
-import { readNamedFields, type DeliveryRequest } from '@asyra/ai-agent-runtime'
+import { type DeliveryRequest } from '@asyra/ai-agent-runtime'
 import {
   createDesignResultDelivery,
   resolveConversationInputs
@@ -108,6 +109,7 @@ type Reply = Awaited<ReturnType<typeof invokeLocalTool>> & {
 export const createLocalToolHost = (options: {
   standaloneInvocations?: boolean
   requestId: string
+  history?: readonly unknown[]
   resultContext?: ExchangeConversationResults
   signal: AbortSignal
   store: AiToolStore
@@ -395,6 +397,52 @@ export const createLocalToolHost = (options: {
         ...operationOwner,
         definitions: operationOwner.definitions.filter((d) => d !== batch)
       }
+    }
+  }
+
+  const deliverImages = (images: AiToolImage[], name: string) => {
+    const call = context.getStore()
+
+    if (call) {
+      const prefix = '/fields/' + name.replace(/~/g, '~0').replace(/\//g, '~1')
+      const selected = (selectedImages.get(call) ?? []).filter(
+        (image) => image.path !== prefix && !image.path.startsWith(prefix + '/')
+      )
+
+      selected.push(...images)
+      selectedImages.set(call, selected)
+    }
+  }
+
+  if (!operationGroup && (options.resultContext || options.history)) {
+    groups.push({
+      name: 'design_operations',
+      description: 'Read saved conversation results.',
+      owner: {
+        definitions: [],
+
+        async call() {
+          throw Error('Unknown resource')
+        }
+      }
+    })
+  }
+
+  const resourceGroup = groups.findIndex(
+    (group) => group.name === 'design_operations'
+  )
+
+  if (resourceGroup >= 0) {
+    const group = groups[resourceGroup]
+
+    groups[resourceGroup] = {
+      ...group,
+      owner: withConversationResourceReads(
+        group.owner,
+        options.resultContext,
+        deliverImages,
+        options.history
+      )
     }
   }
 
@@ -848,16 +896,6 @@ export const createLocalToolHost = (options: {
               }
             : undefined
 
-        if (
-          !(args as Record<string, unknown>)?.operations &&
-          !(args as Record<string, unknown>)?.stages
-        ) {
-          return {
-            inputSchema: sequence.inputSchema,
-            outputSchema: resultReceiptSchema
-          }
-        }
-
         const plan = preparedFor(args)
 
         if ((args as DeliveryRequest).delivery === undefined) {
@@ -1050,29 +1088,6 @@ export const createLocalToolHost = (options: {
 
     async call(_name: string, args: unknown, signal: AbortSignal) {
       const call = context.getStore()
-
-      const deliverImages = (images: AiToolImage[], name: string) => {
-        if (call) {
-          const prefix =
-            '/fields/' + name.replace(/~/g, '~0').replace(/\//g, '~1')
-          const selected = (selectedImages.get(call) ?? []).filter(
-            (image) =>
-              image.path !== prefix && !image.path.startsWith(prefix + '/')
-          )
-
-          selected.push(...images)
-          selectedImages.set(call, selected)
-        }
-      }
-
-      if (
-        !(args as Record<string, unknown>).operations &&
-        !(args as Record<string, unknown>).stages
-      ) {
-        return JSON.stringify(
-          await readNamedFields(args, options.resultContext, deliverImages)
-        )
-      }
 
       const plan = preparedFor(args)
 
@@ -1923,7 +1938,7 @@ export const createLocalToolHost = (options: {
             )
           }
 
-          // The three-entry publication transports standalone controls without
+          // The executor transports standalone controls without
           // making control-plane tools eligible as recipe dependencies.
           if (
             !internal &&

@@ -37,7 +37,7 @@ it('delivers recorded action arguments without repeating the host schema', async
     )
 
   for (const index of [4, 8]) {
-    const result = await read('read_design_contracts', {
+    const result = await read('read_design_resources', {
       names: recorded.discovery[index].operations,
       view: recorded.discovery[index].view
     })
@@ -47,7 +47,7 @@ it('delivers recorded action arguments without repeating the host schema', async
     expect(guide.operationParameters).toBeDefined()
     expect(guide).not.toHaveProperty('parameters')
     expect(guide.hostContract).toMatchObject({
-      tool: 'read_design_contracts',
+      tool: 'read_design_resources',
       arguments: { names: ['design_operations.execute_design'], view: 'usage' }
     })
     if (index === 8) {
@@ -124,7 +124,7 @@ it('delivers recorded action arguments without repeating the host schema', async
   ).toBe(true)
   for (const entry of [...menu.apis, ...menu.tools]) {
     expect(entry.usageGuide).toBeUndefined()
-    expect(entry.usage.tool).toBe('read_design_contracts')
+    expect(entry.usage.tool).toBe('read_design_resources')
     expect(entry).not.toHaveProperty('inputSchema')
   }
 })

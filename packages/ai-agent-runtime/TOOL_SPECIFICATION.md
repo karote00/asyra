@@ -8,7 +8,7 @@ primitive and composed tools. The remaining implementation is tracked by the
 Exported types and formal tests are the authority for the implemented foundation.
 The model-acquisition section applies to the host integration. Runtime owns generic
 registered-tool contracts. Design exposes purpose discovery through
-`search_design_tools`, exact contract acquisition through `read_design_contracts`,
+`search_design_tools`, exact contract and saved-field reads through `read_design_resources`,
 and reusable tool proposals through `submit_tool`; these App routes do not define
 Runtime API names.
 

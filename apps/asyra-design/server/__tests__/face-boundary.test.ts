@@ -345,7 +345,7 @@ it('delivers and executes the selected boundary example with lower total bytes a
       return text
     },
     contractReadFixture(fixture.query.names, fixture.query),
-    'read_design_contracts'
+    'read_design_resources'
   )
 
   process.stdout.write(

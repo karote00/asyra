@@ -316,7 +316,7 @@ const setup = (
         return next.text
       },
       args,
-      'read_design_contracts'
+      'read_design_resources'
     )
 
     return { ...reply, value: JSON.parse(text) }
@@ -358,10 +358,13 @@ it('finds the recorded compound material purpose and follows its exact acquisiti
   const menuBytes = deliveries.reduce((total, bytes) => total + bytes, 0)
   const menuCalls = deliveries.length
 
-  expect(menuCalls).toBe(1)
-  expect(menuBytes).toBeLessThan(acquisitionQuery.broad.responseTextBytes)
+  expect(candidate.operationParameters).toBeDefined()
+  // The search already includes the complete workflow input. Larger replies
+  // use the same contiguous, revision-checked transport pages as exact reads.
+  expect(menuCalls).toBeLessThanOrEqual(2)
+  expect(deliveries.every((bytes) => bytes <= 24000)).toBe(true)
   const selected = (
-    await call('read_design_contracts', {
+    await call('read_design_resources', {
       ...candidate.usage.arguments,
       scopes: Object.fromEntries(
         candidate.usage.arguments.names.map((name: string) => [
@@ -373,6 +376,9 @@ it('finds the recorded compound material purpose and follows its exact acquisiti
   ).value.tools[0]
   const invocation = ownerInvocation(selected.invocationExample.invocation)
 
+  expect(
+    operationInputIssue(invocation.arguments, candidate.operationParameters)
+  ).toBeUndefined()
   expect(selected.usageGuide.parameters).toBeDefined()
   expect(selected.usageGuide.results.guaranteedFields).toBeDefined()
   expect(
@@ -419,9 +425,8 @@ it('keeps recorded broad material usage as candidate menus without projecting ev
     for (const tool of reply.value.tools) {
       expect(tool.usageGuide).toBeUndefined()
       expect(tool.inputSchema).toBeUndefined()
-      expect(tool.usage.arguments.names).toEqual([
-        `${tool.namespace}.${tool.name}`
-      ])
+      expect(tool.namespace).toBeTruthy()
+      expect(tool.capability.purpose).toBeTruthy()
     }
 
     expect(deliveries).toHaveLength(1)
@@ -438,7 +443,7 @@ it('keeps recorded broad material usage as candidate menus without projecting ev
     expect(project).not.toHaveBeenCalled()
     expect(compile).not.toHaveBeenCalled()
     const exact = (
-      await call('read_design_contracts', {
+      await call('read_design_resources', {
         names: ['design.prepare_and_apply_design'],
         view: 'full'
       })
@@ -456,7 +461,7 @@ it('keeps recorded broad material usage as candidate menus without projecting ev
 
 it('delivers recorded full contracts and publishes executable high-level usage without replay on recovery', async () => {
   const { call, compile, execute, owners, created, calls } = setup()
-  const full = (await call('read_design_contracts', recorded.calls[0].input))
+  const full = (await call('read_design_resources', recorded.calls[0].input))
     .value
 
   for (const name of ['prepare_and_apply_design']) {
@@ -473,7 +478,7 @@ it('delivers recorded full contracts and publishes executable high-level usage w
         .inputSchema
     ).toEqual(definition.inputSchema)
     const usage = (
-      await call('read_design_contracts', {
+      await call('read_design_resources', {
         names: [name],
         view: 'usage',
         includeResultSchema: true
@@ -532,7 +537,7 @@ it('delivers recorded full contracts and publishes executable high-level usage w
     }
 
     const recovered = (
-      await call('read_design_contracts', usage.definition.recover.arguments)
+      await call('read_design_resources', usage.definition.recover.arguments)
     ).value.tools[0]
 
     expect(recovered.invocationExample).toEqual(usage.invocationExample)
@@ -546,11 +551,11 @@ it('delivers recorded full contracts and publishes executable high-level usage w
     )
   ).toHaveLength(1)
   const restored = (
-    await call('read_design_contracts', recorded.calls[1].input)
+    await call('read_design_resources', recorded.calls[1].input)
   ).value.tools[0]
 
   expect(restored.inputSchema).toEqual(full.tools[0].inputSchema)
-  expect(calls.filter((name) => name === 'read_design_contracts')).toHaveLength(
+  expect(calls.filter((name) => name === 'read_design_resources')).toHaveLength(
     4
   )
   expect(
@@ -564,7 +569,7 @@ it('navigates actual local definitions and preserves selected constraints and re
   const { call, execute } = setup()
   const names = ['prepare_and_apply_design']
   const usage = (
-    await call('read_design_contracts', {
+    await call('read_design_resources', {
       names,
       view: 'usage',
       includeResultSchema: true
@@ -586,7 +591,7 @@ it('navigates actual local definitions and preserves selected constraints and re
       names.map((name) => [name, { schemaPaths: [path] }])
     )
   }
-  const fragment = (await call('read_design_contracts', args)).value.tools[0]
+  const fragment = (await call('read_design_resources', args)).value.tools[0]
 
   expect(fragment.schemaFragments[0].path).toBe(path)
   expect(
@@ -594,19 +599,19 @@ it('navigates actual local definitions and preserves selected constraints and re
       entry.schema.required?.includes('type')
     )
   ).toBe(true)
-  const repeated = (await call('read_design_contracts', args)).value.tools[0]
+  const repeated = (await call('read_design_resources', args)).value.tools[0]
 
   expect(repeated.definition.availableInResponse).toBe(true)
   const recovery = repeated.definition.recover.arguments
 
   expect(recovery.scopes[recovery.names[0]].schemaPaths).toEqual([path])
-  const recovered = (await call('read_design_contracts', recovery)).value
+  const recovered = (await call('read_design_resources', recovery)).value
     .tools[0]
 
   expect(recovered.schemaFragments).toEqual(fragment.schemaFragments)
   expect(recovered.schemaContext).toEqual(fragment.schemaContext)
   const missing = (
-    await call('read_design_contracts', {
+    await call('read_design_resources', {
       names,
       scopes: Object.fromEntries(
         names.map((name) => [name, { schemaPaths: ['/missing'] }])
@@ -617,9 +622,9 @@ it('navigates actual local definitions and preserves selected constraints and re
   expect(missing.definition.availableInResponse).toBe(false)
   expect(missing.schemaResolution.inputFields).toEqual(usage.inputFields)
   expect(missing.schemaResolution.inputFields).not.toContain(path)
-  const full = (await call('read_design_contracts', { names })).value.tools[0]
+  const full = (await call('read_design_resources', { names })).value.tools[0]
   const draft = (
-    await call('read_design_contracts', {
+    await call('read_design_resources', {
       names,
       scopes: Object.fromEntries(
         names.map((name) => [name, { schemaPaths: ['/properties/draft'] }])
@@ -646,7 +651,7 @@ it('navigates actual local definitions and preserves selected constraints and re
 it('rejects invalid and cancelled invocations before writes and does not revive expired preparation credentials', async () => {
   const first = setup()
   const usage = (
-    await first.call('read_design_contracts', {
+    await first.call('read_design_resources', {
       names: ['prepare_design'],
       view: 'usage',
       includeResultSchema: true
@@ -680,7 +685,7 @@ it('rejects invalid and cancelled invocations before writes and does not revive 
   expect(second.execute).not.toHaveBeenCalled()
   const recovery = (
     await second.call(
-      'read_design_contracts',
+      'read_design_resources',
       usage.definition.recover.arguments
     )
   ).value.tools[0]
@@ -708,7 +713,7 @@ it('rejects invalid and cancelled invocations before writes and does not revive 
 it('uses direct delivered contracts to invoke the owner and recover information without replaying writes', async () => {
   const { call, owners, execute, created } = setup()
   const operations = owners.find((owner) =>
-    owner.definitions.some((d) => d.name === 'read_design_contracts')
+    owner.definitions.some((d) => d.name === 'read_design_resources')
   )
 
   if (!operations) {
@@ -716,7 +721,7 @@ it('uses direct delivered contracts to invoke the owner and recover information 
   }
 
   const definition = operations.definitions.find(
-    (d) => d.name === 'read_design_contracts'
+    (d) => d.name === 'read_design_resources'
   )
 
   if (!definition) {
@@ -829,16 +834,16 @@ it('delivers a complete selected operation with fewer first-use bytes and calls'
   const baseline = setup()
   const names = ['prepare_and_apply_design']
 
-  await baseline.call('read_design_contracts', {
+  await baseline.call('read_design_resources', {
     names,
     view: 'usage',
     includeResultSchema: true
   })
-  const full = (await baseline.call('read_design_contracts', { names })).value
+  const full = (await baseline.call('read_design_resources', { names })).value
     .tools[0]
   const run = setup()
   const usage = (
-    await run.call('read_design_contracts', {
+    await run.call('read_design_resources', {
       names,
       view: 'usage',
       includeResultSchema: true
@@ -847,7 +852,7 @@ it('delivers a complete selected operation with fewer first-use bytes and calls'
   const inputScope = { operation: 'draft', nodeTypes: ['vector'] }
 
   expect(usage.inputScopes.operations).toContain('draft')
-  const selected = await run.call('read_design_contracts', {
+  const selected = await run.call('read_design_resources', {
     names,
     scopes: Object.fromEntries(
       names.map((name) => [name, { inputScope: inputScope }])
@@ -901,7 +906,7 @@ it('delivers a complete selected operation with fewer first-use bytes and calls'
     settlement: 'completed'
   })
   const recovered = (
-    await run.call('read_design_contracts', tool.definition.recover.arguments)
+    await run.call('read_design_resources', tool.definition.recover.arguments)
   ).value.tools[0]
 
   expect(recovered.inputSchema).toEqual(tool.inputSchema)
@@ -957,10 +962,10 @@ it('keeps purpose discovery bounded with unrelated tools and preserves intention
 it('preserves canonical restrictions across selected representations and ordered recovery', async () => {
   const run = setup()
   const names = ['prepare_and_apply_design']
-  const full = (await run.call('read_design_contracts', { names })).value
+  const full = (await run.call('read_design_resources', { names })).value
     .tools[0]
   const usage = (
-    await run.call('read_design_contracts', {
+    await run.call('read_design_resources', {
       names,
       view: 'usage',
       includeResultSchema: true
@@ -1001,7 +1006,7 @@ it('preserves canonical restrictions across selected representations and ordered
       optionalInputs: [...optionalInputs]
     }
     const selected = (
-      await run.call('read_design_contracts', {
+      await run.call('read_design_resources', {
         names,
         scopes: Object.fromEntries(
           names.map((name) => [name, { inputScope: inputScope }])
@@ -1017,7 +1022,7 @@ it('preserves canonical restrictions across selected representations and ordered
     expect(operationInputIssue(invalid, selected.inputSchema)).toBeDefined()
     const refreshed = (
       await run.call(
-        'read_design_contracts',
+        'read_design_resources',
         selected.definition.refresh.arguments
       )
     ).value.tools[0]
@@ -1078,7 +1083,7 @@ it('preserves canonical restrictions across selected representations and ordered
       )
     }
   ]) {
-    expect((await run.call('read_design_contracts', args)).success).toBe(false)
+    expect((await run.call('read_design_resources', args)).success).toBe(false)
   }
 
   expect(run.execute).not.toHaveBeenCalled()
@@ -1100,7 +1105,7 @@ it('uses the selected repair contract after a real preparation rejection without
   const names = ['prepare_and_apply_design']
   const inputScope = { operation: 'repair', nodeTypes: ['vector'] }
   const scoped = (
-    await run.call('read_design_contracts', {
+    await run.call('read_design_resources', {
       names,
       scopes: Object.fromEntries(
         names.map((name) => [name, { inputScope: inputScope }])
@@ -1134,7 +1139,7 @@ it('uses the selected repair contract after a real preparation rejection without
     )
   ).toHaveLength(1)
   const guide = (
-    await run.call('read_design_contracts', {
+    await run.call('read_design_resources', {
       names,
       view: 'usage',
       includeResultSchema: true,
@@ -1143,7 +1148,7 @@ it('uses the selected repair contract after a real preparation rejection without
   ).value.tools[0]
 
   expect(guide.usageGuide.recovery).toContain('Never replay completed writes')
-  await run.call('read_design_contracts', guide.definition.recover.arguments)
+  await run.call('read_design_resources', guide.definition.recover.arguments)
   const expired = await run.call('prepare_and_apply_design', {
     repair: { ...args.repair, draftId: 'missing-retained-draft' },
     inspection: 'defer'
@@ -1155,13 +1160,13 @@ it('uses the selected repair contract after a real preparation rejection without
       batch.actions.some((action) => action.name === 'apply_prepared_design')
     )
   ).toHaveLength(1)
-  await run.call('read_design_contracts', scoped.definition.recover.arguments)
+  await run.call('read_design_resources', scoped.definition.recover.arguments)
   const cancellation = new AbortController()
 
   cancellation.abort()
   await expect(
     run.call(
-      'read_design_contracts',
+      'read_design_resources',
       {
         names,
         scopes: Object.fromEntries(
@@ -1189,7 +1194,7 @@ it('preserves writes for a completed draft and a later invalid part without appr
 
   for (const operation of ['draft', 'parts']) {
     const scoped = (
-      await run.call('read_design_contracts', {
+      await run.call('read_design_resources', {
         names,
         scopes: Object.fromEntries(
           names.map((name) => [
@@ -1224,7 +1229,7 @@ it('preserves writes for a completed draft and a later invalid part without appr
       operation === 'draft' ? 'success' : 'partial'
     )
     const guide = (
-      await run.call('read_design_contracts', {
+      await run.call('read_design_resources', {
         names,
         view: 'usage',
         includeResultSchema: true,
@@ -1240,8 +1245,8 @@ it('preserves writes for a completed draft and a later invalid part without appr
     expect(guide.usageGuide.instructions).toContain(
       'partial preserves completed work'
     )
-    await run.call('read_design_contracts', guide.definition.recover.arguments)
-    await run.call('read_design_contracts', scoped.definition.recover.arguments)
+    await run.call('read_design_resources', guide.definition.recover.arguments)
+    await run.call('read_design_resources', scoped.definition.recover.arguments)
   }
 
   expect(run.execute).toHaveBeenCalledTimes(2)
@@ -1262,14 +1267,14 @@ it('delivers and executes one selected usage guide without validation schema bag
     await baseline.call('search_design_tools', {
       query: 'prepare_and_apply_design'
     })
-    await baseline.call('read_design_contracts', {
+    await baseline.call('read_design_resources', {
       names,
       scopes: Object.fromEntries(
         names.map((name) => [name, { inputScope: inputScope }])
       )
     })
     const before = run.deliveries.length
-    const reply = await run.call('read_design_contracts', {
+    const reply = await run.call('read_design_resources', {
       names,
       view: 'usage',
       scopes: Object.fromEntries(names.map((name) => [name, { inputScope }]))
@@ -1296,7 +1301,7 @@ it('delivers and executes one selected usage guide without validation schema bag
       baseline.deliveries.reduce((sum, bytes) => sum + bytes, 0)
     )
     const machine = setup()
-    const machineReply = await machine.call('read_design_contracts', {
+    const machineReply = await machine.call('read_design_resources', {
       names,
       view: 'usage',
       includeResultSchema: true,
@@ -1334,7 +1339,7 @@ it('delivers and executes one selected usage guide without validation schema bag
 
     expect(example.tool).toBe('prepare_and_apply_design')
     const full = (
-      await run.call('read_design_contracts', {
+      await run.call('read_design_resources', {
         names,
         scopes: Object.fromEntries(
           names.map((name) => [name, { inputScope: inputScope }])
@@ -1356,7 +1361,7 @@ it('delivers and executes one selected usage guide without validation schema bag
     ).toHaveLength(1)
     const created = structuredClone(run.created)
     const restored = await run.call(
-      'read_design_contracts',
+      'read_design_resources',
       tool.definition.recover.arguments
     )
 
@@ -1391,7 +1396,7 @@ it.each([
     const names = ['prepare_and_apply_design']
     const inputScope = { operation: 'draft', nodeTypes }
     const full = (
-      await run.call('read_design_contracts', {
+      await run.call('read_design_resources', {
         names,
         scopes: Object.fromEntries(
           names.map((name) => [name, { inputScope: inputScope }])
@@ -1399,7 +1404,7 @@ it.each([
       })
     ).value.tools[0]
     const guide = (
-      await run.call('read_design_contracts', {
+      await run.call('read_design_resources', {
         names,
         view: 'usage',
         includeResultSchema: true,
@@ -1507,8 +1512,8 @@ it('bounds selected usage delivery under unrelated catalog growth and exposes ex
     view: 'usage',
     includeResultSchema: true
   }
-  const a = await small.call('read_design_contracts', args)
-  const b = await large.call('read_design_contracts', args)
+  const a = await small.call('read_design_resources', args)
+  const b = await large.call('read_design_resources', args)
 
   expect(b.value.resultKey).toEqual(expect.any(String))
   expect(a.value.resultKey).toEqual(expect.any(String))
@@ -1518,7 +1523,7 @@ it('bounds selected usage delivery under unrelated catalog growth and exposes ex
   // Necessary failure evidence may paginate; unrelated catalog entries must not
   // change a single byte or continuation, and the transport budget is unchanged.
   expect(large.deliveries.every((bytes) => bytes <= 24000)).toBe(true)
-  const complete = await large.call('read_design_contracts', {
+  const complete = await large.call('read_design_resources', {
     names: args.names
   })
 
@@ -1531,13 +1536,13 @@ it('rejects recorded foreign inspection fields and executes each narrower recove
   const { call, execute, owners } = setup()
   const definition = owners
     .flatMap((owner) => owner.definitions)
-    .find((d) => d.name === 'read_design_contracts')
+    .find((d) => d.name === 'read_design_resources')
 
   if (!definition) {
     throw new Error('Missing discovery definition')
   }
 
-  const failed = await call('read_design_contracts', inspectionDiscovery.query)
+  const failed = await call('read_design_resources', inspectionDiscovery.query)
 
   expect(failed.value.tools).toHaveLength(2)
   expect(
@@ -1629,7 +1634,7 @@ it('rejects recorded foreign inspection fields and executes each narrower recove
   }
 
   const repeated = await call(
-    'read_design_contracts',
+    'read_design_resources',
     inspectionDiscovery.query
   )
 
@@ -1640,7 +1645,7 @@ it('rejects recorded foreign inspection fields and executes each narrower recove
 it('distinguishes mixed exact coverage from successful shared paths and empty discovery', async () => {
   const { call, execute } = setup()
   const names = ['design.inspect_drawing', 'prepare_and_apply_design']
-  const mixed = await call('read_design_contracts', {
+  const mixed = await call('read_design_resources', {
     names,
     scopes: Object.fromEntries(
       names.map((name) => [name, { schemaPaths: ['/properties/arguments'] }])
@@ -1657,7 +1662,7 @@ it('distinguishes mixed exact coverage from successful shared paths and empty di
     '/properties/arguments'
   )
   expect(mixed.value.tools[1].definition.coverage).toBe('none')
-  const shared = await call('read_design_contracts', {
+  const shared = await call('read_design_resources', {
     names,
     scopes: Object.fromEntries(
       names.map((name) => [name, { schemaPaths: ['/properties/inspection'] }])
@@ -1676,12 +1681,12 @@ it('distinguishes mixed exact coverage from successful shared paths and empty di
   }
 
   expect(
-    (await call('read_design_contracts', { names: ['missing-tool'] })).outcome
+    (await call('read_design_resources', { names: ['missing-tool'] })).outcome
       .status
   ).toBe('failed')
   expect(
     (
-      await call('read_design_contracts', {
+      await call('read_design_resources', {
         names: ['design.inspect_drawing', 'missing-tool'],
         view: 'usage',
         includeResultSchema: true
@@ -1689,7 +1694,7 @@ it('distinguishes mixed exact coverage from successful shared paths and empty di
     ).outcome.status
   ).toBe('partial')
   await expect(
-    call('read_design_contracts', { names }, AbortSignal.abort())
+    call('read_design_resources', { names }, AbortSignal.abort())
   ).rejects.toThrow()
   expect(execute).not.toHaveBeenCalled()
 })
@@ -1697,7 +1702,7 @@ it('distinguishes mixed exact coverage from successful shared paths and empty di
 it('delivers paged partial discovery directly without promoting coverage or replaying writes', async () => {
   const { owners, call, execute } = setup()
   const usage = (
-    await call('read_design_contracts', {
+    await call('read_design_resources', {
       names: ['prepare_and_apply_design'],
       view: 'usage',
       includeResultSchema: true,
@@ -1716,7 +1721,7 @@ it('delivers paged partial discovery directly without promoting coverage or repl
   )
   const writes = execute.mock.calls.length
   const owner = owners.find((o) =>
-    o.definitions.some((d) => d.name === 'read_design_contracts')
+    o.definitions.some((d) => d.name === 'read_design_resources')
   )
 
   if (!owner) {
@@ -1724,7 +1729,7 @@ it('delivers paged partial discovery directly without promoting coverage or repl
   }
 
   const definition = owner.definitions.find(
-    (d) => d.name === 'read_design_contracts'
+    (d) => d.name === 'read_design_resources'
   )
 
   if (!definition) {
@@ -1767,7 +1772,7 @@ it('delivers paged partial discovery directly without promoting coverage or repl
     status: 'partial',
     missingNames: ['missing-tool']
   })
-  const refresh = await call('read_design_contracts', {
+  const refresh = await call('read_design_resources', {
     names: ['design.inspect_drawing'],
     refresh: true,
     refreshReason: 'delivery-failure',
@@ -1798,14 +1803,17 @@ it('keeps purpose menus compact and gives representation choices on exact naviga
   ]) {
     const run = setup()
     const reply = await run.call(
-      'query' in input ? 'search_design_tools' : 'read_design_contracts',
+      'query' in input ? 'search_design_tools' : 'read_design_resources',
       input
     )
     let tool = reply.value.tools.find(
       (entry: { name: string }) => entry.name === 'prepare_and_apply_design'
     )
 
+    const searchPages = run.deliveries.length
+
     if ('query' in input && !tool.inputScopes?.selection) {
+      expect(tool.operationParameters).toBeDefined()
       expect(tool.usage.arguments.names).toEqual([
         'design.prepare_and_apply_design'
       ])
@@ -1825,7 +1833,9 @@ it('keeps purpose menus compact and gives representation choices on exact naviga
     expect(tool.inputScopes.selection).toContain('four-corner')
     expect(tool.inputScopes.selection).toContain('surface-grid')
     expect(tool.inputScopes.selection).toContain('No Knowledge')
-    expect(run.deliveries.length).toBeLessThanOrEqual(2)
+    // One selected scope guide after search; transport may split the full workflow input.
+    expect(run.deliveries.length - searchPages).toBe('query' in input ? 1 : 0)
+    expect(run.deliveries.every((bytes) => bytes <= 24000)).toBe(true)
     expect(tool.inputSchema).toBeUndefined()
     expect(tool.outputSchema).toBeUndefined()
     expect(tool.outputFields).toBeUndefined()
@@ -1845,13 +1855,13 @@ it('selects complete next-part guides in two replies without unrelated catalog g
 
     for (const run of [small, large]) {
       await run.call(
-        'read_design_contracts',
+        'read_design_resources',
         contractReadFixture(
           [operationSelection.query.query],
           operationSelection.query
         )
       )
-      const reply = await run.call('read_design_contracts', {
+      const reply = await run.call('read_design_resources', {
         names: ['prepare_and_apply_design'],
         view: 'usage',
         includeResultSchema: true,
@@ -1903,7 +1913,7 @@ it.each([false, true])(
     if (continuePart) {
       const first = ownerInvocation(
         (
-          await run.call('read_design_contracts', {
+          await run.call('read_design_resources', {
             names,
             view: 'usage',
             includeResultSchema: true,
@@ -1934,7 +1944,7 @@ it.each([false, true])(
     const before = structuredClone(run.created)
     const scope = { operation: 'draft', nodeTypes: ['group', 'surface-grid'] }
     const guide = (
-      await run.call('read_design_contracts', {
+      await run.call('read_design_resources', {
         names,
         view: 'usage',
         includeResultSchema: true,
@@ -1953,7 +1963,7 @@ it.each([false, true])(
       )
     ).toBe(true)
     const full = (
-      await run.call('read_design_contracts', {
+      await run.call('read_design_resources', {
         names,
         scopes: Object.fromEntries(
           names.map((name) => [name, { inputScope: scope }])
@@ -2001,7 +2011,7 @@ it.each([false, true])(
       guide.definition.recover.arguments,
       guide.definition.refresh.arguments
     ]) {
-      await run.call('read_design_contracts', input)
+      await run.call('read_design_resources', input)
     }
 
     expect(run.execute).toHaveBeenCalledTimes(count + 1)
@@ -2014,7 +2024,7 @@ it.each(['group', 'frame'])(
   async (rootType) => {
     const run = setup()
     const guide = (
-      await run.call('read_design_contracts', {
+      await run.call('read_design_resources', {
         names: ['prepare_and_apply_design'],
         view: 'usage',
         includeResultSchema: true,
@@ -2069,11 +2079,11 @@ it.each(['group', 'frame'])(
       )
     ).toHaveLength(1)
     expect(
-      run.calls.filter((name) => name === 'read_design_contracts')
+      run.calls.filter((name) => name === 'read_design_resources')
     ).toHaveLength(1)
     const saved = structuredClone(run.created)
 
-    await run.call('read_design_contracts', guide.definition.refresh.arguments)
+    await run.call('read_design_resources', guide.definition.refresh.arguments)
     expect(run.created).toEqual(saved)
     expect(
       run.execute.mock.calls.filter(([batch]) =>
@@ -2092,7 +2102,7 @@ it('keeps root and nested frame constraints distinct from optional plan document
     optionalInputs: []
   }
   const first = (
-    await run.call('read_design_contracts', {
+    await run.call('read_design_resources', {
       names,
       scopes: Object.fromEntries(
         names.map((name) => [name, { inputScope: inputScope }])
@@ -2100,7 +2110,7 @@ it('keeps root and nested frame constraints distinct from optional plan document
     })
   ).value.tools[0]
   const usage = (
-    await run.call('read_design_contracts', {
+    await run.call('read_design_resources', {
       names,
       view: 'usage',
       includeResultSchema: true,
@@ -2141,7 +2151,7 @@ it('keeps root and nested frame constraints distinct from optional plan document
   })
   expect(operationInputIssue(args, first.inputSchema)).toBeDefined()
   const expanded = (
-    await run.call('read_design_contracts', {
+    await run.call('read_design_resources', {
       names,
       scopes: Object.fromEntries(
         names.map((name) => [
@@ -2181,7 +2191,7 @@ it('delivers the recorded exact query without descriptive matches or catalog gro
 
   for (const run of [small, large]) {
     const reply = await run.call(
-      'read_design_contracts',
+      'read_design_resources',
       contractReadFixture(
         [operationSelection.query.query],
         operationSelection.query
@@ -2212,7 +2222,7 @@ it('delivers the recorded exact query without descriptive matches or catalog gro
     expect(run.created.length).toBeGreaterThan(0)
     const saved = structuredClone(run.created)
 
-    await run.call('read_design_contracts', {
+    await run.call('read_design_resources', {
       ...operationSelection.query,
       refresh: true,
       refreshReason: 'delivery-failure'
@@ -2268,12 +2278,12 @@ it('preserves exact query representations, full constraints and bounded recovery
   ).toBe(true)
   expect(menu.value.tools[0].inputSchema).toBeUndefined()
   const full = (
-    await run.call('read_design_contracts', {
+    await run.call('read_design_resources', {
       names: ['design.' + name],
       view: 'full'
     })
   ).value.tools[0]
-  const exact = (await run.call('read_design_contracts', { names: [name] }))
+  const exact = (await run.call('read_design_resources', { names: [name] }))
     .value.tools[0]
 
   for (const key of [
@@ -2286,7 +2296,7 @@ it('preserves exact query representations, full constraints and bounded recovery
     expect(full[key]).toEqual(exact[key])
   }
 
-  const repeated = await run.call('read_design_contracts', {
+  const repeated = await run.call('read_design_resources', {
     names: [name],
     view: 'usage',
     includeResultSchema: true
@@ -2294,7 +2304,7 @@ it('preserves exact query representations, full constraints and bounded recovery
 
   expect(repeated.value.tools).toHaveLength(1)
   expect(
-    (await run.call('read_design_contracts', { names: [name], offset: 1 }))
+    (await run.call('read_design_resources', { names: [name], offset: 1 }))
       .success
   ).toBe(false)
   expect(
@@ -2336,7 +2346,7 @@ it.each(
     const baseline = setup()
     const { query, ...options } = input
     const expected = await baseline.call(
-      'read_design_contracts',
+      'read_design_resources',
       contractReadFixture([query], options)
     )
 
@@ -2350,7 +2360,7 @@ it.each(
     )
     for (const run of [setup(), setup(10000, `Related to ${query}`)]) {
       const reply = await run.call(
-        'read_design_contracts',
+        'read_design_resources',
         contractReadFixture([input.query], input)
       )
 
@@ -2380,8 +2390,8 @@ it.each(
       expect(restored.value.tools[0].definition.inputScope).toEqual(
         input.inputScope
       )
-      await run.call('read_design_contracts', input)
-      const retained = await run.call('read_design_contracts', {
+      await run.call('read_design_resources', input)
+      const retained = await run.call('read_design_resources', {
         fromResult: reply.value.resultKey,
         names: [query]
       })
@@ -2405,7 +2415,7 @@ it('preserves full exact query scope constraints, paging, refresh and invalidati
   const run = setup()
   const { query, inputScope } = exactQueryScope.calls[0].input
   const names = [query]
-  const expected = await run.call('read_design_contracts', {
+  const expected = await run.call('read_design_resources', {
     names,
     scopes: Object.fromEntries(
       names.map((name) => [name, { inputScope: inputScope }])
@@ -2415,7 +2425,7 @@ it('preserves full exact query scope constraints, paging, refresh and invalidati
   for (const selection of [query, `design.${query}`]) {
     const input = contractReadFixture([selection], { inputScope })
     const start = run.replies.length
-    const full = await run.call('read_design_contracts', input)
+    const full = await run.call('read_design_resources', input)
 
     expect(full.success).toBe(true)
     expect(full.value.tools).toEqual(expected.value.tools)
@@ -2431,7 +2441,7 @@ it('preserves full exact query scope constraints, paging, refresh and invalidati
       }
     }
 
-    const refreshed = await run.call('read_design_contracts', {
+    const refreshed = await run.call('read_design_resources', {
       ...input,
       refresh: true,
       refreshReason: 'delivery-failure'
@@ -2448,7 +2458,7 @@ it('preserves full exact query scope constraints, paging, refresh and invalidati
     { schemaPaths: ['/properties/draft'] },
     { contentPage: { revision: 'stale', offset: 1 } }
   ]) {
-    const reply = await run.call('read_design_contracts', {
+    const reply = await run.call('read_design_resources', {
       ...contractReadFixture([query], { inputScope }),
       ...extra
     })
@@ -2460,7 +2470,7 @@ it('preserves full exact query scope constraints, paging, refresh and invalidati
 
   controller.abort()
   await expect(
-    run.call('read_design_contracts', { query, inputScope }, controller.signal)
+    run.call('read_design_resources', { query, inputScope }, controller.signal)
   ).rejects.toThrow()
   expect(run.execute).not.toHaveBeenCalled()
 })
@@ -2482,7 +2492,7 @@ it('keeps fuzzy query scope rejected and recovers invalid exact scope from owner
   expect(search.success).toBe(true)
   expect(search.value.count).toBeGreaterThanOrEqual(2)
   const bad = await run.call(
-    'read_design_contracts',
+    'read_design_resources',
     contractReadFixture([input.query], {
       ...input,
       inputScope: { operation: 'create', nodeTypes: ['pattern'] }
@@ -2517,7 +2527,7 @@ it('keeps fuzzy query scope rejected and recovers invalid exact scope from owner
     { getNativeTools: () => [] }
   )
   const actionDefinition = actionOwner.definitions.find(
-    (item) => item.name === 'read_design_contracts'
+    (item) => item.name === 'read_design_resources'
   )
 
   if (!actionDefinition) {
@@ -2572,7 +2582,7 @@ it('preserves scoped exact query ambiguity and qualified recovery without select
     }
   )
   const definition = owner.definitions.find(
-    (item) => item.name === 'read_design_contracts'
+    (item) => item.name === 'read_design_resources'
   )
 
   if (!definition) {
@@ -2628,7 +2638,7 @@ it('preserves scoped exact query ambiguity and qualified recovery without select
           }
         }
       },
-      'read_design_contracts'
+      'read_design_resources'
     )
     const guide = JSON.parse(recovered).tools[0]
 
@@ -2646,7 +2656,7 @@ it('preserves scoped exact query ambiguity and qualified recovery without select
 it('recovers the recorded invalid query scope from owner choices without a menu or replay', async () => {
   const run = setup()
   const rejected = await run.call(
-    'read_design_contracts',
+    'read_design_resources',
     contractReadFixture(invalidQueryScope.input.names, invalidQueryScope.input)
   )
 
@@ -2773,7 +2783,7 @@ it('keeps first-query scope guidance owner-derived and independent of unrelated 
   choices.optionalInputs = []
   delete choices.optionalInputPaths
   expect(guidance(small).inputScopes.optionalInputs).toEqual([])
-  const rejected = await small.call('read_design_contracts', {
+  const rejected = await small.call('read_design_resources', {
     ...original.example.arguments,
     scopes: Object.fromEntries(
       original.example.arguments.names.map((name) => [
@@ -2809,7 +2819,7 @@ it.each([
   'names the rejected %s field and supplies a complete recovery example',
   async (field, inputScope) => {
     const run = setup()
-    const rejected = await run.call('read_design_contracts', {
+    const rejected = await run.call('read_design_resources', {
       names: ['prepare_and_apply_design'],
       view: 'usage',
       includeResultSchema: true,
@@ -2838,7 +2848,7 @@ it.each([
 it('corrects only the rejected operation while preserving the requested scope', async () => {
   const run = setup()
   const rejected = await run.call(
-    'read_design_contracts',
+    'read_design_resources',
     contractReadFixture(invalidQueryScope.input.names, invalidQueryScope.input)
   )
   const guidance = JSON.parse(
@@ -2848,7 +2858,7 @@ it('corrects only the rejected operation while preserving the requested scope', 
     ...invalidQueryScope.input.inputScope,
     operation: guidance.inputScopes.operations[0]
   }
-  const corrected = await run.call('read_design_contracts', {
+  const corrected = await run.call('read_design_resources', {
     ...contractReadFixture(
       invalidQueryScope.input.names,
       invalidQueryScope.input
@@ -2894,7 +2904,7 @@ it('delivers expansion accounting and parts selection before the recorded oversi
     String(DesignPreparationLimits.expandedNodes)
   )
   expect(guidance.operationUsage.parts).toContain('each part')
-  const result = await run.call('read_design_contracts', {
+  const result = await run.call('read_design_resources', {
     names: [definition.name],
     view: 'usage',
     includeResultSchema: true,
@@ -2995,7 +3005,7 @@ it('rejects the recorded expansion budget before compilation and explains existi
 
 it('executes the delivered parts example without a preflight and preserves completed writes on refresh', async () => {
   const run = setup()
-  const result = await run.call('read_design_contracts', {
+  const result = await run.call('read_design_resources', {
     names: ['prepare_and_apply_design'],
     view: 'usage',
     includeResultSchema: true,
@@ -3029,7 +3039,7 @@ it('executes the delivered parts example without a preflight and preserves compl
   expect(run.created.length).toBeGreaterThan(0)
   const writes = run.execute.mock.calls.length
 
-  await run.call('read_design_contracts', {
+  await run.call('read_design_resources', {
     names: ['prepare_and_apply_design'],
     view: 'usage',
     includeResultSchema: true,
@@ -3067,7 +3077,7 @@ it('admits exactly the artifact budget and preserves a successful part before a 
   expect(exact.value.available).toBe(true)
   expect(exact.value.elementCount).toBe(DesignPreparationLimits.expandedNodes)
   expect(run.execute).not.toHaveBeenCalled()
-  const guide = await run.call('read_design_contracts', {
+  const guide = await run.call('read_design_resources', {
     names: ['prepare_and_apply_design'],
     view: 'usage',
     includeResultSchema: true,
@@ -3139,7 +3149,7 @@ it('delivers and executes a complete mixed component example and recovers only t
     nodeTypes: ['pattern']
   })
   expect(initial.inputScopes.selection).toContain('outer repetition')
-  const guide = (await run.call('read_design_contracts', query)).value.tools[0]
+  const guide = (await run.call('read_design_resources', query)).value.tools[0]
   const invocation = ownerInvocation(guide.invocationExample.invocation)
 
   expect(
@@ -3148,7 +3158,7 @@ it('delivers and executes a complete mixed component example and recovers only t
     )
   ).toEqual(['projected-face', 'surface-grid'])
   const full = (
-    await run.call('read_design_contracts', {
+    await run.call('read_design_resources', {
       names: query.names,
       scopes: query.scopes
     })
@@ -3182,7 +3192,7 @@ it('delivers and executes a complete mixed component example and recovers only t
   const retained = structuredClone(run.created)
 
   expect(retained).toHaveLength(15)
-  await run.call('read_design_contracts', {
+  await run.call('read_design_resources', {
     ...query,
     refresh: true,
     refreshReason: 'delivery-failure'
@@ -3242,7 +3252,7 @@ it('continues the saved massing and grid layers in order without extra roots or 
   expect(roots.map((entry) => run.created.indexOf(entry))).toEqual([0, 91])
   const retained = structuredClone(run.created)
 
-  await run.call('read_design_contracts', {
+  await run.call('read_design_resources', {
     names: ['prepare_and_apply_design'],
     view: 'usage',
     includeResultSchema: true,
@@ -3282,7 +3292,7 @@ it.each([false, true])(
         ])
       )
     }
-    const response = await run.call('read_design_contracts', query)
+    const response = await run.call('read_design_resources', query)
     const tool = response.value.tools[0]
     const invocation = ownerInvocation(tool.invocationExample.invocation)
     const source = invocation.arguments.draft
@@ -3338,7 +3348,7 @@ it.each([false, true])(
     )
     delete inline.motifTemplates
     const full = (
-      await run.call('read_design_contracts', {
+      await run.call('read_design_resources', {
         ...Object.fromEntries(
           Object.entries(query).filter(([key]) => key !== 'includeResultSchema')
         ),
@@ -3382,7 +3392,7 @@ it.each([false, true])(
         .slice(1)
         .every((entry) => run.parents.get(entry.id) === run.created[0].id)
     ).toBe(true)
-    const restored = await run.call('read_design_contracts', {
+    const restored = await run.call('read_design_resources', {
       ...query,
       refresh: true,
       refreshReason: 'delivery-failure'
@@ -3413,7 +3423,7 @@ it.each([false, true])(
       )
     ).toHaveLength(1)
     const large = setup(10000)
-    const enlarged = await large.call('read_design_contracts', query)
+    const enlarged = await large.call('read_design_resources', query)
 
     expect(large.deliveries[0]).toBe(run.deliveries[0])
     expect(enlarged.value.tools[0].invocationExample).toEqual(
@@ -3474,13 +3484,13 @@ it.each(['projected-face', 'surface-grid'])(
         ])
       )
     }
-    const guide = (await run.call('read_design_contracts', query)).value
+    const guide = (await run.call('read_design_resources', query)).value
       .tools[0]
 
     expect(run.calls).toHaveLength(1)
     expect(run.deliveries.every((bytes) => bytes <= 24000)).toBe(true)
     const full = (
-      await run.call('read_design_contracts', {
+      await run.call('read_design_resources', {
         ...Object.fromEntries(
           Object.entries(query).filter(([key]) => key !== 'includeResultSchema')
         ),
@@ -4080,7 +4090,7 @@ it('preserves the saved layered source through compact preparation and canonical
   expect(ids).toEqual(run.created.slice(1187, 1347).map((e) => e.id))
   const retained = structuredClone(run.created)
 
-  await run.call('read_design_contracts', {
+  await run.call('read_design_resources', {
     ...layeredPattern.query,
     refresh: true,
     refreshReason: 'delivery-failure'
@@ -4109,7 +4119,7 @@ it('delivers executable layered order in the first page without extra reading', 
     layeredPattern.query
   )
 
-  const response = await run.call('read_design_contracts', query)
+  const response = await run.call('read_design_resources', query)
   const tool = response.value.tools[0]
 
   process.stdout.write(
@@ -4201,7 +4211,7 @@ it('delivers executable layered order in the first page without extra reading', 
   )
   const large = setup(10000)
 
-  await large.call('read_design_contracts', query)
+  await large.call('read_design_resources', query)
   expect(large.deliveries).toEqual(run.deliveries.slice(0, calls))
 })
 
@@ -4243,7 +4253,7 @@ it.each([
   async ({ count, step }) => {
     const run = setup()
     const guide = await run.call(
-      'read_design_contracts',
+      'read_design_resources',
       contractReadFixture(layeredPattern.query.names, layeredPattern.query)
     )
     const draft = ownerInvocation(
@@ -4339,7 +4349,7 @@ it('delivers and executes the projected oval example in one selected acquisition
       ])
     )
   }
-  const response = await run.call('read_design_contracts', query)
+  const response = await run.call('read_design_resources', query)
 
   process.stdout.write(
     JSON.stringify({
@@ -4387,7 +4397,7 @@ it('delivers and executes the projected oval example in one selected acquisition
 it('rejects invalid projected ovals before canonical writes and executes the corrected retained geometry once', async () => {
   const run = setup()
   const response = await run.call(
-    'read_design_contracts',
+    'read_design_resources',
     contractReadFixture(sampledEllipse.query.names, sampledEllipse.query)
   )
   const invocation = ownerInvocation(
@@ -4431,7 +4441,7 @@ it('rejects invalid projected ovals before canonical writes and executes the cor
   ).toHaveLength(1)
   const retained = structuredClone(run.created)
 
-  await run.call('read_design_contracts', {
+  await run.call('read_design_resources', {
     ...sampledEllipse.query,
     refresh: true,
     refreshReason: 'delivery-failure'
@@ -4459,18 +4469,18 @@ it('replays saved cross-tool field queries in one bounded reply and executes own
 
   const declaration = t.owners
     .flatMap((owner) => owner.definitions)
-    .find((entry) => entry.name === 'read_design_contracts')
+    .find((entry) => entry.name === 'read_design_resources')
 
   if (!declaration) {
     throw new Error('Missing discovery declaration')
   }
 
   expect(declaration.composition).toBe('request')
-  const usage = await t.call('read_design_contracts', fieldRecovery.usage.input)
+  const usage = await t.call('read_design_resources', fieldRecovery.usage.input)
 
   expect(usage.success).toBe(true)
   const mixed = await t.call(
-    'read_design_contracts',
+    'read_design_resources',
     contractReadFixture(
       fieldRecovery.query.input.names,
       fieldRecovery.query.input
@@ -4609,7 +4619,7 @@ it('bounds failed field navigation and traversal independently of unrelated nest
       }
     )
     const definition = owner.definitions.find(
-      (entry) => entry.name === 'read_design_contracts'
+      (entry) => entry.name === 'read_design_resources'
     )
 
     if (!definition) {
@@ -4668,7 +4678,7 @@ it('delivers complete exact usage without examples and lowers the saved acquisit
   const acquisitionStart = run.deliveries.length
   const queryStart = run.calls.length
   const input = usageAcquisition.calls[0].input
-  const query = await run.call('read_design_contracts', input)
+  const query = await run.call('read_design_resources', input)
   const tool = query.value.tools[0]
 
   expect(tool.usageGuide?.parameters).toBeDefined()
@@ -4722,20 +4732,20 @@ it('delivers complete exact usage without examples and lowers the saved acquisit
   expect(
     run.calls
       .slice(queryStart)
-      .filter((name) => name === 'read_design_contracts')
+      .filter((name) => name === 'read_design_resources')
   ).toHaveLength(1)
   expect(run.calls.length - queryStart).toBe(2)
   expect(
     run.deliveries.slice(acquisitionStart).every((bytes) => bytes <= 24000)
   ).toBe(true)
   const restored = await run.call(
-    'read_design_contracts',
+    'read_design_resources',
     tool.definition.recover.arguments
   )
 
   expect(restored.value.tools[0].usageGuide).toEqual(tool.usageGuide)
   const enlarged = setup(1000)
-  const more = await enlarged.call('read_design_contracts', input)
+  const more = await enlarged.call('read_design_resources', input)
 
   expect(more.value.tools[0]).toEqual(tool)
   expect(enlarged.deliveries.every((bytes) => bytes <= 24000)).toBe(true)
@@ -4757,7 +4767,7 @@ it('delivers complete exact usage without examples and lowers the saved acquisit
 it('keeps exploration separate from executable exact usage and preserves qualified query and partial lookup', async () => {
   const run = setup()
   const exact = (
-    await run.call('read_design_contracts', {
+    await run.call('read_design_resources', {
       names: ['design.select_design_references'],
       view: 'usage',
       includeResultSchema: true
@@ -4782,7 +4792,7 @@ it('keeps exploration separate from executable exact usage and preserves qualifi
     exact.usageGuide.parameters
   )
 
-  const partial = await run.call('read_design_contracts', {
+  const partial = await run.call('read_design_resources', {
     names: ['select_design_references', 'missing_tool'],
     view: 'usage',
     includeResultSchema: true
@@ -4816,13 +4826,13 @@ it('derives usage scope navigation only for usage and reuses retained delivery w
   const scopes = vi.spyOn(workflowDiscovery, 'workflowInputScopes')
 
   try {
-    const full = await run.call('read_design_contracts', {
+    const full = await run.call('read_design_resources', {
       names: ['read_design_checks']
     })
 
     expect(full.value.tools[0].inputSchema).toBeDefined()
     expect(scopes).not.toHaveBeenCalled()
-    const fields = await run.call('read_design_contracts', {
+    const fields = await run.call('read_design_resources', {
       names: ['read_design_checks'],
       scopes: Object.fromEntries(
         ['read_design_checks'].map((name) => [
@@ -4834,7 +4844,7 @@ it('derives usage scope navigation only for usage and reuses retained delivery w
 
     expect(fields.value.tools[0].schemaFragments).toHaveLength(1)
     expect(scopes).not.toHaveBeenCalled()
-    const usage = await run.call('read_design_contracts', {
+    const usage = await run.call('read_design_resources', {
       names: ['read_design_checks'],
       view: 'usage',
       includeResultSchema: true
@@ -4843,7 +4853,7 @@ it('derives usage scope navigation only for usage and reuses retained delivery w
     expect(usage.value.tools[0].usageGuide.parameters).toBeDefined()
     expect(scopes).toHaveBeenCalledTimes(1)
     scopes.mockClear()
-    const retained = await run.call('read_design_contracts', {
+    const retained = await run.call('read_design_resources', {
       fromResult: usage.value.resultKey,
       names: ['read_design_checks']
     })
@@ -4899,7 +4909,7 @@ it('assembles selected input once at the final executable usage boundary', async
   let response: Awaited<ReturnType<typeof run.call>>
 
   try {
-    response = await run.call('read_design_contracts', {
+    response = await run.call('read_design_resources', {
       names: [definition.name],
       view: 'usage',
       includeResultSchema: true,
@@ -4943,7 +4953,7 @@ it('preserves composition coverage when the recorded mixed query also permits ve
   const run = setup()
   const guide = (
     await run.call(
-      'read_design_contracts',
+      'read_design_resources',
       contractReadFixture(strictMixedQuery.query.names, strictMixedQuery.query)
     )
   ).value.tools[0]
@@ -4977,7 +4987,7 @@ it('preserves composition coverage when the recorded mixed query also permits ve
   expect(run.created.length).toBeGreaterThan(1)
   const vector = ownerInvocation(
     (
-      await run.call('read_design_contracts', {
+      await run.call('read_design_resources', {
         names: strictMixedQuery.query.names,
         view: strictMixedQuery.query.view,
         scopes: Object.fromEntries(
@@ -5007,7 +5017,7 @@ it('preserves composition coverage when the recorded mixed query also permits ve
 it('delivers the recorded native-detail size condition before capture', async () => {
   const run = setup()
   const tool = (
-    await run.call('read_design_contracts', {
+    await run.call('read_design_resources', {
       names: ['design.inspect_drawing'],
       view: 'usage'
     })
@@ -5048,7 +5058,7 @@ it('delivers the recorded phase construction scope without unused authoring grou
       ])
     )
   }
-  const reply = await f.call('read_design_contracts', query)
+  const reply = await f.call('read_design_resources', query)
   const selected = reply.value.tools[0]
   const parameters = selected.usageGuide.parameters
 
@@ -5081,7 +5091,7 @@ it('delivers the recorded phase construction scope without unused authoring grou
   expect(selected.usageGuide.optionalInputs).toEqual(
     expect.arrayContaining(['layout', 'relations', 'sharedFills'])
   )
-  const full = await f.call('read_design_contracts', {
+  const full = await f.call('read_design_resources', {
     names: query.names,
     view: 'usage',
     scopes: Object.fromEntries(
@@ -5125,7 +5135,7 @@ it('publishes canonical target mapping structure in the recorded construction us
   const { call, created } = setup()
   const result = (
     await call(
-      'read_design_contracts',
+      'read_design_resources',
       contractReadFixture(
         deliveryHandoff.constructionQuery.names,
         deliveryHandoff.constructionQuery
@@ -5165,7 +5175,7 @@ it('publishes canonical target mapping structure in the recorded construction us
 it('preserves subtree membership and target-local coordinates in the recorded capture query', async () => {
   const { call, created } = setup()
   const result = (
-    await call('read_design_contracts', {
+    await call('read_design_resources', {
       names: ['design.inspect_drawing'],
       view: 'usage'
     })
@@ -5194,9 +5204,8 @@ it('keeps the recorded material query a compact navigable candidate menu', async
   ).value
 
   for (const tool of found.tools) {
-    expect(tool.usage.arguments.names).toEqual([
-      `${tool.namespace}.${tool.name}`
-    ])
+    expect(tool.namespace).toBeTruthy()
+    expect(tool.capability.purpose).toBeTruthy()
     expect(tool.inputScopes?.selection).toBeUndefined()
     expect(tool.usageGuide).toBeUndefined()
   }
@@ -5206,9 +5215,12 @@ it('keeps the recorded material query a compact navigable candidate menu', async
   )
 
   expect(revision).toBeDefined()
-  expect(revision.match.unmatchedTerms.length).toBeGreaterThan(0)
+  expect(revision.capability.purpose).toBeTruthy()
   const contract = (
-    await run.call('read_design_contracts', revision.usage.arguments)
+    await run.call('read_design_resources', {
+      names: [revision.namespace + '.' + revision.name],
+      view: 'usage'
+    })
   ).value.tools[0]
 
   expect(contract.usageGuide.parameters).toBeDefined()

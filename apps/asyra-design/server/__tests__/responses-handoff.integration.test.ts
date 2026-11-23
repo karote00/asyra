@@ -1,3 +1,4 @@
+import { requestEntries } from './responses-search-fixture'
 import { expect, it, vi } from 'vitest'
 
 const captureRecord = vi.hoisted(() => vi.fn<(record: unknown) => void>())
@@ -95,7 +96,7 @@ it('keeps Responses continuation and named results across the real browser/serve
                 namespace: 'design_operations',
                 name: 'execute_design',
                 call_id: `call-${index}`,
-                arguments: JSON.stringify(operation)
+                arguments: JSON.stringify({ workflow: operation })
               }
             ]
           : [
@@ -396,7 +397,7 @@ it('replays the Dome searches through Responses with compact partial matches and
           output = result.next
             ? [call('search_design_tools', result.next.arguments)]
             : [
-                call('read_design_contracts', {
+                call('read_design_resources', {
                   names: [exactName],
                   view: 'usage'
                 })
@@ -536,17 +537,11 @@ it('recovers the acknowledged output after service restart without mixing pointe
           ? [
               {
                 type: 'function_call',
-                namespace: 'design_operations',
-                name: 'execute_design',
+                namespace: 'design_knowledge',
+                name: 'discover_knowledge',
                 call_id: 'owned-by-a',
                 arguments: JSON.stringify({
-                  operations: [
-                    {
-                      id: 'advice',
-                      name: 'design_knowledge.discover_knowledge',
-                      arguments: { ids: ['illustration.architecture'] }
-                    }
-                  ]
+                  ids: ['illustration.architecture']
                 })
               }
             ]
@@ -640,15 +635,7 @@ it('recovers the acknowledged output after service restart without mixing pointe
       expect(rows[0]).toMatchObject({
         conversation_id: 'a',
         call_id: 'owned-by-a',
-        arguments: JSON.stringify({
-          operations: [
-            {
-              id: 'advice',
-              name: 'design_knowledge.discover_knowledge',
-              arguments: { ids: ['illustration.architecture'] }
-            }
-          ]
-        })
+        arguments: JSON.stringify({ ids: ['illustration.architecture'] })
       })
       expect(JSON.parse(String(rows[0].output))).toEqual(
         Array.isArray(requests[1].input) && requests[1].input[0].output
@@ -763,225 +750,200 @@ it('preserves an uncertain dispatch on disk and rejects stale claims across serv
   }
 })
 
-it('publishes the three Design entries, resolves the Dome reference by purpose, and delivers a bounded overview with its original identity', async () => {
-  const { createHash } = await import('node:crypto')
-  const { default: sharp } = await import('sharp')
-  const { default: dome } = await import('./fixtures/dome-responses.json')
-  const { createDefaultAiModelSources, selectAiModelSource } =
-    await import('../ai-model-sources')
-  const download = await import('../reference-image-download')
-  const raw = await sharp({
-    create: { width: 3024, height: 4032, channels: 3, background: '#3399aa' }
-  })
-    .jpeg()
-    .toBuffer()
-  const sha = createHash('sha256').update(raw).digest('hex')
-  const fetchImage = vi
-    .spyOn(download, 'downloadReferenceImage')
-    .mockImplementation(async (url) => {
-      expect(url).toBe(dome.reference.references[0].imageUrl)
-
-      return new Response(new Uint8Array(raw), {
-        headers: { 'content-type': 'image/jpeg' }
-      })
+it.each([false, true])(
+  'imports the Dome reference with its original identity and hosted research=%s',
+  async (research) => {
+    const { createHash } = await import('node:crypto')
+    const { default: sharp } = await import('sharp')
+    const { default: dome } = await import('./fixtures/dome-responses.json')
+    const { createDefaultAiModelSources, selectAiModelSource } =
+      await import('../ai-model-sources')
+    const download = await import('../reference-image-download')
+    const raw = await sharp({
+      create: { width: 3024, height: 4032, channels: 3, background: '#3399aa' }
     })
-  const runtime = await createDrawingRuntime()
-  const { createAiToolContract } = await import('@asyra/ai-agent-runtime')
-  const requests: {
-    tools: { type: string; tools?: { name: string }[] }[]
-    input: { output: { text: string; type: string; image_url: string }[] }[]
-  }[] = []
-  let route = ''
-  let digest = ''
-  const source = selectAiModelSource(
-    'openai-responses',
-    createDefaultAiModelSources({
-      continuationDatabase: ':memory:',
+      .jpeg()
+      .toBuffer()
+    const sha = createHash('sha256').update(raw).digest('hex')
+    const fetchImage = vi
+      .spyOn(download, 'downloadReferenceImage')
+      .mockImplementation(async (url) => {
+        expect(url).toBe(dome.reference.references[0].imageUrl)
 
-      fetch: async (_url, init) => {
-        const body = JSON.parse(String(init?.body))
+        return new Response(new Uint8Array(raw), {
+          headers: { 'content-type': 'image/jpeg' }
+        })
+      })
+    const runtime = await createDrawingRuntime()
+    const { createAiToolContract } = await import('@asyra/ai-agent-runtime')
+    const requests: {
+      tools: { type: string; tools?: { name: string }[] }[]
+      input: { output: { text: string; type: string; image_url: string }[] }[]
+    }[] = []
+    let route = ''
+    const source = selectAiModelSource(
+      'openai-responses',
+      createDefaultAiModelSources({
+        continuationDatabase: ':memory:',
 
-        requests.push(body)
-        const n = requests.length
+        fetch: async (_url, init) => {
+          const body = JSON.parse(String(init?.body))
 
-        if (n === 1) {
-          const user = body.input.find(
-            (item: { role: string }) => item.role === 'user'
-          )
-          const appActions = JSON.parse(user.content[0].text).input.actions
-          const nativeTools = body.tools
-            .filter((entry: { type: string }) => entry.type === 'namespace')
-            .map(
-              (group: {
-                type: string
-                name: string
-                description: string
-                tools: {
-                  type: string
-                  name: string
-                  description: string
-                  parameters: unknown
-                  defer_loading?: boolean
-                }[]
-              }) => ({
-                type: group.type,
-                name: group.name,
-                description: group.description,
-                tools: group.tools.map((tool) => ({
-                  type: tool.type,
-                  name: tool.name,
-                  description: tool.description,
-                  inputSchema: tool.parameters,
-                  deferLoading: !!tool.defer_loading
-                }))
-              })
+          if (!body.previous_response_id) {
+            expect(body.tools.map((t: { type: string }) => t.type)).toEqual([
+              'tool_search'
+            ])
+
+            return requestEntries(
+              ...(research ? ['web_search'] : []),
+              'design_operations.search_design_tools',
+              'design_operations.execute_design',
+              'design_references.import_reference_image'
             )
-
-          digest = createHash('sha256')
-            .update(JSON.stringify({ nativeTools, appActions }))
-            .digest('hex')
-        }
-
-        if (n === 3) {
-          const menu = JSON.parse(body.input[0].output[0].text)
-
-          route = menu.tools[0].execution.operation
-          expect(route).toBe('design_references.import_reference_image')
-        }
-
-        const args = [
-          dome.reference,
-          {
-            query: 'import public image from URL',
-            inputFields: ['sourceUrl', 'imageUrl']
-          },
-          {
-            operations: [
-              { id: 'reference', name: route, arguments: dome.reference }
-            ]
           }
-        ][n - 1]
-        const output =
-          n === 4
-            ? [
-                {
-                  type: 'message',
-                  role: 'assistant',
-                  content: [
-                    { type: 'output_text', text: JSON.stringify(final) }
-                  ]
-                }
+
+          requests.push(body)
+          const n = requests.length
+
+          if (n === 1) {
+            expect(
+              body.input[0].tools
+                .flatMap((group: { tools: { name: string }[] }) =>
+                  group.tools.map((tool) => tool.name)
+                )
+                .sort()
+            ).toEqual(['execute_design', 'search_design_tools'])
+          }
+
+          if (n === 3) {
+            const menu = JSON.parse(body.input[0].output[0].text)
+
+            route = menu.tools[0].execution.operation
+            expect(route).toBe('design_references.import_reference_image')
+          }
+
+          const args = [
+            dome.reference,
+            {
+              query: 'import public image from URL',
+              inputFields: ['sourceUrl', 'imageUrl']
+            },
+            {
+              operations: [
+                { id: 'reference', name: route, arguments: dome.reference }
               ]
-            : [
-                {
-                  type: 'function_call',
-                  call_id: 'call-' + n,
-                  namespace:
-                    n === 1 ? 'design_references' : 'design_operations',
-                  name: [
-                    'import_reference_image',
-                    'search_design_tools',
-                    'execute_design'
-                  ][n - 1],
-                  arguments: JSON.stringify(args)
-                }
-              ]
+            }
+          ][n - 1]
+          const output =
+            n === 4
+              ? [
+                  {
+                    type: 'message',
+                    role: 'assistant',
+                    content: [
+                      { type: 'output_text', text: JSON.stringify(final) }
+                    ]
+                  }
+                ]
+              : [
+                  {
+                    type: 'function_call',
+                    call_id: 'call-' + n,
+                    namespace:
+                      n === 1 ? 'design_references' : 'design_operations',
+                    name: [
+                      'import_reference_image',
+                      'search_design_tools',
+                      'execute_design'
+                    ][n - 1],
+                    arguments: JSON.stringify(args)
+                  }
+                ]
 
-        return Response.json({
-          id: 'response-' + n,
-          status: 'completed',
-          output
-        })
-      }
-    })
-  )
-
-  captureRecord.mockClear()
-  try {
-    await source.request(
-      {
-        ...input,
-        actions: runtime.actionDefinitions.map((a) => createAiToolContract(a))
-      },
-      {
-        environment: {
-          OPENAI_API_KEY: 'fixture',
-          AI_PROVIDER_MODEL: 'fixture',
-          AI_EXECUTION_SOURCE_REVISION: 'fixture'
-        },
-
-        executeBatch: async () => {
-          throw Error('Reference acquisition must not mutate the canvas')
+          return Response.json({
+            id: 'response-' + n,
+            status: 'completed',
+            output
+          })
         }
-      }
-    )
-    process.stdout.write(
-      JSON.stringify({
-        measurement: 'dome-responses-tools-utf8',
-        bytes: Buffer.byteLength(JSON.stringify(requests[0].tools))
-      }) + '\n'
-    )
-    for (const body of requests) {
-      expect(
-        body.tools
-          .flatMap(
-            (g: { tools?: { name: string }[] }) =>
-              g.tools?.map((t) => t.name) ?? []
-          )
-          .sort()
-      ).toEqual([
-        'execute_design',
-        'read_design_contracts',
-        'search_design_tools'
-      ])
-      expect(body.tools.map((t: { type: string }) => t.type)).toEqual([
-        'namespace',
-        'web_search'
-      ])
-    }
-
-    expect(requests[1].input[0].output[0].text).toContain('TOOL_NOT_FOUND')
-    const parts = requests[3].input[0].output
-    const receipt = JSON.parse(parts[0].text).execution.value
-
-    expect(receipt.references[0]).toMatchObject({
-      sha256: sha,
-      attachmentIndex: 0,
-      image: { width: 3024, height: 4032 },
-      source: { url: dome.reference.references[0].sourceUrl }
-    })
-    const pixels = parts.filter(
-      (part: { type: string }) => part.type === 'input_image'
-    )
-
-    expect(pixels).toHaveLength(1)
-    const overview = Buffer.from(pixels[0].image_url.split(',')[1], 'base64')
-
-    expect(await sharp(overview).metadata()).toMatchObject({
-      width: 960,
-      height: 1280
-    })
-    expect(receipt.actionResults[0].result.image).toMatchObject({
-      width: 960,
-      height: 1280
-    })
-    expect(fetchImage).toHaveBeenCalledOnce()
-    expect(captureRecord.mock.calls.flat()).toContainEqual(
-      expect.objectContaining({
-        stage: 'capabilities_advertised',
-        evidence: expect.objectContaining({
-          toolCount: 3,
-          eagerToolCount: 3,
-          contractDigest: digest
-        })
       })
     )
-  } finally {
-    fetchImage.mockRestore()
-    await source.dispose?.()
-    await Promise.all(runtime.ownedResources?.map((r) => r.dispose()) ?? [])
+
+    captureRecord.mockClear()
+    try {
+      await source.request(
+        {
+          ...input,
+          actions: runtime.actionDefinitions.map((a) => createAiToolContract(a))
+        },
+        {
+          environment: {
+            OPENAI_API_KEY: 'fixture',
+            AI_PROVIDER_MODEL: 'fixture',
+            AI_EXECUTION_SOURCE_REVISION: 'fixture'
+          },
+
+          executeBatch: async () => {
+            throw Error('Reference acquisition must not mutate the canvas')
+          }
+        }
+      )
+      process.stdout.write(
+        JSON.stringify({
+          measurement: 'dome-responses-tools-utf8',
+          bytes: Buffer.byteLength(JSON.stringify(requests[0].tools))
+        }) + '\n'
+      )
+      for (const body of requests) {
+        expect(body.tools.map((t) => t.type)).toEqual(
+          research ? ['tool_search', 'web_search'] : ['tool_search']
+        )
+      }
+
+      expect(requests[1].input[0].output[0].text).toContain('TOOL_NOT_FOUND')
+      const parts = requests[3].input[0].output
+      const receipt = JSON.parse(parts[0].text).execution.value
+
+      expect(receipt.references[0]).toMatchObject({
+        sha256: sha,
+        attachmentIndex: 0,
+        image: { width: 3024, height: 4032 },
+        source: { url: dome.reference.references[0].sourceUrl }
+      })
+      const pixels = parts.filter(
+        (part: { type: string }) => part.type === 'input_image'
+      )
+
+      expect(pixels).toHaveLength(1)
+      const overview = Buffer.from(pixels[0].image_url.split(',')[1], 'base64')
+
+      expect(await sharp(overview).metadata()).toMatchObject({
+        width: 960,
+        height: 1280
+      })
+      expect(receipt.actionResults[0].result.image).toMatchObject({
+        width: 960,
+        height: 1280
+      })
+      expect(fetchImage).toHaveBeenCalledOnce()
+      expect(captureRecord.mock.calls.flat()).toContainEqual(
+        expect.objectContaining({
+          stage: 'capabilities_advertised',
+          evidence: expect.objectContaining({
+            toolCount: 5,
+            eagerToolCount: 0,
+            eagerToolDefinitionBytes: 0,
+            contractDigest: expect.stringMatching(/^[a-f0-9]{64}$/)
+          })
+        })
+      )
+    } finally {
+      fetchImage.mockRestore()
+      await source.dispose?.()
+      await Promise.all(runtime.ownedResources?.map((r) => r.dispose()) ?? [])
+    }
   }
-})
+)
 
 it('runs a standalone registered invocation through the published entry and rejects private or mixed calls', async () => {
   const { createDefaultAiModelSources, selectAiModelSource } =
@@ -1000,6 +962,13 @@ it('runs a standalone registered invocation through the published entry and reje
   const inputs = [
     { invocation },
     { invocation, operations: [] },
+    { workflow: { stages: [{ id: 'bad', operations: [], apply: [] }] } },
+    {
+      workflow: {
+        operations: [{ name: 'invalid', arguments: {} }],
+        retain: { broken: { path: 3 } }
+      }
+    },
     {
       invocation: {
         ...invocation,
@@ -1097,6 +1066,8 @@ it.each([true, false])(
     const toolCalls: string[] = []
     let requests = 0
     let bytes = 0
+    let completionParts: { text?: string }[] = []
+    let loadedBytes = 0
     const results = createConversationResults(() => 1).open(
       square.metadata.conversationId
     )
@@ -1118,24 +1089,76 @@ it.each([true, false])(
 
       fetch: async (_url, init) => {
         const body = JSON.parse(String(init?.body))
-        const first = ++requests === 1
+
+        requests++
+        if (requests === 1) {
+          bytes = Buffer.byteLength(String(init?.body))
+          expect(bytes).toBeLessThan(4000)
+          expect(
+            body.tools.map((entry: { type: string }) => entry.type)
+          ).toEqual(['tool_search'])
+          expect(JSON.stringify(body.input)).not.toMatch(
+            /sourceRequestId|protocolVersion|metadata.conversationContext/
+          )
+
+          const loaded = await requestEntries(
+            ...(discover ? ['design_operations.search_design_tools'] : []),
+            'design_operations.execute_design'
+          ).json()
+
+          // Match opaque transport identifier lengths in the recorded square request.
+          loaded.id = 'resp_' + '0'.repeat(50)
+          loaded.output[0].call_id = 'call_' + '0'.repeat(24)
+
+          return Response.json(loaded)
+        }
+
+        const first = requests === 2
 
         if (first) {
-          bytes = Buffer.byteLength(String(init?.body))
-          const entries = body.tools.find(
-            (group: { name?: string }) => group.name === 'design_operations'
-          ).tools
+          loadedBytes = Buffer.byteLength(String(init?.body))
+          const entries = body.input[0].tools.flatMap(
+            (g: { tools: unknown[] }) => g.tools
+          )
+          const executor = entries.find(
+            (entry: { name: string }) => entry.name === 'execute_design'
+          )
+
+          expect(executor.parameters.examples).toBeUndefined()
+          expect(
+            Buffer.byteLength(JSON.stringify(executor.parameters))
+          ).toBeLessThan(2200)
+          const operation = { name: 'first', arguments: {} }
+          const stage = {
+            id: 'phase',
+            operations: [operation],
+            apply: { name: 'apply', arguments: {} }
+          }
 
           expect(
-            entries.map((entry: { name: string }) => entry.name).sort()
-          ).toEqual([
-            'execute_design',
-            'read_design_contracts',
-            'search_design_tools'
-          ])
+            operationInputIssue(
+              { operations: [operation], stages: [stage] },
+              executor.parameters
+            )
+          ).toBeDefined()
+          expect(
+            operationInputIssue(
+              {
+                delivery: {
+                  fields: { item: { name: 'squareColor', path: '' } }
+                }
+              },
+              executor.parameters
+            )
+          ).toBeTruthy()
           for (const [name, args] of [
-            ['search_design_tools', square.query],
-            ['execute_design', square.execute]
+            ...(discover
+              ? [['search_design_tools', square.query] as const]
+              : []),
+            [
+              'execute_design',
+              discover ? { workflow: square.execute } : { operations: [edit] }
+            ]
           ] as const) {
             expect(
               operationInputIssue(
@@ -1151,9 +1174,7 @@ it.each([true, false])(
         let output
 
         if (previous === 'execute_design') {
-          const receipt = JSON.parse(body.input[0].output[0].text)
-
-          expect(receipt.execution.status).toBe('success')
+          completionParts = body.input[0].output
           output = [
             {
               type: 'message',
@@ -1162,7 +1183,9 @@ it.each([true, false])(
             }
           ]
         } else {
-          let args: unknown = square.execute
+          let args: unknown = discover
+            ? { workflow: square.execute }
+            : { operations: [edit] }
           let name = 'execute_design'
 
           if (first && discover) {
@@ -1174,17 +1197,26 @@ it.each([true, false])(
               (a: { name: string }) => a.name === edit.name
             )
 
-            expect(result.execution.tool).toBe(name)
-            expect(result.operationParameters).toBeDefined()
-            expect(
-              operationInputIssue(edit.arguments, result.operationParameters)
-            ).toBeUndefined()
-            expect(
-              operationInputIssue(
-                { updates: [{ color: '#0000FF' }] },
-                result.operationParameters
-              )
-            ).toBeTruthy()
+            if (toolCalls.length === 1) {
+              // The recorded model chose a lower-ranked alternative in this broader query.
+              expect(result.capability.purpose).toBeTruthy()
+              expect(result.operationParameters).toBeUndefined()
+              name = 'search_design_tools'
+              args = { query: result.operation }
+            } else {
+              expect(menu.count).toBe(1)
+              expect(result.execution.tool).toBe(name)
+              expect(result.operationParameters).toBeDefined()
+              expect(
+                operationInputIssue(edit.arguments, result.operationParameters)
+              ).toBeUndefined()
+              expect(
+                operationInputIssue(
+                  { updates: [{ color: '#0000FF' }] },
+                  result.operationParameters
+                )
+              ).toBeTruthy()
+            }
           }
 
           toolCalls.push(name)
@@ -1246,18 +1278,45 @@ it.each([true, false])(
           })
         }
       )
+      const receipt = JSON.parse(String(completionParts[0].text))
+
+      if (discover) {
+        expect(receipt.execution.status).toBe('success')
+      } else {
+        expect(receipt.actionResults[0]).toMatchObject({
+          actionName: edit.name,
+          result: {
+            value: ['changed'],
+            status: 'complete',
+            settlement: 'completed'
+          }
+        })
+        expect(
+          completionParts
+            .filter((p) => p.text)
+            .map((p) => JSON.parse(String(p.text)))
+        ).toContainEqual(
+          expect.objectContaining({
+            toolOutcome: expect.objectContaining({
+              status: 'success',
+              settlement: 'completed'
+            })
+          })
+        )
+      }
+
       expect(applied).toBe(1)
-      expect(requests).toBe(discover ? 3 : 2)
+      expect(requests).toBe(discover ? 5 : 3)
       expect(toolCalls).toEqual(
         discover
-          ? ['search_design_tools', 'execute_design']
+          ? ['search_design_tools', 'search_design_tools', 'execute_design']
           : ['execute_design']
       )
-      expect(requests).toBeLessThan(square.previousExchanges)
       expect(bytes).toBeLessThan(square.previousBytes / 2)
       process.stdout.write(
         JSON.stringify({
           measurement: 'square-offline-replay',
+          loadedBytes,
           discover,
           requests,
           bytes
@@ -1269,3 +1328,416 @@ it.each([true, false])(
     }
   }
 )
+
+it('matches the catalog digest when all entries are explicitly requested and preserves saved-field exclusivity', async () => {
+  const { createDefaultAiModelSources, selectAiModelSource } =
+    await import('../ai-model-sources')
+  const { operationInputIssue } = await import('@asyra/ai-agent-runtime/schema')
+  const { createAiToolContract, createConversationResults } =
+    await import('@asyra/ai-agent-runtime')
+  const results = createConversationResults(() => 1).open('catalog')
+  const { createHash } = await import('node:crypto')
+  const runtime = await createDrawingRuntime()
+  let appActions: unknown
+  let digest = ''
+  let requests = 0
+  const sources = createDefaultAiModelSources({
+    continuationDatabase: ':memory:',
+
+    fetch: async (_, init) => {
+      const body = JSON.parse(String(init?.body))
+
+      if (++requests === 1) {
+        const user = body.input.find(
+          (item: { role: string }) => item.role === 'user'
+        )
+
+        appActions = JSON.parse(user.content[0].text).input.actions
+
+        return requestEntries(
+          'design_operations.read_design_resources',
+          'design_operations.execute_design',
+          'design_operations.search_design_tools',
+          'design_knowledge.discover_knowledge',
+          'design_knowledge.read_knowledge'
+        )
+      }
+
+      const groups = body.input[0].tools
+      const nativeTools = groups.map(
+        (group: {
+          type: string
+          name: string
+          description: string
+          tools: {
+            type: string
+            name: string
+            description: string
+            parameters: unknown
+            defer_loading: boolean
+          }[]
+        }) => ({
+          type: group.type,
+          name: group.name,
+          description: group.description,
+          tools: group.tools.map((tool) => ({
+            type: tool.type,
+            name: tool.name,
+            description: tool.description,
+            inputSchema: tool.parameters,
+            deferLoading: tool.defer_loading
+          }))
+        })
+      )
+
+      digest = createHash('sha256')
+        .update(JSON.stringify({ nativeTools, appActions }))
+        .digest('hex')
+      const resource = groups
+        .flatMap((group: { tools: unknown[] }) => group.tools)
+        .find((tool: { name: string }) => tool.name === 'read_design_resources')
+
+      expect(resource.name).toBe('read_design_resources')
+      const savedFields = { item: { name: 'squareColor', path: '' } }
+
+      expect(
+        operationInputIssue({ savedFields }, resource.parameters)
+      ).toBeUndefined()
+      expect(
+        operationInputIssue(
+          { savedFields, names: ['first'] },
+          resource.parameters
+        )
+      ).toBeDefined()
+
+      return Response.json({
+        id: 'done',
+        status: 'completed',
+        output: [
+          {
+            type: 'message',
+            role: 'assistant',
+            content: [{ type: 'output_text', text: JSON.stringify(final) }]
+          }
+        ]
+      })
+    }
+  })
+
+  captureRecord.mockClear()
+  try {
+    await selectAiModelSource('openai-responses', sources).request(
+      {
+        ...input,
+        metadata: { conversationId: 'catalog' },
+        actions: runtime.actionDefinitions.map(createAiToolContract)
+      },
+      {
+        environment: {
+          OPENAI_API_KEY: 'fixture',
+          AI_PROVIDER_MODEL: 'fixture'
+        },
+
+        resultContext: async (command) => results.exchange(command),
+
+        executeBatch: async () => {
+          throw Error('Unexpected mutation')
+        }
+      }
+    )
+    expect(requests).toBe(2)
+    expect(captureRecord.mock.calls.flat()).toContainEqual(
+      expect.objectContaining({
+        stage: 'capabilities_advertised',
+        evidence: expect.objectContaining({
+          toolCount: 5,
+          contractDigest: digest
+        })
+      })
+    )
+  } finally {
+    await Promise.all(runtime.ownedResources?.map((r) => r.dispose()) ?? [])
+    await Promise.all(sources.map((source) => source.dispose?.()))
+  }
+})
+
+it('reads a known knowledge ID directly through Responses and returns its body in the next request', async () => {
+  const { createDefaultAiModelSources, selectAiModelSource } =
+    await import('../ai-model-sources')
+  const { createAiToolContract } = await import('@asyra/ai-agent-runtime')
+  const runtime = await createDrawingRuntime()
+  let requests = 0
+  let bytes = 0
+  const source = selectAiModelSource(
+    'openai-responses',
+    createDefaultAiModelSources({
+      continuationDatabase: ':memory:',
+
+      fetch: async (_, init) => {
+        const body = JSON.parse(String(init?.body))
+
+        requests++
+        if (requests === 1) {
+          bytes = Buffer.byteLength(String(init?.body))
+
+          return requestEntries('design_knowledge.read_knowledge')
+        }
+
+        if (requests === 2) {
+          expect(
+            body.input[0].tools[0].tools.map(
+              (tool: { name: string }) => tool.name
+            )
+          ).toEqual(['read_knowledge'])
+
+          return Response.json({
+            id: 'direct',
+            status: 'completed',
+            output: [
+              {
+                type: 'function_call',
+                namespace: 'design_knowledge',
+                name: 'read_knowledge',
+                call_id: 'color-advice',
+                arguments: JSON.stringify({ ids: ['colors'] })
+              }
+            ]
+          })
+        }
+
+        const advice = JSON.parse(body.input[0].output[0].text)
+
+        expect(advice.trust).toBe('untrusted-advice')
+        expect(advice.documents).toContainEqual(
+          expect.objectContaining({
+            target: 'colors',
+            text: expect.stringMatching(/\S/)
+          })
+        )
+
+        return Response.json({
+          id: 'done',
+          status: 'completed',
+          output: [
+            {
+              type: 'message',
+              role: 'assistant',
+              content: [{ type: 'output_text', text: JSON.stringify(final) }]
+            }
+          ]
+        })
+      }
+    })
+  )
+
+  try {
+    await source.request(
+      {
+        ...input,
+        intent: 'Read the colors advice.',
+        actions: runtime.actionDefinitions.map(createAiToolContract)
+      },
+      {
+        environment: {
+          OPENAI_API_KEY: 'fixture',
+          AI_PROVIDER_MODEL: 'gpt-6.2-astra',
+          AI_EXECUTION_SOURCE_REVISION: 'fixture'
+        },
+
+        executeBatch: async () => {
+          throw Error('Unexpected canvas dispatch')
+        }
+      }
+    )
+    expect(requests).toBe(3)
+    process.stdout.write(
+      JSON.stringify({ measurement: 'known-knowledge', requests, bytes }) + '\n'
+    )
+  } finally {
+    await source.dispose?.()
+    await Promise.all(runtime.ownedResources?.map((r) => r.dispose()) ?? [])
+  }
+})
+
+it('reads only the selected prior turn and activates hosted research for that turn on the same chain', async () => {
+  const { createDefaultAiModelSources, selectAiModelSource } =
+    await import('../ai-model-sources')
+  const bodies: {
+    tools: { type: string }[]
+    previous_response_id?: string
+    input: { output?: { text: string }[] }[]
+  }[] = []
+  const responses = createDefaultAiModelSources({
+    continuationDatabase: ':memory:',
+
+    fetch: async (_, init) => {
+      const body = JSON.parse(String(init?.body))
+
+      bodies.push(body)
+      const n = bodies.length
+
+      if (n === 2) {
+        return requestEntries(
+          'web_search',
+          'design_operations.read_design_resources'
+        )
+      }
+
+      const output =
+        n === 3
+          ? [
+              {
+                type: 'web_search_call',
+                status: 'completed',
+                action: { type: 'search', query: 'public building' }
+              },
+              {
+                type: 'function_call',
+                namespace: 'design_operations',
+                name: 'read_design_resources',
+                call_id: 'read-2',
+                arguments: JSON.stringify({ history: { start: 2, count: 1 } })
+              }
+            ]
+          : [
+              {
+                type: 'message',
+                role: 'assistant',
+                content: [{ type: 'output_text', text: JSON.stringify(final) }]
+              }
+            ]
+
+      return Response.json({ id: 'research-' + n, status: 'completed', output })
+    }
+  })
+  const source = selectAiModelSource('openai-responses', responses)
+
+  try {
+    for (const [i, intent] of [
+      'Finish the edit',
+      'Read the second proposal and research public sources',
+      'Finish'
+    ].entries()) {
+      const turns = ['unselected-marker', 'chosen-marker'].map(
+        (intent, index) => ({
+          turnId: 'old-' + index,
+          intent,
+          message: intent,
+          outcome: 'success',
+          attachmentIndexes: []
+        })
+      )
+
+      await source.request(
+        {
+          ...input,
+          intent,
+          metadata: {
+            conversationId: 'research',
+            turnId: 't' + i,
+            conversationContext: {
+              turns: i ? turns : [],
+              attachmentIndexes: []
+            }
+          }
+        },
+        {
+          environment: {
+            OPENAI_API_KEY: 'offline',
+            AI_PROVIDER_MODEL: 'fixture'
+          },
+
+          executeBatch: async () => {
+            throw Error('Read must not mutate the canvas')
+          }
+        }
+      )
+    }
+
+    expect(
+      bodies.map((body) => body.tools.some((t) => t.type === 'web_search'))
+    ).toEqual([false, false, true, true, false])
+    expect(bodies.map((body) => body.previous_response_id)).toEqual([
+      undefined,
+      'research-1',
+      'load-entries',
+      'research-3',
+      'research-4'
+    ])
+    const history = JSON.parse(String(bodies[3].input[0].output?.[0].text))
+
+    expect(history).toMatchObject({
+      turns: [{ intent: 'chosen-marker' }],
+      total: 2
+    })
+    expect(history.guidance).toContain('current targets')
+    expect(JSON.stringify(bodies)).not.toContain('unselected-marker')
+    expect(JSON.stringify(bodies.slice(0, 3))).not.toContain('chosen-marker')
+  } finally {
+    await Promise.all(responses.map((s) => s.dispose?.()))
+  }
+})
+
+it('resolves the advanced workflow and deferred final control at their authoritative read boundary', async () => {
+  const { createDesignProviderTools } = await import('../design-provider-tools')
+  const { createAiToolContract } = await import('@asyra/ai-agent-runtime')
+  const { operationInputIssue } = await import('@asyra/ai-agent-runtime/schema')
+  const { readCompleteInformation } = await import('./tool-contract-assertions')
+  const runtime = await createDrawingRuntime()
+  const tools = await createDesignProviderTools(
+    { ...input, actions: runtime.actionDefinitions.map(createAiToolContract) },
+    {
+      modelSource: 'openai-responses',
+
+      executeBatch: async () => {
+        throw Error('Resource reads must not mutate the canvas')
+      }
+    }
+  )
+
+  try {
+    const sequence = 'design_operations.execute_design'
+    const control = 'request_drawing_detail_choice'
+    const reply = JSON.parse(
+      await readCompleteInformation(
+        async (args, name) => {
+          const r = await tools.invoke({
+            namespace: 'design_operations',
+            name,
+            callId: crypto.randomUUID(),
+            arguments: args
+          })
+
+          return r.text
+        },
+        { names: [sequence, control], view: 'full' },
+        'read_design_resources'
+      )
+    )
+    const full = reply.tools.find(
+      (tool: { name: string }) => tool.name === 'execute_design'
+    ).inputSchema
+    const stage = {
+      id: 'stage',
+      operations: [{ name: 'prepare', arguments: {} }],
+      apply: [{ name: 'draw', arguments: {} }]
+    }
+
+    expect(operationInputIssue({ stages: [stage] }, full)).toBeUndefined()
+    expect(
+      operationInputIssue({ stages: [{ ...stage, apply: [] }] }, full)
+    ).toBeTruthy()
+    const admitted = reply.apis.find(
+      (api: { name: string }) => api.name === control
+    )
+
+    expect(admitted.inputSchema).toMatchObject({
+      type: 'object',
+      additionalProperties: false
+    })
+    expect(JSON.stringify(tools.inputForTurn())).not.toContain(control)
+  } finally {
+    await tools.dispose()
+    await Promise.all(runtime.ownedResources?.map((r) => r.dispose()) ?? [])
+  }
+})

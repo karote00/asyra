@@ -197,9 +197,10 @@ export const createToolCallingDesignSource = (configuration: {
                 .join('\n\n'),
               tools: tools.nativeDefinitions,
               webSearch: true,
+              executionContractDigest: tools.executionContractDigest,
 
-              input(resumed): readonly ProviderContentItem[] {
-                return tools.inputForTurn(resumed).map((item) => {
+              input(): readonly ProviderContentItem[] {
+                return tools.inputForTurn().map((item) => {
                   if (item.type === 'text' && typeof item.text === 'string') {
                     return { type: 'inputText', text: item.text }
                   }

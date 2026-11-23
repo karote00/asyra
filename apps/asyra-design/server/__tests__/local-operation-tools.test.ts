@@ -135,7 +135,7 @@ it('refreshes discovery after recipe registration, revision and removal without 
   const lookup = async () =>
     JSON.parse(
       await owner.call(
-        'read_design_contracts',
+        'read_design_resources',
         { names: ['repeat-fill'] },
         new AbortController().signal
       )
@@ -231,7 +231,7 @@ it('discovers reusable tools without knowing their names through the existing bo
   expect(rest.tools).toHaveLength(3)
   expect(rest.complete).toBe(true)
   expect(
-    (await call('read_design_contracts', { names: ['saved-18'] })).tools[0]
+    (await call('read_design_resources', { names: ['saved-18'] })).tools[0]
       .inputSchema
   ).toEqual({
     type: 'number'
@@ -479,7 +479,7 @@ it('resolves multiple semantic operations and semantic names from the admitted r
       )
     )
 
-  const result = await call('read_design_contracts', {
+  const result = await call('read_design_resources', {
     names: [...selected.map((api) => api.operation), 'missing.operation'],
     view: 'usage'
   })
@@ -491,12 +491,12 @@ it('resolves multiple semantic operations and semantic names from the admitted r
   expect(
     result.apis.every((api: { inputSchema?: unknown }) => !api.inputSchema)
   ).toBe(true)
-  const byName = await call('read_design_contracts', {
+  const byName = await call('read_design_resources', {
     names: selected.map((api) => api.operation)
   })
 
   for (const api of selected) {
-    const byQuery = await call('read_design_contracts', {
+    const byQuery = await call('read_design_resources', {
       names: [api.operation],
       view: 'full'
     })
@@ -537,7 +537,7 @@ it.each(['names'])(
     )
     const result = JSON.parse(
       await tools.call(
-        'read_design_contracts',
+        'read_design_resources',
         { names: ['build'] },
         new AbortController().signal
       )
@@ -550,7 +550,7 @@ it.each(['names'])(
     expect(result).toMatchObject({ status: 'failed', settlement: 'completed' })
     const { invokeLocalTool } = await import('../local-tool-invocation')
     const definition = tools.definitions.find(
-      (d) => d.name === 'read_design_contracts'
+      (d) => d.name === 'read_design_resources'
     )
 
     if (!definition) {
@@ -571,7 +571,7 @@ it.each(['names'])(
     })
     const exact = JSON.parse(
       await tools.call(
-        'read_design_contracts',
+        'read_design_resources',
         selector === 'names'
           ? { names: ['first.build'] }
           : { query: 'first.build' },
@@ -2259,7 +2259,7 @@ it('discovers every basic API without publishing hundreds of native tools', asyn
   )
   const requested = basicApiContracts.slice(0, 2).map(({ name }) => name)
   const details = JSON.parse(
-    await operations.call('read_design_contracts', { names: requested }, signal)
+    await operations.call('read_design_resources', { names: requested }, signal)
   )
 
   expect(details.apis.map((entry: { name: string }) => entry.name)).toEqual(
@@ -2306,20 +2306,20 @@ it('searches current API descriptions and names without loading every schema or 
   })
   expect(found.apis[0].inputSchema).toBeUndefined()
   expect(
-    (await call('read_design_contracts', { names: [custom.name] })).apis[0]
+    (await call('read_design_resources', { names: [custom.name] })).apis[0]
       .inputSchema
   ).toEqual(custom.inputSchema)
   expect(found.count).toBeLessThan(full.catalogSize)
   expect(
     (
-      await call('read_design_contracts', {
+      await call('read_design_resources', {
         names: [custom.name],
         refresh: true
       })
     ).apis
   ).toEqual([expect.objectContaining(custom)])
   expect(
-    (await call('read_design_contracts', { names: ['getVectorAnchorPoints'] }))
+    (await call('read_design_resources', { names: ['getVectorAnchorPoints'] }))
       .apis
   ).toEqual(
     expect.arrayContaining([
@@ -2386,7 +2386,7 @@ it('executes discovered APIs in a batch and identifies unknown lookup names', as
   expect(
     JSON.parse(
       await operations.call(
-        'read_design_contracts',
+        'read_design_resources',
         { names: ['api_core_resetRuntime'] },
         signal
       )
@@ -2894,7 +2894,7 @@ it('resolves an exact semantic operation using the admitted schema without a can
   )
   const result = JSON.parse(
     await tools.call(
-      'read_design_contracts',
+      'read_design_resources',
       { names: ['fill.updateFillsAtIndex'] },
       new AbortController().signal
     )
@@ -2979,7 +2979,7 @@ it('discovers batch-only composite schemas without exposing a scalar native tool
   )
   const result = JSON.parse(
     await tools.call(
-      'read_design_contracts',
+      'read_design_resources',
       { names: [action.name] },
       new AbortController().signal
     )
@@ -3101,7 +3101,7 @@ it('advertises admitted categories and includes their choices in invalid lookup 
   expect(
     JSON.parse(
       await tools.call(
-        'read_design_contracts',
+        'read_design_resources',
         { names: ['prepare_design'] },
         new AbortController().signal
       )
@@ -3113,7 +3113,7 @@ it('advertises admitted categories and includes their choices in invalid lookup 
   expect(
     JSON.parse(
       await tools.call(
-        'read_design_contracts',
+        'read_design_resources',
         { names: ['missing.operation'] },
         new AbortController().signal
       )
@@ -3125,7 +3125,7 @@ it('advertises admitted categories and includes their choices in invalid lookup 
   for (const selector of [{ category: 'creation' }]) {
     await expect(
       tools.call(
-        'read_design_contracts',
+        'read_design_resources',
         selector,
         new AbortController().signal
       )
@@ -3229,7 +3229,7 @@ it('retrieves exact admitted category schemas through bounded read-only discover
   const expanded = await call('search_design_tools', {
     category: 'fill'
   })
-  const exact = await call('read_design_contracts', {
+  const exact = await call('read_design_resources', {
     names: expanded.apis.map((api: { name: string }) => api.name)
   })
 
@@ -3266,7 +3266,7 @@ it('retrieves exact admitted category schemas through bounded read-only discover
     { category: 'fill', query: 'fill', includeSchemas: true },
     { category: 'unavailable', includeSchemas: true }
   ]) {
-    await expect(call('read_design_contracts', args)).rejects.toThrow()
+    await expect(call('read_design_resources', args)).rejects.toThrow()
   }
 
   expect(execute).not.toHaveBeenCalled()
@@ -3313,7 +3313,7 @@ it('resolves mixed action and native names without discarding known matches or d
   const lookup = async (names: string[]) =>
     JSON.parse(
       await tools.call(
-        'read_design_contracts',
+        'read_design_resources',
         { names },
         new AbortController().signal
       )
@@ -3376,7 +3376,7 @@ it('resolves mixed action and native names without discarding known matches or d
   expect(repeated.definition.state).toBe('included')
   const refreshed = JSON.parse(
     await tools.call(
-      'read_design_contracts',
+      'read_design_resources',
       repeated.definition.refresh.arguments,
       new AbortController().signal
     )
@@ -3444,10 +3444,10 @@ it('delivers both same-name route schemas in one lookup and invokes each without
   const read = async (toolName: string, args: unknown) =>
     JSON.parse(await owner.call(toolName, args, signal))
 
-  const lookup = await read('read_design_contracts', {
+  const lookup = await read('read_design_resources', {
     names: [action.name, 'registered_operations.' + action.name]
   })
-  const queryLookup = await read('read_design_contracts', {
+  const queryLookup = await read('read_design_resources', {
     names: [action.name, 'registered_operations.' + action.name],
     view: 'full'
   })
@@ -3491,7 +3491,7 @@ it('delivers both same-name route schemas in one lookup and invokes each without
     })
   }
 
-  const repeated = await read('read_design_contracts', {
+  const repeated = await read('read_design_resources', {
     names: [action.name, 'registered_operations.' + action.name]
   })
 
@@ -3546,7 +3546,7 @@ it('retrieves usage and exact schema fragments without consuming full definition
     tools.call(toolName, args, new AbortController().signal).then(JSON.parse)
 
   const usage = (
-    await read('read_design_contracts', {
+    await read('read_design_resources', {
       names: [action.name],
       view: 'usage'
     })
@@ -3559,7 +3559,7 @@ it('retrieves usage and exact schema fragments without consuming full definition
   expect(usage.inputFields).toContain('/properties/rows')
   expect(usage.definition.coverage).toBe('usage')
   const partial = (
-    await read('read_design_contracts', {
+    await read('read_design_resources', {
       names: [action.name],
       scopes: Object.fromEntries(
         [action.name].map((name) => [
@@ -3578,7 +3578,7 @@ it('retrieves usage and exact schema fragments without consuming full definition
   })
   expect(partial.definition.coverage).toBe('partial')
   expect(partial.inputSchema).toBeUndefined()
-  const full = (await read('read_design_contracts', { names: [action.name] }))
+  const full = (await read('read_design_resources', { names: [action.name] }))
     .apis[0]
 
   expect(full.inputSchema).toEqual(action.inputSchema)
@@ -3588,7 +3588,7 @@ it('retrieves usage and exact schema fragments without consuming full definition
     availableInResponse: true
   })
   const repeated = (
-    await read('read_design_contracts', { names: [action.name] })
+    await read('read_design_resources', { names: [action.name] })
   ).apis[0]
 
   expect(repeated.definition).toMatchObject({
@@ -3615,18 +3615,21 @@ it('retrieves usage and exact schema fragments without consuming full definition
   ).apis[0]
 
   expect(menu.usageGuide).toBeUndefined()
-  expect(menu.operationParameters).toBeUndefined()
+  expect(menu.operationParameters).toEqual(action.inputSchema)
   expect(menu.execution).toMatchObject({
     kind: 'batch-action',
     tool: 'execute_design'
   })
   expect(menu.usage.arguments.names).toContain(action.name)
-  expect(JSON.stringify(menu).length).toBeLessThan(
+  const { operationParameters: ordinaryInput, ...navigation } = menu
+
+  expect(JSON.stringify(navigation).length).toBeLessThan(
     JSON.stringify(full).length / 2
   )
+  expect(JSON.stringify(ordinaryInput)).toContain('#/$defs/row')
   expect(
     (
-      await read('read_design_contracts', {
+      await read('read_design_resources', {
         names: [action.name],
         scopes: Object.fromEntries(
           [action.name].map((name) => [
@@ -3675,7 +3678,7 @@ it('retrieves usage and exact schema fragments without consuming full definition
       refreshReason: 'invalid'
     }
   ]) {
-    await expect(read('read_design_contracts', query)).rejects.toThrow()
+    await expect(read('read_design_resources', query)).rejects.toThrow()
   }
 
   expect(execute).not.toHaveBeenCalled()
@@ -3713,7 +3716,7 @@ it('uses exact native schema paths with escaped names and keeps unknown paths re
     tools.call(toolName, args, new AbortController().signal).then(JSON.parse)
 
   const partial = (
-    await read('read_design_contracts', {
+    await read('read_design_resources', {
       names: ['custom.inspect_custom'],
       scopes: Object.fromEntries(
         ['custom.inspect_custom'].map((name) => [
@@ -3735,7 +3738,7 @@ it('uses exact native schema paths with escaped names and keeps unknown paths re
   })
   expect(
     (
-      await read('read_design_contracts', {
+      await read('read_design_resources', {
         names: ['custom.inspect_custom'],
         scopes: Object.fromEntries(
           ['custom.inspect_custom'].map((name) => [
@@ -3757,7 +3760,7 @@ it('uses exact native schema paths with escaped names and keeps unknown paths re
   expect(full.definition.state).toBe('included')
   expect(
     (
-      await read('read_design_contracts', {
+      await read('read_design_resources', {
         names: ['custom.inspect_custom'],
         view: 'usage'
       })
@@ -3790,13 +3793,13 @@ it('returns requested action definitions on repeated reads with explicit context
     owner.call(toolName, args, new AbortController().signal).then(JSON.parse)
 
   await read('search_design_tools', { category: 'design' })
-  const first = (await read('read_design_contracts', { names: [action.name] }))
+  const first = (await read('read_design_resources', { names: [action.name] }))
     .apis[0]
 
   expect(first.inputSchema).toEqual(action.inputSchema)
   expect(first.definition.state).toBe('included')
   const repeated = (
-    await read('read_design_contracts', { names: [action.name] })
+    await read('read_design_resources', { names: [action.name] })
   ).apis[0]
 
   expect(repeated.inputSchema).toBeDefined()
@@ -3814,12 +3817,12 @@ it('returns requested action definitions on repeated reads with explicit context
   expect(recovered.inputSchema).toEqual(action.inputSchema)
   expect(recovered.definition.revision).toBe(first.definition.revision)
   expect(
-    (await read('read_design_contracts', { names: [action.name] }, create()))
+    (await read('read_design_resources', { names: [action.name] }, create()))
       .apis[0].inputSchema
   ).toEqual(action.inputSchema)
   action.inputSchema.required = ['different']
   const changed = (
-    await read('read_design_contracts', { names: [action.name] }, create())
+    await read('read_design_resources', { names: [action.name] }, create())
   ).apis[0]
 
   expect(changed.definition.revision).not.toBe(first.definition.revision)
@@ -4224,13 +4227,13 @@ it('recovers only missing definition fields with explicit provenance and a reusa
       )
     )
 
-  const full = (await read('read_design_contracts', { names: [action.name] }))
+  const full = (await read('read_design_resources', { names: [action.name] }))
     .apis[0]
 
   expect(full.definition.deliveryReason).toBe('requested')
   const paths = ['/properties/elementIds']
   const partial = (
-    await read('read_design_contracts', {
+    await read('read_design_resources', {
       names: [action.name],
       scopes: Object.fromEntries(
         [action.name].map((name) => [name, { schemaPaths: paths }])
@@ -4266,7 +4269,7 @@ it('recovers only missing definition fields with explicit provenance and a reusa
   expect(recovered.schemaFragments).toEqual(partial.schemaFragments)
   expect(recovered.inputSchema).toBeUndefined()
   expect(
-    (await read('read_design_contracts', { names: [action.name] })).apis[0]
+    (await read('read_design_resources', { names: [action.name] })).apis[0]
       .definition.deliveryReason
   ).toBe('requested')
   const restored = (
@@ -4279,18 +4282,18 @@ it('recovers only missing definition fields with explicit provenance and a reusa
   expect(restored.inputSchema).toEqual(action.inputSchema)
   expect(restored.definition.recoveryReason).toBe('context-loss')
   const unspecified = (
-    await read('read_design_contracts', { names: [action.name], refresh: true })
+    await read('read_design_resources', { names: [action.name], refresh: true })
   ).apis[0]
 
   expect(unspecified.definition.recoveryReason).toBe('unknown')
   await expect(
-    read('read_design_contracts', {
+    read('read_design_resources', {
       names: [action.name],
       refreshReason: 'context-loss'
     })
   ).rejects.toThrow()
   await expect(
-    read('read_design_contracts', {
+    read('read_design_resources', {
       names: [action.name],
       refresh: true,
       refreshReason: 'guessed'
@@ -4298,7 +4301,7 @@ it('recovers only missing definition fields with explicit provenance and a reusa
   ).rejects.toThrow()
   expect(
     (
-      await read('read_design_contracts', {
+      await read('read_design_resources', {
         names: [action.name],
         scopes: Object.fromEntries(
           [action.name].map((name) => [name, { schemaPaths: ['/missing'] }])
@@ -4352,7 +4355,7 @@ it('reuses each exact partial definition scope and retains its parent constraint
       [action.name].map((name) => [name, { schemaPaths: ['/properties/x'] }])
     )
   }
-  const first = await read('read_design_contracts', selector)
+  const first = await read('read_design_resources', selector)
 
   expect(first.schemaContext).toContainEqual(
     expect.objectContaining({
@@ -4363,7 +4366,7 @@ it('reuses each exact partial definition scope and retains its parent constraint
       })
     })
   )
-  const again = await read('read_design_contracts', selector)
+  const again = await read('read_design_resources', selector)
 
   expect(again.definition).toMatchObject({
     state: 'included',
@@ -4371,7 +4374,7 @@ it('reuses each exact partial definition scope and retains its parent constraint
     requestedCoverage: 'partial'
   })
   expect(again.schemaFragments).toEqual(first.schemaFragments)
-  const other = await read('read_design_contracts', {
+  const other = await read('read_design_resources', {
     names: [action.name],
     scopes: Object.fromEntries(
       [action.name].map((name) => [name, { schemaPaths: ['/properties/y'] }])
@@ -4386,7 +4389,7 @@ it('reuses each exact partial definition scope and retains its parent constraint
 
   expect(recovered.schemaFragments).toEqual(first.schemaFragments)
   expect(recovered.schemaContext).toEqual(first.schemaContext)
-  const full = await read('read_design_contracts', { names: [action.name] })
+  const full = await read('read_design_resources', { names: [action.name] })
 
   expect(full.inputSchema).toEqual(action.inputSchema)
 })
@@ -4432,7 +4435,7 @@ it('pages broad category discovery and gives registry candidates for an unknown 
   }
 
   expect(new Set(names).size).toBe(category.count)
-  const missing = await read('read_design_contracts', {
+  const missing = await read('read_design_resources', {
     names: ['fill.updateUnknownField']
   })
 
@@ -6195,7 +6198,7 @@ it('advertises only admitted batch routes and actual explicit inspection wrapper
       { names: [name], refresh: true }
     ]) {
       const result = await read(
-        'names' in selector ? 'read_design_contracts' : 'search_design_tools',
+        'names' in selector ? 'read_design_resources' : 'search_design_tools',
         selector
       )
 
@@ -6219,14 +6222,35 @@ it('advertises only admitted batch routes and actual explicit inspection wrapper
     { names: ['review_missing'] }
   ]) {
     const result = await read(
-      'names' in selector ? 'read_design_contracts' : 'search_design_tools',
+      'names' in selector ? 'read_design_resources' : 'search_design_tools',
       selector
     )
 
-    for (const entry of [
+    for (const candidate of [
       ...(result.apis ?? []),
       ...(result.candidates ?? [])
     ]) {
+      const entry = candidate.execution
+        ? candidate
+        : (
+            await read('read_design_resources', {
+              names: [candidate.operation],
+              view: 'usage'
+            })
+          ).apis[0]
+
+      if (entry.execution.kind === 'host-operation') {
+        const definition = owner.definitions.find((d) => d.name === entry.name)
+
+        expect(definition?.composition).toMatch(/^(allowed|request)$/)
+        expect(entry.execution).toEqual({
+          kind: 'host-operation',
+          tool: 'execute_design',
+          operation: 'design_operations.' + entry.name
+        })
+        continue
+      }
+
       expect(entry.execution.kind).toBe('native-tool')
       expect(entry.execution.argumentField).toBe('arguments')
     }
@@ -6271,23 +6295,24 @@ it('delivers usage pages across native and action discovery without consuming fu
   })
 
   expect(page.apis[0].definition).toBeUndefined()
-  expect(page.apis[0].usage.arguments.view).toBe('usage')
+  expect(page.apis[0].capability.purpose).toBeTruthy()
   expect(page.tools[0].inputFields).toBeUndefined()
   expect(page.tools[0].inputSchema).toBeUndefined()
   expect(page.next.arguments).not.toHaveProperty('view')
-  expect(owner.resultIssue('read_design_contracts', page)).toBeUndefined()
+  expect(owner.resultIssue('read_design_resources', page)).toBeUndefined()
   const last = await read(page.next.tool, page.next.arguments)
 
   expect(last.complete).toBe(true)
-  expect(last.tools.at(-1).usage.arguments.names).toEqual([
-    'saved_tools.probe-17'
-  ])
+  expect(last.tools.at(-1)).toMatchObject({
+    namespace: 'saved_tools',
+    name: 'probe-17'
+  })
   const category = await read('search_design_tools', {
     category: 'tools'
   })
 
   expect(category.tools[0].definition).toBeUndefined()
-  const full = await read('read_design_contracts', {
+  const full = await read('read_design_resources', {
     names: ['saved_tools.probe-0']
   })
 
@@ -6300,13 +6325,12 @@ it('delivers usage pages across native and action discovery without consuming fu
   expect(repeated.tools).toEqual(page.tools)
   const restored = await read(page.next.tool, page.next.arguments)
 
-  expect(restored.tools[0].usage.arguments.names).toEqual(
-    last.tools[0].usage.arguments.names
-  )
-  const acquired = await read(
-    restored.tools[0].usage.tool,
-    restored.tools[0].usage.arguments
-  )
+  expect(restored.tools).toEqual(last.tools)
+  const item = restored.tools[0]
+  const acquired = await read('read_design_resources', {
+    names: [item.namespace + '.' + item.name],
+    view: 'usage'
+  })
 
   expect(acquired.tools[0].inputFields).toContain('/properties/target')
   expect(acquired.tools[0].definition.coverage).toBe('usage')
@@ -6348,7 +6372,8 @@ it('searches compact native capability menus with pagination without consuming e
   expect(first.tools).toHaveLength(16)
   expect(first.tools[0]).toMatchObject({
     name: 'inspect-0',
-    execution: { kind: 'native-tool', namespace: 'saved_tools' }
+    namespace: 'saved_tools',
+    capability: { purpose: 'Inspect geometry measurements' }
   })
   expect(first.tools[0].inputSchema).toBeUndefined()
   expect(first.tools[0].outputSchema).toBeUndefined()
@@ -6357,10 +6382,14 @@ it('searches compact native capability menus with pagination without consuming e
 
   expect(second.tools).toHaveLength(3)
   expect(second.complete).toBe(true)
-  const full = await read('read_design_contracts', {
+  const full = await read('read_design_resources', {
     names: ['saved_tools.inspect-18']
   })
 
+  expect(full.tools[0].execution).toMatchObject({
+    kind: 'native-tool',
+    namespace: 'saved_tools'
+  })
   expect(full.tools[0].inputSchema).toEqual(native[18].inputSchema)
   expect(full.tools[0].definition.state).toBe('included')
 })
@@ -6384,8 +6413,8 @@ it('keeps subject research distinct from capability lookup without automatically
     )
   )
 
+  expect(result.undeclaredPurposeTerms).toContain('photograph')
   for (const entry of result.apis) {
-    expect(entry.match.unmatchedTerms).toContain('photograph')
     expect(entry.inputSchema).toBeUndefined()
     expect(entry.usageGuide).toBeUndefined()
   }
@@ -6428,7 +6457,7 @@ it('never substitutes a saved same-name tool for an unavailable explicit action 
   )
   const result = JSON.parse(
     await owner.call(
-      'read_design_contracts',
+      'read_design_resources',
       { names: [name] },
       new AbortController().signal
     )
@@ -6548,7 +6577,7 @@ it('delivers API, native and mixed discovery pages through the actual invocation
   expect(
     JSON.parse(
       await owner.call(
-        'read_design_contracts',
+        'read_design_resources',
         { names: ['saved_tools.pagination-0'] },
         new AbortController().signal
       )
@@ -6861,7 +6890,7 @@ it('preserves successful mixed schema lookups and returns exact recovery for a u
       )
     )
   }
-  const first = await read('read_design_contracts', input)
+  const first = await read('read_design_resources', input)
 
   expect(first.apis[0]).toMatchObject({
     name: AiActionNames.READ_DESIGN_CONTEXT,
@@ -6875,11 +6904,11 @@ it('preserves successful mixed schema lookups and returns exact recovery for a u
   expect(first.apis[0].inputSchema).toBeUndefined()
   expect(first.tools[0].definition.state).toBe('included')
   expect(first.tools[0].schemaFragments[0].path).toBe('/properties')
-  const repeated = await read('read_design_contracts', input)
+  const repeated = await read('read_design_resources', input)
 
   expect(repeated.apis[0].definition.state).toBe('unavailable')
   expect(repeated.tools[0].definition.state).toBe('included')
-  const corrected = await read('read_design_contracts', {
+  const corrected = await read('read_design_resources', {
     names: [AiActionNames.READ_DESIGN_CONTEXT],
     scopes: Object.fromEntries(
       [AiActionNames.READ_DESIGN_CONTEXT].map((name) => [
@@ -6893,7 +6922,7 @@ it('preserves successful mixed schema lookups and returns exact recovery for a u
   expect(corrected.apis[0].schemaFragments[0].path).toBe('/oneOf/0/properties')
   expect(
     (
-      await read('read_design_contracts', {
+      await read('read_design_resources', {
         names: [AiActionNames.READ_DESIGN_CONTEXT]
       })
     ).apis[0].definition.coverage
@@ -6979,10 +7008,13 @@ it.each(['allowed', 'control-plane'] as const)(
     )
 
     expect(entry.inputFields).toBeUndefined()
-    const selected = await read(entry.usage.tool, entry.usage.arguments)
+    const selected = await read('read_design_resources', {
+      names: [entry.operation],
+      view: 'usage'
+    })
 
     expect(selected.apis[0].inputFields).toContain('/properties/elementIds')
-    expect(entry.execution.kind).toBe('batch-action')
+    expect(selected.apis[0].execution.kind).toBe('batch-action')
     expect(entry.recipeDependency).toBeUndefined()
     if (composition === 'allowed') {
       expect(
@@ -7008,7 +7040,7 @@ it.each(['allowed', 'control-plane'] as const)(
       )
     }
 
-    const exact = await read('read_design_contracts', {
+    const exact = await read('read_design_resources', {
       names: [native.registeredName]
     })
 
@@ -7018,7 +7050,7 @@ it.each(['allowed', 'control-plane'] as const)(
     expect(exact.tools[0].partialOutputSchema).toEqual(
       definition.partialOutputSchema
     )
-    const usage = await read('read_design_contracts', {
+    const usage = await read('read_design_resources', {
       names: [native.registeredName],
       view: 'usage'
     })
@@ -7027,7 +7059,7 @@ it.each(['allowed', 'control-plane'] as const)(
     expect(usage.tools[0].inputFields).toContain(
       '/anyOf/0/properties/arguments'
     )
-    const reused = await read('read_design_contracts', {
+    const reused = await read('read_design_resources', {
       names: [native.registeredName],
       view: 'usage'
     })
@@ -7165,7 +7197,7 @@ it('replays all recorded discovery selectors without losing exact contracts or d
       'category' in currentInput ||
       !Object.keys(currentInput).length
         ? 'search_design_tools'
-        : 'read_design_contracts'
+        : 'read_design_resources'
     const result = JSON.parse(
       await readCompleteInformation(
         (input, requestedTool) =>
@@ -7216,7 +7248,7 @@ it('replays all recorded discovery selectors without losing exact contracts or d
             (args, requestedTool) =>
               owner.call(requestedTool, args, new AbortController().signal),
             { names: [expected.name] },
-            'read_design_contracts'
+            'read_design_resources'
           )
         )
 
@@ -7248,7 +7280,7 @@ it('replays all recorded discovery selectors without losing exact contracts or d
             (args, requestedTool) =>
               owner.call(requestedTool, args, new AbortController().signal),
             { names: [`${expected.namespace}.${expected.name}`] },
-            'read_design_contracts'
+            'read_design_resources'
           )
         )
 
@@ -7325,7 +7357,7 @@ it('routes exact final-action discovery to the current final-response contract w
   )
   const signal = new AbortController().signal
   const result = JSON.parse(
-    await owner.call('read_design_contracts', { names: [final.name] }, signal)
+    await owner.call('read_design_resources', { names: [final.name] }, signal)
   )
 
   expect(result.missingNames).toEqual([])
@@ -7352,7 +7384,7 @@ it('routes exact final-action discovery to the current final-response contract w
   expect(dispatch).not.toHaveBeenCalled()
   const query = JSON.parse(
     await owner.call(
-      'read_design_contracts',
+      'read_design_resources',
       { names: [recordedClosure.calls[3].input.query] },
       signal
     )
@@ -7363,7 +7395,7 @@ it('routes exact final-action discovery to the current final-response contract w
     execution: { kind: 'final-response', action: final.name }
   })
   const repeated = JSON.parse(
-    await owner.call('read_design_contracts', { names: [final.name] }, signal)
+    await owner.call('read_design_resources', { names: [final.name] }, signal)
   )
 
   expect(repeated.apis[0].definition.availableInResponse).toBe(true)
@@ -7644,7 +7676,7 @@ it('delivers a validated usage invocation with canonical identity cardinality an
     tools.call(toolName, args, new AbortController().signal).then(JSON.parse)
 
   const usage = (
-    await read('read_design_contracts', { names: [action.name], view: 'usage' })
+    await read('read_design_resources', { names: [action.name], view: 'usage' })
   ).apis[0]
 
   expect(usage.inputFields).toContain('/properties/request')
@@ -7669,14 +7701,14 @@ it('delivers a validated usage invocation with canonical identity cardinality an
   })
   expect(
     (
-      await read('read_design_contracts', {
+      await read('read_design_resources', {
         names: [action.name],
         view: 'usage'
       })
     ).apis[0].invocationExample
   ).toEqual(usage.invocationExample)
   const refreshed = (
-    await read('read_design_contracts', {
+    await read('read_design_resources', {
       names: [action.name],
       view: 'usage',
       refresh: true,
@@ -7686,7 +7718,7 @@ it('delivers a validated usage invocation with canonical identity cardinality an
 
   expect(refreshed.invocationExample).toEqual(usage.invocationExample)
   expect(
-    (await read('read_design_contracts', { names: [action.name] })).apis[0]
+    (await read('read_design_resources', { names: [action.name] })).apis[0]
       .inputSchema
   ).toEqual(action.inputSchema)
 })
@@ -7714,7 +7746,7 @@ it('does not invent usage arguments when owner examples are absent or invalid', 
     )
     const usage = JSON.parse(
       await tools.call(
-        'read_design_contracts',
+        'read_design_resources',
         { names: [action.name], view: 'usage' },
         new AbortController().signal
       )
@@ -7859,7 +7891,7 @@ describe('context entry navigation and recovery', () => {
             return reply.text
           },
           input,
-          'read_design_contracts'
+          'read_design_resources'
         )
       )
 
@@ -8200,7 +8232,7 @@ describe('context entry navigation and recovery', () => {
       controller.abort()
       await expect(
         t.owner.call(
-          'read_design_contracts',
+          'read_design_resources',
           mixed.tools[0].definition.recover.arguments,
           controller.signal
         )
@@ -8247,7 +8279,7 @@ it('keeps union navigation compact while fragments preserve escaped references a
     JSON.parse(await owner.call(toolName, args, new AbortController().signal))
 
   const usage = (
-    await read('read_design_contracts', { names: [action.name], view: 'usage' })
+    await read('read_design_resources', { names: [action.name], view: 'usage' })
   ).apis[0]
 
   expect(usage.inputFields).toEqual([
@@ -8265,7 +8297,7 @@ it('keeps union navigation compact while fragments preserve escaped references a
   expect(example.definition.coverage).toBe('partial')
   for (const path of usage.inputFields) {
     const fragment = (
-      await read('read_design_contracts', {
+      await read('read_design_resources', {
         ...usage.fieldQuery.arguments,
         scopes: Object.fromEntries(
           usage.fieldQuery.arguments.names.map((name: string) => [
@@ -8335,7 +8367,7 @@ it('discovers opaque names by owner capability and recovers a wrong identity usi
     const found = await search('search_design_tools', { query: purpose })
 
     expect(found.tools[0].name).toBe(expected)
-    const recovery = await search('read_design_contracts', {
+    const recovery = await search('read_design_resources', {
       names: ['unknown_identity']
     })
 
@@ -8350,7 +8382,7 @@ it('discovers opaque names by owner capability and recovers a wrong identity usi
     })
   }
 
-  const absent = await search('read_design_contracts', { names: ['xyzqq'] })
+  const absent = await search('read_design_resources', { names: ['xyzqq'] })
 
   expect(absent.missingNames).toEqual(['xyzqq'])
   expect(absent.candidates).toEqual([])
@@ -8455,7 +8487,7 @@ it('ranks partial nested metadata ahead of misleading names and reuses each cata
     expect(unique.tools[0].name).toBe('a')
     expect(unique.tools[0].usageGuide).toBeUndefined()
     expect(unique.tools[0].usage.arguments.names).toEqual(['fixture.a'])
-    const explicit = await search('read_design_contracts', {
+    const explicit = await search('read_design_resources', {
       names: ['fixture.b'],
       view: 'full'
     })
@@ -8479,7 +8511,7 @@ it('ranks partial nested metadata ahead of misleading names and reuses each cata
     expect(annotation).toHaveBeenCalledTimes(readsAfterExplicit)
     expect(
       (
-        await search('read_design_contracts', {
+        await search('read_design_resources', {
           names: ['unknown_identity']
         })
       ).missingNames

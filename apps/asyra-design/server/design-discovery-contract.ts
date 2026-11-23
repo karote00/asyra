@@ -3,7 +3,7 @@ import { operationInputIssue } from '@asyra/ai-agent-runtime/schema'
 
 export const isDiscoveryTool = (name: string) =>
   name === AiDesignToolIds.SEARCH_DESIGN_TOOLS ||
-  name === AiDesignToolIds.READ_DESIGN_CONTRACTS
+  name === AiDesignToolIds.READ_DESIGN_RESOURCES
 
 const scopeSchema = {
   type: 'object',
@@ -40,7 +40,7 @@ const scopeSchema = {
 export const discoveryInputSchema = (name: string, categories: string[]) => ({
   type: 'object',
   additionalProperties: false,
-  ...(name === AiDesignToolIds.READ_DESIGN_CONTRACTS
+  ...(name === AiDesignToolIds.READ_DESIGN_RESOURCES
     ? { required: ['names'] }
     : {}),
   properties:

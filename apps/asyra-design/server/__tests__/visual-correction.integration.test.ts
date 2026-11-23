@@ -118,7 +118,7 @@ it('executes correction discovery through real owners and recovers only the unfi
     expect(missing.apis).toEqual([])
     expect(invoked).toHaveLength(0)
     const lookup = JSON.parse(
-      await tools.call('read_design_contracts', selection, signal)
+      await tools.call('read_design_resources', selection, signal)
     )
 
     expect(lookup.missingNames).toEqual([])

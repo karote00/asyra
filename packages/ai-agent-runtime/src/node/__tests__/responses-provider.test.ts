@@ -99,7 +99,20 @@ it('publishes exact schemas and returns correlated outputs before continuing the
   const fetcher: typeof fetch = async (_url, init) => {
     requests.push(JSON.parse(String(init?.body)))
 
-    return reply(requests.length === 1 ? [reasoning, call('c1')] : [message])
+    if (requests.length === 1) {
+      return reply([
+        reasoning,
+        {
+          type: 'tool_search_call',
+          execution: 'client',
+          status: 'completed',
+          call_id: 'load',
+          arguments: { names: ['inventory.reserve'] }
+        }
+      ])
+    }
+
+    return reply(requests.length === 2 ? [call('c1')] : [message])
   }
 
   const provider = createResponsesAiProvider({
@@ -128,25 +141,31 @@ it('publishes exact schemas and returns correlated outputs before continuing the
         content: [{ type: 'input_text', text: 'Reserve product one' }]
       }
     ],
-    tools: [
-      {
-        type: 'namespace',
-        name: 'inventory',
-        tools: [
-          {
-            name: 'reserve',
-            strict: false,
-            parameters: tools[0].tools[0].inputSchema,
-            defer_loading: true
-          }
-        ]
-      },
-      { type: 'tool_search' }
-    ]
+    tools: [{ type: 'tool_search', execution: 'client' }]
   })
+  expect(requests[1].input).toMatchObject([
+    {
+      type: 'tool_search_output',
+      call_id: 'load',
+      tools: [
+        {
+          type: 'namespace',
+          name: 'inventory',
+          tools: [
+            {
+              name: 'reserve',
+              strict: false,
+              parameters: tools[0].tools[0].inputSchema,
+              defer_loading: true
+            }
+          ]
+        }
+      ]
+    }
+  ])
   expect(requests[0]).not.toHaveProperty('instructions')
-  expect(requests[1].previous_response_id).toBe('response')
-  expect(requests[1].input).toEqual([
+  expect(requests[2].previous_response_id).toBe('response')
+  expect(requests[2].input).toEqual([
     {
       type: 'function_call_output',
       call_id: 'c1',
@@ -159,8 +178,8 @@ it('publishes exact schemas and returns correlated outputs before continuing the
       ]
     }
   ])
-  expect(requests[2].previous_response_id).toBe('response')
-  expect(requests[2].input).toEqual([
+  expect(requests[3].previous_response_id).toBe('response')
+  expect(requests[3].input).toEqual([
     {
       role: 'user',
       content: [{ type: 'input_text', text: 'Reserve product one' }]
@@ -568,13 +587,9 @@ it('observes credential-free protocol bodies and cumulative usage without making
   await provider.dispose?.()
 })
 
-it('distinguishes empty and flat discovery outputs and omits inconsistent write accounting', async () => {
-  const flat = {
-    type: 'function',
-    name: 'reserve',
-    description: 'Café inventory'
-  }
+it('returns only authorized requested definitions and measures the actual client delivery', async () => {
   const events: unknown[] = []
+  let requests = 0
   const provider = createResponsesAiProvider({
     model: 'm',
     apiKey: 'test',
@@ -582,15 +597,36 @@ it('distinguishes empty and flat discovery outputs and omits inconsistent write 
     prepare: async () =>
       makeBinding({ observe: (event) => events.push(event) }),
 
-    fetch: async () =>
-      Response.json({
+    fetch: async (_, init) => {
+      const body = JSON.parse(String(init?.body))
+
+      if (++requests === 1) {
+        return reply(
+          [
+            ['missing'],
+            ['inventory.reserve', 'inventory.reserve', 'private.other']
+          ].map((names, i) => ({
+            type: 'tool_search_call',
+            execution: 'client',
+            status: 'completed',
+            call_id: 'load' + i,
+            arguments: { names }
+          }))
+        )
+      }
+
+      expect(body.input[0].tools).toEqual([])
+      const loaded = body.input[1].tools
+
+      expect(loaded).toHaveLength(1)
+      expect(
+        loaded[0].tools.map((tool: { name: string }) => tool.name)
+      ).toEqual(['reserve'])
+
+      return Response.json({
         id: 'one',
         status: 'completed',
-        output: [
-          { type: 'tool_search_output', id: 'empty', tools: [] },
-          { type: 'tool_search_output', id: 'flat', tools: [flat] },
-          message
-        ],
+        output: [message],
         usage: {
           input_tokens: 10,
           output_tokens: 4,
@@ -598,30 +634,33 @@ it('distinguishes empty and flat discovery outputs and omits inconsistent write 
           input_tokens_details: { cached_tokens: 9, cache_write_tokens: 7 }
         }
       })
+    }
   })
 
   try {
     await expect(
       provider.requestActionBatch(input, { signal: signal() })
     ).resolves.toEqual(final)
-    expect(events[1]).toMatchObject({
+    expect(events[2]).toMatchObject({
+      direction: 'request',
       discovery: {
-        responseId: 'one',
+        responseId: 'response',
         searches: [
-          { itemId: 'empty', bytes: 0, definitions: [] },
+          { itemId: 'load0', bytes: 0, definitions: [] },
           {
-            itemId: 'flat',
+            itemId: 'load1',
             definitions: [
               {
                 name: 'reserve',
-                bytes: Buffer.byteLength(JSON.stringify(flat))
+                namespace: 'inventory',
+                bytes: expect.any(Number)
               }
             ]
           }
         ]
       }
     })
-    expect(events[1]).not.toHaveProperty('usage.response.cacheWriteTokens')
+    expect(events[3]).not.toHaveProperty('usage.response.cacheWriteTokens')
   } finally {
     await provider.dispose?.()
   }
@@ -779,5 +818,106 @@ it('resumes undispatched work only with its original turn executor', async () =>
     expect(invoke).toHaveBeenCalledTimes(1)
   } finally {
     await restored.dispose?.()
+  }
+})
+
+it('recovers an unacknowledged client search on its original chain without replaying a mutation', async () => {
+  const conversations = createResponsesConversations()
+  const invoke = vi.fn(makeBinding().invoke)
+  const requests: string[] = []
+
+  const open = () =>
+    createResponsesAiProvider({
+      model: 'm',
+      apiKey: 'fixture',
+      conversations,
+
+      prepare: async () => makeBinding({ invoke }),
+
+      fetch: async (_, init) => {
+        const body = JSON.parse(String(init?.body))
+
+        requests.push(JSON.stringify(body.input))
+        if (requests.length === 1) {
+          return reply([
+            {
+              type: 'tool_search_call',
+              execution: 'client',
+              status: 'completed',
+              call_id: 'load',
+              arguments: { names: ['inventory.reserve'] }
+            }
+          ])
+        }
+
+        if (requests.length === 2) {
+          return new Response(null, { status: 503 })
+        }
+
+        if (requests.length === 3) {
+          expect(body.previous_response_id).toBe('response')
+          expect(body.input[0]).toMatchObject({
+            type: 'tool_search_output',
+            call_id: 'load',
+            tools: [{ name: 'inventory', tools: [{ name: 'reserve' }] }]
+          })
+
+          return reply([call('write')])
+        }
+
+        return reply([message])
+      }
+    })
+
+  let provider = open()
+
+  try {
+    await expect(
+      provider.requestActionBatch(input, { signal: signal() })
+    ).rejects.toMatchObject({ code: 'AI_PROVIDER_HTTP_STATUS' })
+    await provider.dispose?.()
+    provider = open()
+    await expect(
+      provider.requestActionBatch(
+        { ...input, intent: 'Different turn' },
+        { signal: signal() }
+      )
+    ).rejects.toMatchObject({ code: 'AI_PROVIDER_SESSION_UNAVAILABLE' })
+    await expect(
+      provider.requestActionBatch(input, { signal: signal() })
+    ).resolves.toEqual(final)
+    expect(requests[2]).toBe(requests[1])
+    expect(invoke).toHaveBeenCalledTimes(1)
+  } finally {
+    await provider.dispose?.()
+    conversations.dispose()
+  }
+})
+
+it('binds continued operations to the local execution contract without transmitting its digest', async () => {
+  let digest = 'first'
+  const fetcher = vi.fn(async (_url: RequestInfo | URL, init?: RequestInit) => {
+    expect(String(init?.body)).not.toContain('private-contract-')
+
+    return reply([message])
+  })
+  const source = createResponsesAiProvider({
+    apiKey: 'fixture',
+    model: 'fixture',
+    fetch: fetcher,
+
+    prepare: async () =>
+      makeBinding({ executionContractDigest: 'private-contract-' + digest })
+  })
+
+  try {
+    await source.requestActionBatch(input, { signal: signal() })
+    digest = 'second'
+    await expect(
+      source.requestActionBatch(input, { signal: signal() })
+    ).rejects.toMatchObject({ code: 'AI_PROVIDER_SESSION_UNAVAILABLE' })
+    expect(fetcher).toHaveBeenCalledTimes(1)
+  } finally {
+    await source.dispose?.()
   }
 })

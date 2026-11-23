@@ -146,10 +146,8 @@ it.each(['image', 'bytes'])(
 
     try {
       const reply = await second.invoke({
-        name: 'design_operations.execute_design',
-        input: {
-          delivery: { fields: { picture: { name: 'picture', path: '' } } }
-        }
+        name: 'design_operations.read_design_resources',
+        input: { savedFields: { picture: { name: 'picture', path: '' } } }
       })
 
       expect(reply.outcome, reply.text.slice(0, 800)).toMatchObject({
@@ -166,11 +164,9 @@ it.each(['image', 'bytes'])(
       expect(capture).toHaveBeenCalledOnce()
 
       const shape = await second.invoke({
-        name: 'design_operations.execute_design',
+        name: 'design_operations.read_design_resources',
         input: {
-          delivery: {
-            fields: { picture: { name: 'picture', path: '', view: 'shape' } }
-          }
+          savedFields: { picture: { name: 'picture', path: '', view: 'shape' } }
         }
       })
 
@@ -184,10 +180,8 @@ it.each(['image', 'bytes'])(
 
       if (selection === 'image') {
         const width = await second.invoke({
-          name: 'design_operations.execute_design',
-          input: {
-            delivery: { fields: { width: { name: 'picture', path: '/width' } } }
-          }
+          name: 'design_operations.read_design_resources',
+          input: { savedFields: { width: { name: 'picture', path: '/width' } } }
         })
 
         expect(JSON.parse(width.text).fields.width).toBe(824)
@@ -198,10 +192,8 @@ it.each(['image', 'bytes'])(
         save: { picture: { dataUrl: uri, width: 824, height: 1024 } }
       })
       const authored = await second.invoke({
-        name: 'design_operations.execute_design',
-        input: {
-          delivery: { fields: { picture: { name: 'picture', path: '' } } }
-        }
+        name: 'design_operations.read_design_resources',
+        input: { savedFields: { picture: { name: 'picture', path: '' } } }
       })
 
       expect(

@@ -135,9 +135,9 @@ it('delivers saved inspection pixels and status in the actual native successor',
       id: 'saved-image',
       call_id: 'saved-image',
       namespace: 'design_operations',
-      name: 'execute_design',
+      name: 'read_design_resources',
       arguments: JSON.stringify({
-        delivery: { fields: { picture: { name: 'picture', path: '' } } }
+        savedFields: { picture: { name: 'picture', path: '' } }
       })
     }
   ])
@@ -178,7 +178,8 @@ it('delivers saved inspection pixels and status in the actual native successor',
 })
 
 const initialNativeHandoff = (
-  fixture: Awaited<ReturnType<typeof createNativeProviderFixture>>
+  fixture: Awaited<ReturnType<typeof createNativeProviderFixture>>,
+  toolName = 'execute_design'
 ) => {
   const starts = fixture
     .appPackets()
@@ -202,10 +203,10 @@ const initialNativeHandoff = (
       .flatMap((group) =>
         Array.isArray(group.tools) ? group.tools.filter(isRecord) : []
       )
-      .filter((item) => item.name === 'execute_design')
+      .filter((item) => item.name === toolName)
 
     if (entries.length !== 1) {
-      throw Error('Expected one unambiguous execute_design declaration')
+      throw Error('Expected one unambiguous ' + toolName + ' declaration')
     }
 
     return entries[0]
@@ -279,29 +280,36 @@ it('preserves invalid empty result selection rejection in the actual native cont
         actions: [],
         context: {},
         attempt: 1,
+        metadata: { conversationId: 'resource-admission' },
         intent: 'Inspect result delivery capabilities.'
       },
-      { environment: fixture.environment, signal: AbortSignal.timeout(45000) }
+      {
+        environment: fixture.environment,
+        signal: AbortSignal.timeout(45000),
+
+        resultContext: async () => {
+          throw Error('Registration must not read saved data')
+        }
+      }
     )
-    const { ownerSchema, receivedSchema } = initialNativeHandoff(fixture)
-    const valid = {
-      delivery: { fields: { chosen: { name: 'saved', path: '' } } }
-    }
+    const { ownerSchema, receivedSchema } = initialNativeHandoff(
+      fixture,
+      'read_design_resources'
+    )
+    const valid = { savedFields: { chosen: { name: 'saved', path: '' } } }
 
     for (const schema of [ownerSchema, receivedSchema]) {
       expect(operationInputIssue(valid, schema)).toBeUndefined()
       expect(
         operationInputIssue(
-          { delivery: { fields: { chosen: { name: 'saved' } } } },
+          { savedFields: { chosen: { name: 'saved' } } },
           schema
         )
       ).toBeDefined()
-      expect(
-        operationInputIssue({ delivery: { fields: [] } }, schema)
-      ).toBeDefined()
+      expect(operationInputIssue({ savedFields: [] }, schema)).toBeDefined()
     }
 
-    const invalid = { delivery: { fields: {} } }
+    const invalid = { savedFields: {} }
 
     expect(
       operationInputIssue(invalid, ownerSchema),
@@ -396,7 +404,7 @@ it('retries durable storage through the actual native provider without replaying
           throw Error('Missing executable contract continuation')
         }
 
-        expect(page.next.tool).toBe('read_design_contracts')
+        expect(page.next.tool).toBe('read_design_resources')
         contractCallId = 'contracts-' + contractPages
         steps.splice(fixture.requests.length, 0, readContract)
 
@@ -465,7 +473,7 @@ it('retries durable storage through the actual native provider without replaying
         id: 'contracts',
         call_id: 'contracts',
         namespace: 'design_operations',
-        name: 'read_design_contracts',
+        name: 'read_design_resources',
         arguments: JSON.stringify({
           names: ['design_preparation.prepare_design']
         })
@@ -1700,14 +1708,6 @@ it.each([false, true])(
   async (attemptCall) => {
     const fixture = await createNativeProviderFixture([
       {
-        type: 'tool_search_call',
-        id: 'find-advice',
-        call_id: 'find-advice',
-        execution: 'client',
-        status: 'completed',
-        arguments: { query: 'design_knowledge.read_knowledge', limit: 1 }
-      },
-      {
         type: 'function_call',
         id: 'read-advice',
         call_id: 'read-advice',
@@ -1779,7 +1779,7 @@ it.each([false, true])(
       expect(fixture.toolCalls()).toHaveLength(1)
       assertKnowledgeConsumer(fixture.successorOutput('read-advice'))
       expect(fixture.toolReply('read-advice').success).toBe(true)
-      expect(fixture.requests).toHaveLength(attemptCall ? 4 : 3)
+      expect(fixture.requests).toHaveLength(attemptCall ? 3 : 2)
     } finally {
       await fixture.dispose()
     }
@@ -1789,14 +1789,6 @@ it.each([false, true])(
 
 it('native Knowledge remains usable when durable library loading fails and the model receives that limitation', async () => {
   const fixture = await createNativeProviderFixture([
-    {
-      type: 'tool_search_call',
-      id: 'find-advice',
-      call_id: 'find-advice',
-      execution: 'client',
-      status: 'completed',
-      arguments: { query: 'design_knowledge.read_knowledge', limit: 1 }
-    },
     {
       type: 'function_call',
       id: 'read-advice',
@@ -1862,14 +1854,14 @@ it('delivers bindable common-API read values to the actual native successor', as
       call_id: 'read-tool',
       execution: 'client',
       status: 'completed',
-      arguments: { query: 'read_design_contracts', limit: 1 }
+      arguments: { query: 'read_design_resources', limit: 1 }
     },
     {
       type: 'function_call',
       id: 'read-shape',
       call_id: 'read-shape',
       namespace: 'design_operations',
-      name: 'read_design_contracts',
+      name: 'read_design_resources',
       arguments: JSON.stringify({
         names: ['api_fill_getFillTargetsAtIndex'],
         view: 'full'
@@ -1959,9 +1951,9 @@ it('preserves large selected saved data and outcome in actual native history', a
       id: 'selected-snapshot',
       call_id: 'selected-snapshot',
       namespace: 'design_operations',
-      name: 'execute_design',
+      name: 'read_design_resources',
       arguments: JSON.stringify({
-        delivery: { fields: { snapshot: { name: 'snapshot', path: '' } } }
+        savedFields: { snapshot: { name: 'snapshot', path: '' } }
       })
     }
   ])

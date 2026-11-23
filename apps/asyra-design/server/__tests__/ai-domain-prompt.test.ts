@@ -19,17 +19,14 @@ const imageGuidance = imageDefinitions
 describe('stage-owned App guidance', () => {
   it('publishes user authority, tool choice and optional knowledge without preloading task methods', () => {
     for (const rule of [
-      'original user request remains authoritative',
-      'Search by intended purpose',
-      'Execute known current contracts directly',
-      'optional reference material',
-      'Final verification is your responsibility',
-      'do not replay uncertain writes',
-      'private canvas data or credentials',
-      'Read-only advice leaves the canvas unchanged',
-      'required external permission',
-      'conversation language',
-      'without extra progress calls'
+      "user's intent",
+      'real IDs',
+      'Make design decisions',
+      'Delegate decided work to tools',
+      'Confirm the requested result',
+      'Never replay uncertain writes',
+      'private document data',
+      'Advice leaves the document unchanged'
     ]) {
       expect(general).toContain(rule)
     }
@@ -62,16 +59,12 @@ describe('stage-owned App guidance', () => {
   })
 
   it('consumes chronological conversation data with current intent precedence', () => {
+    expect(AI_CONVERSATION_HISTORY_INSTRUCTIONS).toContain('Prior turns')
     expect(AI_CONVERSATION_HISTORY_INSTRUCTIONS).toContain(
-      'metadata.conversationContext'
-    )
-    expect(AI_CONVERSATION_HISTORY_INSTRUCTIONS).toContain(
-      'current input.intent overrides'
+      'Current intent takes precedence'
     )
     expect(AI_CONVERSATION_HISTORY_INSTRUCTIONS).toContain('attachmentIndexes')
-    expect(AI_CONVERSATION_HISTORY_INSTRUCTIONS).toContain(
-      'fresh target and evidence checks'
-    )
+    expect(AI_CONVERSATION_HISTORY_INSTRUCTIONS).toContain('current targets')
   })
 
   it('offers reference purpose and region as optional context', () => {

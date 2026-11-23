@@ -405,7 +405,7 @@ it('publishes portable authored reference notes separately from request indexes'
   try {
     const output = JSON.parse(
       await owner.call(
-        'read_design_contracts',
+        'read_design_resources',
         {
           names: ['design_operations.select_design_references'],
           view: 'usage'

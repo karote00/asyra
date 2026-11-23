@@ -1821,7 +1821,7 @@ it('hands a material revision to its material-only consumer and reuses the same 
   )
   const found = JSON.parse(
     await query.call(
-      'read_design_contracts',
+      'read_design_resources',
       { names: [materialDefinition.name], view: 'full' },
       signal()
     )

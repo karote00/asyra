@@ -1,3 +1,4 @@
+import { nearbyCatalogNames } from './catalog-spelling'
 import {
   contractReadArguments,
   discoveryInputSchema,
@@ -133,6 +134,7 @@ import {
   designContextDefinitions
 } from './local-design-context'
 import {
+  designKnowledgeNamespace,
   isDesignProviderEntry,
   AiDesignToolIds
 } from '../src/constants/ai-design'
@@ -1730,7 +1732,7 @@ export const createLocalOperationTools = (
       )
       .digest('hex')
     const refresh = {
-      tool: AiDesignToolIds.READ_DESIGN_CONTRACTS,
+      tool: AiDesignToolIds.READ_DESIGN_RESOURCES,
       arguments: contractReadArguments({
         ...selector,
         refresh: true,
@@ -1787,7 +1789,7 @@ export const createLocalOperationTools = (
             availableInResponse: false,
             nextAction: 'correct-schema-paths',
             recover: {
-              tool: AiDesignToolIds.READ_DESIGN_CONTRACTS,
+              tool: AiDesignToolIds.READ_DESIGN_RESOURCES,
               arguments: contractReadArguments({
                 ...selector,
                 ...(validPaths.length
@@ -1803,7 +1805,7 @@ export const createLocalOperationTools = (
             ...(validPaths.length
               ? {
                   narrowerQuery: {
-                    tool: AiDesignToolIds.READ_DESIGN_CONTRACTS,
+                    tool: AiDesignToolIds.READ_DESIGN_RESOURCES,
                     arguments: contractReadArguments({
                       ...selector,
                       schemaPaths: validPaths
@@ -1822,7 +1824,7 @@ export const createLocalOperationTools = (
                 descriptor.namespace === localOperationNamespace
             ),
             recover: {
-              tool: AiDesignToolIds.READ_DESIGN_CONTRACTS,
+              tool: AiDesignToolIds.READ_DESIGN_RESOURCES,
               arguments: contractReadArguments({ ...selector, view: 'usage' })
             }
           }
@@ -2100,7 +2102,7 @@ export const createLocalOperationTools = (
                 instructions:
                   'Use operationParameters for this operation.arguments inside execute_design. Host sequencing, bindings, targets, retention and delivery use hostContract; the host is already available. Omit target-supplied arguments when using a target selector.',
                 hostContract: {
-                  tool: AiDesignToolIds.READ_DESIGN_CONTRACTS,
+                  tool: AiDesignToolIds.READ_DESIGN_RESOURCES,
                   arguments: contractReadArguments({
                     names: [
                       `${localOperationNamespace}.${AiDesignToolIds.EXECUTE_DESIGN}`
@@ -2168,7 +2170,7 @@ export const createLocalOperationTools = (
     const fieldQuery =
       args.view === 'usage' && Array.isArray(navigation) && navigation.length
         ? {
-            tool: AiDesignToolIds.READ_DESIGN_CONTRACTS,
+            tool: AiDesignToolIds.READ_DESIGN_RESOURCES,
             arguments: contractReadArguments({
               ...selector,
               schemaPaths: [navigation[0]]
@@ -2204,7 +2206,7 @@ export const createLocalOperationTools = (
           : {}),
         nextAction,
         recover: {
-          tool: AiDesignToolIds.READ_DESIGN_CONTRACTS,
+          tool: AiDesignToolIds.READ_DESIGN_RESOURCES,
           arguments: contractReadArguments({
             ...selector,
             ...(args.inputScope ? { inputScope: args.inputScope } : {}),
@@ -2298,9 +2300,11 @@ export const createLocalOperationTools = (
 
     if (!nativeToolsByName || nativeToolsRevision !== revision) {
       nativeToolsByName = new Map()
-      const incoming = (options.getNativeTools?.() ?? []).map((tool) => ({
-        ...tool
-      }))
+      const incoming = (options.getNativeTools?.() ?? [])
+        .filter((tool) => tool.namespace !== designKnowledgeNamespace)
+        .map((tool) => ({
+          ...tool
+        }))
       // The host counter invalidates reads even after rejected/no-op library work.
       // Page identity changes only when the ordered published catalog changes.
       const fingerprint = createHash('sha256')
@@ -2497,40 +2501,45 @@ export const createLocalOperationTools = (
 
   const discoveryGuidance = {
     capabilities:
-      'Find an operation by what it does: category menus, semantic operations or capability terms such as fill, hierarchy, bounds and inspection. Menus include execution routes; exact names retrieve input/output contracts. Choose by purpose and boundaries. When operationParameters is present, use those ordinary arguments with the declared execution route, placing them in parameterField when present; read a contract only for missing details. Known tools need no repeated lookup.',
+      'Find an operation by what it does: category menus, semantic operations or capability terms such as fill, hierarchy, bounds and inspection. Clear matches include complete ordinary arguments and their execution route. Alternatives can be selected by exact identity. Choose by purpose and boundaries. When operationParameters is present, use those ordinary arguments with the declared execution route, placing them in parameterField when present; read a contract only for missing details. Known tools need no repeated lookup.',
     references:
       'This catalog does not search subjects, photographs or design reference material. Use native web research for missing external facts/images, then import_reference_image for a selected source. A subject word may be absent from this capability catalog; do not infer a missing drawing capability or automatically repeat it as a tool query.'
   }
 
   // The admitted schema object is immutable for its owner's revision. Search only
   // projects candidates on the requested page and never acquires a result schema.
-  const parameterSizes = new WeakMap<object, number>()
+  const searchInputs = new WeakMap<object, unknown>()
 
   const candidateParameters = (
     schema: unknown,
-    exact: boolean,
     execution: Record<string, unknown>
   ) => {
-    if (!isRecord(schema) || workflowInputScopes(schema)) {
-      return {}
-    }
+    let parameters: unknown = schema
 
-    let bytes = parameterSizes.get(schema)
+    if (isRecord(schema)) {
+      parameters = searchInputs.get(schema)
+      if (parameters === undefined) {
+        const {
+          'x-design-discovery': _discovery,
+          'x-design-input-scope': _scope,
+          ...ordinary
+        } = schema
+        const input =
+          _discovery === undefined && _scope === undefined ? schema : ordinary
 
-    if (bytes === undefined) {
-      bytes = Buffer.byteLength(JSON.stringify(schema))
-      parameterSizes.set(schema, bytes)
-    }
-
-    // Preserve the compact menu even when a single owner has extensive documentation.
-    if (bytes > (exact ? 2048 : 512)) {
-      return {}
+        // Compact large contracts losslessly; size never removes executable arguments.
+        parameters =
+          Buffer.byteLength(JSON.stringify(input)) > 2048
+            ? workflowUsageParameters(input)
+            : input
+        searchInputs.set(schema, parameters)
+      }
     }
 
     const parameterField = invocationInputField(execution)
 
     return {
-      operationParameters: schema,
+      operationParameters: parameters,
       ...(parameterField ? { parameterField } : {})
     }
   }
@@ -2538,7 +2547,7 @@ export const createLocalOperationTools = (
   const nativeMenu = (
     tool: NativeToolDescriptor,
     candidate = false,
-    parameterMatch?: { exact: boolean }
+    includeParameters = false
   ) => {
     const execution = nativeExecution(tool)
     const inputScopes = workflowInputScopes(tool.inputSchema)
@@ -2557,11 +2566,11 @@ export const createLocalOperationTools = (
       effect: tool.effect,
       composition: tool.composition,
       execution,
-      ...(parameterMatch && !inputScopes
-        ? candidateParameters(tool.inputSchema, parameterMatch.exact, execution)
+      ...(includeParameters
+        ? candidateParameters(tool.inputSchema, execution)
         : {}),
       usage: {
-        tool: AiDesignToolIds.READ_DESIGN_CONTRACTS,
+        tool: AiDesignToolIds.READ_DESIGN_RESOURCES,
         arguments: contractReadArguments({
           names: [`${tool.namespace}.${tool.name}`],
           view: 'usage'
@@ -3965,13 +3974,13 @@ export const createLocalOperationTools = (
                 ['tool-registry']
               ),
               revision: 15,
-              name: AiDesignToolIds.READ_DESIGN_CONTRACTS,
+              name: AiDesignToolIds.READ_DESIGN_RESOURCES,
               executionAccess: AiToolAccess.INDEPENDENT,
               composition: 'request' as const,
               description:
                 'Read authoritative contracts for exact names, semantic identities or namespace-qualified identities. names selects identities; scopes maps each selected identity to its own schemaPaths or inputScope. view=usage returns actionable parameters and results; full returns validation schemas. Use search_design_tools for purpose search or category browsing. Known independent reads can run together through execute_design. Ambiguous names return choices without substituting tools. Reuse resultKey with fromResult to restore selected saved contracts. No discovery prerequisite for already-known operations.',
               inputSchema: discoveryInputSchema(
-                AiDesignToolIds.READ_DESIGN_CONTRACTS,
+                AiDesignToolIds.READ_DESIGN_RESOURCES,
                 categoryChoices
               )
             }
@@ -4485,6 +4494,15 @@ export const createLocalOperationTools = (
 
         const apis = [...admittedApisByName.values()]
 
+        const actionInputOwner = (
+          execution: ReturnType<typeof actionExecution>
+        ) =>
+          execution.kind === 'host-operation' && 'operation' in execution
+            ? nativeInventory().find(
+                (tool) => tool.registeredName === execution.operation
+              )
+            : undefined
+
         const details = (
           api: (typeof apis)[number],
           includeSchema = true,
@@ -4507,7 +4525,7 @@ export const createLocalOperationTools = (
                 revision: dependency.revision,
                 execution: nativeExecution(dependency),
                 definition: {
-                  tool: AiDesignToolIds.READ_DESIGN_CONTRACTS,
+                  tool: AiDesignToolIds.READ_DESIGN_RESOURCES,
                   arguments: contractReadArguments({
                     names: [dependency.registeredName]
                   })
@@ -4515,12 +4533,7 @@ export const createLocalOperationTools = (
               }
             : undefined
           const execution = actionExecution(api)
-          const hostOwner =
-            execution.kind === 'host-operation' && 'operation' in execution
-              ? nativeInventory().find(
-                  (tool) => tool.registeredName === execution.operation
-                )
-              : undefined
+          const hostOwner = actionInputOwner(execution)
           const descriptor = {
             ...api,
             ...(hostOwner ?? {}),
@@ -4553,7 +4566,7 @@ export const createLocalOperationTools = (
               ...(descriptor.execution.kind === 'batch-action'
                 ? {
                     usage: {
-                      tool: AiDesignToolIds.READ_DESIGN_CONTRACTS,
+                      tool: AiDesignToolIds.READ_DESIGN_RESOURCES,
                       arguments: contractReadArguments({
                         names: [descriptor.operation],
                         view: 'usage'
@@ -4581,8 +4594,7 @@ export const createLocalOperationTools = (
 
         const searchActionMenu = (
           api: (typeof apis)[number],
-          includeParameters = false,
-          uniqueMatch = false
+          includeParameters = false
         ) => {
           const contract = getBasicApiContract(api.name)
           const operation = contract?.operation ?? api.name
@@ -4599,15 +4611,12 @@ export const createLocalOperationTools = (
             execution,
             ...(includeParameters && execution.kind !== 'unavailable'
               ? candidateParameters(
-                  api.inputSchema,
-                  uniqueMatch ||
-                    args.query === api.name ||
-                    args.query === operation,
+                  actionInputOwner(execution)?.inputSchema ?? api.inputSchema,
                   execution
                 )
               : {}),
             usage: {
-              tool: AiDesignToolIds.READ_DESIGN_CONTRACTS,
+              tool: AiDesignToolIds.READ_DESIGN_RESOURCES,
               arguments: contractReadArguments({
                 names: [operation],
                 view: 'usage'
@@ -4616,10 +4625,41 @@ export const createLocalOperationTools = (
           }
         }
 
-        const searchCapabilities = (terms: string[]) => {
+        const searchCapabilities = (
+          terms: string[],
+          identityQuery?: string
+        ) => {
           const inventory = nativeInventory()
 
           updateSearchCorpus([...apis, ...inventory])
+
+          // Resolve identities before token ranking. A conflicting field selector
+          // must never turn a known identity into an unrelated fuzzy match.
+          const exactActions = identityQuery
+            ? apis.filter((api) => {
+                const contract = getBasicApiContract(api.name)
+
+                return (
+                  (args.category === undefined ||
+                    args.category === (contract?.category ?? 'design')) &&
+                  [api.name, contract?.operation, contract?.method].includes(
+                    identityQuery
+                  )
+                )
+              })
+            : []
+          const exactTools =
+            identityQuery &&
+            (args.category === undefined || args.category === nativeCategory)
+              ? inventory.filter((tool) =>
+                  [
+                    tool.name,
+                    tool.registeredName,
+                    tool.namespace + '.' + tool.name
+                  ].includes(identityQuery)
+                )
+              : []
+          const byIdentity = exactActions.length > 0 || exactTools.length > 0
 
           const match = (
             metadata: CapabilityMetadata,
@@ -4640,11 +4680,13 @@ export const createLocalOperationTools = (
                 : []
             )
 
+            const score = byIdentity ? 1 : matched.score
+
             return {
               ...matched,
               score: Object.values(fields).some((paths) => !paths.length)
                 ? 0
-                : matched.score,
+                : score,
               capability: capabilityBoundary(metadata),
               match: {
                 ...matched.match,
@@ -4653,7 +4695,7 @@ export const createLocalOperationTools = (
             }
           }
 
-          const matches = apis
+          const matches = (byIdentity ? exactActions : apis)
             .map((api) => {
               const direct = match(metadataText(api), api.name)
 
@@ -4697,7 +4739,7 @@ export const createLocalOperationTools = (
               return { api, ...direct, artifactKeyExamples: undefined }
             })
             .filter((v) => v.score)
-          const native = inventory
+          const native = (byIdentity ? exactTools : inventory)
             .map((tool) => {
               const matched = match(metadataText(tool), tool.name)
 
@@ -4722,66 +4764,96 @@ export const createLocalOperationTools = (
                 b.score - a.score ||
                 a.match.unmatchedTerms.length - b.match.unmatchedTerms.length
             )
-            .map((entry, index) => ({ ...entry, rank: index + 1 }))
+            .map((entry, index) => ({ ...entry, rank: index + 1, byIdentity }))
+        }
+
+        const spelling = (query: string) => {
+          const identities = new Map<string, string>()
+
+          for (const api of apis) {
+            const contract = getBasicApiContract(api.name)
+
+            if (
+              args.category &&
+              args.category !== (contract?.category ?? 'design')
+            ) {
+              continue
+            }
+
+            identities.set(api.name, api.name)
+            if (contract) {
+              identities.set(contract.operation, api.name)
+            }
+          }
+
+          if (!args.category || args.category === nativeCategory) {
+            for (const tool of nativeInventory()) {
+              const identity = tool.namespace + '.' + tool.name
+
+              identities.set(identity, identity)
+            }
+          }
+
+          return [
+            ...new Set(
+              nearbyCatalogNames(query, [...identities.keys()]).map(
+                (name) => identities.get(name) ?? name
+              )
+            )
+          ]
         }
 
         const candidatesFor = (missing: string[]) => {
-          if (typeof args.purpose === 'string') {
-            return searchCapabilities([...capabilityQueryTerms(args.purpose)])
-              .slice(0, 6)
-              .map((entry) =>
-                'api' in entry
-                  ? {
-                      name: entry.api.name,
-                      description: entry.capability.purpose,
-                      rank: entry.rank,
-                      capability: entry.capability,
-                      match: entry.match,
-                      ...(entry.artifactKeyExamples
-                        ? { artifactKeyExamples: entry.artifactKeyExamples }
-                        : {}),
-                      operation:
-                        getBasicApiContract(entry.api.name)?.operation ??
-                        entry.api.name,
-                      execution: actionExecution(entry.api)
-                    }
-                  : {
-                      ...nativeMenu(entry.tool, true),
-                      description: entry.capability.purpose,
-                      rank: entry.rank,
-                      capability: entry.capability,
-                      match: entry.match
-                    }
-              )
+          const suggested = [...new Set(missing.flatMap(spelling))]
+
+          if (suggested.length) {
+            return suggested.flatMap<Record<string, unknown>>((name) => {
+              const api = admittedApisByName.get(name)
+
+              if (api) {
+                return [searchActionMenu(api)]
+              }
+
+              return nativeMatches(name).map((tool) => nativeMenu(tool, true))
+            })
           }
 
-          const terms = missing
-            .join(' ')
-            .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
-            .toLowerCase()
-            .split(/[^a-z0-9]+/)
-            .filter(Boolean)
+          if (
+            missing.every((name) =>
+              name.startsWith(designKnowledgeNamespace + '.')
+            )
+          ) {
+            return []
+          }
 
-          return apis
-            .map((api) => {
-              const operation =
-                getBasicApiContract(api.name)?.operation ?? api.name
-              const text = `${operation} ${api.name}`.toLowerCase()
-
-              return {
-                api,
-                operation,
-                score: terms.filter((term) => text.includes(term)).length
-              }
-            })
-            .filter((entry) => entry.score > 0)
-            .sort((a, b) => b.score - a.score)
+          return searchCapabilities([
+            ...capabilityQueryTerms(missing.join(' '))
+          ])
             .slice(0, 6)
-            .map(({ api, operation }) => ({
-              name: api.name,
-              operation,
-              execution: actionExecution(api)
-            }))
+            .map((entry) =>
+              'api' in entry
+                ? {
+                    name: entry.api.name,
+                    description: entry.capability.purpose,
+                    rank: entry.rank,
+                    capability: entry.capability,
+                    match: entry.match,
+                    ...(entry.artifactKeyExamples
+                      ? { artifactKeyExamples: entry.artifactKeyExamples }
+                      : {}),
+                    operation:
+                      getBasicApiContract(entry.api.name)?.operation ??
+                      entry.api.name,
+                    execution: actionExecution(entry.api)
+                  }
+                : {
+                    ...nativeMenu(entry.tool, true),
+                    description: entry.capability.purpose,
+                    rank: entry.rank,
+                    capability: entry.capability,
+                    match: entry.match
+                  }
+            )
         }
 
         const pageBoundary = (count: number, pageSize = definitionPageSize) => {
@@ -4949,8 +5021,12 @@ export const createLocalOperationTools = (
           })
         }
 
-        const terms = [...capabilityQueryTerms(String(args.query))]
-        const candidates = searchCapabilities(terms).filter(
+        const query = String(args.query).trim()
+        const terms = [...capabilityQueryTerms(query)]
+        const inventory = searchCapabilities(
+          terms,
+          /\s/.test(query) ? undefined : query
+        ).filter(
           (entry) =>
             args.category === undefined ||
             ('api' in entry
@@ -4958,40 +5034,72 @@ export const createLocalOperationTools = (
                 args.category
               : args.category === nativeCategory)
         )
-        // A partial vocabulary match is navigation, not evidence that the
-        // operation exists. Keep all results reachable at their original rank.
-        const complete = candidates.filter(
-          (entry) => entry.match.unmatchedTerms.length === 0
+        const hasCompleteMatch = inventory.some(
+          (entry) => !entry.match.unmatchedTerms.length
         )
-        const uniqueMatch = complete.length === 1 ? complete[0] : undefined
-        const partial = candidates.length > 0 && complete.length === 0
+        const byIdentity = inventory[0]?.byIdentity
+        const partial = !byIdentity && inventory.length > 0 && !hasCompleteMatch
+        const [leader, runnerUp] = inventory
+        // Ranking can suggest ordinary arguments without claiming support for
+        // every word in the query. Tied owners remain independently readable.
+        const distinct =
+          !runnerUp ||
+          leader.intentMatches !== runnerUp.intentMatches ||
+          leader.score !== runnerUp.score
+        const clearMatch = byIdentity
+          ? inventory.length === 1
+          : distinct &&
+            leader?.intentMatches > 0 &&
+            leader.match.metadataTerms.length >
+              leader.match.unmatchedTerms.length
+        const primary = clearMatch ? leader : undefined
         const pageSize = partial && !args.offset ? 3 : definitionPageSize
-        const inventory = candidates
         const page = pageBoundary(inventory.length, pageSize)
         const selected = inventory.slice(page.offset, page.offset + pageSize)
 
+        const candidateSummary = (
+          entry: (typeof inventory)[number],
+          detailed: boolean
+        ) => ({
+          rank: entry.rank,
+          capability: detailed
+            ? entry.capability
+            : { purpose: entry.capability.purpose },
+          ...(args.inputFields
+            ? { match: { inputFields: entry.match.inputFields } }
+            : {}),
+          ...(detailed || (entry === leader && !byIdentity)
+            ? { match: entry.match }
+            : {})
+        })
+
         return JSON.stringify({
           catalogSize: apis.length,
-          ...(partial
+          ...(partial || !inventory.length
             ? {
-                guidance: {
-                  capabilities:
-                    'Check the declared operation before execution.',
-                  references:
-                    'This catalog does not search reference material. Use native web research for external sources.'
-                },
+                candidates: spelling(query).map((name) => ({ name })),
                 undeclaredPurposeTerms: terms.filter(
                   (term) =>
-                    !candidates.some((entry) =>
+                    !inventory.some((entry) =>
                       metadataText(
                         'api' in entry ? entry.api : entry.tool
                       ).purpose.has(term)
                     )
                 ),
                 message:
-                  'Partial matches only. No candidate matched all query terms. Check the declared purpose and unmatched terms before executing.'
+                  'Partial matches only. Check the declared purpose and unmatched terms before executing.'
               }
-            : { guidance: discoveryGuidance }),
+            : {}),
+          guidance: {
+            capabilities:
+              'Use operationParameters with the declared route. For other candidates read_design_resources accepts the operation or namespace-qualified tool name.',
+            ...(!inventory.length || partial
+              ? {
+                  references:
+                    'This catalog does not search reference material. Use native web research for external sources.'
+                }
+              : {})
+          },
           ...(inventory.length
             ? {}
             : {
@@ -5003,50 +5111,49 @@ export const createLocalOperationTools = (
                   arguments: {}
                 }
               }),
-          apis: selected.flatMap((entry) =>
-            'api' in entry
-              ? [
-                  {
-                    ...searchActionMenu(
-                      entry.api,
-                      !partial,
-                      entry === uniqueMatch
-                    ),
-                    rank: entry.rank,
-                    capability: entry.capability,
-                    match: entry.match,
-                    ...(entry.artifactKeyExamples
-                      ? { artifactKeyExamples: entry.artifactKeyExamples }
-                      : {})
-                  }
-                ]
-              : []
-          ),
-          tools: selected.flatMap((entry) =>
-            'tool' in entry
-              ? [
-                  {
-                    ...nativeMenu(
-                      entry.tool,
-                      true,
-                      partial
-                        ? undefined
-                        : {
-                            exact:
-                              entry === uniqueMatch ||
-                              args.query === entry.tool.name ||
-                              args.query === entry.tool.registeredName ||
-                              args.query ===
-                                entry.tool.namespace + '.' + entry.tool.name
-                          }
-                    ),
-                    rank: entry.rank,
-                    capability: entry.capability,
-                    match: entry.match
-                  }
-                ]
-              : []
-          ),
+          apis: selected.flatMap((entry) => {
+            if (!('api' in entry)) {
+              return []
+            }
+
+            const selectedOwner = entry === primary
+            const contract = getBasicApiContract(entry.api.name)
+            const menu = selectedOwner
+              ? searchActionMenu(entry.api, true)
+              : {
+                  name: entry.api.name,
+                  operation: contract?.operation ?? entry.api.name,
+                  effect:
+                    contract?.effect ??
+                    ('effect' in entry.api ? entry.api.effect : undefined)
+                }
+
+            return [
+              {
+                ...menu,
+                ...candidateSummary(entry, selectedOwner),
+                ...(entry.artifactKeyExamples && selectedOwner
+                  ? { artifactKeyExamples: entry.artifactKeyExamples }
+                  : {})
+              }
+            ]
+          }),
+          tools: selected.flatMap((entry) => {
+            if (!('tool' in entry)) {
+              return []
+            }
+
+            const selectedOwner = entry === primary
+            const menu = selectedOwner
+              ? nativeMenu(entry.tool, true, true)
+              : {
+                  name: entry.tool.name,
+                  namespace: entry.tool.namespace,
+                  effect: entry.tool.effect
+                }
+
+            return [{ ...menu, ...candidateSummary(entry, selectedOwner) }]
+          }),
           ...page
         })
       }
@@ -5632,14 +5739,14 @@ export const createLocalOperationTools = (
         executionAccess?: AiToolAccess
       }
     >((definition) =>
-      definition.name === AiDesignToolIds.READ_DESIGN_CONTRACTS
+      definition.name === AiDesignToolIds.READ_DESIGN_RESOURCES
         ? [
             definition,
             {
               ...definition,
               name: AiDesignToolIds.SEARCH_DESIGN_TOOLS,
               description:
-                'Find tools by intended capability and optional required input fields. Returns ranked candidates with complete ordinary argument schemas for compact executable matches and exact read routes for further details. Search never executes an operation. query searches declared purpose, fields and identities; category optionally narrows the search. Omit both for categories. Follow next.arguments for more candidates. Use read_design_contracts for exact contracts. Independent searches and contract reads can be composed through execute_design.',
+                'Find tools by intended capability and optional required input fields. Returns executable arguments for a clear match and purpose summaries for alternatives. A unique exact method selects one owner. Search never executes an operation. query searches declared purpose, fields and identities; category optionally narrows the search. Omit both for categories. Follow next.arguments for more candidates. Use read_design_resources for exact contracts. Independent searches and contract reads can be composed through execute_design.',
               inputSchema: discoveryInputSchema(
                 AiDesignToolIds.SEARCH_DESIGN_TOOLS,
                 categoryChoices
@@ -5654,8 +5761,8 @@ export const createLocalOperationTools = (
             ...definition,
             description:
               definition.description +
-              (definition.name === AiDesignToolIds.READ_DESIGN_CONTRACTS
-                ? ' Retained contract reads use read_design_contracts with names and fromResult; preserve the original scope. Missing retained content requires a fresh exact read, never replay writes. '
+              (definition.name === AiDesignToolIds.READ_DESIGN_RESOURCES
+                ? ' Retained contract reads use read_design_resources with names and fromResult; preserve the original scope. Missing retained content requires a fresh exact read, never replay writes. '
                 : ' ') +
               informationDeliveryInstructions,
             inputSchema: (() => {
@@ -5668,7 +5775,7 @@ export const createLocalOperationTools = (
                 properties: { ...properties, contentPage: contentPageSchema }
               }
 
-              return definition.name === AiDesignToolIds.READ_DESIGN_CONTRACTS
+              return definition.name === AiDesignToolIds.READ_DESIGN_RESOURCES
                 ? {
                     anyOf: [
                       ordinary,
@@ -5898,7 +6005,7 @@ export const createLocalOperationTools = (
       ) {
         const value: Record<string, unknown> =
           selection ??
-          (name === AiDesignToolIds.READ_DESIGN_CONTRACTS &&
+          (name === AiDesignToolIds.READ_DESIGN_RESOURCES &&
           isRecord(query.scopes)
             ? await (async () => {
                 const { scopes, ...common } = query

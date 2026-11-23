@@ -93,7 +93,7 @@ it('executes the published identity example through the real Core and uses issue
     dispatch
   )
   const definition = operations.definitions.find(
-    (item) => item.name === 'read_design_contracts'
+    (item) => item.name === 'read_design_resources'
   )
 
   if (!definition) {

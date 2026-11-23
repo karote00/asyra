@@ -117,14 +117,14 @@ const verifyPagedDiscovery = async () => {
 
   for (let index = 0; index < 20; index++) {
     const raw = await owner.call(
-      'read_design_contracts',
+      'read_design_resources',
       input,
       new AbortController().signal
     )
 
     expect(Buffer.byteLength(raw)).toBeLessThanOrEqual(24000)
     const declared = owner.definitions.find(
-      (d) => d.name === AiDesignToolIds.READ_DESIGN_CONTRACTS
+      (d) => d.name === AiDesignToolIds.READ_DESIGN_RESOURCES
     )
 
     if (!declared) {
@@ -150,7 +150,7 @@ const verifyPagedDiscovery = async () => {
 
   for (let i = 0; i < 63; i++) {
     await owner.call(
-      'read_design_contracts',
+      'read_design_resources',
       { names: ['unrelated-' + i] },
       new AbortController().signal
     )
@@ -164,14 +164,14 @@ const verifyPagedDiscovery = async () => {
 
   for (;;) {
     const raw = await owner.call(
-      'read_design_contracts',
+      'read_design_resources',
       selectedInput,
       new AbortController().signal
     )
 
     expect(
       await owner.call(
-        'read_design_contracts',
+        'read_design_resources',
         selectedInput,
         new AbortController().signal
       )
@@ -198,7 +198,7 @@ const verifyPagedDiscovery = async () => {
   generation++
   native.description = 'Changed declaration.'
   await expect(
-    owner.call('read_design_contracts', first, new AbortController().signal)
+    owner.call('read_design_resources', first, new AbortController().signal)
   ).rejects.toThrow(/stale|changed/i)
   expect(dispatch).not.toHaveBeenCalled()
 }
@@ -493,7 +493,7 @@ it('redisplays selected retained tool contracts without rebuilding schemas or re
       getNativeToolsRevision: () => revision
     }
   )
-  const name = AiDesignToolIds.READ_DESIGN_CONTRACTS
+  const name = AiDesignToolIds.READ_DESIGN_RESOURCES
   const definition = requiredInformationTool(owner, name)
 
   const read = async (args: Record<string, unknown>) => {
@@ -686,7 +686,7 @@ it('preserves saved discovery scope, partial results, ambiguity and foreign-key 
     )
 
   const owner = make()
-  const name = AiDesignToolIds.READ_DESIGN_CONTRACTS
+  const name = AiDesignToolIds.READ_DESIGN_RESOURCES
   const definition = requiredInformationTool(owner, name)
 
   const read = async (input: Record<string, unknown>) =>

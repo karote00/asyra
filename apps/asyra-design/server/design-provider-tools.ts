@@ -21,6 +21,7 @@ import {
 import type { AiToolOwnership } from '@asyra/ai-agent-runtime/schema'
 import {
   nativeToolInputSchema,
+  operationInputIssue,
   toolDeliveryFailure
 } from '@asyra/ai-agent-runtime/schema'
 import { AsyncLocalStorage } from 'node:async_hooks'
@@ -29,7 +30,9 @@ import { readEvaluationWindow } from '../src/ai/evaluation-window'
 import { AiActionNames } from '../src/constants/ai-actions'
 import {
   AiDesignToolIds,
-  designProviderEntryDescription,
+  AiToolFailureCodes,
+  designKnowledgeNamespace,
+  designProviderEntry,
   isDesignProviderEntry
 } from '../src/constants/ai-design'
 import { createDesignPreparationSession } from './design-preparation'
@@ -38,6 +41,7 @@ import {
   workflowUsageParameters
 } from './design-workflow-discovery'
 import { observeActionBatch } from './local-action-observation'
+import { sequenceEntryParameters } from './local-design-sequence'
 import { createLocalDesignTools } from './local-design-tools'
 import { createLocalDesignWorkflow } from './local-design-workflow'
 import { createLocalImageTools } from './local-image-tools'
@@ -89,8 +93,17 @@ type PublishedAction = Pick<
   'name' | 'description' | 'inputSchema'
 >
 
+const finalControlDescriptions: Readonly<Record<string, string>> = {
+  [AiActionNames.REPORT_OUTCOME]:
+    'Report completion or limitation; claim saving only after confirmation.',
+  [AiActionNames.REQUEST_CLARIFICATION]:
+    'Ask for missing user input or required permission.',
+  [AiActionNames.REQUEST_DRAWING_DETAIL_CHOICE]: 'Offer drawing detail choices.'
+}
+
 const turnInput = (
   input: Omit<AiProviderInput, 'actions'> & { actions: PublishedAction[] },
+  responses: boolean,
   references: ReturnType<
     ReturnType<typeof createLocalImageTools>['validateReferences']
   >
@@ -99,6 +112,7 @@ const turnInput = (
     ? { ...input.metadata }
     : input.metadata
   const images: Record<string, unknown>[] = []
+  const imageIndexes: number[] = []
 
   // Host evaluation controls and retrospective questions are not drawing input.
   if (isRecord(metadata)) {
@@ -106,6 +120,13 @@ const turnInput = (
   }
 
   if (isRecord(metadata) && Array.isArray(metadata.imageAttachments)) {
+    const currentIndexes =
+      responses &&
+      isRecord(metadata.conversationContext) &&
+      Array.isArray(metadata.conversationContext.attachmentIndexes)
+        ? new Set(metadata.conversationContext.attachmentIndexes)
+        : undefined
+
     metadata.imageAttachments = metadata.imageAttachments.map(
       (attachment: unknown, index: number) => {
         if (
@@ -120,7 +141,11 @@ const turnInput = (
 
         const { dataUrl, ...description } = attachment
 
-        images.push({ type: 'image', url: dataUrl })
+        if (!currentIndexes || currentIndexes.has(index)) {
+          images.push({ type: 'image', url: dataUrl })
+          imageIndexes.push(index)
+        }
+
         // Caller metadata cannot assert mechanical admission or source identity.
         delete description.referenceId
         delete description.validation
@@ -135,15 +160,46 @@ const turnInput = (
     )
   }
 
+  if (responses && isRecord(metadata)) {
+    if (
+      isRecord(metadata.conversationContext) &&
+      Array.isArray(metadata.imageAttachments) &&
+      metadata.imageAttachments.length
+    ) {
+      metadata.attachmentIndexes = imageIndexes
+    }
+
+    delete metadata.conversationId
+    delete metadata.turnId
+    delete metadata.sourceRequestId
+    delete metadata.conversationContext
+    if (
+      isRecord(metadata.aiTargets) &&
+      !metadata.aiTargets.compositionId &&
+      isRecord(metadata.aiTargets.roleToElementIds) &&
+      !Object.keys(metadata.aiTargets.roleToElementIds).length
+    ) {
+      delete metadata.aiTargets
+    }
+  }
+
   return [
     {
       type: 'text',
       text: JSON.stringify({
         input: {
-          ...input,
-          metadata
+          ...(responses
+            ? {
+                intent: input.intent,
+                context: input.context,
+                actions: input.actions
+              }
+            : input),
+          ...(metadata && (!isRecord(metadata) || Object.keys(metadata).length)
+            ? { metadata }
+            : {})
         },
-        protocolVersion: 1
+        ...(!responses && { protocolVersion: 1 })
       })
     },
     ...images
@@ -437,6 +493,7 @@ export const createDesignProviderTools = async (
               observation: ownerObservation,
               ownership,
               standaloneInvocations: responses,
+
               requestSignal: options.signal,
               resolveSources: imageTools.resolveSources,
               validateReferences: imageTools.validateReferences,
@@ -503,9 +560,9 @@ export const createDesignProviderTools = async (
       : undefined
     const toolGroups = [
       {
-        name: 'design_knowledge',
+        name: designKnowledgeNamespace,
         description:
-          'Domain principles, common design pitfalls and mappings to supported App capabilities help avoid re-deriving relationships and reduce exploration or repeated correction, even for familiar tasks. Discover relevant advice when a method is uncertain or an adjustment keeps missing its target. Consultation is optional, adds no detail or polish requirement and does not change files or permissions.',
+          'Optional design advice. Discovery returns visible topic metadata. Read a known ID directly.',
         owner: knowledge
       },
       {
@@ -563,8 +620,16 @@ export const createDesignProviderTools = async (
   const queuedAt = new Map<string, number>()
 
   if (!options.assessmentOnly && !options.checkOnly) {
+    const priorTurns =
+      isRecord(input.metadata) &&
+      isRecord(input.metadata.conversationContext) &&
+      Array.isArray(input.metadata.conversationContext.turns)
+        ? input.metadata.conversationContext.turns
+        : []
+
     host = createLocalToolHost({
       standaloneInvocations: responses,
+      history: responses ? priorTurns : undefined,
       resultContext:
         isRecord(input.metadata) &&
         typeof input.metadata.conversationId === 'string'
@@ -750,21 +815,30 @@ export const createDesignProviderTools = async (
                     !responses || isDesignProviderEntry(name, definition.name)
                 )
                 .map(({ name: toolName, description, inputSchema }) => {
-                  const example = workflowInvocationExample(inputSchema)
+                  const sequence =
+                    name === 'design_operations' &&
+                    toolName === AiDesignToolIds.EXECUTE_DESIGN
+                  const example =
+                    !sequence && workflowInvocationExample(inputSchema)
 
                   return {
                     type: 'function',
                     name: toolName,
                     description:
-                      designProviderEntryDescription(name, toolName) ??
-                      description,
+                      responses && sequence
+                        ? 'Run known operations together. Use workflow for advanced execution; read execute_design for its Host contract.'
+                        : (designProviderEntry(name, toolName)?.description ??
+                          description),
                     inputSchema: {
                       ...workflowUsageParameters(
-                        nativeToolInputSchema(inputSchema)
+                        responses && sequence
+                          ? sequenceEntryParameters(inputSchema)
+                          : nativeToolInputSchema(inputSchema)
                       ),
                       ...(example ? { examples: [example] } : {})
                     },
-                    deferLoading: !isDesignProviderEntry(name, toolName)
+                    deferLoading:
+                      responses || !isDesignProviderEntry(name, toolName)
                   }
                 })
             }
@@ -772,6 +846,11 @@ export const createDesignProviderTools = async (
         : []
     )
     .filter((group) => group.tools.length > 0)
+  const executionEntry = responses
+    ? nativeDefinitions
+        .find((g) => g.name === localOperationNamespace)
+        ?.tools.find((t) => t.name === AiDesignToolIds.EXECUTE_DESIGN)
+    : undefined
   const advertisedContractDigests = new Map(
     nativeDefinitions.flatMap((group) =>
       group.tools.map(
@@ -833,14 +912,25 @@ export const createDesignProviderTools = async (
     options.signal?.throwIfAborted()
     appActions = preparation
       .modelActions(input.actions)
-      .filter((action) => !operationNames.has(action.name))
+      .filter(
+        (action) =>
+          !operationNames.has(action.name) &&
+          !(
+            responses &&
+            operations &&
+            action.name === AiActionNames.REQUEST_DRAWING_DETAIL_CHOICE
+          )
+      )
       .map(({ name, description, inputSchema }) => ({
         name,
-        description,
+        description: responses
+          ? (finalControlDescriptions[name] ?? description)
+          : description,
         inputSchema
       }))
     inputItems = turnInput(
       { ...input, actions: appActions },
+      responses,
       attachmentReferences
     )
   } catch (error) {
@@ -852,6 +942,13 @@ export const createDesignProviderTools = async (
 
     throw error
   }
+
+  const responseInstructions = responses
+    ? 'Return final JSON {batchId,actions:[{id,name,arguments,summary}]} using admitted final controls. Report verified outcomes; distinguish unsaved work.'
+    : 'Return one final JSON object with batchId and actions [{id,name,arguments,summary}] using the final controls in input.actions. Report in the conversation language. Request context grants no environment access. Never repeat an executed edit in the final batch.' +
+      (operations
+        ? ' Use tools before the final response. Finish completed work with report_outcome.'
+        : ' Return the prepared action batch without invoking backend operation tools. Use report_outcome only for an unsupported request.')
 
   const instructions = () => {
     return [
@@ -865,7 +962,36 @@ export const createDesignProviderTools = async (
           ]
         : [
             { role: 'base', source: 'app-contract', text: AI_APP_PROMPT },
-            ...(isRecord(input.metadata) &&
+            ...(responses && nativeDefinitions.length
+              ? [
+                  {
+                    role: 'base',
+                    source: 'entry-index',
+                    text: nativeDefinitions
+                      .flatMap((group) =>
+                        group.tools.flatMap((tool) => {
+                          const entry = designProviderEntry(
+                            group.name,
+                            tool.name
+                          )
+
+                          return entry
+                            ? [
+                                group.name +
+                                  '.' +
+                                  tool.name +
+                                  ' - ' +
+                                  entry.purpose
+                              ]
+                            : []
+                        })
+                      )
+                      .join('\n')
+                  }
+                ]
+              : []),
+            ...(!responses &&
+            isRecord(input.metadata) &&
             (isRecord(input.metadata.conversationContext) ||
               typeof input.metadata.conversationId === 'string')
               ? [
@@ -884,10 +1010,7 @@ export const createDesignProviderTools = async (
           : 'provider-response-contract',
         text: options.assessmentOnly
           ? assessmentInstructions
-          : 'Return one final JSON object with batchId and actions [{id,name,arguments,summary}] using the final controls in input.actions. Report in the conversation language. Request context grants no environment access. Never repeat an executed edit in the final batch.' +
-            (operations
-              ? ' Use tools before the final response. Finish completed work with report_outcome.'
-              : ' Return the prepared action batch without invoking backend operation tools. Use report_outcome only for an unsupported request.')
+          : responseInstructions
       },
       ...(libraryUnavailable
         ? [
@@ -935,27 +1058,23 @@ export const createDesignProviderTools = async (
       : 0
   })
 
-  const inputForTurn = (resumed: boolean) => {
-    const items = inputItems.map((item) => ({ ...item }))
-
-    if (resumed && typeof items[0]?.text === 'string') {
-      const projected: unknown = JSON.parse(items[0].text)
-
-      if (
-        isRecord(projected) &&
-        isRecord(projected.input) &&
-        isRecord(projected.input.metadata) &&
-        isRecord(projected.input.metadata.conversationContext)
-      ) {
-        projected.input.metadata.conversationContext = {
-          ...projected.input.metadata.conversationContext,
-          turns: []
-        }
-        items[0] = { ...items[0], text: JSON.stringify(projected) }
-      }
+  const inputForTurn = (resumed = false) => {
+    if (responses || !resumed || typeof inputItems[0]?.text !== 'string') {
+      return inputItems
     }
 
-    return items
+    const projected = JSON.parse(inputItems[0].text)
+
+    if (!isRecord(projected.input?.metadata?.conversationContext)) {
+      return inputItems
+    }
+
+    projected.input.metadata.conversationContext.turns = []
+
+    return [
+      { ...inputItems[0], text: JSON.stringify(projected) },
+      ...inputItems.slice(1)
+    ]
   }
 
   const invokeOwner = async (call: {
@@ -976,9 +1095,43 @@ export const createDesignProviderTools = async (
         throw new Error('Tool host is unavailable')
       }
 
+      let args = call.arguments
+
+      if (
+        executionEntry &&
+        call.namespace === localOperationNamespace &&
+        toolName === executionEntry.name
+      ) {
+        const issue = operationInputIssue(args, executionEntry.inputSchema)
+
+        if (issue) {
+          const reply = localToolFailureReply(
+            'Use operations for ordinary steps or workflow for a full Host submission. ' +
+              issue,
+            AiToolFailureCodes.INPUT_INVALID,
+            { stage: 'admission', settlement: 'not-started' }
+          )
+
+          return {
+            ...reply,
+            contentItems: [
+              { type: 'inputText' as const, text: reply.text },
+              {
+                type: 'inputText' as const,
+                text: JSON.stringify({ toolOutcome: reply.outcome })
+              }
+            ]
+          }
+        }
+
+        if (isRecord(args) && Object.hasOwn(args, 'workflow')) {
+          args = args.workflow
+        }
+      }
+
       const reply = await host.invoke({
         name: `${call.namespace}.${call.name}`,
-        input: call.arguments,
+        input: args,
         callId: call.callId,
         signal: toolController.signal,
         actor: 'provider',
@@ -1350,6 +1503,12 @@ export const createDesignProviderTools = async (
     nativeDefinitions,
     toolBindings,
     advertisedContractDigests,
+    executionContractDigest: executionEntry
+      ? toolContractDigest(
+          toolBindings.get(localOperationNamespace + '.' + executionEntry.name)
+            ?.definition.inputSchema
+        )
+      : undefined,
     inputItems,
 
     instructions: () => appOwnedInstructionBlocks,

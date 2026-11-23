@@ -2783,7 +2783,7 @@ it.each(['native', 'registered', 'batch'])(
       if (route === 'registered') {
         const discovery = host
           .definitions()
-          .find((entry) => entry.name === 'read_design_contracts')
+          .find((entry) => entry.name === 'read_design_resources')
 
         if (!discovery?.registeredName) {
           throw new Error('Missing discovery route')
@@ -2803,7 +2803,7 @@ it.each(['native', 'registered', 'batch'])(
               view: 'usage',
               includeResultSchema: true
             },
-            'read_design_contracts'
+            'read_design_resources'
           )
         )
         const selected = [...(guide.apis ?? []), ...(guide.tools ?? [])][0]

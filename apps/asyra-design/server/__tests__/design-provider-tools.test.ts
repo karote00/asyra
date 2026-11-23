@@ -112,3 +112,53 @@ it('reports cancellation before owner invocation as not started rather than unkn
     await tools.dispose()
   }
 })
+
+it('keeps retained sources addressable and sends only current attachment pixels to Responses', async () => {
+  const { default: sharp } = await import('sharp')
+  const images = await Promise.all(
+    ['#eebb00', '#0044dd'].map(async (background) => {
+      const bytes = await sharp({
+        create: { width: 2, height: 2, channels: 3, background }
+      })
+        .png()
+        .toBuffer()
+
+      return {
+        mediaType: 'image/png',
+        size: bytes.length,
+        dataUrl: 'data:image/png;base64,' + bytes.toString('base64')
+      }
+    })
+  )
+  const tools = await createDesignProviderTools(
+    {
+      intent: 'Use this source',
+      context: {},
+      actions: [],
+      attempt: 1,
+      metadata: {
+        conversationId: 'refs',
+        imageAttachments: images,
+        conversationContext: { turns: [], attachmentIndexes: [1] }
+      }
+    },
+    { modelSource: 'openai-responses' }
+  )
+
+  try {
+    const [turn, ...pixels] = tools.inputForTurn()
+
+    expect(pixels).toEqual([{ type: 'image', url: images[1].dataUrl }])
+    const projected = JSON.parse(String(turn.text)).input.metadata
+
+    expect(projected.attachmentIndexes).toEqual([1])
+    expect(
+      projected.imageAttachments.map(
+        (a: { referenceId: string }) => a.referenceId
+      )
+    ).toEqual([expect.any(String), expect.any(String)])
+    expect(String(turn.text)).not.toContain('base64')
+  } finally {
+    await tools.dispose()
+  }
+})

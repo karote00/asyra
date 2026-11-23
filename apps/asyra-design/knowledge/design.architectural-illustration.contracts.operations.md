@@ -50,14 +50,14 @@ Examples use current public selectors:
 
 ```json
 {
-  "tool": "read_design_contracts",
+  "tool": "read_design_resources",
   "arguments": { "names": ["fill.updateFillsAtIndex"], "view": "usage" }
 }
 ```
 
 ```json
 {
-  "tool": "read_design_contracts",
+  "tool": "read_design_resources",
   "arguments": {
     "names": ["design_workflow.prepare_and_apply_design"],
     "scopes": { "design_workflow.prepare_and_apply_design": { "schemaPaths": ["/properties/draft"] } }

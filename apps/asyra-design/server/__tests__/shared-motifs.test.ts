@@ -331,7 +331,7 @@ it('reduces complete selected delivery and saved invocation without another page
 
   while (args) {
     const raw = await operations.call(
-      'read_design_contracts',
+      'read_design_resources',
       args,
       new AbortController().signal
     )
@@ -367,7 +367,7 @@ it('reduces complete selected delivery and saved invocation without another page
   for (;;) {
     const pageText = deliverInformation(
       JSON.stringify(contract),
-      'read_design_contracts',
+      'read_design_resources',
       budgetQuery,
       'contract-budget'
     )

@@ -1,4 +1,8 @@
 import { createHash } from 'node:crypto'
+import {
+  responsesToolCatalog,
+  type ResponsesSearchSelection
+} from './responses-tool-search.js'
 import type { TokenUsage } from '../profiler/recorder.js'
 import {
   AiProviderError,
@@ -29,6 +33,7 @@ export interface ResponsesCheckpoint {
   responseId: string
   turn: string
   callIds: readonly string[]
+  searches: readonly ResponsesSearchSelection[]
   pending: readonly ResponsesCall[]
   outputs: readonly {
     type: 'function_call_output'
@@ -38,6 +43,7 @@ export interface ResponsesCheckpoint {
       | { type: 'input_image'; image_url: string }
     )[]
   }[]
+  webSearchActive?: boolean
   executing?: string
 }
 export type ResponsesConversations = ProviderConversations<ResponsesCheckpoint>
@@ -62,11 +68,14 @@ export function isResponsesCheckpoint(
 ): value is ResponsesCheckpoint {
   if (
     !record(value) ||
+    ('webSearchActive' in value &&
+      typeof value.webSearchActive !== 'boolean') ||
     !identity(value.responseId) ||
     !identity(value.turn) ||
     !Array.isArray(value.callIds) ||
     !value.callIds.every(identity) ||
     !Array.isArray(value.pending) ||
+    !Array.isArray(value.searches) ||
     !Array.isArray(value.outputs)
   ) {
     return false
@@ -87,6 +96,14 @@ export function isResponsesCheckpoint(
 
   return (
     calls.size === value.callIds.length &&
+    value.searches.every(
+      (entry: unknown) =>
+        record(entry) &&
+        claim(entry.callId) &&
+        Array.isArray(entry.names) &&
+        entry.names.every(identity) &&
+        new Set(entry.names).size === entry.names.length
+    ) &&
     value.pending.every(
       (call: unknown) =>
         record(call) &&
@@ -112,64 +129,6 @@ export function isResponsesCheckpoint(
         )
     )
   )
-}
-
-// Measure only definitions actually returned by server-side tool search.
-const returnedToolSearches = (response: Record<string, unknown>) => {
-  if (!Array.isArray(response.output) || !identity(response.id)) {
-    return undefined
-  }
-
-  const searches = response.output.flatMap((item: unknown) => {
-    if (
-      !record(item) ||
-      item.type !== 'tool_search_output' ||
-      !Array.isArray(item.tools)
-    ) {
-      return []
-    }
-
-    const definitions: { name: string; namespace?: string; bytes: number }[] =
-      []
-
-    const measure = (tool: unknown, namespace?: string) => {
-      if (record(tool) && identity(tool.name)) {
-        definitions.push({
-          name: tool.name,
-          namespace,
-          bytes: Buffer.byteLength(JSON.stringify(tool))
-        })
-      }
-    }
-
-    for (const tool of item.tools) {
-      if (
-        record(tool) &&
-        tool.type === 'namespace' &&
-        identity(tool.name) &&
-        Array.isArray(tool.tools)
-      ) {
-        for (const child of tool.tools) {
-          measure(child, tool.name)
-        }
-      } else {
-        measure(
-          tool,
-          record(tool) && identity(tool.namespace) ? tool.namespace : undefined
-        )
-      }
-    }
-
-    return [
-      {
-        itemId: identity(item.id) ? item.id : undefined,
-        bytes: definitions.reduce((sum, entry) => sum + entry.bytes, 0),
-        definitions
-      }
-    ]
-  })
-
-  return searches.length ? { responseId: response.id, searches } : undefined
 }
 
 /** Optional HTTP transport. The injected owner, not this adapter, validates and executes tools. */
@@ -224,11 +183,7 @@ export const createResponsesAiProvider = (options: {
 
     const observe = (event: ToolProviderObservation) => {
       try {
-        binding?.observe?.(
-          event.direction === 'response' && record(event.value)
-            ? { ...event, discovery: returnedToolSearches(event.value) }
-            : event
-        )
+        binding?.observe?.(event)
       } catch {
         /* Diagnostic failure cannot interrupt execution. */
       }
@@ -241,35 +196,7 @@ export const createResponsesAiProvider = (options: {
         signal: controller.signal
       })
       controller.signal.throwIfAborted()
-      const tools = binding.tools.map((group) => ({
-        type: 'namespace',
-        name: group.name,
-        description: group.description,
-        tools: group.tools.map((tool) => ({
-          type: 'function',
-          name: tool.name,
-          description: tool.description,
-          parameters: tool.inputSchema,
-          strict: false,
-          ...(tool.deferLoading ? { defer_loading: true } : {})
-        }))
-      }))
-      const names = new Set<string>()
-
-      for (const group of binding.tools) {
-        for (const tool of group.tools) {
-          const name = `${group.name}.${tool.name}`
-
-          if (names.has(name)) {
-            throw new AiProviderError({
-              code: 'AI_PROVIDER_INVALID_CONFIGURATION',
-              message: 'Duplicate provider tool identity.'
-            })
-          }
-
-          names.add(name)
-        }
-      }
+      const tools = responsesToolCatalog(binding.tools, binding.webSearch)
 
       const key =
         record(input.metadata) &&
@@ -285,7 +212,11 @@ export const createResponsesAiProvider = (options: {
             credential: createHash('sha256')
               .update(options.apiKey)
               .digest('hex'),
-            tools,
+            tools: tools.catalog,
+            ...(binding.executionContractDigest && {
+              executionContractDigest: binding.executionContractDigest
+            }),
+            discovery: 'client',
             instructions: binding.instructions,
             webSearch: binding.webSearch === true
           })
@@ -313,7 +244,11 @@ export const createResponsesAiProvider = (options: {
           ? input.metadata.turnId
           : createHash('sha256').update(JSON.stringify(input)).digest('hex')
 
-      if (checkpoint?.pending.length && checkpoint.turn !== turn) {
+      if (
+        checkpoint &&
+        (checkpoint.pending.length || checkpoint.searches.length) &&
+        checkpoint.turn !== turn
+      ) {
         throw new AiProviderError({
           code: 'AI_PROVIDER_SESSION_UNAVAILABLE',
           message: 'Resume the original turn to execute its outstanding tools.'
@@ -323,7 +258,9 @@ export const createResponsesAiProvider = (options: {
       const calls = new Set(checkpoint?.callIds)
       const recovering =
         checkpoint?.turn === turn &&
-        (checkpoint.pending.length || checkpoint.outputs.length)
+        (checkpoint.pending.length ||
+          checkpoint.outputs.length ||
+          checkpoint.searches.length)
       let newInput: unknown[] = []
 
       if (!recovering) {
@@ -366,7 +303,7 @@ export const createResponsesAiProvider = (options: {
             }
           }
 
-          if (!names.has(`${call.namespace}.${call.name}`)) {
+          if (!tools.names.has(`${call.namespace}.${call.name}`)) {
             problem = {
               code: 'TOOL_NOT_FOUND',
               message: 'Use a declared tool identity; no tool was executed.'
@@ -409,6 +346,14 @@ export const createResponsesAiProvider = (options: {
           controller.signal.throwIfAborted()
         }
 
+        const selections = checkpoint?.searches.map(tools.output) ?? []
+        const webSearchActive: boolean =
+          binding.webSearch === true &&
+          checkpoint?.turn === turn &&
+          (checkpoint.webSearchActive === true ||
+            checkpoint.searches.some((selection) =>
+              selection.names.includes('web_search')
+            ))
         const body = {
           model: options.model,
           store: true,
@@ -416,19 +361,42 @@ export const createResponsesAiProvider = (options: {
           ...(binding.requestInstructions && {
             instructions: binding.requestInstructions
           }),
-          input: [...(checkpoint?.outputs ?? []), ...newInput],
+          input: [...selections, ...(checkpoint?.outputs ?? []), ...newInput],
           tools: [
-            ...tools,
-            ...(binding.tools.some((group) =>
-              group.tools.some((tool) => tool.deferLoading)
-            )
-              ? [{ type: 'tool_search' }]
-              : []),
-            ...(binding.webSearch ? [{ type: 'web_search' }] : [])
+            ...tools.declarations,
+            ...(webSearchActive ? [{ type: 'web_search' }] : [])
           ]
         }
 
-        observe({ direction: 'request', value: body })
+        observe({
+          direction: 'request',
+          value: body,
+          ...(binding.observe && checkpoint && selections.length
+            ? {
+                discovery: {
+                  responseId: checkpoint.responseId,
+                  searches: selections.map((selection) => {
+                    const definitions = selection.tools.flatMap((group) =>
+                      group.tools.map((tool) => ({
+                        namespace: group.name,
+                        name: tool.name,
+                        bytes: Buffer.byteLength(JSON.stringify(tool))
+                      }))
+                    )
+
+                    return {
+                      itemId: selection.call_id,
+                      definitions,
+                      bytes: definitions.reduce(
+                        (sum, tool) => sum + tool.bytes,
+                        0
+                      )
+                    }
+                  })
+                }
+              }
+            : {})
+        })
         let response: Response
 
         try {
@@ -566,6 +534,7 @@ export const createResponsesAiProvider = (options: {
 
         observe({ direction: 'response', value, ...(usage ? { usage } : {}) })
         const output = value.output
+        const searches: ResponsesSearchSelection[] = []
         const pending: ResponsesCall[] = []
         const text: string[] = []
 
@@ -612,32 +581,38 @@ export const createResponsesAiProvider = (options: {
                 text.push(part.text)
               }
             }
+          } else if (item.type === 'tool_search_call') {
+            if (
+              item.execution !== 'client' ||
+              !tools.deferred.size ||
+              !identity(item.call_id) ||
+              calls.has(item.call_id) ||
+              item.status !== 'completed'
+            ) {
+              invalid('Invalid Responses client tool search call.')
+            }
+
+            calls.add(item.call_id)
+            searches.push(tools.resolve(item.call_id, item.arguments))
           } else if (
-            ![
-              'reasoning',
-              'tool_search_call',
-              'tool_search_output',
-              'web_search_call'
-            ].includes(String(item.type))
+            item.type !== 'reasoning' &&
+            !(webSearchActive && item.type === 'web_search_call')
           ) {
             invalid('Responses returned an unsupported output item.')
-          } else if (
-            item.type === 'tool_search_call' &&
-            item.execution !== 'server'
-          ) {
-            invalid('Responses requested an unsupported client-side search.')
           }
         }
 
         checkpoint = {
           responseId: value.id,
           turn,
+          ...(webSearchActive && { webSearchActive }),
           callIds: [...calls],
+          searches,
           pending,
           outputs: []
         }
         newInput = []
-        if (!pending.length) {
+        if (!pending.length && !searches.length) {
           if (!text.length) {
             invalid('Responses completed without a final answer.')
           }

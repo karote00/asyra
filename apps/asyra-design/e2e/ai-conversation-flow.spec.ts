@@ -1396,7 +1396,7 @@ for (const width of [360, 1280]) {
         ['read_design_context', 'Reading the design'],
         ['inspect_drawing', 'Reviewing the drawing'],
         ['search_design_tools', 'Finding available operations'],
-        ['read_design_contracts', 'Reading operation contracts']
+        ['read_design_resources', 'Reading operation contracts']
       ]
 
       for (const [tool, label] of inspectedOperations) {

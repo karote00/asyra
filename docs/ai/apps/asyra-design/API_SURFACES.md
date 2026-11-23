@@ -1005,7 +1005,9 @@ Search returns paginated candidate metadata and exact read routes, never acquire
 execution contracts. A unique match remains a candidate. Empty results disclose
 coverage and category navigation; they do not prove a capability is unavailable.
 
-`read_design_contracts` accepts exact `names` (action names, semantic operations
+`read_design_resources` accepts a separate `savedFields: {label: {name, path, view?}}` request when the conversation result store is available. A value read delivers its selected media. A shape read returns types and paths. Execution binds known paths directly. Contract selection and saved-field selection are exclusive.
+
+Tool contract selection accepts exact `names` (action names, semantic operations
 or qualified native identities). `view: "usage"` returns actionable parameters and
 results; full view returns validation schemas. `scopes` maps each selected name
 to its own `schemaPaths` or owner-published `inputScope`. Schema paths return
@@ -1151,12 +1153,14 @@ and `bdd-features/text-canvas.feature` for lifecycle and accepted behavior.
 
 ### Native discovery entry
 
-With drawing operations enabled, `search_design_tools`, `read_design_contracts` and the single
+In the Codex CLI with drawing operations enabled, `search_design_tools`, `read_design_resources` and the single
 `execute_design` host entry are eagerly available native tools. Its declaration and dispatch still come from
-the existing operation owner. Domain tools remain deferred; no-operation and
+the existing operation owner. The knowledge namespace publishes its discovery and reading functions eagerly. Other domain tools remain deferred; no-operation and
 assessment requests do not add the entry. Native advertised counts/bytes reflect
 the actual registration. Qualified names, selected usage, scopes and batch/native
 execution envelopes retain their existing contracts.
+
+For Responses, the five admitted entries form a short index. Client-executed tool search loads selected definitions into the stored response chain on demand. Ordinary `execute_design` accepts `operations` with name, arguments and optional step ID. For advanced submissions read the exact Host contract and send its complete value under `workflow`. Standalone registered invocations use their admitted invocation envelope. The Host validates the full value before dispatch. The read entry accepts `history:{start,count}` (one-based) for a slice of the current conversation. Current attachment indexes and actual selected targets stay on the turn; correlation identifiers stay with the Host. Detailed drawing choices use operation discovery and the final-response route. Web research is authorized per conversation and activated by requesting `web_search` for the current turn.
 
 ### Capture recovery
 
@@ -1167,7 +1171,7 @@ current. Captures require no criterion IDs, binding step or final approval call.
 
 ### Executable usage result representation
 
-`read_design_contracts` with `view: "usage"` returns complete selected input
+`read_design_resources` with `view: "usage"` returns complete selected input
 constraints, owner examples, result fields and settlement/recovery meaning.
 `includeResultSchema: true` explicitly includes the full model-facing result
 validation schema for machine consumers. It requires usage view. Refresh, paging
@@ -1187,7 +1191,7 @@ its actual delivery mode and fields before invoking it; use host target bindings
 for known artifacts or current regions. Preserve complete/truncated semantics.
 No separate evidence protocol or judgment submission is required.
 
-Use search_design_tools for capability metadata and the ordinary argument schema of compact executable matches. Use read_design_contracts for additional selected input, result and recovery details. Missing identities retain their successful siblings; purpose search is a separate request step. design_operations.execute_design accepts one ordered operations array.
+Use search_design_tools for complete ordinary arguments of a clearly matched action or registered tool. Other candidates supply a purpose and identity. Use read_design_resources for additional selected input, result and recovery details. Missing identities retain their successful siblings; purpose search is a separate request step. design_operations.execute_design accepts one ordered operations array.
 Each operation specifies a name and ordinary arguments. Optional id identifies
 an output for later arguments using {kind:"step",step:"id",path:"/field"}.
 A known operation can specify an artifact or region target; selectAt:"step"
@@ -1211,7 +1215,7 @@ the displayed batch route. Other required arguments retain their actual nesting.
 
 ### Design entries for OpenAI Responses
 
-Design publishes search_design_tools, read_design_contracts and execute_design.
+Asyra Design publishes `search_design_tools`, `read_design_resources` and `execute_design` for Design operations. The independent knowledge namespace publishes `discover_knowledge` and `read_knowledge`. Tool categories and spelling candidates use only the admitted Design catalog. Knowledge discovery matches visible metadata, supports context and topic scope, and suggests visible IDs. A known ID reads directly.
 The Host retains the tool catalog. A known operation goes straight to
 execute_design. A standalone native or revision-pinned registered route uses
 execute_design with only `{invocation:{namespace,tool,arguments}}` and returns
@@ -1254,8 +1258,8 @@ A later operation uses `{kind:"named", name:"alias", path:""}` in its arguments
 without model retrieval. Same-call aliases with a producer step compile to step
 bindings. For a decision use `delivery: {fields: {label: {step, path}}}`.
 Omitting step selects the final projected result (the existing receipt on the
-ready canvas route). Read a field of a saved snapshot with no operations and
-`delivery: {fields: {label: {name:"alias", path:"/field"}}}`.
+ready canvas route). Read a saved snapshot through
+`read_design_resources({savedFields:{label:{name:"alias",path:"/field"}}})`.
 If the path is unknown, add `view:"shape"` to that selector to return a bounded
 subtree description (paths, types and array lengths), without values. This is
 optional navigation; known paths bind directly without a preliminary read.

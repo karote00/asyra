@@ -494,7 +494,7 @@ it('executes the delivered small-part example without criteria or research and p
     const main = createLocalDesignWorkflow(source, operations)
     const signal = new AbortController().signal
     const discovery = operations.definitions.find(
-      (d) => d.name === 'read_design_contracts'
+      (d) => d.name === 'read_design_resources'
     )
 
     if (!discovery) {

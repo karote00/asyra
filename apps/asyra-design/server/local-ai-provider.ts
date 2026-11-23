@@ -796,7 +796,7 @@ const runLocalAiProvider = async (
           appToolCompletion &&
           [
             'search_design_tools',
-            'read_design_contracts',
+            'read_design_resources',
             'read_knowledge'
           ].includes(String(params.item.tool))
             ? {
