@@ -1,4 +1,4 @@
-import { createDesign } from './index.js'
+import { mountWorkspace } from './workspace.js'
 
 export const designTag = 'asyra-design'
 
@@ -19,6 +19,8 @@ if (globalThis.customElements && !globalThis.customElements.get(designTag)) {
     #options
 
     #editor
+
+    #startup
 
     #work = Promise.resolve()
 
@@ -67,7 +69,15 @@ if (globalThis.customElements && !globalThis.customElements.get(designTag)) {
       this.#schedule()
     }
 
+    connectedMoveCallback() {
+      // The browser preserved the editor document and live session.
+    }
+
     disconnectedCallback() {
+      if (!this.isConnected) {
+        this.#startup?.abort()
+      }
+
       this.#schedule()
     }
 
@@ -80,7 +90,25 @@ if (globalThis.customElements && !globalThis.customElements.get(designTag)) {
             this.#editor = undefined
             await editor?.destroy()
           } else if (!this.#editor) {
-            this.#editor = await createDesign(this.#host, this.options)
+            const startup = new globalThis.AbortController()
+
+            this.#startup = startup
+            try {
+              this.#editor = await mountWorkspace(
+                this.#host,
+                this.options ?? {},
+                startup.signal
+              )
+            } catch (error) {
+              if (!startup.signal.aborted) {
+                throw error
+              }
+
+              return
+            } finally {
+              this.#startup = undefined
+            }
+
             if (this.isConnected) {
               this.dispatchEvent(
                 new globalThis.CustomEvent('design-ready', {

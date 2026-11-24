@@ -21,10 +21,15 @@ const commands = {
   }
 }
 
-export function createActions(custom = {}) {
-  const actions = new Map(Object.entries(commands))
+export function createActions(custom = {}, extra = {}, extensions = []) {
+  const actions = new Map(Object.entries({ ...commands, ...extra }))
 
-  for (const [id, action] of Object.entries(custom)) {
+  const entries = [
+    ...extensions.flatMap((extension) => Object.entries(extension.actions)),
+    ...Object.entries(custom)
+  ]
+
+  for (const [id, action] of entries) {
     if (
       !id.trim() ||
       actions.has(id) ||

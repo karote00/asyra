@@ -1,7 +1,7 @@
 {
   "name": "@asyra/design",
   "version": "0.1.0",
-  "description": "Optional 2D design tools for canvas bindings",
+  "description": "Embeddable Design workspace and 2D tools for canvas bindings",
   "license": "MIT",
   "type": "module",
   "files": [
@@ -29,9 +29,10 @@
   },
   "scripts": {
     "build:design": "node build.mjs",
-    "test:ci": "node --test --test-name-pattern=\"opt-in design\" ../../fixtures/canvas/__tests__/consumer.test.mjs"
+    "test:ci": "node --test --test-name-pattern=\"opt-in design|packed Design\" ../../fixtures/canvas/__tests__/consumer.test.mjs"
   },
   "devDependencies": {
+    "@asyra/asyra-design": "workspace:*",
     "@asyra/canvas": "workspace:*",
     "@asyra/core": "workspace:*",
     "@asyra/preset": "workspace:*",

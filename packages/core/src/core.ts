@@ -2614,7 +2614,8 @@ class Core implements CoreAPIs {
   }
 
   async save(): Promise<CoreRawData> {
-    const sceneTreeData = await this.sceneTreeSaveData()
+    // Capture the document in the calling turn, including during pagehide.
+    const sceneTreeData = this.sceneTreeSaveData()
     const systemContextData = this.deps.systemContext.saveManagedProperties()
 
     let data: CoreRawData = {

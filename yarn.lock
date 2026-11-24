@@ -86,7 +86,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@asyra/asyra-design@workspace:apps/asyra-design":
+"@asyra/asyra-design@workspace:*, @asyra/asyra-design@workspace:apps/asyra-design":
   version: 0.0.0-use.local
   resolution: "@asyra/asyra-design@workspace:apps/asyra-design"
   dependencies:
@@ -329,6 +329,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@asyra/design@workspace:sdk/design"
   dependencies:
+    "@asyra/asyra-design": "workspace:*"
     "@asyra/canvas": "workspace:*"
     "@asyra/core": "workspace:*"
     "@asyra/preset": "workspace:*"

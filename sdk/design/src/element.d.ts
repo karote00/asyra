@@ -1,9 +1,9 @@
-import type { createDesign, DesignOptions } from './index.js'
+import type { createDesign, WorkspaceOptions } from './index.js'
 
 export declare const designTag: 'asyra-design'
 
 export interface DesignElement extends HTMLElement {
-  options?: DesignOptions<string>
+  options?: WorkspaceOptions<string>
   readonly editor: Awaited<ReturnType<typeof createDesign<string>>> | undefined
 }
 

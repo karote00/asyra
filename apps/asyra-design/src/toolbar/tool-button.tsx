@@ -13,14 +13,18 @@ const PRIMARY_TOOL_ICON_MAP: Record<string, IconName> = {
   [PrimaryToolType.TEXT]: 'Text'
 }
 
-const ToolButton = () => {
+const ToolButton = ({
+  onReset = resetStoredDocument
+}: {
+  onReset?: () => Promise<void>
+}) => {
   const primaryTool = usePrimaryTool()
 
   const handleReset = useCallback(() => {
-    void resetStoredDocument().catch((error: unknown) => {
+    void onReset().catch((error: unknown) => {
       console.error('[toolbar.reset] Stored document Reset failed:', error)
     })
-  }, [])
+  }, [onReset])
 
   const handleSwitchToSelectTool = useCallback(() => {
     switchPrimaryTool(PrimaryToolType.SELECT)

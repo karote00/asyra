@@ -55,3 +55,14 @@ yield to an edge-to-edge layout. Authored margins and panel padding remain
 part of the application's layout. Toolbar and canvas share this area. The
 existing canvas ResizeObserver owns drawing buffer updates. Packed browser
 checks resize the window and panel independently, including a framework root.
+
+## Full Design workspace
+
+The default container and declarative entries mount the maintained Design app's
+non-conversation workspace. Its registered editing features, layers, properties,
+menus, renderer, text overlay and optional collaboration session have the same
+owners in apps/asyra-design. A host supplies initial document or collaboration
+settings and named actions without Framework imports. Browser input, portals and
+styles belong to each workspace. The borrowed-canvas API retains its lightweight
+tools. Verify real editing, isolation, configured actions, lifecycle and packaged
+assets from an independent JavaScript installation.

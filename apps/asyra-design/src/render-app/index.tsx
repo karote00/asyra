@@ -11,7 +11,10 @@ import type {
   CollaborationSessionNotification
 } from '../collaboration/lifecycle'
 import { createEmptyDocument } from '../config/empty-document'
-import { getConfiguredCollaborationMode } from './collaboration-mode'
+import {
+  getConfiguredCollaborationMode,
+  type CollaborationMode
+} from './collaboration-mode'
 import AiDrawingProgressIndicator from './ai-drawing-progress-indicator'
 import { StatusToastStack } from './status-toast-stack'
 import { TextCanvasEditor } from './text-canvas-editor'
@@ -22,12 +25,31 @@ export interface CanvasContextMenuInvocation {
   invoker: HTMLDivElement
 }
 
+export interface RenderSession {
+  document?: ReturnType<typeof createEmptyDocument>
+  collaboration?: CollaborationMode
+  surface: {
+    start(
+      container: HTMLElement,
+      start: (canvas: HTMLCanvasElement) => Promise<void>,
+      resize: (width: number, height: number) => void,
+      dispose: () => Promise<void>
+    ): Promise<void>
+    destroy(): Promise<void>
+  }
+  ready(): void
+  failed(error: unknown): void
+  reopen(): void
+}
+
 interface RenderAppProps {
+  session?: RenderSession
   onContextMenuRequest?: (invocation: CanvasContextMenuInvocation) => void
   onCanvasHostTeardown?: () => void
 }
 
 const RenderApp: React.FC<RenderAppProps> = ({
+  session,
   onContextMenuRequest,
   onCanvasHostTeardown
 }) => {
@@ -62,7 +84,9 @@ const RenderApp: React.FC<RenderAppProps> = ({
     let unsubscribeCollaborationState: (() => void) | undefined
 
     const destroyRuntime = (): Promise<void> => {
-      runtimeDestroyPromise ??= core.destroy()
+      runtimeDestroyPromise ??= session
+        ? session.surface.destroy()
+        : core.destroy()
 
       return runtimeDestroyPromise
     }
@@ -80,7 +104,9 @@ const RenderApp: React.FC<RenderAppProps> = ({
           return
         }
 
-        const collaborationMode = getConfiguredCollaborationMode()
+        const collaborationMode = session
+          ? session.collaboration
+          : getConfiguredCollaborationMode()
         let collaborationLifecycle:
           typeof import('../collaboration/lifecycle') | undefined
 
@@ -95,16 +121,29 @@ const RenderApp: React.FC<RenderAppProps> = ({
           core.setLoadSource({
             name: 'LocalOnlyDocument',
 
-            load: async () => createEmptyDocument()
+            load: async () => session?.document ?? createEmptyDocument()
           })
         }
 
-        await core.start(container, {
-          width: window.innerWidth,
-          height: window.innerHeight,
-          backgroundColor: CANVAS_BACKGROUND_COLOR,
-          backgroundColorAlpha: 1
-        })
+        const start = (target: HTMLElement) =>
+          core.start(target, {
+            width: window.innerWidth,
+            height: window.innerHeight,
+            backgroundColor: CANVAS_BACKGROUND_COLOR,
+            backgroundColorAlpha: 1
+          })
+
+        if (session) {
+          await session.surface.start(
+            container,
+            start,
+            (width, height) => core.resizeRenderer(width, height),
+            () => core.destroy()
+          )
+        } else {
+          await start(container)
+        }
+
         if (!active) {
           await destroyRuntime()
 
@@ -138,6 +177,8 @@ const RenderApp: React.FC<RenderAppProps> = ({
 
         if (!active) {
           await destroyRuntime()
+        } else {
+          session?.ready()
         }
       })
 
@@ -145,6 +186,7 @@ const RenderApp: React.FC<RenderAppProps> = ({
     void lifecycle.catch((error: unknown) => {
       if (active) {
         console.error('[RenderApp] Render startup failed:', error)
+        session?.failed(error)
       }
     })
 
@@ -155,7 +197,7 @@ const RenderApp: React.FC<RenderAppProps> = ({
         console.error('[RenderApp] runtime teardown failed:', error)
       })
     }
-  }, [])
+  }, [session])
 
   useEffect(() => {
     if (!recoverySession) {
@@ -211,10 +253,10 @@ const RenderApp: React.FC<RenderAppProps> = ({
       {recoverySession && (
         <DocumentRecoveryControls
           session={recoverySession}
-          reopen={() => window.location.reload()}
+          reopen={session?.reopen ?? (() => window.location.reload())}
         />
       )}
-      <AiDrawingProgressIndicator />
+      {!session && <AiDrawingProgressIndicator />}
       <TextCanvasEditor />
     </div>
   )

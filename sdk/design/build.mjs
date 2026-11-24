@@ -1,3 +1,4 @@
+import { buildWorkspace } from '@asyra/asyra-design/sdk-build'
 import { build } from 'vite'
 import { copyFile, mkdir, writeFile } from 'node:fs/promises'
 import process from 'node:process'
@@ -36,6 +37,7 @@ for (const name of [
   'index.d.ts',
   'toolbar.js',
   'actions.js',
+  'workspace.js',
   'element.js',
   'element.d.ts',
   'react.js',
@@ -45,3 +47,8 @@ for (const name of [
 ]) {
   await copyFile('src/' + name, 'dist/' + name)
 }
+
+await buildWorkspace(
+  fileURLToPath(new URL('./dist/', import.meta.url)),
+  fileURLToPath(new URL('build-inputs/workspace.js', import.meta.url))
+)

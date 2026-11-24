@@ -7,7 +7,9 @@ import ToolButton from './tool-button'
 export interface ToolBarProps {
   readonly aiOpen: boolean
   readonly aiShortcutLabel?: string
-  readonly onAiToggle: (invoker: HTMLButtonElement) => void
+  readonly controls?: React.ReactNode
+  readonly onReset?: () => Promise<void>
+  readonly onAiToggle?: (invoker: HTMLButtonElement) => void
 }
 
 const stopAgentInteractionPropagation = (event: SyntheticEvent): void => {
@@ -21,7 +23,13 @@ const stopAgentInteractionPropagation = (event: SyntheticEvent): void => {
   event.stopPropagation()
 }
 
-const ToolBar = ({ aiOpen, aiShortcutLabel, onAiToggle }: ToolBarProps) => {
+const ToolBar = ({
+  aiOpen,
+  aiShortcutLabel,
+  onAiToggle,
+  controls,
+  onReset
+}: ToolBarProps) => {
   return (
     <div
       className="z-10 flex items-center justify-between px-3"
@@ -34,42 +42,44 @@ const ToolBar = ({ aiOpen, aiShortcutLabel, onAiToggle }: ToolBarProps) => {
       }}
       data-testid="toolbar"
     >
-      <ToolButton />
+      {controls ?? <ToolButton onReset={onReset} />}
       <div className="flex items-center gap-2">
-        <button
-          {...AiDocumentInteractionTargetProps.AGENT_CONTROL}
-          onKeyDown={stopAgentInteractionPropagation}
-          onKeyUp={stopAgentInteractionPropagation}
-          onMouseDown={stopAgentInteractionPropagation}
-          onMouseUp={stopAgentInteractionPropagation}
-          onPointerDown={stopAgentInteractionPropagation}
-          onPointerUp={stopAgentInteractionPropagation}
-          onTouchEnd={stopAgentInteractionPropagation}
-          onTouchStart={stopAgentInteractionPropagation}
-          aria-expanded={aiOpen}
-          aria-label={aiOpen ? 'Close Agent' : 'Open Agent'}
-          className={`flex h-7 items-center gap-1.5 rounded-md border px-2.5 text-[10px] font-medium transition-colors ${
-            aiOpen
-              ? 'border-[#8d7bff] bg-[#745cff] text-white'
-              : 'border-[#47484e] bg-[#33343a] text-[#dedee3] hover:border-[#686971] hover:bg-[#3d3e44]'
-          }`}
-          data-testid="ai-agent-toolbar-button"
-          onClick={(event) => {
-            event.stopPropagation()
-            onAiToggle(event.currentTarget)
-          }}
-          title={
-            aiShortcutLabel
-              ? `Toggle Agent Panel (${aiShortcutLabel})`
-              : 'Toggle Agent Panel'
-          }
-          type="button"
-        >
-          <span aria-hidden="true" className="text-[11px]">
-            ✦
-          </span>
-          AI
-        </button>
+        {onAiToggle && (
+          <button
+            {...AiDocumentInteractionTargetProps.AGENT_CONTROL}
+            onKeyDown={stopAgentInteractionPropagation}
+            onKeyUp={stopAgentInteractionPropagation}
+            onMouseDown={stopAgentInteractionPropagation}
+            onMouseUp={stopAgentInteractionPropagation}
+            onPointerDown={stopAgentInteractionPropagation}
+            onPointerUp={stopAgentInteractionPropagation}
+            onTouchEnd={stopAgentInteractionPropagation}
+            onTouchStart={stopAgentInteractionPropagation}
+            aria-expanded={aiOpen}
+            aria-label={aiOpen ? 'Close Agent' : 'Open Agent'}
+            className={`flex h-7 items-center gap-1.5 rounded-md border px-2.5 text-[10px] font-medium transition-colors ${
+              aiOpen
+                ? 'border-[#8d7bff] bg-[#745cff] text-white'
+                : 'border-[#47484e] bg-[#33343a] text-[#dedee3] hover:border-[#686971] hover:bg-[#3d3e44]'
+            }`}
+            data-testid="ai-agent-toolbar-button"
+            onClick={(event) => {
+              event.stopPropagation()
+              onAiToggle(event.currentTarget)
+            }}
+            title={
+              aiShortcutLabel
+                ? `Toggle Agent Panel (${aiShortcutLabel})`
+                : 'Toggle Agent Panel'
+            }
+            type="button"
+          >
+            <span aria-hidden="true" className="text-[11px]">
+              ✦
+            </span>
+            AI
+          </button>
+        )}
         <ThemeToggle />
         <Zoom />
       </div>

@@ -162,6 +162,7 @@
         "dist/**"
       ],
       "dependsOn": [
+        "@asyra/asyra-design#react:build",
         "@asyra/canvas#build:canvas",
         "@asyra/core#build:core",
         "@asyra/preset#build:preset"

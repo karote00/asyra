@@ -10,10 +10,14 @@ const original = host.appendChild(
 
 globalThis.document.body.append(host)
 Object.assign(globalThis, { host, original, createDesign })
-globalThis.ready = createDesign(host).then((editor) => {
+globalThis.ready = createDesign(host, {
+  panels: { layers: false, properties: false }
+}).then((editor) => {
   globalThis.editor = editor
 })
-globalThis.duplicate = createDesign(host).then(
+globalThis.duplicate = createDesign(host, {
+  panels: { layers: false, properties: false }
+}).then(
   () => false,
   () => true
 )

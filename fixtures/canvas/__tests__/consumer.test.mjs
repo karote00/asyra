@@ -7,7 +7,9 @@ import { URL, fileURLToPath } from 'node:url'
 import test from 'node:test'
 import { build, preview } from 'vite'
 import { chromium } from 'playwright'
+import { expect } from '@playwright/test'
 import sharp from 'sharp'
+import { withDocumentServices } from '../services.mjs'
 
 const fixture = fileURLToPath(new URL('../', import.meta.url))
 const root = path.resolve(fixture, '../..')
@@ -81,6 +83,8 @@ async function withConsumer(packages, entry, assertions) {
             "const editor = await createDesign(document.body.appendChild(document.createElement('div')), { toolbar: false, actions: { revert: { label: 'Undo', run: tools => tools.undo() } } })",
             "await editor.runAction('revert')",
             'await editor.destroy()',
+            "const extended = await createDesign(document.body, { extensions: [{ actions: { badge: { label: 'Badge', run(tools) { tools.drawOval({ x: 0, y: 0, width: 10, height: 10 }) } } } }], toolbar: ['badge'] })",
+            "await extended.runAction('badge')",
             'const tools = await attachDesignTools(surface)',
             "tools.setTool('select')",
             'await tools.undo()'
@@ -517,45 +521,46 @@ test('opt-in design owns the canvas inside a supplied container', async () => {
     'container.js',
     async (page) => {
       const host = page.locator('#design-host')
-      const canvas = host.locator('canvas')
-      const controls = host.getByRole('group', { name: 'Design tools' })
+      const workspace = host.frameLocator('iframe')
+      const canvas = workspace.locator('canvas')
 
       await page.evaluate(() => globalThis.ready)
       assert.equal(await canvas.count(), 1)
-      assert.equal(await controls.getByRole('button').count(), 4)
-      await page.waitForFunction(() => {
-        const canvas = globalThis.host.querySelector('canvas')
-
-        return (
-          canvas.width === 360 &&
-          canvas.height === canvas.clientHeight &&
-          canvas.height > 100
-        )
-      })
+      await workspace.getByTestId('tool-rectangle').click()
+      await page.waitForFunction(
+        () =>
+          globalThis.host
+            .querySelector('iframe')
+            .contentDocument.querySelector('canvas').width === 360
+      )
       await host.evaluate((el) => {
         el.style.width = '480px'
       })
       await page.waitForFunction(
-        () => globalThis.host.querySelector('canvas').width === 480
+        () =>
+          globalThis.host
+            .querySelector('iframe')
+            .contentDocument.querySelector('canvas').width === 480
       )
       const bounds = await canvas.boundingBox()
 
-      await page.mouse.move(bounds.x + 30, bounds.y + 30)
+      await page.mouse.move(bounds.x + 30, bounds.y + 70)
       await page.mouse.down()
-      await page.mouse.move(bounds.x + 110, bounds.y + 80)
+      await page.mouse.move(bounds.x + 110, bounds.y + 130, { steps: 5 })
       await page.mouse.up()
-      await controls.getByRole('button', { name: 'Select' }).click()
-      await canvas.click({ position: { x: 55, y: 55 } })
+      await workspace.getByTestId('tool-select').click()
+      await canvas.click({ position: { x: 55, y: 95 } })
       assert.equal(
         await page.evaluate(() => globalThis.editor.getSelection().length),
         1
       )
-      await controls.getByRole('button', { name: 'Undo' }).click()
+      await workspace.getByRole('button', { name: 'Undo', exact: true }).click()
       assert.equal(
         await page.evaluate(
           async () =>
-            (await globalThis.editor.save()).sceneTree.elements.workspace
-              .children.length
+            Object.values(
+              (await globalThis.editor.save()).sceneTree.elements
+            ).filter((el) => el.type === 'rect').length
         ),
         0
       )
@@ -580,7 +585,12 @@ test('opt-in design owns the canvas inside a supplied container', async () => {
 
         await editor.destroy()
         const remounted =
-          !!host.querySelector('canvas') && !host.querySelector('fieldset')
+          !!host
+            .querySelector('iframe')
+            .contentDocument.querySelector('canvas') &&
+          !host
+            .querySelector('iframe')
+            .contentDocument.querySelector('[data-testid=toolbar]')
 
         await next.destroy()
 
@@ -619,40 +629,37 @@ test('opt-in design React component mounts and releases a packed editor', async 
     async (page) => {
       const host = page.locator('main > asyra-design')
 
-      await host.getByRole('button', { name: 'Select' }).waitFor()
-      const canvas = host.locator('canvas')
+      const workspace = host.frameLocator('iframe')
+
+      await workspace.getByTestId('tool-rectangle').click()
+      const canvas = workspace.locator('canvas')
 
       assert.equal(await canvas.count(), 1)
       const bounds = await canvas.boundingBox()
 
-      await page.mouse.move(bounds.x + 30, bounds.y + 30)
+      await page.mouse.move(bounds.x + 340, bounds.y + 80)
       await page.mouse.down()
-      await page.mouse.move(bounds.x + 100, bounds.y + 75)
+      await page.mouse.move(bounds.x + 410, bounds.y + 140, { steps: 5 })
       await page.mouse.up()
-      await host.getByRole('button', { name: 'Select' }).click()
-      await canvas.click({ position: { x: 55, y: 50 } })
+      await workspace.getByTestId('tool-select').click()
+      await canvas.click({ position: { x: 360, y: 95 } })
       assert.equal(
         await host.evaluate((el) => el.editor.getSelection().length),
         1
       )
-      await host.getByRole('button', { name: 'Undo' }).click()
-      assert.equal(
-        await host.evaluate(
+
+      const shapes = () =>
+        host.evaluate(
           async (el) =>
-            (await el.editor.save()).sceneTree.elements.workspace.children
-              .length
-        ),
-        0
-      )
-      await host.getByRole('button', { name: 'Redo' }).click()
-      assert.equal(
-        await host.evaluate(
-          async (el) =>
-            (await el.editor.save()).sceneTree.elements.workspace.children
-              .length
-        ),
-        1
-      )
+            Object.values((await el.editor.save()).sceneTree.elements).filter(
+              (el) => el.type === 'rect'
+            ).length
+        )
+
+      await workspace.getByRole('button', { name: 'Undo', exact: true }).click()
+      await expect.poll(shapes).toBe(0)
+      await workspace.getByRole('button', { name: 'Redo', exact: true }).click()
+      await expect.poll(shapes).toBe(1)
       await page.evaluate(() => {
         globalThis.formerHost = globalThis.document.querySelector(
           'main > asyra-design'
@@ -660,7 +667,7 @@ test('opt-in design React component mounts and releases a packed editor', async 
         globalThis.unmount()
       })
       await page.waitForFunction(
-        () => !globalThis.formerHost.shadowRoot.querySelector('canvas')
+        () => !globalThis.formerHost.shadowRoot.querySelector('iframe')
       )
     }
   )
@@ -673,43 +680,45 @@ test('opt-in design element preserves a moved editor and serializes reconnects',
     async (page) => {
       const board = page.locator('asyra-design')
 
-      await board.getByRole('button', { name: 'Add card' }).click()
-      assert.equal(
-        await page.evaluate(
-          async () =>
-            (await globalThis.board.editor.save()).sceneTree.elements.workspace
-              .children.length
-        ),
-        1
-      )
-      await board.getByRole('button', { name: 'Undo' }).click()
-      assert.equal(
-        await page.evaluate(
-          async () =>
-            (await globalThis.board.editor.save()).sceneTree.elements.workspace
-              .children.length
-        ),
-        0
-      )
-      const moved = await page.evaluate(async () => {
-        const { board, document } = globalThis
-        const original = board.editor
-        const parent = document.body.appendChild(
-          document.createElement('section')
+      const workspace = board.frameLocator('iframe')
+
+      const count = () =>
+        board.evaluate(
+          async (el) =>
+            Object.values((await el.editor.save()).sceneTree.elements).filter(
+              (el) => el.type === 'rect'
+            ).length
         )
 
-        parent.append(board)
-        await new Promise((resolve) =>
-          globalThis.requestAnimationFrame(resolve)
+      await workspace.getByRole('button', { name: 'Add card' }).click()
+      await expect.poll(count).toBe(1)
+      const moved = await board.evaluate((el) => {
+        const original = el.editor
+        const parent = globalThis.document.body.appendChild(
+          globalThis.document.createElement('section')
         )
 
-        return (
-          board.editor === original &&
-          board.shadowRoot.querySelectorAll('canvas').length === 1
-        )
+        parent.moveBefore(el, null)
+
+        return el.editor === original
       })
 
       assert.equal(moved, true)
+      await workspace.getByRole('button', { name: 'Undo' }).click()
+      await expect.poll(count).toBe(0)
+      await workspace.getByRole('button', { name: 'Add card' }).click()
+      await expect.poll(count).toBe(1)
+      await board.evaluate((el) => {
+        globalThis.prior = el.editor
+        globalThis.document.body.append(el)
+      })
+      assert.equal(
+        await board.evaluate((el) => el.editor === globalThis.prior),
+        true,
+        'DOM move replaced the editor'
+      )
+      await workspace.getByRole('button', { name: 'Add card' }).waitFor()
+      await expect.poll(count).toBe(1)
       await page.evaluate(async () => {
         const { board, document } = globalThis
 
@@ -717,30 +726,30 @@ test('opt-in design element preserves a moved editor and serializes reconnects',
         await new Promise((resolve) => globalThis.setTimeout(resolve, 0))
         document.body.append(board)
       })
-      await board.getByRole('button', { name: 'Add card' }).click()
-      assert.equal(await board.locator('canvas').count(), 1)
+      await workspace.getByRole('button', { name: 'Add card' }).click()
+      await expect.poll(count).toBe(1)
       await page.evaluate(() => globalThis.board.remove())
-      await page.waitForFunction(
-        () =>
-          !globalThis.board.shadowRoot.querySelector('canvas') &&
-          !globalThis.board.editor
-      )
-      await page.evaluate(async () => {
-        const board = globalThis.board
 
-        globalThis.document.body.append(board)
+      const released = () =>
+        page.waitForFunction(
+          () =>
+            !globalThis.board.shadowRoot.querySelector('iframe') &&
+            !globalThis.board.editor
+        )
+
+      await released()
+      await page.evaluate(async () => {
+        const { board, document } = globalThis
+
+        document.body.append(board)
         await Promise.resolve()
-        if (!board.shadowRoot.querySelector('canvas')) {
-          throw new Error('Expected pending editor startup')
+        if (!board.shadowRoot.querySelector('iframe')) {
+          throw new Error('Expected pending startup')
         }
 
         board.remove()
       })
-      await page.waitForFunction(
-        () =>
-          !globalThis.board.shadowRoot.querySelector('canvas') &&
-          !globalThis.board.editor
-      )
+      await released()
     }
   )
 })
@@ -753,20 +762,21 @@ test('opt-in design fits the parent panel and defaults to the viewport', async (
       const panel = page.locator('main')
       const editor = panel.locator('asyra-design')
 
-      await editor.getByRole('button', { name: 'Select' }).waitFor()
+      await editor.frameLocator('iframe').getByTestId('tool-select').waitFor()
 
       async function fits(width, height) {
         await page.waitForFunction(
           ([width, height]) => {
             const editor = globalThis.document.querySelector('asyra-design')
-            const canvas = editor.shadowRoot.querySelector('canvas')
-            const toolbar = editor.shadowRoot.querySelector('fieldset')
+            const canvas = editor.shadowRoot
+              .querySelector('iframe')
+              .contentDocument.querySelector('canvas')
 
             return (
               editor.clientWidth === width &&
               editor.clientHeight === height &&
               canvas.width === width &&
-              canvas.height === height - toolbar.offsetHeight &&
+              canvas.height === height &&
               canvas.height === canvas.clientHeight
             )
           },
@@ -834,6 +844,276 @@ test('opt-in design fits the parent panel and defaults to the viewport', async (
         el.firstElementChild.style.flex = '0 0 40px'
       })
       await fits(400, 220)
+    }
+  )
+})
+
+test('packed Design workspace edits with the Design app tools, panels and document history', async () => {
+  await withConsumer(
+    ['sdk/canvas', 'sdk/design'],
+    'workspace.js',
+    async (page) => {
+      const workspace = page.frameLocator('main iframe')
+
+      await page.evaluate(() => globalThis.ready)
+
+      const types = () =>
+        page.evaluate(async () =>
+          Object.values(
+            (await globalThis.editor.save()).sceneTree.elements
+          ).map((el) => el.type)
+        )
+
+      for (const id of [
+        'contents-panel',
+        'properties-panel',
+        'tool-select',
+        'tool-rectangle',
+        'tool-oval',
+        'tool-pen',
+        'tool-text',
+        'zoom-level'
+      ]) {
+        await workspace.getByTestId(id).waitFor()
+      }
+
+      assert.equal(
+        await workspace.getByTestId('ai-agent-toolbar-button').count(),
+        0
+      )
+      const frame = await page.locator('main iframe').boundingBox()
+
+      const click = (x, y) => page.mouse.click(frame.x + x, frame.y + y)
+
+      const drag = async (x, y, endX, endY) => {
+        await page.mouse.move(frame.x + x, frame.y + y)
+        await page.mouse.down()
+        await page.mouse.move(frame.x + endX, frame.y + endY, { steps: 6 })
+        await page.mouse.up()
+      }
+
+      await workspace.getByTestId('tool-oval').click()
+      await drag(380, 180, 465, 238)
+      assert.ok((await types()).includes('oval'))
+      await workspace.getByTestId('tool-select').click()
+      await click(418, 203)
+      const width = workspace.getByTestId('prop-width')
+
+      await width.fill('115')
+      await width.press('Enter')
+      assert.equal(Number(await width.inputValue()), 115)
+      await workspace.getByTestId('prop-stroke-add').click()
+      await workspace.getByTestId('prop-fill-color-picker-0-trigger').click()
+      await workspace.getByTestId('prop-fill-mode-gradient-0').click()
+      await workspace
+        .getByTestId('prop-fill-gradient-type-0')
+        .selectOption('radial')
+      await workspace.getByTestId('prop-fill-color-picker-0-trigger').click()
+      assert.match(
+        await page.evaluate(async () =>
+          JSON.stringify(await globalThis.editor.save())
+        ),
+        /"gradientType":"radial"/
+      )
+      await workspace.getByTestId('tool-text').click()
+      await click(400, 280)
+      const text = workspace.getByRole('textbox', {
+        name: 'Canvas text editor'
+      })
+
+      await text.fill('Embedded workspace')
+      await text.press('Control+Enter')
+      assert.ok((await types()).includes('text'))
+      await page.evaluate(() => globalThis.editor.undo())
+      assert.ok(!(await types()).includes('text'))
+      await page.evaluate(() => globalThis.editor.redo())
+      await workspace.getByTestId('tool-pen').click()
+      await click(380, 380)
+      await click(450, 390)
+      await click(430, 425)
+      await page.keyboard.press('Escape')
+      assert.ok((await types()).includes('vector'))
+      const restored = await page.evaluate(async () => {
+        const saved = await globalThis.editor.save()
+
+        await globalThis.editor.destroy()
+        globalThis.editor = await globalThis.createDesign(globalThis.host, {
+          document: saved
+        })
+
+        return globalThis.editor.save()
+      })
+
+      assert.match(JSON.stringify(restored), /Embedded workspace/)
+      await page.locator('main iframe').screenshot({
+        path: path.join(root, 'tmp/canvas/packed-design-workspace.png')
+      })
+      assert.ok((await types()).includes('vector'))
+    }
+  )
+})
+
+test('packed Design workspaces use the app collaboration transport and durable document service', async () => {
+  await withConsumer(
+    ['sdk/canvas', 'sdk/design'],
+    'workspace.js',
+    async (page, directory) => {
+      const origin = new URL(page.url()).origin
+
+      await withDocumentServices(
+        directory,
+        origin,
+        async (endpoint, storage) => {
+          const open = async (client) => {
+            await client.goto(origin)
+            await client.evaluate(async (endpoint) => {
+              await globalThis.ready
+              await globalThis.editor.destroy()
+              globalThis.editor = await globalThis.createDesign(
+                globalThis.host,
+                {
+                  collaboration: { fileId: 'shared-board', endpoint }
+                }
+              )
+            }, endpoint)
+          }
+
+          const peer = await page.context().browser().newPage()
+
+          try {
+            await open(page)
+            await open(peer)
+            const id = await page.evaluate(() =>
+              globalThis.editor.drawOval({
+                x: 20,
+                y: 25,
+                width: 80,
+                height: 50
+              })
+            )
+
+            const hasShape = (client) =>
+              client.evaluate(
+                async (id) =>
+                  (await globalThis.editor.save()).sceneTree.elements[id]?.type,
+                id
+              )
+
+            await expect
+              .poll(() => hasShape(peer), { timeout: 12000 })
+              .toBe('oval')
+            await expect
+              .poll(
+                async () => {
+                  const response = await globalThis.fetch(
+                    storage + '/api/documents/shared-board/bootstrap-checkpoint'
+                  )
+                  const { checkpoint } = await response.json()
+
+                  return checkpoint?.sceneTree.elements[id]?.type
+                },
+                { timeout: 12000 }
+              )
+              .toBe('oval')
+            await peer.evaluate(() => globalThis.editor.destroy())
+            await page.evaluate(() => globalThis.editor.destroy())
+            await open(peer)
+            await expect.poll(() => hasShape(peer)).toBe('oval')
+          } finally {
+            await peer.close()
+          }
+        }
+      )
+    }
+  )
+})
+
+test('packed Design actions edit and group through the app with isolated histories', async () => {
+  await withConsumer(
+    ['sdk/canvas', 'sdk/design'],
+    'workspace.js',
+    async (page) => {
+      await page.evaluate(async () => {
+        await globalThis.ready
+        const panel = globalThis.document.body.appendChild(
+          globalThis.document.createElement('section')
+        )
+
+        panel.style.height = '360px'
+        globalThis.custom = await globalThis.createDesign(panel, {
+          panels: { layers: false, properties: false },
+          toolbar: ['badge', 'undo', 'redo'],
+          extensions: [
+            {
+              actions: {
+                badge: {
+                  label: 'Insert badge',
+
+                  run(tools) {
+                    const id = tools.drawOval({
+                      x: 12,
+                      y: 16,
+                      width: 90,
+                      height: 36
+                    })
+
+                    tools.updateElement({
+                      elementId: id,
+                      name: 'Status badge',
+                      fillColor: '#ff5500'
+                    })
+                    tools.select([id])
+                  }
+                }
+              }
+            }
+          ]
+        })
+      })
+      const custom = page.frameLocator('section iframe')
+
+      await custom.getByRole('button', { name: 'Insert badge' }).click()
+      assert.equal(await custom.getByTestId('contents-panel').count(), 0)
+      assert.equal(await custom.getByTestId('properties-panel').count(), 0)
+      const results = await page.evaluate(async () => {
+        const { custom, editor } = globalThis
+        const [badge] = custom.getSelection()
+        const rect = custom.drawRectangle({
+          x: 15,
+          y: 22,
+          width: 20,
+          height: 20
+        })
+
+        custom.select([badge, rect])
+        const group = custom.group()
+        const grouped = await custom.save()
+        const children = custom.ungroup()
+
+        await custom.undo()
+        const restored = await custom.save()
+
+        await custom.destroy()
+        const other = await editor.save()
+
+        return {
+          group,
+          children,
+          grouped: grouped.sceneTree.elements[group]?.children,
+          name: restored.sceneTree.elements[badge]?.name,
+          restored: restored.sceneTree.elements[group]?.children,
+          unrelated: Object.values(other.sceneTree.elements).filter(
+            (el) => el.type !== 'workspace'
+          ).length
+        }
+      })
+
+      assert.ok(results.group)
+      assert.equal(results.children.length, 2)
+      assert.deepEqual(results.children, results.grouped)
+      assert.deepEqual(results.restored, results.grouped)
+      assert.equal(results.name, 'Status badge')
+      assert.equal(results.unrelated, 0)
     }
   )
 })
