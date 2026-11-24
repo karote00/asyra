@@ -30,6 +30,9 @@ export function attachDesignTools(
 export interface WorkspaceTools extends DesignTools<WorkspaceTool> {
   drawOval(bounds: Rectangle): string
   select(ids: readonly string[]): void
+  deleteSelectedElement(): void
+  zoomFit(): void
+  reset(): Promise<void>
   group(): string | null
   ungroup(): readonly string[]
   updateElement(edit: {
@@ -50,7 +53,13 @@ export interface DesignAction<Tool extends string = WorkspaceTool> {
   run(tools: ToolsFor<Tool>): void | Promise<void>
 }
 
-type Command<Tool extends string> = Tool | 'undo' | 'redo'
+type WorkspaceAction =
+  'group' | 'ungroup' | 'deleteSelectedElement' | 'zoomFit' | 'reset'
+type Command<Tool extends string> =
+  | Tool
+  | 'undo'
+  | 'redo'
+  | (WorkspaceTool extends Tool ? WorkspaceAction : never)
 
 export interface DesignOptions<
   Id extends string = never,
@@ -71,22 +80,18 @@ export type WorkspaceFeature =
   | WorkspaceTool
   | 'undo'
   | 'redo'
-  | 'group'
-  | 'ungroup'
+  | WorkspaceAction
   | 'hoverElement'
   | 'moveElements'
   | 'moveLayerHierarchy'
-  | 'deleteSelectedElement'
   | 'pan'
   | 'zoom'
-  | 'zoomFit'
   | 'geometry'
   | 'fills'
   | 'strokes'
   | 'lock'
   | 'visibility'
   | 'rename'
-  | 'reset'
 
 export interface WorkspaceExtension<Id extends string = string> {
   actions: Partial<Record<Id, DesignAction>>

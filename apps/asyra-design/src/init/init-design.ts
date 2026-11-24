@@ -8,9 +8,18 @@ import { initLoadDiagnostics } from './diagnostics/init-load-diagnostics'
 import { initCanvasPipelineDebugger } from './diagnostics/init-canvas-pipeline-debugger'
 import { initPathEditingContinuation } from './derived-state/init-path-editing-continuation'
 import { initInputSystem } from './foundation/init-input-system'
+import { configureWorkspaceFeatures } from './workspace-features'
 import '../features'
 
-export function initDesign(initProgress?: () => void) {
+interface DesignComposition {
+  disabledFeatures?: readonly string[]
+  initProgress?: () => void
+}
+
+export function initDesign({
+  disabledFeatures,
+  initProgress
+}: DesignComposition = {}) {
   applyPreset(core)
   initText(core)
 
@@ -32,4 +41,7 @@ export function initDesign(initProgress?: () => void) {
 
   // Foundation init.
   initInputSystem()
+  if (disabledFeatures?.length) {
+    configureWorkspaceFeatures(disabledFeatures)
+  }
 }

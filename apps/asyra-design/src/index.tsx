@@ -2,7 +2,6 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import './index.css'
 import '@asyra/design-system/index.css'
-import DataContexts from './contexts/data-change'
 
 import App from './app'
 import {
@@ -46,7 +45,6 @@ const bootstrapApp = async (): Promise<void> => {
 
       root.render(
         <React.StrictMode>
-          <DataContexts />
           <App
             ai={{
               confirmation: initialization.aiConfirmation,

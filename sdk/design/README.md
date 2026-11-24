@@ -21,6 +21,25 @@ keyboard shortcuts and Undo/Redo. Each editor owns its input, canvas,
 menus and styles. The embedded workspace omits the conversation panel,
 its shortcut and its agent runtime.
 
+A host can put existing app commands in its own toolbar order. The buttons,
+`runAction` and direct editor methods use the app's selection, history and viewport.
+
+```js
+import { createDesign } from '@asyra/design'
+
+const editor = await createDesign(container, {
+  toolbar: [
+    'rectangle',
+    'group',
+    'ungroup',
+    'deleteSelectedElement',
+    'zoomFit',
+    'undo'
+  ]
+})
+await editor.runAction('zoomFit')
+```
+
 ### React
 
 ```tsx

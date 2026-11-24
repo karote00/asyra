@@ -85,6 +85,10 @@ async function withConsumer(packages, entry, assertions) {
             'await editor.destroy()',
             "const extended = await createDesign(document.body, { extensions: [{ actions: { badge: { label: 'Badge', run(tools) { tools.drawOval({ x: 0, y: 0, width: 10, height: 10 }) } } } }], toolbar: ['badge'], disabledFeatures: ['text', 'pen', 'badge'], hideUI: true })",
             "await extended.runAction('badge')",
+            "const workspace = await createDesign(document.body, { toolbar: ['group', 'ungroup', 'deleteSelectedElement', 'zoomFit', 'reset'] })",
+            "await workspace.runAction('zoomFit')",
+            'workspace.deleteSelectedElement()',
+            'await workspace.reset()',
             'const tools = await attachDesignTools(surface)',
             "tools.setTool('select')",
             'await tools.undo()'
@@ -1042,11 +1046,11 @@ test('packed Design actions edit and group through the app with isolated histori
         panel.style.height = '360px'
         globalThis.custom = await globalThis.createDesign(panel, {
           panels: { layers: false, properties: false },
-          toolbar: ['badge', 'undo', 'redo'],
+          toolbar: ['group', 'undo', 'redo'],
           extensions: [
             {
               actions: {
-                badge: {
+                group: {
                   label: 'Insert badge',
 
                   run(tools) {
@@ -1114,6 +1118,111 @@ test('packed Design actions edit and group through the app with isolated histori
       assert.deepEqual(results.restored, results.grouped)
       assert.equal(results.name, 'Status badge')
       assert.equal(results.unrelated, 0)
+    }
+  )
+})
+
+test('packed Design toolbar actions use the app selection, viewport, history and reset', async () => {
+  await withConsumer(
+    ['sdk/canvas', 'sdk/design'],
+    'workspace.js',
+    async (page) => {
+      const commands = [
+        'group',
+        'ungroup',
+        'deleteSelectedElement',
+        'zoomFit',
+        'reset'
+      ]
+      const [rect, oval] = await page.evaluate(async (toolbar) => {
+        await globalThis.ready
+        await globalThis.editor.destroy()
+        const editor = await globalThis.createDesign(globalThis.host, {
+          toolbar
+        })
+
+        globalThis.editor = editor
+        const a = editor.drawRectangle({ x: 20, y: 20, width: 30, height: 30 })
+        const b = editor.drawOval({ x: 2000, y: 1000, width: 60, height: 60 })
+
+        editor.select([a, b])
+
+        return [a, b]
+      }, commands)
+      const frame = page.frameLocator('main iframe')
+
+      const button = (name) => frame.getByRole('button', { name, exact: true })
+
+      const selection = () =>
+        page.evaluate(() => globalThis.editor.getSelection())
+
+      const elements = () =>
+        page.evaluate(
+          async () => (await globalThis.editor.save()).sceneTree.elements
+        )
+
+      await button('Zoom to fit').click()
+      await expect
+        .poll(async () =>
+          Number(
+            await frame.getByTestId('zoom-level').getAttribute('data-value')
+          )
+        )
+        .toBeLessThan(1)
+      await button('Group').click()
+      const [group] = await selection()
+
+      assert.deepEqual((await elements())[group].children, [rect, oval])
+      await button('Ungroup').click()
+      assert.deepEqual(await selection(), [rect, oval])
+      await page.evaluate((id) => globalThis.editor.select([id]), oval)
+      await button('Delete selection').click()
+      assert.equal((await elements())[oval], undefined)
+      await page.evaluate(() => globalThis.editor.undo())
+      assert.ok((await elements())[oval])
+      await page.evaluate(() => globalThis.editor.runAction('reset'))
+      assert.deepEqual(
+        Object.values(await elements()).filter(
+          (element) => element.type !== 'workspace'
+        ),
+        []
+      )
+      assert.deepEqual(await selection(), [])
+      await button('Zoom to fit').waitFor()
+
+      await page.evaluate(async (ids) => {
+        await globalThis.editor.destroy()
+
+        globalThis.editor = await globalThis.createDesign(globalThis.host, {
+          toolbar: ids,
+          disabledFeatures: ids
+        })
+      }, commands)
+      assert.equal(
+        await frame
+          .getByTestId('toolbar')
+          .getByRole('button', { name: 'Reset document' })
+          .count(),
+        0
+      )
+      const errors = await page.evaluate(
+        (ids) =>
+          Promise.all(
+            ids.map(async (id) => {
+              try {
+                await globalThis.editor.runAction(id)
+              } catch (error) {
+                return error.message
+              }
+            })
+          ),
+        commands
+      )
+
+      assert.deepEqual(
+        errors,
+        commands.map((id) => 'Disabled Design feature: ' + id)
+      )
     }
   )
 })

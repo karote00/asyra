@@ -52,7 +52,7 @@ export interface AppInitialization {
  * ```
  */
 export const initApp = (): AppInitialization => {
-  initDesign(initAiDrawingProgress)
+  initDesign({ initProgress: initAiDrawingProgress })
   const aiStartup: AiStartup = createAiStartup()
   let initializedFeatures: ReturnType<typeof initFeatures>
 

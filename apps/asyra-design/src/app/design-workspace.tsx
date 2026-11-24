@@ -1,7 +1,8 @@
 import { featureEnabled } from '../workspace-features'
 import type { ConversationDrafts } from '../ai/conversation-drafts'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import ToolBar from '../toolbar'
+import ToolBar, { type ToolBarProps } from '../toolbar'
+import DataContexts from '../contexts/data-change'
 import Contents from '../contents'
 import Properties from '../properties'
 import { toTailwindPixelSize } from '../tailwind-size'
@@ -31,7 +32,7 @@ import type { AiHistoryProjection } from '../common-apis/history'
 
 export interface WorkspaceProps {
   session?: RenderSession
-  toolbar?: React.ReactNode
+  toolbar?: false | ToolBarProps['controls']
   onReset?: () => Promise<void>
   panels?: { layers?: boolean; properties?: boolean }
   conversationPanel?: (close: () => void) => React.ReactNode
@@ -214,6 +215,7 @@ export const DesignWorkspace: React.FC<WorkspaceProps> = ({
         gridTemplateRows: 'auto 1fr'
       }}
     >
+      <DataContexts />
       <RenderApp
         session={session}
         onContextMenuRequest={

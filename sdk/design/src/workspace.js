@@ -2,13 +2,29 @@ import { createActions } from './actions.js'
 import { assets } from './workspace-assets.js'
 
 const occupied = new WeakSet()
-const workspaceCommands = Object.fromEntries(
+const workspaceTools = Object.fromEntries(
   ['oval', 'pen', 'text'].map((id) => [
     id,
     {
       label: id[0].toUpperCase() + id.slice(1),
 
       run: (tools) => tools.setTool(id)
+    }
+  ])
+)
+const workspaceActions = Object.fromEntries(
+  Object.entries({
+    group: 'Group',
+    ungroup: 'Ungroup',
+    deleteSelectedElement: 'Delete selection',
+    zoomFit: 'Zoom to fit',
+    reset: 'Reset document'
+  }).map(([id, label]) => [
+    id,
+    {
+      label,
+
+      run: (tools) => tools[id]()
     }
   ])
 )
@@ -41,25 +57,21 @@ export async function mountWorkspace(host, options, signal) {
 
   const { actions, disabled, runAction } = createActions(
     options,
-    workspaceCommands,
+    workspaceTools,
     [
-      'group',
-      'ungroup',
       'moveElements',
       'hoverElement',
       'moveLayerHierarchy',
-      'deleteSelectedElement',
       'pan',
       'zoom',
-      'zoomFit',
       'geometry',
       'fills',
       'strokes',
       'lock',
       'visibility',
-      'rename',
-      'reset'
-    ]
+      'rename'
+    ],
+    workspaceActions
   )
   const defaultControls = options.toolbar === undefined
   const ids = defaultControls
@@ -140,6 +152,12 @@ export async function mountWorkspace(host, options, signal) {
 
     select: (ids) => current().select(ids),
 
+    deleteSelectedElement: () => current().deleteSelectedElement(),
+
+    zoomFit: () => current().zoomFit(),
+
+    reset: () => current().reset(),
+
     group: () => current().group(),
 
     ungroup: () => current().ungroup(),
@@ -203,12 +221,23 @@ export async function mountWorkspace(host, options, signal) {
     session = frame.contentWindow.DesignWorkspaceRuntime.mount({
       document: documentData,
       collaboration,
-      controls,
-      defaultControls,
+      toolbar:
+        controls === false
+          ? false
+          : {
+              includeTools: defaultControls,
+              actions: controls.map(({ id, label }) => ({
+                id,
+                label,
+
+                run: () => editor.runAction(id)
+              }))
+            },
       disabledFeatures: [...disabled],
       hideUI: options.hideUI === true,
-      panels: options.panels,
-      runAction: editor.runAction,
+      panels: options.hideUI
+        ? { layers: false, properties: false }
+        : options.panels,
 
       reopen: () => reopen()
     })

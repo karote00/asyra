@@ -21,7 +21,12 @@ const commands = {
   }
 }
 
-export function createActions(options = {}, extra = {}, features = []) {
+export function createActions(
+  options = {},
+  extra = {},
+  features = [],
+  defaults = {}
+) {
   const { actions: custom = {}, extensions = [] } = options
   const actions = new Map(Object.entries({ ...commands, ...extra }))
 
@@ -33,7 +38,8 @@ export function createActions(options = {}, extra = {}, features = []) {
   const disabled = disabledActions(options.disabledFeatures, [
     ...actions.keys(),
     ...entries.map(([id]) => id),
-    ...features
+    ...features,
+    ...Object.keys(defaults)
   ])
 
   for (const [id, action] of entries) {
@@ -59,6 +65,12 @@ export function createActions(options = {}, extra = {}, features = []) {
         }
       })
     } else {
+      actions.set(id, action)
+    }
+  }
+
+  for (const [id, action] of Object.entries(defaults)) {
+    if (!actions.has(id)) {
       actions.set(id, action)
     }
   }

@@ -1,4 +1,4 @@
-import type { KeyboardEvent, SyntheticEvent } from 'react'
+import { useState, type KeyboardEvent, type SyntheticEvent } from 'react'
 import { AiDocumentInteractionTargetProps } from '../constants'
 import ThemeToggle from './theme-toggle'
 import Zoom from './zoom'
@@ -7,7 +7,10 @@ import ToolButton from './tool-button'
 export interface ToolBarProps {
   readonly aiOpen: boolean
   readonly aiShortcutLabel?: string
-  readonly controls?: React.ReactNode
+  readonly controls?: {
+    includeTools: boolean
+    actions: readonly { id: string; label: string; run(): Promise<void> }[]
+  }
   readonly onReset?: () => Promise<void>
   readonly onAiToggle?: (invoker: HTMLButtonElement) => void
 }
@@ -30,6 +33,17 @@ const ToolBar = ({
   controls,
   onReset
 }: ToolBarProps) => {
+  const [busy, setBusy] = useState(false)
+
+  async function run(action: () => Promise<void>) {
+    setBusy(true)
+    try {
+      await action()
+    } finally {
+      setBusy(false)
+    }
+  }
+
   return (
     <div
       className="z-10 flex items-center justify-between px-3"
@@ -42,7 +56,20 @@ const ToolBar = ({
       }}
       data-testid="toolbar"
     >
-      {controls ?? <ToolButton onReset={onReset} />}
+      <div className="flex items-center gap-1">
+        {(controls?.includeTools ?? true) && <ToolButton onReset={onReset} />}
+        {controls?.actions.map(({ id, label, run: execute }) => (
+          <button
+            key={id}
+            type="button"
+            className="h-7 rounded px-2 text-[11px] text-white hover:bg-[#47484e] disabled:opacity-50"
+            disabled={busy}
+            onClick={() => void run(execute)}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
       <div className="flex items-center gap-2">
         {onAiToggle && (
           <button

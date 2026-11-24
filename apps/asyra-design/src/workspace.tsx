@@ -1,10 +1,9 @@
-import React, { useState } from 'react'
+import React from 'react'
 import { createRoot } from 'react-dom/client'
 import { PresetSystemPropertyKeys } from '@asyra/preset'
-import { DesignWorkspace } from './app/design-workspace'
+import { DesignWorkspace, type WorkspaceProps } from './app/design-workspace'
 import core from './contexts'
-import DataContexts from './contexts/data-change'
-import { configureWorkspaceFeatures } from './init/workspace-features'
+import { featureEnabled } from './workspace-features'
 import { initDesign } from './init/init-design'
 import { switchPrimaryToolFeature } from './features/switch-primary-tool'
 import { createDesignShape } from './features/create-element'
@@ -20,7 +19,8 @@ import { groupCommandFeature } from './features/group-elements'
 import { PrimaryToolType } from './constants'
 import { resetCollaborationDocument } from './collaboration/lifecycle'
 import type { RenderSession } from './render-app'
-import ToolButton from './toolbar/tool-button'
+import { deleteElementFeature } from './features/delete-element'
+import { zoomFitFeature } from './features/zoom-fit'
 import './index.css'
 import '@asyra/design-system/index.css'
 
@@ -61,55 +61,15 @@ interface WorkspaceOptions {
   surface: RenderSession['surface']
   document?: RenderSession['document']
   collaboration?: RenderSession['collaboration']
-  panels?: { layers?: boolean; properties?: boolean }
-  controls?: false | readonly { id: string; label: string }[]
+  panels?: WorkspaceProps['panels']
+  toolbar?: WorkspaceProps['toolbar']
   disabledFeatures: readonly string[]
   hideUI: boolean
-  defaultControls: boolean
-  runAction(id: string): Promise<void>
   reopen(): Promise<void>
 }
 
-function WorkspaceControls({
-  options,
-  reset
-}: {
-  options: WorkspaceOptions
-  reset: () => Promise<void>
-}) {
-  const [busy, setBusy] = useState(false)
-
-  async function run(id: string) {
-    setBusy(true)
-    try {
-      await options.runAction(id)
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  return (
-    <div className="flex items-center gap-1">
-      {options.defaultControls && <ToolButton onReset={reset} />}
-      {options.controls &&
-        options.controls.map(({ id, label }) => (
-          <button
-            key={id}
-            type="button"
-            className="h-7 rounded px-2 text-[11px] text-white hover:bg-[#47484e] disabled:opacity-50"
-            disabled={busy}
-            onClick={() => void run(id)}
-          >
-            {label}
-          </button>
-        ))}
-    </div>
-  )
-}
-
 export function mount(options: WorkspaceOptions) {
-  initDesign()
-  configureWorkspaceFeatures(options.disabledFeatures)
+  initDesign({ disabledFeatures: options.disabledFeatures })
   if (
     options.document !== undefined &&
     (!options.document || core.preflightLoad(options.document).length)
@@ -122,6 +82,7 @@ export function mount(options: WorkspaceOptions) {
   )
 
   const reset = async () => {
+    featureEnabled('reset', 'reject')
     if (options.collaboration) {
       await resetCollaborationDocument(options.collaboration.fileId)
     }
@@ -129,12 +90,6 @@ export function mount(options: WorkspaceOptions) {
     await options.reopen()
   }
 
-  const controls =
-    options.controls === false ? (
-      false
-    ) : (
-      <WorkspaceControls options={options} reset={reset} />
-    )
   let cancel!: (error: Error) => void
   const ready = new Promise<void>((resolve, reject) => {
     cancel = reject
@@ -149,19 +104,12 @@ export function mount(options: WorkspaceOptions) {
     }
 
     root.render(
-      <>
-        <DataContexts />
-        <DesignWorkspace
-          session={session}
-          panels={
-            options.hideUI
-              ? { layers: false, properties: false }
-              : options.panels
-          }
-          toolbar={controls}
-          onReset={reset}
-        />
-      </>
+      <DesignWorkspace
+        session={session}
+        panels={options.panels}
+        toolbar={options.toolbar}
+        onReset={reset}
+      />
     )
   })
   let closing: Promise<void> | undefined
@@ -208,6 +156,18 @@ export function mount(options: WorkspaceOptions) {
     },
 
     getSelection: selectionApis.getSelectedIds,
+
+    deleteSelectedElement() {
+      featureEnabled('deleteSelectedElement', 'reject')
+      deleteElementFeature.api.deleteSelectedElement()
+    },
+
+    zoomFit() {
+      featureEnabled('zoomFit', 'reject')
+      zoomFitFeature.api.zoomFit()
+    },
+
+    reset,
 
     undo: async () => {
       await runHistoryCommand('undo', 'reject')
