@@ -1940,6 +1940,9 @@ for (const rootType of ['frame', 'group'] as const) {
       ? 'whole subtree reconciliation survives local edits history collaboration and durable reload'
       : 'incremental Group review preserves identity through local edits history collaboration and durable reload',
     async ({ page, context }, testInfo) => {
+      // This sequence spans two runtimes, two editor reloads, and distinct
+      // durable revisions. Bound each post-reload phase as well as the scenario.
+      test.setTimeout(60_000)
       const document = createTestDocumentIdentity()
 
       await page.goto(document.url)
@@ -1969,7 +1972,10 @@ for (const rootType of ['frame', 'group'] as const) {
         name: string,
         action: () => Promise<T>,
         expected?: unknown
-      ) => test.step(name, () => evidence.phase(name, action, expected))
+      ) =>
+        test.step(name, () => evidence.phase(name, action, expected), {
+          timeout: 15_000
+        })
 
       let failure: unknown
 
@@ -2165,9 +2171,57 @@ for (const rootType of ['frame', 'group'] as const) {
         expect((await invoke('read_design_checks')).counts.pass).toBe(3)
         const edited = await getCoreDocumentDigest(page)
 
-        await expect
-          .poll(() => getPersistedDocumentDigest(document.fileId))
-          .toEqual(edited)
+        const verifyPersisted = async (expected: typeof edited) => {
+          await expect
+            .poll(() =>
+              page.evaluate(
+                async () =>
+                  (await import('../src/testing/runtime-access'))
+                    .getActiveCollaborationHandle()
+                    ?.getSessionState().sync
+              )
+            )
+            .toBe('synced')
+          const receipt = await page.evaluate(async () => {
+            const { getActiveCollaborationHandle } =
+              await import('../src/testing/runtime-access')
+            const session = getActiveCollaborationHandle()
+
+            if (!session) {
+              throw new Error('Missing document session')
+            }
+
+            return session.confirmPersistence(AbortSignal.timeout(5_000))
+          })
+
+          expect(receipt.documentId).toBe(document.fileId)
+          expect(receipt.durableSequence).toBeGreaterThanOrEqual(
+            receipt.sequence
+          )
+          expect(await getPersistedDocumentDigest(document.fileId)).toEqual(
+            expected
+          )
+        }
+
+        const verifyReload = (label: string, expected: typeof edited) =>
+          test.step(
+            label,
+            async () => {
+              await evidence.reload('editor', async () => {
+                await page.reload()
+                await page.waitForSelector('#viewport-anchor')
+                await page.waitForSelector('[data-testid="toolbar"]')
+                await page.waitForSelector('canvas')
+                await waitForCollaboration(page)
+              })
+              await expect
+                .poll(() => getCoreDocumentDigest(page))
+                .toEqual(expected)
+            },
+            { timeout: 15_000 }
+          )
+
+        await verifyPersisted(edited)
         await evidence.reload('peer', async () => {
           await peer.goto(document.url)
           await peer.waitForSelector('#viewport-anchor')
@@ -2189,9 +2243,7 @@ for (const rootType of ['frame', 'group'] as const) {
         await review(fixture.root)
         expect((await invoke('read_design_checks')).counts.pass).toBe(3)
         await expect.poll(() => getCoreDocumentDigest(peer)).toEqual(edited)
-        await expect
-          .poll(() => getPersistedDocumentDigest(document.fileId))
-          .toEqual(edited)
+        await verifyPersisted(edited)
         const capture = await invoke('inspect_drawing', {
           arguments: { elementId: fixture.root, view: 'overview' }
         })
@@ -2236,9 +2288,9 @@ for (const rootType of ['frame', 'group'] as const) {
           status: 'no-change',
           persistence: { status: 'durable' }
         })
-        await expect
-          .poll(() => getPersistedDocumentDigest(document.fileId))
-          .toEqual(edited)
+        expect(await getPersistedDocumentDigest(document.fileId)).toEqual(
+          edited
+        )
         await page.evaluate(async () => {
           const { testRuntimeState } =
             await import('../src/testing/runtime-access')
@@ -2251,15 +2303,7 @@ for (const rootType of ['frame', 'group'] as const) {
             await owner.dispose()
           }
         })
-        await test.step('planned reload - editor', () =>
-          evidence.reload('editor', async () => {
-            await page.reload()
-            await page.waitForSelector('#viewport-anchor')
-            await page.waitForSelector('[data-testid="toolbar"]')
-            await page.waitForSelector('canvas')
-            await waitForCollaboration(page)
-          }))
-        await expect.poll(() => getCoreDocumentDigest(page)).toEqual(edited)
+        await verifyReload('Reload the reviewed document', edited)
         await phase('edit after reload', async () => {
           await page.evaluate(async (childId) => {
             const { elementApis } = await import('../src/common-apis')
@@ -2274,9 +2318,7 @@ for (const rootType of ['frame', 'group'] as const) {
         await phase(
           'persist new edit',
           async () => {
-            await expect
-              .poll(() => getPersistedDocumentDigest(document.fileId))
-              .toEqual(subsequent)
+            await verifyPersisted(subsequent)
           },
           subsequent
         )
@@ -2286,9 +2328,7 @@ for (const rootType of ['frame', 'group'] as const) {
             await undo(page, evidence.assertContinuous)
             await expect.poll(() => getCoreDocumentDigest(page)).toEqual(edited)
             await expect.poll(() => getCoreDocumentDigest(peer)).toEqual(edited)
-            await expect
-              .poll(() => getPersistedDocumentDigest(document.fileId))
-              .toEqual(edited)
+            await verifyPersisted(edited)
           },
           edited
         )
@@ -2302,21 +2342,11 @@ for (const rootType of ['frame', 'group'] as const) {
             await expect
               .poll(() => getCoreDocumentDigest(peer))
               .toEqual(subsequent)
-            await expect
-              .poll(() => getPersistedDocumentDigest(document.fileId))
-              .toEqual(subsequent)
+            await verifyPersisted(subsequent)
           },
           subsequent
         )
-        await test.step('planned reload - editor', () =>
-          evidence.reload('editor', async () => {
-            await page.reload()
-            await page.waitForSelector('#viewport-anchor')
-            await page.waitForSelector('[data-testid="toolbar"]')
-            await page.waitForSelector('canvas')
-            await waitForCollaboration(page)
-          }))
-        await expect.poll(() => getCoreDocumentDigest(page)).toEqual(subsequent)
+        await verifyReload('Reload the redone edit', subsequent)
       } catch (error) {
         failure = error
       } finally {
