@@ -63,14 +63,26 @@ async function withConsumer(packages, entry, assertions) {
       )
       .sort()
   )
-  await cp(path.join(fixture, 'index.html'), path.join(cwd, 'index.html'))
+  const headless = entry === 'headless.js'
+
+  await cp(
+    path.join(fixture, headless ? 'headless.html' : 'index.html'),
+    path.join(cwd, 'index.html')
+  )
+  if (headless) {
+    await cp(path.join(fixture, 'headless.css'), path.join(cwd, 'headless.css'))
+  }
+
   if (entry === 'react.js') {
     await cp(path.join(fixture, 'examples'), path.join(cwd, 'examples'), {
       recursive: true
     })
   }
 
-  await cp(path.join(fixture, entry), path.join(cwd, 'main.js'))
+  await cp(
+    path.join(fixture, entry),
+    path.join(cwd, headless ? entry : 'main.js')
+  )
 
   await writeFile(
     path.join(cwd, 'consumer.ts'),
@@ -1760,7 +1772,7 @@ test('packed Design headless editing uses only host controls and the public tool
       assert.ok(text)
       await page.getByRole('button', { name: 'Draw line' }).click()
       await page.getByRole('button', { name: 'Undo' }).click()
-      await expect(page.locator('nav')).toHaveJSProperty('inert', false)
+      await expect(page.locator('main')).toHaveJSProperty('inert', false)
       const result = await page.evaluate(async (text) => {
         const e = globalThis.editor
         const textValue = e.getElementProperties(text, ['text']).text
@@ -2068,6 +2080,142 @@ test('packed Design headless editing uses only host controls and the public tool
       assert.deepEqual(blocked.failures, blocked.expected)
       assert.equal(blocked.loadedText, 'Custom UI')
       assert.equal(blocked.width, 70)
+    }
+  )
+})
+
+test('headless playground edits through the host UI and preserves artwork across feature switches', async () => {
+  await withConsumer(
+    ['sdk/canvas', 'sdk/design'],
+    'headless.js',
+    async (page) => {
+      await page.evaluate(() => globalThis.ready)
+
+      const button = (name) => page.getByRole('button', { name, exact: true })
+
+      const input = (name) => page.getByLabel(name, { exact: true })
+
+      const run = async (name) => {
+        await button(name).click()
+        await expect(page.locator('#status')).toHaveText(name + ' completed.')
+        await expect(page.locator('main')).toHaveJSProperty('inert', false)
+      }
+
+      await run('Insert rectangle')
+      const rect = await input('Inspect layer').inputValue()
+
+      await input('Layer name').fill('Swatch')
+      await run('Rename')
+      await run('Hide')
+      await run('Show')
+      await run('Lock')
+      await expect(button('Apply gradient')).toBeDisabled()
+      await run('Unlock')
+      await input('Gradient type').selectOption('radial')
+      await input('End color').fill('#ff7711')
+      await run('Apply gradient')
+      await input('Stroke width').fill('7')
+      await input('Stroke color').fill('#335599')
+      await input('Stroke style').selectOption('dashed')
+      await run('Apply stroke')
+      await run('Insert label')
+      const text = await input('Inspect layer').inputValue()
+
+      await input('Label text').fill('Proof label')
+      await run('Update text')
+      await run('Draw line')
+      const vector = await input('Inspect layer').inputValue()
+
+      await input('X').fill('230')
+      await input('Y').fill('185')
+      await run('Add anchor')
+      await input('X').fill('250')
+      await run('Move anchor')
+      await run('Close path')
+      await input('Inspect layer').selectOption(rect)
+      await run('Move to first')
+      await run('Fit drawing')
+
+      const drawing = () =>
+        page.evaluate(
+          ({ rect, text, vector }) => {
+            const e = globalThis.editor
+            const layers = e.getLayers()
+            const { fills, strokes } = e.getElementProperties(rect)
+            const path = e.getPath(vector)
+
+            return {
+              ids: layers.ids,
+              name: layers.elements[rect].name,
+              text: e.getElementProperties(text).text,
+              gradient: fills[0].gradient,
+              stroke: strokes[0],
+              anchors: path.anchors.map(({ x, y }) => [x, y]),
+              closed: Object.values(path.networks)[0].closed
+            }
+          },
+          { rect, text, vector }
+        )
+
+      const before = await drawing()
+
+      assert.equal(before.name, 'Swatch')
+      assert.equal(before.text, 'Proof label')
+      assert.equal(before.gradient.gradientType, 'radial')
+      assert.equal(before.gradient.gradientStops[1].color, '#ff7711')
+      assert.equal(before.stroke.width, 7)
+      assert.equal(before.stroke.fill.color, '#335599')
+      assert.equal(before.stroke.style, 'dashed')
+      assert.equal(before.anchors.length, 3)
+      assert.ok(
+        before.anchors.some(
+          ([x, y]) => Math.abs(x - 250) < 1e-6 && Math.abs(y - 185) < 1e-6
+        ),
+        JSON.stringify(before.anchors)
+      )
+      assert.ok(before.closed)
+      const switches = ['pen', 'text', 'fills', 'strokes', 'rename', 'select']
+
+      for (const feature of switches) {
+        await input(feature).check()
+      }
+
+      await run('Apply features')
+      assert.deepEqual(await drawing(), before)
+      await expect(
+        page.frameLocator('iframe').getByTestId('toolbar')
+      ).toHaveCount(0)
+      for (const action of [
+        'Draw line',
+        'Insert label',
+        'Apply gradient',
+        'Apply stroke',
+        'Rename'
+      ]) {
+        await expect(button(action)).toBeDisabled()
+      }
+
+      const rejection = await page.evaluate((id) => {
+        try {
+          globalThis.editor.addFill(id)
+        } catch (error) {
+          return error.message
+        }
+      }, rect)
+
+      assert.equal(rejection, 'Disabled Design feature: fills')
+      for (const feature of switches) {
+        await input(feature).uncheck()
+      }
+
+      await run('Apply features')
+      assert.deepEqual(await drawing(), before)
+      await run('Remove gradient')
+      await run('Remove stroke')
+      await input('Inspect layer').selectOption(vector)
+      await run('Open path')
+      await run('Remove anchor')
+      await expect(input('Anchor').locator('option')).toHaveCount(2)
     }
   )
 })

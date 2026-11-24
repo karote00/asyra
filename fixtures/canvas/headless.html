@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Asyra Design playground</title>
+    <link rel="stylesheet" href="./headless.css" />
+  </head>
+  <body>
+    <header>
+      <h1>
+        Asyra Design
+        <small>Playground</small>
+      </h1>
+      <code>hideUI: true</code>
+    </header>
+    <main>
+      <section class="board" aria-label="Drawing workspace">
+        <nav aria-label="Canvas controls">
+          <button data-command="rectangle">Insert rectangle</button>
+          <button data-command="line">Draw line</button>
+          <button data-command="label">Insert label</button>
+          <span class="spacer"></span>
+          <button data-command="fit">Fit drawing</button>
+          <button data-command="undo">Undo</button>
+          <button data-command="redo">Redo</button>
+        </nav>
+        <div id="host"></div>
+        <footer>
+          <span>Selection</span>
+          <output>None</output>
+        </footer>
+      </section>
+      <aside aria-label="Workspace controls">
+        <nav class="panel-links" aria-label="Inspector sections">
+          <a href="#panel-layers">Layers</a>
+          <a href="#panel-text">Text</a>
+          <a href="#panel-vector">Vector</a>
+          <a href="#panel-gradient">Gradient</a>
+          <a href="#panel-stroke">Stroke</a>
+          <a href="#panel-feature-switches">Feature switches</a>
+        </nav>
+        <section id="panel-layers">
+          <h2>Layers</h2>
+          <label for="layers">Inspect layer</label>
+          <select id="layers"></select>
+          <label>
+            Layer name
+            <input id="name" />
+          </label>
+          <div class="actions">
+            <button data-command="rename">Rename</button>
+            <button data-command="first">Move to first</button>
+            <button data-command="lock">Lock</button>
+            <button data-command="visible">Hide</button>
+          </div>
+        </section>
+        <section id="panel-text">
+          <h2>Text</h2>
+          <label>
+            Label text
+            <input id="text" value="Custom UI" />
+          </label>
+          <div class="actions">
+            <button data-command="updateText">Update text</button>
+          </div>
+        </section>
+        <section id="panel-vector">
+          <h2>Vector</h2>
+          <label for="anchors">Anchor</label>
+          <select id="anchors"></select>
+          <div class="pair">
+            <label>
+              X
+              <input id="x" type="number" step="any" value="180" />
+            </label>
+            <label>
+              Y
+              <input id="y" type="number" step="any" value="140" />
+            </label>
+          </div>
+          <div class="actions">
+            <button data-command="append">Add anchor</button>
+            <button data-command="move">Move anchor</button>
+            <button data-command="remove">Remove anchor</button>
+            <button data-command="close">Close path</button>
+          </div>
+        </section>
+        <section id="panel-gradient">
+          <h2>Gradient</h2>
+          <label for="gradient">Gradient type</label>
+          <select id="gradient">
+            <option>linear</option>
+            <option>radial</option>
+            <option>angular</option>
+            <option>diamond</option>
+          </select>
+          <div class="pair">
+            <label>
+              Start color
+              <input type="color" id="start" value="#405bd5" />
+            </label>
+            <label>
+              End color
+              <input type="color" id="end" value="#fc9974" />
+            </label>
+          </div>
+          <div class="actions">
+            <button data-command="fill">Apply gradient</button>
+            <button data-command="removeFill">Remove gradient</button>
+          </div>
+        </section>
+        <section id="panel-stroke">
+          <h2>Stroke</h2>
+          <div class="pair">
+            <label>
+              Stroke width
+              <input id="width" type="number" min="1" step="any" value="4" />
+            </label>
+            <label>
+              Stroke color
+              <input id="ink" type="color" value="#253248" />
+            </label>
+          </div>
+          <label for="style">Stroke style</label>
+          <select id="style">
+            <option>solid</option>
+            <option>dashed</option>
+          </select>
+          <div class="actions">
+            <button data-command="stroke">Apply stroke</button>
+            <button data-command="removeStroke">Remove stroke</button>
+          </div>
+        </section>
+        <section id="panel-feature-switches">
+          <h2>Feature switches</h2>
+          <p>
+            Check features to disable, then apply. Your drawing is kept. Undo
+            history starts over.
+          </p>
+          <div id="flags"></div>
+          <div class="actions">
+            <button data-command="configure">Apply features</button>
+          </div>
+          <pre id="config"></pre>
+        </section>
+      </aside>
+    </main>
+    <div id="status" role="status">Opening workspace…</div>
+    <script type="module" src="./headless.js"></script>
+  </body>
+</html>
