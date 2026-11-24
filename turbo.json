@@ -227,6 +227,16 @@
         "@asyra/utils#build:utils"
       ]
     },
+    "@asyra/react#build:react": {
+      "cache": false,
+      "outputs": [
+        "dist/**"
+      ],
+      "dependsOn": [
+        "@asyra/core#build:core",
+        "@asyra/preset#build:preset"
+      ]
+    },
     "@asyra/reactive-events#build:reactive-events": {
       "cache": false,
       "outputs": [

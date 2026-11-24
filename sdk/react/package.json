@@ -1,0 +1,30 @@
+{
+  "name": "@asyra/react",
+  "version": "0.1.0",
+  "description": "An embeddable React canvas with local drawing, selection and history",
+  "license": "MIT",
+  "type": "module",
+  "files": [
+    "dist"
+  ],
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "peerDependencies": {
+    "react": "^19.0.0"
+  },
+  "scripts": {
+    "build:react": "node build.mjs"
+  },
+  "devDependencies": {
+    "@asyra/core": "workspace:*",
+    "@asyra/preset": "workspace:*",
+    "@types/react": "^19.2.18",
+    "vite": "^6.4.4"
+  }
+}

@@ -423,6 +423,19 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@asyra/react@workspace:sdk/react":
+  version: 0.0.0-use.local
+  resolution: "@asyra/react@workspace:sdk/react"
+  dependencies:
+    "@asyra/core": "workspace:*"
+    "@asyra/preset": "workspace:*"
+    "@types/react": "npm:^19.2.18"
+    vite: "npm:^6.4.4"
+  peerDependencies:
+    react: ^19.0.0
+  languageName: unknown
+  linkType: soft
+
 "@asyra/reactive-events@workspace:*, @asyra/reactive-events@workspace:packages/reactive-events":
   version: 0.0.0-use.local
   resolution: "@asyra/reactive-events@workspace:packages/reactive-events"
