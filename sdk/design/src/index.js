@@ -1,14 +1,13 @@
 import { createCanvas } from '@asyra/canvas'
-import { createActions, disabledActions } from './actions.js'
+import { createActions } from './actions.js'
 import { createToolbar } from './toolbar.js'
 import { mountWorkspace } from './workspace.js'
 import { createRuntime } from './runtime.js'
 
 export async function attachDesignTools(canvas, options = {}) {
-  const disabled = disabledActions(
-    options.disabledFeatures,
-    createActions().keys()
-  )
+  const { disabled } = createActions({
+    disabledFeatures: options.disabledFeatures
+  })
 
   return mountTools(canvas, options, disabled)
 }
@@ -52,8 +51,10 @@ export async function createDesign(host, options = {}) {
   }
 
   try {
-    const actions = createActions(options.actions)
-    const disabled = disabledActions(options.disabledFeatures, actions.keys())
+    const { actions, disabled, runAction } = createActions({
+      ...options,
+      extensions: []
+    })
     const session = await mountTools(surface, options, disabled)
     const tools = {
       ...session,
@@ -72,17 +73,7 @@ export async function createDesign(host, options = {}) {
           throw new Error('Design editor is disposed')
         }
 
-        const action = actions.get(id)
-
-        if (!action) {
-          throw new TypeError('Unknown Design action: ' + id)
-        }
-
-        if (disabled.has(id)) {
-          throw new Error('Disabled Design feature: ' + id)
-        }
-
-        await action.run(tools)
+        await runAction(id, tools)
       },
 
       destroy

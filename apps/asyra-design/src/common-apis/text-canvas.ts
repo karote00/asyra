@@ -1,3 +1,4 @@
+import { defaultPrimaryTool } from '../workspace-features'
 import { runTransaction } from '@asyra/core'
 import {
   DEFAULT_TEXT_DATA,
@@ -7,7 +8,7 @@ import {
 } from '@asyra/preset'
 import { createDefaultFills, type Rect } from '@asyra/utils'
 import core from '../contexts'
-import { PrimaryToolType, DEFAULT_ELEMENT_FILL_COLOR } from '../constants'
+import { DEFAULT_ELEMENT_FILL_COLOR } from '../constants'
 import { measureTextBox } from './text-layout'
 import { selectionApis } from './selection'
 import { systemContextApis } from './system-context'
@@ -211,7 +212,7 @@ export const textCanvasApis = {
     }
 
     publish(null)
-    systemContextApis.switchPrimaryTool(PrimaryToolType.SELECT)
+    systemContextApis.switchPrimaryTool(defaultPrimaryTool)
   },
 
   cancel: () => {

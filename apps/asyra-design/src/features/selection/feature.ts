@@ -7,6 +7,7 @@ import {
 import { defineFeature } from '@asyra/core'
 import { SessionCancelPolicies } from '@asyra/utils'
 import {
+  cursorApis,
   elementApis,
   selectionApis,
   systemContextApis,
@@ -24,6 +25,7 @@ import {
 } from '../../controllers/canvas-hierarchy-target'
 
 interface SelectionAPI {
+  selectElements: typeof selectionApis.selectElements
   getSelectedIds: () => string[]
   clearSelection: () => void
   toggleSelection: (elementId: string) => void
@@ -48,6 +50,8 @@ interface SelectionAreaState {
 type SelectionSessionState = SelectionClickState | SelectionAreaState
 
 const api: SelectionAPI = {
+  selectElements: (...args) => selectionApis.selectElements(...args),
+
   getSelectedIds: () => selectionApis.getSelectedIds(),
 
   clearSelection: () => {
@@ -155,7 +159,7 @@ export const selectionFeature = defineFeature<
           if (snapshot.keyShift) {
             api.toggleSelection(hoveredElementId)
           } else {
-            selectionApis.selectElements([hoveredElementId])
+            api.selectElements([hoveredElementId])
           }
 
           clearPathEditingIfSelectionChanged()
@@ -228,7 +232,7 @@ export const selectionFeature = defineFeature<
         state.additive ? 'toggle' : 'replace'
       )
 
-      selectionApis.selectElements(nextSelectionIds, {
+      api.selectElements(nextSelectionIds, {
         undoable: false,
         sharedDelivery: 'immediate'
       })
@@ -253,7 +257,7 @@ export const selectionFeature = defineFeature<
         }
 
         transactionApis.runTransaction(() => {
-          selectionApis.selectElements([])
+          api.selectElements([])
           clearPathEditingIfSelectionChanged()
         })
 
@@ -279,7 +283,7 @@ export const selectionFeature = defineFeature<
       )
 
       transactionApis.runTransaction(() => {
-        selectionApis.selectElements(nextSelectionIds)
+        api.selectElements(nextSelectionIds)
         clearPathEditingIfSelectionChanged()
       })
     },
@@ -333,12 +337,37 @@ export const selectContainerChildFeature = defineFeature(
         return null
       }
 
-      selectionApis.selectElements([childId])
+      api.selectElements([childId])
       // The pointer can stay still after entering a new parent scope.
       systemContextApis.updateHoveredElementId(childId)
 
       // Consume this gesture; vector editing belongs to a later double-click.
       return { selectedElementId: childId }
+    }
+  }
+)
+
+export const clearElementSelectionFeature = defineFeature(
+  FeatureNames.CLEAR_ELEMENT_SELECTION,
+  InputSystemEvents.INPUT_SHORTCUT_CANCEL,
+  {
+    priority: 99,
+    exclusive: true,
+
+    execution: () => {
+      if (systemContextApis.getPathEditingMode()) {
+        return null
+      }
+
+      const selected = selectionApis.getSelectedIds()
+
+      if (selected.length) {
+        selectionApis.clearSelection({ undoable: false })
+      }
+
+      cursorApis.resetCanvasCursor()
+
+      return selected.length ? { cancelled: true, selection: 'element' } : null
     }
   }
 )

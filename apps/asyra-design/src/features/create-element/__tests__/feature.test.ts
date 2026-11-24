@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
   changeElementGeometry: vi.fn(),
@@ -51,7 +51,8 @@ vi.mock('../../../controllers/canvas-hierarchy-target', () => ({
 }))
 
 import { PrimaryToolType } from '../../../constants'
-import { createElementSession } from '../feature'
+import { setDisabledFeatures } from '../../../workspace-features'
+import { createDesignShape, createElementSession } from '../feature'
 
 const startSnapshot = {
   primaryTool: PrimaryToolType.RECTANGLE,
@@ -67,6 +68,24 @@ describe('create-element canonical parent handoff', () => {
     mocks.resolveCreateParentAtClientPos.mockReturnValue('group-2')
     mocks.createElement.mockReturnValue('new-element')
     mocks.hasMovedBeyondThreshold.mockReturnValue(true)
+  })
+
+  afterEach(() => setDisabledFeatures([]))
+
+  it('rejects a disabled shape before pointer publication or SDK creation and keeps its sibling available', () => {
+    setDisabledFeatures(['rectangle'])
+    const bounds = { workspacePosition: { x: 1, y: 1 }, width: 5, height: 5 }
+
+    expect(createElementSession.onStart(startSnapshot as never)).toBeNull()
+    expect(() =>
+      createDesignShape({ type: 'rect', ...bounds }, 'reject')
+    ).toThrow('Disabled Design feature: rectangle')
+    expect(mocks.configureSharedDeliverySequence).not.toHaveBeenCalled()
+    expect(mocks.createElement).not.toHaveBeenCalled()
+    expect(createDesignShape({ type: 'oval', ...bounds }, 'reject')).toBe(
+      'new-element'
+    )
+    expect(mocks.createElement).toHaveBeenCalledTimes(1)
   })
 
   it('passes the parent resolved from the mouse-down hierarchy target', () => {

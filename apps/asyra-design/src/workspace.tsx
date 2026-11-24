@@ -1,4 +1,3 @@
-import { requireFeature } from './workspace-features'
 import React, { useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import { PresetSystemPropertyKeys } from '@asyra/preset'
@@ -7,16 +6,17 @@ import core from './contexts'
 import DataContexts from './contexts/data-change'
 import { configureWorkspaceFeatures } from './init/workspace-features'
 import { initDesign } from './init/init-design'
-import { switchPrimaryTool } from './controllers/app'
-import { elementApis } from './common-apis/element'
+import { switchPrimaryToolFeature } from './features/switch-primary-tool'
+import { createDesignShape } from './features/create-element'
+import { selectElements } from './controllers/element-selection'
 import { selectionApis } from './common-apis/selection'
-import { historyApis } from './common-apis/history'
+import { runHistoryCommand } from './features/undo-redo'
 import {
   prepareDesignElementEdit,
   type DesignElementEdit
 } from './common-apis/design-edit'
 import { runTransaction } from '@asyra/core'
-import { runGroupCommand } from './controllers/group-command-actions'
+import { groupCommandFeature } from './features/group-elements'
 import { PrimaryToolType } from './constants'
 import { resetCollaborationDocument } from './collaboration/lifecycle'
 import type { RenderSession } from './render-app'
@@ -40,21 +40,15 @@ interface Bounds {
 }
 
 function createShape(type: 'rect' | 'oval', { x, y, width, height }: Bounds) {
-  requireFeature(type === 'rect' ? 'rectangle' : 'oval')
-  if (
-    ![x, y, width, height].every(Number.isFinite) ||
-    width <= 0 ||
-    height <= 0
-  ) {
-    throw new TypeError('Expected finite coordinates and positive dimensions')
-  }
-
-  const id = elementApis.createElement({
-    type,
-    workspacePosition: { x, y },
-    width,
-    height
-  })
+  const id = createDesignShape(
+    {
+      type,
+      workspacePosition: { x, y },
+      width,
+      height
+    },
+    'reject'
+  )
 
   if (!id) {
     throw new Error('Shape creation failed')
@@ -192,30 +186,20 @@ export function mount(options: WorkspaceOptions) {
         throw new TypeError('Unknown Design tool: ' + tool)
       }
 
-      requireFeature(tool)
-      switchPrimaryTool(tools[tool])
+      switchPrimaryToolFeature.api.switch(tools[tool], 'reject')
     },
 
     drawRectangle: (bounds: Bounds) => createShape('rect', bounds),
 
     drawOval: (bounds: Bounds) => createShape('oval', bounds),
 
-    select: (ids: string[]) => {
-      requireFeature('select')
-      selectionApis.selectElements(ids, { undoable: false })
-    },
+    select: (ids: string[]) => selectElements(ids, { undoable: false }, true),
 
-    group: () => {
-      requireFeature('group')
+    group: () =>
+      groupCommandFeature.api.execute('group', 'reject')?.groupId ?? null,
 
-      return runGroupCommand('group')?.groupId ?? null
-    },
-
-    ungroup: () => {
-      requireFeature('ungroup')
-
-      return runGroupCommand('ungroup')?.selectedIds ?? []
-    },
+    ungroup: () =>
+      groupCommandFeature.api.execute('ungroup', 'reject')?.selectedIds ?? [],
 
     updateElement: (request: DesignElementEdit) => {
       const apply = prepareDesignElementEdit(request)
@@ -226,13 +210,11 @@ export function mount(options: WorkspaceOptions) {
     getSelection: selectionApis.getSelectedIds,
 
     undo: async () => {
-      requireFeature('undo')
-      await historyApis.undo()
+      await runHistoryCommand('undo', 'reject')
     },
 
     redo: async () => {
-      requireFeature('redo')
-      await historyApis.redo()
+      await runHistoryCommand('redo', 'reject')
     },
 
     save: () => core.save(),

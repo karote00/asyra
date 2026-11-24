@@ -1,4 +1,4 @@
-import { createActions, disabledActions } from './actions.js'
+import { createActions } from './actions.js'
 import { assets } from './workspace-assets.js'
 
 const occupied = new WeakSet()
@@ -31,12 +31,6 @@ export async function mountWorkspace(host, options, signal) {
     throw new Error('Container already has an active Design editor')
   }
 
-  const actions = createActions(
-    options.actions,
-    workspaceCommands,
-    options.extensions
-  )
-
   if (
     options.toolbar !== undefined &&
     options.toolbar !== false &&
@@ -45,25 +39,28 @@ export async function mountWorkspace(host, options, signal) {
     throw new TypeError('Expected an ordered toolbar list or false')
   }
 
-  const disabled = disabledActions(options.disabledFeatures, [
-    ...actions.keys(),
-    'group',
-    'ungroup',
-    'moveElements',
-    'hoverElement',
-    'moveLayerHierarchy',
-    'deleteSelectedElement',
-    'pan',
-    'zoom',
-    'zoomFit',
-    'geometry',
-    'fills',
-    'strokes',
-    'lock',
-    'visibility',
-    'rename',
-    'reset'
-  ])
+  const { actions, disabled, runAction } = createActions(
+    options,
+    workspaceCommands,
+    [
+      'group',
+      'ungroup',
+      'moveElements',
+      'hoverElement',
+      'moveLayerHierarchy',
+      'deleteSelectedElement',
+      'pan',
+      'zoom',
+      'zoomFit',
+      'geometry',
+      'fills',
+      'strokes',
+      'lock',
+      'visibility',
+      'rename',
+      'reset'
+    ]
+  )
   const defaultControls = options.toolbar === undefined
   const ids = defaultControls
     ? [
@@ -159,17 +156,7 @@ export async function mountWorkspace(host, options, signal) {
 
     async runAction(id) {
       current()
-      const action = actions.get(id)
-
-      if (!action) {
-        throw new TypeError('Unknown Design action: ' + id)
-      }
-
-      if (disabled.has(id)) {
-        throw new Error('Disabled Design feature: ' + id)
-      }
-
-      await action.run(editor)
+      await runAction(id, editor)
     },
 
     destroy() {

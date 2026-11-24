@@ -1,3 +1,4 @@
+import { defaultPrimaryTool } from '../../workspace-features'
 import { defineFeature } from '@asyra/core'
 import {
   rectFromPoints,
@@ -39,7 +40,7 @@ export const textCanvasFeature = defineFeature(
 
       cancel: () => {
         textCanvasApis.cancel()
-        systemContextApis.switchPrimaryTool(PrimaryToolType.SELECT)
+        systemContextApis.switchPrimaryTool(defaultPrimaryTool)
       }
     },
 
@@ -156,7 +157,7 @@ export const cancelTextToolFeature = defineFeature(
       }
 
       textCanvasApis.cancel()
-      systemContextApis.switchPrimaryTool(PrimaryToolType.SELECT)
+      systemContextApis.switchPrimaryTool(defaultPrimaryTool)
 
       return { cancelled: true }
     }

@@ -1461,6 +1461,8 @@ test('packed Design command availability is isolated per workspace and direction
         const failures = []
 
         for (const run of [
+          () => restricted.runAction('rectangle'),
+          () => restricted.runAction('redo'),
           () => restricted.select([shape]),
           () => restricted.drawRectangle(bounds),
           () => restricted.redo(),
@@ -1494,6 +1496,7 @@ test('packed Design command availability is isolated per workspace and direction
 
         return {
           initial,
+          shape,
           failures,
           independent: !!(await globalThis.editor.save()).sceneTree.elements[
             original
@@ -1507,7 +1510,7 @@ test('packed Design command availability is isolated per workspace and direction
         result.failures.filter((message) =>
           message.startsWith('Disabled Design feature:')
         ).length,
-        8
+        10
       )
       assert.ok(result.independent && result.enabledOval)
       const frame = page.frameLocator('aside iframe')
@@ -1516,11 +1519,17 @@ test('packed Design command availability is isolated per workspace and direction
         assert.equal(await frame.getByTestId(id).count(), 0)
       }
 
+      await frame.getByTestId('element-item-' + result.shape).click()
+      assert.deepEqual(
+        await page.evaluate(() => globalThis.restricted.getSelection()),
+        []
+      )
       await frame.getByTestId('tool-oval').click()
       assert.equal(
         await page.evaluate(() => globalThis.restricted.getTool()),
         'oval'
       )
+      await frame.locator('canvas').first().press('r')
       await frame.locator('canvas').first().press('v')
       assert.equal(
         await page.evaluate(() => globalThis.restricted.getTool()),

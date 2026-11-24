@@ -1,8 +1,24 @@
-import { featureEnabled } from '../../workspace-features'
+import {
+  featureEnabled,
+  type DisabledCommandBehavior
+} from '../../workspace-features'
 import { defineFeature } from '@asyra/core'
 import { historyApis } from '../../common-apis'
 import { FeatureNames, InputSystemEvents } from '../../constants'
 import type { SystemContextSnapshotWithDetail } from '@asyra/utils'
+
+export async function runHistoryCommand(
+  direction: 'undo' | 'redo',
+  behavior?: DisabledCommandBehavior
+) {
+  if (!featureEnabled(direction, behavior)) {
+    return null
+  }
+
+  await historyApis[direction]()
+
+  return direction === 'undo' ? { undid: true } : { redid: true }
+}
 
 export const undoRedoFeature = defineFeature(
   FeatureNames.UNDO_REDO,
@@ -19,19 +35,7 @@ export const undoRedoFeature = defineFeature(
         return null
       }
 
-      if (!featureEnabled(direction)) {
-        return null
-      }
-
-      if (direction === 'redo') {
-        await historyApis.redo()
-
-        return { redid: true }
-      } else {
-        await historyApis.undo()
-
-        return { undid: true }
-      }
+      return runHistoryCommand(direction)
     }
   }
 )

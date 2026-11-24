@@ -1,4 +1,3 @@
-import { featureEnabled } from '../workspace-features'
 import React, {
   type PointerEvent as ReactPointerEvent,
   useCallback,
@@ -118,7 +117,7 @@ const Contents: React.FC = () => {
     }, 0)
   }, [])
   const handleContentsPanelClick = useCallback(() => {
-    if (!featureEnabled('select') || consumeSuppressedClick()) {
+    if (consumeSuppressedClick()) {
       return
     }
 
@@ -129,7 +128,7 @@ const Contents: React.FC = () => {
   }, [])
   const handleElementSelect = useCallback(
     (event: React.MouseEvent<HTMLDivElement>, elementId: string) => {
-      if (!featureEnabled('select') || consumeSuppressedClick()) {
+      if (consumeSuppressedClick()) {
         return
       }
 
@@ -207,7 +206,6 @@ const Contents: React.FC = () => {
   const handleLayerPointerDown = useCallback(
     (event: ReactPointerEvent<HTMLDivElement>, elementId: string) => {
       if (
-        !featureEnabled('moveLayerHierarchy') ||
         event.button !== 0 ||
         event.shiftKey ||
         event.metaKey ||

@@ -1,5 +1,5 @@
 import { hasSizeEdit, requireSizeEditTarget } from './element/geometry-policy'
-import { requireFeature } from '../workspace-features'
+import { featureEnabled } from '../workspace-features'
 import { DEFAULT_TEXT_DATA, TEXT_PROPERTY_SCHEMA } from '@asyra/preset'
 import core from '../contexts'
 import { elementApis } from './element'
@@ -106,26 +106,26 @@ export const createDesignElementEditPreparer =
       throw new Error('The design edit has no changes.')
     }
 
+    const fields = Object.keys(properties ?? {})
+
     if (name !== undefined) {
-      requireFeature('rename')
+      featureEnabled('rename', 'reject')
     }
 
     if (fillColor !== undefined) {
-      requireFeature('fills')
+      featureEnabled('fills', 'reject')
     }
 
     if (strokeColor !== undefined) {
-      requireFeature('strokes')
+      featureEnabled('strokes', 'reject')
     }
 
-    for (const key of Object.keys(properties ?? {})) {
-      if (geometryFields.includes(key)) {
-        requireFeature('geometry')
-      }
+    if (fields.some((key) => geometryFields.includes(key))) {
+      featureEnabled('geometry', 'reject')
+    }
 
-      if (textFields.includes(key)) {
-        requireFeature('text')
-      }
+    if (fields.some((key) => textFields.includes(key))) {
+      featureEnabled('text', 'reject')
     }
 
     const target = apis.getData(elementId)

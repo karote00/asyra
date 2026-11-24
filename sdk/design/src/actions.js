@@ -21,13 +21,20 @@ const commands = {
   }
 }
 
-export function createActions(custom = {}, extra = {}, extensions = []) {
+export function createActions(options = {}, extra = {}, features = []) {
+  const { actions: custom = {}, extensions = [] } = options
   const actions = new Map(Object.entries({ ...commands, ...extra }))
 
   const entries = [
     ...extensions.flatMap((extension) => Object.entries(extension.actions)),
     ...Object.entries(custom)
   ]
+
+  const disabled = disabledActions(options.disabledFeatures, [
+    ...actions.keys(),
+    ...entries.map(([id]) => id),
+    ...features
+  ])
 
   for (const [id, action] of entries) {
     if (
@@ -43,13 +50,33 @@ export function createActions(custom = {}, extra = {}, extensions = []) {
       )
     }
 
-    actions.set(id, action)
+    if (disabled.has(id)) {
+      actions.set(id, {
+        label: action.label,
+
+        run() {
+          throw new Error('Disabled Design feature: ' + id)
+        }
+      })
+    } else {
+      actions.set(id, action)
+    }
   }
 
-  return actions
+  async function runAction(id, tools) {
+    const action = actions.get(id)
+
+    if (!action) {
+      throw new TypeError('Unknown Design action: ' + id)
+    }
+
+    await action.run(tools)
+  }
+
+  return { actions, disabled, runAction }
 }
 
-export function disabledActions(ids = [], supported) {
+function disabledActions(ids = [], supported) {
   if (!Array.isArray(ids)) {
     throw new TypeError('Expected a disabledFeatures list')
   }

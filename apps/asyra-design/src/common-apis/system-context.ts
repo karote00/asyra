@@ -1,4 +1,4 @@
-import { featureEnabled, toolId } from '../workspace-features'
+import { defaultPrimaryTool } from '../workspace-features'
 /**
  * System Context APIs
  * For managing system-level state observables
@@ -14,7 +14,7 @@ import {
 } from '@asyra/core'
 import type { PositionData } from '@asyra/utils'
 import { PresetSystemPropertyKeys } from '@asyra/preset'
-import { SystemPropertyKeys, PrimaryToolType } from '../constants'
+import { SystemPropertyKeys } from '../constants'
 import { selectionApis } from './selection'
 
 export type SelectedVectorPointState = CoreSelectedVectorPointState
@@ -130,10 +130,7 @@ export const systemContextApis = {
    * Switch the primary tool
    */
   switchPrimaryTool: (tool: string) => {
-    core.setSystemProperty(
-      PresetSystemPropertyKeys.PRIMARY_TOOL,
-      featureEnabled(toolId(tool)) ? tool : 'none'
-    )
+    core.setSystemProperty(PresetSystemPropertyKeys.PRIMARY_TOOL, tool)
   },
 
   /**
@@ -147,10 +144,6 @@ export const systemContextApis = {
    * Update the hovered element ID in system state
    */
   updateHoveredElementId: (elementId: string | null) => {
-    if (elementId && !featureEnabled('hoverElement')) {
-      return
-    }
-
     core.setSystemProperty(
       PresetSystemPropertyKeys.HOVERED_ELEMENT_ID,
       elementId
@@ -418,7 +411,7 @@ export const systemContextApis = {
     systemContextApis.setPathEditingVectorId(null)
     systemContextApis.setPathEditingStartNewSubpath(false)
     systemContextApis.clearVectorPointState()
-    systemContextApis.switchPrimaryTool(PrimaryToolType.SELECT)
+    systemContextApis.switchPrimaryTool(defaultPrimaryTool)
   },
 
   getPathEditingContinuation: (): PathEditingContinuationState | null => {

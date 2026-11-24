@@ -290,14 +290,23 @@ export async function start(target, options) {
       )
     }
 
-    const replay = async (command) => {
+    const replay = async (direction, event) => {
+      if (disabled.has(direction)) {
+        if (event) {
+          return
+        }
+
+        throw new Error('Disabled Design feature: ' + direction)
+      }
+
+      event?.preventDefault()
       assertActive()
       if (pending) {
         throw new Error('History operation in progress')
       }
 
       cancel()
-      pending = command()
+      pending = api[direction]()
       try {
         await pending
       } finally {
@@ -315,12 +324,10 @@ export async function start(target, options) {
         if (
           (event.metaKey || event.ctrlKey) &&
           event.key.toLowerCase() === 'z' &&
-          !disabled.has(event.shiftKey ? 'redo' : 'undo') &&
           !event.repeat &&
           !pending
         ) {
-          event.preventDefault()
-          void replay(event.shiftKey ? api.redo : api.undo)
+          void replay(event.shiftKey ? 'redo' : 'undo', event)
         }
       },
       { signal }
@@ -354,15 +361,9 @@ export async function start(target, options) {
           .filter((id) => core.getElementMetadata(id))
       },
 
-      undo: async () => {
-        requireFeature('undo')
-        await replay(api.undo)
-      },
+      undo: () => replay('undo'),
 
-      redo: async () => {
-        requireFeature('redo')
-        await replay(api.redo)
-      },
+      redo: () => replay('redo'),
 
       save() {
         assertActive()
