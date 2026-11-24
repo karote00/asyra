@@ -81,7 +81,7 @@ permanent regression and record its failure on current production code. Then
 implement the canonical owner, review direct consumers and run the affected
 focused tests before advancing. Use actual provider declarations and invocation
 counts, not copied schemas or aggregate passing counts. Record evidence under
-`/Users/asa/Desktop/workspace/asra/tmp/openai-api-integration/`.
+`tmp/openai-api-integration/`.
 
 Gates: focused runtime/provider, source lifetime, App exchange, native preservation,
 browser conversation/results tests; affected type checks, scoped lint/format,

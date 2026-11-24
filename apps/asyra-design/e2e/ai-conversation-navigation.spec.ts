@@ -44,9 +44,12 @@ for (const width of [360, 1440]) {
     const before = await getCoreDocumentDigest(page)
 
     await page.getByRole('button', { name: 'Open Agent' }).click()
-    await expect(
-      page.getByRole('note', { name: 'Your AI subscription' })
-    ).toBeVisible()
+    const accountNotice = page.getByRole('note', { name: 'Your AI account' })
+
+    await expect(accountNotice).toBeVisible()
+    await expect(accountNotice).toContainText(
+      'Subscription limits or API charges apply.'
+    )
     await expect(page.getByLabel('Design context')).toHaveCount(0)
     await page
       .getByLabel('Message Agent')

@@ -15,8 +15,8 @@
         "./schema"
       ],
       "sourceDigests": {
-        "contract": "faded333e71684a1a59c7b684180318851336826cbf9d61f0d7a15e6151c58f5",
-        "guide": "80432edefa2af4561eab45043459043976d0222eefa61baaceba12e2a902e020",
+        "contract": "a1bdd0bec0a6e5b86584009adfe5222e9d9ca4d2ae7261399c825f3ecca939c0",
+        "guide": "d3055c70289126e85af568ed4ed8e21d895f5a6d95c6b0e6ca986948554dc995",
         "manifest": "8ff77c83d4afcf8aa017e6af629bc3aba31669d54dfe19cb611856f5790e81f9"
       },
       "version": "0.5.1"
@@ -214,7 +214,7 @@
         "./spatial-engine"
       ],
       "sourceDigests": {
-        "contract": "06fc4febe8a71d8c2baa9d83c44c6f9f58b770514530c13ad247df83a4625e8a",
+        "contract": "7c188c27da0116ac101d00b5c98d6abf4e12ae23f62dca44e1e6746e00271cd4",
         "guide": "96d66df52c5f73e156dc28a7b7d354769452d56677ea23a34fb9a38796ab24ff",
         "manifest": "faeadb90e225de890dabcaf27c479aab9d863760855f05712ffe744af93ebd8c"
       },
