@@ -74,7 +74,7 @@ async function withConsumer(packages, entry, assertions) {
     await cp(path.join(fixture, 'headless.css'), path.join(cwd, 'headless.css'))
   }
 
-  if (entry === 'react.js') {
+  if (entry === 'react.js' || entry === 'common.js') {
     await cp(path.join(fixture, 'examples'), path.join(cwd, 'examples'), {
       recursive: true
     })
@@ -2404,6 +2404,143 @@ test('packed Design exposes every common API on two isolated editor sessions', a
       assert.deepEqual(result.ids, [result.rect])
       assert.deepEqual(result.afterReset, [])
       assert.ok(result.stale && result.closed && result.surviving)
+    }
+  )
+})
+
+test('packed Design selection extension updates only its own control and aligns with one Undo', async () => {
+  await withConsumer(
+    ['sdk/canvas', 'sdk/design'],
+    'common.js',
+    async (page) => {
+      await page.evaluate(() => globalThis.ready)
+      const proof = await page.evaluate(async () => {
+        const { full, restricted, rect, bindAlignmentButton } = globalThis
+        const button = globalThis.document.createElement('button')
+
+        globalThis.document.body.append(button)
+        const keys = []
+        let notifications = 0
+        let writes = 0
+        const state = Object.getOwnPropertyDescriptor(
+          globalThis.HTMLButtonElement.prototype,
+          'disabled'
+        )
+
+        Object.defineProperty(button, 'disabled', {
+          get: () => state.get.call(button),
+
+          set(value) {
+            writes++
+            state.set.call(button, value)
+          }
+        })
+        const stop = bindAlignmentButton(
+          {
+            runAction: (id) => full.runAction(id),
+
+            observe(key, notify) {
+              keys.push(key)
+
+              return full.observe(key, (value) => {
+                notifications++
+                notify(value)
+              })
+            }
+          },
+          button
+        )
+
+        const frame = () =>
+          new Promise((resolve) =>
+            globalThis.requestAnimationFrame(() =>
+              globalThis.requestAnimationFrame(resolve)
+            )
+          )
+
+        const second = full.drawRectangle({
+          x: 140,
+          y: 10,
+          width: 80,
+          height: 40
+        })
+
+        full.select([rect, second])
+        await frame()
+        const enabled = !button.disabled
+        const before = [notifications, writes]
+
+        full.common.viewport.panTo(15, 10)
+        full.common.element.changeElementGeometry(second, { height: 52 })
+        const peer = restricted.drawOval({
+          x: 220,
+          y: 0,
+          width: 40,
+          height: 40
+        })
+
+        restricted.select([rect, peer])
+        await frame()
+        const after = [notifications, writes]
+        let blocked = false
+
+        try {
+          await restricted.runAction('alignLeft')
+        } catch (error) {
+          blocked = error.message === 'Disabled Design feature: moveElements'
+        }
+
+        const x = () => full.getElementProperties(second, ['x']).x
+
+        const original = x()
+
+        button.click()
+        await frame()
+        const aligned = x()
+
+        await full.undo()
+        await frame()
+        const undone = x()
+        const peerX = restricted.getElementProperties(peer, ['x']).x
+
+        full.select([rect])
+        await frame()
+        const disabled = button.disabled
+
+        stop()
+        const stopped = [notifications, writes]
+
+        full.select([rect, second])
+        await frame()
+        const final = [notifications, writes]
+
+        await restricted.destroy()
+        await full.destroy()
+
+        return {
+          keys,
+          enabled,
+          before,
+          after,
+          blocked,
+          original,
+          aligned,
+          undone,
+          peerX,
+          disabled,
+          stopped,
+          final
+        }
+      })
+
+      assert.deepEqual(proof.keys, ['elementSelection'])
+      assert.ok(proof.enabled && proof.disabled && proof.blocked)
+      assert.deepEqual(proof.after, proof.before)
+      assert.deepEqual(proof.final, proof.stopped)
+      assert.deepEqual(
+        [proof.original, proof.aligned, proof.undone, proof.peerX],
+        [140, 10, 140, 220]
+      )
     }
   )
 })

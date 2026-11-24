@@ -1,4 +1,8 @@
 import { createDesign } from '@asyra/design'
+import {
+  alignmentTools,
+  bindAlignmentButton
+} from './examples/align-selection.js'
 
 function host() {
   const container = globalThis.document.createElement('div')
@@ -10,19 +14,21 @@ function host() {
 }
 
 globalThis.ready = (async () => {
-  const full = await createDesign(host(), { hideUI: true })
+  const options = { hideUI: true, extensions: [alignmentTools] }
+  const full = await createDesign(host(), options)
   const rect = full.drawRectangle({ x: 10, y: 10, width: 80, height: 40 })
   const restricted = await createDesign(host(), {
-    hideUI: true,
+    ...options,
     document: await full.save(),
     disabledFeatures: [
       'rectangle',
       'pen',
       'fills',
       'undo',
-      'moveLayerHierarchy'
+      'moveLayerHierarchy',
+      'moveElements'
     ]
   })
 
-  Object.assign(globalThis, { full, restricted, rect })
+  Object.assign(globalThis, { full, restricted, rect, bindAlignmentButton })
 })()
