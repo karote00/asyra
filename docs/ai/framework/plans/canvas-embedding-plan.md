@@ -74,3 +74,12 @@ cataloged in sdk/design/FEATURES.md. Resolve it at mount, gate the distinct
 input and facade paths, and preserve schema registration, remote replay and
 rendering. Host chrome visibility is independent. Acceptance runs on packed
 consumers with the full workspace and borrowed canvas.
+
+### Host-owned Design controls
+
+With workspace chrome hidden, host controls read projected properties and
+call the same app operations for text, paths, selection, layers, appearance,
+viewport and recovery. The host receives detached reads and subscriptions
+scoped to its editor. Reset rebinds observers and destroy releases them.
+Validate using a packed JavaScript consumer, including disabled operations,
+document reload, Undo and collaboration recovery.

@@ -87,7 +87,7 @@ const clearPathEditingIfSelectionChanged = () => {
   systemContextApis.exitPathEditingMode()
 }
 
-const resolveSelectionIds = (
+export const resolveSelectionIds = (
   selectionBounds: Rect,
   baseSelectionIds: string[],
   mode: 'replace' | 'toggle'

@@ -146,10 +146,45 @@ const editor = await createDesign(container, {
 Each extension receives the same workspace tools. Duplicate action IDs fail
 at startup.
 
-For a fully host-owned UI, use `createDesign(canvas, { toolbar: false })`
-and bind your own controls to `editor.setTool('select')`, `editor.undo()` and
-`editor.redo()`. Load a previous `await editor.save()` result with the
-`document` option.
+### Build the controls in your own UI
+
+Mount the full workspace on a container and set `hideUI`. The following
+example connects a host button and a selection label using ordinary DOM APIs.
+
+```js
+import { createDesign } from '@asyra/design'
+
+const editor = await createDesign(document.querySelector('main'), {
+  hideUI: true
+})
+document.querySelector('#insert-label').onclick = () =>
+  editor.createText('Label', { x: 32, y: 40, width: 160, height: 40 })
+
+const stop = editor.observe('elementSelection', (ids) => {
+  document.querySelector('output').textContent = Array.from(ids).join(', ')
+})
+// When the host unmounts:
+const close = async () => {
+  stop()
+  await editor.destroy()
+}
+```
+
+`getLayers()` returns the workspace ID, ordered layer IDs and per-layer data.
+`getElementProperties(id, fields?)` reads computed properties, including
+fill and stroke records with the IDs used for editing. Use `observe(key, fn)`
+for a current value and subsequent updates. Examples include
+`elementDataMap`, `flattenedElementIds`, `elementSelection`, `primaryTool`,
+`hoveredElementId`, `viewportPosition`, `zoom`, `fills`, `strokes` and `collaboration`.
+Observations survive reset, and unsubscribe or destroy releases them.
+
+Text creation, marquee bounds and path anchors use workspace coordinates.
+`moveElements` takes absolute element positions in their parent.
+`zoomTo(scale, center)` and gradient handle commands take pixel coordinates
+relative to the embedded viewport. A gradient stored through `updateFill`
+uses normalized gradient handles and stops. `moveLayers` takes ordered
+element IDs, a target parent ID and a target insertion index.
+The [feature map](./FEATURES.md) lists each editing command and availability flag.
 
 Applications that already manage their own `createCanvas(target)` binding
 can call `await attachDesignTools(binding)` from this package. That entry
@@ -218,7 +253,8 @@ on objects originally created by a disabled tool.
 
 `hideUI: true` hides the toolbar, panels, context menu and session notices.
 Active tools retain their canvas feedback and inline text input. Keyboard
-commands and the SDK continue to work. Hosts using collaboration should keep
-the built-in UI if they need its recovery buttons.
+commands and the SDK continue to work. Hosts can observe `collaboration` and show their own recovery controls when
+`recoveryAvailable` is true. Await `retrySaving()` to persist and reopen the
+session, or call `downloadRecoveryFile()` to export its recovery document.
 
 See the [feature map](./FEATURES.md) for each editing entry, shortcut and document flow.

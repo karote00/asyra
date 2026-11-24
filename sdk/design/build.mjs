@@ -35,6 +35,7 @@ await writeFile(
 for (const name of [
   'index.js',
   'index.d.ts',
+  'workspace-tools.d.ts',
   'toolbar.js',
   'actions.js',
   'workspace.js',

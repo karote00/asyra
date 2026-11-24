@@ -21,6 +21,7 @@ import { resetCollaborationDocument } from './collaboration/lifecycle'
 import type { RenderSession } from './render-app'
 import { deleteElementFeature } from './features/delete-element'
 import { zoomFitFeature } from './features/zoom-fit'
+import { workspaceCommands, observeWorkspace } from './workspace/commands'
 import './index.css'
 import '@asyra/design-system/index.css'
 
@@ -116,6 +117,8 @@ export function mount(options: WorkspaceOptions) {
 
   return {
     ready,
+    commands: workspaceCommands(options.reopen),
+    observe: observeWorkspace,
 
     getTool() {
       const active = core.getSystemProperty(

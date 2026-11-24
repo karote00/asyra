@@ -88,6 +88,11 @@ async function withConsumer(packages, entry, assertions) {
             "const workspace = await createDesign(document.body, { toolbar: ['group', 'ungroup', 'deleteSelectedElement', 'zoomFit', 'reset'] })",
             "await workspace.runAction('zoomFit')",
             'workspace.deleteSelectedElement()',
+            "const label = workspace.createText('Label', {x:0,y:0,width:50,height:20})",
+            'workspace.setLayerLocked(label, false)',
+            "workspace.observe('collaboration', state => state?.sync)",
+            "workspace.updateStroke(label, 'stroke', {width:3, joinType:'round'})",
+            'workspace.getPath(label)?.anchors.forEach(anchor => workspace.moveAnchor(label,anchor.id,anchor))',
             'await workspace.reset()',
             'const tools = await attachDesignTools(surface)',
             "tools.setTool('select')",
@@ -976,6 +981,7 @@ test('packed Design workspaces use the app collaboration transport and durable d
               globalThis.editor = await globalThis.createDesign(
                 globalThis.host,
                 {
+                  hideUI: true,
                   collaboration: { fileId: 'shared-board', endpoint }
                 }
               )
@@ -996,7 +1002,7 @@ test('packed Design workspaces use the app collaboration transport and durable d
               })
             )
 
-            const hasShape = (client) =>
+            const hasShapeForId = (client, id) =>
               client.evaluate(
                 async (id) =>
                   (await globalThis.editor.save()).sceneTree.elements[id]?.type,
@@ -1004,7 +1010,7 @@ test('packed Design workspaces use the app collaboration transport and durable d
               )
 
             await expect
-              .poll(() => hasShape(peer), { timeout: 12000 })
+              .poll(() => hasShapeForId(peer, id), { timeout: 12000 })
               .toBe('oval')
             await expect
               .poll(
@@ -1019,10 +1025,83 @@ test('packed Design workspaces use the app collaboration transport and durable d
                 { timeout: 12000 }
               )
               .toBe('oval')
+            // Simulate a local storage quota failure at the browser storage boundary.
+            await page
+              .frameLocator('main iframe')
+              .locator('body')
+              .evaluate(() => {
+                const put = globalThis.IDBObjectStore.prototype.put
+
+                globalThis.IDBObjectStore.prototype.put = function (...args) {
+                  if (
+                    this.transaction.db.name === 'collaboration-publications'
+                  ) {
+                    throw new globalThis.DOMException(
+                      'Storage quota exhausted',
+                      'QuotaExceededError'
+                    )
+                  }
+
+                  return put.apply(this, args)
+                }
+
+                globalThis.restoreStorage = () => {
+                  globalThis.IDBObjectStore.prototype.put = put
+                }
+              })
+            const unsaved = await page.evaluate(() => {
+              globalThis.editor.observe('collaboration', (state) => {
+                globalThis.syncState = state
+              })
+
+              return globalThis.editor.createText('Recover me', {
+                x: 10,
+                y: 10,
+                width: 100,
+                height: 50
+              })
+            })
+
+            await expect
+              .poll(() =>
+                page.evaluate(() => globalThis.syncState?.recoveryAvailable)
+              )
+              .toBe(true)
+            const downloaded = page.waitForEvent('download')
+
+            await page.evaluate(() => globalThis.editor.downloadRecoveryFile())
+            const file = await downloaded
+
+            assert.equal(file.suggestedFilename(), 'document-recovery.json')
+            const recovered = JSON.parse(
+              await readFile(await file.path(), 'utf8')
+            )
+
+            assert.ok(recovered.sceneTree.elements[unsaved])
+            await assert.rejects(
+              page.evaluate(() => globalThis.editor.retrySaving()),
+              /persist|stor/i
+            )
+            await page
+              .frameLocator('main iframe')
+              .locator('body')
+              .evaluate(() => globalThis.restoreStorage())
+            await page.evaluate(() => globalThis.editor.retrySaving())
+            await expect
+              .poll(() => hasShapeForId(peer, unsaved), { timeout: 12000 })
+              .toBe('text')
+            assert.equal(
+              await page.evaluate(
+                () =>
+                  globalThis.editor.getCollaborationState()
+                    .recoveryAvailable === true
+              ),
+              false
+            )
             await peer.evaluate(() => globalThis.editor.destroy())
             await page.evaluate(() => globalThis.editor.destroy())
             await open(peer)
-            await expect.poll(() => hasShape(peer)).toBe('oval')
+            await expect.poll(() => hasShapeForId(peer, id)).toBe('oval')
           } finally {
             await peer.close()
           }
@@ -1662,6 +1741,333 @@ test('packed Design command availability is isolated per workspace and direction
         ),
         false
       )
+    }
+  )
+})
+
+test('packed Design headless editing uses only host controls and the public tools', async () => {
+  await withConsumer(
+    ['sdk/canvas', 'sdk/design'],
+    'headless.js',
+    async (page) => {
+      await page.evaluate(() => globalThis.ready)
+      await expect(
+        page.frameLocator('iframe').getByTestId('toolbar')
+      ).toHaveCount(0)
+      await page.getByRole('button', { name: 'Insert label' }).click()
+      const text = await page.locator('output').textContent()
+
+      assert.ok(text)
+      await page.getByRole('button', { name: 'Draw line' }).click()
+      await page.getByRole('button', { name: 'Undo' }).click()
+      await expect(page.locator('nav')).toHaveJSProperty('inert', false)
+      const result = await page.evaluate(async (text) => {
+        const e = globalThis.editor
+        const textValue = e.getElementProperties(text, ['text']).text
+        const restored = e.getLayers().ids
+        const rect = e.drawRectangle({ x: 620, y: 520, width: 70, height: 40 })
+
+        e.moveElements({ [rect]: { x: 320, y: 120 } })
+        e.selectArea({ x: 310, y: 110, width: 90, height: 65 })
+        const areaSelection = e.getSelection()
+        let hovered
+        const off = e.observe('hoveredElementId', (value) => {
+          hovered = value
+        })
+
+        e.setHoveredElement(rect)
+        off()
+        e.setHoveredElement(null)
+        e.select([text, rect])
+        const group = e.group()
+
+        e.moveLayers({
+          elementIds: [rect],
+          targetParentId: e.getLayers().workspaceId,
+          targetIndex: 0
+        })
+        const root = e.getLayers().workspaceId
+        const parent = e.getLayers().elements[rect].parentId
+
+        e.setLayerVisible(rect, false)
+        e.setLayerLocked(rect, true)
+        const flags = e.getLayers().elements[rect]
+
+        e.setLayerLocked(rect, false)
+        e.setLayerVisible(rect, true)
+        const fill = e.addFill(rect)
+        const gradient = {
+          gradientType: 'radial',
+          gradientStops: [
+            { position: 0, color: '#112233', opacity: 1 },
+            { position: 1, color: '#ddeeff', opacity: 1 }
+          ],
+          gradientHandles: [
+            { x: 0, y: 0 },
+            { x: 1, y: 1 }
+          ]
+        }
+
+        e.updateFill(rect, fill, { kind: 'gradient', gradient })
+        e.setActiveGradient(rect, fill)
+        const handles = e.getGradientHandles(rect, fill)
+
+        e.moveGradientHandle(rect, fill, 1, {
+          x: handles[1].x + 10,
+          y: handles[1].y
+        })
+        const stroke = e.addStroke(rect)
+
+        e.updateStroke(rect, stroke, {
+          width: 6,
+          style: 'dashed',
+          dash: 4,
+          gap: 3,
+          joinType: 'round'
+        })
+        const appearance = e.getElementProperties(rect, ['fills', 'strokes'])
+
+        e.removeFill(rect, fill)
+        e.removeStroke(rect, stroke)
+        const removed = e.getElementProperties(rect, ['fills', 'strokes'])
+
+        e.zoomTo(1.5, { x: 0, y: 0 })
+        let observedPosition
+        const stopPan = e.observe('viewportPosition', (value) => {
+          observedPosition = value
+        })
+
+        e.panTo({ x: 16, y: 24 })
+        stopPan()
+        const viewport = e.getViewport()
+        const path = e.createPath([
+          { x: 0, y: 0 },
+          { x: 100, y: 0 },
+          { x: 100, y: 100 }
+        ])
+        const { anchors, segments } = e.getPath(path)
+
+        e.editPath(path)
+        e.selectPathPoint(path, anchors[0].id)
+        e.selectPathSegment(path, Object.keys(segments)[0])
+        e.editPath(null)
+        const added = e.appendAnchor(path, { x: 0, y: 100 })
+
+        e.moveAnchor(path, added, { x: 5, y: 110 })
+        const moved = e.getPath(path).anchors.find((a) => a.id === added)
+        const segment = Object.values(segments)[0].id
+        const split = e.splitSegment(path, segment, { x: 50, y: 0 })
+
+        e.setAnchorType(path, split, 'smooth')
+        e.setHandleMode(path, split, 'mirror-angle')
+        e.moveHandle(path, split, 'outHandle', { x: 65, y: 10 })
+        const controlled = e.getPath(path).anchors.find((a) => a.id === split)
+
+        e.removeAnchor(path, split)
+        await e.undo()
+        const undoSplitRemoval = e
+          .getPath(path)
+          .anchors.some((a) => a.id === split)
+
+        e.setPathClosed(path, true)
+        const closed = Object.values(e.getPath(path).networks).some(
+          (n) => n.closed
+        )
+        let zoomEvents = 0
+        const stop = e.observe('zoom', () => {
+          zoomEvents++
+        })
+        const beforeReset = zoomEvents
+        const saved = await e.save()
+
+        await e.reset()
+        e.zoomTo(2, { x: 0, y: 0 })
+        stop()
+
+        return {
+          textValue,
+          restored,
+          areaSelection,
+          hovered,
+          group,
+          rect,
+          parent,
+          root,
+          flags,
+          appearance,
+          removed,
+          fill,
+          stroke,
+          viewport,
+          observedPosition,
+          anchors: anchors.length,
+          added,
+          moved,
+          controlled,
+          undoSplitRemoval,
+          closed,
+          saved,
+          resubscribed: zoomEvents >= beforeReset + 2
+        }
+      }, text)
+
+      assert.equal(result.textValue, 'Custom UI')
+      assert.deepEqual(result.restored, [text])
+      assert.deepEqual(result.areaSelection, [result.rect])
+      assert.equal(result.hovered, result.rect)
+      assert.ok(result.group)
+      assert.equal(result.parent, result.root)
+      assert.equal(result.flags.lock, true)
+      assert.equal(result.flags.visible, false)
+      assert.equal(
+        result.appearance.fills.find((f) => f.id === result.fill).gradient
+          .gradientStops[1].color,
+        '#ddeeff'
+      )
+      assert.equal(
+        result.appearance.strokes.find((s) => s.id === result.stroke).width,
+        6
+      )
+      assert.ok(!result.removed.fills.some((f) => f.id === result.fill))
+      assert.ok(!result.removed.strokes.some((s) => s.id === result.stroke))
+      assert.deepEqual(result.viewport, {
+        position: { x: 16, y: 24 },
+        scale: 1.5
+      })
+      assert.deepEqual(result.observedPosition, result.viewport.position)
+      assert.equal(result.anchors, 3)
+      assert.deepEqual([result.moved.x, result.moved.y], [5, 110])
+      assert.deepEqual(result.controlled.outHandle, { x: 65, y: 10 })
+      assert.ok(result.closed && result.undoSplitRemoval && result.resubscribed)
+
+      const blocked = await page.evaluate(async ({ saved, rect }) => {
+        await globalThis.editor.destroy()
+        const disabledFeatures = [
+          'text',
+          'pen',
+          'moveLayerHierarchy',
+          'moveElements',
+          'lock',
+          'visibility',
+          'fills',
+          'strokes',
+          'zoom',
+          'pan',
+          'select',
+          'hoverElement'
+        ]
+        const e = await globalThis.createDesign(globalThis.host, {
+          hideUI: true,
+          document: saved,
+          disabledFeatures
+        })
+        const point = { x: 10, y: 10 }
+        const bounds = { ...point, width: 20, height: 30 }
+        const attempts = {
+          text: () => e.createText('Blocked', bounds),
+
+          pen: () => e.createPath([point]),
+
+          moveLayerHierarchy: () =>
+            e.moveLayers({
+              elementIds: [rect],
+              targetParentId: e.getLayers().workspaceId,
+              targetIndex: 0
+            }),
+
+          moveElements: () => e.moveElements({ [rect]: point }),
+
+          lock: () => e.setLayerLocked(rect, true),
+
+          visibility: () => e.setLayerVisible(rect, false),
+
+          fills: () => e.addFill(rect),
+
+          strokes: () => e.addStroke(rect),
+
+          zoom: () => e.zoomTo(3, point),
+
+          pan: () => e.panTo(point),
+
+          select: () => e.selectArea(bounds),
+
+          hoverElement: () => e.setHoveredElement(rect)
+        }
+        const failures = []
+
+        for (const [id, run] of Object.entries(attempts)) {
+          try {
+            run()
+          } catch (error) {
+            if (error.message === 'Disabled Design feature: ' + id) {
+              failures.push(id)
+            }
+          }
+        }
+
+        const extraCommands = {
+          pen: {
+            appendAnchor: [rect, point],
+            removeAnchor: [rect, 'anchor'],
+            moveAnchor: [rect, 'anchor', point],
+            splitSegment: [rect, 'segment', point],
+            setPathClosed: [rect, true],
+            connectAnchors: [rect, 'a', 'b'],
+            setAnchorType: [rect, 'a', 'smooth'],
+            setHandleMode: [rect, 'a', 'none'],
+            moveHandle: [rect, 'a', 'outHandle', point],
+            editPath: [null],
+            selectPathPoint: [rect, 'a'],
+            selectPathSegment: [rect, 's']
+          },
+          fills: {
+            updateFill: [rect, 'fill', { color: '#112233' }],
+            removeFill: [rect, 'fill'],
+            setActiveGradient: [null, null],
+            moveGradientHandle: [rect, 'fill', 0, point]
+          },
+          strokes: {
+            updateStroke: [rect, 'stroke', { width: 3 }],
+            removeStroke: [rect, 'stroke']
+          }
+        }
+
+        for (const [feature, commands] of Object.entries(extraCommands)) {
+          for (const [command, args] of Object.entries(commands)) {
+            try {
+              e[command](...args)
+            } catch (error) {
+              if (error.message === 'Disabled Design feature: ' + feature) {
+                continue
+              }
+
+              throw error
+            }
+
+            throw new Error('Disabled command executed: ' + command)
+          }
+        }
+
+        const read = e.getElementProperties(rect)
+        const loadedText = e.getElementProperties(
+          Object.values(saved.sceneTree.elements).find(
+            (el) => el.type === 'text'
+          ).id
+        ).text
+
+        await e.destroy()
+
+        return {
+          failures,
+          expected: disabledFeatures,
+          loadedText,
+          width: read.width
+        }
+      }, result)
+
+      assert.deepEqual(blocked.failures, blocked.expected)
+      assert.equal(blocked.loadedText, 'Custom UI')
+      assert.equal(blocked.width, 70)
     }
   )
 })

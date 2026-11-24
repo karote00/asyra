@@ -58,6 +58,46 @@ const defaultApis: DesignEditApis = {
 const colorValid = (value: unknown) =>
   typeof value === 'string' && /^#[0-9a-f]{6}([0-9a-f]{2})?$/i.test(value)
 
+export function requireEditableElement<
+  T extends { type?: string; lock?: boolean; parentId?: string }
+>(elementId: string, getData: (id: string) => T | undefined) {
+  const target = getData(elementId)
+
+  if (!target || target.type === 'workspace') {
+    throw new Error('The edit target is unavailable.')
+  }
+
+  const visited = new Set<string>()
+  let id: string | undefined = elementId
+  let data = target
+
+  while (id) {
+    if (visited.has(id) || visited.size >= 512) {
+      throw new Error('The target hierarchy is invalid.')
+    }
+
+    visited.add(id)
+    if (data.lock) {
+      throw new Error('The target or its parent is locked.')
+    }
+
+    if (data.type === 'workspace') {
+      break
+    }
+
+    id = data.parentId
+    const parent = id ? getData(id) : undefined
+
+    if (!parent) {
+      throw new Error('The target parent is unavailable.')
+    }
+
+    data = parent
+  }
+
+  return target
+}
+
 export const createDesignElementEditPreparer =
   (apis: DesignEditApis = defaultApis) =>
   (request: DesignElementEdit) => {
@@ -128,42 +168,10 @@ export const createDesignElementEditPreparer =
       featureEnabled('text', 'reject')
     }
 
-    const target = apis.getData(elementId)
-
-    if (!target || target.type === 'workspace') {
-      throw new Error('The edit target is unavailable.')
-    }
+    const target = requireEditableElement(elementId, apis.getData)
 
     if (properties && hasSizeEdit(properties)) {
       requireSizeEditTarget(elementId, target.type)
-    }
-
-    const visited = new Set<string>()
-    let id: string | undefined = elementId
-    let data = target
-
-    while (id) {
-      if (visited.has(id) || visited.size >= 512) {
-        throw new Error('The target hierarchy is invalid.')
-      }
-
-      visited.add(id)
-      if (data.lock) {
-        throw new Error('The target or its parent is locked.')
-      }
-
-      if (data.type === 'workspace') {
-        break
-      }
-
-      id = data.parentId
-      const parent = id ? apis.getData(id) : undefined
-
-      if (!parent) {
-        throw new Error('The target parent is unavailable.')
-      }
-
-      data = parent
     }
 
     const computed = apis.getComputed(elementId, observationFields)

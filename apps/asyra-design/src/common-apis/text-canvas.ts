@@ -49,6 +49,51 @@ const readTarget = (id: string) => {
   return core.getElementComputedData(id)
 }
 
+function createTextElement(
+  workspaceId: string,
+  typography: TextData,
+  bounds: Rect,
+  text: string
+) {
+  const id = core.createElementInParent(
+    {
+      type: TEXT_COMPONENT_TYPE,
+      fills: createDefaultFills({ color: DEFAULT_ELEMENT_FILL_COLOR }),
+      ...bounds,
+      ...typography,
+      text
+    },
+    workspaceId
+  )
+
+  if (!id) {
+    throw new Error('Text creation failed.')
+  }
+
+  selectionApis.selectElements([id])
+
+  return id
+}
+
+export function createWorkspaceText(
+  bounds: Rect,
+  text: string,
+  sizing: TextData['textSizing']
+) {
+  const workspaceId = core.getCurrentWorkspaceId()
+
+  if (!workspaceId) {
+    throw new Error('Text creation requires a workspace')
+  }
+
+  const typography = { ...DEFAULT_TEXT_DATA, textSizing: sizing }
+  const measured = measureTextBox(typography, bounds, text)
+
+  return runTransaction(() =>
+    createTextElement(workspaceId, typography, measured, text)
+  )
+}
+
 export const textCanvasApis = {
   getSnapshot: () => session,
 
@@ -191,22 +236,12 @@ export const textCanvasApis = {
             }
           ])
         } else {
-          const id = core.createElementInParent(
-            {
-              type: TEXT_COMPONENT_TYPE,
-              fills: createDefaultFills({ color: DEFAULT_ELEMENT_FILL_COLOR }),
-              ...bounds,
-              ...current.typography,
-              text
-            },
-            current.workspaceId
+          createTextElement(
+            current.workspaceId,
+            current.typography,
+            bounds,
+            text
           )
-
-          if (!id) {
-            throw new Error('Text creation failed.')
-          }
-
-          selectionApis.selectElements([id])
         }
       })
     }

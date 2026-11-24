@@ -1,5 +1,8 @@
 import type { CanvasBinding } from '@asyra/canvas'
 
+import type { WorkspaceEditingTools } from './workspace-tools.js'
+export type * from './workspace-tools.js'
+
 export interface Rectangle {
   x: number
   y: number
@@ -27,7 +30,8 @@ export function attachDesignTools(
   }
 ): Promise<DesignTools>
 
-export interface WorkspaceTools extends DesignTools<WorkspaceTool> {
+export interface WorkspaceTools
+  extends DesignTools<WorkspaceTool>, WorkspaceEditingTools {
   drawOval(bounds: Rectangle): string
   select(ids: readonly string[]): void
   deleteSelectedElement(): void

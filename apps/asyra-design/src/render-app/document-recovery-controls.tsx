@@ -1,17 +1,10 @@
 import React, { useState } from 'react'
-import type { CollaborationDebugHandle } from '../collaboration/lifecycle'
+import {
+  retrySaving,
+  downloadRecoveryFile,
+  type DocumentRecoveryControlsProps
+} from './document-recovery'
 import { AiDocumentInteractionTargetProps } from '../constants'
-
-interface DocumentRecoveryControlsProps {
-  readonly session: Pick<
-    CollaborationDebugHandle,
-    | 'prepareRecovery'
-    | 'whenIdle'
-    | 'hasUnpersistedChanges'
-    | 'getRecoveryDocument'
-  >
-  readonly reopen: () => void
-}
 
 export const DocumentRecoveryControls = ({
   session,
@@ -28,15 +21,7 @@ export const DocumentRecoveryControls = ({
     setBusy(true)
     setError('')
     try {
-      await session.prepareRecovery()
-      await session.whenIdle()
-      if (session.hasUnpersistedChanges()) {
-        throw new Error(
-          'Keep this tab open. Some changes have not been stored yet.'
-        )
-      }
-
-      reopen()
+      await retrySaving({ session, reopen })
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : String(cause))
     } finally {
@@ -52,24 +37,7 @@ export const DocumentRecoveryControls = ({
     setBusy(true)
     setError('')
     try {
-      await session.whenIdle()
-      const document = session.getRecoveryDocument()
-
-      if (document === undefined) {
-        throw new Error(
-          'A recovery document is not available yet. Keep this tab open.'
-        )
-      }
-
-      const url = URL.createObjectURL(
-        new Blob([JSON.stringify(document)], { type: 'application/json' })
-      )
-      const link = window.document.createElement('a')
-
-      link.href = url
-      link.download = 'document-recovery.json'
-      link.click()
-      window.setTimeout(() => URL.revokeObjectURL(url), 0)
+      await downloadRecoveryFile(session)
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : String(cause))
     } finally {

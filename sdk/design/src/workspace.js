@@ -132,6 +132,14 @@ export async function mountWorkspace(host, options, signal) {
   let closing
   let active = true
   let pending
+  const observations = new Set()
+
+  function detachObservers() {
+    for (const entry of observations) {
+      entry.detach?.()
+      entry.detach = undefined
+    }
+  }
 
   function current() {
     if (!active || !session) {
@@ -172,6 +180,21 @@ export async function mountWorkspace(host, options, signal) {
 
     save: () => current().save(),
 
+    observe(key, listener) {
+      if (typeof listener !== 'function') {
+        throw new TypeError('Expected an observation callback')
+      }
+
+      const entry = { key, listener, detach: current().observe(key, listener) }
+
+      observations.add(entry)
+
+      return () => {
+        entry.detach?.()
+        observations.delete(entry)
+      }
+    },
+
     async runAction(id) {
       current()
       await runAction(id, editor)
@@ -179,6 +202,8 @@ export async function mountWorkspace(host, options, signal) {
 
     destroy() {
       active = false
+      detachObservers()
+      observations.clear()
       signal?.removeEventListener('abort', stop)
       stop()
       closing ??= (async () => {
@@ -288,6 +313,7 @@ export async function mountWorkspace(host, options, signal) {
     }
 
     pending = (async () => {
+      detachObservers()
       const previous = session
 
       session = undefined
@@ -299,6 +325,9 @@ export async function mountWorkspace(host, options, signal) {
       if (active) {
         lifetime = new globalThis.AbortController()
         await start(data)
+        for (const entry of observations) {
+          entry.detach = current().observe(entry.key, entry.listener)
+        }
       }
     })().finally(() => {
       pending = undefined
@@ -309,6 +338,10 @@ export async function mountWorkspace(host, options, signal) {
 
   try {
     await start(options.document)
+    // Bind to the current session on each call, including after reset or DOM reparenting.
+    for (const name of Object.keys(session.commands)) {
+      editor[name] = (...args) => current().commands[name](...args)
+    }
 
     return editor
   } catch (error) {
