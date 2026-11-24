@@ -4,8 +4,6 @@ Never record completed plans here.
 
 ## Current Status
 
-- [On-demand Design contracts](plans/on-demand-design-contracts.md) covers native client-executed loading and cross-turn reuse of the five public entries, independent knowledge lookup, saved-field delivery, complete search-to-execution inputs across the admitted catalog and offline request measurements.
-
 - Planning only: [AI Agent Runtime Ownership Transfer](../../framework/plans/ai-agent-runtime-ownership-transfer-plan.md).
   Framework-owned follow-up to the merged conversation work. Design keeps domain
   actions, context, permissions and Feature/transaction ownership; common host
