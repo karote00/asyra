@@ -48,3 +48,19 @@ export function createActions(custom = {}, extra = {}, extensions = []) {
 
   return actions
 }
+
+export function disabledActions(ids = [], supported) {
+  if (!Array.isArray(ids)) {
+    throw new TypeError('Expected a disabledFeatures list')
+  }
+
+  const available = new Set(supported)
+
+  for (const id of ids) {
+    if (!available.has(id)) {
+      throw new TypeError('Unknown Design feature: ' + id)
+    }
+  }
+
+  return new Set(ids)
+}

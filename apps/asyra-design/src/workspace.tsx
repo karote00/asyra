@@ -1,9 +1,11 @@
+import { requireFeature } from './workspace-features'
 import React, { useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import { PresetSystemPropertyKeys } from '@asyra/preset'
 import { DesignWorkspace } from './app/design-workspace'
 import core from './contexts'
 import DataContexts from './contexts/data-change'
+import { configureWorkspaceFeatures } from './init/workspace-features'
 import { initDesign } from './init/init-design'
 import { switchPrimaryTool } from './controllers/app'
 import { elementApis } from './common-apis/element'
@@ -38,6 +40,7 @@ interface Bounds {
 }
 
 function createShape(type: 'rect' | 'oval', { x, y, width, height }: Bounds) {
+  requireFeature(type === 'rect' ? 'rectangle' : 'oval')
   if (
     ![x, y, width, height].every(Number.isFinite) ||
     width <= 0 ||
@@ -66,6 +69,8 @@ interface WorkspaceOptions {
   collaboration?: RenderSession['collaboration']
   panels?: { layers?: boolean; properties?: boolean }
   controls?: false | readonly { id: string; label: string }[]
+  disabledFeatures: readonly string[]
+  hideUI: boolean
   defaultControls: boolean
   runAction(id: string): Promise<void>
   reopen(): Promise<void>
@@ -110,6 +115,7 @@ function WorkspaceControls({
 
 export function mount(options: WorkspaceOptions) {
   initDesign()
+  configureWorkspaceFeatures(options.disabledFeatures)
   if (
     options.document !== undefined &&
     (!options.document || core.preflightLoad(options.document).length)
@@ -139,6 +145,7 @@ export function mount(options: WorkspaceOptions) {
   const ready = new Promise<void>((resolve, reject) => {
     cancel = reject
     const session: RenderSession = {
+      hideUI: options.hideUI,
       surface: options.surface,
       collaboration: options.collaboration,
       document: options.document,
@@ -152,7 +159,11 @@ export function mount(options: WorkspaceOptions) {
         <DataContexts />
         <DesignWorkspace
           session={session}
-          panels={options.panels}
+          panels={
+            options.hideUI
+              ? { layers: false, properties: false }
+              : options.panels
+          }
           toolbar={controls}
           onReset={reset}
         />
@@ -169,6 +180,10 @@ export function mount(options: WorkspaceOptions) {
         PresetSystemPropertyKeys.PRIMARY_TOOL
       )
 
+      if (active === 'none') {
+        return null
+      }
+
       return active === PrimaryToolType.RECTANGLE ? 'rectangle' : active
     },
 
@@ -177,6 +192,7 @@ export function mount(options: WorkspaceOptions) {
         throw new TypeError('Unknown Design tool: ' + tool)
       }
 
+      requireFeature(tool)
       switchPrimaryTool(tools[tool])
     },
 
@@ -184,12 +200,22 @@ export function mount(options: WorkspaceOptions) {
 
     drawOval: (bounds: Bounds) => createShape('oval', bounds),
 
-    select: (ids: string[]) =>
-      selectionApis.selectElements(ids, { undoable: false }),
+    select: (ids: string[]) => {
+      requireFeature('select')
+      selectionApis.selectElements(ids, { undoable: false })
+    },
 
-    group: () => runGroupCommand('group')?.groupId ?? null,
+    group: () => {
+      requireFeature('group')
 
-    ungroup: () => runGroupCommand('ungroup')?.selectedIds ?? [],
+      return runGroupCommand('group')?.groupId ?? null
+    },
+
+    ungroup: () => {
+      requireFeature('ungroup')
+
+      return runGroupCommand('ungroup')?.selectedIds ?? []
+    },
 
     updateElement: (request: DesignElementEdit) => {
       const apply = prepareDesignElementEdit(request)
@@ -198,8 +224,16 @@ export function mount(options: WorkspaceOptions) {
     },
 
     getSelection: selectionApis.getSelectedIds,
-    undo: historyApis.undo,
-    redo: historyApis.redo,
+
+    undo: async () => {
+      requireFeature('undo')
+      await historyApis.undo()
+    },
+
+    redo: async () => {
+      requireFeature('redo')
+      await historyApis.redo()
+    },
 
     save: () => core.save(),
 

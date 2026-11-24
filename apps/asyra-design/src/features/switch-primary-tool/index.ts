@@ -1,3 +1,4 @@
+import { featureEnabled, toolId } from '../../workspace-features'
 import type { SystemContextSnapshotWithDetail } from '@asyra/utils'
 import { defineFeature } from '@asyra/core'
 import { systemContextApis } from '../../common-apis'
@@ -14,6 +15,10 @@ interface SwitchPrimaryToolAPI {
 
 const api: SwitchPrimaryToolAPI = {
   switch: (tool: string) => {
+    if (!featureEnabled(toolId(tool))) {
+      return
+    }
+
     const pathEditingMode = systemContextApis.getPathEditingMode()
 
     systemContextApis.switchPrimaryTool(tool)

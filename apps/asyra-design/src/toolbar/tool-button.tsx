@@ -1,3 +1,4 @@
+import { featureEnabled } from '../workspace-features'
 import { useCallback } from 'react'
 import { Icon, type IconName } from '@asyra/design-system'
 import { usePrimaryTool } from '../providers'
@@ -48,89 +49,103 @@ const ToolButton = ({
 
   return (
     <div className="flex items-center gap-1">
-      <button
-        aria-label="Reset document"
-        className="tool-btn"
-        data-testid="reset-button"
-        onClick={handleReset}
-        title="Reset document"
-        type="button"
-      >
-        <svg
-          aria-hidden="true"
-          fill="none"
-          height="16"
-          viewBox="0 0 16 16"
-          width="16"
+      {featureEnabled('reset') && (
+        <button
+          aria-label="Reset document"
+          className="tool-btn"
+          data-testid="reset-button"
+          onClick={handleReset}
+          title="Reset document"
+          type="button"
         >
-          <path
-            d="M3.5 5.5A5 5 0 1 1 3 9"
-            stroke="currentColor"
-            strokeLinecap="round"
-            strokeWidth="1.5"
-          />
-          <path
-            d="M3.5 2.5v3h3"
-            stroke="currentColor"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="1.5"
-          />
-        </svg>
-      </button>
-      <div
-        aria-hidden="true"
-        className="mx-1 h-5 w-px bg-[#4a4a4a]"
-        data-testid="reset-separator"
-      />
-      <button
-        className={`tool-btn ${primaryTool === PrimaryToolType.SELECT ? 'active' : ''}`}
-        onClick={handleSwitchToSelectTool}
-        data-testid="tool-select"
-        data-active={primaryTool === PrimaryToolType.SELECT}
-        title="Select (V)"
-      >
-        <Icon name={PRIMARY_TOOL_ICON_MAP[PrimaryToolType.SELECT]} />
-      </button>
-      <button
-        className={`tool-btn ${primaryTool === PrimaryToolType.RECTANGLE ? 'active' : ''}`}
-        onClick={handleSwitchToRectangleTool}
-        data-testid="tool-rectangle"
-        data-active={primaryTool === PrimaryToolType.RECTANGLE}
-        title="Rectangle (R)"
-      >
-        <Icon name={PRIMARY_TOOL_ICON_MAP[PrimaryToolType.RECTANGLE]} />
-      </button>
-      <button
-        className={`tool-btn ${primaryTool === PrimaryToolType.OVAL ? 'active' : ''}`}
-        onClick={handleSwitchToOvalTool}
-        data-testid="tool-oval"
-        data-active={primaryTool === PrimaryToolType.OVAL}
-        title="Oval (O)"
-      >
-        <Icon name={PRIMARY_TOOL_ICON_MAP[PrimaryToolType.OVAL]} />
-      </button>
-      <button
-        className={`tool-btn ${primaryTool === PrimaryToolType.PEN ? 'active' : ''}`}
-        onClick={handleSwitchToPenTool}
-        data-testid="tool-pen"
-        data-active={primaryTool === PrimaryToolType.PEN}
-        title="Pen (P)"
-      >
-        <Icon name="Pen" />
-      </button>
-      <button
-        aria-label="Text"
-        aria-pressed={primaryTool === PrimaryToolType.TEXT}
-        className={`tool-btn ${primaryTool === PrimaryToolType.TEXT ? 'active' : ''}`}
-        onClick={handleSwitchToTextTool}
-        data-testid="tool-text"
-        data-active={primaryTool === PrimaryToolType.TEXT}
-        title="Text (T)"
-        type="button"
-      >
-        <Icon name={PRIMARY_TOOL_ICON_MAP[PrimaryToolType.TEXT]} />
-      </button>
+          <svg
+            aria-hidden="true"
+            fill="none"
+            height="16"
+            viewBox="0 0 16 16"
+            width="16"
+          >
+            <path
+              d="M3.5 5.5A5 5 0 1 1 3 9"
+              stroke="currentColor"
+              strokeLinecap="round"
+              strokeWidth="1.5"
+            />
+            <path
+              d="M3.5 2.5v3h3"
+              stroke="currentColor"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="1.5"
+            />
+          </svg>
+        </button>
+      )}
+      {featureEnabled('reset') && (
+        <div
+          aria-hidden="true"
+          className="mx-1 h-5 w-px bg-[#4a4a4a]"
+          data-testid="reset-separator"
+        />
+      )}
+      {featureEnabled('select') && (
+        <button
+          className={`tool-btn ${primaryTool === PrimaryToolType.SELECT ? 'active' : ''}`}
+          onClick={handleSwitchToSelectTool}
+          data-testid="tool-select"
+          data-active={primaryTool === PrimaryToolType.SELECT}
+          title="Select (V)"
+        >
+          <Icon name={PRIMARY_TOOL_ICON_MAP[PrimaryToolType.SELECT]} />
+        </button>
+      )}
+      {featureEnabled('rectangle') && (
+        <button
+          className={`tool-btn ${primaryTool === PrimaryToolType.RECTANGLE ? 'active' : ''}`}
+          onClick={handleSwitchToRectangleTool}
+          data-testid="tool-rectangle"
+          data-active={primaryTool === PrimaryToolType.RECTANGLE}
+          title="Rectangle (R)"
+        >
+          <Icon name={PRIMARY_TOOL_ICON_MAP[PrimaryToolType.RECTANGLE]} />
+        </button>
+      )}
+      {featureEnabled('oval') && (
+        <button
+          className={`tool-btn ${primaryTool === PrimaryToolType.OVAL ? 'active' : ''}`}
+          onClick={handleSwitchToOvalTool}
+          data-testid="tool-oval"
+          data-active={primaryTool === PrimaryToolType.OVAL}
+          title="Oval (O)"
+        >
+          <Icon name={PRIMARY_TOOL_ICON_MAP[PrimaryToolType.OVAL]} />
+        </button>
+      )}
+      {featureEnabled('pen') && (
+        <button
+          className={`tool-btn ${primaryTool === PrimaryToolType.PEN ? 'active' : ''}`}
+          onClick={handleSwitchToPenTool}
+          data-testid="tool-pen"
+          data-active={primaryTool === PrimaryToolType.PEN}
+          title="Pen (P)"
+        >
+          <Icon name="Pen" />
+        </button>
+      )}
+      {featureEnabled('text') && (
+        <button
+          aria-label="Text"
+          aria-pressed={primaryTool === PrimaryToolType.TEXT}
+          className={`tool-btn ${primaryTool === PrimaryToolType.TEXT ? 'active' : ''}`}
+          onClick={handleSwitchToTextTool}
+          data-testid="tool-text"
+          data-active={primaryTool === PrimaryToolType.TEXT}
+          title="Text (T)"
+          type="button"
+        >
+          <Icon name={PRIMARY_TOOL_ICON_MAP[PrimaryToolType.TEXT]} />
+        </button>
+      )}
     </div>
   )
 }

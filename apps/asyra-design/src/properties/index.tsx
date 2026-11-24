@@ -1,4 +1,5 @@
 import { supportsSizeEdits } from '../common-apis/element/geometry-policy'
+import { featureEnabled } from '../workspace-features'
 import React from 'react'
 import { COLUMN_WIDTH } from '../constants'
 import {
@@ -87,7 +88,7 @@ const Properties: React.FC = () => {
     )
   }
 
-  if (showVectorPoint) {
+  if (featureEnabled('pen') && showVectorPoint) {
     panelContent = <VectorPointPropertiesPanel title={title} />
   }
 

@@ -1,3 +1,4 @@
+import { featureEnabled } from '../../workspace-features'
 import { defineFeature } from '@asyra/core'
 import type { SystemContextSnapshotWithDetail } from '@asyra/utils'
 import {
@@ -61,6 +62,10 @@ export const executeGroupCommandRequest = (
 
 const api: GroupCommandFeatureAPI = {
   execute: (command) => {
+    if (!featureEnabled(command)) {
+      return null
+    }
+
     const request = createCurrentGroupCommandRequest(command)
 
     return request ? executeGroupCommandRequest(request) : null

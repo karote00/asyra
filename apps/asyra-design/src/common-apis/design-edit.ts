@@ -1,4 +1,5 @@
 import { hasSizeEdit, requireSizeEditTarget } from './element/geometry-policy'
+import { requireFeature } from '../workspace-features'
 import { DEFAULT_TEXT_DATA, TEXT_PROPERTY_SCHEMA } from '@asyra/preset'
 import core from '../contexts'
 import { elementApis } from './element'
@@ -103,6 +104,28 @@ export const createDesignElementEditPreparer =
       )
     ) {
       throw new Error('The design edit has no changes.')
+    }
+
+    if (name !== undefined) {
+      requireFeature('rename')
+    }
+
+    if (fillColor !== undefined) {
+      requireFeature('fills')
+    }
+
+    if (strokeColor !== undefined) {
+      requireFeature('strokes')
+    }
+
+    for (const key of Object.keys(properties ?? {})) {
+      if (geometryFields.includes(key)) {
+        requireFeature('geometry')
+      }
+
+      if (textFields.includes(key)) {
+        requireFeature('text')
+      }
     }
 
     const target = apis.getData(elementId)

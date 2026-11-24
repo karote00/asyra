@@ -79,7 +79,15 @@ export async function start(target, options) {
   const listeners = new globalThis.AbortController()
   const { signal } = listeners
   let active = true
-  let tool = 'rectangle'
+  const disabled = options.disabledFeatures
+
+  const requireFeature = (id) => {
+    if (disabled.has(id)) {
+      throw new Error('Disabled Design feature: ' + id)
+    }
+  }
+
+  let tool = ['rectangle', 'select'].find((id) => !disabled.has(id)) ?? null
   let gesture
   let pending
   let observer
@@ -91,6 +99,7 @@ export async function start(target, options) {
   }
 
   function drawRectangle({ x, y, width, height }) {
+    requireFeature('rectangle')
     if (!active || pending) {
       throw new Error('Canvas is unavailable')
     }
@@ -224,7 +233,13 @@ export async function start(target, options) {
     target.addEventListener(
       'pointerdown',
       (event) => {
-        if (!event.isPrimary || event.button !== 0 || gesture || pending) {
+        if (
+          !tool ||
+          !event.isPrimary ||
+          event.button !== 0 ||
+          gesture ||
+          pending
+        ) {
           return
         }
 
@@ -300,6 +315,7 @@ export async function start(target, options) {
         if (
           (event.metaKey || event.ctrlKey) &&
           event.key.toLowerCase() === 'z' &&
+          !disabled.has(event.shiftKey ? 'redo' : 'undo') &&
           !event.repeat &&
           !pending
         ) {
@@ -323,6 +339,7 @@ export async function start(target, options) {
           throw new TypeError('Expected rectangle or select')
         }
 
+        requireFeature(value)
         cancel()
         tool = value
       },
@@ -337,9 +354,15 @@ export async function start(target, options) {
           .filter((id) => core.getElementMetadata(id))
       },
 
-      undo: () => replay(api.undo),
+      undo: async () => {
+        requireFeature('undo')
+        await replay(api.undo)
+      },
 
-      redo: () => replay(api.redo),
+      redo: async () => {
+        requireFeature('redo')
+        await replay(api.redo)
+      },
 
       save() {
         assertActive()

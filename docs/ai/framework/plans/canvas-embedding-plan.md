@@ -66,3 +66,11 @@ settings and named actions without Framework imports. Browser input, portals and
 styles belong to each workspace. The borrowed-canvas API retains its lightweight
 tools. Verify real editing, isolation, configured actions, lifecycle and packaged
 assets from an independent JavaScript installation.
+
+### Feature availability
+
+The embed step owns a per-instance runtime policy over the local commands
+cataloged in sdk/design/FEATURES.md. Resolve it at mount, gate the distinct
+input and facade paths, and preserve schema registration, remote replay and
+rendering. Host chrome visibility is independent. Acceptance runs on packed
+consumers with the full workspace and borrowed canvas.

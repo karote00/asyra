@@ -1,3 +1,4 @@
+import { featureEnabled, toolId } from '../workspace-features'
 /**
  * System Context APIs
  * For managing system-level state observables
@@ -129,7 +130,10 @@ export const systemContextApis = {
    * Switch the primary tool
    */
   switchPrimaryTool: (tool: string) => {
-    core.setSystemProperty(PresetSystemPropertyKeys.PRIMARY_TOOL, tool)
+    core.setSystemProperty(
+      PresetSystemPropertyKeys.PRIMARY_TOOL,
+      featureEnabled(toolId(tool)) ? tool : 'none'
+    )
   },
 
   /**
@@ -143,6 +147,10 @@ export const systemContextApis = {
    * Update the hovered element ID in system state
    */
   updateHoveredElementId: (elementId: string | null) => {
+    if (elementId && !featureEnabled('hoverElement')) {
+      return
+    }
+
     core.setSystemProperty(
       PresetSystemPropertyKeys.HOVERED_ELEMENT_ID,
       elementId

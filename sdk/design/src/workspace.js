@@ -1,4 +1,4 @@
-import { createActions } from './actions.js'
+import { createActions, disabledActions } from './actions.js'
 import { assets } from './workspace-assets.js'
 
 const occupied = new WeakSet()
@@ -45,6 +45,25 @@ export async function mountWorkspace(host, options, signal) {
     throw new TypeError('Expected an ordered toolbar list or false')
   }
 
+  const disabled = disabledActions(options.disabledFeatures, [
+    ...actions.keys(),
+    'group',
+    'ungroup',
+    'moveElements',
+    'hoverElement',
+    'moveLayerHierarchy',
+    'deleteSelectedElement',
+    'pan',
+    'zoom',
+    'zoomFit',
+    'geometry',
+    'fills',
+    'strokes',
+    'lock',
+    'visibility',
+    'rename',
+    'reset'
+  ])
   const defaultControls = options.toolbar === undefined
   const ids = defaultControls
     ? [
@@ -57,17 +76,19 @@ export async function mountWorkspace(host, options, signal) {
       ]
     : options.toolbar
   const controls =
-    ids === false
+    options.hideUI || ids === false
       ? false
-      : ids.map((id) => {
-          const action = actions.get(id)
+      : ids
+          .map((id) => {
+            const action = actions.get(id)
 
-          if (!action) {
-            throw new TypeError('Unknown Design action: ' + id)
-          }
+            if (!action) {
+              throw new TypeError('Unknown Design action: ' + id)
+            }
 
-          return { id, label: action.label }
-        })
+            return { id, label: action.label }
+          })
+          .filter(({ id }) => !disabled.has(id))
   const collaboration = options.collaboration && {
     ...options.collaboration,
     actorId: options.collaboration.actorId ?? globalThis.crypto.randomUUID()
@@ -144,6 +165,10 @@ export async function mountWorkspace(host, options, signal) {
         throw new TypeError('Unknown Design action: ' + id)
       }
 
+      if (disabled.has(id)) {
+        throw new Error('Disabled Design feature: ' + id)
+      }
+
       await action.run(editor)
     },
 
@@ -193,6 +218,8 @@ export async function mountWorkspace(host, options, signal) {
       collaboration,
       controls,
       defaultControls,
+      disabledFeatures: [...disabled],
+      hideUI: options.hideUI === true,
       panels: options.panels,
       runAction: editor.runAction,
 

@@ -1,3 +1,4 @@
+import { featureEnabled } from '../../workspace-features'
 import {
   SessionCancelPolicies,
   type EVENT_OPTIONS,
@@ -1231,6 +1232,10 @@ export const cancelPenEditingFeature = defineFeature(
       const pathEditingMode = systemContextApis.getPathEditingMode()
       const editingVectorId = systemContextApis.getPathEditingVectorId()
 
+      if (pathEditingMode && !featureEnabled('pen')) {
+        return null
+      }
+
       if (pathEditingMode) {
         if (snapshot.primaryTool === PrimaryToolType.PEN) {
           const startNewSubpath =
@@ -1276,7 +1281,7 @@ export const cancelPenEditingFeature = defineFeature(
 
       const selectedIds = selectionApis.getSelectedIds()
 
-      if (selectedIds.length > 0) {
+      if (featureEnabled('select') && selectedIds.length > 0) {
         selectionApis.clearSelection({ undoable: false })
         cursorApis.resetCanvasCursor()
 

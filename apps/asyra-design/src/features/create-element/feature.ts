@@ -1,3 +1,4 @@
+import { featureEnabled, toolId } from '../../workspace-features'
 import {
   type EVENT_OPTIONS,
   type PositionData,
@@ -120,6 +121,10 @@ export const createElementSession = {
       primaryTool !== PrimaryToolType.RECTANGLE &&
       primaryTool !== PrimaryToolType.OVAL
     ) {
+      return null
+    }
+
+    if (!featureEnabled(toolId(primaryTool))) {
       return null
     }
 

@@ -83,7 +83,7 @@ async function withConsumer(packages, entry, assertions) {
             "const editor = await createDesign(document.body.appendChild(document.createElement('div')), { toolbar: false, actions: { revert: { label: 'Undo', run: tools => tools.undo() } } })",
             "await editor.runAction('revert')",
             'await editor.destroy()',
-            "const extended = await createDesign(document.body, { extensions: [{ actions: { badge: { label: 'Badge', run(tools) { tools.drawOval({ x: 0, y: 0, width: 10, height: 10 }) } } } }], toolbar: ['badge'] })",
+            "const extended = await createDesign(document.body, { extensions: [{ actions: { badge: { label: 'Badge', run(tools) { tools.drawOval({ x: 0, y: 0, width: 10, height: 10 }) } } } }], toolbar: ['badge'], disabledFeatures: ['text', 'pen', 'badge'], hideUI: true })",
             "await extended.runAction('badge')",
             'const tools = await attachDesignTools(surface)',
             "tools.setTool('select')",
@@ -1114,6 +1114,436 @@ test('packed Design actions edit and group through the app with isolated histori
       assert.deepEqual(results.restored, results.grouped)
       assert.equal(results.name, 'Status badge')
       assert.equal(results.unrelated, 0)
+    }
+  )
+})
+
+test('packed Design disabled features guard gestures, shortcuts and API while saved content renders', async () => {
+  await withConsumer(
+    ['sdk/canvas', 'sdk/design'],
+    'workspace.js',
+    async (page) => {
+      await page.evaluate(() => globalThis.ready)
+      const frame = page.frameLocator('main iframe')
+      const canvas = frame.locator('canvas').first()
+
+      const click = (x, y) => canvas.click({ position: { x, y } })
+
+      await frame.getByTestId('tool-text').click()
+      await click(410, 270)
+      const inline = frame.getByRole('textbox', { name: 'Canvas text editor' })
+
+      await inline.fill('Visible saved text')
+      await inline.press('Control+Enter')
+      await frame.getByTestId('tool-pen').click()
+      await click(420, 395)
+      await click(470, 430)
+      await page.keyboard.press('Escape')
+      await page.keyboard.press('Escape')
+      await page.evaluate(() => globalThis.editor.setTool('select'))
+      await page.evaluate(() => globalThis.editor.select([]))
+      await page.mouse.move(0, 0)
+      // Reopen both variants from identical serialized content and viewport state.
+      await page.evaluate(async () => {
+        globalThis.savedPolicyExample = await globalThis.editor.save()
+        await globalThis.editor.destroy()
+        globalThis.editor = await globalThis.createDesign(globalThis.host, {
+          document: globalThis.savedPolicyExample
+        })
+      })
+
+      const fit = async () => {
+        await frame.getByTestId('canvas-host').focus()
+        await page.keyboard.press('Control+1')
+        await page.mouse.move(0, 0)
+      }
+
+      await fit()
+      const area = { x: 247, y: 52, width: 348, height: 650 }
+
+      const sample = async () =>
+        sharp(await canvas.screenshot())
+          .extract({
+            left: area.x,
+            top: area.y,
+            width: area.width,
+            height: area.height
+          })
+          .png()
+          .toBuffer()
+
+      // Capture after the renderer has painted and compare the same content after load.
+      await canvas.evaluate(
+        () =>
+          new Promise((resolve) =>
+            globalThis.requestAnimationFrame(() =>
+              globalThis.requestAnimationFrame(resolve)
+            )
+          )
+      )
+      const before = await sample()
+      const pixels = await sharp(before).removeAlpha().raw().toBuffer()
+
+      const paintedPoint = (top, bottom) => {
+        for (let y = top; y < bottom; y++) {
+          for (let x = 0; x < area.width; x++) {
+            if (pixels[(y * area.width + x) * 3] > 150) {
+              return { x: area.x + x, y: area.y + y }
+            }
+          }
+        }
+
+        throw new Error('Expected visible document content')
+      }
+
+      const textPoint = paintedPoint(0, 300)
+      const vectorPoint = paintedPoint(300, area.height)
+
+      await canvas.screenshot({
+        path: path.join(root, 'tmp/canvas/packed-feature-reference.png')
+      })
+
+      await page.evaluate(async () => {
+        const saved = globalThis.savedPolicyExample
+
+        await globalThis.editor.destroy()
+        globalThis.editor = await globalThis.createDesign(globalThis.host, {
+          document: saved,
+          disabledFeatures: ['pen', 'text', 'oval', 'undo', 'group', 'custom'],
+          actions: {
+            custom: {
+              label: 'Custom',
+
+              run() {
+                throw new Error('Callback invoked')
+              }
+            }
+          }
+        })
+      })
+      await fit()
+      await canvas.evaluate(
+        () =>
+          new Promise((resolve) =>
+            globalThis.requestAnimationFrame(() =>
+              globalThis.requestAnimationFrame(resolve)
+            )
+          )
+      )
+      await expect.poll(async () => (await sample()).equals(before)).toBe(true)
+      await canvas.screenshot({
+        path: path.join(root, 'tmp/canvas/packed-feature-restricted.png')
+      })
+      for (const tool of ['text', 'pen', 'oval']) {
+        assert.equal(await frame.getByTestId('tool-' + tool).count(), 0)
+      }
+
+      assert.equal(
+        await frame
+          .getByRole('button', { name: 'Custom', exact: true })
+          .count(),
+        0
+      )
+      await click(440, 340)
+      for (const key of ['p', 't', 'o']) {
+        await page.keyboard.press(key)
+        assert.equal(
+          await page.evaluate(() => globalThis.editor.getTool()),
+          'select'
+        )
+      }
+
+      const ids = await page.evaluate(async () =>
+        Object.fromEntries(
+          Object.values(
+            (await globalThis.editor.save()).sceneTree.elements
+          ).map((item) => [item.type, item.id])
+        )
+      )
+
+      await page.evaluate(
+        (ids) => globalThis.editor.select([ids.text, ids.vector]),
+        ids
+      )
+      await canvas.click({ button: 'right', position: textPoint })
+      await frame.getByRole('menu').waitFor()
+      assert.equal(
+        await frame
+          .getByRole('menuitem', { name: 'Group selected layers', exact: true })
+          .count(),
+        0
+      )
+      await page.keyboard.press('Escape')
+      await frame.getByTestId('canvas-host').focus()
+      await page.keyboard.press('Control+g')
+      await page.keyboard.press('Meta+g')
+      assert.equal(
+        await page.evaluate(async () =>
+          Object.values(
+            (await globalThis.editor.save()).sceneTree.elements
+          ).some((el) => el.type === 'group')
+        ),
+        false
+      )
+      await page.evaluate((id) => globalThis.editor.select([id]), ids.text)
+      await canvas.dblclick({ position: textPoint })
+      assert.equal(await inline.count(), 0)
+      assert.equal(
+        await frame.getByRole('region', { name: 'Typography' }).count(),
+        0
+      )
+      const rejected = await page.evaluate(async (id) => {
+        const e = globalThis.editor
+        const operations = [
+          () => e.setTool('text'),
+          () => e.drawOval({ x: 0, y: 0, width: 20, height: 10 }),
+          () => e.undo(),
+          () => e.group(),
+          () => e.runAction('custom'),
+          () =>
+            e.updateElement({
+              elementId: id,
+              name: 'Partial edit',
+              properties: { fontSize: 32 }
+            })
+        ]
+
+        return Promise.all(
+          operations.map(async (run) => {
+            try {
+              await run()
+
+              return false
+            } catch (error) {
+              return error.message.startsWith('Disabled Design feature:')
+            }
+          })
+        )
+      }, ids.text)
+
+      assert.deepEqual(rejected, Array(6).fill(true))
+      await page.evaluate((id) => globalThis.editor.select([id]), ids.vector)
+      await page.keyboard.press('Escape')
+      assert.deepEqual(
+        await page.evaluate(() => globalThis.editor.getSelection()),
+        []
+      )
+      await page.evaluate((id) => globalThis.editor.select([id]), ids.vector)
+      await page.keyboard.press('Enter')
+      await canvas.dblclick({ position: vectorPoint })
+      assert.deepEqual(
+        await page.evaluate(() => globalThis.editor.getSelection()),
+        [ids.vector]
+      )
+      // Outside path editing Delete removes the element. Inside it, Delete only edits an anchor.
+      await page.keyboard.press('Backspace')
+      assert.equal(
+        await page.evaluate(
+          async (id) =>
+            Object.hasOwn(
+              (await globalThis.editor.save()).sceneTree.elements,
+              id
+            ),
+          ids.vector
+        ),
+        false
+      )
+      await page.evaluate(async () => {
+        const saved = await globalThis.editor.save()
+
+        await globalThis.editor.destroy()
+        globalThis.editor = await globalThis.createDesign(globalThis.host, {
+          document: saved,
+          hideUI: true
+        })
+      })
+      for (const id of ['toolbar', 'contents-panel', 'properties-panel']) {
+        assert.equal(await frame.getByTestId(id).count(), 0)
+      }
+
+      await canvas.click({ button: 'right', position: { x: 420, y: 395 } })
+      assert.equal(await frame.getByRole('menu').count(), 0)
+      await click(700, 310)
+      await page.keyboard.press('r')
+      assert.equal(
+        await page.evaluate(() => globalThis.editor.getTool()),
+        'rectangle'
+      )
+    }
+  )
+})
+
+test('packed Design borrowed canvas guards its own pointer, history and action paths', async () => {
+  await withConsumer(
+    ['sdk/canvas', 'sdk/design'],
+    'design.js',
+    async (page) => {
+      await page.evaluate(() => globalThis.ready)
+      const canvas = page.locator('#first')
+
+      await page.evaluate(async () => {
+        await globalThis.editor.destroy()
+        globalThis.editor = await globalThis.createDesign(
+          globalThis.document.querySelector('#first'),
+          {
+            hideUI: true,
+            disabledFeatures: ['rectangle', 'select', 'undo', 'redo']
+          }
+        )
+      })
+      assert.equal(
+        await page.getByRole('group', { name: 'Design tools' }).count(),
+        0
+      )
+      assert.equal(await page.evaluate(() => globalThis.editor.getTool()), null)
+      const bounds = await canvas.boundingBox()
+
+      await page.mouse.move(bounds.x + 15, bounds.y + 15)
+      await page.mouse.down()
+      await page.mouse.move(bounds.x + 80, bounds.y + 65)
+      await page.mouse.up()
+      await canvas.press('Control+z')
+      assert.equal(
+        await page.evaluate(async () =>
+          Object.values(
+            (await globalThis.editor.save()).sceneTree.elements
+          ).some((el) => el.type === 'rect')
+        ),
+        false
+      )
+      for (const id of ['rectangle', 'select', 'undo', 'redo']) {
+        await assert.rejects(
+          page.evaluate((id) => globalThis.editor.runAction(id), id),
+          /Disabled Design feature/
+        )
+      }
+
+      await assert.rejects(
+        page.evaluate(() =>
+          globalThis.editor.drawRectangle({ x: 1, y: 1, width: 10, height: 10 })
+        ),
+        /Disabled Design feature/
+      )
+    }
+  )
+})
+
+test('packed Design command availability is isolated per workspace and direction', async () => {
+  await withConsumer(
+    ['sdk/canvas', 'sdk/design'],
+    'workspace.js',
+    async (page) => {
+      await page.evaluate(() => globalThis.ready)
+      const result = await page.evaluate(async () => {
+        const second = globalThis.document.createElement('aside')
+
+        second.style.cssText = 'height:720px;width:100%'
+        globalThis.host.after(second)
+        const restricted = await globalThis.createDesign(second, {
+          disabledFeatures: [
+            'select',
+            'rectangle',
+            'redo',
+            'ungroup',
+            'reset',
+            'geometry',
+            'strokes',
+            'fills',
+            'lock',
+            'visibility',
+            'rename'
+          ]
+        })
+        const bounds = { x: 10, y: 20, width: 28, height: 36 }
+        const initial = restricted.getTool()
+        const shape = restricted.drawOval(bounds)
+        const original = globalThis.editor.drawRectangle(bounds)
+        const failures = []
+
+        for (const run of [
+          () => restricted.select([shape]),
+          () => restricted.drawRectangle(bounds),
+          () => restricted.redo(),
+          () => restricted.ungroup(),
+          () =>
+            restricted.updateElement({ elementId: shape, name: 'New name' }),
+          () =>
+            restricted.updateElement({
+              elementId: shape,
+              properties: { width: 120 }
+            }),
+          () =>
+            restricted.updateElement({
+              elementId: shape,
+              fillColor: '#ffffff'
+            }),
+          () =>
+            restricted.updateElement({
+              elementId: shape,
+              strokeColor: '#ffffff'
+            })
+        ]) {
+          try {
+            await run()
+          } catch (error) {
+            failures.push(error.message)
+          }
+        }
+
+        globalThis.restricted = restricted
+
+        return {
+          initial,
+          failures,
+          independent: !!(await globalThis.editor.save()).sceneTree.elements[
+            original
+          ],
+          enabledOval: !!(await restricted.save()).sceneTree.elements[shape]
+        }
+      })
+
+      assert.equal(result.initial, null)
+      assert.equal(
+        result.failures.filter((message) =>
+          message.startsWith('Disabled Design feature:')
+        ).length,
+        8
+      )
+      assert.ok(result.independent && result.enabledOval)
+      const frame = page.frameLocator('aside iframe')
+
+      for (const id of ['tool-select', 'tool-rectangle', 'reset-button']) {
+        assert.equal(await frame.getByTestId(id).count(), 0)
+      }
+
+      await frame.getByTestId('tool-oval').click()
+      assert.equal(
+        await page.evaluate(() => globalThis.restricted.getTool()),
+        'oval'
+      )
+      await frame.locator('canvas').first().press('v')
+      assert.equal(
+        await page.evaluate(() => globalThis.restricted.getTool()),
+        'oval'
+      )
+      await page.evaluate(() => globalThis.restricted.undo())
+      assert.equal(
+        await page.evaluate(async () =>
+          Object.values(
+            (await globalThis.restricted.save()).sceneTree.elements
+          ).some((item) => item.type === 'oval')
+        ),
+        false
+      )
+      await frame.locator('canvas').first().press('Control+Shift+z')
+      assert.equal(
+        await page.evaluate(async () =>
+          Object.values(
+            (await globalThis.restricted.save()).sceneTree.elements
+          ).some((item) => item.type === 'oval')
+        ),
+        false
+      )
     }
   )
 })

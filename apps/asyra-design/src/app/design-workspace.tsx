@@ -1,3 +1,4 @@
+import { featureEnabled } from '../workspace-features'
 import type { ConversationDrafts } from '../ai/conversation-drafts'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import ToolBar from '../toolbar'
@@ -147,7 +148,7 @@ export const DesignWorkspace: React.FC<WorkspaceProps> = ({
     () =>
       ai
         ? [aiPanelCommandDescriptor, ...groupCommandDescriptors]
-        : groupCommandDescriptors,
+        : groupCommandDescriptors.filter(({ id }) => featureEnabled(id)),
     [ai, aiPanelCommandDescriptor, groupCommandDescriptors]
   )
 
@@ -215,7 +216,11 @@ export const DesignWorkspace: React.FC<WorkspaceProps> = ({
     >
       <RenderApp
         session={session}
-        onContextMenuRequest={contextMenu.open}
+        onContextMenuRequest={
+          session?.hideUI || !contextMenuDescriptors.length
+            ? undefined
+            : contextMenu.open
+        }
         onCanvasHostTeardown={handleCanvasHostTeardown}
       />
       <GroupContextMenu

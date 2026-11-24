@@ -1,12 +1,24 @@
 import { createCanvas } from '@asyra/canvas'
-import { createActions } from './actions.js'
+import { createActions, disabledActions } from './actions.js'
 import { createToolbar } from './toolbar.js'
 import { mountWorkspace } from './workspace.js'
 import { createRuntime } from './runtime.js'
 
-export function attachDesignTools(canvas, options = {}) {
+export async function attachDesignTools(canvas, options = {}) {
+  const disabled = disabledActions(
+    options.disabledFeatures,
+    createActions().keys()
+  )
+
+  return mountTools(canvas, options, disabled)
+}
+
+function mountTools(canvas, options, disabled) {
   return canvas.mount(async (target) => {
-    const { destroy, ...tools } = await createRuntime().start(target, options)
+    const { destroy, ...tools } = await createRuntime().start(target, {
+      ...options,
+      disabledFeatures: disabled
+    })
 
     return { tools, destroy }
   })
@@ -41,7 +53,8 @@ export async function createDesign(host, options = {}) {
 
   try {
     const actions = createActions(options.actions)
-    const session = await attachDesignTools(surface, options)
+    const disabled = disabledActions(options.disabledFeatures, actions.keys())
+    const session = await mountTools(surface, options, disabled)
     const tools = {
       ...session,
 
@@ -65,16 +78,22 @@ export async function createDesign(host, options = {}) {
           throw new TypeError('Unknown Design action: ' + id)
         }
 
+        if (disabled.has(id)) {
+          throw new Error('Disabled Design feature: ' + id)
+        }
+
         await action.run(tools)
       },
 
       destroy
     }
 
-    if (options.toolbar !== false) {
+    if (!options.hideUI && options.toolbar !== false) {
       toolbar = createToolbar(
         target,
-        options.toolbar ?? actions.keys(),
+        [...(options.toolbar ?? actions.keys())].filter(
+          (id) => !disabled.has(id)
+        ),
         actions,
         editor,
         listeners.signal

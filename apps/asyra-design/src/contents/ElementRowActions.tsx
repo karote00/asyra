@@ -1,3 +1,4 @@
+import { featureEnabled } from '../workspace-features'
 import type { MouseEvent } from 'react'
 import { Icon } from '@asyra/design-system'
 
@@ -29,32 +30,36 @@ export const ElementRowActions = ({
         transition: 'opacity 0.12s ease'
       }}
     >
-      <button
-        type="button"
-        className={`flex items-center justify-center w-5 h-5 ${
-          lock ? 'text-[#e5e5e5]' : 'text-[#777]'
-        } hover:text-[#e5e5e5]`}
-        onClick={onToggleLock}
-        title={lock ? 'Unlock element' : 'Lock element'}
-        aria-pressed={lock}
-        aria-label={lock ? 'Unlock element' : 'Lock element'}
-        data-testid={`content-element-lock-${elementId}`}
-      >
-        <Icon name={lock ? 'Lock' : 'Unlock'} />
-      </button>
-      <button
-        type="button"
-        className={`flex items-center justify-center w-5 h-5 ${
-          visible ? 'text-[#e5e5e5]' : 'text-[#555]'
-        } hover:text-[#e5e5e5]`}
-        onClick={onToggleVisible}
-        title={visible ? 'Hide element' : 'Show element'}
-        aria-pressed={visible}
-        aria-label={visible ? 'Hide element' : 'Show element'}
-        data-testid={`content-element-visible-${elementId}`}
-      >
-        <Icon name={visible ? 'Visible' : 'Invisible'} />
-      </button>
+      {featureEnabled('lock') && (
+        <button
+          type="button"
+          className={`flex items-center justify-center w-5 h-5 ${
+            lock ? 'text-[#e5e5e5]' : 'text-[#777]'
+          } hover:text-[#e5e5e5]`}
+          onClick={onToggleLock}
+          title={lock ? 'Unlock element' : 'Lock element'}
+          aria-pressed={lock}
+          aria-label={lock ? 'Unlock element' : 'Lock element'}
+          data-testid={`content-element-lock-${elementId}`}
+        >
+          <Icon name={lock ? 'Lock' : 'Unlock'} />
+        </button>
+      )}
+      {featureEnabled('visibility') && (
+        <button
+          type="button"
+          className={`flex items-center justify-center w-5 h-5 ${
+            visible ? 'text-[#e5e5e5]' : 'text-[#555]'
+          } hover:text-[#e5e5e5]`}
+          onClick={onToggleVisible}
+          title={visible ? 'Hide element' : 'Show element'}
+          aria-pressed={visible}
+          aria-label={visible ? 'Hide element' : 'Show element'}
+          data-testid={`content-element-visible-${elementId}`}
+        >
+          <Icon name={visible ? 'Visible' : 'Invisible'} />
+        </button>
+      )}
     </div>
   )
 }

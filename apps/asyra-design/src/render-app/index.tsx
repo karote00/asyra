@@ -26,6 +26,7 @@ export interface CanvasContextMenuInvocation {
 }
 
 export interface RenderSession {
+  hideUI?: boolean
   document?: ReturnType<typeof createEmptyDocument>
   collaboration?: CollaborationMode
   surface: {
@@ -238,19 +239,21 @@ const RenderApp: React.FC<RenderAppProps> = ({
         className="absolute inset-0"
         data-testid="canvas-render-container"
       />
-      <StatusToastStack
-        toasts={[
-          ...(collaborationNotification
-            ? [
-                {
-                  id: collaborationNotification.id,
-                  message: collaborationNotification.message
-                }
-              ]
-            : [])
-        ]}
-      />
-      {recoverySession && (
+      {!session?.hideUI && (
+        <StatusToastStack
+          toasts={[
+            ...(collaborationNotification
+              ? [
+                  {
+                    id: collaborationNotification.id,
+                    message: collaborationNotification.message
+                  }
+                ]
+              : [])
+          ]}
+        />
+      )}
+      {!session?.hideUI && recoverySession && (
         <DocumentRecoveryControls
           session={recoverySession}
           reopen={session?.reopen ?? (() => window.location.reload())}

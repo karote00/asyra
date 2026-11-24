@@ -119,7 +119,9 @@ An extension can export an object with its own `actions` and be shared across
 products. Install one or more in a single call:
 
 ```js
-const editor = await createDesign(container, { extensions: [cardTools, reviewTools] })
+const editor = await createDesign(container, {
+  extensions: [cardTools, reviewTools]
+})
 ```
 
 Each extension receives the same workspace tools. Duplicate action IDs fail
@@ -142,7 +144,10 @@ For a shared document, supply its service and identity at startup:
 
 ```js
 const editor = await createDesign(container, {
-  collaboration: { endpoint: 'wss://design.example.com/collaboration', fileId: 'board-7' }
+  collaboration: {
+    endpoint: 'wss://design.example.com/collaboration',
+    fileId: 'board-7'
+  }
 })
 ```
 
@@ -156,3 +161,45 @@ To hide a panel, pass `panels: { layers: false }` or
 Workspace actions can use `setTool`, `drawRectangle`, `drawOval`, `select`,
 `getSelection`, `updateElement`, `group`, `ungroup`, `undo`, `redo` and
 `save`. The app owns validation and document history.
+
+### Disable editing features or hide the built-in UI
+
+```js
+import { createDesign } from '@asyra/design'
+
+const editor = await createDesign(container, {
+  disabledFeatures: ['pen', 'text'],
+  hideUI: true
+})
+```
+
+Omit both options for the complete default workspace. The custom element accepts
+the same object through its `options` property before connection. Each editor
+resolves its own runtime policy at mount. All instances use the same package
+and bundle. Disabled tools disappear from the controls, ignore their gestures
+and shortcuts, and reject explicit SDK requests. Existing document content
+still loads, renders and saves. A custom action receives the same guarded tools.
+
+The full workspace accepts these feature IDs:
+
+- Primary tools: `select`, `rectangle`, `oval`, `pen`, `text`. Pen includes
+  path editing. Text includes the inline editor and typography fields.
+- Commands: `undo`, `redo`, `group`, `ungroup`, `deleteSelectedElement`, `reset`.
+- Gestures: `hoverElement` (element hover feedback), `moveElements` (canvas drag), `moveLayerHierarchy` (Layers drag),
+  `pan`, `zoom` (wheel zoom), `zoomFit`.
+- Property edits: `geometry` (numeric position, dimensions and rotation),
+  `fills` (including gradient controls), `strokes`, `lock`, `visibility`, `rename`.
+- IDs of actions registered by the host or its extensions.
+
+A borrowed canvas supports `select`, `rectangle`, `undo`, `redo` and its
+registered action IDs. The editor reports a null tool when no tool is active.
+Selection produced by an enabled editing command, such as grouping, belongs
+to that command. General geometry and appearance controls can still operate
+on objects originally created by a disabled tool.
+
+`hideUI: true` hides the toolbar, panels, context menu and session notices.
+Active tools retain their canvas feedback and inline text input. Keyboard
+commands and the SDK continue to work. Hosts using collaboration should keep
+the built-in UI if they need its recovery buttons.
+
+See the [feature map](./FEATURES.md) for each editing entry, shortcut and document flow.

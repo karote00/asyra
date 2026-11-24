@@ -1,3 +1,4 @@
+import { featureEnabled } from '../../workspace-features'
 import { defineFeature } from '@asyra/core'
 import { historyApis } from '../../common-apis'
 import { FeatureNames, InputSystemEvents } from '../../constants'
@@ -15,6 +16,10 @@ export const undoRedoFeature = defineFeature(
       const direction = snapshot.detail?.historyDirection
 
       if (direction !== 'undo' && direction !== 'redo') {
+        return null
+      }
+
+      if (!featureEnabled(direction)) {
         return null
       }
 

@@ -1,3 +1,4 @@
+import { featureEnabled } from '../../workspace-features'
 import { TEXT_COMPONENT_TYPE } from '@asyra/preset'
 import Header from '../header'
 import TextProperties from '../text'
@@ -16,8 +17,8 @@ const ElementAppearance = ({ elementId }: { elementId: string }) => {
   return (
     <>
       <SectionDivider />
-      <Fills />
-      {element.type !== TEXT_COMPONENT_TYPE && (
+      {featureEnabled('fills') && <Fills />}
+      {featureEnabled('strokes') && element.type !== TEXT_COMPONENT_TYPE && (
         <>
           <SectionDivider />
           <Strokes />
@@ -44,17 +45,19 @@ const ElementPropertiesPanel = ({
     <div className="flex flex-col">
       {/* Design section: Position, Dimension, Rotation */}
       <Header label={title} />
-      <div className="grid grid-cols-1 w-full pb-2">
-        <Position />
-        {dimensionsUnavailable ? (
-          <p>Size editing is unavailable for this selection.</p>
-        ) : (
-          <Dimension />
-        )}
-        <Rotation />
-      </div>
+      {featureEnabled('geometry') && (
+        <div className="grid grid-cols-1 w-full pb-2">
+          <Position />
+          {dimensionsUnavailable ? (
+            <p>Size editing is unavailable for this selection.</p>
+          ) : (
+            <Dimension />
+          )}
+          <Rotation />
+        </div>
+      )}
 
-      <TextProperties />
+      {featureEnabled('text') && <TextProperties />}
       <ElementAppearance
         elementId={elementSelection.size === 1 ? [...elementSelection][0] : ''}
       />

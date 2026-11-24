@@ -11,7 +11,7 @@ export type DesignTool = 'rectangle' | 'select'
 export type WorkspaceTool = DesignTool | 'oval' | 'pen' | 'text'
 
 export interface DesignTools<Tool extends string = DesignTool> {
-  getTool(): Tool
+  getTool(): Tool | null
   setTool(tool: Tool): void
   drawRectangle(rectangle: Rectangle): string
   getSelection(): readonly string[]
@@ -21,7 +21,10 @@ export interface DesignTools<Tool extends string = DesignTool> {
 }
 export function attachDesignTools(
   canvas: CanvasBinding,
-  options?: { document?: unknown }
+  options?: {
+    document?: unknown
+    disabledFeatures?: readonly (DesignTool | 'undo' | 'redo')[]
+  }
 ): Promise<DesignTools>
 
 export interface WorkspaceTools extends DesignTools<WorkspaceTool> {
@@ -53,10 +56,37 @@ export interface DesignOptions<
   Id extends string = never,
   Tool extends string = WorkspaceTool
 > {
+  hideUI?: boolean
+  disabledFeatures?: readonly (
+    | Command<Tool>
+    | NoInfer<Id>
+    | (WorkspaceTool extends Tool ? WorkspaceFeature : never)
+  )[]
   actions?: Partial<Record<Id, DesignAction<Tool>>>
   document?: unknown
   toolbar?: false | readonly (Command<Tool> | NoInfer<Id>)[]
 }
+
+export type WorkspaceFeature =
+  | WorkspaceTool
+  | 'undo'
+  | 'redo'
+  | 'group'
+  | 'ungroup'
+  | 'hoverElement'
+  | 'moveElements'
+  | 'moveLayerHierarchy'
+  | 'deleteSelectedElement'
+  | 'pan'
+  | 'zoom'
+  | 'zoomFit'
+  | 'geometry'
+  | 'fills'
+  | 'strokes'
+  | 'lock'
+  | 'visibility'
+  | 'rename'
+  | 'reset'
 
 export interface WorkspaceExtension<Id extends string = string> {
   actions: Partial<Record<Id, DesignAction>>
