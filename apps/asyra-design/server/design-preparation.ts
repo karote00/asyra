@@ -1,3 +1,4 @@
+import { DesignCurveError, unpairedControls } from './design-curve-repair'
 import { DesignInputError } from './design-input-error'
 import { inspectDesignBudget } from './design-budget'
 import { createDesignCheckResults } from './design-check-results'
@@ -272,22 +273,17 @@ const admitDraft = (input: unknown): DraftNode => {
           }
         }
 
-        ring.forEach((anchor, index) => {
-          const next = ring[(index + 1) % ring.length]
-
-          if (
-            (anchor.outControl !== undefined) !==
-            (next.inControl !== undefined)
-          ) {
-            pairIssues.push(
-              `rings[${ringIndex}] edge ${index} -> ${(index + 1) % ring.length}: unpaired cubic controls; pair outControl with the next inControl, or omit both for a straight edge`
-            )
-          }
-        })
+        for (const { start, end } of unpairedControls(ring)) {
+          pairIssues.push(
+            `rings[${ringIndex}] edge ${start} -> ${end}: unpaired cubic controls; pair outControl with the next inControl, or omit both for a straight edge`
+          )
+        }
       }
 
       if (pairIssues.length) {
-        fail(`node ${key}: ${pairIssues.join('; ')}`)
+        throw new DesignCurveError(
+          `Invalid design: node ${key}: ${pairIssues.join('; ')}`
+        )
       }
     }
 

@@ -178,7 +178,8 @@ export const createDesignDraftRepairStore = (
         }
 
         paths.add(replacement.path)
-        const parts = replacement.path
+        const pointer = replacement.path
+        const parts = pointer
           .slice(1)
           .split('/')
           .map((part) => part.replace(/~1/g, '/').replace(/~0/g, '~'))
@@ -191,15 +192,31 @@ export const createDesignDraftRepairStore = (
 
         let parent = result
 
-        for (const part of parts.slice(0, -1)) {
+        const unresolved = (index: number) => {
+          const prefix =
+            pointer
+              .split('/')
+              .slice(0, index + 1)
+              .join('/') || '/'
+          const owner =
+            record(parent) &&
+            typeof parent.type === 'string' &&
+            typeof parent.key === 'string'
+              ? ` (${parent.type} ${parent.key})`
+              : ''
+
+          return new DesignInputError(
+            `Repair path does not exist: ${replacement.path}. Resolved ${prefix}${owner}; unresolved segment ${parts[index]}.`
+          )
+        }
+
+        for (const [index, part] of parts.slice(0, -1).entries()) {
           if (
             !parent ||
             typeof parent !== 'object' ||
             !Object.hasOwn(parent, part)
           ) {
-            throw new DesignInputError(
-              `Repair path does not exist: ${replacement.path}`
-            )
+            throw unresolved(index)
           }
 
           parent = parent[part]
@@ -223,9 +240,7 @@ export const createDesignDraftRepairStore = (
           isMissingFieldDisallowed ||
           hasInvalidArrayIndex
         ) {
-          throw new DesignInputError(
-            `Repair path does not exist: ${replacement.path}`
-          )
+          throw unresolved(parts.length - 1)
         }
 
         if (!Object.hasOwn(parent, key)) {

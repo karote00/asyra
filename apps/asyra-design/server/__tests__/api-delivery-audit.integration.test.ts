@@ -665,10 +665,10 @@ const canonicalWorkflowScope = (input: unknown, scope: unknown): unknown => {
     : []
 
   for (const name of ['retain', 'delivery']) {
-    expect(Object.hasOwn(properties, name)).toBe(true)
-    if (!selected.includes(name)) {
-      properties[name] = false
-    }
+    expect(
+      Object.hasOwn(properties, name),
+      'Host-only control in operation arguments'
+    ).toBe(false)
   }
 
   const draft = definitions.readyDraft
@@ -762,6 +762,7 @@ it.each([
   'equivalent-union',
   'weaken-message',
   'open-draft',
+  'expose-host-control',
   'remove-operation'
 ])(
   'checks canonical scope preservation through discovery - %s',
@@ -804,6 +805,8 @@ it.each([
         selected.properties.message.maxLength = 2000
       } else if (fault === 'open-draft') {
         selected.$defs.readyDraft.additionalProperties = true
+      } else if (fault === 'expose-host-control') {
+        selected.properties.delivery = { const: 'status' }
       } else if (fault === 'remove-operation') {
         delete selected.oneOf
       } else if (fault === 'equivalent-reference') {
@@ -869,7 +872,12 @@ it.each([
         )
 
       if (
-        ['weaken-message', 'open-draft', 'remove-operation'].includes(fault)
+        [
+          'weaken-message',
+          'open-draft',
+          'expose-host-control',
+          'remove-operation'
+        ].includes(fault)
       ) {
         expect(audit).toThrow(
           /Selected contract must preserve canonical scope constraints/
@@ -1540,13 +1548,7 @@ it.each(native)(
         { operation, optionalInputs: undefined },
         {
           operation,
-          optionalInputs: [
-            'retain',
-            'delivery',
-            'layout',
-            'relations',
-            'sharedFills'
-          ]
+          optionalInputs: ['layout', 'relations', 'sharedFills']
         }
       ])
 

@@ -1,3 +1,7 @@
+import {
+  DesignCurveError,
+  authoredCurveCorrections
+} from './design-curve-repair'
 import { DesignInputError } from './design-input-error'
 import { AiToolFailureCodes } from '../src/constants/ai-design'
 import { isReservedDraftRepairKey } from './design-draft-repair'
@@ -557,6 +561,31 @@ export const createLocalDesignTools = (
   }
 
   return {
+    recoverOperationInput(name: string, input: unknown) {
+      if (
+        !enabled ||
+        name !== AiDesignToolIds.PREPARE_DESIGN ||
+        !record(input) ||
+        !record(input.draft) ||
+        'parts' in input ||
+        'repair' in input
+      ) {
+        return
+      }
+
+      const retained = retainDraft(input.draft)
+
+      if (retained.nextStep !== undefined) {
+        return { message: retained.nextStep }
+      }
+
+      return {
+        correction: { draftId: retained.draftId },
+        message:
+          'Keep the operation and its valid options. Replace draft with repair using this draftId and draft-relative replacements. For a forbidden field replace its parent object without that field. Correct Host options on the executor.'
+      }
+    },
+
     canOverlapPreparation(name: string, input: unknown) {
       return (
         name === AiDesignToolIds.PREPARE_DESIGN &&
@@ -1296,6 +1325,10 @@ export const createLocalDesignTools = (
           error instanceof DesignKeyConflictError ||
           error instanceof AiToolInputError
         const retained = draft === undefined ? undefined : retainDraft(draft)
+        const curves =
+          retained?.draftId && error instanceof DesignCurveError
+            ? authoredCurveCorrections(draft)
+            : []
 
         return JSON.stringify({
           available: false,
@@ -1304,6 +1337,18 @@ export const createLocalDesignTools = (
             ? AiToolFailureCodes.INPUT_INVALID
             : AiToolFailureCodes.EXECUTION_FAILED,
           ...retained,
+          ...(curves.length
+            ? {
+                repairGuide: {
+                  tool: AiDesignToolIds.PREPARE_DESIGN,
+                  arguments: {
+                    repair: { draftId: retained?.draftId, replacements: curves }
+                  },
+                  instructions:
+                    'Supply each missing control point to keep a cubic edge. For a straight edge replace the opposite anchor without its control. Revalidate the retained source before applying.'
+                }
+              }
+            : {}),
           ...(error instanceof DesignGeometryError
             ? {
                 geometryIssue: error.issue,

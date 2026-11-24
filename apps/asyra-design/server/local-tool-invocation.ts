@@ -148,6 +148,16 @@ export interface LocalToolOwner {
         | 'recoveryOutputSchema'
       >
     | undefined
+  /** Preserve a concrete rejected operation for correction without granting execution authority. */
+  recoverOperationInput?(
+    name: string,
+    input: unknown
+  ):
+    | {
+        correction?: Record<string, unknown>
+        message: string
+      }
+    | undefined
   /** Bounded diagnostics only; called after rejection, never executes a tool. */
   rejectInput?(
     name: string,

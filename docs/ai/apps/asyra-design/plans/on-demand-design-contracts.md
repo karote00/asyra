@@ -4,6 +4,29 @@
 
 On the reviewed adapter source f1441f5a9, a fresh selected rectangle generated 42,860 request bytes and four model exchanges. The recorded purpose query was `set solid fill color elementIds`. The chosen action was the sixth candidate. Preserve choice among candidates and direct execution of an already-known operation. The current scope includes Design publication, the Responses discovery protocol, its continuation and offline regressions. Model inference, billing, cache policy and editing behavior are outside this revision.
 
+## Recover an authored draft through the published operation
+
+1. Project the registered route's ordinary input before lookup, scope selection and exact reads. Host-owned retention and delivery stay on the executor. Direct tool contracts keep their own semantics.
+2. On pre-dispatch rejection of concrete operation input, hand the rejected draft back to its registered owner for request-local recovery. Preserve the operation identity and actionable diagnostics. Do not apply valid siblings, drop unsupported attributes or replay completed work. A skipped rotation can change the intended composition.
+3. For unpaired cubic controls, identify repairable authored positions on the retained revision, including independent contours and template sources. The agent chooses control values or straight edges. Validate the complete corrected source before applying.
+4. For an invalid pointer, identify the first unresolved segment and the actual resolved parent. Never redirect the edit. Keep the draft available.
+
+Replay recorded requests 11 through 15 through offline Responses and the production Host. Separate the two original source designs. Count full draft resubmissions after rejection, local correction exchanges and actual applications. Include reordered/nested geometry and invalid-path retries. Model choice and billing are outside acceptance.
+
+### Offline acceptance for draft recovery
+
+The recorded provider issued two full drafts, followed by three local submissions for the second draft's two curves. The scripted Responses replay kept the two independently authored sources separate. For the first draft, the unchanged Host rejection returned a source handle and field issues. Replacing the rejected text node reached geometric validation with zero canvas writes and zero full resubmissions. For the second draft, the first rejection identified both missing controls in source space. The values from recorded request 13 applied in one local exchange, with zero full resubmissions and one acknowledged application of 1,335 elements. Intentionally replaying the two invalid corrections preserved the same source for the final successful correction.
+
+A separate valid label exercised explicit Host delivery through the compact entry's workflow envelope. With unsupported rotation, the label made zero writes until the agent submitted the corrected node. Reordered nested vectors and a repeated vector template were repaired at their original paths. These are offline scripted exchanges with production discovery, preparation and Host execution and a simulated canvas acknowledgment. They establish the available recovery path, not a prediction about model behavior.
+
+## Creation identity delivery
+
+Replay the actual Dome creation receipt (1,400 element IDs) without model access. On successful preparation and application, save the ordered source-key maps under a unique name in the originating App conversation. Preserve the full Host result for downstream bindings and explicit delivery. Present the count, acknowledged roots and confirmed name as the default creation value. Preserve requested pixels, execution status and failure evidence; a missing storage acknowledgment must never hide the mapping or repeat a canvas write.
+
+At the Responses boundary compare UTF-8 receipt bytes, verify the stored map against the original, read one key on demand, bind one saved key into another operation and bind an earlier step's key in one submission. Verify a missing key prevents dependent dispatch. Drawing quality, live inference and billing are outside this offline change.
+
+The real ready geometry was reconstructed from the original draft and its two recorded repairs. Production preparation emitted the same 1,399 child keys in the same order. The offline browser acknowledgment supplied the original 1,400 IDs; transport returned the independently tested inspection pixels. The recorded creation value shrank from 96,430 to 163 UTF-8 bytes. Including the original execution envelope, the creation text shrank from 96,828 to 561 bytes. The separate 73-byte outcome remained. Known child use took one Host submission; explicit inspection of a stored ID took one resource read. Saving used an App exchange with no additional model request. A later missing-key failure retains the creation handle, storage name and failure evidence without repeating the acknowledged mapping.
+
 ## Execution routes and optional recipe authoring
 
 Search owns the route accompanying each returned candidate. A partial match preserves its unmatched terms and does not confer support for them. The same registered route drives direct execution and exact reads. Ordinary exact reads omit recipe authoring dependencies; request these from the same reader when composing a saved recipe. Preserve batched input and output reads, direct known execution, scope selection and recovery. Keep knowledge separate.

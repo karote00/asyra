@@ -42,6 +42,27 @@ it('selects declared alternative fields only with execution-time presence checks
   )
 })
 
+it('binds typed dictionary members only with execution-time presence checks', () => {
+  const map = {
+    type: 'object',
+    additionalProperties: { type: 'string', 'x-runtime-value': 'document' }
+  }
+
+  expect(registeredRecipeOutputAt(map, '/a~1b', true)).toMatchObject({
+    type: 'string',
+    'x-runtime-value': 'document'
+  })
+  expect(() => registeredRecipeOutputAt(map, '/a~1b')).toThrow()
+  for (const schema of [
+    { ...map, additionalProperties: true },
+    { ...map, additionalProperties: {} },
+    { ...map, additionalProperties: false },
+    { ...map, propertyNames: { enum: ['roof'] } }
+  ]) {
+    expect(() => registeredRecipeOutputAt(schema, '/unknown', true)).toThrow()
+  }
+})
+
 it('preserves intersection constraints and request lifetimes during conditional field selection', () => {
   const schema = {
     anyOf: [

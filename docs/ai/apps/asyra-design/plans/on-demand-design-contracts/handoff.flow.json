@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "projectId": "asyra",
   "flowId": "on-demand-design-contracts",
-  "revision": 24,
+  "revision": 31,
   "definition": {
     "title": "On-demand Design contracts",
     "purpose": "Publish five owner-scoped entries with independent tool and knowledge lookup, direct saved-field delivery, and one submission for decided dependencies.",
@@ -40,7 +40,7 @@
       {
         "id": "discovery",
         "title": "Design operation discovery",
-        "objective": "Design registry lookup excludes knowledge. Unique exact methods select one owner. Every clearly matched executable owner delivers complete ordinary arguments independently of discovery metadata, schema size and workflow scopes; alternatives summarize purpose and remain individually readable. Resource reads accept named fields and deliver saved media through the App conversation context. Execution accepts work and binds prior results. Expose scoped historical turns and full host constraints on demand. Validate every execution at the canonical Host. Publish executable scoped reads and guaranteed delivery fields from the selected owner. The request Host retains only a delivery selection rejected before dispatch and consumes its correction once under full admission. Every candidate carries its owner execution route. Recipe dependency metadata is computed and delivered only when requested on an exact read.",
+        "objective": "Design registry lookup excludes knowledge. Unique exact methods select one owner. Every clearly matched executable owner delivers complete ordinary arguments independently of discovery metadata, schema size and workflow scopes; alternatives summarize purpose and remain individually readable. Resource reads accept named fields and deliver saved media through the App conversation context. Execution accepts work and binds prior results. Expose scoped historical turns and full host constraints on demand. Validate every execution at the canonical Host. Publish executable scoped reads and guaranteed delivery fields from the selected owner. The request Host retains only a delivery selection rejected before dispatch and consumes its correction once under full admission. Every candidate carries its owner execution route. Recipe dependency metadata is computed and delivered only when requested on an exact read. Validated creation keeps full identity mappings for step bindings and App storage. Default model delivery summarizes the final creation only after storage acknowledgment and preserves media. Project route-specific ordinary arguments. Failed literal preparation before dispatch retains source for owner-validated local repairs. Source-addressed curve findings and first unresolved pointer segments keep invalid input atomic.",
         "owner": "Design operation discovery",
         "required": true,
         "applicable": true,
@@ -53,7 +53,7 @@
         "criteria": [
           {
             "id": "handoff",
-            "title": "Design registry lookup excludes knowledge. Unique exact methods select one owner. Every clearly matched executable owner delivers complete ordinary arguments independently of discovery metadata, schema size and workflow scopes; alternatives summarize purpose and remain individually readable. Resource reads accept named fields and deliver saved media through the App conversation context. Execution accepts work and binds prior results. Expose scoped historical turns and full host constraints on demand. Validate every execution at the canonical Host. Publish executable scoped reads and guaranteed delivery fields from the selected owner. The request Host retains only a delivery selection rejected before dispatch and consumes its correction once under full admission. Every candidate carries its owner execution route. Recipe dependency metadata is computed and delivered only when requested on an exact read.",
+            "title": "Design registry lookup excludes knowledge. Unique exact methods select one owner. Every clearly matched executable owner delivers complete ordinary arguments independently of discovery metadata, schema size and workflow scopes; alternatives summarize purpose and remain individually readable. Resource reads accept named fields and deliver saved media through the App conversation context. Execution accepts work and binds prior results. Expose scoped historical turns and full host constraints on demand. Validate every execution at the canonical Host. Publish executable scoped reads and guaranteed delivery fields from the selected owner. The request Host retains only a delivery selection rejected before dispatch and consumes its correction once under full admission. Every candidate carries its owner execution route. Recipe dependency metadata is computed and delivered only when requested on an exact read. Validated creation keeps full identity mappings for step bindings and App storage. Default model delivery summarizes the final creation only after storage acknowledgment and preserves media. Project route-specific ordinary arguments. Failed literal preparation before dispatch retains source for owner-validated local repairs. Source-addressed curve findings and first unresolved pointer segments keep invalid input atomic.",
             "kind": "manual"
           }
         ],
@@ -69,14 +69,25 @@
           "apps/asyra-design/server/local-design-resources.ts",
           "apps/asyra-design/server/catalog-spelling.ts",
           "apps/asyra-design/server/local-tool-host.ts",
-          "apps/asyra-design/server/local-design-sequence.ts"
+          "apps/asyra-design/server/local-design-sequence.ts",
+          "apps/asyra-design/server/local-design-workflow.ts",
+          "apps/asyra-design/server/created-target-delivery.ts",
+          "apps/asyra-design/server/design-provider-tools.ts",
+          "packages/ai-agent-runtime/src/recipe-schema.ts",
+          "apps/asyra-design/server/local-operation-batch.ts",
+          "apps/asyra-design/server/design-construction.ts",
+          "apps/asyra-design/server/design-preparation.ts",
+          "apps/asyra-design/server/local-design-tools.ts",
+          "apps/asyra-design/server/design-draft-repair.ts",
+          "apps/asyra-design/server/design-curve-repair.ts",
+          "apps/asyra-design/server/local-tool-invocation.ts"
         ],
         "actions": []
       },
       {
         "id": "proof",
         "title": "Design provider integration",
-        "objective": "Independent registry enumeration checks every searchable action and registered tool against its actual input owner. Offline Responses capture checks the three recorded search menus, validates their ordinary arguments and applies both edits through Host and Core. Known operations still reuse one execute definition. Measure UTF-8 result bytes and exchanges. Exercise conditional web research, scoped history and compact cold requests through real provider preparation and scripted transport. Classify recorded submissions from their outer arguments and verify rectangle edits and a Dome delivery correction against actual provider receipts and Core mutations. Replay the partial Dome import query through published Responses and compare ordinary and recipe-authoring reads while preserving known edits and dependent ordering.",
+        "objective": "Independent registry enumeration checks every searchable action and registered tool against its actual input owner. Offline Responses capture checks the three recorded search menus, validates their ordinary arguments and applies both edits through Host and Core. Known operations still reuse one execute definition. Measure UTF-8 result bytes and exchanges. Exercise conditional web research, scoped history and compact cold requests through real provider preparation and scripted transport. Classify recorded submissions from their outer arguments and verify rectangle edits and a Dome delivery correction against actual provider receipts and Core mutations. Replay the partial Dome import query through published Responses and compare ordinary and recipe-authoring reads while preserving known edits and dependent ordering. Replay the 1,400 original Dome identities through Responses, including default delivery, selected media, named read and reuse, dependent execution and failed storage. Replay recorded requests 11–15 through provider search and Host. Count full resubmissions and local corrections, verify both contours, failed writes and retained source reuse.",
         "owner": "Design provider integration",
         "required": true,
         "applicable": true,
@@ -89,7 +100,7 @@
         "criteria": [
           {
             "id": "handoff",
-            "title": "Independent registry enumeration checks every searchable action and registered tool against its actual input owner. Offline Responses capture checks the three recorded search menus, validates their ordinary arguments and applies both edits through Host and Core. Known operations still reuse one execute definition. Measure UTF-8 result bytes and exchanges. Exercise conditional web research, scoped history and compact cold requests through real provider preparation and scripted transport. Classify recorded submissions from their outer arguments and verify rectangle edits and a Dome delivery correction against actual provider receipts and Core mutations. Replay the partial Dome import query through published Responses and compare ordinary and recipe-authoring reads while preserving known edits and dependent ordering.",
+            "title": "Independent registry enumeration checks every searchable action and registered tool against its actual input owner. Offline Responses capture checks the three recorded search menus, validates their ordinary arguments and applies both edits through Host and Core. Known operations still reuse one execute definition. Measure UTF-8 result bytes and exchanges. Exercise conditional web research, scoped history and compact cold requests through real provider preparation and scripted transport. Classify recorded submissions from their outer arguments and verify rectangle edits and a Dome delivery correction against actual provider receipts and Core mutations. Replay the partial Dome import query through published Responses and compare ordinary and recipe-authoring reads while preserving known edits and dependent ordering. Replay the 1,400 original Dome identities through Responses, including default delivery, selected media, named read and reuse, dependent execution and failed storage. Replay recorded requests 11–15 through provider search and Host. Count full resubmissions and local corrections, verify both contours, failed writes and retained source reuse.",
             "kind": "manual"
           }
         ],
@@ -104,7 +115,10 @@
           "apps/asyra-design/server/__tests__/conversation-production-handoff.integration.test.ts",
           "apps/asyra-design/server/__tests__/design-provider-tools.test.ts",
           "packages/ai-agent-runtime/src/node/__tests__/responses-provider.test.ts",
-          "apps/asyra-design/test-data/ai-drawing/recorded-submissions.mjs"
+          "apps/asyra-design/test-data/ai-drawing/recorded-submissions.mjs",
+          "packages/ai-agent-runtime/src/__tests__/recipe-admission.test.ts",
+          "apps/asyra-design/server/__tests__/design-draft-repair.test.ts",
+          "apps/asyra-design/server/__tests__/fixtures/retained-curve-submissions.json"
         ],
         "actions": []
       }
@@ -124,24 +138,24 @@
         "at": "2026-11-23T08:52:24.111Z"
       },
       {
-        "kind": "manual",
-        "status": "accepted",
         "nodeId": "discovery",
         "criterionId": "handoff",
-        "binding": "a48ceebc9b82461749a4abdee28625551090cdf5271f025d54266e50f8ff3eea",
-        "actor": "Codex",
-        "summary": "Recorded Dome candidates returned the actual Host route before the import. Ordinary reads of three actions measured 5,335 bytes; authoring returned the same inputs plus canonical wrappers.",
-        "at": "2026-11-23T17:59:45.444Z"
-      },
-      {
         "kind": "manual",
         "status": "accepted",
+        "binding": "ad288419478f3c3e13310ef2e995247df32e6d91c1ec9e2346ef933d7bbc2fd3",
+        "actor": "Codex",
+        "summary": "Search and exact reads publish the admitted operation input. Request-local recovery preserves schema rejection, returns actionable retained-source pointers, and records unresolved pointer segments. Atomic text rotation rejection and explicit workflow delivery passed.",
+        "at": "2026-11-24T04:23:26.793Z"
+      },
+      {
         "nodeId": "proof",
         "criterionId": "handoff",
-        "binding": "0052589469f20bd19ae4e4b5cc489c6df823ab05dd2aecbda95996c81f3a60c6",
+        "kind": "manual",
+        "status": "accepted",
+        "binding": "d6d051a40b2089d11169db570e2ddeb843a91eb2261a127cd62e6a2a4b6ef947",
         "actor": "Codex",
-        "summary": "Offline Responses imported the reference immediately after the partial search and returned original identity and pixels. Core applied both square edits. Dependent window creation and ordering remained in one invocation.",
-        "at": "2026-11-23T17:59:45.447Z"
+        "summary": "Recorded Responses replay used zero full resubmissions. Two source-addressed curve corrections in one operation produced one acknowledged application of 1,335 elements. Recorded wrong pointers made zero writes. Nested and reordered template cases, Host scopes, and independent contract audit mutations passed.",
+        "at": "2026-11-24T04:23:26.797Z"
       }
     ],
     "notes": [],

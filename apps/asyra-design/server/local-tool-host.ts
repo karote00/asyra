@@ -1,3 +1,7 @@
+import {
+  defaultCreationProjection,
+  type ProjectCreationText
+} from './created-target-delivery'
 import { withConversationResourceReads } from './local-design-resources'
 import {
   AiToolFailureCodes,
@@ -11,7 +15,10 @@ import {
   createDesignResultDelivery,
   resolveConversationInputs
 } from './local-result-delivery'
-import { runtimeOperationSchema } from './local-operation-batch'
+import {
+  ordinaryOperationInput,
+  runtimeOperationSchema
+} from './local-operation-batch'
 import { randomUUID } from 'node:crypto'
 import { AsyncLocalStorage } from 'node:async_hooks'
 import {
@@ -74,6 +81,7 @@ import {
 } from './local-tool-invocation'
 import {
   operationContractIssue,
+  operationInputIssues,
   operationInputIssue
 } from '@asyra/ai-agent-runtime/schema'
 import type { AiToolOwnership } from '@asyra/ai-agent-runtime/schema'
@@ -104,8 +112,19 @@ export interface LocalToolGroup {
   }
 }
 type Reply = Awaited<ReturnType<typeof invokeLocalTool>> & {
+  projectCreationText?: ProjectCreationText
   media?: AiToolImage[]
   executionContract?: AiToolContract
+}
+
+/** Acquire request-local repair handles only when returning the actual rejection. */
+class OperationAdmissionError extends AiToolInputError {
+  constructor(
+    message: string,
+    readonly recovery: () => unknown[]
+  ) {
+    super(message)
+  }
 }
 
 /** One request host: registered metadata, guarded leaves and actual store ownership. */
@@ -525,7 +544,8 @@ export const createLocalToolHost = (options: {
   // the same canonical admission-failure alternative.
   const invocationContract = <T extends LocalToolDefinition>(
     name: string,
-    contract: T
+    contract: T,
+    forOperationLookup = false
   ) => {
     const binding = bindings.get(name)
 
@@ -535,7 +555,11 @@ export const createLocalToolHost = (options: {
 
     return {
       ...contract,
-      inputSchema: runtimeOperationSchema(binding.definition.inputSchema),
+      inputSchema: runtimeOperationSchema(
+        forOperationLookup
+          ? ordinaryOperationInput(binding.definition.inputSchema)
+          : binding.definition.inputSchema
+      ),
       ...Object.fromEntries(
         ['outputSchema', 'partialOutputSchema', 'recoveryOutputSchema'].map(
           (key) => [
@@ -675,7 +699,61 @@ export const createLocalToolHost = (options: {
     const admitted = library.admitInline(prepared.proposal, 'sequence')
 
     if (!admitted.ok) {
-      throw admissionError(admitted)
+      const error = admissionError(admitted)
+
+      if (!(error instanceof AiToolInputError)) {
+        throw error
+      }
+
+      throw new OperationAdmissionError(error.message, () => {
+        const issues = []
+        const indices = new Set(
+          admitted.issues.flatMap((issue) => {
+            const match = /^\/steps\/(\d+)\/input(?:\/|$)/.exec(issue.path)
+
+            return match ? [Number(match[1])] : []
+          })
+        )
+
+        for (const index of indices) {
+          const step = prepared.proposal.steps[index]
+          const leaf = bindings.get(step.tool)
+
+          if (
+            step.input.kind !== 'literal' ||
+            !leaf?.owner.recoverOperationInput ||
+            step.revision !== leaf.definition.revision
+          ) {
+            continue
+          }
+
+          const schema = runtimeOperationSchema(
+            leaf.definition.inputSchema,
+            true
+          )
+          const invalid = operationInputIssues(step.input.value, schema)
+
+          if (!invalid) {
+            continue
+          }
+
+          const recovery = leaf.owner.recoverOperationInput(
+            leaf.definition.name,
+            step.input.value
+          )
+
+          if (recovery) {
+            issues.push({
+              step: step.id,
+              operation: step.tool,
+              issues: invalid,
+              ...recovery
+            })
+          }
+        }
+
+        return issues
+      })
     }
 
     const recipe = admitted.value.recipe
@@ -1545,12 +1623,26 @@ export const createLocalToolHost = (options: {
           }
         }
 
+        let inputIssues: unknown[] | undefined
+
+        if (error instanceof OperationAdmissionError) {
+          try {
+            inputIssues = error.recovery()
+          } catch {
+            // Optional recovery cannot turn a known pre-dispatch rejection into an unknown settlement.
+          }
+        }
+
         return localToolFailureReply(
           localToolErrorMessage(error),
           error instanceof AiToolInputError
             ? error.code
             : 'TOOL_CONTRACT_INVALID',
-          { stage: 'admission', settlement: 'not-started' }
+          {
+            stage: 'admission',
+            settlement: 'not-started',
+            ...(inputIssues?.length ? { inputIssues } : {})
+          }
         )
       }
 
@@ -2149,8 +2241,21 @@ export const createLocalToolHost = (options: {
             reply.executionContract
           )
 
+          const projectCreationText =
+            call.input &&
+            typeof call.input === 'object' &&
+            !('delivery' in call.input)
+              ? defaultCreationProjection(
+                  call.name,
+                  delivered.value,
+                  delivered.outcome.status === 'success',
+                  () => sequenceFinalStep(call.input)
+                )
+              : undefined
+
           return {
             ...reply,
+            ...(projectCreationText ? { projectCreationText } : {}),
             success: delivered.outcome.status === 'success',
             outcome: delivered.outcome,
             text: JSON.stringify(delivered.value)
@@ -2178,7 +2283,12 @@ export const createLocalToolHost = (options: {
 
           if (binding) {
             return {
-              ...invocationContract(definition.name, definition),
+              ...invocationContract(
+                definition.name,
+                definition,
+                binding.definition.providerExposure !== 'registry' &&
+                  ['allowed', 'request'].includes(definition.composition ?? '')
+              ),
               resultPaths: binding.definition.resultPaths,
               name: binding.definition.name,
               registeredName: definition.name,

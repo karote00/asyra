@@ -2481,7 +2481,7 @@ it('replays the recorded smooth ornament delivery and subsequent artifact data q
   }
 })
 
-it('publishes direct host retention fields in the recorded scoped discovery request', async () => {
+it('separates Host controls from the recorded scoped operation read', async () => {
   const f = await fixture(
     false,
     recorded.create.parentId,
@@ -2492,7 +2492,7 @@ it('publishes direct host retention fields in the recorded scoped discovery requ
   )
 
   try {
-    for (const optionalInputs of [['retain'], []]) {
+    for (const optionalInputs of [['retain'], ['delivery'], ['layout']]) {
       const replyReply = await f.host.invoke({
         name: 'design_operations.read_design_resources',
         input: {
@@ -2514,10 +2514,18 @@ it('publishes direct host retention fields in the recorded scoped discovery requ
       })
       const reply = JSON.parse(replyReply.text)
 
-      expect(replyReply.outcome.status, JSON.stringify(reply)).toBe('success')
-      expect(JSON.stringify(reply)).not.toContain(
-        'Only optional canonical root inputs'
-      )
+      if (optionalInputs[0] === 'layout') {
+        expect(replyReply.outcome.status, JSON.stringify(reply)).toBe('success')
+      } else {
+        expect(replyReply.outcome.status).toBe('failed')
+        expect(reply).toMatchObject({
+          code: 'TOOL_INPUT_INVALID',
+          settlement: 'not-started'
+        })
+        expect(reply.message).toContain(
+          'Unsupported inputScope: optionalInputs'
+        )
+      }
     }
 
     expect(f.calls).toEqual([])
@@ -3033,8 +3041,7 @@ it.each([false, true])(
             {
               inputScope: {
                 operation: 'draft',
-                nodeTypes: ['rect'],
-                optionalInputs: ['retain']
+                nodeTypes: ['rect']
               }
             }
           ])

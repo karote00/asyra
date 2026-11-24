@@ -1598,12 +1598,14 @@ is admitted only for the current host sequence, never a reusable saved recipe.
 Reference import, explicit reference selection and drawing capture preserve their
 existing owner validation and result/media contracts through this route.
 
-Creation workflows accept includeTargets:true to select createdTargets, an ordered
-array of acknowledged {compositionId,keyToId} records. Omission returns an empty
-array without constructing/copying an additional mapping. Retain /createdTargets
-with status delivery to preserve targets without model transfer; consume a known
-key using a named JSON Pointer such as /0/keyToId/panel. This is historical
-creation identity, not current geometry or live group membership.
+Creation workflows return acknowledged `createdTargets` to the Host as an ordered
+array of {compositionId,keyToId} records. The App conversation saves that array.
+The default provider value contains createdElementCount, compositionIds and
+createdTargetsName. Bind /createdTargets/0/keyToId/panel in the same submission
+or bind /0/keyToId/panel under the saved name in a later submission. To inspect
+an ID, use read_design_resources.savedFields. Explicit delivery may select the
+whole array. If saving cannot be acknowledged, keep the full receipt available.
+These IDs identify created elements; subsequent operations validate current state.
 
 A named selector may consume a retain alias declared in the same submission.
 Authored-input aliases resolve the producer's declared ordinary input; result

@@ -4685,8 +4685,10 @@ or acquire a tool; qualified identity ambiguity is never resolved by relevance.
 
 Applied creation mapping is portable source-key to acknowledged document-ID
 output. createdTargets preserves acknowledged composition order and each keyToId
-map without an input selector. It can be retained in conversation context with
-status delivery, or selected for the model with delivery.fields. Both routes use
+map without an input selector. Successful application saves the array in the App
+conversation. Default provider delivery returns createdElementCount, compositionIds
+and createdTargetsName after acknowledgment; delivery.fields can explicitly select
+the array. Both routes use
 the same validated mapping; no re-preparation or additional query is required.
 Saved metadata describes bounded shape/navigation, not values; derive
 it once on save. Canonical consumers recheck existence and permissions. Neither

@@ -433,10 +433,46 @@ export const prepareOperationBatch = (
   return actions
 }
 
+/** The Host consumes marked envelope controls before calling an operation. */
+export function ordinaryOperationInput(schema: unknown) {
+  if (!record(schema) || !record(schema.properties)) {
+    return schema
+  }
+
+  const fields = Object.entries(schema.properties)
+  const ordinary = fields.filter(
+    ([, child]) => !(record(child) && child['x-host-delivery'] === true)
+  )
+
+  if (ordinary.length === fields.length) {
+    return schema
+  }
+
+  const properties = Object.fromEntries(ordinary)
+  const scope = schema['x-design-input-scope']
+
+  return {
+    ...schema,
+    properties,
+    ...(record(scope) && Array.isArray(scope.optionalInputs)
+      ? {
+          'x-design-input-scope': {
+            ...scope,
+            optionalInputs: scope.optionalInputs.filter((k) =>
+              Object.hasOwn(properties, k)
+            )
+          }
+        }
+      : {})
+  }
+}
+
 /** Remove only App binding and model-visibility annotations for Runtime recipe type proofs.
  * Binding expansion remains owned by the App; all JSON Schema constraints stay intact.
  */
 export const runtimeOperationSchema = <T>(schema: T, recipe = false): T => {
+  const root = recipe ? ordinaryOperationInput(schema) : schema
+
   const visit = (value: unknown): unknown => {
     if (!record(value)) {
       return value
@@ -444,7 +480,7 @@ export const runtimeOperationSchema = <T>(schema: T, recipe = false): T => {
 
     const result = { ...value }
 
-    if (recipe && value === schema) {
+    if (recipe && value === root) {
       delete result['x-design-input-scope']
     }
 
@@ -466,18 +502,10 @@ export const runtimeOperationSchema = <T>(schema: T, recipe = false): T => {
     ]) {
       if (record(result[key])) {
         result[key] = Object.fromEntries(
-          Object.entries(result[key])
-            .filter(
-              ([, child]) =>
-                !(
-                  recipe &&
-                  key === 'properties' &&
-                  value === schema &&
-                  record(child) &&
-                  child['x-host-delivery'] === true
-                )
-            )
-            .map(([name, child]) => [name, visit(child)])
+          Object.entries(result[key]).map(([name, child]) => [
+            name,
+            visit(child)
+          ])
         )
       }
     }
@@ -508,5 +536,5 @@ export const runtimeOperationSchema = <T>(schema: T, recipe = false): T => {
     return result
   }
 
-  return visit(schema) as T
+  return visit(root) as T
 }

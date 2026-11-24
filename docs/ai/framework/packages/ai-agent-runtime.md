@@ -707,7 +707,10 @@ registry, invocation, schema validation, scheduler and lease owners remain
 authoritative; no automatic persistence or lease extension is implied.
 
 Request-sequence input bindings can use declared optional output paths with
-execution-time presence checks before dependent dispatch. A nullable object may
+execution-time presence checks before dependent dispatch. This includes a named
+member of a dictionary with a typed additionalProperties value and unrestricted
+key names. The actual member must exist and meet the consumer contract.
+A nullable object may
 also supply a declared field: admission projects the non-null branches, while an
 actual null result fails the binding before dependent dispatch. Other union
 branches must still declare the selected field. Durable recipes still require guaranteed paths. Request-sequence delivery may

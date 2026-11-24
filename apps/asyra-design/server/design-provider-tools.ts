@@ -364,6 +364,12 @@ export const createDesignProviderTools = async (
     })
   )
 
+  const resultContext =
+    isRecord(input.metadata) &&
+    typeof input.metadata.conversationId === 'string'
+      ? options.resultContext
+      : undefined
+
   const buildGroups = (ownership?: AiToolOwnership) => {
     const imageTools = createLocalImageTools(
       input,
@@ -555,7 +561,8 @@ export const createDesignProviderTools = async (
 
             return batches?.length ? { batches } : undefined
           },
-          executeInCallContext
+          executeInCallContext,
+          resultContext
         )
       : undefined
     const toolGroups = [
@@ -630,11 +637,7 @@ export const createDesignProviderTools = async (
     host = createLocalToolHost({
       standaloneInvocations: responses,
       history: responses ? priorTurns : undefined,
-      resultContext:
-        isRecord(input.metadata) &&
-        typeof input.metadata.conversationId === 'string'
-          ? options.resultContext
-          : undefined,
+      resultContext,
       requestId: usage?.requestId ?? randomUUID(),
       signal: toolController.signal,
       store: storage,
@@ -826,7 +829,7 @@ export const createDesignProviderTools = async (
                     name: toolName,
                     description:
                       responses && sequence
-                        ? 'Run known operations together. Use workflow for advanced execution; read execute_design for its Host contract.'
+                        ? 'Run known operations together. For delivery or retain, put them beside operations inside workflow. Read execute_design for advanced execution.'
                         : (designProviderEntry(name, toolName)?.description ??
                           description),
                     inputSchema: {
@@ -1141,12 +1144,22 @@ export const createDesignProviderTools = async (
       })
 
       try {
-        const { media, ...result } = reply
+        const { media, projectCreationText, ...result } = reply
+
+        const content = await localToolContent(
+          reply.text,
+          media,
+          projectCreationText
+        )
+        const text = content[0]
 
         return {
           ...result,
+          ...(projectCreationText && text?.type === 'inputText'
+            ? { text: text.text }
+            : {}),
           contentItems: [
-            ...(await localToolContent(reply.text, media)),
+            ...content,
             {
               type: 'inputText' as const,
               text: JSON.stringify({ toolOutcome: reply.outcome })

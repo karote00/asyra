@@ -438,7 +438,10 @@ identities, additional findings and uncertain outcomes retain their owner contra
 `delivery` is the sole public result selector; named retention is independent of it.
 Canonical validation and state tracking consume the complete receipt before model
 projection. Prepared application returns complete acknowledged IDs and counts; workflow
-createdTargets exposes their source-key mappings. Neither public nor internal
+createdTargets exposes their source-key mappings to the Host. After successful
+App storage the default creation value for the model is the count, ordered roots
+and saved name. Named bindings, reads and explicit result fields use the original
+mapping. Neither public nor internal
 inputs accept response or includeTargets. The Host applies delivery after owner
 validation, independently of binding and named retention.
 It does not bypass action registration, permission, confirmation, cancellation,
@@ -515,6 +518,20 @@ the face key and vertices; repair/split the plane rather than search again. Thes
 failures do not imply an unsuitable reference. Preparation still never modifies the
 canvas, relaxes geometric tolerances, invents visual approval or discards valid artifacts.
 Existing per-draft shared projection and request-owned artifacts remain the reuse owners.
+
+On a concrete failed preparation step the executor may return the owner's
+request-local draft ID before dispatch. Use draft-relative replacements and
+correct any Host options separately. An unsupported authored transform rejects
+the submitted operation without applying a different composition. A valid
+retained draft with an envelope-only correction can use empty replacements.
+Independent ready parts retain their original partial-settlement semantics.
+
+An unpaired cubic edge reports the missing control location in the retained
+source, including nested vectors and shared vector placement templates.
+Repair all identified controls in one submission, or replace their opposite
+anchors to make the edges straight. Revalidation covers the entire source.
+An unresolved repair pointer identifies its first unavailable segment and
+resolved parent. The rejected correction leaves the original draft reusable.
 
 ### Type-directed repair and construction choice
 

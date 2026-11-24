@@ -652,12 +652,13 @@ When design application is registered, prepare_and_apply_design combines semanti
 preparation and application in one tool call. Invalid preparation never dispatches
 an action. Valid artifacts are prepared once, then consumed through the existing
 operation owner and its immediate/deferred capture policy. It does not implicitly
-run layout measurement. Its default response omits duplicated refreshed context,
-applied-ID lists and role mappings; it preserves preparation findings, root identity
-and actual capture results. createdTargets carries acknowledged source-key
-mappings for binding, named retention and selected delivery, without a second
-input selector. The adapter delivers selected receipt text and actual image content directly for
-visual judgment.
+run layout measurement. The validated owner receipt retains findings, creation mappings and capture results.
+Successful creation saves the ordered mappings in the originating App conversation.
+After App acknowledgment the default provider creation value contains only
+createdElementCount, compositionIds and createdTargetsName. Requested pixels,
+outer settlement and explicit field selections are independent. A failed save
+returns the complete receipt with the save error. Without a conversation store
+the complete receipt remains available. Partial execution keeps its recovery evidence. An earlier successful creation in that evidence keeps its handles and storage name; its already saved map stays in the App.
 
 Formal cases cover ordered concurrent writes, cancellation/failure queues,
 unchanged analysis concurrency, one preparation per combined call, no application
@@ -816,7 +817,7 @@ Exact parameter reads accept multiple selected names with `view: "parameters"`. 
 On a named-step delivery field rejected during Host admission, the request may return a single-use `retryDelivery` handle in the input issue. The caller submits that handle and a replacement delivery selection through the same executor. The Host claims the retained authored submission, resolves its inputs again, and validates before dispatch. A foreign or consumed handle cannot execute. Geometry failures retain their existing draft repair path. After any write or uncertain settlement the Host does not issue a delivery correction.
 
 A clear purpose candidate can carry its route and complete ordinary arguments even when some query terms are unmatched. Search excludes discovery and scope-menu annotations from ordinary arguments. Every executable owner participates, including workflow and saved tools. Large schemas use lossless compaction; larger serialized replies use the published content continuation. Alternative candidates give an identity, purpose and execution route. Exact reads expose recipe authoring metadata only with includeRecipeDependency. Preserve category, required field filters, workflow scopes and paging.
-A returned schema describes the named candidate. When a route wraps ordinary arguments,
+For a Host operation the ordinary input excludes Host-owned delivery and retention controls in search and exact reads. The compact Responses entry takes both controls alongside operations inside workflow. A returned schema describes the named candidate. When a route wraps ordinary arguments,
 `parameterField` names the slot alongside the route’s admitted arguments. Search does not execute the operation. Known operations execute directly. Use `read_design_resources` for exact
 identities, complex owner scopes, results and recovery when those are needed. No-match results preserve truthful coverage and navigation.
 These are separate inputs and owners, not mutually exclusive modes of one tool.

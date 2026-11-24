@@ -1,3 +1,4 @@
+import type { ProjectCreationText } from './created-target-delivery'
 import { nearbyCatalogNames } from './catalog-spelling'
 import {
   contractReadArguments,
@@ -6180,7 +6181,8 @@ export const createLocalOperationTools = (
 /** Separate validated original reference rasters and bounded canvas snapshots from text. */
 export const localToolContent = async (
   text: string,
-  selectedImages: readonly AiToolImage[] = []
+  selectedImages: readonly AiToolImage[] = [],
+  projectCreationText?: ProjectCreationText
 ): Promise<
   (
     | { type: 'inputText'; text: string }
@@ -6271,5 +6273,7 @@ export const localToolContent = async (
     }
   }
 
-  return [{ type: 'inputText', text: JSON.stringify(value) }, ...images]
+  const textValue = projectCreationText ? projectCreationText(value) : value
+
+  return [{ type: 'inputText', text: JSON.stringify(textValue) }, ...images]
 }
