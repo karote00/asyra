@@ -109,7 +109,10 @@ async function withConsumer(packages, entry, assertions) {
       'ESNext',
       '--moduleResolution',
       'bundler',
-      'consumer.ts'
+      'consumer.ts',
+      ...(entry === 'react.js'
+        ? ['--jsx', 'react-jsx', 'examples/DesignBoard.tsx']
+        : [])
     ],
     { cwd }
   )
@@ -608,20 +611,135 @@ test('opt-in design React component mounts and releases a packed editor', async 
       'sdk/design',
       'node_modules/react',
       'node_modules/react-dom',
-      'node_modules/scheduler'
+      'node_modules/scheduler',
+      'node_modules/@types/react',
+      'node_modules/csstype'
     ],
     'react.js',
     async (page) => {
-      const host = page.locator('main > div')
+      const host = page.locator('main > asyra-design')
 
       await host.getByRole('button', { name: 'Select' }).waitFor()
-      assert.equal(await host.locator('canvas').count(), 1)
+      const canvas = host.locator('canvas')
+
+      assert.equal(await canvas.count(), 1)
+      const bounds = await canvas.boundingBox()
+
+      await page.mouse.move(bounds.x + 30, bounds.y + 30)
+      await page.mouse.down()
+      await page.mouse.move(bounds.x + 100, bounds.y + 75)
+      await page.mouse.up()
+      await host.getByRole('button', { name: 'Select' }).click()
+      await canvas.click({ position: { x: 55, y: 50 } })
+      assert.equal(
+        await host.evaluate((el) => el.editor.getSelection().length),
+        1
+      )
+      await host.getByRole('button', { name: 'Undo' }).click()
+      assert.equal(
+        await host.evaluate(
+          async (el) =>
+            (await el.editor.save()).sceneTree.elements.workspace.children
+              .length
+        ),
+        0
+      )
+      await host.getByRole('button', { name: 'Redo' }).click()
+      assert.equal(
+        await host.evaluate(
+          async (el) =>
+            (await el.editor.save()).sceneTree.elements.workspace.children
+              .length
+        ),
+        1
+      )
       await page.evaluate(() => {
-        globalThis.formerHost = globalThis.document.querySelector('main > div')
+        globalThis.formerHost = globalThis.document.querySelector(
+          'main > asyra-design'
+        )
         globalThis.unmount()
       })
       await page.waitForFunction(
-        () => globalThis.formerHost.childNodes.length === 0
+        () => !globalThis.formerHost.shadowRoot.querySelector('canvas')
+      )
+    }
+  )
+})
+
+test('opt-in design element preserves a moved editor and serializes reconnects', async () => {
+  await withConsumer(
+    ['sdk/canvas', 'sdk/design'],
+    'element.js',
+    async (page) => {
+      const board = page.locator('asyra-design')
+
+      await board.getByRole('button', { name: 'Add card' }).click()
+      assert.equal(
+        await page.evaluate(
+          async () =>
+            (await globalThis.board.editor.save()).sceneTree.elements.workspace
+              .children.length
+        ),
+        1
+      )
+      await board.getByRole('button', { name: 'Undo' }).click()
+      assert.equal(
+        await page.evaluate(
+          async () =>
+            (await globalThis.board.editor.save()).sceneTree.elements.workspace
+              .children.length
+        ),
+        0
+      )
+      const moved = await page.evaluate(async () => {
+        const { board, document } = globalThis
+        const original = board.editor
+        const parent = document.body.appendChild(
+          document.createElement('section')
+        )
+
+        parent.append(board)
+        await new Promise((resolve) =>
+          globalThis.requestAnimationFrame(resolve)
+        )
+
+        return (
+          board.editor === original &&
+          board.shadowRoot.querySelectorAll('canvas').length === 1
+        )
+      })
+
+      assert.equal(moved, true)
+      await page.evaluate(async () => {
+        const { board, document } = globalThis
+
+        board.remove()
+        await new Promise((resolve) => globalThis.setTimeout(resolve, 0))
+        document.body.append(board)
+      })
+      await board.getByRole('button', { name: 'Add card' }).click()
+      assert.equal(await board.locator('canvas').count(), 1)
+      await page.evaluate(() => globalThis.board.remove())
+      await page.waitForFunction(
+        () =>
+          !globalThis.board.shadowRoot.querySelector('canvas') &&
+          !globalThis.board.editor
+      )
+      await page.evaluate(async () => {
+        const board = globalThis.board
+
+        globalThis.document.body.append(board)
+        await Promise.resolve()
+        if (!board.shadowRoot.querySelector('canvas')) {
+          throw new Error('Expected pending editor startup')
+        }
+
+        board.remove()
+      })
+      await page.waitForFunction(
+        () =>
+          !globalThis.board.shadowRoot.querySelector('canvas') &&
+          !globalThis.board.editor
       )
     }
   )

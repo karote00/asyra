@@ -180,6 +180,14 @@ const pluginIdentityOwners = new Set([
   'scripts/__tests__/ci-scope.test.mjs'
 ])
 
+// The public Design component is exported to applications under this name.
+const designComponentOwners = new Set([
+  'sdk/design/src/react.js',
+  'sdk/design/src/react.d.ts',
+  'sdk/design/src/vue.d.ts',
+  'fixtures/canvas/examples/DesignBoard.tsx'
+])
+
 const isAllowedPublicIdentity = (token, line, filePath) => {
   const escapedToken = token.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
   const relativePath = path.relative(repositoryRoot, filePath)
@@ -202,6 +210,13 @@ const isAllowedPublicIdentity = (token, line, filePath) => {
     if (withoutOrigin !== line && !withoutOrigin.match(brandedTokenPattern)) {
       return true
     }
+  }
+
+  if (
+    token === referenceAppDisplayName.replaceAll(' ', '') &&
+    designComponentOwners.has(relativePath)
+  ) {
+    return true
   }
 
   if (
@@ -336,6 +351,17 @@ test('the official domain is URL data only in its deployment owners', () => {
     ),
     false
   )
+})
+
+test('the public Design component identity stays with its exports and consumer', () => {
+  const identity = referenceAppDisplayName.replaceAll(' ', '')
+
+  const accepted = (file) =>
+    isAllowedPublicIdentity(identity, identity, path.join(repositoryRoot, file))
+
+  assert.equal(accepted('sdk/design/src/react.js'), true)
+  assert.equal(accepted('sdk/design/src/element.js'), false)
+  assert.equal(accepted('packages/core/src/core.ts'), false)
 })
 
 test('plugin distribution identities remain scoped to quoted owner data', () => {

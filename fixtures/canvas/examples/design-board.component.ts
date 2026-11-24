@@ -1,26 +1,11 @@
-import {
-  afterNextRender,
-  Component,
-  DestroyRef,
-  ElementRef,
-  inject,
-  viewChild
-} from '@angular/core'
-import { mountDesign } from './mount-design'
+import { Component, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core'
+import '@asyra/design/element'
 
 @Component({
   selector: 'app-design-board',
   standalone: true,
-  template: '<div #host style="height: 480px"></div>'
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
+  template: '<asyra-design></asyra-design>'
 })
-export class DesignBoard {
-  private host = viewChild.required<ElementRef<HTMLDivElement>>('host')
-
-  constructor() {
-    const lifetime = inject(DestroyRef)
-
-    afterNextRender(() => {
-      lifetime.onDestroy(mountDesign(this.host().nativeElement))
-    })
-  }
-}
+// eslint-disable-next-line @typescript-eslint/no-extraneous-class -- Angular uses this class as its template owner.
+export class DesignBoard {}

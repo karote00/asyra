@@ -1,24 +1,69 @@
 # @asyra/design
 
-Install `@asyra/design` and its peer `@asyra/canvas`. Pass a container to create a drawing surface and toolbar inside it. Set the
-container height to choose the editor size.
+Place the editor directly in your page. Install `@asyra/design` and its
+`@asyra/canvas` peer.
 
-```html
-<div id="drawing" style="height: 500px"></div>
+### React
+
+```tsx
+import { AsyraDesign } from '@asyra/design/react'
+
+export default function App() {
+  return <AsyraDesign />
+}
 ```
+
+### Vue
+
+```vue
+<script setup>
+import AsyraDesign from '@asyra/design/vue'
+</script>
+
+<template>
+  <AsyraDesign />
+</template>
+```
+
+The Vue entry is a single-file component for projects with Vue SFC support.
+
+### Angular
+
+```ts
+import { Component, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core'
+import '@asyra/design/element'
+
+@Component({
+  selector: 'app-root',
+  standalone: true,
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
+  template: '<asyra-design></asyra-design>'
+})
+export class App {}
+```
+
+The browser element starts a Design editor at its position and releases the
+session on removal. Each instance has its own document and history. The
+default height is 480px and can be set with CSS. Drag to draw, or choose
+Select, Undo or Redo from the toolbar.
+
+Pass the initial `options` property to customize the actions and toolbar.
+React 19 and Vue can pass an object as `options={options}` and
+`:options="options"`, respectively. In Angular use `[options]="options"`.
+The native element emits `design-ready` with the editor in `event.detail`
+and exposes the mounted instance through its `editor` property.
+
+## Mount on an existing container or canvas
 
 ```js
 import { createDesign } from '@asyra/design'
 
-const editor = await createDesign(document.querySelector('#drawing'))
+const editor = await createDesign(container)
 ```
 
-Drag to draw a rectangle. The toolbar above the canvas provides Rectangle,
-Select, Undo and Redo. Call `await editor.destroy()` to remove the editor and
-release the container for reuse. Existing content in the container stays in place.
-
-Pass your own HTML canvas instead to draw on that specific element. The
-default toolbar appears before the canvas, and disposal preserves the canvas.
+Set the container height to choose the size. Call `await editor.destroy()` to
+release it. Passing an existing canvas draws on that exact element and
+preserves it on disposal.
 
 ## Customize the tools
 
@@ -27,7 +72,7 @@ named actions. A callback receives the same Design tools as the host. For
 example, inserting a card below creates one undoable rectangle.
 
 ```js
-const editor = await createDesign(canvas, {
+const options = {
   actions: {
     card: {
       label: 'Add card',
@@ -37,7 +82,7 @@ const editor = await createDesign(canvas, {
     }
   },
   toolbar: ['select', 'card', 'undo', 'redo']
-})
+}
 ```
 
 Call `await editor.runAction('card')` to run that action from your application.

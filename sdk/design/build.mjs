@@ -31,6 +31,17 @@ await writeFile(
   'dist/runtime.js',
   'export function createRuntime() {\n' + script + '\nreturn canvasRuntime\n}\n'
 )
-for (const name of ['index.js', 'index.d.ts', 'toolbar.js', 'actions.js']) {
+for (const name of [
+  'index.js',
+  'index.d.ts',
+  'toolbar.js',
+  'actions.js',
+  'element.js',
+  'element.d.ts',
+  'react.js',
+  'react.d.ts',
+  'design-board.vue',
+  'vue.d.ts'
+]) {
   await copyFile('src/' + name, 'dist/' + name)
 }

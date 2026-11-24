@@ -34,3 +34,14 @@ session lifetime. Failed initialization and disposal release the binding and
 SDK-owned controls. The packed browser cases exercise each mode, history and
 reuse of the target. This step changes only the Design entry and its consumer
 proof, documentation and flow.
+
+## Place the editor as a component
+
+The Design SDK owns the public AsyraDesign component and asyra-design HTML
+tag. These are public distribution names. A browser element owns one Design
+session, mounts at its template position, preserves state across a synchronous
+DOM move and releases its session after removal, including during startup.
+React and Vue expose the named component. Angular uses the registered element.
+Mount options reach the same Design action registry. The Canvas SDK has no UI
+or framework dependency. Verify the package exports, JSX types, startup,
+editing, independent instances and disconnect/reconnect in packed consumers.
