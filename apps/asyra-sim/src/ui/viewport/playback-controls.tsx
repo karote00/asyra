@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { PlaybackClock } from './playback-clock'
+import { PlaybackClock } from '@asyra/simulation'
 import type { LiveSampleOptions } from '../experiments/live-preview'
 
 export function PlaybackControls({

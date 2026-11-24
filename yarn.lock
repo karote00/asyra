@@ -218,10 +218,12 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@asyra/asyra-sim@workspace:apps/asyra-sim"
   dependencies:
+    "@asyra/canvas": "workspace:*"
     "@asyra/core": "workspace:*"
     "@asyra/preset": "workspace:*"
     "@asyra/render": "workspace:*"
     "@asyra/render-engine": "workspace:*"
+    "@asyra/simulation": "workspace:*"
     "@asyra/utils": "workspace:*"
     "@playwright/test": "npm:^1.62.1"
     "@tailwindcss/vite": "npm:^4.3.3"
@@ -242,13 +244,11 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@asyra/canvas@workspace:sdk/canvas":
+"@asyra/canvas@workspace:*, @asyra/canvas@workspace:sdk/canvas":
   version: 0.0.0-use.local
   resolution: "@asyra/canvas@workspace:sdk/canvas"
   dependencies:
-    "@asyra/core": "workspace:*"
-    "@asyra/preset": "workspace:*"
-    vite: "npm:^6.4.4"
+    typescript: "npm:^5.7.2"
   languageName: unknown
   linkType: soft
 
@@ -322,6 +322,19 @@ __metadata:
   peerDependencies:
     react: ^19.2.8
     react-dom: ^19.2.8
+  languageName: unknown
+  linkType: soft
+
+"@asyra/design@workspace:sdk/design":
+  version: 0.0.0-use.local
+  resolution: "@asyra/design@workspace:sdk/design"
+  dependencies:
+    "@asyra/canvas": "workspace:*"
+    "@asyra/core": "workspace:*"
+    "@asyra/preset": "workspace:*"
+    vite: "npm:^6.4.4"
+  peerDependencies:
+    "@asyra/canvas": ^0.1.0
   languageName: unknown
   linkType: soft
 
@@ -513,6 +526,17 @@ __metadata:
     "@vitest/coverage-v8": "npm:^3.2.6"
     typescript: "npm:^5.7.2"
     vitest: "npm:^3.2.6"
+  languageName: unknown
+  linkType: soft
+
+"@asyra/simulation@workspace:*, @asyra/simulation@workspace:sdk/simulation":
+  version: 0.0.0-use.local
+  resolution: "@asyra/simulation@workspace:sdk/simulation"
+  dependencies:
+    "@asyra/canvas": "workspace:*"
+    typescript: "npm:^5.7.2"
+  peerDependencies:
+    "@asyra/canvas": ^0.1.0
   languageName: unknown
   linkType: soft
 

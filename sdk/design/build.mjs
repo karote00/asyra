@@ -15,7 +15,11 @@ const built = await build({
     write: false,
     target: 'es2022',
     reportCompressedSize: false,
-    lib: { entry: 'src/editor.js', name: 'canvasRuntime', formats: ['iife'] },
+    lib: {
+      entry: 'build-inputs/editor.js',
+      name: 'canvasRuntime',
+      formats: ['iife']
+    },
     rollupOptions: { output: { inlineDynamicImports: true } }
   }
 })

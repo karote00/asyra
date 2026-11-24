@@ -240,6 +240,7 @@ export async function buildConsumer() {
         `${item.packageName}#build:${item.packageName.slice('@asyra/'.length)}`
     )
 
+    tasks.push('@asyra/simulation#build:simulation')
     await run(
       'framework-build',
       'yarn',
@@ -263,6 +264,25 @@ export async function buildConsumer() {
 
       return { ...item, tarballPath }
     })
+
+    for (const slug of ['canvas', 'simulation']) {
+      const directory = path.join(snapshot, 'sdk', slug)
+      const { name, version } = json(path.join(directory, 'package.json'))
+      const tarballPath = path.join(
+        output,
+        'framework',
+        `asyra-${slug}-${version}.tgz`
+      )
+
+      await run(
+        `pack-${slug}`,
+        'yarn',
+        ['pack', '--out', tarballPath],
+        directory
+      )
+      packages.push({ packageName: name, version, tarballPath })
+    }
+
     const sourceApp = path.join(snapshot, 'apps/asyra-sim')
     const app = json(path.join(sourceApp, 'package.json'))
 

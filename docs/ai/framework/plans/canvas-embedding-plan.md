@@ -1,15 +1,19 @@
 # Caller-owned canvas SDK
 
-The installed product accepts a real HTMLCanvasElement. A plain JavaScript
-consumer owns layout, framework, toolbar, persistence identity and disposal.
-The SDK owns document edits, selection, history and input for that target only.
+Canvas owns the lifetime and exclusive claim on the supplied HTMLCanvasElement.
+Creating a binding preserves all pixels, children and attributes. The base does
+not acquire a drawing context, install tools, process input or start a clock.
+A product attaches one tool session through the public mount contract.
+Closing a binding settles pending startup, retires the product once and then
+releases the claim. A failed mount can be retried on the same open binding.
 
-Core passes a canvas host to the 2D renderer. Pixi borrows the element instead
-of creating and appending a new one. Existing container initialization retains
-its original behavior. A scoped bundle factory gives each mounted target its own
-Framework module state. Duplicate mounts reject before acquiring resources.
-Failure and teardown remove subscriptions and release the target claim.
+Design owns its isolated Core composition, 2D Preset, drawing, selection,
+document history and storage format. Simulation independently owns transient
+playback with the existing simulation playback clock. Its host supplies frame
+presentation. Neither product depends on the other. This slice does not migrate
+the complete Design or Sim applications or change workcell analysis.
 
-The packed consumer test installs the SDK alone, builds a plain browser app,
-and exercises pointer drawing, visible selection, undo/redo, isolation, invalid
-targets, save/load and disposal on the original DOM elements.
+Verify independently packed consumer installations and dependency boundaries,
+canvas identity and untouched pixels, pending mount teardown, simultaneous
+targets, design edits and replay, simulation time and cancellation, reattachment
+and existing Framework container and canvas lifecycle behavior.

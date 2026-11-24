@@ -1,11 +1,12 @@
 {
   "name": "@asyra/canvas",
   "version": "0.1.0",
-  "description": "Framework-independent editing on an application-owned HTML canvas",
+  "description": "Application-owned canvas lifecycle for product SDKs",
   "license": "MIT",
   "type": "module",
   "files": [
-    "dist"
+    "dist/index.js",
+    "dist/index.d.ts"
   ],
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -16,11 +17,10 @@
     }
   },
   "scripts": {
-    "build:canvas": "node build.mjs"
+    "build:canvas": "tsc -p tsconfig.json",
+    "test:ci": "node --test --test-name-pattern=\"standalone\" ../../fixtures/canvas/__tests__/consumer.test.mjs"
   },
   "devDependencies": {
-    "@asyra/core": "workspace:*",
-    "@asyra/preset": "workspace:*",
-    "vite": "^6.4.4"
+    "typescript": "^5.7.2"
   }
 }

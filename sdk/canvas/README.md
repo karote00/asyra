@@ -1,24 +1,21 @@
 # @asyra/canvas
 
-Pass an HTML canvas from your page to the browser SDK. Your application owns the
-DOM element, toolbar and layout. Give the canvas a CSS size for responsive layouts.
-
-```html
-<canvas id="diagram" width="800" height="480" tabindex="0" style="touch-action:none"></canvas>
-```
+Bind a caller-owned HTML canvas without drawing or registering input handlers.
+The host controls the DOM, layout and choice of tools.
 
 ```js
 import { createCanvas } from '@asyra/canvas'
 
-const editor = await createCanvas(document.querySelector('#diagram'))
+const surface = createCanvas(document.querySelector('canvas'))
+// The element and its contents are unchanged.
+await surface.destroy()
 ```
 
-Drag to draw a rectangle. Bind your own controls to editor.setTool('select'),
-editor.setTool('rectangle'), editor.undo() and editor.redo(). A focusable
-canvas supports Escape and Cmd/Ctrl+Z or Cmd/Ctrl+Shift+Z.
+A product SDK calls surface.mount(setup). The callback receives the original
+element and returns a session with tools and a destroy function. Mount resolves
+to the tools. Each binding admits one product session. Destroy waits for startup
+and product cleanup before releasing the element. After a failed setup the
+binding may retry; the setup owner cleans up partially acquired resources.
 
-Use a fresh canvas with no pre-existing drawing context. One live editor owns
-each target. Multiple canvases have independent documents and histories.
-Save with await editor.save(), store the returned data in your application,
-and pass it as the document option on initialization. Await editor.destroy()
-before removing the canvas from your application.
+Install @asyra/design for rectangle editing or @asyra/simulation for simulation
+playback. Each is an independent optional package.

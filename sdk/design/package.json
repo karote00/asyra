@@ -1,0 +1,31 @@
+{
+  "name": "@asyra/design",
+  "version": "0.1.0",
+  "description": "Optional 2D design tools for canvas bindings",
+  "license": "MIT",
+  "type": "module",
+  "files": [
+    "dist"
+  ],
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build:design": "node build.mjs",
+    "test:ci": "node --test --test-name-pattern=\"opt-in design\" ../../fixtures/canvas/__tests__/consumer.test.mjs"
+  },
+  "devDependencies": {
+    "@asyra/canvas": "workspace:*",
+    "@asyra/core": "workspace:*",
+    "@asyra/preset": "workspace:*",
+    "vite": "^6.4.4"
+  },
+  "peerDependencies": {
+    "@asyra/canvas": "^0.1.0"
+  }
+}

@@ -2,23 +2,23 @@
   "schemaVersion": 1,
   "projectId": "asyra",
   "flowId": "canvas",
-  "revision": 2,
+  "revision": 5,
   "definition": {
     "title": "Canvas SDK",
-    "purpose": "Draw directly on a caller-owned canvas in a plain JavaScript application.",
+    "purpose": "Bind a blank host surface and opt into independent product SDKs.",
     "nodes": [
       {
         "id": "embed",
         "title": "Bind an editor to a canvas",
-        "objective": "Reject invalid or claimed targets before startup. Evaluate one Core composition per canvas. Pass the original node through Core and Render to Pixi. Route target-local pointer events and product commands into Feature and Factory. Release handlers, renderer and the claim on teardown or failure; retain the DOM node.",
-        "owner": "Canvas SDK and renderer",
+        "objective": "Canvas validates and reserves the target. Only an explicit mount initializes product tools. Design owns 2D Core, rendering and edits; Simulation owns clock and sampled playback. Base disposal waits for pending setup and teardown before releasing the target. Invalid or duplicate mounts cannot edit the surface.",
+        "owner": "Canvas lifecycle and independent product SDKs",
         "required": true,
         "applicable": true,
         "dependsOn": [],
         "criteria": [
           {
             "id": "consumer",
-            "title": "Installed native browser SDK edits two existing canvases and releases their ownership",
+            "title": "Packed empty canvas, design editor and simulation playback work independently",
             "kind": "automated",
             "selector": {
               "producer": "custom",
@@ -34,7 +34,9 @@
           "fixtures/canvas/**",
           "packages/core/src/core.ts",
           "packages/render/src/renderer.ts",
-          "packages/render-engine-pixi/src/pixi-render-engine.ts"
+          "packages/render-engine-pixi/src/pixi-render-engine.ts",
+          "sdk/design/**",
+          "sdk/simulation/**"
         ],
         "actions": [
           {
@@ -62,12 +64,12 @@
         "criterionId": "consumer",
         "kind": "automated",
         "status": "passed",
-        "binding": "556d21e539a765fc6ebced7988388106fe1397edb8cf09b62972813b730aac59",
+        "binding": "69b09a9f0fa81ca9ef242cef292348e0f7bf51f0b10af3cf4958059c051f7461",
         "actor": "packed-consumer",
-        "executionId": "efa29472-7de3-47ba-a268-e7e8388990f5",
+        "executionId": "c8c2cd11-5433-413f-952b-1de1d7326fb3",
         "caseId": "canvas/consumer",
-        "summary": "Packed browser SDK passed type, production build, isolation and Chromium interaction checks.",
-        "at": "2026-11-24T13:04:27.768Z"
+        "summary": "Separate packed base, design and simulation installations passed type, build and Chromium checks.",
+        "at": "2026-11-24T13:56:36.130Z"
       }
     ],
     "notes": [],

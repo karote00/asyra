@@ -21,10 +21,12 @@
     "lint": "node ../../node_modules/eslint/bin/eslint.js src samples scripts e2e app-environment.mjs playwright.config.ts vite.config.ts vitest.config.ts"
   },
   "dependencies": {
+    "@asyra/canvas": "workspace:*",
     "@asyra/core": "workspace:*",
     "@asyra/preset": "workspace:*",
     "@asyra/render": "workspace:*",
     "@asyra/render-engine": "workspace:*",
+    "@asyra/simulation": "workspace:*",
     "@asyra/utils": "workspace:*",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",

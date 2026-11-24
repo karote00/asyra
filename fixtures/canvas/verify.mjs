@@ -24,7 +24,13 @@ let status = 'failed'
 try {
   execFileSync(
     'yarn',
-    ['turbo', 'run', 'build:canvas', '--output-logs=errors-only'],
+    [
+      'turbo',
+      'run',
+      'build:design',
+      'build:simulation',
+      '--output-logs=errors-only'
+    ],
     options
   )
   execFileSync(
@@ -48,7 +54,7 @@ try {
       caseId: 'canvas/consumer',
       summary:
         status === 'passed'
-          ? 'Packed browser SDK passed type, production build, isolation and Chromium interaction checks.'
+          ? 'Separate packed base, design and simulation installations passed type, build and Chromium checks.'
           : 'Build or browser verification failed.',
       at: new Date().toISOString()
     }

@@ -1,5 +1,5 @@
 import { expect, it, vi } from 'vitest'
-import { PlaybackClock } from '../playback-clock'
+import { PlaybackClock } from '@asyra/simulation'
 
 function setup() {
   const callbacks = new Map<number, (time: number) => void>()

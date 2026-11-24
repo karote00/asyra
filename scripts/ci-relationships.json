@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "workspaceRoots": ["apps", "packages", "tools", "domain-knowledge"],
+  "workspaceRoots": ["apps", "packages", "tools", "domain-knowledge", "sdk"],
   "excludedRoots": {
     "create-app": "archive-readiness"
   },
@@ -134,6 +134,18 @@
     }
   ],
   "workspaceInputRules": [
+    {
+      "pattern": "fixtures/canvas/**",
+      "workspaceDirectory": "sdk/canvas"
+    },
+    {
+      "pattern": "fixtures/canvas/**",
+      "workspaceDirectory": "sdk/design"
+    },
+    {
+      "pattern": "fixtures/canvas/**",
+      "workspaceDirectory": "sdk/simulation"
+    },
     {
       "pattern": "conversation-flow-inspector.config.json",
       "workspaceDirectory": "apps/asyra-design"
