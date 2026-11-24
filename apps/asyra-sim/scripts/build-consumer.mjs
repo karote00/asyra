@@ -271,7 +271,7 @@ export async function buildConsumer() {
       const tarballPath = path.join(
         output,
         'framework',
-        `asyra-${slug}-${version}.tgz`
+        `${slug}-${version}.tgz`
       )
 
       await run(
