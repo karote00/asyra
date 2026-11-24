@@ -194,7 +194,7 @@ The baseline used the recorded first-request byte count and the source-matched o
 
 The scripted provider chose the sixth candidate from the original query. Its complete arguments passed validation; omitting the required element identity failed validation. A real browser then edited and persisted the same rectangle, from red to blue, with one rectangle remaining. Separate cases cover a hierarchy operation, a partial query, and reference import by purpose even when the tool name is opaque.
 
-[Owner flow](../on-demand-design-contracts/handoff.flow.json)
+[Owner flow](on-demand-design-contracts/handoff.flow.json)
 
 ## Prepared and measured finding delivery
 
@@ -276,15 +276,3 @@ took 520–562 ms through frame submission and GPU synchronization. With four
 direct Groups of 2,500 rectangles each, insertion beside the four Groups took
 11–17 ms. Scene creation, provider latency and remote collaboration were outside
 the timed interval. No change to the coordinate policy was required.
-
-## Closeout
-
-Completed: 2026-11-24
-
-Reviewed source: 29240e0ee5f06c8c2b80074fee1d87a164d78370
-
-Outcome: Known Design operations execute directly. Search and resource reads deliver scoped information. The App retains complete geometry and identities, accepts signed vector coordinates and preserves existing sibling placement on insertion.
-
-Decision: Accept the on-demand Design contracts. The recorded entrance requires one retained repair covering four collapsed paths. No new live drawing was required for closeout.
-
-Exit criteria: 2,339 focused Vitest cases, one Chromium import/Undo case, six TypeScript configurations, the Design production build, naming checks and the dependency audit passed. Scoped ESLint had no errors and four existing diagnostic logging warnings. The latest drawing-input recovery was verified offline. All ten Flow Inspector owner steps were accepted.

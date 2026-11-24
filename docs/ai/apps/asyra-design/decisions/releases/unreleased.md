@@ -123,7 +123,3 @@ merging and publication remain separate.
 Reviewed implementation source: `8c870e6e845cbb09ce33a09035acda09ba2241dc`. Completed plan records now retain this
 exact source identity and the complete local evidence. Subsequent changes in this
 closeout stage only record that acceptance.
-
-## 2026-11-24 - On-demand Design contracts
-
-Accepted [the completed Design plan](/docs/ai/apps/asyra-design/plans/completed/on-demand-design-contracts.md) on reviewed source `29240e0ee5f06c8c2b80074fee1d87a164d78370`. The Host keeps full results for binding or scoped retrieval. Preparation handles signed coordinates and reports collapsed paths in one retained repair. The earlier two-rejection entrance trace remains historical evidence.
