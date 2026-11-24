@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "projectId": "asyra",
   "flowId": "canvas",
-  "revision": 8,
+  "revision": 11,
   "definition": {
     "title": "Canvas SDK",
     "purpose": "Bind a blank host surface and opt into independent product SDKs.",
@@ -10,7 +10,7 @@
       {
         "id": "embed",
         "title": "Bind an editor to a canvas",
-        "objective": "Canvas validates and reserves the target. Only an explicit mount initializes product tools. Design owns 2D Core, rendering and edits; Simulation owns clock and sampled playback. Base disposal waits for pending setup and teardown before releasing the target. Invalid or duplicate mounts cannot edit the surface. The Design entry binds the supplied canvas and mounts its Design session. Default or caller-selected controls dispatch through the public Design tools. Headless mode bypasses control creation. Cleanup releases SDK-owned DOM and the binding, including on failure.",
+        "objective": "Canvas validates and reserves the target. Only an explicit mount initializes product tools. Design owns 2D Core, rendering and edits; Simulation owns clock and sampled playback. Base disposal waits for pending setup and teardown before releasing the target. Invalid or duplicate mounts cannot edit the surface. Design claims a supplied container and creates its own canvas inside it, or borrows the supplied canvas directly. It mounts the Design session on that exact surface. Failure and disposal remove only owned elements and release container exclusivity after teardown. Default or caller-selected controls dispatch through the public Design tools. Headless mode bypasses control creation. Cleanup releases SDK-owned DOM and the binding, including on failure.",
         "owner": "Canvas lifecycle and independent product SDKs",
         "required": true,
         "applicable": true,
@@ -64,12 +64,12 @@
         "criterionId": "consumer",
         "kind": "automated",
         "status": "passed",
-        "binding": "d5b6fc664d60d315a76e6009edf81fca3d8b87851920f29c85e76a779653972f",
+        "binding": "f32011864e09fcf8e2feff8429bd0599c506e31a1d102f12f50cced61064fb87",
         "actor": "packed-consumer",
-        "executionId": "c7270376-e90d-4e2e-b7e2-0a27be469e10",
+        "executionId": "e5a26dd8-a9d7-4535-8913-47d647ffcc17",
         "caseId": "canvas/consumer",
         "summary": "Separate packed base, design and simulation installations passed type, build and Chromium checks.",
-        "at": "2026-11-24T14:09:36.002Z"
+        "at": "2026-11-24T14:21:41.619Z"
       }
     ],
     "notes": [],

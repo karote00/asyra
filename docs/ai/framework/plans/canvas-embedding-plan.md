@@ -20,7 +20,11 @@ and existing Framework container and canvas lifecycle behavior.
 
 ## Design editor entry
 
-The Design SDK owns the one-call editor on a caller-supplied canvas. Its
+The Design SDK owns the one-call editor on a supplied HTML container or canvas.
+For a container, Design adds its own resizable editor area, canvas and optional
+controls, retaining existing host children. A container admits one editor until
+disposal completes. Failure or disposal releases the claim and owned nodes.
+For an existing canvas, Design borrows the exact target and preserves it. Its
 default controls select Rectangle, Select, Undo and Redo. Callers can replace
 the ordered controls with built-in commands and named actions receiving the
 same public Design tools, or supply their entire UI. Registered actions can also

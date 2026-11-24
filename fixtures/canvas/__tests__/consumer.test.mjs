@@ -53,9 +53,21 @@ async function withConsumer(packages, entry, assertions) {
 
   assert.deepEqual(
     Object.keys(installed).filter(Boolean).sort(),
-    packages.map((dir) => 'node_modules/@asyra/' + path.basename(dir)).sort()
+    packages
+      .map((dir) =>
+        dir.startsWith('sdk/')
+          ? 'node_modules/@asyra/' + path.basename(dir)
+          : dir
+      )
+      .sort()
   )
   await cp(path.join(fixture, 'index.html'), path.join(cwd, 'index.html'))
+  if (entry === 'react.js') {
+    await cp(path.join(fixture, 'examples'), path.join(cwd, 'examples'), {
+      recursive: true
+    })
+  }
+
   await cp(path.join(fixture, entry), path.join(cwd, 'main.js'))
 
   await writeFile(
@@ -66,7 +78,7 @@ async function withConsumer(packages, entry, assertions) {
       ...(packages.includes('sdk/design')
         ? [
             "import { createDesign, attachDesignTools } from '@asyra/design'",
-            "const editor = await createDesign(document.body.appendChild(document.createElement('canvas')), { toolbar: false, actions: { revert: { label: 'Undo', run: tools => tools.undo() } } })",
+            "const editor = await createDesign(document.body.appendChild(document.createElement('div')), { toolbar: false, actions: { revert: { label: 'Undo', run: tools => tools.undo() } } })",
             "await editor.runAction('revert')",
             'await editor.destroy()',
             'const tools = await attachDesignTools(surface)',
@@ -102,6 +114,7 @@ async function withConsumer(packages, entry, assertions) {
     { cwd }
   )
   const result = await build({
+    esbuild: { jsx: 'automatic' },
     root: cwd,
     configFile: false,
     logLevel: 'error'
@@ -491,6 +504,125 @@ test('opt-in design entry mounts default controls, custom actions or a host UI',
       assert.equal(await shapes(), 1)
       await page.evaluate(() => globalThis.editor.destroy())
       assert.equal(await page.locator('#second').getAttribute('tabindex'), '0')
+    }
+  )
+})
+
+test('opt-in design owns the canvas inside a supplied container', async () => {
+  await withConsumer(
+    ['sdk/canvas', 'sdk/design'],
+    'container.js',
+    async (page) => {
+      const host = page.locator('#design-host')
+      const canvas = host.locator('canvas')
+      const controls = host.getByRole('group', { name: 'Design tools' })
+
+      await page.evaluate(() => globalThis.ready)
+      assert.equal(await canvas.count(), 1)
+      assert.equal(await controls.getByRole('button').count(), 4)
+      await page.waitForFunction(() => {
+        const canvas = globalThis.host.querySelector('canvas')
+
+        return (
+          canvas.width === 360 &&
+          canvas.height === canvas.clientHeight &&
+          canvas.height > 100
+        )
+      })
+      await host.evaluate((el) => {
+        el.style.width = '480px'
+      })
+      await page.waitForFunction(
+        () => globalThis.host.querySelector('canvas').width === 480
+      )
+      const bounds = await canvas.boundingBox()
+
+      await page.mouse.move(bounds.x + 30, bounds.y + 30)
+      await page.mouse.down()
+      await page.mouse.move(bounds.x + 110, bounds.y + 80)
+      await page.mouse.up()
+      await controls.getByRole('button', { name: 'Select' }).click()
+      await canvas.click({ position: { x: 55, y: 55 } })
+      assert.equal(
+        await page.evaluate(() => globalThis.editor.getSelection().length),
+        1
+      )
+      await controls.getByRole('button', { name: 'Undo' }).click()
+      assert.equal(
+        await page.evaluate(
+          async () =>
+            (await globalThis.editor.save()).sceneTree.elements.workspace
+              .children.length
+        ),
+        0
+      )
+
+      const results = await page.evaluate(async () => {
+        const { host, editor, createDesign, original, duplicate } = globalThis
+
+        await editor.destroy()
+        const preserved =
+          host.childNodes.length === 1 && host.firstChild === original
+        let failed = false
+
+        try {
+          await createDesign(host, { toolbar: ['invalid'] })
+        } catch {
+          failed = true
+        }
+
+        const rolledBack =
+          host.childNodes.length === 1 && host.firstChild === original
+        const next = await createDesign(host, { toolbar: false })
+
+        await editor.destroy()
+        const remounted =
+          !!host.querySelector('canvas') && !host.querySelector('fieldset')
+
+        await next.destroy()
+
+        return {
+          duplicate: await duplicate,
+          preserved,
+          failed,
+          rolledBack,
+          remounted
+        }
+      })
+
+      assert.deepEqual(results, {
+        duplicate: true,
+        preserved: true,
+        failed: true,
+        rolledBack: true,
+        remounted: true
+      })
+    }
+  )
+})
+
+test('opt-in design React component mounts and releases a packed editor', async () => {
+  await withConsumer(
+    [
+      'sdk/canvas',
+      'sdk/design',
+      'node_modules/react',
+      'node_modules/react-dom',
+      'node_modules/scheduler'
+    ],
+    'react.js',
+    async (page) => {
+      const host = page.locator('main > div')
+
+      await host.getByRole('button', { name: 'Select' }).waitFor()
+      assert.equal(await host.locator('canvas').count(), 1)
+      await page.evaluate(() => {
+        globalThis.formerHost = globalThis.document.querySelector('main > div')
+        globalThis.unmount()
+      })
+      await page.waitForFunction(
+        () => globalThis.formerHost.childNodes.length === 0
+      )
     }
   )
 })

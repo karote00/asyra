@@ -11,8 +11,53 @@ export function attachDesignTools(canvas, options = {}) {
   })
 }
 
-export async function createDesign(target, options = {}) {
-  const surface = createCanvas(target)
+const activeContainers = new WeakSet()
+
+function bindTarget(host) {
+  if (!globalThis.HTMLElement || !(host instanceof globalThis.HTMLElement)) {
+    throw new TypeError('Expected an HTML container or canvas from this window')
+  }
+
+  if (host instanceof globalThis.HTMLCanvasElement) {
+    return createCanvas(host)
+  }
+
+  if (activeContainers.has(host)) {
+    throw new Error('Container already has an active Design editor')
+  }
+
+  const area = host.ownerDocument.createElement('div')
+  const canvas = host.ownerDocument.createElement('canvas')
+
+  area.style.cssText =
+    'display:flex;flex-direction:column;width:100%;height:100%;min-width:0;min-height:0;'
+  canvas.style.cssText =
+    'display:block;flex:1 1 auto;width:100%;height:150px;min-height:0;min-width:0;'
+  area.append(canvas)
+  const surface = createCanvas(canvas)
+
+  host.append(area)
+  activeContainers.add(host)
+
+  let closing
+
+  return {
+    ...surface,
+
+    destroy() {
+      closing ??= surface.destroy().finally(() => {
+        area.remove()
+        activeContainers.delete(host)
+      })
+
+      return closing
+    }
+  }
+}
+
+export async function createDesign(host, options = {}) {
+  const surface = bindTarget(host)
+  const target = surface.target
   const listeners = new globalThis.AbortController()
   let toolbar
   let addedTabIndex = false

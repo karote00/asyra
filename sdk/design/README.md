@@ -1,10 +1,10 @@
 # @asyra/design
 
-Install `@asyra/design` and its peer `@asyra/canvas`. Add a canvas to your page
-and pass that element to the editor.
+Install `@asyra/design` and its peer `@asyra/canvas`. Pass a container to create a drawing surface and toolbar inside it. Set the
+container height to choose the editor size.
 
 ```html
-<canvas id="drawing" width="800" height="500"></canvas>
+<div id="drawing" style="height: 500px"></div>
 ```
 
 ```js
@@ -14,7 +14,11 @@ const editor = await createDesign(document.querySelector('#drawing'))
 ```
 
 Drag to draw a rectangle. The toolbar above the canvas provides Rectangle,
-Select, Undo and Redo. Call `await editor.destroy()` when removing the editor.
+Select, Undo and Redo. Call `await editor.destroy()` to remove the editor and
+release the container for reuse. Existing content in the container stays in place.
+
+Pass your own HTML canvas instead to draw on that specific element. The
+default toolbar appears before the canvas, and disposal preserves the canvas.
 
 ## Customize the tools
 

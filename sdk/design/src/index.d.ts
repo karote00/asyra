@@ -36,7 +36,7 @@ export interface DesignOptions<Id extends string = never> {
 }
 
 export function createDesign<Id extends string = never>(
-  target: HTMLCanvasElement,
+  target: HTMLElement,
   options?: DesignOptions<Id>
 ): Promise<
   DesignTools & {
