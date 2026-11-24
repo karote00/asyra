@@ -38,7 +38,7 @@ export interface AiHistorySnapshot {
   readonly replaying: boolean
 }
 
-interface AiHistoryProjectionDependencies {
+export interface AiHistoryProjectionDependencies {
   readonly redo: () => Promise<void>
   readonly subscribeToActions: (
     observer: (actionId: number) => void

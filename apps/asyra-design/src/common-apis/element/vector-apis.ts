@@ -91,7 +91,7 @@ const DEFAULT_VECTOR_STYLE: VectorPathStyle = {
 const VECTOR_POINT_HIT_RADIUS = 6
 const VECTOR_SEGMENT_HIT_RADIUS = 8
 
-interface VectorHandleUpdate {
+export interface VectorHandleUpdate {
   pointId: string
   target: Exclude<VectorPointTarget, typeof VECTOR_TOKENS.POINT.TARGET.ANCHOR>
   position: PositionData | null
@@ -163,7 +163,7 @@ type VectorTopologyOperation =
   | SetHandlesOperation
   | RemoveLastSinglePointSubpathOperation
 
-interface VectorOperationIntentOptions {
+export interface VectorOperationIntentOptions {
   structuralOperationIntent?: StructuralVectorOperationPatchIntent | null
   transientPreview?: boolean
 }

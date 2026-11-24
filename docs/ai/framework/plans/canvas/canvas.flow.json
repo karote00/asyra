@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "projectId": "asyra",
   "flowId": "canvas",
-  "revision": 30,
+  "revision": 33,
   "definition": {
     "title": "Canvas SDK",
     "purpose": "Bind a blank host surface and opt into independent product SDKs.",
@@ -10,7 +10,7 @@
       {
         "id": "embed",
         "title": "Bind an editor to a canvas",
-        "objective": "Canvas validates and reserves the target. Only an explicit mount initializes product tools. Design owns 2D Core, rendering and edits; Simulation owns clock and sampled playback. Base disposal waits for pending setup and teardown before releasing the target. Invalid or duplicate mounts cannot edit the surface. Design claims a supplied container and creates its own canvas inside it, or borrows the supplied canvas directly. It mounts the Design session on that exact surface. Failure and disposal remove only owned elements and release container exclusivity after teardown. Default or caller-selected controls dispatch through the public Design tools. Headless mode bypasses control creation. Cleanup releases SDK-owned DOM and the binding, including on failure. A declarative Design element mounts through the same editor entry in its own shadow tree. Connection owns startup and disconnection owns teardown. Moving the connected element preserves its session. The React and Vue exports and Angular template use that browser lifecycle. The declarative element fills the parent layout with a viewport-height intrinsic fallback. On a standalone page the element fills the viewport. The existing Design resize observer updates the drawing buffer to the space left by the controls. The default container session mounts the maintained Design workspace in an isolated browser document. The app owns interactive features, panels, menus and optional collaboration. SDK options supply document, actions and services. Conversation has no startup or UI entry. Raw canvas sessions retain their borrowed target. Packed consumers exercise the full workspace and isolated disposal. At mount, Design resolves disabledFeatures for this instance. User commands from controls, gestures, shortcuts, inspectors, extensions and public methods respect that policy. Document load, remote replay and projection retain the original component registrations. hideUI suppresses workspace chrome independently of tool dispatch. Packed consumers verify defaults, disabled routes, document rendering and independent instances. With hidden chrome, public Design commands route text, vector, hierarchy, appearance, selection and viewport edits through the app owners. Read-only UI observations detach on disposal and rebind on reset. Recovery commands reuse the active collaboration session. A plain JavaScript consumer verifies these operations, disabled commands and recovery from failed local storage.",
+        "objective": "Canvas validates and reserves the target. Only an explicit mount initializes product tools. Design owns 2D Core, rendering and edits; Simulation owns clock and sampled playback. Base disposal waits for pending setup and teardown before releasing the target. Invalid or duplicate mounts cannot edit the surface. Design claims a supplied container and creates its own canvas inside it, or borrows the supplied canvas directly. It mounts the Design session on that exact surface. Failure and disposal remove only owned elements and release container exclusivity after teardown. Default or caller-selected controls dispatch through the public Design tools. Headless mode bypasses control creation. Cleanup releases SDK-owned DOM and the binding, including on failure. A declarative Design element mounts through the same editor entry in its own shadow tree. Connection owns startup and disconnection owns teardown. Moving the connected element preserves its session. The React and Vue exports and Angular template use that browser lifecycle. The declarative element fills the parent layout with a viewport-height intrinsic fallback. On a standalone page the element fills the viewport. The existing Design resize observer updates the drawing buffer to the space left by the controls. The default container session mounts the maintained Design workspace in an isolated browser document. The app owns interactive features, panels, menus and optional collaboration. SDK options supply document, actions and services. Conversation has no startup or UI entry. Raw canvas sessions retain their borrowed target. Packed consumers exercise the full workspace and isolated disposal. At mount, Design resolves disabledFeatures for this instance. User commands from controls, gestures, shortcuts, inspectors, extensions and public methods respect that policy. Document load, remote replay and projection retain the original component registrations. hideUI suppresses workspace chrome independently of tool dispatch. Packed consumers verify defaults, disabled routes, document rendering and independent instances. With hidden chrome, public Design commands route text, vector, hierarchy, appearance, selection and viewport edits through the app owners. Read-only UI observations detach on disposal and rebind on reset. Recovery commands reuse the active collaboration session. A plain JavaScript consumer verifies these operations, disabled commands and recovery from failed local storage. The app supplies common API groups and feature admission. The container editor resolves every group against its own live session, detaches document reads and retires subscriptions and retained owners on disposal or reset. The packed plain JavaScript case exercises catalog parity, guarded mixed writes and independent documents.",
         "owner": "Canvas lifecycle and independent product SDKs",
         "required": true,
         "applicable": true,
@@ -67,12 +67,12 @@
         "criterionId": "consumer",
         "kind": "automated",
         "status": "passed",
-        "binding": "8473f4a1ba26bd71803d6313ec3f598bc5c490c021d6ee1b8f8b4bedbea17a82",
+        "binding": "da3cf0d891c1f1f9eef93ac5dc3352c06fb6416bcd5ed4d4988deb983f4168fe",
         "actor": "packed-consumer",
-        "executionId": "de4c9ff4-c6cb-4fcf-9cf4-cc64096f000e",
+        "executionId": "095f72cd-94e1-4fcf-9290-be7c9db46638",
         "caseId": "canvas/consumer",
         "summary": "Separate packed base, design and simulation installations passed type, build and Chromium checks.",
-        "at": "2026-11-24T18:56:25.058Z"
+        "at": "2026-11-24T20:04:57.995Z"
       }
     ],
     "notes": [],

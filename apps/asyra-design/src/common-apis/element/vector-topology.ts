@@ -37,7 +37,7 @@ export interface VectorTopologyEndpoint {
 
 export type VectorTopologyContinuation = VectorTopologyEndpoint
 
-interface VectorAnchorViewOptions {
+export interface VectorAnchorViewOptions {
   includeSyntheticHandles?: boolean
 }
 

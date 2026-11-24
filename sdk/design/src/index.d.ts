@@ -1,3 +1,4 @@
+import type { common } from './common.js'
 import type { CanvasBinding } from '@asyra/canvas'
 
 import type { WorkspaceEditingTools } from './workspace-tools.js'
@@ -32,6 +33,7 @@ export function attachDesignTools(
 
 export interface WorkspaceTools
   extends DesignTools<WorkspaceTool>, WorkspaceEditingTools {
+  readonly common: typeof common
   drawOval(bounds: Rectangle): string
   select(ids: readonly string[]): void
   deleteSelectedElement(): void

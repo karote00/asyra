@@ -121,7 +121,7 @@ export type PathEditingContinuationState = CoreVectorEditingContinuation & {
   elementId: string
 }
 
-interface EnterPathEditingOptions {
+export interface EnterPathEditingOptions {
   startNewSubpath?: boolean
 }
 

@@ -22,7 +22,7 @@ interface PositionUpdate {
   elementId: string
   values: Record<string, number>
 }
-interface ArrangementApis {
+export interface ArrangementApis {
   read(id: string): LayoutRecord | undefined
   geometry(id: string): Record<string, unknown> | undefined
   corner(

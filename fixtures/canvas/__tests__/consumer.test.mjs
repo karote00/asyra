@@ -9,6 +9,7 @@ import { build, preview } from 'vite'
 import { chromium } from 'playwright'
 import { expect } from '@playwright/test'
 import sharp from 'sharp'
+import { commonInventory } from './common-inventory.mjs'
 import { withDocumentServices } from '../services.mjs'
 
 const fixture = fileURLToPath(new URL('../', import.meta.url))
@@ -102,6 +103,8 @@ async function withConsumer(packages, entry, assertions) {
             'workspace.deleteSelectedElement()',
             "const label = workspace.createText('Label', {x:0,y:0,width:50,height:20})",
             'workspace.setLayerLocked(label, false)',
+            'workspace.common.viewport.getCanvasPositionFromWorkspace({x:1,y:2})',
+            'workspace.common.transaction.runTransaction(() => workspace.common.element.setElementLock(label,true))',
             "workspace.observe('collaboration', state => state?.sync)",
             "workspace.updateStroke(label, 'stroke', {width:3, joinType:'round'})",
             'workspace.getPath(label)?.anchors.forEach(anchor => workspace.moveAnchor(label,anchor.id,anchor))',
@@ -2216,6 +2219,191 @@ test('headless playground edits through the host UI and preserves artwork across
       await run('Open path')
       await run('Remove anchor')
       await expect(input('Anchor').locator('option')).toHaveCount(2)
+    }
+  )
+})
+
+test('packed Design exposes every common API on two isolated editor sessions', async () => {
+  const inventory = commonInventory(root)
+
+  await withConsumer(
+    ['sdk/canvas', 'sdk/design'],
+    'common.js',
+    async (page) => {
+      await page.evaluate(() => globalThis.ready)
+      const result = await page.evaluate(async ({ grouped, functions }) => {
+        const { full, restricted, rect } = globalThis
+        const a = full.common
+        const b = restricted.common
+        const keys = Object.entries(b).flatMap(([group, api]) =>
+          Object.keys(api).map((name) => group + '.' + name)
+        )
+        const names = new Set(keys.map((key) => key.split('.')[1]))
+        const missing = [
+          ...grouped.filter((key) => !keys.includes(key)),
+          ...functions.filter((name) => !names.has(name))
+        ]
+        const calls = [
+          ['rectangle', () => b.element.createElement({ type: 'rect' })],
+          [
+            'rectangle',
+            () => b.element.createElements([{ type: 'oval' }, { type: 'rect' }])
+          ],
+          [
+            'pen',
+            () =>
+              b.element.createVectorElementFromSinglePoint('p', { x: 1, y: 2 })
+          ],
+          ['pen', () => b.systemContext.switchPrimaryTool('pen')],
+          [
+            'pen',
+            () =>
+              b.element.patchElementProperties([
+                { elementId: rect, records: [{ key: 'points' }] }
+              ])
+          ],
+          [
+            'fills',
+            () =>
+              b.element.updateElementProperties([rect], {
+                width: 12,
+                fills: []
+              })
+          ],
+          [
+            'fills',
+            () =>
+              b.element.changeElementGeometry(rect, { width: 12, fills: [] })
+          ],
+          ['fills', () => b.fills.addFill(rect)],
+          ['undo', () => b.history.undo()],
+          ['moveLayerHierarchy', () => b.hierarchy.moveElementsRelative({})],
+          [
+            'moveLayerHierarchy',
+            () =>
+              b.design.createDesignOrganizer()({
+                operation: 'reorder',
+                elementIds: [rect],
+                index: 0
+              })
+          ]
+        ]
+        const rejected = []
+
+        for (const [feature, call] of calls) {
+          try {
+            await call()
+          } catch (error) {
+            if (error.message !== 'Disabled Design feature: ' + feature) {
+              throw error
+            }
+
+            rejected.push(feature)
+          }
+        }
+
+        if (rejected.length !== calls.length) {
+          throw new Error(
+            'A disabled common API mutation passed its command guard'
+          )
+        }
+
+        const snapshot = b.hierarchy.getElementDataMap()
+
+        snapshot[rect].name = 'outside'
+        const token = Symbol('host receipt')
+        const preservesToken =
+          b.properties.mutationReceipt(token, {
+            acceptedIds: [],
+            changed: false
+          }).value === token
+        const sourceName = b.hierarchy.getElementDataMap()[rect].name
+        const changes = [0, 0]
+        const stopA = a.transaction.subscribeToTransactionStatus(
+          () => changes[0]++
+        )
+        const stopB = b.transaction.subscribeToTransactionStatus(
+          () => changes[1]++
+        )
+        const before = [...changes]
+
+        a.transaction.runTransaction(() => {
+          a.element.setElementLock(rect, true)
+          a.viewport.panTo(10, 15)
+        })
+        const afterA = [...changes]
+        const coords = [a, b].map((api) =>
+          api.viewport.getCanvasPositionFromWorkspace({ x: 0, y: 0 })
+        )
+        const locks = [a, b].map((api) => api.element.isElementLocked(rect))
+        const width = restricted.getElementProperties(rect, ['width']).width
+        const ids = b.hierarchy.getFlattenedElementIds()
+
+        stopA()
+        stopB()
+        const prepare = b.design.prepareDesignElementEdit({
+          elementId: rect,
+          name: 'old'
+        })
+        const viewport = b.viewport.getPosition
+
+        await restricted.reset()
+        let stale = false
+
+        try {
+          prepare()
+        } catch {
+          stale = true
+        }
+
+        const afterReset = b.hierarchy.getFlattenedElementIds()
+
+        await restricted.destroy()
+        let closed = false
+
+        try {
+          viewport()
+        } catch {
+          closed = true
+        }
+
+        const surviving = a.element.isElementLocked(rect)
+
+        await full.destroy()
+
+        return {
+          missing,
+          total: keys.length,
+          preservesToken,
+          checked: calls.length,
+          rejected,
+          sourceName,
+          before,
+          afterA,
+          coords,
+          locks,
+          width,
+          ids,
+          rect,
+          afterReset,
+          stale,
+          closed,
+          surviving
+        }
+      }, inventory)
+
+      assert.deepEqual(result.missing, [])
+      assert.ok(result.preservesToken)
+      assert.equal(result.rejected.length, result.checked)
+      assert.notEqual(result.sourceName, 'outside')
+      assert.ok(result.afterA[0] > result.before[0])
+      assert.equal(result.afterA[1], result.before[1])
+      assert.notDeepEqual(...result.coords)
+      assert.deepEqual(result.locks, [true, false])
+      assert.equal(result.width, 80)
+      assert.deepEqual(result.ids, [result.rect])
+      assert.deepEqual(result.afterReset, [])
+      assert.ok(result.stale && result.closed && result.surviving)
     }
   )
 })

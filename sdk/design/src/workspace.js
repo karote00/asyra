@@ -343,6 +343,22 @@ export async function mountWorkspace(host, options, signal) {
       editor[name] = (...args) => current().commands[name](...args)
     }
 
+    editor.common = Object.freeze(
+      Object.fromEntries(
+        Object.entries(session.common).map(([group, methods]) => [
+          group,
+          Object.freeze(
+            Object.fromEntries(
+              Object.keys(methods).map((name) => [
+                name,
+                (...args) => current().common[group][name](...args)
+              ])
+            )
+          )
+        ])
+      )
+    )
+
     return editor
   } catch (error) {
     await editor.destroy()

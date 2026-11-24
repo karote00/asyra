@@ -1,4 +1,5 @@
 import { build } from 'vite'
+import { buildCommonTypes } from './sdk-types.mjs'
 import tailwindcss from '@tailwindcss/vite'
 import { mkdir, writeFile } from 'node:fs/promises'
 import path from 'node:path'
@@ -8,6 +9,8 @@ import { URL, fileURLToPath } from 'node:url'
 // Emit portable asset references so the consumer bundler owns their final URLs.
 export async function buildWorkspace(outDir, entry) {
   const root = fileURLToPath(new URL('.', import.meta.url))
+
+  await buildCommonTypes(outDir)
   const [result] = await build({
     root,
     envFile: false,

@@ -13,7 +13,7 @@ export interface DesignElementEdit {
   fillColor?: string
   strokeColor?: string
 }
-interface DesignEditApis {
+export interface DesignEditApis {
   getData(
     id: string
   ):

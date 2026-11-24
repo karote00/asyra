@@ -1,3 +1,4 @@
+import { createCommonSession } from './workspace/common-session'
 import React from 'react'
 import { createRoot } from 'react-dom/client'
 import { PresetSystemPropertyKeys } from '@asyra/preset'
@@ -113,10 +114,12 @@ export function mount(options: WorkspaceOptions) {
       />
     )
   })
+  const lifetime = new AbortController()
   let closing: Promise<void> | undefined
 
   return {
     ready,
+    common: createCommonSession(options.disabledFeatures, lifetime.signal),
     commands: workspaceCommands(options.reopen),
     observe: observeWorkspace,
 
@@ -184,6 +187,7 @@ export function mount(options: WorkspaceOptions) {
 
     destroy() {
       if (!closing) {
+        lifetime.abort()
         cancel(new Error('Design workspace closed during startup'))
         root.unmount()
         closing = options.surface.destroy()

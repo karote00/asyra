@@ -83,3 +83,12 @@ viewport and recovery. The host receives detached reads and subscriptions
 scoped to its editor. Reset rebinds observers and destroy releases them.
 Validate using a packed JavaScript consumer, including disabled operations,
 document reload, Undo and collaboration recovery.
+
+### Workspace common APIs
+
+The embed step binds Design common operations to the creating container editor.
+The app owns signatures, work and feature admission. The host receives grouped
+commands, detached document reads, transaction handles and scoped observers.
+Reset retains the editor entry and retires session-local resources. Destroy
+releases the owner. Verify the catalog, mixed feature policy, callback lifetime
+and independent documents with two editors in a packed plain JavaScript consumer.

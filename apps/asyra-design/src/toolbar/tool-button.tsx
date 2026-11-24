@@ -84,7 +84,7 @@ const ToolButton = ({
           <button
             key={tool}
             type="button"
-            aria-label={label}
+            aria-label={tool === PrimaryToolType.TEXT ? label : undefined}
             aria-pressed={primaryTool === tool}
             className={`tool-btn ${primaryTool === tool ? 'active' : ''}`}
             onClick={() => switchPrimaryTool(tool)}

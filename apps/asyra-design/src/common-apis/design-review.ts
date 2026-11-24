@@ -16,7 +16,7 @@ interface Bounds {
   width: number
   height: number
 }
-interface ReviewApis {
+export interface ReviewApis {
   observeChanges?(
     listener: (change?: InspectionDependencyChange) => void
   ): () => void
@@ -36,7 +36,7 @@ interface ReviewApis {
     ids: readonly string[]
   ): readonly { elementId: string; bounds: Bounds | null }[]
 }
-interface ReviewFinding {
+export interface ReviewFinding {
   parentId?: string
   kind: string
   elementId: string

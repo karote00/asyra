@@ -112,10 +112,27 @@ Feature name, and common history API, while `defineFeature` is imported through
 the public `@asyra/core` facade.
 
 ```ts
+import {
+  featureEnabled,
+  type DisabledCommandBehavior
+} from '../../workspace-features'
 import { defineFeature } from '@asyra/core'
 import { historyApis } from '../../common-apis'
 import { FeatureNames, InputSystemEvents } from '../../constants'
 import type { SystemContextSnapshotWithDetail } from '@asyra/utils'
+
+export async function runHistoryCommand(
+  direction: 'undo' | 'redo',
+  behavior?: DisabledCommandBehavior
+) {
+  if (!featureEnabled(direction, behavior)) {
+    return null
+  }
+
+  await historyApis[direction]()
+
+  return direction === 'undo' ? { undid: true } : { redid: true }
+}
 
 export const undoRedoFeature = defineFeature(
   FeatureNames.UNDO_REDO,
@@ -132,15 +149,7 @@ export const undoRedoFeature = defineFeature(
         return null
       }
 
-      if (direction === 'redo') {
-        await historyApis.redo()
-
-        return { redid: true }
-      } else {
-        await historyApis.undo()
-
-        return { undid: true }
-      }
+      return runHistoryCommand(direction)
     }
   }
 )
@@ -149,7 +158,7 @@ export const undoRedoFeature = defineFeature(
 - **This excerpt proves:** registration, priority, exclusivity, and execution
   remain explicit at one App-owned intent boundary.
 - **The App owns meaning:** its shortcut event chooses Undo or Redo and calls
-  the App's common history API.
+  the App's `historyApis.undo()` or `historyApis.redo()` method.
 - **The complete runtime contract:** the common API reaches Factory-owned
   transaction, replay, Undo/Redo, rollback, and lifecycle behavior described in
   the maintained guide below. Those guarantees are not inferred from the code

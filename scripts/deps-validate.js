@@ -160,7 +160,9 @@ export function validateSourceImports({
 }) {
   const declaredDependencies = new Set(dependencies)
 
-  const privateBuildInput = distOnly && relativeFile.startsWith('build-inputs/')
+  const privateBuildInput =
+    distOnly &&
+    (relativeFile.startsWith('build-inputs/') || relativeFile === 'build.mjs')
 
   if (isTestFile(relativeFile) || privateBuildInput) {
     for (const dependency of devDependencies) {
@@ -255,7 +257,11 @@ export async function validateDependencies({
         ...manifest.dependencies,
         ...manifest.peerDependencies
       }),
-      distOnly: manifest.files?.length === 1 && manifest.files[0] === 'dist',
+      distOnly:
+        manifest.files?.includes('dist') &&
+        manifest.files.every(
+          (file) => file === 'dist' || /^[^/]+\.md$/iu.test(file)
+        ),
       devDependencies: Object.keys(manifest.devDependencies || {})
     }
   })

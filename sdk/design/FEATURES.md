@@ -51,3 +51,93 @@ This inventory follows the maintained app in `apps/asyra-design/src` and the pub
 - The borrowed HTML canvas and attachDesignTools have a separate runtime. They support rectangle drawing, click selection, undo/redo, save and gesture cancellation. The created toolbar is optional. The full workspace shortcut map does not apply to this entry.
 - Removing built-in chrome and disabling editing capabilities are independent decisions. Selection outlines, the drawing surface and the text tool's inline input belong to tool interaction. Existing text, shapes, strokes, gradients, vectors, visibility and hierarchy must survive document loading.
 - Source entry points for review: `features/index.ts`, `constants/feature-names.ts`, `config/key-combinations.ts`, `config/group-command-descriptors.ts`, `controllers/`, `contents/`, `properties/`, `init/init-design.ts`, `render-app/`, `app/design-workspace.tsx`, `workspace.tsx`, `sdk/design/src/actions.js` and `sdk/design/build-inputs/editor.js`.
+
+## Instance-scoped common APIs
+
+Container editors expose the following groups under `editor.common`. Each method resolves against the live workspace for that editor. The packed declaration includes the signatures without runtime Framework dependencies. For example, `editor.common.viewport.getCanvasPositionFromWorkspace(point)` uses that editor’s viewport.
+
+Read operations are available on restricted editors. Feature-owned writes use the same feature IDs as the corresponding Design commands. Mixed creation and property batches check every requested feature before the first write. Raw transaction event payloads have no declared feature owner, so direct event publication requires an unrestricted editor. Transaction callbacks can group permitted commands on restricted editors.
+
+The editor retains stable method references across reset. Subscriptions and resources created through common APIs belong to a single session and are released on reset or destruction. Use the unsubscribe or dispose function to release them earlier. Use `editor.observe` when a host subscription should follow the editor across resets.
+
+The catalog groups callable operations, including geometry utilities and specialized factories. Source modules also export data types, constants and error classes. The packed consumer checks callable source exports against the runtime inventory.
+
+### element
+
+`appendVectorAnchorPoint`, `changeElementGeometry`, `connectVectorAnchorEndpoints`, `connectVectorAnchorPoints`, `createElement`, `createElements`, `createElementsInParent`, `createVectorElement`, `createVectorElementFromSinglePoint`, `createVectorElementsInParent`, `deleteElement`, `deleteElements`, `discardTransientVectorPreviews`, `getElementBounds`, `getElementClientBounds`, `getElementIdAtClientPos`, `getElementIdAtWorkspacePos`, `getElementIdsInBounds`, `getElementPosition`, `getElementType`, `getMousePosInWorkspace`, `getPositionInParent`, `getRenderElementIdAtClientPos`, `getVectorAnchorContinuation`, `getVectorAnchorEndpoint`, `getVectorAnchorPointAtClientPos`, `getVectorAnchorPointAtWorkspacePos`, `getVectorAnchorPointById`, `getVectorAnchorPointHandleMode`, `getVectorAnchorPoints`, `getVectorAnchorSubpaths`, `getVectorEditablePointAtClientPos`, `getVectorEditablePointAtWorkspacePos`, `getVectorSegmentAtClientPos`, `getVectorSegmentAtWorkspacePos`, `getVectorSegmentHitAtClientPos`, `getVectorSegmentHitAtWorkspacePos`, `getVectorTopology`, `hasMovedBeyondThreshold`, `isContainerType`, `isElementLocked`, `isElementVisible`, `isPointInsideElement`, `isPointNearVectorPathAtClientPos`, `isPointNearVectorPathAtWorkspacePos`, `normalizeGroupGeometryForElements`, `patchElementProperties`, `removeLastSinglePointSubpath`, `removeVectorAnchorPoint`, `resetElementSize`, `scaleVectorElementAroundCenter`, `setElementLock`, `setElementPositions`, `setElementVisible`, `setElementsVisible`, `setVectorAnchorPointHandleMode`, `setVectorClosed`, `setVectorElementPosition`, `setVectorElementPositions`, `splitVectorSegmentAtWorkspacePos`, `toggleElementLock`, `toggleElementVisible`, `updateElementProperties`, `updateVectorAnchorPointHandlePosition`, `updateVectorAnchorPointHandles`, `updateVectorAnchorPointPosition`, `updateVectorAnchorPointType`
+
+### viewport
+
+`getCanvasPositionFromWorkspace`, `getPosition`, `getScale`, `panTo`, `zoomFit`, `zoomToCenter`
+
+### selection
+
+`clearSelection`, `clearVectorPointSelection`, `clearVectorSegmentSelection`, `decodeVectorPointSelectionId`, `decodeVectorSegmentSelectionId`, `encodeVectorPointSelectionId`, `encodeVectorSegmentSelectionId`, `getSelectedIds`, `getSelectedVectorPoints`, `getSelectedVectorSegments`, `getVectorPointSelectionIds`, `getVectorSegmentSelectionIds`, `selectElements`, `selectVectorPoint`, `selectVectorPoints`, `selectVectorSegment`, `selectVectorSegments`, `toggleSelection`
+
+### hierarchy
+
+`getElementDataMap`, `getFlattenedElementIds`, `getWorkspaceId`, `groupElements`, `moveElements`, `moveElementsRelative`, `removeSubtree`, `ungroupElement`
+
+### fills
+
+`addFill`, `addFills`, `detachFillsAtIndex`, `getCanvasBounds`, `getCanvasPositionFromClient`, `getFillById`, `getFillTargetsAtIndex`, `getGradientHandleGeometry`, `getGradientHandleHitAtClientPos`, `getGradientStopHitAtClientPos`, `getNextGradientForHandleAtClientPosition`, `getPrimaryFillColor`, `removeFill`, `removeFills`, `shareFillAtIndex`, `updateFillField`, `updateFillFields`, `updateFillFieldsBatch`, `updateFillsAtIndex`, `updateGradientHandleAtClientPosition`, `updatePrimaryFillColor`, `updatePrimaryFillColors`
+
+### strokes
+
+`addStroke`, `getPrimaryStrokeColor`, `removeStroke`, `updatePrimaryStrokeColor`, `updatePrimaryStrokeColors`, `updateStrokeField`, `updateStrokeFields`, `updateStrokeFieldsBatch`
+
+### systemContext
+
+`clearAiDrawingProgress`, `clearAreaSelection`, `clearGradientFillEditingState`, `clearVectorPointState`, `enterPathEditingMode`, `exitPathEditingMode`, `getActiveGradientFill`, `getAiDrawingProgress`, `getAreaSelection`, `getHoveredGradientHandle`, `getHoveredGradientStop`, `getHoveredVectorPoint`, `getHoveredVectorSegment`, `getHoveredVectorSegmentInsertPoint`, `getPathEditingContinuation`, `getPathEditingMode`, `getPathEditingStartNewSubpath`, `getPathEditingVectorId`, `getSelectedGradientHandle`, `getSelectedGradientStop`, `getSelectedVectorPoint`, `getSelectedVectorSegment`, `getSystemContextSnapshot`, `isAiDrawingProgressState`, `isAiDrawingProgressStateOrNull`, `setActiveGradientFill`, `setAiDrawingProgress`, `setAreaSelection`, `setHoveredGradientHandle`, `setHoveredGradientStop`, `setHoveredVectorPoint`, `setHoveredVectorSegment`, `setHoveredVectorSegmentInsertPoint`, `setPathEditingContinuation`, `setPathEditingMode`, `setPathEditingStartNewSubpath`, `setPathEditingVectorId`, `setSelectedGradientHandle`, `setSelectedGradientStop`, `switchPrimaryTool`, `updateHoveredElementId`
+
+### transaction
+
+`configureSharedDeliverySequence`, `endHistoryGroup`, `endTransaction`, `isTransactionBoundaryIdle`, `rollbackTransaction`, `runTransaction`, `startHistoryGroup`, `startTransaction`, `subscribeToTransactionStatus`, `updateHistoryGroup`, `updateTransaction`
+
+### history
+
+`createAiHistoryProjection`, `redo`, `undo`
+
+### renderLayer
+
+`registerRenderLayer`, `unregisterRenderLayer`
+
+### cursor
+
+`resetCanvasCursor`, `setCanvasCursor`
+
+### text
+
+`beginCreate`, `beginEdit`, `cancel`, `createWorkspaceText`, `finish`, `getDraftSnapshot`, `getSnapshot`, `isCurrent`, `measureTextBox`, `projectTextLayoutUpdate`, `subscribe`, `updateDraft`
+
+### inspection
+
+`createInspectionDependencies`, `createInspectionEvidence`, `inspect`, `observeInspectionChanges`
+
+### design
+
+`arrangeDesign`, `assertDesignContextCount`, `createDesignArranger`, `createDesignContextReader`, `createDesignElementEditPreparer`, `createDesignElementEditor`, `createDesignOrganizer`, `createDesignReviewer`, `createRetainedDesignContext`, `editDesignElement`, `matchesDesignContextFilter`, `observeDesignChanges`, `organizeDesign`, `prepareDesignElementEdit`, `readDesignContext`, `requireEditableElement`, `validateDesignContextFilter`, `validateDesignContextQuery`
+
+### review
+
+`capture`, `coverage`, `dispose`, `isCurrent`, `owns`, `reconcile`, `reviewDesign`, `validate`
+
+### vectorGeometry
+
+`addPoint`, `buildPatch`, `connectAnchors`, `connectEndpoints`, `movePoint`, `removePoint`, `setHandleMode`, `splitSegment`, `updateHandle`, `updatePoint`, `validate`
+
+### topology
+
+`appendAnchorPointToTopology`, `connectAnchorEndpointsInTopology`, `connectAnchorPointsInTopology`, `createEmptyVectorTopology`, `createVectorTopologyFromSinglePoint`, `getAnchorContinuationInTopology`, `getAnchorEndpointInTopology`, `getOrderedNetworks`, `hasVectorTopologyData`, `isClosedVectorTopology`, `isVectorTopology`, `removeAnchorPointFromTopology`, `removeLastSinglePointSubpath`, `setAnchorHandleInTopology`, `setAnchorHandleModeInTopology`, `setAnchorTypeInTopology`, `setTopologyClosed`, `splitSegmentInTopology`, `toLocalTopology`, `updateAnchorPositionInTopology`, `vectorTopologyToAnchorPoints`, `vectorTopologyToAnchorSubpaths`
+
+### vector
+
+`assertVectorTopologyConsistency`, `buildVectorComputedPatch`, `calculateVectorBounds`, `connectAnchorPointsAndRepair`, `connectEndpointsAndRepair`, `createValidatedVectorComputedPatchRequest`, `createVectorComputedPatchFromTopologyChange`, `getClosestPointOnCubicBezier`, `getCubicBezierSegmentBounds`, `getVectorAnchorHandleMode`, `insertPointAndRepairTopology`, `isVectorComputedData`, `normalizeVectorTopology`, `prepareVectorElementData`, `projectPointToCubicBezier`, `removePointAndRepairTopology`, `resolveHandleModeDragUpdate`, `resolveHandleModeSwitchUpdate`, `scaleVectorTopologyAroundCenter`, `setHandleModeAndRepair`, `splitCubicBezierAtT`, `splitSegmentAndRepairTopology`, `translateAnchorAndHandles`, `updateHandleWithMode`, `updatePoint`
+
+### gradient
+
+`computeNextGradientForHandleWithDelta`, `isNonLinearGradient`
+
+### properties
+
+`getChangedDefinedPatchEntries`, `mutationReceipt`

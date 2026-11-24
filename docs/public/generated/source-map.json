@@ -448,7 +448,7 @@
         },
         {
           "path": "packages/core/src/core.ts",
-          "sha256": "b450b976de4a0eb54b4b88cb178554764f16461ae59d6a023cf88b64a381fce8"
+          "sha256": "eb1aa8dad400fa6861c0c9ddd7d3731d4a22aea9d3c82f75a38d715ddbb1aba2"
         },
         {
           "path": "packages/preset/src/index.ts",
@@ -494,7 +494,7 @@
         },
         {
           "path": "packages/core/src/core.ts",
-          "sha256": "b450b976de4a0eb54b4b88cb178554764f16461ae59d6a023cf88b64a381fce8"
+          "sha256": "eb1aa8dad400fa6861c0c9ddd7d3731d4a22aea9d3c82f75a38d715ddbb1aba2"
         },
         {
           "path": "packages/preset/src/index.ts",
@@ -524,7 +524,7 @@
       "sources": [
         {
           "path": "packages/core/src/core.ts",
-          "sha256": "b450b976de4a0eb54b4b88cb178554764f16461ae59d6a023cf88b64a381fce8"
+          "sha256": "eb1aa8dad400fa6861c0c9ddd7d3731d4a22aea9d3c82f75a38d715ddbb1aba2"
         },
         {
           "path": "packages/preset/src/props/components/text-component.ts",
@@ -546,7 +546,7 @@
       "sources": [
         {
           "path": "packages/core/src/core.ts",
-          "sha256": "b450b976de4a0eb54b4b88cb178554764f16461ae59d6a023cf88b64a381fce8"
+          "sha256": "eb1aa8dad400fa6861c0c9ddd7d3731d4a22aea9d3c82f75a38d715ddbb1aba2"
         },
         {
           "path": "packages/preset/src/props/components/text-component.ts",
@@ -764,7 +764,7 @@
     },
     {
       "id": "reference/packages/render-engine-pixi",
-      "pageSha256": "6b1da10bd572467992694c5e0ae923f7d803b97db81d494b35b37b4c2a69c34f",
+      "pageSha256": "bda603adab842985f9e6e646ac357c9b582ab61bb480eb773b3980e77ed74c4d",
       "sources": [
         {
           "path": "docs/ai/framework/packages/render-engine-pixi.md",
@@ -868,7 +868,7 @@
         },
         {
           "path": "package.json",
-          "sha256": "16015836f0c0d70c147a1297bdbbdcd1b6d6036b9dbbfde2bc937392fe196dd0"
+          "sha256": "5419bcced10a0aac8e7e450045c1f41a8829d2e1c4fc484fcae7f5cf080f68a4"
         }
       ]
     },
@@ -934,7 +934,7 @@
         },
         {
           "path": "packages/core/src/core.ts",
-          "sha256": "b450b976de4a0eb54b4b88cb178554764f16461ae59d6a023cf88b64a381fce8"
+          "sha256": "eb1aa8dad400fa6861c0c9ddd7d3731d4a22aea9d3c82f75a38d715ddbb1aba2"
         },
         {
           "path": "packages/utils/src/sid/idCounter.ts",
