@@ -1302,7 +1302,10 @@ it.each([true, false])(
               return {
                 actionId: a.id,
                 actionName: a.name,
-                result: a.name === edit.name ? square.receipt : capture
+                result:
+                  a.name === edit.name
+                    ? { ...square.receipt, modelResult: square.receipt }
+                    : capture
               }
             })
           })
@@ -2430,10 +2433,18 @@ it.each(['catalog', 'rotation', 'admission', 'curves', 'pointer'] as const)(
         )
 
         expect(rotation.instancePath).toBe('/draft/children/30/rotation')
-        const parent = rotation.instancePath.slice(
-          '/draft'.length,
-          -'/rotation'.length
+        expect(issue.repairGuide.envelopeIssues).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({ instancePath: '/delivery' })
+          ])
         )
+        expect(issue.repairGuide.tool).toBe('prepare_design')
+        expect(issue.repairGuide.arguments).not.toHaveProperty('delivery')
+        const [target] = issue.repairGuide.arguments.repair.replacements
+        const parent = target.path
+
+        expect(parent).toBe('/children/30')
+        expect(issue.repairGuide.arguments.repair.draftId).toBe(repair.draftId)
 
         expect(repair.draftId).toEqual(expect.any(String))
         const originalArgs = original.operations[0].arguments
@@ -2703,3 +2714,658 @@ it.each(['catalog', 'rotation', 'admission', 'curves', 'pointer'] as const)(
     }
   }
 )
+
+it('delivers a trace receipt to Responses and pages retained local paths only on request', async () => {
+  const { createDefaultAiModelSources, selectAiModelSource } =
+    await import('../ai-model-sources')
+  const { createAiToolContract } = await import('@asyra/ai-agent-runtime')
+  const { readFile } = await import('node:fs/promises')
+  const bytes = await readFile('e2e/fixtures/reference-logo.png')
+  const runtime = await createDrawingRuntime()
+  let exchange = 0
+  let imageArtifactId = ''
+  const replies: string[] = []
+  const sources = createDefaultAiModelSources({
+    continuationDatabase: ':memory:',
+
+    fetch: async (_, init) => {
+      const body = JSON.parse(String(init?.body))
+
+      exchange++
+      if (exchange === 1) {
+        return requestEntries('design_operations.execute_design')
+      }
+
+      const reply = body.input.find(
+        (item: { type: string }) => item.type === 'function_call_output'
+      )
+
+      if (reply) {
+        replies.push(reply.output[0].text)
+        if (exchange === 3) {
+          imageArtifactId = JSON.parse(reply.output[0].text).imageArtifactId
+        }
+      }
+
+      const args =
+        exchange === 2
+          ? {
+              invocation: {
+                namespace: 'image_analysis',
+                tool: 'vtracer',
+                arguments: {
+                  attachmentIndex: 0,
+                  plan: {
+                    strategy: 'preserve-vectors',
+                    reason: 'Keep editable contours.'
+                  }
+                }
+              }
+            }
+          : {
+              operations: [
+                {
+                  name: 'image_analysis.query_vector_paths',
+                  arguments: {
+                    imageArtifactId,
+                    region: { x: 0, y: 0, width: 250, height: 250 },
+                    limit: 1
+                  }
+                }
+              ]
+            }
+
+      return Response.json({
+        id: 'vector-page-' + exchange,
+        status: 'completed',
+        output:
+          exchange === 4
+            ? [
+                {
+                  type: 'message',
+                  role: 'assistant',
+                  content: [
+                    { type: 'output_text', text: JSON.stringify(final) }
+                  ]
+                }
+              ]
+            : [
+                {
+                  type: 'function_call',
+                  namespace: 'design_operations',
+                  name: 'execute_design',
+                  call_id: 'vector-' + exchange,
+                  arguments: JSON.stringify(args)
+                }
+              ]
+      })
+    }
+  })
+
+  try {
+    await selectAiModelSource('openai-responses', sources).request(
+      {
+        ...input,
+        actions: runtime.actionDefinitions.map(createAiToolContract),
+        metadata: {
+          imageAttachments: [
+            {
+              mediaType: 'image/webp',
+              dataUrl: 'data:image/webp;base64,' + bytes.toString('base64'),
+              size: bytes.length
+            }
+          ]
+        }
+      },
+      {
+        environment: {
+          OPENAI_API_KEY: 'fixture',
+          AI_PROVIDER_MODEL: 'fixture'
+        },
+
+        executeBatch: async () => {
+          throw Error('Reading a retained artifact must not change the canvas')
+        }
+      }
+    )
+    expect(exchange).toBe(4)
+    const [receipt, page] = replies.map((text) => JSON.parse(text))
+
+    expect(receipt.pathCount, replies[0]).toBeGreaterThan(1)
+    expect(receipt).not.toHaveProperty('paths')
+    expect(page.execution?.value, replies[1]).toMatchObject({
+      imageArtifactId,
+      paths: [{ id: expect.any(String) }],
+      nextOffset: expect.any(Number)
+    })
+  } finally {
+    await Promise.all(sources.map((source) => source.dispose?.()))
+    await Promise.all(
+      runtime.ownedResources?.map((resource) => resource.dispose()) ?? []
+    )
+    captureRecord.mockClear()
+  }
+})
+
+it('shares preparation findings with the published check reader and scopes review to the authored node', async () => {
+  const { createDesignProviderTools } = await import('../design-provider-tools')
+  const { createAiToolContract } = await import('@asyra/ai-agent-runtime')
+  const runtime = await createDrawingRuntime()
+  const tools = await createDesignProviderTools(
+    { ...input, actions: runtime.actionDefinitions.map(createAiToolContract) },
+    {
+      modelSource: 'openai-responses',
+
+      executeBatch: async (batch) => ({
+        context: {},
+        actionResults: batch.actions.map(
+          (
+            a
+          ): import('@asyra/ai-agent-runtime').AiBatchReceipt['actionResults'][number] => ({
+            actionId: a.id,
+            actionName: a.name,
+            result:
+              a.name === 'read_design_attachment'
+                ? {
+                    available: true,
+                    workspaceId: 'workspace',
+                    parentId: 'workspace',
+                    basis: [
+                      { x: 0, y: 0 },
+                      { x: 1, y: 0 },
+                      { x: 0, y: 1 }
+                    ],
+                    evidence: { sessionId: 'scene', revision: 0 }
+                  }
+                : {
+                    current: true,
+                    validatedAt: { sessionId: 'scene', revision: 0 }
+                  }
+          })
+        )
+      })
+    }
+  )
+
+  const send = (args: unknown) =>
+    tools.invoke({
+      namespace: 'design_operations',
+      name: 'execute_design',
+      callId: crypto.randomUUID(),
+      arguments: args
+    })
+
+  const read = async (tool: string, args: unknown) =>
+    JSON.parse(
+      (
+        await send({
+          invocation: { namespace: 'design_operations', tool, arguments: args }
+        })
+      ).text
+    )
+
+  try {
+    const draft = {
+      type: 'frame',
+      name: 'Panel',
+      width: 100,
+      height: 100,
+      brief: {
+        intent: 'Tiles',
+        viewpoint: 'Front',
+        sources: ['User'],
+        assumptions: ['Fixed'],
+        checks: [
+          { key: 'tile-0', property: 'width', expected: 8, tolerance: 0 }
+        ]
+      },
+      children: Array.from({ length: 180 }, (_, i) => ({
+        name: 'Tile',
+        key: 'tile-' + i,
+        type: 'rect',
+        width: 10,
+        height: 10,
+        x: 95,
+        y: 0
+      }))
+    }
+    const result = JSON.parse(
+      (
+        await send({
+          operations: [
+            {
+              id: 'prepare',
+              name: 'design_preparation.prepare_design',
+              arguments: { draft }
+            }
+          ]
+        })
+      ).text
+    )
+    const value = result.execution.recovery[0].value
+
+    expect((await read('read_design_checks', {})).counts.fail).toBe(1)
+    expect(value.findings.length).toBeLessThan(10)
+    const page = await read('read_design_checks', {
+      findingsFor: value.findingSummary.checkId,
+      target: 'tile-0'
+    })
+
+    expect(page.findingPage.items.map((f: { kind: string }) => f.kind)).toEqual(
+      ['overflow', 'requirement']
+    )
+    expect(
+      (
+        await read('review_prepared_design', {
+          artifactId: value.artifactId,
+          keys: ['tile-0']
+        })
+      ).deterministicFindings
+    ).toEqual(page.findingPage.items)
+    const selected = await read('review_prepared_design', {
+      artifactId: value.artifactId,
+      keys: ['tile-1']
+    })
+
+    expect(selected.findingSummary).toMatchObject({
+      total: 1,
+      blockingTotal: 181
+    })
+    const combined = JSON.parse(
+      (
+        await send({
+          operations: [
+            {
+              name: 'design_workflow.prepare_and_apply_design',
+              arguments: { parts: [{ key: 'panel', draft }] }
+            }
+          ]
+        })
+      ).text
+    )
+    const failedPart = combined.execution.recovery[0].value.parts[0]
+
+    expect(failedPart.findingSummary.total).toBe(181)
+    expect(failedPart.findings).toHaveLength(2)
+    const all = await read('review_prepared_design', {
+      artifactId: value.artifactId
+    })
+
+    expect(all.status).toBe('fail')
+    expect(all.findingSummary.total).toBe(181)
+    expect(
+      (await read('review_prepared_design', { artifactId: value.artifactId }))
+        .deterministicFindings
+    ).toEqual([])
+    expect(
+      (
+        await read('read_design_checks', {
+          briefFor: value.findingSummary.checkId
+        })
+      ).preparedReview.checks[0]
+    ).toMatchObject({ key: 'tile-0', actual: 10, passed: false })
+    const forwarded = await send({
+      workflow: {
+        operations: [
+          {
+            id: 'full',
+            name: 'design_preparation.prepare_design',
+            arguments: {
+              draft: {
+                type: 'frame',
+                name: 'Labels',
+                width: 106,
+                height: 100,
+                children: Array.from({ length: 20 }, (_, i) => ({
+                  name: 'Label',
+                  key: 'label-' + i,
+                  type: 'text',
+                  width: 80,
+                  height: 18,
+                  text: 'Label'
+                }))
+              }
+            }
+          }
+        ],
+        delivery: { fields: { issues: { step: 'full', path: '/findings' } } }
+      }
+    })
+
+    expect(JSON.parse(forwarded.text), forwarded.text).toMatchObject({
+      fields: { issues: expect.any(Array) }
+    })
+    expect(JSON.parse(forwarded.text).fields.issues).toHaveLength(20)
+    expect(value.draftId).toEqual(expect.any(String))
+    const repaired = JSON.parse(
+      (
+        await send({
+          operations: [
+            {
+              name: 'design_preparation.prepare_design',
+              arguments: {
+                repair: {
+                  draftId: value.draftId,
+                  replacements: [
+                    { path: '/width', value: 105 },
+                    { path: '/children/0/width', value: 8 }
+                  ]
+                }
+              }
+            }
+          ]
+        })
+      ).text
+    )
+
+    expect(repaired.execution.value).toMatchObject({
+      applicable: true,
+      elementCount: 181,
+      findings: []
+    })
+    const error = await send({ operations: [] })
+    const message = JSON.parse(error.text).message
+
+    expect(
+      error.contentItems.flatMap((p) =>
+        p.type === 'inputText'
+          ? p.text.split(JSON.stringify(message)).slice(1)
+          : []
+      )
+    ).toHaveLength(1)
+  } finally {
+    await tools.dispose()
+    await Promise.all(runtime.ownedResources?.map((r) => r.dispose()) ?? [])
+  }
+})
+
+it('repairs the recorded entrance at the native provider boundary without resubmitting its source', async () => {
+  const { default: submission } =
+    await import('./fixtures/entrance-vector-submission.json')
+  const { createDesignProviderTools } = await import('../design-provider-tools')
+  const { createAiToolContract, createConversationResults } =
+    await import('@asyra/ai-agent-runtime')
+  const { operationInputIssue } = await import('@asyra/ai-agent-runtime/schema')
+  const runtime = await createDrawingRuntime()
+  const saved = createConversationResults(() => 1).open('entrance')
+  const writes: string[][] = []
+  const tools = await createDesignProviderTools(
+    {
+      ...input,
+      metadata: { conversationId: 'entrance' },
+      actions: runtime.actionDefinitions.map(createAiToolContract)
+    },
+    {
+      modelSource: 'local-codex',
+
+      resultContext: async (command) => saved.exchange(command),
+
+      executeBatch: async (batch) => ({
+        context: {},
+        actionResults: batch.actions.map((a) => {
+          expect(a.name).toBe('apply_prepared_design')
+          const args = a.arguments
+
+          if (
+            !args ||
+            typeof args !== 'object' ||
+            !('design' in args) ||
+            !args.design ||
+            typeof args.design !== 'object' ||
+            !('entries' in args.design) ||
+            !Array.isArray(args.design.entries)
+          ) {
+            throw Error('Expected compiled design')
+          }
+
+          expect(args).toMatchObject({ parentId: submission.parentId })
+          const keys = args.design.entries.map((e) => String(e.key))
+          const ids = keys.map((_, i) => 'created-' + i)
+
+          writes.push(keys)
+
+          return {
+            actionName: a.name,
+            actionId: a.id,
+            result: {
+              status: 'complete',
+              timing: {},
+              compositionId: ids[0],
+              appliedElementCount: ids.length,
+              modelResult: {
+                status: 'complete',
+                compositionId: ids[0],
+                appliedElementCount: ids.length
+              },
+              appliedElementIds: ids,
+              keyToId: Object.fromEntries(keys.map((k, i) => [k, ids[i]])),
+              roleToElementIds: Object.fromEntries(
+                keys.map((k, i) => [k, [ids[i]]])
+              )
+            }
+          }
+        })
+      })
+    }
+  )
+
+  const call = async (namespace: string, name: string, args: unknown) => {
+    const reply = await tools.invoke({
+      namespace,
+      name,
+      arguments: args,
+      callId: crypto.randomUUID()
+    })
+    const content = reply.contentItems[0]
+
+    if (content.type !== 'inputText') {
+      throw Error('Missing provider text')
+    }
+
+    const acknowledgement = reply.contentItems.at(-1)
+
+    if (acknowledgement?.type !== 'inputText') {
+      throw Error('Missing provider acknowledgement')
+    }
+
+    const state = JSON.parse(acknowledgement.text).toolOutcome
+
+    expect(state).toMatchObject({
+      status: reply.outcome.status,
+      settlement: reply.outcome.settlement
+    })
+
+    return {
+      ...JSON.parse(content.text),
+      toolOutcome: state
+    }
+  }
+
+  const draw = (args: unknown) =>
+    call('design_workflow', 'prepare_and_apply_design', args)
+
+  try {
+    const rejected = await draw(submission)
+
+    expect(rejected).toMatchObject({
+      code: 'TOOL_INPUT_INVALID',
+      settlement: 'not-started',
+      draftId: expect.any(String)
+    })
+    expect(rejected.message).toMatch(/zero width/i)
+    expect(rejected.retainedDraft.revision).toBe(rejected.draftId)
+    expect(writes).toHaveLength(0)
+    let resource = await call('design_operations', 'read_design_resources', {
+      names: ['prepare_and_apply_design'],
+      scopes: {
+        prepare_and_apply_design: { inputScope: { operation: 'repair' } }
+      }
+    })
+
+    if (resource.contentDelivery) {
+      const fragments = [resource.contentDelivery.text]
+
+      while (!resource.contentDelivery.lastPage) {
+        const nextByte = resource.contentDelivery.endByte
+
+        resource = await call(
+          'design_operations',
+          'read_design_resources',
+          resource.contentDelivery.next.arguments
+        )
+        expect(resource.contentDelivery.startByte).toBe(nextByte)
+        expect(resource.contentDelivery.endByte).toBeGreaterThan(nextByte)
+        fragments.push(resource.contentDelivery.text)
+      }
+
+      resource = JSON.parse(fragments.join(''))
+    }
+
+    expect(resource.tools?.[0]?.inputSchema).toBeDefined()
+    const guide = rejected.repairGuide.arguments
+
+    expect(guide.parentId).toBe(submission.parentId)
+    expect(guide.repair.draftId).toBe(rejected.draftId)
+    const paths: string[] = guide.repair.replacements.map(
+      (entry: { path: string }) => entry.path
+    )
+
+    expect(paths).toEqual(
+      [42, 43, 44, 45].map((i) => '/children/' + i + '/rings')
+    )
+    const corrected = {
+      ...guide,
+      inspection: 'defer',
+      repair: {
+        ...guide.repair,
+        replacements: paths.map((path) => {
+          const node = submission.draft.children[Number(path.split('/')[2])]
+
+          return {
+            path,
+            value: node.rings.map((r) =>
+              r.map((pt, i) => ({
+                ...pt,
+                x: pt.x + (i === 1 || i === 2 ? 2 : 0)
+              }))
+            )
+          }
+        })
+      }
+    }
+
+    expect(
+      operationInputIssue(corrected, resource.tools[0].inputSchema)
+    ).toBeUndefined()
+    expect(corrected).not.toHaveProperty('draft')
+    const applied = await draw(corrected)
+
+    expect(applied, JSON.stringify(applied).slice(0, 600)).toMatchObject({
+      createdElementCount: 104,
+      toolOutcome: { status: 'success', settlement: 'completed' }
+    })
+    expect(writes).toHaveLength(1)
+    expect(writes[0].slice(1)).toEqual(
+      submission.draft.children.map((c) => c.key)
+    )
+  } finally {
+    await tools.dispose()
+    await Promise.all(runtime.ownedResources?.map((r) => r.dispose()) ?? [])
+  }
+})
+
+it('retains admission recovery on a direct drawing with explicit delivery', async () => {
+  const { createDesignProviderTools } = await import('../design-provider-tools')
+  const { createAiToolContract } = await import('@asyra/ai-agent-runtime')
+  const runtime = await createDrawingRuntime()
+  const executeBatch = vi.fn()
+  const tools = await createDesignProviderTools(
+    { ...input, actions: runtime.actionDefinitions.map(createAiToolContract) },
+    { modelSource: 'local-codex', executeBatch }
+  )
+
+  try {
+    const reply = await tools.invoke({
+      namespace: 'design_workflow',
+      name: 'prepare_and_apply_design',
+      callId: 'invalid',
+      arguments: {
+        draft: {
+          type: 'group',
+          name: 'Container',
+          children: [
+            {
+              type: 'rect',
+              key: 'rect',
+              name: 'Rectangle',
+              width: -1,
+              height: 1
+            }
+          ]
+        },
+        delivery: 'status'
+      }
+    })
+    const item = reply.contentItems[0]
+
+    if (item.type !== 'inputText') {
+      throw Error('Missing rejection')
+    }
+
+    expect(JSON.parse(item.text)).toMatchObject({
+      code: 'TOOL_INPUT_INVALID',
+      settlement: 'not-started',
+      draftId: expect.any(String)
+    })
+
+    const native = async (namespace: string, name: string, args: unknown) => {
+      const reply = await tools.invoke({
+        namespace,
+        name,
+        callId: crypto.randomUUID(),
+        arguments: args
+      })
+      const first = reply.contentItems[0]
+
+      if (first.type !== 'inputText') {
+        throw Error('Missing provider reply')
+      }
+
+      return JSON.parse(first.text)
+    }
+
+    const bulk = await native('design_workflow', 'prepare_and_apply_design', {
+      draft: {
+        type: 'group',
+        name: 'Elements',
+        children: Array.from({ length: 53 }, (_, i) => ({
+          type: 'rect',
+          key: 'item' + i,
+          name: 'Item',
+          width: 0,
+          height: 1
+        }))
+      }
+    })
+    const continuation = bulk.repairGuide.read
+    const last = await native(
+      'design_operations',
+      continuation.tool,
+      continuation.arguments
+    )
+
+    expect(last).toMatchObject({
+      draftId: bulk.draftId,
+      total: 53,
+      items: [
+        { path: '/children/50' },
+        { path: '/children/51' },
+        { path: '/children/52' }
+      ]
+    })
+    expect(executeBatch).not.toHaveBeenCalled()
+  } finally {
+    await tools.dispose()
+    await Promise.all(runtime.ownedResources?.map((r) => r.dispose()) ?? [])
+  }
+})

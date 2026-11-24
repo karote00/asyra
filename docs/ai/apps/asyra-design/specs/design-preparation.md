@@ -506,7 +506,14 @@ The preparation tool consumes the same published schema through the existing App
 operation-input validator before compilation. Independent field errors are collected
 with paths such as `arguments.draft.children[0].name`; diagnostics are bounded and
 explicitly request another validation pass when truncated. This is input admission,
-not a second geometry compiler or permission owner. Semantic geometry validation
+not a second geometry compiler or permission owner. A retained truncated source
+is checked by independent authored node. A rejected child identifies its editable
+subtree, including when a forbidden property must be removed. Small target lists
+are delivered inline. Larger lists supply a request-local draft revision and a
+continuation through `read_design_checks({draftIssuesFor, offset})` when storage
+permits. A storage limit must be explicit. A retained camera/layout rejection
+identifies the affected source fields. Declared vector bounds and collapsed axes
+identify their authored rings where that mapping exists. Semantic geometry validation
 remains authoritative and may reveal further errors after schema repair; a reported
 list is not a promise that every other property or visual requirement passed.
 
@@ -578,11 +585,20 @@ This does not infer a camera, invent depth or simplify the drawing.
 
 Projected positions and draft offsets can be negative within the coordinate
 budget. Group admission computes child bounds, adds the bounds origin to the
-Group position and subtracts it from every child. Final Group child positions
-are nonnegative (zero is valid), preserving each workspace point. This is not a
-camera adjustment or geometry repair. Dimensions remain positive where required;
-vector rings retain their local-coordinate contract. Frames retain explicit
-bounds and report overflow rather than silently relocating content.
+Group position and subtracts it from every child. The children's combined bounds start at the Group origin. A rotated shape's
+local placement can differ from its bounds origin. Vector anchors and controls
+accept signed local coordinates. With derived dimensions, the exact curve bounds
+determine placement before creation. With supplied dimensions the curve must fit
+the declared rectangle. Both measured spans must be positive.
+
+When attaching a prepared root or continuing a partition in a live Group, the
+application projects the incoming sibling batch together with its existing
+siblings before writing. Each changed Group supplies its projected bounds to
+its parent. Moving a Group origin compensates the positions of its direct
+children, preserving each branch's world geometry, rotation, scale and painter
+order. A fixed Frame or unchanged enclosing rectangle ends propagation. Commit
+the new siblings and coordinate adjustments together. A later partition uses
+the original attachment basis and rejects an anchor that actually moved.
 
 ### Reusable paint values
 

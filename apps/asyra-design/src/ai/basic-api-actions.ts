@@ -32,6 +32,7 @@ import {
   type BasicApiOwner
 } from './basic-api-contracts'
 import { operationInputIssue } from '@asyra/ai-agent-runtime/schema'
+import { fitsReceiptPage, retainBulkReceipt } from './bulk-mutation-receipt'
 import type { createRetainedDesignContext } from '../common-apis/retained-design-context'
 
 interface MutationScopeSource {
@@ -87,6 +88,10 @@ const basicApiResources = (effect: BasicApiContract['effect']) => {
 }
 
 const basicApiRevision = (contract: BasicApiContract): number => {
+  if (['created-items', 'status-items'].includes(contract.result.kind)) {
+    return 12
+  }
+
   if (contract.result.valueSchema) {
     return 3
   }
@@ -99,23 +104,8 @@ const basicApiRevision = (contract: BasicApiContract): number => {
     return 11
   }
 
-  if (
-    [
-      'property-mutation',
-      'change-flag',
-      'created-items',
-      'moves',
-      'removed'
-    ].includes(contract.result.kind)
-  ) {
+  if (['change-flag', 'moves', 'removed'].includes(contract.result.kind)) {
     return 8
-  }
-
-  if (
-    ['created-items', 'status-items'].includes(contract.result.kind) &&
-    ['write', 'delete'].includes(contract.effect)
-  ) {
-    return 7
   }
 
   if (
@@ -356,6 +346,82 @@ export const createBasicApiActions = (
           mutationScope: { complete, elementIds, removedElementIds }
         }
         const kind = contract.result.kind
+
+        if (kind === 'created-items' || kind === 'status-items') {
+          const targets = resolvedArgs[contract.parameters[0]]
+
+          // Invalid owner/alignment evidence follows its normal recovery contract.
+          if (
+            !Array.isArray(value) ||
+            !Array.isArray(targets) ||
+            value.length !== targets.length ||
+            ('code' in result && result.code === 'OWNER_RESULT_INVALID') ||
+            (kind === 'status-items' &&
+              value.some(
+                (status) =>
+                  !['changed', 'unchanged', 'unavailable'].includes(status)
+              ))
+          ) {
+            return receipt
+          }
+
+          if (fitsReceiptPage(receipt, value.length)) {
+            return { ...receipt, modelResult: receipt }
+          }
+
+          let issueCount = 0,
+            changedCount = 0,
+            firstIssueIndex
+          const ids: string[] = []
+
+          for (const [index, item] of value.entries()) {
+            if (
+              kind === 'created-items'
+                ? typeof item !== 'string' || !item
+                : item === 'unavailable'
+            ) {
+              firstIssueIndex ??= index
+              issueCount++
+              continue
+            }
+
+            if (item === 'changed') {
+              changedCount++
+            }
+
+            if (kind === 'created-items') {
+              ids.push(item)
+            } else {
+              const target = targets[index]
+
+              ids.push(typeof target === 'string' ? target : target.elementId)
+            }
+          }
+
+          const summary = {
+            status: receipt.status,
+            ...(kind === 'created-items'
+              ? { createdCount: ids.length, failedCount: issueCount }
+              : {
+                  changedCount,
+                  unchangedCount: ids.length - changedCount,
+                  unavailableCount: issueCount
+                }),
+            ...(firstIssueIndex === undefined ? {} : { firstIssueIndex }),
+            ...('message' in result ? { message: result.message } : {}),
+            ...('settlement' in receipt
+              ? { settlement: receipt.settlement }
+              : {})
+          }
+
+          return retainBulkReceipt(
+            receipt,
+            summary,
+            ids,
+            context.signal,
+            atSettlement ? queries?.retainReceipt : undefined
+          )
+        }
 
         if (
           kind === 'mutation-receipt' &&

@@ -32,6 +32,8 @@ import {
 } from '../src/ai/tool-contract'
 
 export interface LocalToolDefinition extends AiToolContractInput {
+  /** Public fields an owner can publish on static input rejection. */
+  readonly admissionRecoveryProperties?: Record<string, unknown>
   /** Canonical output subtrees needed to bind downstream operations. */
   readonly resultPaths?: readonly string[]
   /** Registry-only operations remain available to typed recipes without native function expansion. */
@@ -148,16 +150,6 @@ export interface LocalToolOwner {
         | 'recoveryOutputSchema'
       >
     | undefined
-  /** Preserve a concrete rejected operation for correction without granting execution authority. */
-  recoverOperationInput?(
-    name: string,
-    input: unknown
-  ):
-    | {
-        correction?: Record<string, unknown>
-        message: string
-      }
-    | undefined
   /** Bounded diagnostics only; called after rejection, never executes a tool. */
   rejectInput?(
     name: string,
@@ -165,7 +157,7 @@ export interface LocalToolOwner {
     issues?: readonly OperationInputIssue[]
   ): Record<string, unknown> | undefined
   /** Validate successful domain output, including required retained identities. */
-  resultIssue?(name: string, value: unknown): string | undefined
+  resultIssue?(name: string, value: unknown, args?: unknown): string | undefined
   resultOutcome?(
     name: string,
     value: unknown
@@ -474,10 +466,11 @@ export const localToolFailureModelSchema = modelToolResultSchemas({
 export const localToolFailureIssue = (
   value: unknown,
   outcome: LocalToolAcknowledgement,
-  stage: 'owner' | 'model' = 'owner'
+  stage: 'owner' | 'model' = 'owner',
+  schema = stage === 'model'
+    ? localToolFailureModelSchema
+    : localToolFailureSchema
 ): string | undefined => {
-  const schema =
-    stage === 'model' ? localToolFailureModelSchema : localToolFailureSchema
   const issue = operationContractIssue(value, schema, {
     stage: 'output'
   })
@@ -612,7 +605,7 @@ export const invokeLocalTool = async (
         let value = JSON.parse(text)
 
         decodedResult = value
-        const resultIssue = owner.resultIssue?.(definition.name, value)
+        const resultIssue = owner.resultIssue?.(definition.name, value, args)
 
         if (resultIssue) {
           throw new Error(resultIssue)

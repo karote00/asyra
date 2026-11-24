@@ -1,3 +1,4 @@
+import type { DraftRepairTarget } from './design-source-recovery'
 import { DesignInputError } from './design-input-error'
 import {
   partitionDesignBudget,
@@ -19,7 +20,12 @@ export const createDesignDraftRepairStore = (
 ) => {
   const drafts = new Map<
     string,
-    { source: string; bytes: number; plan: DesignPartitionPlan }
+    {
+      source: string
+      bytes: number
+      plan: DesignPartitionPlan
+      targets?: readonly DraftRepairTarget[]
+    }
   >()
   let retainedBytes = 0
 
@@ -63,6 +69,52 @@ export const createDesignDraftRepairStore = (
       retainedBytes += bytes
 
       return id
+    },
+
+    attachTargets(id: string, targets: readonly DraftRepairTarget[]) {
+      const draft = drafts.get(id)
+      const bytes = Buffer.byteLength(JSON.stringify(targets))
+
+      if (
+        !draft ||
+        draft.targets ||
+        retainedBytes + bytes > limits.retainedDraftBytes
+      ) {
+        return false
+      }
+
+      draft.targets = structuredClone(targets)
+      draft.bytes += bytes
+      retainedBytes += bytes
+
+      return true
+    },
+
+    readTargets(id: string, offset: number, limit: number) {
+      const targets = drafts.get(id)?.targets
+
+      if (
+        !targets ||
+        !Number.isSafeInteger(limit) ||
+        limit < 1 ||
+        limit > 100 ||
+        !Number.isSafeInteger(offset) ||
+        offset < 0 ||
+        offset >= targets.length
+      ) {
+        throw new DesignInputError(
+          'Repair diagnostics are unavailable for this draft revision or offset.'
+        )
+      }
+
+      const end = Math.min(offset + limit, targets.length)
+
+      return {
+        draftId: id,
+        total: targets.length,
+        items: structuredClone(targets.slice(offset, end)),
+        ...(end < targets.length ? { nextOffset: end } : {})
+      }
     },
 
     describe(draftId: string) {

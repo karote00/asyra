@@ -127,6 +127,9 @@ const fixture = (count = 1000, maxBytes?: number, fillReceipt?: unknown) => {
   const actions = createBasicApiActions(
     () => ({
       core: {
+        createElementsInParent: () =>
+          ids.map((id, index) => (index === 1 ? null : id)),
+
         moveElements: () => ({
           moves: ids.map((elementId) => ({
             elementId,
@@ -1200,6 +1203,81 @@ it('reports canonical receipt retention failure without replaying the settled wr
     expect(app.fill).toHaveBeenCalledTimes(1)
   } finally {
     app.controller.abort()
+    app.queries.dispose()
+  }
+})
+
+it('keeps bulk visibility statuses local and pages the aligned owner result', async () => {
+  const app = fixture(4000)
+
+  try {
+    const action = app.action('api_element_setElementsVisible')
+    const raw = await action.execute(
+      { elementIds: app.ids, visible: true },
+      app.context
+    )
+    const { projectToolDelivery } =
+      await import('@asyra/ai-agent-runtime/schema')
+    const projected = projectToolDelivery(
+      action,
+      raw,
+      localToolOutcome(raw)
+    ).value
+
+    expect(JSON.stringify(projected).length).toBeLessThan(1200)
+    expect(projected).toMatchObject({
+      changedCount: 4000,
+      unavailableCount: 0,
+      unchangedCount: 0,
+      retained: { total: 4000 }
+    })
+    expect(raw).toMatchObject({ value: app.ids.map(() => 'changed') })
+    expect(app.edit).toHaveBeenCalledOnce()
+  } finally {
+    app.queries.dispose()
+  }
+})
+
+it('preserves the original index of a missing created identity in a large partial receipt', async () => {
+  const app = fixture(1400)
+
+  try {
+    const action = observeAiAction(
+      app.action('api_core_createElementsInParent')
+    )
+    const raw = await action.execute(
+      {
+        data: app.ids.map((id) => ({
+          id,
+          name: id,
+          type: 'rectangle',
+          x: 0,
+          y: 0
+        })),
+        parentId: 'group'
+      },
+      app.context
+    )
+    const { projectToolDelivery } =
+      await import('@asyra/ai-agent-runtime/schema')
+    const projected = projectToolDelivery(
+      action,
+      raw,
+      localToolOutcome(raw)
+    ).value
+
+    expect(projected).toMatchObject({
+      status: 'partial',
+      createdCount: 1399,
+      failedCount: 1,
+      firstIssueIndex: 1,
+      retained: { total: 1399 }
+    })
+    expect(JSON.stringify(projected).length).toBeLessThan(1200)
+    expect(raw).toMatchObject({
+      value: app.ids.map((id, i) => (i === 1 ? null : id))
+    })
+  } finally {
     app.queries.dispose()
   }
 })

@@ -1,3 +1,4 @@
+import { publishBulkMutationReceipt } from './bulk-mutation-receipt'
 import { createPrescribedPositionAction } from './prescribed-position-action'
 import { createDocumentExport } from './document-export'
 import {
@@ -132,6 +133,8 @@ export const createAiRuntimeInput = (
     ...documentExports.actions,
     ...createBasicApiActions(undefined, undefined, queries),
     ...createAiActions(undefined, {
+      retainReceipt: queries.retainReceipt,
+
       confirmPersistence: async (signal) => {
         const session = getActiveCollaborationHandle()
 
@@ -152,16 +155,22 @@ export const createAiRuntimeInput = (
       evidence,
       materials
     ),
-    materials.action,
+    publishBulkMutationReceipt(materials.action, queries.retainReceipt),
     createDocumentContextAction(queries.read),
     createRegionTargetsAction(queries.read),
     createDocumentContextReleaseAction(queries.read),
     createRetainedFillAction(queries),
     createDesignEditAction(),
     createOrganizationAction(),
-    createArrangementAction(),
+    publishBulkMutationReceipt(
+      createArrangementAction(),
+      queries.retainReceipt
+    ),
     createDesignReviewAction(reviewer.capture, reviewer.isCurrent),
-    createPrescribedPositionAction(reviewer, evidence),
+    publishBulkMutationReceipt(
+      createPrescribedPositionAction(reviewer, evidence),
+      queries.retainReceipt
+    ),
     createAiInspectionAction(undefined, evidence),
     createDesignAttachmentAction(evidence),
     createInspectionValidationAction(evidence, reviewer)

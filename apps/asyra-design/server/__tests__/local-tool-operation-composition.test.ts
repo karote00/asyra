@@ -42,7 +42,7 @@ const proposal = {
     {
       id: 'create',
       tool: 'design_operations.api_element_createElements',
-      revision: 9,
+      revision: 13,
       input: {
         kind: 'object',
         fields: {
@@ -318,12 +318,15 @@ it('composes actual canonical basic operations and hands creation identities thr
 
     expect(semantic.apis[0].recipeDependency).toEqual({
       name: proposal.steps[0].tool,
-      revision: 9,
+      revision: proposal.steps[0].revision,
       execution: {
         kind: 'registered-tool',
         namespace: 'tool_library',
         tool: 'invoke_tool',
-        arguments: { name: proposal.steps[0].tool, revision: 9 }
+        arguments: {
+          name: proposal.steps[0].tool,
+          revision: proposal.steps[0].revision
+        }
       },
       definition: {
         tool: 'read_design_resources',
@@ -343,7 +346,7 @@ it('composes actual canonical basic operations and hands creation identities thr
 
     expect(lookup.tools[0]).toMatchObject({
       registeredName: proposal.steps[0].tool,
-      revision: 9,
+      revision: proposal.steps[0].revision,
       composition: 'allowed',
       execution: {
         kind: 'registered-tool',
@@ -359,7 +362,10 @@ it('composes actual canonical basic operations and hands creation identities thr
       kind: 'registered-tool',
       namespace: 'tool_library',
       tool: 'invoke_tool',
-      arguments: { name: proposal.steps[0].tool, revision: 9 }
+      arguments: {
+        name: proposal.steps[0].tool,
+        revision: proposal.steps[0].revision
+      }
     })
   } finally {
     await app.host.dispose()
@@ -1103,9 +1109,26 @@ it.each([false, true])(
     await f.review('b')
     const read = await f.read(['measurement:a'])
 
-    expect(JSON.parse(read.items[0].evidence).findings).toEqual(
-      f.state.findings
-    )
+    expect(JSON.stringify(read.items)).not.toContain('retained-evidence-')
+    const rows: unknown[] = []
+    let offset = 0
+
+    do {
+      const { findingPage } = await f.invoke(
+        AiDesignToolIds.READ_DESIGN_CHECKS,
+        {
+          findingsFor: 'measurement:a',
+          revision: read.items[0].revision,
+          limit: 100,
+          offset
+        }
+      )
+
+      rows.push(...findingPage.items)
+      offset = findingPage.nextOffset
+    } while (offset !== undefined)
+
+    expect(rows).toEqual(f.state.findings)
     expect(f.checked).toEqual(['a', 'b'])
     const explicit = await f.review('a')
 

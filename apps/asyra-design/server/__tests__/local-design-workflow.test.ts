@@ -2258,6 +2258,50 @@ it('retains material conflicts and source ownership without writes or replay', a
   expect(f.execute).toHaveBeenCalledTimes(executionsBeforeExpiredRetry)
 })
 
+it('delivers repair locations for later parts when an earlier part exhausts the diagnostic limit', async () => {
+  const f = setup()
+
+  const block = (count: number) => ({
+    type: 'group',
+    name: 'Block',
+    children: Array.from({ length: count }, (_, i) => ({
+      type: 'rect',
+      name: 'Item',
+      key: 'item-' + i,
+      width: -1,
+      height: 1
+    }))
+  })
+
+  const request = {
+    parts: [
+      { key: 'early', draft: block(15) },
+      { key: 'late', parentPart: 'early', draft: block(1) }
+    ],
+    inspection: 'defer'
+  }
+  const reply = await invokeLocalTool(
+    f.workflow,
+    f.workflow.definitions[0],
+    request,
+    new AbortController().signal
+  )
+  const rejected = JSON.parse(reply.text)
+
+  expect(rejected.toolOutcome.settlement).toBe('not-started')
+  expect(
+    rejected.rejectedParts.map((part: { index: number }) => part.index)
+  ).toEqual([0, 1])
+  const next = rejected.repairGuide.arguments.parts
+
+  expect(next[0].repair.replacements).toHaveLength(15)
+  expect(next[1]).toMatchObject({
+    parentPart: 'early',
+    repair: { replacements: [{ path: '/children/0/width' }] }
+  })
+  expect(f.execute).not.toHaveBeenCalled()
+})
+
 it('preserves material selectors for all raw parts retained by input admission', async () => {
   const f = setup()
   const seed = f.session.prepare({

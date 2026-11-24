@@ -492,8 +492,9 @@ export const describeBasicApiResult = (
 /** Domain values retain their public shape; mutation status is validated separately from that value. */
 export const basicApiResultSchema = (
   contract: BasicApiContract,
-  partial = false
-) => {
+  partial = false,
+  includeDelivery = true
+): ReturnType<typeof toolResultObject> & { anyOf?: unknown[] } => {
   const kind = contract.result.kind
   let valueSchema: unknown = contract.result.valueSchema ?? true
 
@@ -581,16 +582,21 @@ export const basicApiResultSchema = (
   fields.settlement = {
     enum: ['not-started', 'completed', 'partial', 'unknown']
   }
-  if (basicApiDeliverySchema(contract)) {
+  const delivery = includeDelivery && basicApiDeliverySchema(contract)
+
+  if (delivery) {
     fields.value = valueSchema
     fields.mutationScope = toolMutationScope
-    fields.modelResult = basicApiDeliverySchema(contract)
+    fields.modelResult = delivery
     fields.retained = retainedElementSetSchema
-    if (!partial && kind !== 'mutation-receipt') {
+    if (
+      !partial &&
+      !['mutation-receipt', 'created-items', 'status-items'].includes(kind)
+    ) {
       required.push('retained')
     }
 
-    if (partial) {
+    if (partial && !['created-items', 'status-items'].includes(kind)) {
       fields.value = true
     }
 
@@ -628,6 +634,44 @@ export const basicApiResultSchema = (
 
 /** A model view never substitutes for a complete typed owner result. */
 export const basicApiDeliverySchema = (contract: BasicApiContract) => {
+  if (['created-items', 'status-items'].includes(contract.result.kind)) {
+    const count = { type: 'integer', minimum: 0 }
+    const counts =
+      contract.result.kind === 'created-items'
+        ? { createdCount: count, failedCount: count }
+        : {
+            changedCount: count,
+            unchangedCount: count,
+            unavailableCount: count
+          }
+
+    return {
+      anyOf: [
+        basicApiResultSchema(contract, false, false),
+        {
+          ...toolResultObject(
+            {
+              status: toolResultStatus,
+              ...counts,
+              settlement: {
+                enum: ['not-started', 'completed', 'partial', 'unknown']
+              },
+              message: { type: 'string' },
+              firstIssueIndex: count,
+              retained: retainedElementSetSchema,
+              delivery: toolResultObject({
+                status: { const: 'unavailable' },
+                message: { type: 'string' }
+              })
+            },
+            ['status', ...Object.keys(counts)]
+          ),
+          anyOf: [{ required: ['retained'] }, { required: ['delivery'] }]
+        }
+      ]
+    }
+  }
+
   if (
     !['grouped', 'ungrouped', 'moves', 'removed', 'mutation-receipt'].includes(
       contract.result.kind

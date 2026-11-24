@@ -1,3 +1,7 @@
+import core from '../../contexts'
+import { projectToolDelivery } from '@asyra/ai-agent-runtime/schema'
+import { designActionOutcome } from '../tool-contract'
+import { createRetainedDesignContext } from '../../common-apis/retained-design-context'
 import { describe, expect, it, vi } from 'vitest'
 import {
   subscribeToBrowserDragPhases,
@@ -986,6 +990,7 @@ describe('Asyra Design AI composition action execution', () => {
 
     await expect(action.execute(prepared, executionContext())).resolves.toEqual(
       {
+        modelResult: expect.any(Object),
         action: AiActionNames.INSERT_VECTOR_COMPOSITION,
         appliedElementIds: ['left-eye-id', 'left-whisker-1-id'],
         compositionId: 'cat-group-id',
@@ -1131,6 +1136,7 @@ describe('Asyra Design AI composition action execution', () => {
         executionContext()
       )
     ).resolves.toEqual({
+      modelResult: expect.any(Object),
       action: AiActionNames.UPDATE_COMPOSITION_ELEMENTS,
       appliedElementIds: ['eye-present', 'whisker-present'],
       skipped: [
@@ -1305,6 +1311,7 @@ describe('Asyra Design AI composition action execution', () => {
         executionContext()
       )
     ).resolves.toEqual({
+      modelResult: expect.any(Object),
       action: AiActionNames.UPDATE_COMPOSITION_ELEMENTS,
       appliedElementIds: ['pupil-left', 'pupil-right'],
       skipped: [
@@ -1462,6 +1469,7 @@ describe('Asyra Design AI composition action execution', () => {
           executionContext()
         )
       ).resolves.toEqual({
+        modelResult: expect.any(Object),
         action: AiActionNames.UPDATE_COMPOSITION_ELEMENTS,
         appliedElementIds: ['vector-eye-left'],
         skipped: [],
@@ -1509,6 +1517,7 @@ describe('Asyra Design AI composition action execution', () => {
         executionContext()
       )
     ).resolves.toEqual({
+      modelResult: expect.any(Object),
       action: AiActionNames.UPDATE_COMPOSITION_ELEMENTS,
       appliedElementIds: ['pupil-left', 'pupil-right'],
       skipped: [],
@@ -1564,6 +1573,7 @@ describe('Asyra Design AI composition action execution', () => {
         executionContext()
       )
     ).resolves.toEqual({
+      modelResult: expect.any(Object),
       action: AiActionNames.UPDATE_COMPOSITION_ELEMENTS,
       appliedElementIds: ['pupil-right'],
       skipped: [
@@ -1605,6 +1615,7 @@ describe('Asyra Design AI composition action execution', () => {
         executionContext()
       )
     ).resolves.toEqual({
+      modelResult: expect.any(Object),
       action: AiActionNames.REMOVE_AI_COMPOSITION,
       appliedElementIds: [],
       skipped: [
@@ -1915,5 +1926,161 @@ it.each(['workspace', 'vector', undefined])(
     })
     expect(apis.createCompositionGroup).not.toHaveBeenCalled()
     expect(apis.removeSubtree).not.toHaveBeenCalled()
+  }
+)
+
+it('delivers a compact large composition receipt and recovers every original role and skipped item', async () => {
+  const apis = actionApis()
+  const context = executionContext()
+  const queries = createRetainedDesignContext(core, () => () => undefined)
+  const items = Array.from({ length: 1400 }, (_, i) => ovalItem('window-' + i))
+  const prepared = createServerPreparedCompositionArtifact({
+    items: [...items, items[0]]
+  })
+  const action = createAiActions(apis, {
+    retainReceipt: queries.retainReceipt,
+
+    yieldToHost: async () => undefined
+  }).find((a) => a.name === AiActionNames.INSERT_VECTOR_COMPOSITION)
+
+  if (!action) {
+    throw Error('Missing composition insertion')
+  }
+
+  try {
+    const raw = await action.execute(prepared, context)
+    const model = projectToolDelivery(action, raw, designActionOutcome(raw))
+    const bytes = new TextEncoder().encode(
+      JSON.stringify(model.value)
+    ).byteLength
+
+    expect(bytes).toBeLessThan(1200)
+    expect(model.value).toMatchObject({
+      appliedCount: 1400,
+      skippedCount: 1,
+      compositionId: 'cat-group-id',
+      firstSkipped: { reason: 'duplicate-role' }
+    })
+    expect(model.outcome.status).toBe('partial')
+    expect(raw).toMatchObject({
+      appliedElementIds: items.map((item) => item.role + '-id')
+    })
+    const { retained } = model.value as { retained: { snapshotId: string } }
+    let offset = 0
+    let text = ''
+
+    for (;;) {
+      const page = queries.read(
+        {
+          scope: 'snapshot',
+          snapshotId: retained.snapshotId,
+          delivery: 'receipt',
+          offset
+        },
+        context.signal
+      )
+
+      if (!('receiptPage' in page) || !page.receiptPage) {
+        throw Error('Missing retained page')
+      }
+
+      text += page.receiptPage.text
+      if (page.receiptPage.nextOffset === null) {
+        break
+      }
+
+      offset = page.receiptPage.nextOffset
+    }
+
+    expect(JSON.parse(text)).toMatchObject({
+      roleToElementIds: prepared.roleToElementIds,
+      skipped: prepared.skipped
+    })
+    expect(apis.createCompositionGroup).toHaveBeenCalledOnce()
+  } finally {
+    queries.dispose()
+  }
+})
+
+it.each([true, false])(
+  'sends the settled subtree removal through execute_design once with document storage available=%s',
+  async (available) => {
+    const { createLocalOperationTools } =
+      await import('../../../server/local-operation-tools')
+    const { createAiToolContract, redactAiValue } =
+      await import('@asyra/ai-agent-runtime')
+    const { observeAiAction } = await import('../runtime-input')
+    const apis = actionApis()
+    const ids = Array.from({ length: 2400 }, (_, i) => 'removed-' + i)
+
+    apis.getElementType.mockReturnValue('group')
+    apis.removeSubtree.mockReturnValue({
+      removed: ids,
+      rootParentChildrenAfter: []
+    })
+    const context = executionContext()
+    const queries = createRetainedDesignContext(
+      core,
+      () => () => undefined,
+      available ? {} : { maxBytes: 64 }
+    )
+
+    try {
+      const action = createAiActions(apis, {
+        retainReceipt: queries.retainReceipt
+      }).find((a) => a.name === AiActionNames.REMOVE_AI_COMPOSITION)
+
+      if (!action) {
+        throw Error('Missing composition removal')
+      }
+
+      const observed = observeAiAction(action)
+      const operations = createLocalOperationTools(
+        [createAiToolContract(observed)],
+        {
+          modelActions: (actions) => actions,
+
+          resolveBatch: (batch) => batch
+        },
+        async (batch) => ({
+          context: {},
+          actionResults: await Promise.all(
+            batch.actions.map(async (call) => ({
+              actionId: call.id,
+              actionName: call.name,
+              result: redactAiValue(
+                await observed.execute(call.arguments, context)
+              )
+            }))
+          )
+        })
+      )
+      const result = JSON.parse(
+        await operations.call(
+          'execute_design',
+          {
+            operations: [
+              { name: action.name, arguments: { compositionId: 'old-root' } }
+            ],
+            inspection: 'defer'
+          },
+          context.signal
+        )
+      )
+      const receipt = result.actionResults[0].result
+
+      expect(receipt).toMatchObject({ status: 'complete', appliedCount: 2400 })
+      expect(receipt).not.toHaveProperty('appliedElementIds')
+      expect(JSON.stringify(result)).not.toContain('removed-2399')
+      if (available) {
+        expect(receipt.retained.total).toBe(2400)
+      } else {
+        expect(receipt.delivery.message).toMatch(/do not replay/i)
+      }
+
+      expect(apis.removeSubtree).toHaveBeenCalledOnce()
+    } finally {
+      queries.dispose()
+    }
   }
 )

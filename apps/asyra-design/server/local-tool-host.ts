@@ -1,3 +1,4 @@
+import { defaultFindingProjection } from './design-findings'
 import {
   defaultCreationProjection,
   type ProjectCreationText
@@ -112,7 +113,7 @@ export interface LocalToolGroup {
   }
 }
 type Reply = Awaited<ReturnType<typeof invokeLocalTool>> & {
-  projectCreationText?: ProjectCreationText
+  projectDefaultText?: ProjectCreationText
   media?: AiToolImage[]
   executionContract?: AiToolContract
 }
@@ -126,6 +127,17 @@ class OperationAdmissionError extends AiToolInputError {
     super(message)
   }
 }
+
+const admissionFailureSchema = (definition?: LocalToolDefinition) =>
+  definition?.admissionRecoveryProperties
+    ? {
+        ...localToolFailureSchema,
+        properties: {
+          ...definition.admissionRecoveryProperties,
+          ...localToolFailureSchema.properties
+        }
+      }
+    : localToolFailureSchema
 
 /** One request host: registered metadata, guarded leaves and actual store ownership. */
 export const createLocalToolHost = (options: {
@@ -214,7 +226,10 @@ export const createLocalToolHost = (options: {
     {
       owner: LocalToolGroup['owner']
       definition: AiToolContract &
-        Pick<LocalToolDefinition, 'providerExposure' | 'resultPaths'>
+        Pick<
+          LocalToolDefinition,
+          'providerExposure' | 'resultPaths' | 'admissionRecoveryProperties'
+        >
       access?: AiToolAccess
     }
   >()
@@ -244,7 +259,7 @@ export const createLocalToolHost = (options: {
           inputSchema: binding.definition.inputSchema,
           outputSchema: false,
           partialOutputSchema: false,
-          recoveryOutputSchema: localToolFailureSchema
+          recoveryOutputSchema: admissionFailureSchema(binding.definition)
         }
       : undefined
     const selected = staticIssue
@@ -356,6 +371,7 @@ export const createLocalToolHost = (options: {
         owner: group.owner,
         definition: {
           ...definition,
+          admissionRecoveryProperties: source.admissionRecoveryProperties,
           providerExposure: source.providerExposure,
           resultPaths: source.resultPaths
         },
@@ -721,7 +737,7 @@ export const createLocalToolHost = (options: {
 
           if (
             step.input.kind !== 'literal' ||
-            !leaf?.owner.recoverOperationInput ||
+            !leaf?.owner.rejectInput ||
             step.revision !== leaf.definition.revision
           ) {
             continue
@@ -737,17 +753,23 @@ export const createLocalToolHost = (options: {
             continue
           }
 
-          const recovery = leaf.owner.recoverOperationInput(
+          const recovery = leaf.owner.rejectInput(
             leaf.definition.name,
-            step.input.value
+            step.input.value,
+            invalid
           )
 
           if (recovery) {
+            const { draftId, ...details } = recovery
+
             issues.push({
               step: step.id,
               operation: step.tool,
               issues: invalid,
-              ...recovery
+              ...details,
+              ...(typeof draftId === 'string'
+                ? { correction: { draftId } }
+                : {})
             })
           }
         }
@@ -1896,8 +1918,22 @@ export const createLocalToolHost = (options: {
           )
         }
 
-        const publicView = projectToolResultFields(view, localToolFailureSchema)
-        const issue = localToolFailureIssue(publicView, outcome, 'model')
+        const failureSchema =
+          failure.stage === 'admission'
+            ? admissionFailureSchema(binding?.definition)
+            : localToolFailureSchema
+        const publicView = projectToolResultFields(view, failureSchema)
+        const modelSchema =
+          failureSchema === localToolFailureSchema
+            ? localToolFailureModelSchema
+            : modelToolResultSchemas({ outputSchema: failureSchema })
+                .outputSchema
+        const issue = localToolFailureIssue(
+          publicView,
+          outcome,
+          'model',
+          modelSchema
+        )
 
         if (issue) {
           throw new Error(issue)
@@ -1905,7 +1941,7 @@ export const createLocalToolHost = (options: {
 
         return {
           value: publicView,
-          schema: localToolFailureModelSchema,
+          schema: modelSchema,
           outcome
         }
       }
@@ -2126,45 +2162,40 @@ export const createLocalToolHost = (options: {
               definition &&
               operationInputIssue(call.input, definition.inputSchema)
 
-            if (!definition || issue) {
-              return localToolFailureReply(
-                issue ?? 'Missing drawing owner',
-                AiToolFailureCodes.INPUT_INVALID,
-                { settlement: 'not-started' }
-              )
-            }
+            // Invalid submissions stay with the drawing owner, which retains the source.
+            if (definition && !issue) {
+              const { retain, delivery, ...arguments_ } = call.input as Record<
+                string,
+                unknown
+              > &
+                DeliveryRequest
 
-            const { retain, delivery, ...arguments_ } = call.input as Record<
-              string,
-              unknown
-            > &
-              DeliveryRequest
+              const selections = (value: DeliveryRequest['retain']) =>
+                value &&
+                Object.fromEntries(
+                  Object.entries(value).map(([key, selector]) => [
+                    key,
+                    { ...selector, step: 'draw' }
+                  ])
+                )
 
-            const selections = (value: DeliveryRequest['retain']) =>
-              value &&
-              Object.fromEntries(
-                Object.entries(value).map(([key, selector]) => [
-                  key,
-                  { ...selector, step: 'draw' }
-                ])
-              )
-
-            call = {
-              ...call,
-              name: 'design_operations.' + AiDesignToolIds.EXECUTE_DESIGN,
-              input: {
-                operations: [
-                  { id: 'draw', name: call.name, arguments: arguments_ }
-                ],
-                ...(retain ? { retain: selections(retain) } : {}),
-                ...(delivery
-                  ? {
-                      delivery:
-                        typeof delivery === 'object'
-                          ? { fields: selections(delivery.fields) }
-                          : delivery
-                    }
-                  : {})
+              call = {
+                ...call,
+                name: 'design_operations.' + AiDesignToolIds.EXECUTE_DESIGN,
+                input: {
+                  operations: [
+                    { id: 'draw', name: call.name, arguments: arguments_ }
+                  ],
+                  ...(retain ? { retain: selections(retain) } : {}),
+                  ...(delivery
+                    ? {
+                        delivery:
+                          typeof delivery === 'object'
+                            ? { fields: selections(delivery.fields) }
+                            : delivery
+                      }
+                    : {})
+                }
               }
             }
           }
@@ -2241,21 +2272,36 @@ export const createLocalToolHost = (options: {
             reply.executionContract
           )
 
-          const projectCreationText =
+          let projectDefaultText: ProjectCreationText | undefined
+
+          if (
             call.input &&
             typeof call.input === 'object' &&
             !('delivery' in call.input)
-              ? defaultCreationProjection(
-                  call.name,
-                  delivered.value,
-                  delivered.outcome.status === 'success',
-                  () => sequenceFinalStep(call.input)
-                )
-              : undefined
+          ) {
+            const finalStep = () => sequenceFinalStep(call.input)
+
+            const creation = defaultCreationProjection(
+              call.name,
+              delivered.value,
+              delivered.outcome.status === 'success',
+              finalStep
+            )
+            const findings = defaultFindingProjection(
+              call.name,
+              delivered.value,
+              finalStep
+            )
+
+            projectDefaultText =
+              creation && findings
+                ? (receipt) => creation(findings(receipt))
+                : (creation ?? findings)
+          }
 
           return {
             ...reply,
-            ...(projectCreationText ? { projectCreationText } : {}),
+            ...(projectDefaultText ? { projectDefaultText } : {}),
             success: delivered.outcome.status === 'success',
             outcome: delivered.outcome,
             text: JSON.stringify(delivered.value)

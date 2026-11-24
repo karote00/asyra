@@ -6,7 +6,8 @@ import { convertVTracerBuffer } from '../../vtracer-tool-server.mjs'
 import {
   parseLocalVectorArtifact,
   prepareLocalVectorArtifact,
-  vectorArtifactSummary
+  vectorArtifactSummary,
+  queryVectorPaths
 } from '../local-vector-artifact'
 
 const svg =
@@ -232,8 +233,17 @@ describe('request-owned vector artifacts', () => {
       )
     )
 
-    expect(summary.paths).toHaveLength(2)
-    expect(summary.paths[0]).toMatchObject({
+    expect(summary.pathCount).toBe(2)
+    const { paths } = JSON.parse(
+      await tools.call(
+        'query_vector_paths',
+        { imageArtifactId: summary.imageArtifactId },
+        signal()
+      )
+    )
+
+    expect(paths).toHaveLength(2)
+    expect(paths[0]).toMatchObject({
       bounds: { x: 0, y: 0, width: 80, height: 80 },
       pointCount: 8
     })
@@ -263,7 +273,7 @@ describe('request-owned vector artifacts', () => {
             imageArtifactId: summary.imageArtifactId,
             bounds: { x: 10, y: 20, width: 240, height: 240 },
             compositionRole: 'Reference',
-            excludePathIds: [summary.paths[1].id]
+            excludePathIds: [paths[1].id]
           }
         }
       ]
@@ -328,12 +338,20 @@ describe('request-owned vector artifacts', () => {
       ]
     })
 
+    const { paths } = JSON.parse(
+      await tools.call(
+        'query_vector_paths',
+        { imageArtifactId: summary.imageArtifactId },
+        signal()
+      )
+    )
+
     for (const invalid of [
       { ...args, imageArtifactId: 'foreign' },
       { ...args, excludePathIds: ['unknown'] },
       {
         ...args,
-        excludePathIds: summary.paths.map((path: { id: string }) => path.id)
+        excludePathIds: paths.map((path: { id: string }) => path.id)
       },
       { ...args, bounds: { ...args.bounds, width: -1 } }
     ]) {
@@ -432,7 +450,7 @@ describe('explicit native oval preparation', () => {
       result.slices.reduce((sum, slice) => sum + slice.pointCount, 0)
     ).toBe(result.pointCount)
     expect(artifact.paths[0].pointCount).toBe(8)
-    expect(vectorArtifactSummary(artifact).paths[0]).toMatchObject({
+    expect(queryVectorPaths(artifact, undefined, 0, 1).paths[0]).toMatchObject({
       subpathCount: 1
     })
     expect(original.slices[0].descriptors[0].type).toBe('vector')
@@ -566,4 +584,60 @@ describe('App component mapping before drawing', () => {
       })
     ).toThrow()
   })
+})
+
+it('keeps dense geometry at its owner and pages only artifact-local candidates without retracing', async () => {
+  const path = '<path d="M1,1L2,1L2,2Z" fill="#123456"/>'
+  const other = '<path d="M10,10L11,10L11,11Z" fill="#654321"/>'
+  const convert = vi.fn(
+    async () =>
+      '<svg width="15" height="15">' +
+      path.repeat(13646) +
+      other.repeat(2) +
+      '</svg>'
+  )
+  const tools = createLocalImageTools(input, convert)
+  const result = await tools.call(
+    'vtracer',
+    {
+      attachmentIndex: 0,
+      plan: {
+        strategy: 'preserve-vectors',
+        reason: 'Trace the supplied contours.'
+      }
+    },
+    signal()
+  )
+  const receipt = JSON.parse(result)
+
+  expect(receipt.pathCount).toBe(13648)
+  expect(receipt).not.toHaveProperty('paths')
+  expect(Buffer.byteLength(result)).toBeLessThan(1024)
+
+  const query = async (args: Record<string, unknown>) =>
+    JSON.parse(
+      await tools.call(
+        'query_vector_paths',
+        { imageArtifactId: receipt.imageArtifactId, ...args },
+        signal()
+      )
+    )
+
+  const region = { x: 10, y: 10, width: 2, height: 2 }
+  const first = await query({ region, limit: 1 })
+
+  expect(first.paths.map((p: { id: string }) => p.id)).toEqual(['path-13647'])
+  const last = await query({ region, offset: first.nextOffset, limit: 1 })
+
+  expect(last).toMatchObject({
+    paths: [{ id: 'path-13648' }],
+    nextOffset: null
+  })
+  expect(await query({ region: { ...region, x: 5 } })).toMatchObject({
+    paths: [],
+    nextOffset: null
+  })
+  await expect(query({ imageArtifactId: 'foreign' })).rejects.toThrow()
+  await expect(query({ limit: 0 })).rejects.toThrow()
+  expect(convert).toHaveBeenCalledOnce()
 })

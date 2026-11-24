@@ -227,7 +227,7 @@ export function withConversationResourceReads(
         : value
     },
 
-    resultIssue(name, value) {
+    resultIssue(name, value, args) {
       if (history && name === resource && has(value, 'turns')) {
         return operationInputIssue(value, historyOutput)
       }
@@ -236,7 +236,7 @@ export function withConversationResourceReads(
         return operationInputIssue(value, savedOutput)
       }
 
-      return owner.resultIssue?.(name, value)
+      return owner.resultIssue?.(name, value, args)
     }
   }
 }

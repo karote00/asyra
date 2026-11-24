@@ -210,8 +210,11 @@ exposes its registered VTracer tool for submitted PNG/JPEG/WebP attachments and 
 arguments select an attachment index, never a path or URL. Conversion uses the
 existing App worker and the owning request cancellation, without a cumulative call quota.
 The request-owned image tool retains the parsed vector paths and returns only
-an opaque artifact ID plus path IDs, colors, bounds and point counts to the
-model. The model selects target bounds and optional whole-path exclusions;
+the artifact ID, dimensions and path count with any applicable conversion evidence.
+Before insertion, use query_vector_paths on that same request-owned artifact for
+a bounded page of path IDs, colors, bounds and point counts. Region filtering tests
+bounding-box intersection in artifact-local pixels. Continue with the returned
+nextOffset and the same region. Omit the region to page in source order. The model selects target bounds and optional whole-path exclusions;
 the backend prepares the existing editable batch descriptors deterministically.
 Insert and replacement model-facing schemas accept these references only for
 compatible image requests. References cannot cross requests. The final browser

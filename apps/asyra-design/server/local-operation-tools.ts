@@ -1,3 +1,6 @@
+import type { createDesignPreparationSession } from './design-preparation'
+import { DesignInputError } from './design-input-error'
+import { inlineFindingLimit } from './design-findings'
 import type { ProjectCreationText } from './created-target-delivery'
 import { nearbyCatalogNames } from './catalog-spelling'
 import {
@@ -85,6 +88,7 @@ import {
   designActionOutcome,
   toolInternalResult,
   toolResultCount,
+  toolRequestReference,
   toolResultObject,
   toolResultString,
   toolSemantics,
@@ -555,6 +559,9 @@ export interface NativeToolDescriptor extends LocalToolDefinition {
 }
 
 export interface LocalActionPreparation {
+  readRepairTargets?: ReturnType<
+    typeof createDesignPreparationSession
+  >['readRepairTargets']
   checkResults?: ReturnType<typeof createDesignCheckResults>
   resolveRecipe?: Parameters<
     typeof createPreparedDesignReview
@@ -1001,29 +1008,81 @@ const repairChecksDefinition = {
   inputSchema: repairChecksSchema
 }
 
+const draftIssuePageSchema = toolResultObject(
+  {
+    draftId: toolRequestReference,
+    total: { type: 'integer', minimum: 1 },
+    items: {
+      type: 'array',
+      minItems: 1,
+      items: toolResultObject({
+        path: toolResultString,
+        message: toolResultString
+      })
+    },
+    nextOffset: { type: 'integer', minimum: 1 }
+  },
+  ['draftId', 'total', 'items']
+)
+const checkResultsOutput = {
+  anyOf: [designCheckDeliverySchema, draftIssuePageSchema]
+}
 const checkResultsDefinition = {
   type: 'function',
   name: AiDesignToolIds.READ_DESIGN_CHECKS,
-  ...toolSemantics(designCheckDeliverySchema, 'read', ['request-artifacts']),
-  revision: 5,
+  ...toolSemantics(checkResultsOutput, 'read', ['request-artifacts']),
+  revision: 7,
   executionAccess: AiToolAccess.EXCLUSIVE,
   description:
-    'Read retained program checks and compiler findings. Default returns request-checks counts, firstPendingId and ledger revision without rows. Exact-ID counts are selected-checks; paginated counts remain request-wide. Counts are not visual acceptance or save confirmation. Exact ids retrieve full selected evidence. For all details use view=details, optional includePassed and limit (1-100); continue using nextOffset as offset with the returned revision. Changed revision requires restarting at offset zero. No model is invoked. Results never substitute for current canonical inspection.',
+    'Read retained program checks and compiler findings. Use draftIssuesFor with the rejected draft ID and offset to page its source repair targets. Default returns request-checks counts, firstPendingId and ledger revision without rows. Exact-ID counts are selected-checks; paginated counts remain request-wide. Counts are not visual acceptance or save confirmation. Use findingsFor with a check ID to read individual findings; optional target, kind, limit, offset and the findingPage revision select later pages. briefFor reads the retained prepared brief and numeric checks. For all details use view=details, optional includePassed and limit (1-100); continue using nextOffset as offset with the returned revision. Changed revision requires restarting at offset zero. No model is invoked. Results never substitute for current canonical inspection.',
   inputSchema: {
-    type: 'object',
-    additionalProperties: false,
-    properties: {
-      view: { enum: ['summary', 'details'] },
-      offset: { type: 'integer', minimum: 0 },
-      limit: { type: 'integer', minimum: 1, maximum: 100 },
-      revision: { type: 'integer', minimum: 0 },
-      includePassed: { type: 'boolean' },
-      ids: {
-        type: 'array',
-        uniqueItems: true,
-        items: { type: 'string', minLength: 1 }
+    anyOf: [
+      {
+        type: 'object',
+        additionalProperties: false,
+        properties: {
+          view: { enum: ['summary', 'details'] },
+          offset: { type: 'integer', minimum: 0 },
+          limit: { type: 'integer', minimum: 1, maximum: 100 },
+          revision: { type: 'integer', minimum: 0 },
+          includePassed: { type: 'boolean' },
+          ids: {
+            type: 'array',
+            uniqueItems: true,
+            items: { type: 'string', minLength: 1 }
+          }
+        }
+      },
+      {
+        type: 'object',
+        additionalProperties: false,
+        required: ['draftIssuesFor'],
+        properties: {
+          draftIssuesFor: toolRequestReference,
+          offset: { type: 'integer', minimum: 0 },
+          limit: { type: 'integer', minimum: 1, maximum: 100 }
+        }
+      },
+      {
+        type: 'object',
+        additionalProperties: false,
+        required: ['findingsFor'],
+        properties: {
+          findingsFor: toolResultString,
+          target: toolResultString,
+          kind: toolResultString,
+          offset: { type: 'integer', minimum: 0 },
+          limit: { type: 'integer', minimum: 1, maximum: 100 },
+          revision: { type: 'integer', minimum: 1 }
+        }
+      },
+      {
+        type: 'object',
+        additionalProperties: false,
+        required: ['briefFor'],
+        properties: { briefFor: toolResultString }
       }
-    }
+    ]
   }
 }
 
@@ -2896,10 +2955,10 @@ export const createLocalOperationTools = (
         ])
       ).values()
     ]
-    const evidence = JSON.stringify({
-      complete: false,
-      findings: knownFindings
-    })
+    const evidence =
+      knownFindings.length > inlineFindingLimit
+        ? `Incomplete measurement with ${knownFindings.length} known findings.`
+        : JSON.stringify({ complete: false, findings: knownFindings })
 
     measuredTargets.set(elementId, undefined)
     checkResults.record(
@@ -2957,7 +3016,10 @@ export const createLocalOperationTools = (
         id: measurementId(elementId),
         origin: 'tool',
         status: findings.length ? 'fail' : 'pass',
-        evidence: JSON.stringify({ complete, findings }),
+        evidence:
+          findings.length > inlineFindingLimit
+            ? `Measurement reported ${findings.length} findings.`
+            : JSON.stringify({ complete, findings }),
         scope: [elementId],
         dependencies: { [measurementId(elementId)]: JSON.stringify(stamp) }
       },
@@ -4135,7 +4197,11 @@ export const createLocalOperationTools = (
         }))
     ],
 
-    resultIssue: (name: string, value: unknown): string | undefined => {
+    resultIssue: (
+      name: string,
+      value: unknown,
+      args?: unknown
+    ): string | undefined => {
       if (!isRecord(value)) {
         return 'Operation returned no result object'
       }
@@ -4171,6 +4237,14 @@ export const createLocalOperationTools = (
       }
 
       if (name === AiDesignToolIds.READ_DESIGN_CHECKS) {
+        if (isRecord(args) && typeof args.draftIssuesFor === 'string') {
+          if (value.draftId !== args.draftIssuesFor) {
+            return 'Repair diagnostics belong to a different draft.'
+          }
+
+          return operationInputIssue(value, draftIssuePageSchema)
+        }
+
         return operationInputIssue(value, designCheckDeliverySchema)
       }
 
@@ -4473,9 +4547,35 @@ export const createLocalOperationTools = (
         }
 
         signal.throwIfAborted()
+        if (isRecord(args) && typeof args.draftIssuesFor === 'string') {
+          if (!preparation.readRepairTargets) {
+            throw new AiToolInputError(
+              'Rejected draft diagnostics are unavailable in this request.'
+            )
+          }
+
+          try {
+            return JSON.stringify(
+              preparation.readRepairTargets(
+                args.draftIssuesFor,
+                typeof args.offset === 'number' ? args.offset : 0,
+                typeof args.limit === 'number' ? args.limit : 50
+              )
+            )
+          } catch (error) {
+            if (error instanceof DesignInputError) {
+              throw new AiToolInputError(error.message)
+            }
+
+            throw error
+          }
+        }
+
         const request = args as DesignCheckDeliveryOptions
-        const selected = request.ids
-          ? checkResults.dependencyIds(request.ids)
+        const checkId = request.findingsFor ?? request.briefFor
+        const selectedIds = checkId ? [checkId] : request.ids
+        const selected = selectedIds
+          ? checkResults.dependencyIds(selectedIds)
           : undefined
         const selectedRecords = selected
           ? checkResults.read({ ids: selected, includePassed: true }).items
@@ -6182,7 +6282,7 @@ export const createLocalOperationTools = (
 export const localToolContent = async (
   text: string,
   selectedImages: readonly AiToolImage[] = [],
-  projectCreationText?: ProjectCreationText
+  projectDefaultText?: ProjectCreationText
 ): Promise<
   (
     | { type: 'inputText'; text: string }
@@ -6273,7 +6373,7 @@ export const localToolContent = async (
     }
   }
 
-  const textValue = projectCreationText ? projectCreationText(value) : value
+  const textValue = projectDefaultText ? projectDefaultText(value) : value
 
   return [{ type: 'inputText', text: JSON.stringify(textValue) }, ...images]
 }

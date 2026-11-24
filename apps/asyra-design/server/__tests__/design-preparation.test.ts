@@ -1300,6 +1300,78 @@ describe('owner-derived vector dimensions', () => {
       measure.mockRestore()
     }
   })
+  it('preserves nested sibling positions and cubic controls for equivalent signed sources', () => {
+    const shape = (shift: number) => ({
+      type: 'vector',
+      key: 'curve',
+      name: 'Curve',
+      x: 7 - shift,
+      y: 9 - shift,
+      rings: [
+        [
+          {
+            x: 2 + shift,
+            y: 4 + shift,
+            outControl: { x: 3 + shift, y: 8 + shift }
+          },
+          {
+            x: 12 + shift,
+            y: 14 + shift,
+            inControl: { x: 8 + shift, y: 1 + shift }
+          },
+          { x: 15 + shift, y: 5 + shift }
+        ]
+      ]
+    })
+
+    const nested = (shift: number) => ({
+      type: 'group',
+      name: 'Outer',
+      x: 30,
+      y: -4,
+      children: [
+        {
+          type: 'group',
+          key: 'inner',
+          name: 'Inner',
+          x: -15,
+          y: 6,
+          children: [
+            shape(shift),
+            {
+              type: 'rect',
+              key: 'a',
+              name: 'Neighbor',
+              x: -8,
+              y: 4,
+              width: 3,
+              height: 7
+            }
+          ]
+        },
+        {
+          type: 'rect',
+          key: 'b',
+          name: 'Sibling',
+          x: 100,
+          y: 15,
+          width: 9,
+          height: 8
+        }
+      ]
+    })
+
+    expect(prepareDesign(nested(-50), 'identity').entries).toEqual(
+      prepareDesign(nested(0), 'identity').entries
+    )
+    expect(() =>
+      prepareDesign({
+        ...nested(-50),
+        children: [{ ...shape(-50), width: 50, height: 50 }]
+      })
+    ).toThrow(/bounds/)
+  })
+
   it('rejects incomplete dimensions and keeps explicit bounds assertions', () => {
     expect(() => prepareDesign(source({ width: 50 }))).toThrow(/dimensions/)
     expect(() => prepareDesign(source({ width: 20, height: 20 }))).toThrow(

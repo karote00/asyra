@@ -1,3 +1,4 @@
+import { isDeepStrictEqual } from 'node:util'
 import type {
   AiActionBatch,
   AiToolProgress,
@@ -400,6 +401,8 @@ export const createDesignProviderTools = async (
       )
     )
     const preparation: LocalActionPreparation = {
+      checkResults: designs.checkResults,
+      readRepairTargets: designs.readRepairTargets,
       resolveTargets: designs.resolveTargets,
       resolveRecipe: designs.resolveRecipe,
 
@@ -1144,18 +1147,18 @@ export const createDesignProviderTools = async (
       })
 
       try {
-        const { media, projectCreationText, ...result } = reply
+        const { media, projectDefaultText, ...result } = reply
 
         const content = await localToolContent(
           reply.text,
           media,
-          projectCreationText
+          projectDefaultText
         )
         const text = content[0]
 
         return {
           ...result,
-          ...(projectCreationText && text?.type === 'inputText'
+          ...(projectDefaultText && text?.type === 'inputText'
             ? { text: text.text }
             : {}),
           contentItems: [
@@ -1328,11 +1331,57 @@ export const createDesignProviderTools = async (
       execute: () => {
         ownerStarted = true
 
-        return invokeOwner(call).finally(() => {
-          executionStartedAt = executionStarted.get(String(call.callId))
-          executionStarted.delete(String(call.callId))
-          queuedAt.delete(String(call.callId))
-        })
+        return invokeOwner(call)
+          .then((reply) => {
+            if (reply.outcome.status === 'success') {
+              return reply
+            }
+
+            const first = reply.contentItems[0]
+
+            if (first?.type !== 'inputText') {
+              return reply
+            }
+
+            const body = JSON.parse(first.text)
+
+            if (
+              !isRecord(body) ||
+              !isDeepStrictEqual(body.toolOutcome, reply.outcome)
+            ) {
+              return reply
+            }
+
+            const last = reply.contentItems.at(-1)
+            const redundantStatus =
+              last !== first &&
+              last?.type === 'inputText' &&
+              last.text === JSON.stringify({ toolOutcome: reply.outcome })
+            const { issues, ...state } = reply.outcome
+            const identical =
+              issues?.length === 1 &&
+              isDeepStrictEqual(issues[0], {
+                message: body.message,
+                code: body.code
+              })
+            const text = JSON.stringify({
+              ...body,
+              toolOutcome: identical ? state : reply.outcome
+            })
+
+            return {
+              ...reply,
+              contentItems: [
+                { type: 'inputText' as const, text },
+                ...reply.contentItems.slice(1, redundantStatus ? -1 : undefined)
+              ]
+            }
+          })
+          .finally(() => {
+            executionStartedAt = executionStarted.get(String(call.callId))
+            executionStarted.delete(String(call.callId))
+            queuedAt.delete(String(call.callId))
+          })
       },
 
       observe: (event) => {

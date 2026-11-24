@@ -315,14 +315,44 @@ export const vectorArtifactSummary = (artifact: LocalVectorArtifact) => ({
     : {}),
   width: artifact.width,
   height: artifact.height,
-  paths: artifact.paths.map(({ id, fill, bounds, pointCount, rings }) => ({
-    id,
-    fill,
-    bounds,
-    pointCount,
-    subpathCount: rings.length
-  }))
+  pathCount: artifact.paths.length
 })
+
+/** The cursor is a source index on this immutable artifact, not a match count. */
+export const queryVectorPaths = (
+  artifact: LocalVectorArtifact,
+  region: Bounds | undefined,
+  offset: number,
+  limit: number
+) => {
+  const paths = []
+
+  for (let index = offset; index < artifact.paths.length; index++) {
+    const { id, fill, bounds, pointCount, rings } = artifact.paths[index]
+
+    if (
+      region &&
+      (bounds.x >= region.x + region.width ||
+        bounds.x + bounds.width <= region.x ||
+        bounds.y >= region.y + region.height ||
+        bounds.y + bounds.height <= region.y)
+    ) {
+      continue
+    }
+
+    if (paths.length === limit) {
+      return {
+        imageArtifactId: artifact.imageArtifactId,
+        paths,
+        nextOffset: index
+      }
+    }
+
+    paths.push({ id, fill, bounds, pointCount, subpathCount: rings.length })
+  }
+
+  return { imageArtifactId: artifact.imageArtifactId, paths, nextOffset: null }
+}
 
 export const LOCAL_VECTOR_REFERENCE_SCHEMA = {
   type: 'object',
@@ -362,7 +392,7 @@ export const LOCAL_VECTOR_REFERENCE_SCHEMA = {
       uniqueItems: true,
       items: { type: 'string' },
       description:
-        'IDs of whole paths to omit. Use bounds and colors from the VTracer summary to identify separate marks. Empty preserves all paths.'
+        'IDs of whole paths to omit. Use bounds and colors from query_vector_paths to identify separate marks. Empty preserves all paths.'
     },
     bounds: {
       type: 'object',

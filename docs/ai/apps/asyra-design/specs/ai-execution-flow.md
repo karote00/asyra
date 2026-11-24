@@ -2467,7 +2467,10 @@ and reference dependencies and do not constitute standalone validation schemas.
 Category and lexical discovery return bounded pages with explicit continuation;
 unknown operations return registered candidates, never inferred executable aliases.
 Reference pages retain other linked/structured image candidates alongside the
-representative declaration. Candidate pages do not fetch alternatives or certify
+representative declaration. Successful import returns the selected image, inventory
+count and continuation. Reading that continuation returns at most 16 candidate
+records and matching attempt evidence without redisplaying pixels or downloading
+images. An unimported source has no inventory. Candidate pages do not certify
 subject suitability. Selecting an explicit candidate uses the ordinary immutable
 image acquisition/reuse path. Explicit acquisition of any known gallery candidate
 updates the page's selected asset, including after representative acquisition
@@ -4097,6 +4100,15 @@ outer envelope must not produce a purported complete recovery invocation.
 Execution failures continue to expose only unfinished work; admission recovery
 never implies that any mutation already ran.
 
+Direct drawing admission delivers the preparation owner's retained draft reference
+to the provider, including when the submission requests explicit result delivery.
+A repair-only contract read accepts the operation without node types. Measured
+vector rings must span positive width and height even when dimensions are omitted.
+Within one geometry rejection, identify the collapsed axes and the authored rings
+that need correction. Repeated placements address their shared source template.
+A rejected repair retains its updated source revision for the next repair in the
+same request. Apply only after the complete corrected source passes admission.
+
 Every public API requires actual-owner semantic evidence through its delivered
 entry, with applicable success, no-op, invalid input/output, cancellation, partial
 result, stale identity and recovery cases. Format-only admission, mocked delegation
@@ -4931,3 +4943,23 @@ ready-arguments-only actions when their individual wrapper cannot be composed.
 Pass concrete arguments in an ordinary batch. Named or previous-step inputs,
 step-time selection and individually retained or delivered outputs require a
 composable wrapper. A direct native invocation takes ordinary concrete arguments.
+
+
+### Bulk mutation receipt delivery
+
+Composition insertion, replacement, update and removal, arrangement, prescribed positions and prepared material application keep their complete mutation receipts for Host bindings. When the receipt exceeds one document receipt page, the browser retains the complete value and ordered distinct applied targets for the request. Default model delivery reports settlement, counts, root identity when available, and the first skipped or unavailable target when applicable. Material provenance and storage failure remain distinguishable from mutation success. Read the snapshot with `read_design_context`, `scope: snapshot`, `delivery: receipt` for full details. Small receipts remain inline. An unavailable receipt store must report delivery failure without replaying the mutation.
+
+The same page boundary applies to ordered basic create results and per-target visibility, fill and stroke statuses. Large receipts report counts by outcome and the first issue index. The source result preserves input order, null creation slots and all per-item statuses. Successful direct application of a prepared design reports the root and applied count. Its existing preparation artifact resolves child keys or target sets; internal consumers keep the actual IDs and complete mapping.
+
+Preparation and mechanical review share request-scoped check records. Default delivery includes actionable small findings or a counted sample with a check reference. Exact finding reads select a check revision and can filter by target or kind and page through matches. Partial source review limits returned findings while preserving whole-source admission. Rechecking unchanged evidence can reuse its receipt. Full operation results remain available to bindings and explicit field delivery. A provider rejection preserves settlement, recovery and distinct issues while delivering identical error prose once.
+
+
+### Source recovery in composed admission
+
+Direct and literal composed calls use the registered operation owner's same
+admission recovery for a concrete rejected source. The Host reports the step,
+operation, validation issues and actual settlement. Preparation supplies the
+request-local draft and editable paths. Invalid workflow options remain explicit. A guide for that source prepares only;
+applying requires correcting the workflow options. Recovery cannot apply a partial source or
+retry acknowledged actions. A dynamic binding error without a concrete source
+does not create a retained drawing.

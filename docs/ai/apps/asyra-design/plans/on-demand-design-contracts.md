@@ -1,5 +1,28 @@
 # On-demand Design contracts
 
+## Retained vector path delivery
+
+The request-owned image tool retains complete trace geometry. Conversion, layer
+separation and refinement report artifact identity, dimensions and path count.
+Whole-artifact insertion consumes the receipt directly. When a caller needs
+individual paths before insertion, a read on the same artifact returns a bounded
+page of path summaries intersecting an optional artifact-local pixel region.
+The canvas region query continues to select existing scene elements. Verify
+the recorded 13,648-path scale, unchanged preparation, page continuation,
+empty regions, ownership and conversion reuse offline.
+
+Offline replay used the recorded source photograph, native crop and original
+representation plan. The 13,648-path tool receipt fell from 1,634,562 to 776
+UTF-8 bytes. One 20-by-20 artifact-local region matched six path summaries in
+819 bytes. The results matched filtering the archived original path bounds.
+These measurements describe tool payloads, not provider token accounting.
+
+## Related default tool responses
+
+Check reference acquisition, image analysis, browser mutations, preparation, tool discovery and knowledge at their model-delivery boundaries. Exercise candidate metadata paging independently of pixel delivery. For bulk mutation owners with published ID lists, keep small values directly usable, retain large complete receipts for the request, and distinguish a missing storage acknowledgment from a failed mutation. Use offline success, partial, storage-failure and paging cases; explicitly requested detail remains available.
+
+The 1,400-item partial composition projection decreased from 66,822 to 313 UTF-8 bytes; the immutable receipt reproduced all roles, IDs and the skipped duplicate. An ordered 4,000-target visibility write previously returned 40,129 bytes. An independent 46-image gallery case delivered one selected image on import and zero images on the first 16-candidate page. These are offline result measurements, not billing estimates.
+
 ## Task contract
 
 On the reviewed adapter source f1441f5a9, a fresh selected rectangle generated 42,860 request bytes and four model exchanges. The recorded purpose query was `set solid fill color elementIds`. The chosen action was the sixth candidate. Preserve choice among candidates and direct execution of an already-known operation. The current scope includes Design publication, the Responses discovery protocol, its continuation and offline regressions. Model inference, billing, cache policy and editing behavior are outside this revision.
@@ -172,3 +195,84 @@ The baseline used the recorded first-request byte count and the source-matched o
 The scripted provider chose the sixth candidate from the original query. Its complete arguments passed validation; omitting the required element identity failed validation. A real browser then edited and persisted the same rectangle, from red to blue, with one rectangle remaining. Separate cases cover a hierarchy operation, a partial query, and reference import by purpose even when the tool name is opaque.
 
 [Owner flow](on-demand-design-contracts/handoff.flow.json)
+
+## Prepared and measured finding delivery
+
+The recorded Dome preparation had no blocking findings. The offline panel produced 181 blocking findings, repeated in preparation, full review, single-key review, and a one-row check page. The provider created separate preparation and review ledgers. The last Dome insertion rejection delivered identical issue text three times.
+
+1. Publish preparation results in the request check ledger. Select actual source nodes independently of numeric check references. Keep the global verdict for partial coverage.
+2. Deliver small corrections inline. Summarize repeated findings with examples, counts, and an exact request-local check reference. Retrieve individual findings by target, kind and page. Preserve complete results for bindings, explicit delivery and mechanical repair.
+3. Preserve failure state, settlement and independent issues while sending an identical rejection explanation once. Replay both the saved Dome and the high-finding case offline through the provider-facing Host.
+
+Offline provider-facing text measurements count UTF-8 content bytes, including the outcome part when present. The 1,400-element Dome preparation went from 1,516 to 723 bytes. Its full prepared review (746 bytes) and canvas review (1,105 bytes) had no blocking findings. The stress draft had 180 identical right overflows, one failed numeric requirement, and ten pending text measurements.
+
+| Stress response | Original bytes | Updated bytes |
+| --- | ---: | ---: |
+| Preparation | 15,412 | 1,985 |
+| Full prepared review | 14,261 | 1,168 |
+| Same review without changes | 14,259 | 905 |
+| Single overflow target review | 14,269 | 992 |
+| One check row | 16,935 | 590 |
+| Canvas measurement | 20,856 | 1,468 |
+
+A scoped read delivered both findings for the tile with the numeric requirement. A single retained-draft repair corrected both source fields. A 1,000-finding measurement was recovered in ten pages. The first recorded insertion rejection reproduced the original explanation once instead of three times (3,338 to 1,168 bytes). The next recorded insertion referenced a request-local vector artifact unavailable in the replay, so its original failure was not reproduced.
+
+## Native entrance draft recovery
+
+The recorded native drawing submitted an entrance draft with 103 vectors. Static admission reported negative anchors without a public draft handle. After resubmission, geometry admission reported the first of four zero-width mullions as exceeding declared bounds. A subsequent repair-only contract query required unrelated node types.
+
+1. Preserve owner-declared admission recovery in the native provider reply. Keep request scope, immutable source revisions, and existing input and settlement validation.
+2. Publish the repair branch without a node type selection. Preserve node selection for new geometry.
+3. Use the existing vector measurement to report all zero extents with their authored repair locations. Revalidate the corrected source inside the same operation before any write.
+4. Replay the original direct provider arguments offline. Require one source submission, all four collapsed paths in the first rejection, one retained repair and one successful application. Rejection leaves the canvas untouched. Signed coordinates use the preparation rules below.
+
+Before signed coordinate preparation, offline acceptance used the original 22,979-byte native submission and the original repair-scope query. The first rejection retained all 103 children. One repair changed rings and placement on the 22 vectors with negative anchors. The next rejection identified zero width on a42 through a45 and returned four authored rings pointers and the updated draft revision. One four-field repair reached the application boundary with all 103 original child keys in order and the same parent. The provider received a completed receipt for 104 elements. There were two rejected submissions, zero complete-source resubmissions and one application. Contract-read pages were acquired separately from drawing submissions. This proves offline recoverability with a simulated browser receipt.
+
+## Recovery from the public tool reply
+
+The preparation owner must retain a concrete correctable source, including early camera/layout rejection. Late geometry and static admission must identify locations in the authored source. Bound diagnostic text separately from locating independent invalid nodes. When the original validator truncates, inventory independently checkable authored nodes using the canonical schemas. Identify what was examined; subsequent geometry still requires revalidation. Deliver small target sets inline and read larger sets by immutable request-local draft revision. Never infer user geometry.
+
+The Host owns envelope and binding errors and the settlement of completed steps. Direct and composed concrete drawing inputs delegate recovery to the same registered drawing owner, including multipart inputs. Unavailable retention, unresolvable bindings, cancellation and unknown settlement keep their actual semantics. Existing discovery, Knowledge, delivery-only recovery, storage and parent-part continuation stay with their current owners.
+
+Prove the recorded entrance repair using only publicly delivered target locations. Check projection recovery with an actual corrected retry, oversized diagnostic pages, invalid references, nested groups, declared bounds and both provider routes. Exercise existing partial-write, delivery, discovery, saved/bound input and cancellation controls offline. The discovery pagination regression must distinguish transport fragments from catalogue pages. No live drawing or API call.
+
+Before signed-coordinate support, the native entrance replay identified 22 independent children from the
+first public rejection and four collapsed rings from the second. Both attempts
+left the canvas untouched. Two local corrections and zero full-source resends
+produced one acknowledged application of 104 elements. The Responses replay
+also distinguished a forbidden source property from misplaced workflow delivery.
+A truncated first part no longer hides the second part's invalid source. The
+public diagnostics continuation returned the remaining nested targets and rejected
+foreign references and invalid offsets. Production conversation tests verified
+source and Knowledge reuse, deliberate corruption, partial settlement and saved
+creation-map metadata against the offline native client and Responses fixtures.
+
+## Signed source coordinates and live attachment
+
+Prepare signed source anchors and controls in one bottom-up pass before creating
+anything. Explicit bounds remain an assertion. Preserve workspace geometry and
+report all collapsed authored rings together. For an insertion into an existing
+Group, project the incoming sibling batch and affected ancestor Groups against
+their live direct children inside the owned mutation, preserving fixed Frame
+bounds, sibling order, transforms and partial-application boundaries. Do not
+serialize unrelated subtrees or normalize newly created Groups again on child
+delivery. Verify the recorded entrance, equivalent signed/translated drafts,
+and live attachment with nested siblings, changed ancestors and work counts.
+
+
+Offline acceptance on the recorded 103-vector entrance now requires one rejection
+for the four collapsed paths, one retained repair and one acknowledged application
+of 104 elements at the provider boundary. No complete draft is resent. A separate
+canonical App integration reads the two affected sibling lists once and sends one
+property batch for the first attachment, including when its descendants span
+multiple creation slices. After the Render layer update, both existing branches
+and the Frame peer retain their original workspace positions. A later partition
+survives a separate transaction rebasing the ancestors; an actual anchor move
+or changed transform prevents further creation from stale coordinates.
+
+A local Chrome 158 run on an Apple M3 Max inserted a rectangle at x = -10 in
+a scene of 10,000 rectangles. With 10,000 direct siblings, three insertions
+took 520–562 ms through frame submission and GPU synchronization. With four
+direct Groups of 2,500 rectangles each, insertion beside the four Groups took
+11–17 ms. Scene creation, provider latency and remote collaboration were outside
+the timed interval. No change to the coordinate policy was required.

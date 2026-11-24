@@ -262,15 +262,6 @@ export const createLocalDesignWorkflow = (
     'request-artifact'
   )
   const single = {
-    recoverOperationInput(name: string, input: unknown) {
-      if (name === AiDesignToolIds.PREPARE_AND_APPLY_DESIGN) {
-        return designs.recoverOperationInput(
-          AiDesignToolIds.PREPARE_DESIGN,
-          input
-        )
-      }
-    },
-
     projectModelResult(name: string, args: unknown, value: unknown): unknown {
       if (!value || typeof value !== 'object' || Array.isArray(value)) {
         return value
@@ -312,7 +303,7 @@ export const createLocalDesignWorkflow = (
       const details = designs.rejectInput(
         AiDesignToolIds.PREPARE_DESIGN,
         args,
-        issues
+        issues?.filter((issue) => issue.instancePath.startsWith('/draft/'))
       )
 
       if (!details?.repairGuide) {
@@ -325,6 +316,31 @@ export const createLocalDesignWorkflow = (
         materialSourceId: _materialSource,
         ...context
       } = args as Record<string, unknown>
+
+      const envelopeIssues = (issues ?? []).filter(
+        (issue) =>
+          issue.instancePath &&
+          !issue.instancePath.startsWith('/draft/') &&
+          issue.instancePath !== '/draft'
+      )
+
+      if (envelopeIssues.length) {
+        // A source-only correction cannot apply using an invalid parent or an implicit default.
+        return {
+          ...details,
+          repairGuide: {
+            ...details.repairGuide,
+            arguments: envelopeIssues.some(
+              (issue) => issue.instancePath === '/materialSourceId'
+            )
+              ? { repair: details.repairGuide.arguments.repair }
+              : details.repairGuide.arguments,
+            envelopeIssues,
+            instructions:
+              'This guide prepares source only. Correct the reported workflow arguments before applying. The same repair can be submitted with corrected workflow options.'
+          }
+        }
+      }
 
       return {
         ...details,
@@ -734,7 +750,7 @@ export const createLocalDesignWorkflow = (
         relations: ['/$defs/readyDraft/properties/relations'],
         sharedFills: ['/$defs/readyDraft/properties/sharedFills']
       },
-      selection: `Choose component contents and painter order, then outer repetition and operation/nodeTypes for the next submitted part. Component order: one pattern of face/grid members. Layer order: sibling patterns, with independent nodes at their painter positions. For either, define members once; axes count/step set translation. Selecting projected-face/surface-grid includes pattern with members; no extra query is needed. Examples are optional; select types for independent siblings. inputScope usage gives complete parameters/results/recovery. draft creates an artifact within ${designs.expandedNodeLimit} expanded objects or continues a safely partitionable source through retained parts in this call; repair corrects retained preparation; parts submits independent artifacts exceeding that total together, each within limits, with partial receipts. Independent world-space planar faces in a shared orthographic projection: projected-face. Pattern-only queries include all face/grid members; content queries include only selected kinds. origin sets the start. For faces mode, explicitly select pattern. surface-grid repeats normalized motifs on a planar convex four-corner boundary using rows/columns and painter order. Select grid if this submission needs it; later grid details may be added separately when useful. Arbitrary or already-projected 2D outlines: vector; identical 2D curves: vector-pattern. Guides include root group/frame; nodeTypes selects children, including nested containers. Nest group for organization, frame for size; rect/oval/text for primitives. Root changes need no query. Set retain and delivery on execute_design when using operations. Request handles are not conversation values. Omit unused optional inputs without rereading. Select used types only. Size/rotation/irregular exceptions stay explicit. Templates reduce input, not output budgets; safe excess continues via retained parts. Use parts for independent layers or bounded complete-instance ranges; never replay acknowledged parts. No Knowledge or planning call is required. Known scopes can read directly; full schema/field queries remain available.`,
+      selection: `Choose component contents and painter order, then outer repetition and operation/nodeTypes for the next submitted part. Component order: one pattern of face/grid members. Layer order: sibling patterns, with independent nodes at their painter positions. For either, define members once; axes count/step set translation. Selecting projected-face/surface-grid includes pattern with members; no extra query is needed. Examples are optional; select types for independent siblings. inputScope usage gives complete parameters/results/recovery. draft creates an artifact within ${designs.expandedNodeLimit} expanded objects or continues a safely partitionable source through retained parts in this call; repair corrects retained preparation and can be queried with operation alone; parts submits independent artifacts exceeding that total together, each within limits, with partial receipts. Independent world-space planar faces in a shared orthographic projection: projected-face. Pattern-only queries include all face/grid members; content queries include only selected kinds. origin sets the start. For faces mode, explicitly select pattern. surface-grid repeats normalized motifs on a planar convex four-corner boundary using rows/columns and painter order. Select grid if this submission needs it; later grid details may be added separately when useful. Arbitrary or already-projected 2D outlines: vector; identical 2D curves: vector-pattern. Guides include root group/frame; nodeTypes selects children, including nested containers. Nest group for organization, frame for size; rect/oval/text for primitives. Root changes need no query. Set retain and delivery on execute_design when using operations. Request handles are not conversation values. Omit unused optional inputs without rereading. Select used types only. Size/rotation/irregular exceptions stay explicit. Templates reduce input, not output budgets; safe excess continues via retained parts. Use parts for independent layers or bounded complete-instance ranges; never replay acknowledged parts. No Knowledge or planning call is required. Known scopes can read directly; full schema/field queries remain available.`,
       usage: {
         resultPaths: ['/createdTargets'],
         instructions:
@@ -862,6 +878,10 @@ export const createLocalDesignWorkflow = (
     definitions: [
       {
         ...definition,
+        admissionRecoveryProperties: {
+          ...definition.admissionRecoveryProperties,
+          rejectedParts: { type: 'array' }
+        },
         outputSchema: {
           ...(semantics.outputSchema as Record<string, unknown>),
           ...toolResultObject({
@@ -962,16 +982,23 @@ export const createLocalDesignWorkflow = (
         return
       }
 
-      const inputParts = args.parts
       const inputIssues =
         issues ?? operationInputIssues(args, inputSchema) ?? []
-      let complete = inputIssues.every(
-        (issue) =>
-          ['anyOf', 'oneOf', 'allOf'].includes(issue.keyword) ||
-          inputParts.some((_part, index) =>
-            issue.instancePath.startsWith(`/parts/${index}/draft/`)
-          )
+      const truncated = inputIssues.some(
+        (issue) => issue.keyword === 'diagnosticLimit'
       )
+      // When diagnostics stop inside a draft, check the rest of the envelope
+      // independently, keeping all order, ownership and exclusivity rules.
+      let complete = truncated
+        ? !operationInputIssue(args, {
+            ...inputSchema,
+            $defs: { ...inputSchema.$defs, readyDraft: true }
+          })
+        : inputIssues.every(
+            (issue) =>
+              ['anyOf', 'oneOf', 'allOf'].includes(issue.keyword) ||
+              /^\/parts\/\d+\/draft\//.test(issue.instancePath)
+          )
 
       if (complete) {
         try {
@@ -1000,12 +1027,25 @@ export const createLocalDesignWorkflow = (
         }
 
         const prefix = `/parts/${index}`
-        const partIssues = inputIssues
-          .filter((issue) => issue.instancePath.startsWith(prefix + '/draft/'))
-          .map((issue) => ({
-            ...issue,
-            instancePath: issue.instancePath.slice(prefix.length)
-          }))
+        const partIssues = truncated
+          ? (
+              operationInputIssues(
+                part.draft,
+                inputSchema.$defs.readyDraft,
+                inputSchema
+              ) ?? []
+            ).map((issue) => ({
+              ...issue,
+              instancePath: '/draft' + issue.instancePath
+            }))
+          : inputIssues
+              .filter((issue) =>
+                issue.instancePath.startsWith(prefix + '/draft/')
+              )
+              .map((issue) => ({
+                ...issue,
+                instancePath: issue.instancePath.slice(prefix.length)
+              }))
         const details = designs.rejectInput(
           AiDesignToolIds.PREPARE_DESIGN,
           { draft: part.draft },

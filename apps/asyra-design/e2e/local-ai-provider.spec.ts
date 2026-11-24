@@ -873,7 +873,13 @@ test('pre-trace decomposition renders an editable oval below reference vectors i
   const drawing = prepared.actions[0].arguments
   const descriptors = drawing.slices.flatMap(
     (slice: {
-      descriptors: { id: string; type: string; width: number; height: number }[]
+      descriptors: {
+        id: string
+        type: string
+        width: number
+        height: number
+        fills: { color: string }[]
+      }[]
     }) => slice.descriptors
   )
 
@@ -964,7 +970,9 @@ test('pre-trace decomposition renders an editable oval below reference vectors i
   )
   expect(meanError).toBeLessThan(12)
   expect(
-    summary.paths.every((path: { fill: string }) => path.fill === '#FFFFFF')
+    descriptors
+      .slice(1)
+      .every((descriptor) => descriptor.fills[0].color === '#FFFFFF')
   ).toBe(true)
   expect(await getUndoHistoryDepth(page)).toBe(depth + 1)
   const after = await getCoreDocumentDigest(page)

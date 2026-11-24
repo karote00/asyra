@@ -1664,9 +1664,17 @@ it.each(native)(
   }
 )
 
+// A qualified wrapper can cache the same usage page. Trace the cold producer
+// independently of the native-registration cases that ran before this group.
+const actionUsageFixture = createDeliveryAuditFixture()
+
+afterAll(() => actionUsageFixture.dispose())
+
 it.each(runtime.actionDefinitions)(
   '$name selected action usage retains parameters independently of its effect - case %#',
   async (action) => {
+    const { operations, host, preparation, actions, execute } =
+      actionUsageFixture
     const query = operations.definitions.find(
       (d) => d.name === 'read_design_resources'
     )

@@ -1,4 +1,7 @@
-import { designContextPageLimit } from './design-context-fields'
+import {
+  designContextPageLimit,
+  receiptPageLength
+} from './design-context-fields'
 import {
   createDesignContextReader,
   validateDesignContextQuery,
@@ -501,8 +504,9 @@ export const createRetainedDesignContext = (
           )
         }
 
-        const end = Math.min(text.length, offset + 8192)
-        const paged = input.offset !== undefined || text.length > 8192
+        const end = Math.min(text.length, offset + receiptPageLength)
+        const paged =
+          input.offset !== undefined || text.length > receiptPageLength
 
         return {
           available: true,

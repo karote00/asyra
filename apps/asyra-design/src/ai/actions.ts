@@ -1,3 +1,5 @@
+import { publishBulkMutationReceipt } from './bulk-mutation-receipt'
+import type { createRetainedDesignContext } from '../common-apis/retained-design-context'
 import { supportsSizeEdits } from '../common-apis/element/geometry-policy'
 import { scaleElementAroundCenter } from '../common-apis/element/scale'
 import { SelectionTargetUnavailableError } from '../common-apis/selection'
@@ -45,6 +47,9 @@ export const AI_WORKSPACE_LIMIT = 2048
 export const AI_TRANSIENT_CREATE_CHUNK_SIZE = 256
 
 export interface CreateAiActionsOptions {
+  readonly retainReceipt?: ReturnType<
+    typeof createRetainedDesignContext
+  >['retainReceipt']
   readonly confirmPersistence?: (
     signal: AbortSignal
   ) => Promise<
@@ -1280,7 +1285,14 @@ export const createAiActions = (
     Object.freeze(reportOutcome),
     clarification,
     drawingDetailChoice,
-    ...createCompositionActions(apis, mutationOptions, hostYield, paintYield),
+    ...createCompositionActions(
+      apis,
+      mutationOptions,
+      hostYield,
+      paintYield
+    ).map((action) =>
+      publishBulkMutationReceipt(action, options.retainReceipt)
+    ),
     visibility,
     selection
   ])

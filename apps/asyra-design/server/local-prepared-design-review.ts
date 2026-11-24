@@ -1,3 +1,4 @@
+import { describeDesignFindings, findingTargetMatches } from './design-findings'
 import {
   createDesignCheckResults,
   designCheckDeliverySchema
@@ -13,7 +14,7 @@ import {
 import { createHash } from 'node:crypto'
 import type { InspectionEvidenceStamp } from '../src/ai/inspection-evidence'
 import { AiDesignToolIds } from '../src/constants/ai-design'
-import { AiToolAccess } from '@asyra/ai-agent-runtime'
+import { AiToolAccess, AiToolInputError } from '@asyra/ai-agent-runtime'
 import { operationInputIssue } from '@asyra/ai-agent-runtime/schema'
 import type { DesignCheckAssessment } from './design-check-contract'
 
@@ -68,6 +69,7 @@ export const preparedReviewDefinition = {
         assessment: toolResultObject({ overall: { type: 'object' } }, [
           'overall'
         ]),
+        findingSummary: { type: 'object' },
         deterministicFindings: { type: 'array' },
         unresolvedPriorConflict: toolResultBoolean,
         results: designCheckDeliverySchema
@@ -89,11 +91,11 @@ export const preparedReviewDefinition = {
     'prepare',
     ['request-artifacts']
   ),
-  revision: 3,
+  revision: 4,
   name: AiDesignToolIds.REVIEW_PREPARED_DESIGN,
   executionAccess: AiToolAccess.EXCLUSIVE,
   description:
-    'Check canonical attachment and selected recipe coverage using program checks only. Preparation already retains compiler findings; this call is not needed merely to record them. No model is invoked. Pass covers data checks only; appearance and request interpretation remain for the primary agent using rendered output. Supply artifactId and intended parentId. Partial keys cannot hide a compiler failure. Correct failures and recheck. Exact dependencies reuse results; the AI judges rendered appearance separately.',
+    'Check canonical attachment and selected recipe coverage using program checks only. Preparation already retains compiler findings; this call is not needed merely to record them. No model is invoked. Pass covers data checks only; appearance and request interpretation remain for the primary agent using rendered output. Supply artifactId and intended parentId. Keys scope the returned findings; global failure still blocks application. Use read_design_checks with findingsFor=findingSummary.checkId for full findings or individual targets. Correct failures and recheck. Exact dependencies reuse results; the AI judges rendered appearance separately.',
   inputSchema: {
     type: 'object',
     additionalProperties: false,
@@ -313,7 +315,7 @@ export const createPreparedDesignReview = (options: {
 
           if (typeof value.key === 'string' && keys.includes(value.key)) {
             if (selected.has(value.key)) {
-              throw new Error(
+              throw new AiToolInputError(
                 'Source key is ambiguous; select a unique recipe part.'
               )
             }
@@ -321,12 +323,16 @@ export const createPreparedDesignReview = (options: {
             selected.set(value.key, value)
           }
 
-          Object.values(value).forEach(visit)
+          visit(value.children)
+          visit(value.motifs)
+          if (record(value.motifTemplates)) {
+            Object.values(value.motifTemplates).forEach(visit)
+          }
         }
 
         visit(recipe)
         if (keys.some((key) => !selected.has(key))) {
-          throw new Error(
+          throw new AiToolInputError(
             'Requested source key is unavailable; use original recipe keys.'
           )
         }
@@ -494,11 +500,32 @@ export const createPreparedDesignReview = (options: {
           [`recipe:${lineage}`]: recipeIdentity
         }
       })
+      const last = artifactReviews.get(artifactId)
+      const unchanged =
+        reused &&
+        evidenceCurrent &&
+        last?.evidenceCurrent === true &&
+        last.recipeIdentity === recipeIdentity &&
+        last.evidenceIdentity === evidenceIdentity &&
+        last.status === status &&
+        JSON.stringify(last.coverage) === JSON.stringify(coverage)
+
       artifactReviews.set(artifactId, reviewed)
       // Unknown stale observations cannot replace current same-source conflict evidence.
       if (evidenceCurrent) {
         sourceReviews.set(sourceKey, reviewed)
       }
+
+      const selectedFindings = keys.length
+        ? deterministicFindings.filter((finding) =>
+            keys.some((key) => findingTargetMatches(finding, key))
+          )
+        : deterministicFindings
+      const delivered = describeDesignFindings(
+        selectedFindings,
+        `prepared:${lineage}:data`,
+        unchanged
+      )
 
       return {
         available: true,
@@ -522,7 +549,15 @@ export const createPreparedDesignReview = (options: {
             }
           : {}),
         appearance: 'unverified',
-        deterministicFindings,
+        deterministicFindings: delivered.findings,
+        ...(deterministicFindings.length
+          ? {
+              findingSummary: {
+                ...delivered.findingSummary,
+                blockingTotal: deterministicFindings.length
+              }
+            }
+          : {}),
         assessment,
         results: results.deliver()
       }

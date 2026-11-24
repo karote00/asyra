@@ -1,4 +1,8 @@
-import { deriveGroupBounds, type GroupBounds } from '../group-bounds.js'
+import {
+  deriveGroupBounds,
+  transformGroupOffset,
+  type GroupBounds
+} from '../group-bounds.js'
 import {
   runTransaction,
   type ComponentDefinition,
@@ -217,7 +221,7 @@ const normalizeGroupBoundsInTransaction = (
     readRectangle(projection, elementId, data(elementId)?.type)
   )
   const childBounds = deriveGroupBounds(childRectangles)
-  const offset = transformOffset(groupRectangle, childBounds, false)
+  const offset = transformGroupOffset(groupRectangle, childBounds, false)
   const nextBounds =
     childRectangles.length === 0
       ? Object.freeze({
@@ -286,7 +290,9 @@ const getComputedData = (
     'height',
     'rotation',
     'scaleX',
-    'scaleY'
+    'scaleY',
+    'skewX',
+    'skewY'
   ])
 
   if (!data) {
@@ -350,29 +356,6 @@ const applyGeometryProjection = (
   core.updateElementProperties(getProjectedPropertyUpdates(projection), options)
 }
 
-// Parent-local translation and physical scale share Render's rotate-after-scale order.
-const transformOffset = (
-  pose: Pick<GroupBounds, 'rotation' | 'scaleX' | 'scaleY'>,
-  point: Readonly<{ x: number; y: number }>,
-  inverse: boolean
-) => {
-  const angle = pose.rotation ?? 0
-  const c = Math.cos(angle)
-  const s = Math.sin(angle)
-  const sx = pose.scaleX ?? 1
-  const sy = pose.scaleY ?? 1
-
-  return inverse
-    ? {
-        x: (c * point.x + s * point.y) / sx,
-        y: (-s * point.x + c * point.y) / sy
-      }
-    : {
-        x: c * sx * point.x - s * sy * point.y,
-        y: s * sx * point.x + c * sy * point.y
-      }
-}
-
 const readRectangle = (
   projection: GroupGeometryProjection,
   elementId: string,
@@ -384,6 +367,8 @@ const readRectangle = (
     id: elementId,
     type,
     rotation: typeof data.rotation === 'number' ? data.rotation : 0,
+    skewX: typeof data.skewX === 'number' ? data.skewX : 0,
+    skewY: typeof data.skewY === 'number' ? data.skewY : 0,
     scaleX: typeof data.scaleX === 'number' ? data.scaleX : 1,
     scaleY: typeof data.scaleY === 'number' ? data.scaleY : 1,
     x: readFiniteNumber(data, 'x', elementId),
@@ -442,14 +427,14 @@ const createHierarchyPointTransform = (
   return (point: Readonly<{ x: number; y: number }>) =>
     poses.reduce((value, pose) => {
       if (inverse) {
-        return transformOffset(
+        return transformGroupOffset(
           pose,
           { x: value.x - pose.x, y: value.y - pose.y },
           true
         )
       }
 
-      const offset = transformOffset(pose, value, false)
+      const offset = transformGroupOffset(pose, value, false)
 
       return { x: pose.x + offset.x, y: pose.y + offset.y }
     }, point)
@@ -914,7 +899,7 @@ export const ungroupElement = (
         options
       )
       childPositions.forEach(({ elementId, x, y }) => {
-        const offset = transformOffset(groupPosition, { x, y }, false)
+        const offset = transformGroupOffset(groupPosition, { x, y }, false)
 
         stageGeometryValues(geometryProjection, elementId, {
           x: offset.x + groupPosition.x,

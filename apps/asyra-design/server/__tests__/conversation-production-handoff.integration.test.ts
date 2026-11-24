@@ -100,6 +100,24 @@ const completion = {
   ]
 }
 
+// Successful creation also saves a portable source-key mapping. Only its
+// navigation metadata belongs in subsequent provider context.
+const savedCreationMapping = () => ({
+  name: expect.stringMatching(/^created-[0-9a-f-]+$/),
+  type: 'array',
+  origin: {
+    operation: 'prepare_and_apply_design',
+    source: 'result',
+    path: '/createdTargets'
+  },
+  paths: [
+    { path: '', type: 'array', length: 1 },
+    { path: '/0', type: 'object' },
+    { path: '/0/compositionId', type: 'string' },
+    { path: '/0/keyToId', type: 'object' }
+  ]
+})
+
 it.each([undefined, 'alter-saved-input'] as const)(
   'hands retained stage input through the real controller HTTP exchange native Host and Core into a later turn: %s',
   async (fault) => {
@@ -480,8 +498,12 @@ it.each([undefined, 'alter-saved-input'] as const)(
 
       const received = JSON.parse(body.text).input.metadata
 
-      expect(received.conversationResultNames).toEqual(['facadeSource'])
+      expect(received.conversationResultNames).toEqual([
+        received.conversationResults[0].name,
+        'facadeSource'
+      ])
       expect(received.conversationResults).toEqual([
+        savedCreationMapping(),
         expect.objectContaining({
           name: 'facadeSource',
           type: 'object',
@@ -496,7 +518,10 @@ it.each([undefined, 'alter-saved-input'] as const)(
           ])
         })
       ])
-      expect(received.conversationResults[0]).not.toHaveProperty('value')
+      for (const summary of received.conversationResults) {
+        expect(summary).not.toHaveProperty('value')
+      }
+
       expect(JSON.stringify(received.conversationResults)).not.toContain(
         JSON.stringify(draft)
       )
@@ -874,7 +899,8 @@ for (const { fault, title } of [
               path: '/documents/0/text'
             }
           },
-          body
+          body,
+          savedCreationMapping()
         ])
       } finally {
         elementApis.createElementsInParent = createElements
@@ -2185,3 +2211,246 @@ it.each(['known', 'purpose', 'method', 'latest', 'recorded-square'])(
   },
   30000
 )
+
+it('attaches a signed prepared subtree once in the corrected basis of existing nested groups', async () => {
+  const { prepareDesign } = await import('../design-preparation')
+  const { deliverPreparedDesign } = await import('../../src/ai/prepared-design')
+
+  core.load({
+    version: '1.0.0',
+    props: {},
+    sceneTree: {
+      workspace: 'workspace',
+      workspaceList: ['workspace'],
+      elements: {
+        workspace: {
+          id: 'workspace',
+          name: 'Workspace',
+          type: 'workspace',
+          visible: true,
+          lock: false,
+          children: [],
+          parentId: ''
+        }
+      }
+    }
+  })
+
+  const rect = (key: string, x: number) => ({
+    key,
+    type: 'rect',
+    name: key,
+    x,
+    width: 10,
+    height: 10
+  })
+
+  const seed = prepareDesign({
+    type: 'frame',
+    name: 'Paper',
+    key: 'paper',
+    x: -15,
+    y: 35,
+    width: 260,
+    height: 130,
+    children: [
+      {
+        type: 'group',
+        name: 'Outer',
+        key: 'outer',
+        x: 100,
+        y: 20,
+        children: [
+          {
+            type: 'group',
+            key: 'inner',
+            name: 'Inner',
+            x: 5,
+            children: [rect('a', 0)]
+          },
+          {
+            type: 'group',
+            key: 'other',
+            name: 'Other',
+            x: 35,
+            children: [rect('b', 0)]
+          }
+        ]
+      },
+      rect('frame-peer', 200)
+    ]
+  })
+  const context = { signal: new AbortController().signal }
+  const apply = createPreparedDesignAction(undefined, async () => undefined)
+
+  await apply.execute({ design: deliverPreparedDesign(seed) }, context)
+  const ids = seed.keyToId
+
+  const pos = (id: string) =>
+    core.getElementComputedData(id, ['x', 'y', 'width', 'height'])
+
+  const scenePoints = () => {
+    core.deps.render.updateLayers()
+
+    return [ids.a, ids.b, ids['frame-peer']].map((id) =>
+      core.elementLocalToWorkspace(id, { x: 0, y: 0 })
+    )
+  }
+
+  const originalPoints = scenePoints()
+
+  expect(originalPoints).toEqual([
+    { x: 90, y: 55 },
+    { x: 120, y: 55 },
+    { x: 185, y: 35 }
+  ])
+  const incoming = prepareDesign({
+    type: 'group',
+    name: 'New',
+    key: 'new',
+    children: [
+      {
+        type: 'vector',
+        key: 'path',
+        name: 'Signed',
+        rings: [
+          [
+            { x: -10, y: -4 },
+            { x: 2, y: 0 },
+            { x: 0, y: 2 }
+          ]
+        ]
+      },
+      ...Array.from({ length: 40 }, (_, i) => rect('r' + i, 0))
+    ]
+  })
+  const reads = vi.spyOn(core, 'getElementChildren')
+  const update = vi.spyOn(core, 'updateElementProperties')
+
+  try {
+    await apply.execute(
+      { design: deliverPreparedDesign(incoming), parentId: ids.inner },
+      context
+    )
+    expect(pos(ids.outer)).toMatchObject({
+      x: 95,
+      y: 16,
+      width: 50,
+      height: 14
+    })
+    expect(pos(ids.inner)).toMatchObject({ x: 0, y: 0, width: 20, height: 14 })
+    expect(pos(ids.a)).toMatchObject({ x: 10, y: 4 })
+    expect(pos(ids.other)).toMatchObject({ x: 40, y: 4 })
+    expect(pos(ids.b)).toMatchObject({ x: 0, y: 0 })
+    expect(pos(incoming.rootId)).toMatchObject({ x: 0, y: 0 })
+    expect(reads.mock.calls.map((call) => call[0])).toEqual([
+      ids.inner,
+      ids.outer
+    ])
+    expect(update).toHaveBeenCalledTimes(1)
+    expect(pos(ids.paper)).toMatchObject({
+      x: -15,
+      y: 35,
+      width: 260,
+      height: 130
+    })
+    expect(scenePoints()).toEqual(originalPoints)
+    expect(
+      core.elementLocalToWorkspace(incoming.keyToId.path, { x: 0, y: 0 })
+    ).toMatchObject({ x: 80, y: 51 })
+    expect(core.getElementChildren(ids.outer).elementIds).toEqual([
+      ids.inner,
+      ids.other
+    ])
+    expect(core.getElementChildren(ids.inner).elementIds).toEqual([
+      ids.a,
+      incoming.rootId
+    ])
+    // Another editor transaction expands the same groups one unit to the left.
+    // Its origin changes must be read from canonical scene geometry.
+    core.createElementInParent(
+      { type: 'rect', x: 0, y: 0, width: 1, height: 1 },
+      ids.inner
+    )
+    core.updateElementProperties([
+      { elementId: ids.outer, values: { x: 94, width: 51 } },
+      { elementId: ids.inner, values: { width: 21 } },
+      { elementId: ids.a, values: { x: 11 } },
+      { elementId: ids.other, values: { x: 41 } },
+      { elementId: incoming.rootId, values: { x: 1 } }
+    ])
+    // A subsequent flat partition is expressed in the original parent basis.
+    const root = incoming.entries[0]
+    const anchor = incoming.entries[1]
+    const more = prepareDesign({
+      type: 'group',
+      name: 'Next',
+      children: Array.from({ length: 34 }, (_, i) => rect('p' + i, -20 - i))
+    })
+    const members = more.entries.slice(1).map((entry) => ({
+      ...entry,
+      parentId: incoming.rootId,
+      descriptor: {
+        ...entry.descriptor,
+        x:
+          Number(entry.descriptor.x) +
+          Number(more.entries[0].descriptor.x) -
+          Number(root.descriptor.x),
+        y:
+          Number(entry.descriptor.y) +
+          Number(more.entries[0].descriptor.y) -
+          Number(root.descriptor.y)
+      }
+    }))
+    const continuation = deliverPreparedDesign({
+      ...more,
+      rootId: incoming.rootId,
+      continuation: {
+        anchor: {
+          id: anchor.descriptor.id,
+          x: Number(root.descriptor.x) + Number(anchor.descriptor.x),
+          y: Number(root.descriptor.y) + Number(anchor.descriptor.y)
+        }
+      },
+      entries: [root, ...members],
+      keyToId: Object.fromEntries(
+        [root, ...members].map((entry) => [entry.key, entry.descriptor.id])
+      )
+    })
+
+    // Scaling about this anchor leaves its position unchanged but changes
+    // every other member offset in the retained partition.
+    core.updateElementProperties([
+      { elementId: ids.inner, values: { scaleY: 2 } }
+    ])
+    await expect(
+      apply.execute({ design: continuation, parentId: ids.inner }, context)
+    ).rejects.toThrow(/attachment transform changed/)
+    expect(core.getElementMetadata(more.keyToId.p0)).toBeUndefined()
+    core.updateElementProperties([
+      { elementId: ids.inner, values: { scaleY: 1 } }
+    ])
+    await apply.execute({ design: continuation, parentId: ids.inner }, context)
+    expect(pos(ids.outer)).toMatchObject({
+      x: 52,
+      y: 16,
+      width: 93,
+      height: 14
+    })
+    expect(pos(ids.a)).toMatchObject({ x: 53, y: 4 })
+    expect(pos(ids.other)).toMatchObject({ x: 83, y: 4 })
+    expect(pos(more.keyToId.p0)).toMatchObject({ x: 33, y: 4 })
+    expect(pos(more.keyToId.p33)).toMatchObject({ x: 0, y: 4 })
+    expect(pos(anchor.descriptor.id)).toMatchObject({ x: 43, y: 0 })
+    expect(scenePoints()).toEqual(originalPoints)
+    core.updateElementProperties([
+      { elementId: anchor.descriptor.id, values: { x: 44 } }
+    ])
+    await expect(
+      apply.execute({ design: continuation, parentId: ids.inner }, context)
+    ).rejects.toThrow(/anchor moved/)
+  } finally {
+    reads.mockRestore()
+    update.mockRestore()
+  }
+})

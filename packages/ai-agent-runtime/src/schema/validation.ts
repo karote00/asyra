@@ -347,7 +347,7 @@ export const operationInputIssues = (
     }
 
     if (s === false) {
-      return [issue(`${path}: disallowed value`)]
+      return [issue(`${path}: disallowed value`, 'falseSchema')]
     }
 
     if (!record(s)) {

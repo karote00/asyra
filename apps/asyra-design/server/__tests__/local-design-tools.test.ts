@@ -704,6 +704,109 @@ it('identifies missing shared projection as a local input repair, not a referenc
   expect(result.message).toContain('draft.projection')
   expect(result.code).toBe('TOOL_INPUT_INVALID')
   expect(compile).not.toHaveBeenCalled()
+  const repair = result.repairGuide.arguments.repair
+
+  expect(repair.draftId).toBe(result.draftId)
+  expect(repair.replacements).toEqual([{ path: '/projection' }])
+  const fixed = JSON.parse(
+    await tools.call(
+      'prepare_design',
+      {
+        repair: {
+          ...repair,
+          replacements: [
+            {
+              path: '/projection',
+              value: {
+                azimuth: 35,
+                elevation: 30,
+                scale: 1,
+                originX: 100,
+                originY: 100
+              }
+            }
+          ]
+        }
+      },
+      signal()
+    )
+  )
+
+  expect(fixed).toMatchObject({ available: true, elementCount: 2 })
+  expect(compile).toHaveBeenCalledOnce()
+})
+
+it('pages independent nested repair targets from the original request without applying a design', async () => {
+  const tools = createLocalDesignTools(actions)
+  const write = vi.fn()
+  const operations = createLocalOperationTools(actions, tools, write)
+  const source = {
+    type: 'group',
+    name: 'Nested',
+    children: [
+      {
+        type: 'group',
+        key: 'g',
+        name: 'Group',
+        children: Array.from({ length: 57 }, (_, i) => ({
+          type: 'rect',
+          name: 'Item',
+          key: 'k' + i,
+          width: -1,
+          height: 2
+        }))
+      }
+    ]
+  }
+  const rejected = JSON.parse(
+    await tools.call('prepare_design', { draft: source }, signal())
+  )
+  const guide = rejected.repairGuide
+
+  expect(guide.totalTargets).toBe(57)
+  expect(guide.arguments.repair.replacements).toHaveLength(50)
+  const definition = operations.definitions.find(
+    (d) => d.name === guide.read.tool
+  )
+
+  if (!definition) {
+    throw Error('Missing repair diagnostics reader')
+  }
+
+  const read = async (args: unknown) =>
+    JSON.parse(
+      (await invokeLocalTool(operations, definition, args, signal())).text
+    )
+
+  const args = guide.read.arguments
+
+  expect(args.draftIssuesFor).toBe(rejected.draftId)
+  const page = await read({ ...args, limit: 3 })
+
+  expect(page.items.map((i: { path: string }) => i.path)).toEqual(
+    [50, 51, 52].map((i) => '/children/0/children/' + i)
+  )
+  expect(page.nextOffset).toBe(53)
+  const last = await read({ ...args, offset: page.nextOffset })
+
+  expect(last.items).toHaveLength(4)
+  expect(last.nextOffset).toBeUndefined()
+  for (const invalid of [
+    { ...args, offset: 57 },
+    { ...args, draftIssuesFor: 'other' }
+  ]) {
+    expect((await read(invalid)).code).toBe('TOOL_INPUT_INVALID')
+  }
+
+  const wrongResult = vi
+    .spyOn(operations, 'callInternal')
+    .mockResolvedValue(JSON.stringify({ ...last, draftId: 'other' }))
+
+  expect((await read(args)).code).toBe('TOOL_RESULT_INVALID')
+  wrongResult.mockResolvedValue(JSON.stringify(last))
+  expect((await read({})).code).toBe('TOOL_RESULT_INVALID')
+  wrongResult.mockRestore()
+  expect(write).not.toHaveBeenCalled()
 })
 
 it('reports malformed repeated geometry as input recovery even while structure is pending', async () => {
@@ -1075,6 +1178,73 @@ it.each([false, true])(
   }
 )
 
+it('locates collapsed rings on their nested authored template once for multiple placements', async () => {
+  const tools = createLocalDesignTools(actions)
+  const collapsed = {
+    type: 'vector-pattern',
+    name: 'Rails',
+    key: 'rail',
+    template: {
+      rings: [
+        [
+          { x: 2, y: 4 },
+          { x: 8, y: 4 },
+          { x: 9, y: 4 }
+        ]
+      ]
+    },
+    placements: [
+      { x: 0, y: 0 },
+      { x: 10, y: 10 }
+    ]
+  }
+  const point = {
+    type: 'vector',
+    name: 'Point',
+    key: 'point',
+    rings: [
+      [
+        { x: 4, y: 5 },
+        { x: 4, y: 5 },
+        { x: 4, y: 5 }
+      ]
+    ]
+  }
+  const input = {
+    draft: {
+      type: 'group',
+      name: 'Sash',
+      children: [
+        {
+          type: 'group',
+          key: 'frame',
+          name: 'Frame',
+          children: [collapsed, point]
+        }
+      ]
+    }
+  }
+  const reply = await invokeLocalTool(
+    tools,
+    tools.definitions[0],
+    input,
+    signal()
+  )
+  const rejected = JSON.parse(reply.text)
+
+  expect(rejected.message).toContain('rail-0: vector has zero height')
+  expect(rejected.message).toContain(
+    'point: vector has zero width and zero height'
+  )
+  expect(rejected.repairGuide.arguments.repair).toEqual({
+    draftId: rejected.draftId,
+    replacements: [
+      { path: '/children/0/children/0/template/rings' },
+      { path: '/children/0/children/1/rings' }
+    ]
+  })
+})
+
 it('admits signed cubic controls when the measured curve stays inside its declared bounds', async () => {
   const tools = createLocalDesignTools(actions)
   const input = {
@@ -1113,6 +1283,9 @@ it('admits signed cubic controls when the measured curve stays inside its declar
 
   expect(rejected.available).toBe(false)
   expect(rejected.message).toContain('bounds')
+  expect(rejected.repairGuide.arguments.repair.replacements).toEqual([
+    { path: '/children/0/rings' }
+  ])
 })
 
 it('prepares large source input through bounded work windows without changing hierarchy or IDs', async () => {

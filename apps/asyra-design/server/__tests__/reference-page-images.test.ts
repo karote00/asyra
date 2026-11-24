@@ -81,7 +81,16 @@ it('tries the next declared image after a source-local failure without another m
   ).references[0]
 
   expect(result.available).toBe(true)
-  expect(result.pageAcquisition.attempts).toEqual([
+  expect(result.pageAcquisition.attemptCount).toBe(2)
+  const details = JSON.parse(
+    await tools.call(
+      'import_reference_image',
+      result.pageAcquisition.next.arguments,
+      signal()
+    )
+  ).references[0]
+
+  expect(details.pageAcquisition.attempts).toEqual([
     {
       imageUrl: 'https://images.example/broken.png',
       available: false,
@@ -289,7 +298,15 @@ it('returns gallery alternatives beside a generic representative without fetchin
     await tools.call('import_reference_image', { sourceUrl }, signal())
   ).references[0]
 
-  expect(result.pageAcquisition.candidates).toEqual(
+  const listing = JSON.parse(
+    await tools.call(
+      'import_reference_image',
+      result.pageAcquisition.next.arguments,
+      signal()
+    )
+  ).references[0]
+
+  expect(listing.pageAcquisition.candidates).toEqual(
     expect.arrayContaining([
       expect.objectContaining({
         imageUrl: 'https://publisher.example/logo.png',
@@ -329,7 +346,8 @@ it('pages candidate discovery while reusing the already selected image bytes', a
       (await invokeLocalTool(tools, tools.definitions[0], args, signal())).text
     ).references[0]
 
-  let result = await read({ sourceUrl })
+  const initial = await read({ sourceUrl })
+  let result = await read(initial.pageAcquisition.next.arguments)
   const urls: string[] = []
 
   while (true) {
@@ -509,5 +527,58 @@ it.each([
     if (width <= 1280) {
       expect(emitted).toEqual(bytes)
     }
+  }
+)
+
+it('delivers the selected image once and reads retained alternatives without pixels or repeated URLs', async () => {
+  const html =
+    '<meta property="og:image" content="/main.png">' +
+    Array.from(
+      { length: 45 },
+      (_, i) => `<a href="/photo-${i}.png"><img src="/preview-${i}.png"></a>`
+    ).join('')
+  const { tools, page, download } = await fixture(html)
+
+  const call = async (args: unknown) =>
+    JSON.parse(
+      (await invokeLocalTool(tools, tools.definitions[0], args, signal())).text
+    )
+
+  const original = await call({ sourceUrl })
+
+  expect(original.actionResults).toHaveLength(1)
+  const inventory = original.references[0].pageAcquisition
+
+  expect(inventory.count).toBe(46)
+  expect(inventory).not.toHaveProperty('candidates')
+  const lookup = await call(inventory.next.arguments)
+
+  expect(lookup.references[0].pageAcquisition.candidates).toHaveLength(16)
+  expect(lookup.references[0].pageAcquisition).not.toHaveProperty(
+    'candidateImageUrls'
+  )
+  expect(lookup.actionResults).toEqual([])
+  expect(lookup.references[0].referenceId).toBe(
+    original.references[0].referenceId
+  )
+  expect(page).toHaveBeenCalledOnce()
+  expect(download).toHaveBeenCalledOnce()
+})
+
+it.each(['https://publisher.example/unseen', 'not a URL'])(
+  'rejects a candidate lookup without a retained inventory without contacting the source: %s',
+  async (url) => {
+    const { tools, download, page } = await fixture('')
+    const result = await invokeLocalTool(
+      tools,
+      tools.definitions[0],
+      { sourceUrl: url, candidateOffset: 0 },
+      signal()
+    )
+
+    expect(result.success).toBe(false)
+    expect(result.text).toContain('REFERENCE_ARGUMENTS_INVALID')
+    expect(page).not.toHaveBeenCalled()
+    expect(download).not.toHaveBeenCalled()
   }
 )

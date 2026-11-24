@@ -576,3 +576,51 @@ it('labels selected counts separately from request counts without rescanning evi
     counts: { pass: 1, unverified: 1 }
   })
 })
+
+it('pages retained findings by target or kind without invalidating pages when an independent check changes', () => {
+  const store = createDesignCheckResults()
+  const findings = Array.from({ length: 180 }, (_, i) => ({
+    kind: 'overflow',
+    key: 'tile-' + i,
+    right: 5
+  }))
+
+  const publish = (revision: string, rows: typeof findings) =>
+    store.recordPreparedSource({
+      artifactId: 'a',
+      recipeRevision: revision,
+      findings: rows
+    })
+
+  publish('one', findings)
+  const args = { findingsFor: 'prepared:a:data', kind: 'overflow', limit: 1 }
+  const first = store.deliver(args).findingPage
+
+  expect(first).toEqual({
+    items: [findings[0]],
+    total: 180,
+    nextOffset: 1,
+    revision: 1
+  })
+  store.recordPreparedSource({
+    artifactId: 'other',
+    recipeRevision: 'one',
+    findings: []
+  })
+  expect(
+    store.deliver({ ...args, revision: 1, offset: 179 }).findingPage?.items
+  ).toEqual([findings[179]])
+  expect(
+    store.deliver({ ...args, target: 'tile-2' }).findingPage?.items
+  ).toEqual([findings[2]])
+  expect(
+    store.deliver({ view: 'details', limit: 1 }).items?.[0].evidence
+  ).not.toContain('tile-179')
+  publish('two', findings.slice(1))
+  expect(() => store.deliver({ ...args, revision: 1, offset: 1 })).toThrow(
+    /revision/
+  )
+  expect(
+    store.deliver({ ...args, target: 'tile-0' }).findingPage?.items
+  ).toEqual([])
+})

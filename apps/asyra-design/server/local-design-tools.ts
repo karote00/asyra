@@ -2,8 +2,12 @@ import {
   DesignCurveError,
   authoredCurveCorrections
 } from './design-curve-repair'
-import { DesignInputError } from './design-input-error'
+import { DesignInputError, DesignVectorExtentError } from './design-input-error'
 import { AiToolFailureCodes } from '../src/constants/ai-design'
+import {
+  locateDraftRepairTargets,
+  type DraftRepairTarget
+} from './design-source-recovery'
 import { isReservedDraftRepairKey } from './design-draft-repair'
 import {
   toolInternalResult,
@@ -187,8 +191,8 @@ const nodeSchema = {
           additionalProperties: false,
           required: ['x', 'y'],
           properties: {
-            x: coordinate,
-            y: coordinate,
+            x: position,
+            y: position,
             inControl: point,
             outControl: point
           }
@@ -197,7 +201,7 @@ const nodeSchema = {
     }
   },
   description:
-    'Vectors may omit both width and height: the preparation owner measures the exact rings and derives dimensions, with x/y as the local placement offset (default zero). If dimensions are supplied, both are required and constrain the curve. Do not calculate bounds yourself when only the geometry is needed. Unique key and meaningful name. Groups and frames accept children. Groups omit width/height/fill/layout; bounds follow children. Signed draft x/y offsets are allowed: Group normalization preserves workspace geometry; rotated oval origins may be negative while their extents remain inside the group. Rect, oval and text require positive width/height. Only frames accept layout fields. Flow children omit x/y. Text uses literal text and typography fields. Text/rect/oval/vector use fill. Vectors use closed rings: each cubic segment pairs the start outControl with the next anchor inControl; omit both for straight edges. Declare bounds containing the curve. No canonical IDs, props, raster images, SVG strings or executable code.'
+    'Vectors may omit both width and height: the preparation owner measures the exact rings and derives dimensions, with x/y as the local placement offset (default zero). Anchors and controls may be signed. The measured curve must span positive width and height. Supplying both dimensions asserts the curve fits within [0,width] by [0,height]. Do not calculate bounds yourself when only the geometry is needed. Unique key and meaningful name. Groups and frames accept children. Groups omit width/height/fill/layout; bounds follow children. Signed draft x/y offsets are allowed: Group normalization preserves workspace geometry; rotated oval origins may be negative while their extents remain inside the group. Rect, oval and text require positive width/height. Only frames accept layout fields. Flow children omit x/y. Text uses literal text and typography fields. Text/rect/oval/vector use fill. Vectors use closed rings: each cubic segment pairs the start outControl with the next anchor inControl; omit both for straight edges. No canonical IDs, props, raster images, SVG strings or executable code.'
 }
 
 // Field eligibility belongs to preparation, including native oval rotation.
@@ -511,81 +515,164 @@ export const createLocalDesignTools = (
         }
   }
 
+  const repairGuide = (
+    draftId: string,
+    paths: readonly string[],
+    instructions: string,
+    materialSourceId?: string
+  ) => ({
+    tool: AiDesignToolIds.PREPARE_DESIGN,
+    arguments: {
+      ...(materialSourceId === undefined ? {} : { materialSourceId }),
+      repair: { draftId, replacements: paths.map((path) => ({ path })) }
+    },
+    instructions
+  })
+
+  const locatedRecovery = (
+    draftId: string,
+    targets: DraftRepairTarget[],
+    instructions: string,
+    materialSourceId?: string
+  ) => {
+    const limit = 50
+    const guide = repairGuide(
+      draftId,
+      targets.slice(0, limit).map((t) => t.path),
+      instructions,
+      materialSourceId
+    )
+
+    if (targets.length > limit) {
+      if (!session.attachRepairTargets(draftId, targets)) {
+        return {
+          ...guide,
+          instructions:
+            instructions +
+            ' Only the first page is available within the request storage budget. Revalidate after correcting it.'
+        }
+      }
+
+      return {
+        ...guide,
+        totalTargets: targets.length,
+        read: {
+          tool: AiDesignToolIds.READ_DESIGN_CHECKS,
+          arguments: { draftIssuesFor: draftId, offset: limit }
+        }
+      }
+    }
+
+    return guide
+  }
+
   const retainInputFailure = (
     draft: unknown,
     issues: readonly OperationInputIssue[],
     materialSourceId?: string
-  ) => {
+  ): ReturnType<typeof retainDraft> & {
+    repairGuide?: ReturnType<typeof locatedRecovery>
+  } => {
     const retained = retainDraft(draft)
+
+    if (
+      retained.draftId &&
+      !issues.length &&
+      !operationInputIssue({ draft }, effectivePreparationSchema)
+    ) {
+      return {
+        ...retained,
+        repairGuide: repairGuide(
+          retained.draftId,
+          [],
+          'Use empty replacements to reuse the retained source. Correct the workflow arguments separately.',
+          materialSourceId
+        )
+      }
+    }
+
+    if (
+      retained.draftId &&
+      issues.some((issue) => issue.keyword === 'diagnosticLimit')
+    ) {
+      const targets = locateDraftRepairTargets(
+        draft,
+        effectivePreparationSchema.properties.draft,
+        effectivePreparationSchema.$defs.node,
+        effectivePreparationSchema
+      )
+
+      if (targets.length) {
+        return {
+          ...retained,
+          repairGuide: locatedRecovery(
+            retained.draftId,
+            targets,
+            'Correct the indicated authored targets or their invalid fields. Each child target covers its subtree. Revalidate the complete source; envelope and geometric constraints remain independent.',
+            materialSourceId
+          )
+        }
+      }
+    }
+
     const fieldIssues = issues.filter(
       (issue) => !['anyOf', 'oneOf', 'allOf'].includes(issue.keyword)
     )
-    const complete = fieldIssues.every(
-      (issue) =>
-        issue.instancePath.startsWith('/draft/') &&
-        !['diagnosticLimit', 'additionalProperties'].includes(issue.keyword) &&
-        !issue.instancePath
+    const paths = new Set<string>()
+
+    for (const issue of fieldIssues) {
+      if (
+        !issue.instancePath.startsWith('/draft/') ||
+        issue.keyword === 'diagnosticLimit'
+      ) {
+        return retained
+      }
+
+      const field = issue.instancePath.slice('/draft'.length)
+      // Replacing a forbidden field cannot remove it. Replace the enclosing object.
+      const path = ['additionalProperties', 'falseSchema'].includes(
+        issue.keyword
+      )
+        ? field.slice(0, field.lastIndexOf('/'))
+        : field
+
+      if (
+        !path ||
+        path
           .split('/')
-          .slice(2)
+          .slice(1)
           .some((part) =>
             isReservedDraftRepairKey(
               part.replace(/~1/g, '/').replace(/~0/g, '~')
             )
           )
+      ) {
+        return retained
+      }
+
+      paths.add(path)
+    }
+
+    const replacements = [...paths].filter(
+      (path) => ![...paths].some((parent) => path.startsWith(parent + '/'))
     )
-    const paths = [
-      ...new Set(
-        fieldIssues.map((issue) => issue.instancePath.slice('/draft'.length))
-      )
-    ]
 
     return {
       ...retained,
-      ...(complete && retained.draftId && paths.length && paths.length <= 12
+      ...(retained.draftId && replacements.length
         ? {
-            repairGuide: {
-              tool: AiDesignToolIds.PREPARE_DESIGN,
-              arguments: {
-                ...(materialSourceId === undefined ? {} : { materialSourceId }),
-                repair: {
-                  draftId: retained.draftId,
-                  replacements: paths.map((path) => ({ path }))
-                }
-              },
-              instructions:
-                'Supply your corrected value for each returned JSON Pointer in repair.replacements, then invoke the returned tool with arguments. Do not resend geometry. Missing declared object fields are admitted only after complete source revalidation. Preserve workflow options and completed work; never replay writes. Expired source requires fresh preparation.'
-            }
+            repairGuide: repairGuide(
+              retained.draftId,
+              replacements,
+              'Supply corrected values for the returned JSON Pointers. When a field is forbidden, omit it from its replacement object. Revalidate the complete source. Preserve workflow options and completed work.',
+              materialSourceId
+            )
           }
         : {})
     }
   }
 
   return {
-    recoverOperationInput(name: string, input: unknown) {
-      if (
-        !enabled ||
-        name !== AiDesignToolIds.PREPARE_DESIGN ||
-        !record(input) ||
-        !record(input.draft) ||
-        'parts' in input ||
-        'repair' in input
-      ) {
-        return
-      }
-
-      const retained = retainDraft(input.draft)
-
-      if (retained.nextStep !== undefined) {
-        return { message: retained.nextStep }
-      }
-
-      return {
-        correction: { draftId: retained.draftId },
-        message:
-          'Keep the operation and its valid options. Replace draft with repair using this draftId and draft-relative replacements. For a forbidden field replace its parent object without that field. Correct Host options on the executor.'
-      }
-    },
-
     canOverlapPreparation(name: string, input: unknown) {
       return (
         name === AiDesignToolIds.PREPARE_DESIGN &&
@@ -601,6 +688,7 @@ export const createLocalDesignTools = (
     recoveryFields,
     checkResults: session.checkResults,
     resolveRecipe: session.recipe,
+    readRepairTargets: session.readRepairTargets,
 
     rejectInput: (
       name: string,
@@ -820,12 +908,20 @@ export const createLocalDesignTools = (
               ]
             },
             name: AiDesignToolIds.PREPARE_DESIGN,
+            admissionRecoveryProperties: {
+              draftId: recoveryFields.draftId,
+              retainedDraft: recoveryFields.retainedDraft,
+              retention: recoveryFields.retention,
+              repairGuide: recoveryFields.repairGuide,
+              budget: recoveryFields.budget,
+              nextStep: recoveryFields.nextStep
+            },
             revision: 5,
             executionAccess: AiToolAccess.INDEPENDENT,
             description:
               designRepresentationGuidance +
               ' ' +
-              'Prepare native editable objects without changing the canvas; returns artifactId, applicable and findings. This single-artifact API rejects excess; the main tool handles safely partitionable excess in one invocation. Use prepare_and_apply_design when this part is ready to draw. Keep unaffected objects and valid artifacts. Include a brief with source notes, assumptions and measurable checks when needed. Resolve concrete overflow before applying; text-metrics-required needs actual rendering. Group derives child bounds; Frame owns size and optional fill. Layout is computed once, not live Auto Layout. Clipping, constraints, frame borders and corner radii are unavailable. Canonical input examples illustrate syntax; adapt them to the request and inspect each stage.',
+              'Prepare native editable objects without changing the canvas; returns artifactId, applicable and inline corrections. Default delivery groups large findings; use read_design_checks with findingsFor=findingSummary.checkId, optional target or kind. Read the original evaluated brief with briefFor on the same check. This single-artifact API rejects excess; the main tool handles safely partitionable excess in one invocation. Use prepare_and_apply_design when this part is ready to draw. Keep unaffected objects and valid artifacts. Include a brief with source notes, assumptions and measurable checks when needed. Resolve concrete overflow before applying; text-metrics-required needs actual rendering. Group derives child bounds; Frame owns size and optional fill. Layout is computed once, not live Auto Layout. Clipping, constraints, frame borders and corner radii are unavailable. Canonical input examples illustrate syntax; adapt them to the request and inspect each stage.',
             inputSchema: effectivePreparationSchema
           },
           {
@@ -967,7 +1063,7 @@ export const createLocalDesignTools = (
             ...action,
             inputSchema: referenceSchema,
             description:
-              'Apply the artifactId returned by prepare_design. The backend resolves native editable objects. Review the actual rendered result and use returned IDs for targeted corrections.'
+              'Apply the artifactId returned by prepare_design. The backend resolves native editable objects. The result reports the root and applied count. Address children using the original artifactId and keys, keyPrefix or targetSetId. Host bindings can use the complete acknowledged result.'
           }
         }
 
@@ -1270,10 +1366,26 @@ export const createLocalDesignTools = (
           (!record(draft.projection) ||
             (draft.layout ?? 'absolute') !== 'absolute')
         ) {
+          const paths = [
+            ...(!record(draft.projection) ? ['/projection'] : []),
+            ...((draft.layout ?? 'absolute') !== 'absolute' ? ['/layout'] : [])
+          ]
+          const retained = retainDraft(draft)
+
           return JSON.stringify({
             available: false,
             settlement: 'not-started',
             code: AiToolFailureCodes.INPUT_INVALID,
+            ...retained,
+            ...(retained.draftId
+              ? {
+                  repairGuide: repairGuide(
+                    retained.draftId,
+                    paths,
+                    'Supply the missing camera or correct the layout on this retained draft.'
+                  )
+                }
+              : {}),
             message:
               'arguments.draft.projection: provide one shared camera (azimuth, elevation, scale, originX, originY); arguments.draft.layout: projected faces and patterns require absolute layout. Reuse the chosen viewpoint; no new reference search is needed.'
           })
@@ -1300,6 +1412,7 @@ export const createLocalDesignTools = (
           ...prepared,
           ...(!prepared.applicable
             ? {
+                ...retainDraft(draft),
                 settlement: 'not-started',
                 code: AiToolFailureCodes.INPUT_INVALID,
                 message:
@@ -1324,7 +1437,8 @@ export const createLocalDesignTools = (
           error instanceof DesignGeometryError ||
           error instanceof DesignKeyConflictError ||
           error instanceof AiToolInputError
-        const retained = draft === undefined ? undefined : retainDraft(draft)
+        const retained =
+          invalidInput && draft !== undefined ? retainDraft(draft) : undefined
         const curves =
           retained?.draftId && error instanceof DesignCurveError
             ? authoredCurveCorrections(draft)
@@ -1347,6 +1461,17 @@ export const createLocalDesignTools = (
                   instructions:
                     'Supply each missing control point to keep a cubic edge. For a straight edge replace the opposite anchor without its control. Revalidate the retained source before applying.'
                 }
+              }
+            : {}),
+          ...(error instanceof DesignVectorExtentError &&
+          retained?.draftId &&
+          error.targets.length
+            ? {
+                repairGuide: locatedRecovery(
+                  retained.draftId,
+                  error.targets,
+                  'Replace the indicated rings with geometry spanning positive width and height within its local bounds. Submit all corrected values in one repair.'
+                )
               }
             : {}),
           ...(error instanceof DesignGeometryError

@@ -2,6 +2,7 @@ export { AiReferenceToolIds } from '../src/constants/ai-research'
 
 export const AiImageToolIds = Object.freeze({
   VTRACER: 'vtracer',
+  QUERY_VECTOR_PATHS: 'query_vector_paths',
   VALIDATE_REFERENCE_IMAGES: 'validate_reference_images',
   VECTORIZE_IMAGE_LAYERS: 'vectorize_image_layers',
   ANALYZE_VECTOR_COMPONENTS: 'analyze_vector_components',
