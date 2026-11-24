@@ -111,6 +111,8 @@ export class PixiRenderEngine implements RenderEngine {
 
   private app: Application | null = null
 
+  private borrowedCanvas = false
+
   private rootHandle: StoredObjectHandle | null = null
 
   private readonly objects = new Map<RenderEngineObjectHandle, PixiObject>()
@@ -149,15 +151,23 @@ export class PixiRenderEngine implements RenderEngine {
     const app = new Application()
     const runtimeWindow = typeof window === 'undefined' ? null : window
 
+    const target =
+      typeof HTMLCanvasElement !== 'undefined' &&
+      options.host instanceof HTMLCanvasElement
+        ? options.host
+        : null
+
+    this.borrowedCanvas = target !== null
     try {
       await app.init({
         width: options.width,
         height: options.height,
         antialias: options.antialias ?? true,
-        resolution:
-          options.resolution ??
-          Math.min(runtimeWindow?.devicePixelRatio ?? 1, 2),
-        autoDensity: options.autoDensity ?? true,
+        resolution: target
+          ? 1
+          : (options.resolution ??
+            Math.min(runtimeWindow?.devicePixelRatio ?? 1, 2)),
+        autoDensity: target ? false : (options.autoDensity ?? true),
         autoStart: false,
         // InputSystem owns native wheel input; the engine publishes only pointers.
         eventFeatures: { wheel: false },
@@ -167,7 +177,8 @@ export class PixiRenderEngine implements RenderEngine {
         ...(options.backgroundAlpha !== undefined
           ? { backgroundAlpha: options.backgroundAlpha }
           : {}),
-        ...(runtimeWindow ? { resizeTo: runtimeWindow } : {})
+        ...(target ? { canvas: target } : {}),
+        ...(!target && runtimeWindow ? { resizeTo: runtimeWindow } : {})
       })
 
       app.stage.eventMode = 'static'
@@ -176,7 +187,7 @@ export class PixiRenderEngine implements RenderEngine {
       this.objectHandles.set(app.stage, this.rootHandle)
       this.attachInteractionEvents(app.stage)
 
-      if (isAppendHost(options.host)) {
+      if (!target && isAppendHost(options.host)) {
         options.host.appendChild(app.canvas)
       }
 
@@ -189,7 +200,7 @@ export class PixiRenderEngine implements RenderEngine {
     } catch (error) {
       this.detachInteractionEvents(app.stage)
       try {
-        app.destroy(true)
+        app.destroy(!this.borrowedCanvas)
       } catch {
         // Pixi plugins may not have completed initialization; preserve the
         // owner failure instead of replacing it with a partial-cleanup error.
@@ -563,7 +574,7 @@ export class PixiRenderEngine implements RenderEngine {
       this.batchPartitions.dispose(this.app.stage)
     }
 
-    this.app?.destroy(true)
+    this.app?.destroy(!this.borrowedCanvas)
     this.app = null
     this.rootHandle = null
     this.objectHandles = new WeakMap()

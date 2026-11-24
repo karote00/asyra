@@ -1360,8 +1360,11 @@ class Core implements CoreAPIs {
       }
 
       if (result.canvas && container) {
-        container.appendChild(result.canvas)
-        this.attachedCanvas = result.canvas
+        if (container !== result.canvas) {
+          container.appendChild(result.canvas)
+          this.attachedCanvas = result.canvas
+        }
+
         // Setup input system to watch the canvas
         this.setupInputSystem(result.canvas)
       }

@@ -30,8 +30,11 @@ provider through Core.
 
 ## Lifecycle, inputs, outputs, and failure
 
-Initialization creates one owned application, canvas/input target, root handle,
-and standalone ticker. Commands/queries translate abstract operations. Frame
+Initialization creates one owned application and root handle. For an HTML
+container the provider creates a canvas. When the host is an HTMLCanvasElement
+from the current window, Pixi uses that exact element for drawing and input.
+Its parent and DOM position stay under application ownership during startup
+and teardown. The caller controls layout and supplies the logical surface size. Commands/queries translate abstract operations. Frame
 callbacks only schedule; explicit `flush` calls `Application.render()`.
 `destroy()` releases ticker, objects, owned resources, and application with
 deterministic counts. Partial initialization failure cleans acquired resources

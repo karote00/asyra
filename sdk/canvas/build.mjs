@@ -1,5 +1,5 @@
 import { build } from 'vite'
-import { copyFile, mkdir, readFile, writeFile } from 'node:fs/promises'
+import { copyFile, mkdir, writeFile } from 'node:fs/promises'
 import process from 'node:process'
 import { URL, fileURLToPath } from 'node:url'
 
@@ -15,24 +15,17 @@ const built = await build({
     write: false,
     target: 'es2022',
     reportCompressedSize: false,
-    lib: { entry: 'src/editor.js', name: 'canvasEditor', formats: ['iife'] },
+    lib: { entry: 'src/editor.js', name: 'canvasRuntime', formats: ['iife'] },
     rollupOptions: { output: { inlineDynamicImports: true } }
   }
 })
 const script = built[0].output.find((entry) => entry.type === 'chunk').code
-const html = await readFile('src/editor.html', 'utf8')
-const document = html.replace(
-  '</body>',
-  () =>
-    '<script>' +
-    script.replace(/<\/script/gi, '<\\/script') +
-    '</script></body>'
-)
 
+// Initialize module-owned Framework state independently for each target.
 await mkdir('dist', { recursive: true })
 await writeFile(
-  'dist/document.js',
-  'export const editorDocument = ' + JSON.stringify(document) + '\n'
+  'dist/runtime.js',
+  'export function createRuntime() {\n' + script + '\nreturn canvasRuntime\n}\n'
 )
 for (const name of ['index.js', 'index.d.ts']) {
   await copyFile('src/' + name, 'dist/' + name)

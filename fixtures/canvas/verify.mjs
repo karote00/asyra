@@ -8,10 +8,10 @@ import flowApi from '../../tools/flow-inspector/flow-files/api.cjs'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 const flow = flowApi.openProject(
-  path.join(root, 'docs/ai/framework/plans/react-canvas')
+  path.join(root, 'docs/ai/framework/plans/canvas')
 )
 const { context } = flow.snapshot().evaluation.flows[0].nodes[0]
-const temp = path.join(root, 'tmp/react-canvas')
+const temp = path.join(root, 'tmp/canvas')
 
 mkdirSync(temp, { recursive: true })
 const options = {
@@ -24,16 +24,12 @@ let status = 'failed'
 try {
   execFileSync(
     'yarn',
-    ['turbo', 'run', 'build:react', '--output-logs=errors-only'],
+    ['turbo', 'run', 'build:canvas', '--output-logs=errors-only'],
     options
   )
   execFileSync(
     process.execPath,
-    [
-      '--test',
-      'fixtures/react-canvas/__tests__/realm.test.mjs',
-      'fixtures/react-canvas/__tests__/consumer.test.mjs'
-    ],
+    ['--test', 'fixtures/canvas/__tests__/consumer.test.mjs'],
     options
   )
   status = 'passed'
@@ -49,10 +45,10 @@ try {
       binding: context.criteria[0].binding,
       actor: 'packed-consumer',
       executionId: randomUUID(),
-      caseId: 'react-canvas/consumer',
+      caseId: 'canvas/consumer',
       summary:
         status === 'passed'
-          ? 'Packed React editor passed type, production build, isolation and Chromium interaction checks.'
+          ? 'Packed browser SDK passed type, production build, isolation and Chromium interaction checks.'
           : 'Build or browser verification failed.',
       at: new Date().toISOString()
     }

@@ -116,6 +116,16 @@
         "@asyra/utils#build:utils"
       ]
     },
+    "@asyra/canvas#build:canvas": {
+      "cache": false,
+      "outputs": [
+        "dist/**"
+      ],
+      "dependsOn": [
+        "@asyra/core#build:core",
+        "@asyra/preset#build:preset"
+      ]
+    },
     "@asyra/collaboration#build:collaboration": {
       "cache": false,
       "outputs": [
@@ -225,16 +235,6 @@
       "dependsOn": [
         "@asyra/reactive-events#build:reactive-events",
         "@asyra/utils#build:utils"
-      ]
-    },
-    "@asyra/react#build:react": {
-      "cache": false,
-      "outputs": [
-        "dist/**"
-      ],
-      "dependsOn": [
-        "@asyra/core#build:core",
-        "@asyra/preset#build:preset"
       ]
     },
     "@asyra/reactive-events#build:reactive-events": {

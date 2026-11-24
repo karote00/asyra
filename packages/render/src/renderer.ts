@@ -61,7 +61,9 @@ export class RenderAdapter implements IRenderer {
     this.container = null
     this.destroyRequested = true
     if (this.initializationPending) {
-      container.innerHTML = ''
+      if (container.localName !== 'canvas') {
+        container.innerHTML = ''
+      }
 
       return
     }
@@ -69,7 +71,9 @@ export class RenderAdapter implements IRenderer {
     try {
       this.runtime.dispose()
     } finally {
-      container.innerHTML = ''
+      if (container.localName !== 'canvas') {
+        container.innerHTML = ''
+      }
     }
   }
 

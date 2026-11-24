@@ -12,8 +12,8 @@ import sharp from 'sharp'
 const fixture = fileURLToPath(new URL('../', import.meta.url))
 const root = path.resolve(fixture, '../..')
 
-test('installs a packed editor and edits isolated documents in the production React consumer', async () => {
-  const scratch = path.join(root, 'tmp/react-canvas')
+test('installs a packed editor and edits isolated documents in the plain browser consumer', async () => {
+  const scratch = path.join(root, 'tmp/native-canvas')
 
   await mkdir(scratch, { recursive: true })
   const cwd = await mkdtemp(path.join(scratch, 'consumer-'))
@@ -37,14 +37,7 @@ test('installs a packed editor and edits isolated documents in the production Re
     path.join(cwd, 'package.json'),
     JSON.stringify({ private: true, type: 'module' })
   )
-  const archives = [
-    'sdk/react',
-    'node_modules/react',
-    'node_modules/react-dom',
-    'node_modules/scheduler',
-    'node_modules/@types/react',
-    'node_modules/csstype'
-  ].map((dir) => pack(path.join(root, dir)))
+  const archives = ['sdk/canvas'].map((dir) => pack(path.join(root, dir)))
 
   npm([
     'install',
@@ -54,16 +47,15 @@ test('installs a packed editor and edits isolated documents in the production Re
     '--no-fund',
     ...archives
   ])
-  for (const name of ['index.html', 'main.jsx']) {
+  for (const name of ['index.html', 'main.js']) {
     await cp(path.join(fixture, name), path.join(cwd, name))
   }
 
   await writeFile(
-    path.join(cwd, 'consumer.tsx'),
+    path.join(cwd, 'consumer.ts'),
     [
-      "import { AsyraCanvas, type CanvasAction } from '@asyra/react'",
-      "const action: CanvasAction = {label: 'Draw', execute: editor => editor.drawRectangle({x: 0, y: 0, width: 10, height: 10})}",
-      'export const panel = <AsyraCanvas actions={[action]} />'
+      "import { createCanvas } from '@asyra/canvas'",
+      "export const editor = createCanvas(document.createElement('canvas'))"
     ].join('\n')
   )
   execFileSync(
@@ -72,17 +64,15 @@ test('installs a packed editor and edits isolated documents in the production Re
       path.join(root, 'node_modules/typescript/bin/tsc'),
       '--noEmit',
       '--strict',
+      '--typeRoots',
+      './node_modules/@types',
       '--target',
       'ES2022',
-      '--jsx',
-      'react-jsx',
       '--module',
       'ESNext',
       '--moduleResolution',
       'bundler',
-      '--types',
-      'react',
-      'consumer.tsx'
+      'consumer.ts'
     ],
     { cwd }
   )
@@ -124,23 +114,20 @@ test('installs a packed editor and edits isolated documents in the production Re
       errors.push(error.message)
     })
     await page.goto(server.resolvedUrls.local[0])
-    const first = page.frameLocator('[title="Asyra canvas"]')
-    const second = page.frameLocator('[title="Persistent diagram"]')
-
-    async function ready(frame) {
-      await frame
-        .locator('output')
-        .filter({ hasText: /^Ready$/ })
-        .waitFor({ timeout: 10000 })
-        .catch(async (e) => {
-          throw new Error(await frame.locator('output').textContent(), {
-            cause: e
-          })
-        })
-    }
+    await page
+      .waitForFunction(
+        () => globalThis.editors?.length === 2 || false,
+        undefined,
+        { timeout: 10000 }
+      )
+      .catch((e) => {
+        throw new Error(errors.join(' | '), { cause: e })
+      })
+    const first = page.locator('#first')
+    const second = page.locator('#second')
 
     async function color(frame, x, y) {
-      const png = await frame.locator('canvas').screenshot()
+      const png = await frame.screenshot()
       const pixel = await sharp(png)
         .extract({ left: x, top: y, width: 1, height: 1 })
         .removeAlpha()
@@ -166,58 +153,77 @@ test('installs a packed editor and edits isolated documents in the production Re
       })
     }
 
-    await ready(first)
-    await ready(second)
-    const bounds = await first.locator('canvas').boundingBox()
-    const mouse = page.mouse
+    const bounds = await first.boundingBox()
 
-    await mouse.move(bounds.x + 55, bounds.y + 50)
-    await mouse.down()
-    await mouse.move(bounds.x + 155, bounds.y + 130, { steps: 5 })
-    await mouse.up()
-    await expectColor(first, 90, 85, [204, 204, 204])
-    await expectColor(first, 45, 85, [255, 255, 255])
-    await first.getByRole('button', { name: 'Select', exact: true }).click()
-    await first.locator('canvas').click({ position: { x: 90, y: 85 } })
-    await first
-      .locator('output')
-      .filter({ hasText: 'Selected:' })
-      .waitFor({ timeout: 4000 })
-    await expectColor(first, 55, 85, [21, 122, 231])
-    await page.screenshot({ path: path.join(cwd, 'selected-rectangle.png') })
-    await first.getByRole('button', { name: 'Undo' }).click()
-    await expectColor(first, 90, 85, [255, 255, 255])
-    await first.getByRole('button', { name: 'Redo' }).click()
+    await page.mouse.move(bounds.x + 55, bounds.y + 50)
+    await page.mouse.down()
+    await page.mouse.move(bounds.x + 155, bounds.y + 130)
+    await page.mouse.up()
     await expectColor(first, 90, 85, [204, 204, 204])
     await expectColor(second, 90, 85, [255, 255, 255])
-    await page.getByRole('button', { name: 'Toggle first editor' }).click()
-    await second.getByRole('button', { name: 'Invalid block' }).click()
-    await second.getByText(/positive dimensions/).waitFor()
-    await second.getByRole('button', { name: 'Add block' }).click()
-    await expectColor(second, 25, 20, [204, 204, 204])
-    await second.getByRole('button', { name: 'Save' }).click()
-    await second.getByText('Saved', { exact: true }).waitFor()
-    await page.reload()
-    await ready(first)
-    await ready(second)
-    await expectColor(first, 90, 85, [255, 255, 255])
-    await expectColor(second, 25, 20, [204, 204, 204])
-    await first.locator('canvas').click({ position: { x: 30, y: 30 } })
-    await page.mouse.move(bounds.x + 20, bounds.y + 20)
-    await page.mouse.down()
-    await page.mouse.move(bounds.x + 90, bounds.y + 80)
-    await page.keyboard.press('Escape')
-    await page.mouse.up()
-    await expectColor(first, 60, 60, [255, 255, 255])
-    await page.evaluate(() =>
-      globalThis.localStorage.setItem('@asyra/react:document:diagram', '{}')
+    await page.evaluate(() => globalThis.editors[0].setTool('select'))
+    await first.click({ position: { x: 90, y: 85 } })
+    await expectColor(first, 55, 85, [21, 122, 231])
+    assert.equal(
+      await page.evaluate(() => globalThis.editors[0].getSelection().length),
+      1
     )
-    await page.reload()
-    await ready(first)
-    await second
-      .getByText('The saved canvas document is invalid')
-      .waitFor({ timeout: 5000 })
-    assert.equal(await second.locator('nav').getAttribute('inert'), '')
+    await page.evaluate(() => globalThis.editors[0].undo())
+    await expectColor(first, 90, 85, [255, 255, 255])
+    await page.evaluate(() => globalThis.editors[0].redo())
+    await expectColor(first, 90, 85, [204, 204, 204])
+    await page.screenshot({ path: path.join(cwd, 'selected-rectangle.png') })
+    assert.equal(
+      await page.evaluate(async () => {
+        for (const invalid of [
+          globalThis.document.body,
+          null,
+          globalThis.targets[0]
+        ]) {
+          try {
+            await globalThis.createCanvas(invalid)
+
+            return false
+          } catch {
+            continue
+          }
+        }
+
+        return true
+      }),
+      true
+    )
+    const snapshot = await page.evaluate(() => globalThis.editors[0].save())
+
+    await page.evaluate(() => globalThis.editors[0].destroy())
+    assert.equal(
+      await page.evaluate(
+        () =>
+          globalThis.document.querySelector('#first') === globalThis.targets[0]
+      ),
+      true
+    )
+    await page.evaluate(() =>
+      globalThis.editors[1].drawRectangle({
+        x: 20,
+        y: 30,
+        width: 50,
+        height: 50
+      })
+    )
+    await expectColor(second, 40, 50, [204, 204, 204])
+    await page.evaluate(async (snapshot) => {
+      globalThis.editors[0] = await globalThis.createCanvas(
+        globalThis.targets[0],
+        { document: snapshot }
+      )
+    }, snapshot)
+    await expectColor(first, 90, 85, [204, 204, 204])
+    await page.evaluate(() =>
+      Promise.all(globalThis.editors.map((editor) => editor.destroy()))
+    )
+    assert.equal(await page.locator('iframe').count(), 0)
+    assert.equal(await page.locator('canvas').count(), 2)
     assert.deepEqual(errors, [])
   } finally {
     await browser?.close()

@@ -1,0 +1,78 @@
+{
+  "schemaVersion": 1,
+  "projectId": "asyra",
+  "flowId": "canvas",
+  "revision": 2,
+  "definition": {
+    "title": "Canvas SDK",
+    "purpose": "Draw directly on a caller-owned canvas in a plain JavaScript application.",
+    "nodes": [
+      {
+        "id": "embed",
+        "title": "Bind an editor to a canvas",
+        "objective": "Reject invalid or claimed targets before startup. Evaluate one Core composition per canvas. Pass the original node through Core and Render to Pixi. Route target-local pointer events and product commands into Feature and Factory. Release handlers, renderer and the claim on teardown or failure; retain the DOM node.",
+        "owner": "Canvas SDK and renderer",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [],
+        "criteria": [
+          {
+            "id": "consumer",
+            "title": "Installed native browser SDK edits two existing canvases and releases their ownership",
+            "kind": "automated",
+            "selector": {
+              "producer": "custom",
+              "identity": "canvas/consumer"
+            }
+          }
+        ],
+        "specRefs": [
+          "docs/ai/framework/plans/canvas-embedding-plan.md"
+        ],
+        "implementationRefs": [
+          "sdk/canvas/**",
+          "fixtures/canvas/**",
+          "packages/core/src/core.ts",
+          "packages/render/src/renderer.ts",
+          "packages/render-engine-pixi/src/pixi-render-engine.ts"
+        ],
+        "actions": [
+          {
+            "id": "check",
+            "label": "Verify packed editor",
+            "kind": "command",
+            "argv": [
+              "node",
+              "fixtures/canvas/verify.mjs"
+            ],
+            "cwd": ".",
+            "criterionIds": [
+              "consumer"
+            ]
+          }
+        ]
+      }
+    ],
+    "criteria": []
+  },
+  "current": {
+    "observations": [
+      {
+        "nodeId": "embed",
+        "criterionId": "consumer",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "556d21e539a765fc6ebced7988388106fe1397edb8cf09b62972813b730aac59",
+        "actor": "packed-consumer",
+        "executionId": "efa29472-7de3-47ba-a268-e7e8388990f5",
+        "caseId": "canvas/consumer",
+        "summary": "Packed browser SDK passed type, production build, isolation and Chromium interaction checks.",
+        "at": "2026-11-24T13:04:27.768Z"
+      }
+    ],
+    "notes": [],
+    "progress": [],
+    "sources": [],
+    "warnings": []
+  }
+}

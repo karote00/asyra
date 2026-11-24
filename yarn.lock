@@ -242,6 +242,16 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@asyra/canvas@workspace:sdk/canvas":
+  version: 0.0.0-use.local
+  resolution: "@asyra/canvas@workspace:sdk/canvas"
+  dependencies:
+    "@asyra/core": "workspace:*"
+    "@asyra/preset": "workspace:*"
+    vite: "npm:^6.4.4"
+  languageName: unknown
+  linkType: soft
+
 "@asyra/collaboration@workspace:*, @asyra/collaboration@workspace:packages/collaboration":
   version: 0.0.0-use.local
   resolution: "@asyra/collaboration@workspace:packages/collaboration"
@@ -420,19 +430,6 @@ __metadata:
     rxjs: "npm:^7.8.1"
     typescript: "npm:^5.7.2"
     vitest: "npm:^3.2.6"
-  languageName: unknown
-  linkType: soft
-
-"@asyra/react@workspace:sdk/react":
-  version: 0.0.0-use.local
-  resolution: "@asyra/react@workspace:sdk/react"
-  dependencies:
-    "@asyra/core": "workspace:*"
-    "@asyra/preset": "workspace:*"
-    "@types/react": "npm:^19.2.18"
-    vite: "npm:^6.4.4"
-  peerDependencies:
-    react: ^19.0.0
   languageName: unknown
   linkType: soft
 

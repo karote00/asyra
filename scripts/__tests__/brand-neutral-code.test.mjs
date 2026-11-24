@@ -184,20 +184,6 @@ const isAllowedPublicIdentity = (token, line, filePath) => {
   const escapedToken = token.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
   const relativePath = path.relative(repositoryRoot, filePath)
 
-  // The public React entry exports the explicitly named product component.
-  if (
-    token === repositoryDisplayName + 'Canvas' &&
-    ((['sdk/react/src/index.js', 'sdk/react/src/index.d.ts'].includes(
-      relativePath
-    ) &&
-      line.startsWith('export function ' + token + '(')) ||
-      (relativePath === 'fixtures/react-canvas/__tests__/consumer.test.mjs' &&
-        (line.includes('import { ' + token + ',') ||
-          line.includes('<' + token + ' actions='))))
-  ) {
-    return true
-  }
-
   if (
     token === repositoryBrand &&
     [
