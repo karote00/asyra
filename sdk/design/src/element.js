@@ -3,6 +3,16 @@ import { createDesign } from './index.js'
 export const designTag = 'asyra-design'
 
 if (globalThis.customElements && !globalThis.customElements.get(designTag)) {
+  // A standalone editor may be nested in framework mount elements. Leave
+  // document margins alone when any branch has sibling content.
+  const content = ':not(script, style, link, template, noscript, [hidden])'
+  const pageDefaults = globalThis.document.createElement('style')
+
+  pageDefaults.textContent = `@layer {
+    :where(body:has(${designTag}):not(:has(${content} ~ ${content}))) { margin: 0; }
+  }`
+  globalThis.document.head.prepend(pageDefaults)
+
   class DesignElement extends globalThis.HTMLElement {
     #host
 
@@ -17,10 +27,26 @@ if (globalThis.customElements && !globalThis.customElements.get(designTag)) {
       const root = this.attachShadow({ mode: 'open' })
       const css = this.ownerDocument.createElement('style')
 
-      css.textContent =
-        ':host{display:block;height:480px}:host([hidden]){display:none}'
+      css.textContent = `
+        :host {
+          display: block;
+          position: relative;
+          box-sizing: border-box;
+          width: 100%;
+          height: 100%;
+          min-width: 0;
+          min-height: 0;
+          contain: size;
+          contain-intrinsic-size: 0 100vh;
+          contain-intrinsic-size: 0 100dvh;
+        }
+        :host([hidden]) { display: none; }
+      `
       this.#host = this.ownerDocument.createElement('div')
-      this.#host.style.height = '100%'
+      // Percentage height in an auto-height layout is intrinsic. Inset the
+      // drawing area against the resulting box after that size is resolved.
+      this.#host.style.cssText =
+        'position: absolute; inset: 0; overflow: hidden;'
       root.append(css, this.#host)
     }
 

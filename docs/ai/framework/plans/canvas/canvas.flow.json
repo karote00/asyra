@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "projectId": "asyra",
   "flowId": "canvas",
-  "revision": 14,
+  "revision": 16,
   "definition": {
     "title": "Canvas SDK",
     "purpose": "Bind a blank host surface and opt into independent product SDKs.",
@@ -10,7 +10,7 @@
       {
         "id": "embed",
         "title": "Bind an editor to a canvas",
-        "objective": "Canvas validates and reserves the target. Only an explicit mount initializes product tools. Design owns 2D Core, rendering and edits; Simulation owns clock and sampled playback. Base disposal waits for pending setup and teardown before releasing the target. Invalid or duplicate mounts cannot edit the surface. Design claims a supplied container and creates its own canvas inside it, or borrows the supplied canvas directly. It mounts the Design session on that exact surface. Failure and disposal remove only owned elements and release container exclusivity after teardown. Default or caller-selected controls dispatch through the public Design tools. Headless mode bypasses control creation. Cleanup releases SDK-owned DOM and the binding, including on failure. A declarative Design element mounts through the same editor entry in its own shadow tree. Connection owns startup and disconnection owns teardown. Moving the connected element preserves its session. The React and Vue exports and Angular template use that browser lifecycle.",
+        "objective": "Canvas validates and reserves the target. Only an explicit mount initializes product tools. Design owns 2D Core, rendering and edits; Simulation owns clock and sampled playback. Base disposal waits for pending setup and teardown before releasing the target. Invalid or duplicate mounts cannot edit the surface. Design claims a supplied container and creates its own canvas inside it, or borrows the supplied canvas directly. It mounts the Design session on that exact surface. Failure and disposal remove only owned elements and release container exclusivity after teardown. Default or caller-selected controls dispatch through the public Design tools. Headless mode bypasses control creation. Cleanup releases SDK-owned DOM and the binding, including on failure. A declarative Design element mounts through the same editor entry in its own shadow tree. Connection owns startup and disconnection owns teardown. Moving the connected element preserves its session. The React and Vue exports and Angular template use that browser lifecycle. The declarative element fills the parent layout with a viewport-height intrinsic fallback. On a standalone page the element fills the viewport. The existing Design resize observer updates the drawing buffer to the space left by the controls.",
         "owner": "Canvas lifecycle and independent product SDKs",
         "required": true,
         "applicable": true,
@@ -64,12 +64,12 @@
         "criterionId": "consumer",
         "kind": "automated",
         "status": "passed",
-        "binding": "e0662ba0cae2828588bda0fd1ebcce34552d2197e230e4b825b046af48b1acc1",
+        "binding": "1fcdb963123ddb58430c462eca3214fb7029c256427e353f723f4b9d105adbca",
         "actor": "packed-consumer",
-        "executionId": "084d3000-61c0-4edf-bada-d69cc998f299",
+        "executionId": "20d64457-53a6-4e26-9f9c-06111ffce6ed",
         "caseId": "canvas/consumer",
         "summary": "Separate packed base, design and simulation installations passed type, build and Chromium checks.",
-        "at": "2026-11-24T14:42:02.135Z"
+        "at": "2026-11-24T15:53:09.663Z"
       }
     ],
     "notes": [],

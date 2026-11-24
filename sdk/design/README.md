@@ -43,9 +43,15 @@ export class App {}
 ```
 
 The browser element starts a Design editor at its position and releases the
-session on removal. Each instance has its own document and history. The
-default height is 480px and can be set with CSS. Drag to draw, or choose
-Select, Undo or Redo from the toolbar.
+session on removal. Each instance has its own document and history.
+
+Inside a sized panel the editor fills its content area and follows resizes
+automatically. Without a definite parent height it uses the visible
+viewport height. As the sole content of a page it fills the viewport by
+default. Application-defined margins and padding are respected. The toolbar
+and drawing surface share the available space.
+
+Drag to draw, or choose Select, Undo or Redo from the toolbar.
 
 Pass the initial `options` property to customize the actions and toolbar.
 React 19 and Vue can pass an object as `options={options}` and

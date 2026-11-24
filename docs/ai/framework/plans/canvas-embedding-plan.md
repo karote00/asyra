@@ -45,3 +45,13 @@ React and Vue expose the named component. Angular uses the registered element.
 Mount options reach the same Design action registry. The Canvas SDK has no UI
 or framework dependency. Verify the package exports, JSX types, startup,
 editing, independent instances and disconnect/reconnect in packed consumers.
+
+### Element sizing
+
+The declarative element fills the layout space assigned by its parent. With
+an indefinite parent height its intrinsic height is the dynamic viewport
+height. On a page containing only the editor, browser-default body margins
+yield to an edge-to-edge layout. Authored margins and panel padding remain
+part of the application's layout. Toolbar and canvas share this area. The
+existing canvas ResizeObserver owns drawing buffer updates. Packed browser
+checks resize the window and panel independently, including a framework root.

@@ -744,3 +744,96 @@ test('opt-in design element preserves a moved editor and serializes reconnects',
     }
   )
 })
+
+test('opt-in design fits the parent panel and defaults to the viewport', async () => {
+  await withConsumer(
+    ['sdk/canvas', 'sdk/design'],
+    'sizing.js',
+    async (page) => {
+      const panel = page.locator('main')
+      const editor = panel.locator('asyra-design')
+
+      await editor.getByRole('button', { name: 'Select' }).waitFor()
+
+      async function fits(width, height) {
+        await page.waitForFunction(
+          ([width, height]) => {
+            const editor = globalThis.document.querySelector('asyra-design')
+            const canvas = editor.shadowRoot.querySelector('canvas')
+            const toolbar = editor.shadowRoot.querySelector('fieldset')
+
+            return (
+              editor.clientWidth === width &&
+              editor.clientHeight === height &&
+              canvas.width === width &&
+              canvas.height === height - toolbar.offsetHeight &&
+              canvas.height === canvas.clientHeight
+            )
+          },
+          [width, height],
+          { timeout: 2500 }
+        )
+      }
+
+      await page.setViewportSize({ width: 820, height: 620 })
+      await fits(820, 620)
+      assert.deepEqual(await editor.boundingBox(), {
+        x: 0,
+        y: 0,
+        width: 820,
+        height: 620
+      })
+      const noOverflow = await page.evaluate(() => {
+        const doc = globalThis.document.documentElement
+
+        return (
+          doc.scrollWidth === doc.clientWidth &&
+          doc.scrollHeight === doc.clientHeight
+        )
+      })
+
+      assert.ok(noOverflow)
+      await page.setViewportSize({ width: 640, height: 510 })
+      await fits(640, 510)
+
+      await panel.evaluate((el) => {
+        el.style.cssText = 'width:470px;height:290px;padding:12px'
+      })
+      await fits(470, 290)
+      await panel.evaluate((el) => {
+        el.style.cssText = 'width:320px;height:190px;display:grid'
+      })
+      await fits(320, 190)
+      await page.setViewportSize({ width: 750, height: 480 })
+      await fits(320, 190)
+      await panel.evaluate((el) => {
+        el.style.cssText = 'width:360px'
+      })
+      await fits(360, 480)
+
+      await page.evaluate(() => {
+        globalThis.document.body.style.margin = '20px'
+        globalThis.document.querySelector('main').removeAttribute('style')
+      })
+      await fits(710, 480)
+      assert.equal((await editor.boundingBox()).x, 20)
+
+      // A normal application page keeps its page margins. Grid allocates the
+      // second row to the editor independently of the toolbar in its shadow.
+      await panel.evaluate((el) => {
+        globalThis.document.body.style.removeProperty('margin')
+        el.style.cssText =
+          'width:400px;height:280px;display:grid;grid-template-rows:50px 1fr'
+        el.prepend(globalThis.document.createElement('header'))
+      })
+      await fits(400, 230)
+      assert.equal((await editor.boundingBox()).x, 8)
+      await panel.evaluate((el) => {
+        el.style.cssText =
+          'width:400px;height:260px;display:flex;flex-direction:column'
+        el.firstElementChild.style.flex = '0 0 40px'
+      })
+      await fits(400, 220)
+    }
+  )
+})
