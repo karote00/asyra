@@ -1444,7 +1444,10 @@ it('bounds the recorded fill and context short-name queries while retaining qual
       ],
       [['read_design_context'], 20000, 1]
     ] as const) {
-      const short = await read('read_design_resources', { names })
+      const short = await read('read_design_resources', {
+        names,
+        includeRecipeDependency: true
+      })
 
       expect(short.missingNames).toEqual([])
       expect(short.tools.map((entry: { name: string }) => entry.name)).toEqual(
@@ -1452,12 +1455,16 @@ it('bounds the recorded fill and context short-name queries while retaining qual
       )
       expect(short.apis[0].usageGuide.operationParameters).toBeDefined()
       const qualified = short.apis[0].recipeDependency.name
-      const byQuery = await read('read_design_resources', { names: [names[0]] })
+      const byQuery = await read('read_design_resources', {
+        names: [names[0]],
+        includeRecipeDependency: true
+      })
 
       expect(byQuery.tools).toEqual([])
       expect(byQuery.apis[0].recipeDependency.name).toBe(qualified)
       const machine = await read('read_design_resources', {
         names: [names[0]],
+        includeRecipeDependency: true,
         includeResultSchema: true
       })
 

@@ -248,6 +248,45 @@ const fixture = () => {
   return { host, invoke, create, select }
 }
 
+it('delivers recipe dependencies only on request with the same executable parameters', async () => {
+  const app = fixture()
+
+  try {
+    const names = ['element.createElements', 'selection.selectElements']
+
+    const read = (extra: Record<string, unknown>) =>
+      app.invoke('design_operations.read_design_resources', {
+        names,
+        view: 'parameters',
+        ...extra
+      })
+
+    const ordinary = await read({})
+
+    expect(ordinary.apis).toHaveLength(2)
+    expect(
+      ordinary.apis.map(
+        (entry: { recipeDependency?: unknown }) => entry.recipeDependency
+      )
+    ).toEqual([undefined, undefined])
+    const authoring = await read({ includeRecipeDependency: true })
+
+    for (const [i, entry] of ordinary.apis.entries()) {
+      expect(authoring.apis[i].recipeDependency.name).toBe(
+        proposal.steps[i].tool
+      )
+      expect(authoring.apis[i].operationParameters).toEqual(
+        entry.operationParameters
+      )
+      expect(
+        authoring.apis[i].definition.refresh.arguments.includeRecipeDependency
+      ).toBe(true)
+    }
+  } finally {
+    await app.host.dispose()
+  }
+})
+
 it('composes actual canonical basic operations and hands creation identities through secured browser dispatch', async () => {
   const app = fixture()
 
@@ -274,7 +313,7 @@ it('composes actual canonical basic operations and hands creation identities thr
     expect(app.select).toHaveBeenCalledExactlyOnceWith(['created-id'])
     const semantic = await app.invoke(
       'design_operations.read_design_resources',
-      { names: ['element.createElements'] }
+      { names: ['element.createElements'], includeRecipeDependency: true }
     )
 
     expect(semantic.apis[0].recipeDependency).toEqual({
@@ -1680,7 +1719,8 @@ it('continues only an unresolved suffix using acknowledged document identities i
       output: literal(null)
     }
     const found = await app.invoke('design_operations.read_design_resources', {
-      names: ['selection.selectElements']
+      names: ['selection.selectElements'],
+      includeRecipeDependency: true
     })
 
     expect(found.apis[0].recipeDependency).toMatchObject({

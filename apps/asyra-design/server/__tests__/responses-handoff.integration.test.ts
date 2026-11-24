@@ -750,9 +750,13 @@ it('preserves an uncertain dispatch on disk and rejects stale claims across serv
   }
 })
 
-it.each([false, true])(
-  'imports the Dome reference with its original identity and hosted research=%s',
-  async (research) => {
+it.each([
+  { research: false, partial: false },
+  { research: true, partial: false },
+  { research: true, partial: true }
+])(
+  'imports the Dome reference with its original identity and hosted research=$research partial=$partial',
+  async ({ research, partial }) => {
     const { createHash } = await import('node:crypto')
     const { default: sharp } = await import('sharp')
     const { default: dome } = await import('./fixtures/dome-responses.json')
@@ -803,9 +807,9 @@ it.each([false, true])(
           }
 
           requests.push(body)
-          const n = requests.length
+          const n = requests.length + (partial ? 1 : 0)
 
-          if (n === 1) {
+          if (requests.length === 1) {
             expect(
               body.input[0].tools
                 .flatMap((group: { tools: { name: string }[] }) =>
@@ -818,16 +822,37 @@ it.each([false, true])(
           if (n === 3) {
             const menu = JSON.parse(body.input[0].output[0].text)
 
+            if (partial) {
+              expect(menu.tools[0].match.unmatchedTerms.length).toBeGreaterThan(
+                0
+              )
+              expect(menu.tools[0].execution).toMatchObject({
+                kind: 'host-operation',
+                tool: 'execute_design'
+              })
+              process.stdout.write(
+                JSON.stringify({
+                  measurement: 'partial-import',
+                  menuBytes: Buffer.byteLength(JSON.stringify(menu))
+                }) + '\n'
+              )
+            }
+
             route = menu.tools[0].execution.operation
             expect(route).toBe('design_references.import_reference_image')
           }
 
           const args = [
             dome.reference,
-            {
-              query: 'import public image from URL',
-              inputFields: ['sourceUrl', 'imageUrl']
-            },
+            partial
+              ? {
+                  query:
+                    'import reference image from original source URL retain bytes inspect photo'
+                }
+              : {
+                  query: 'import public image from URL',
+                  inputFields: ['sourceUrl', 'imageUrl']
+                },
             {
               operations: [
                 { id: 'reference', name: route, arguments: dome.reference }
@@ -900,8 +925,13 @@ it.each([false, true])(
         )
       }
 
-      expect(requests[1].input[0].output[0].text).toContain('TOOL_NOT_FOUND')
-      const parts = requests[3].input[0].output
+      if (partial) {
+        expect(requests).toHaveLength(3)
+      } else {
+        expect(requests[1].input[0].output[0].text).toContain('TOOL_NOT_FOUND')
+      }
+
+      const parts = requests[requests.length - 1].input[0].output
       const receipt = JSON.parse(parts[0].text).execution.value
 
       expect(receipt.references[0]).toMatchObject({
@@ -1329,6 +1359,129 @@ it.each([true, false])(
   }
 )
 
+it('reads the three recorded Dome operations with recipe authoring only when selected through Responses', async () => {
+  const { createDefaultAiModelSources, selectAiModelSource } =
+    await import('../ai-model-sources')
+  const { operationInputIssue } = await import('@asyra/ai-agent-runtime/schema')
+  const { createAiToolContract } = await import('@asyra/ai-agent-runtime')
+  const runtime = await createDrawingRuntime()
+  const query = {
+    names: [
+      'element.getVectorAnchorPoints',
+      'element.deleteElements',
+      'inspect_drawing'
+    ],
+    view: 'parameters'
+  }
+  const replies: string[] = []
+  let request = 0
+  const sources = createDefaultAiModelSources({
+    continuationDatabase: ':memory:',
+
+    fetch: async (_, init) => {
+      const body = JSON.parse(String(init?.body))
+
+      request++
+      if (request === 1) {
+        return requestEntries('design_operations.read_design_resources')
+      }
+
+      if (request === 2) {
+        const tool = body.input[0].tools[0].tools[0]
+
+        expect(
+          operationInputIssue(
+            { ...query, includeRecipeDependency: true },
+            tool.parameters
+          )
+        ).toBeUndefined()
+      }
+
+      if (request > 2) {
+        replies.push(body.input[0].output[0].text)
+      }
+
+      const output =
+        request === 4
+          ? [
+              {
+                type: 'message',
+                role: 'assistant',
+                content: [{ type: 'output_text', text: JSON.stringify(final) }]
+              }
+            ]
+          : [
+              {
+                type: 'function_call',
+                namespace: 'design_operations',
+                name: 'read_design_resources',
+                call_id: 'definition-' + request,
+                arguments: JSON.stringify(
+                  request === 2
+                    ? query
+                    : { ...query, includeRecipeDependency: true }
+                )
+              }
+            ]
+
+      return Response.json({
+        id: 'facet-' + request,
+        status: 'completed',
+        output
+      })
+    }
+  })
+
+  try {
+    await selectAiModelSource('openai-responses', sources).request(
+      {
+        ...input,
+        actions: runtime.actionDefinitions.map(createAiToolContract)
+      },
+      {
+        environment: {
+          OPENAI_API_KEY: 'fixture',
+          AI_PROVIDER_MODEL: 'fixture'
+        },
+
+        executeBatch: async () => {
+          throw Error('Resource reads must not dispatch edits')
+        }
+      }
+    )
+    expect(replies).toHaveLength(2)
+    const [plain, recipe] = replies.map((text) => JSON.parse(text).apis)
+
+    expect(plain.map((entry: { name: string }) => entry.name)).toHaveLength(3)
+    for (const [i, entry] of plain.entries()) {
+      expect(entry.recipeDependency).toBeUndefined()
+      expect(recipe[i].recipeDependency.name).toBeTruthy()
+      expect(recipe[i].operationParameters).toEqual(entry.operationParameters)
+      expect(entry.operationParameters).toBeDefined()
+      expect(recipe[i].execution).toEqual(entry.execution)
+    }
+
+    const [ordinaryBytes, authoringBytes] = replies.map((text) =>
+      Buffer.byteLength(text)
+    )
+
+    expect(ordinaryBytes).toBeLessThan(6441)
+    expect(ordinaryBytes).toBeLessThan(authoringBytes)
+    process.stdout.write(
+      JSON.stringify({
+        measurement: 'dome-three-parameters',
+        ordinaryBytes,
+        authoringBytes
+      }) + '\n'
+    )
+  } finally {
+    await Promise.all(sources.map((source) => source.dispose?.()))
+    await Promise.all(
+      runtime.ownedResources?.map((resource) => resource.dispose()) ?? []
+    )
+  }
+})
+
 it('matches the catalog digest when all entries are explicitly requested and preserves saved-field exclusivity', async () => {
   const { createDefaultAiModelSources, selectAiModelSource } =
     await import('../ai-model-sources')
@@ -1461,103 +1614,114 @@ it('matches the catalog digest when all entries are explicitly requested and pre
   }
 })
 
-it('reads a known knowledge ID directly through Responses and returns its body in the next request', async () => {
-  const { createDefaultAiModelSources, selectAiModelSource } =
-    await import('../ai-model-sources')
-  const { createAiToolContract } = await import('@asyra/ai-agent-runtime')
-  const runtime = await createDrawingRuntime()
-  let requests = 0
-  let bytes = 0
-  const source = selectAiModelSource(
-    'openai-responses',
-    createDefaultAiModelSources({
-      continuationDatabase: ':memory:',
+it.each(['read_knowledge', 'discover_knowledge'])(
+  'reads a known knowledge ID directly through Responses using %s',
+  async (toolName) => {
+    const { createDefaultAiModelSources, selectAiModelSource } =
+      await import('../ai-model-sources')
+    const { createAiToolContract } = await import('@asyra/ai-agent-runtime')
+    const runtime = await createDrawingRuntime()
+    let requests = 0
+    let bytes = 0
+    const source = selectAiModelSource(
+      'openai-responses',
+      createDefaultAiModelSources({
+        continuationDatabase: ':memory:',
 
-      fetch: async (_, init) => {
-        const body = JSON.parse(String(init?.body))
+        fetch: async (_, init) => {
+          const body = JSON.parse(String(init?.body))
 
-        requests++
-        if (requests === 1) {
-          bytes = Buffer.byteLength(String(init?.body))
+          requests++
+          if (requests === 1) {
+            bytes = Buffer.byteLength(String(init?.body))
 
-          return requestEntries('design_knowledge.read_knowledge')
-        }
+            return requestEntries('design_knowledge.' + toolName)
+          }
 
-        if (requests === 2) {
-          expect(
-            body.input[0].tools[0].tools.map(
-              (tool: { name: string }) => tool.name
+          if (requests === 2) {
+            expect(
+              body.input[0].tools[0].tools.map(
+                (tool: { name: string }) => tool.name
+              )
+            ).toEqual([toolName])
+
+            return Response.json({
+              id: 'direct',
+              status: 'completed',
+              output: [
+                {
+                  type: 'function_call',
+                  namespace: 'design_knowledge',
+                  name: toolName,
+                  call_id: 'color-advice',
+                  arguments: JSON.stringify({ ids: ['colors'] })
+                }
+              ]
+            })
+          }
+
+          const advice = JSON.parse(body.input[0].output[0].text)
+
+          expect(advice.trust).toBe('untrusted-advice')
+          if (toolName === 'read_knowledge') {
+            expect(advice.documents).toContainEqual(
+              expect.objectContaining({
+                target: 'colors',
+                text: expect.stringMatching(/\S/)
+              })
             )
-          ).toEqual(['read_knowledge'])
+          } else {
+            expect(advice.entries).toContainEqual(
+              expect.objectContaining({ id: 'colors' })
+            )
+            expect(advice.documents).toBeUndefined()
+          }
 
           return Response.json({
-            id: 'direct',
+            id: 'done',
             status: 'completed',
             output: [
               {
-                type: 'function_call',
-                namespace: 'design_knowledge',
-                name: 'read_knowledge',
-                call_id: 'color-advice',
-                arguments: JSON.stringify({ ids: ['colors'] })
+                type: 'message',
+                role: 'assistant',
+                content: [{ type: 'output_text', text: JSON.stringify(final) }]
               }
             ]
           })
         }
+      })
+    )
 
-        const advice = JSON.parse(body.input[0].output[0].text)
-
-        expect(advice.trust).toBe('untrusted-advice')
-        expect(advice.documents).toContainEqual(
-          expect.objectContaining({
-            target: 'colors',
-            text: expect.stringMatching(/\S/)
-          })
-        )
-
-        return Response.json({
-          id: 'done',
-          status: 'completed',
-          output: [
-            {
-              type: 'message',
-              role: 'assistant',
-              content: [{ type: 'output_text', text: JSON.stringify(final) }]
-            }
-          ]
-        })
-      }
-    })
-  )
-
-  try {
-    await source.request(
-      {
-        ...input,
-        intent: 'Read the colors advice.',
-        actions: runtime.actionDefinitions.map(createAiToolContract)
-      },
-      {
-        environment: {
-          OPENAI_API_KEY: 'fixture',
-          AI_PROVIDER_MODEL: 'gpt-6.2-astra',
-          AI_EXECUTION_SOURCE_REVISION: 'fixture'
+    try {
+      await source.request(
+        {
+          ...input,
+          intent: 'Read the colors advice.',
+          actions: runtime.actionDefinitions.map(createAiToolContract)
         },
+        {
+          environment: {
+            OPENAI_API_KEY: 'fixture',
+            AI_PROVIDER_MODEL: 'gpt-6.2-astra',
+            AI_EXECUTION_SOURCE_REVISION: 'fixture'
+          },
 
-        executeBatch: async () => {
-          throw Error('Unexpected canvas dispatch')
+          executeBatch: async () => {
+            throw Error('Unexpected canvas dispatch')
+          }
         }
-      }
-    )
-    expect(requests).toBe(3)
-    process.stdout.write(
-      JSON.stringify({ measurement: 'known-knowledge', requests, bytes }) + '\n'
-    )
-  } finally {
-    await source.dispose?.()
-    await Promise.all(runtime.ownedResources?.map((r) => r.dispose()) ?? [])
+      )
+      expect(requests).toBe(3)
+      process.stdout.write(
+        JSON.stringify({ measurement: 'known-knowledge', requests, bytes }) +
+          '\n'
+      )
+    } finally {
+      await source.dispose?.()
+      await Promise.all(runtime.ownedResources?.map((r) => r.dispose()) ?? [])
+    }
   }
-})
+)
 
 it('reads only the selected prior turn and activates hosted research for that turn on the same chain', async () => {
   const { createDefaultAiModelSources, selectAiModelSource } =

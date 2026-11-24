@@ -263,7 +263,7 @@ it('keeps the primary action independent of an unrelated native tool with the sa
   const reply = await invokeLocalTool(
     owner,
     definition,
-    { names: [action.name] },
+    { names: [action.name], includeRecipeDependency: true },
     new AbortController().signal
   )
   const result = JSON.parse(reply.text)

@@ -13,7 +13,10 @@ import { readCompleteInformation } from './tool-contract-assertions'
 import { afterAll, afterEach, expect, it, vi } from 'vitest'
 import * as nativeSchemaOwner from '@asyra/ai-agent-runtime/schema'
 import { basicApiContracts } from '../../src/ai/basic-api-catalog'
-import { invokeLocalTool } from '../local-tool-invocation'
+import {
+  invokeLocalTool,
+  localToolFailureSchema
+} from '../local-tool-invocation'
 import { operationInputIssue } from '@asyra/ai-agent-runtime/schema'
 import { writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
@@ -1497,9 +1500,6 @@ it.each(native)(
       args,
       'read_design_resources'
     )
-    const entry = JSON.parse(text).tools[0]
-
-    expect(entry, text.slice(0, 1000)).toBeDefined()
     const registeredDefinition = host
       .definitions()
       .find((d) => d.registeredName === `${namespace}.${definition.name}`)
@@ -1507,6 +1507,29 @@ it.each(native)(
     if (!registeredDefinition) {
       throw new Error('Missing host registration')
     }
+
+    const menu = JSON.parse(text)
+
+    if (namespace === 'design_knowledge') {
+      expect(menu.missingNames).toEqual([registeredDefinition.registeredName])
+      expect(menu.tools).toEqual([])
+      expect(registeredDefinition.inputSchema).toEqual(definition.inputSchema)
+      const input = { ids: ['colors'] }
+
+      expect(
+        operationInputIssue(input, registeredDefinition.inputSchema)
+      ).toBeUndefined()
+      // Successful knowledge responses are exercised at their separately published
+      // provider entries. This reader must return neither tool nor advice here.
+      expect(menu.code).toBe('IDENTITY_UNRESOLVED')
+      expect(execute).not.toHaveBeenCalled()
+
+      return
+    }
+
+    const entry = menu.tools[0]
+
+    expect(entry, text.slice(0, 1000)).toBeDefined()
 
     const scopes = workflowInputScopes(registeredDefinition.inputSchema)
 
@@ -1892,6 +1915,26 @@ it.each(host.definitions())(
 it.each(host.definitions())(
   '$registeredName declares its actual admission failure without dispatch - case %#',
   async (registration) => {
+    if (registration.namespace === 'design_knowledge') {
+      const reply = await host.invoke({
+        name: registration.registeredName,
+        input: null
+      })
+      const result = JSON.parse(reply.text)
+
+      expect(reply.success).toBe(false)
+      expect(result).toMatchObject({
+        code: 'TOOL_INPUT_INVALID',
+        toolOutcome: { status: 'failed', settlement: 'not-started' }
+      })
+      expect(
+        operationInputIssue(result, localToolFailureSchema)
+      ).toBeUndefined()
+      expect(execute).not.toHaveBeenCalled()
+
+      return
+    }
+
     const scopes = workflowInputScopes(registration.inputSchema)
     const inputScope = scopes
       ? {

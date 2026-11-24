@@ -1770,10 +1770,13 @@ export const createLocalOperationTools = (
       tool: AiDesignToolIds.READ_DESIGN_RESOURCES,
       arguments: contractReadArguments({
         ...selector,
+        ...(args.includeRecipeDependency === true && {
+          includeRecipeDependency: true
+        }),
         refresh: true,
         refreshReason: 'context-loss',
         ...(args.inputScope ? { inputScope: args.inputScope } : {}),
-        ...(args.view !== undefined
+        ...(args.view !== undefined && args.view !== 'full'
           ? {
               view: args.view,
               ...(args.includeResultSchema !== undefined
@@ -2232,8 +2235,11 @@ export const createLocalOperationTools = (
           tool: AiDesignToolIds.READ_DESIGN_RESOURCES,
           arguments: contractReadArguments({
             ...selector,
+            ...(args.includeRecipeDependency === true && {
+              includeRecipeDependency: true
+            }),
             ...(args.inputScope ? { inputScope: args.inputScope } : {}),
-            ...(args.view !== undefined
+            ...(args.view !== undefined && args.view !== 'full'
               ? {
                   view: args.view,
                   ...(args.includeResultSchema !== undefined
@@ -4027,7 +4033,7 @@ export const createLocalOperationTools = (
                 'read',
                 ['tool-registry']
               ),
-              revision: 15,
+              revision: 16,
               name: AiDesignToolIds.READ_DESIGN_RESOURCES,
               executionAccess: AiToolAccess.INDEPENDENT,
               composition: 'request' as const,
@@ -4563,14 +4569,15 @@ export const createLocalOperationTools = (
           definitionArgs = args
         ) => {
           const contract = getBasicApiContract(api.name)
-          const dependencies = nativeInventory().filter(
-            (tool) =>
-              !finalActions.has(api.name) &&
-              tool.name === api.name &&
-              tool.composition === 'allowed' &&
-              tool.registeredName &&
-              isCanonicalWrapper(tool, api)
-          )
+          const dependencies =
+            definitionArgs.includeRecipeDependency === true &&
+            !finalActions.has(api.name)
+              ? nativeMatches(api.name).filter(
+                  (tool) =>
+                    tool.composition === 'allowed' &&
+                    isCanonicalWrapper(tool, api)
+                )
+              : []
           const dependency =
             dependencies.length === 1 ? dependencies[0] : undefined
           const recipeDependency = dependency
@@ -5151,7 +5158,7 @@ export const createLocalOperationTools = (
             : {}),
           guidance: {
             capabilities:
-              'Use operationParameters with the declared route. For other candidates read_design_resources with names and view=parameters. Use scopeRead for selected workflow branches.',
+              'For host-operation use operations with the given operation and arguments. Follow execution for other routes. Read missing parameters by name with view=parameters, or use scopeRead for a workflow branch.',
             ...(!inventory.length || partial
               ? {
                   references:
@@ -5182,6 +5189,7 @@ export const createLocalOperationTools = (
               : {
                   name: entry.api.name,
                   operation: contract?.operation ?? entry.api.name,
+                  execution: actionExecution(entry.api),
                   effect:
                     contract?.effect ??
                     ('effect' in entry.api ? entry.api.effect : undefined)
@@ -5208,6 +5216,7 @@ export const createLocalOperationTools = (
               : {
                   name: entry.tool.name,
                   namespace: entry.tool.namespace,
+                  execution: nativeExecution(entry.tool),
                   ...(workflowInputScopes(entry.tool.inputSchema)
                     ? selectedScope(entry.tool)
                     : {}),

@@ -1533,8 +1533,8 @@ other required arguments; they reuse the same validated examples as purpose menu
 Its hostContract selector references the already available execute_design contract;
 it does not repeat the host input envelope or full host instructions. Native and
 registered tools retain their own invocation parameters. Exact full definitions
-remain available. Exploratory candidate menus omit recipeDependency; exact lookup
-retains authoring metadata. Only a canonical same-owner wrapper already represented
+remain available. Search candidates carry their owner execution route even on partial matches.
+Exact reads return recipeDependency only when includeRecipeDependency is true and a canonical composable wrapper exists. Only a canonical same-owner wrapper already represented
 by an admitted action route is suppressed; foreign same-name tools remain distinct.
 
 The AI chooses the views and canonical data needed for its decision and final

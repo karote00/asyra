@@ -6458,7 +6458,7 @@ it('never substitutes a saved same-name tool for an unavailable explicit action 
   const result = JSON.parse(
     await owner.call(
       'read_design_resources',
-      { names: [name] },
+      { includeRecipeDependency: true, names: [name] },
       new AbortController().signal
     )
   )
@@ -7010,7 +7010,8 @@ it.each(['allowed', 'control-plane'] as const)(
     expect(entry.inputFields).toBeUndefined()
     const selected = await read('read_design_resources', {
       names: [entry.operation],
-      view: 'usage'
+      view: 'usage',
+      includeRecipeDependency: true
     })
 
     expect(selected.apis[0].inputFields).toContain('/properties/elementIds')

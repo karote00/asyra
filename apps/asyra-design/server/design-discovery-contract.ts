@@ -79,6 +79,11 @@ export const discoveryInputSchema = (name: string, categories: string[]) => ({
             description:
               'Use parameters for executable arguments. For scoped workflows use the published scopeRead.'
           },
+          includeRecipeDependency: {
+            type: 'boolean',
+            description:
+              'Include the canonical action wrapper, when available, for saving a recipe.'
+          },
           includeResultSchema: {
             type: 'boolean',
             description:

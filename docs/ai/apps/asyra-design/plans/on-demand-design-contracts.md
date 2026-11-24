@@ -4,6 +4,16 @@
 
 On the reviewed adapter source f1441f5a9, a fresh selected rectangle generated 42,860 request bytes and four model exchanges. The recorded purpose query was `set solid fill color elementIds`. The chosen action was the sixth candidate. Preserve choice among candidates and direct execution of an already-known operation. The current scope includes Design publication, the Responses discovery protocol, its continuation and offline regressions. Model inference, billing, cache policy and editing behavior are outside this revision.
 
+## Execution routes and optional recipe authoring
+
+Search owns the route accompanying each returned candidate. A partial match preserves its unmatched terms and does not confer support for them. The same registered route drives direct execution and exact reads. Ordinary exact reads omit recipe authoring dependencies; request these from the same reader when composing a saved recipe. Preserve batched input and output reads, direct known execution, scope selection and recovery. Keep knowledge separate.
+
+Prove the recorded Dome import query through Responses and verify returned image bytes, ordinary versus authoring handoffs for multiple actions, the two-turn square edit and dependent creation and ordering. A single five-minute live Dome run follows successful offline acceptance.
+
+The production Responses replay used the recorded partial import query. A 2,099-byte menu gave the executable operation and the next call imported the image. The original recorded menu was 1,708 bytes and the historical recovery read was 18,632 bytes. For the recorded three-action read, ordinary parameters measured 5,335 bytes (previously 6,441). Explicit authoring measured 6,627 bytes, with identical execution parameters and routes. Square edits took 3+2, 4+3 or 6+3 requests with known operations, clear lookup or the recorded lookup. Candidate routes increase the size of some searches. Creation and dependent ordering still used one Host submission. These offline routes establish achievable behavior, not a live cost saving.
+
+The five-minute live Dome test used the same prompt and gpt-6.2-astra. It finished in 238.8 seconds with 1,674 persisted scene elements, 20 usage receipts and USD 1.6852 estimated. Both references imported on the first attempt; the shorter live query included ordinary arguments. Five contract reads requested no recipe metadata. The first completed build returned a 96,828-byte result including 94,411 bytes of created target mappings. The run establishes a successful import and narrower reads, not lower end-to-end cost.
+
 ## Recorded discovery and pre-dispatch recovery
 
 Scope: classify observed provider submissions from the recorded payloads, expose executable owner scope and output choices at discovery, and correct a rejected delivery selection without resending the work. Preserve the five-entry publication, on-demand lookup, independent knowledge, media, and ordinary/direct execution. Offline acceptance uses the selected rectangle and the recorded Dome submission. No live model invocation.
