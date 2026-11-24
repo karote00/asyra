@@ -6,8 +6,11 @@ export interface Rectangle {
   width: number
   height: number
 }
+export type DesignTool = 'rectangle' | 'select'
+
 export interface DesignTools {
-  setTool(tool: 'rectangle' | 'select'): void
+  getTool(): DesignTool
+  setTool(tool: DesignTool): void
   drawRectangle(rectangle: Rectangle): string
   getSelection(): readonly string[]
   undo(): Promise<void>
@@ -18,3 +21,26 @@ export function attachDesignTools(
   canvas: CanvasBinding,
   options?: { document?: unknown }
 ): Promise<DesignTools>
+
+export interface DesignAction {
+  label: string
+  run(tools: DesignTools): void | Promise<void>
+}
+
+type Command = DesignTool | 'undo' | 'redo'
+
+export interface DesignOptions<Id extends string = never> {
+  actions?: Record<Id, DesignAction>
+  document?: unknown
+  toolbar?: false | readonly (Command | NoInfer<Id>)[]
+}
+
+export function createDesign<Id extends string = never>(
+  target: HTMLCanvasElement,
+  options?: DesignOptions<Id>
+): Promise<
+  DesignTools & {
+    runAction(id: Command | Id): Promise<void>
+    destroy(): Promise<void>
+  }
+>

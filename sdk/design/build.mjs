@@ -31,6 +31,6 @@ await writeFile(
   'dist/runtime.js',
   'export function createRuntime() {\n' + script + '\nreturn canvasRuntime\n}\n'
 )
-for (const name of ['index.js', 'index.d.ts']) {
+for (const name of ['index.js', 'index.d.ts', 'toolbar.js', 'actions.js']) {
   await copyFile('src/' + name, 'dist/' + name)
 }

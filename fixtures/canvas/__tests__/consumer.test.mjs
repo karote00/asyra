@@ -65,7 +65,10 @@ async function withConsumer(packages, entry, assertions) {
       "export const surface = createCanvas(document.createElement('canvas'))",
       ...(packages.includes('sdk/design')
         ? [
-            "import { attachDesignTools } from '@asyra/design'",
+            "import { createDesign, attachDesignTools } from '@asyra/design'",
+            "const editor = await createDesign(document.body.appendChild(document.createElement('canvas')), { toolbar: false, actions: { revert: { label: 'Undo', run: tools => tools.undo() } } })",
+            "await editor.runAction('revert')",
+            'await editor.destroy()',
             'const tools = await attachDesignTools(surface)',
             "tools.setTool('select')",
             'await tools.undo()'
@@ -375,6 +378,119 @@ test('opt-in design tools edit isolated documents in the packed browser consumer
       )
       assert.equal(await page.locator('iframe').count(), 0)
       assert.equal(await page.locator('canvas').count(), 2)
+    }
+  )
+})
+
+test('opt-in design entry mounts default controls, custom actions or a host UI', async () => {
+  await withConsumer(
+    ['sdk/canvas', 'sdk/design'],
+    'design.js',
+    async (page) => {
+      await page.evaluate(() => globalThis.ready)
+      const toolbar = page.getByRole('group', { name: 'Design tools' })
+
+      const button = (name) =>
+        toolbar.getByRole('button', { name, exact: true })
+
+      const canvas = page.locator('#first')
+      const bounds = await canvas.boundingBox()
+
+      async function shapes() {
+        return page.evaluate(async () => {
+          const doc = await globalThis.editor.save()
+
+          return doc.sceneTree.elements.workspace.children.length
+        })
+      }
+
+      assert.deepEqual(await toolbar.locator('button').allTextContents(), [
+        'Rectangle',
+        'Select',
+        'Undo',
+        'Redo'
+      ])
+      assert.equal(
+        await button('Rectangle').getAttribute('aria-pressed'),
+        'true'
+      )
+      await page.mouse.move(bounds.x + 25, bounds.y + 30)
+      await page.mouse.down()
+      await page.mouse.move(bounds.x + 110, bounds.y + 90)
+      await page.mouse.up()
+      assert.equal(await shapes(), 1)
+      await button('Select').click()
+      await canvas.click({ position: { x: 50, y: 55 } })
+      assert.equal(
+        await page.evaluate(() => globalThis.editor.getSelection().length),
+        1
+      )
+      await button('Undo').click()
+      assert.equal(await shapes(), 0)
+      await button('Redo').click()
+      assert.equal(await shapes(), 1)
+      await page.evaluate(() => globalThis.editor.setTool('rectangle'))
+      assert.equal(
+        await button('Rectangle').getAttribute('aria-pressed'),
+        'true'
+      )
+      await page.evaluate(() => globalThis.editor.destroy())
+      assert.equal(await toolbar.count(), 0)
+      assert.equal(await canvas.getAttribute('tabindex'), null)
+
+      await page.evaluate(async () => {
+        const target = globalThis.document.querySelector('#first')
+
+        globalThis.editor = await globalThis.createDesign(target, {
+          actions: {
+            card: {
+              label: 'Add card',
+
+              run: (tools) =>
+                tools.drawRectangle({ x: 10, y: 20, width: 80, height: 40 })
+            }
+          },
+          toolbar: ['card', 'undo']
+        })
+      })
+      assert.deepEqual(await toolbar.locator('button').allTextContents(), [
+        'Add card',
+        'Undo'
+      ])
+      await button('Add card').click()
+      assert.equal(await shapes(), 1)
+      await button('Undo').click()
+      assert.equal(await shapes(), 0)
+
+      await page.evaluate(async () => {
+        await globalThis.editor.destroy()
+        const target = globalThis.document.querySelector('#second')
+
+        try {
+          await globalThis.createDesign(target, { toolbar: ['unknown'] })
+        } catch (error) {
+          if (!(error instanceof TypeError)) {
+            throw error
+          }
+        }
+
+        globalThis.editor = await globalThis.createDesign(target, {
+          toolbar: false,
+          actions: {
+            stamp: {
+              label: 'Stamp',
+
+              run: (tools) =>
+                tools.drawRectangle({ x: 5, y: 8, width: 40, height: 25 })
+            }
+          }
+        })
+        await globalThis.editor.runAction('stamp')
+      })
+      assert.equal(await toolbar.count(), 0)
+      assert.equal(await shapes(), 1)
+      await page.evaluate(() => globalThis.editor.destroy())
+      assert.equal(await page.locator('#second').getAttribute('tabindex'), '0')
     }
   )
 })

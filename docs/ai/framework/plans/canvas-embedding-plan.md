@@ -17,3 +17,16 @@ Verify independently packed consumer installations and dependency boundaries,
 canvas identity and untouched pixels, pending mount teardown, simultaneous
 targets, design edits and replay, simulation time and cancellation, reattachment
 and existing Framework container and canvas lifecycle behavior.
+
+## Design editor entry
+
+The Design SDK owns the one-call editor on a caller-supplied canvas. Its
+default controls select Rectangle, Select, Undo and Redo. Callers can replace
+the ordered controls with built-in commands and named actions receiving the
+same public Design tools, or supply their entire UI. Registered actions can also
+run by ID with the toolbar hidden. All document writes and
+history go through the existing Design session. The canvas binding owns the
+session lifetime. Failed initialization and disposal release the binding and
+SDK-owned controls. The packed browser cases exercise each mode, history and
+reuse of the target. This step changes only the Design entry and its consumer
+proof, documentation and flow.

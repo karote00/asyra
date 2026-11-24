@@ -311,6 +311,12 @@ export async function start(target, options) {
     )
 
     return {
+      getTool() {
+        assertActive()
+
+        return tool
+      },
+
       setTool(value) {
         assertActive()
         if (value !== 'rectangle' && value !== 'select') {
