@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { WalkingConstrainedCycleOwner } from '../../domain/walking-constrained-kinematics'
 import {
   cycleFixture,
@@ -2130,6 +2130,52 @@ describe('canonical nonlinear exact axis work', () => {
   )
 })
 describe('canonical nonlinear rational source placement', () => {
+  it('accounts for each rational reduction without remeasuring shrinking remainder widths', () => {
+    const compile = (numerator: bigint) => {
+      const owner = new WalkingSourceRelationEvaluator({
+        maxRegionPairs: 1,
+        maxExactPredicates: 10000
+      })
+      const zero = { numerator: 0n, denominator: 1n }
+      const one = { numerator: 1n, denominator: 1n }
+      const conversions = vi.spyOn(BigInt.prototype, 'toString')
+
+      try {
+        const node = owner.prepareRationalNode(
+          [
+            {
+              origin: [{ numerator, denominator: 75025n }, zero, zero],
+              matrix: [
+                [one, zero, zero],
+                [zero, one, zero],
+                [zero, zero, one]
+              ]
+            }
+          ],
+          24000
+        )
+
+        return {
+          widths: conversions.mock.calls.filter(([radix]) => radix === 2)
+            .length,
+          operations: owner.work.rationalArithmeticOperations,
+          position: node.frames[0].position[0].significand
+        }
+      } finally {
+        conversions.mockRestore()
+      }
+    }
+
+    const short = compile(1n)
+    // Consecutive Fibonacci numbers require a long Euclidean remainder chain.
+    const long = compile(-46368n)
+
+    expect(long.position).toBe(-46368n)
+    // These reductions take 24 and 2 modulo operations, respectively.
+    expect(long.operations - short.operations).toBe(22)
+    expect(long.widths).toBe(short.widths)
+  })
+
   it('retains original-world metric margin and closed-set classification under a shared positive denominator', () => {
     const owner = new WalkingSourceRelationEvaluator({
       maxRegionPairs: 20,
