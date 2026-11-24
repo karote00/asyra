@@ -2,7 +2,7 @@ import {
   DesignCurveError,
   authoredCurveCorrections
 } from './design-curve-repair'
-import { DesignInputError, DesignVectorExtentError } from './design-input-error'
+import { DesignVectorExtentError } from './design-input-error'
 import { AiToolFailureCodes } from '../src/constants/ai-design'
 import {
   locateDraftRepairTargets,
@@ -50,6 +50,8 @@ import {
 import type { AiActionBatch, AiProviderInput } from '@asyra/ai-agent-runtime'
 import {
   createDesignPreparationSession,
+  isAuthoredDesignError,
+  RetainedPartitionCompilationError,
   designNodeInputFields
 } from './design-preparation'
 import {
@@ -1430,15 +1432,18 @@ export const createLocalDesignTools = (
                 }
               : { kind: 'source' }
         })
-      } catch (error) {
+      } catch (failure) {
         signal.throwIfAborted()
+        const interrupted = failure instanceof RetainedPartitionCompilationError
+        const error = interrupted ? failure.cause : failure
         const invalidInput =
-          error instanceof DesignInputError ||
-          error instanceof DesignGeometryError ||
-          error instanceof DesignKeyConflictError ||
-          error instanceof AiToolInputError
+          isAuthoredDesignError(error) || error instanceof AiToolInputError
         const retained =
           invalidInput && draft !== undefined ? retainDraft(draft) : undefined
+        const prior =
+          interrupted && !invalidInput
+            ? session.describeRejectedDraft(failure.draftId)
+            : undefined
         const curves =
           retained?.draftId && error instanceof DesignCurveError
             ? authoredCurveCorrections(draft)
@@ -1450,7 +1455,9 @@ export const createLocalDesignTools = (
           code: invalidInput
             ? AiToolFailureCodes.INPUT_INVALID
             : AiToolFailureCodes.EXECUTION_FAILED,
-          ...retained,
+          ...(prior
+            ? { draftId: prior.draftId, retainedDraft: prior }
+            : retained),
           ...(curves.length
             ? {
                 repairGuide: {

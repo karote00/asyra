@@ -2600,10 +2600,44 @@ test('shared source field changes preserve masked visual receipts and unrelated 
 })
 
 test('recorded UI Undo retires the exact property graph after removing its element', async ({
-  page
+  page,
+  context
 }) => {
-  await page.goto(createTestDocumentIdentity().url)
+  const document = createTestDocumentIdentity()
+  const peer = await context.newPage()
+
+  await page.goto(document.url)
   await waitForAppReady(page)
+  await waitForCollaboration(page)
+  const empty = await getCoreDocumentDigest(page)
+
+  await createRectangle(page)
+  const created = await getCoreDocumentDigest(page)
+
+  await expect
+    .poll(() => getPersistedDocumentDigest(document.fileId))
+    .toEqual(created)
+  await peer.goto(document.url)
+  await waitForAppReady(peer)
+  await waitForCollaboration(peer)
+  await expect.poll(() => getCoreDocumentDigest(peer)).toEqual(created)
+  await undo(page)
+  await expect.poll(() => getCoreDocumentDigest(peer)).toEqual(empty)
+  const retired = await peer.evaluate(async () => {
+    const { core } = await import('../src/testing/runtime-access')
+    const data = await core.save()
+
+    return {
+      properties: Object.keys(data.props),
+      elements: Object.keys(data.sceneTree.elements)
+    }
+  })
+
+  expect(retired).toEqual({ properties: [], elements: ['workspace'] })
+  await peer.close()
+
+  // The recorded position predates scale. Its removal is stale against a
+  // hydrated current document and must still fail exact-record validation.
   const outcome = await page.evaluate(async (recorded) => {
     const { core, getActiveCollaborationHandle } =
       await import('../src/testing/runtime-access')
@@ -2618,20 +2652,20 @@ test('recorded UI Undo retires the exact property graph after removing its eleme
         ]
       })
 
-      return { error: null, document: await core.save() }
+      return null
     } catch (error) {
-      return {
-        error: error instanceof Error ? error.message : String(error),
-        document: await core.save()
-      }
+      return error instanceof Error ? error.message : String(error)
     }
   }, recordedPropertyUndo)
 
-  expect(outcome.error).toBeNull()
-  expect(Object.keys(outcome.document.props)).toEqual([])
-  expect(Object.keys(outcome.document.sceneTree.elements)).toEqual([
-    'workspace'
-  ])
+  const position = Object.values(recordedPropertyUndo.document.props).find(
+    (property) => property.type === 'position'
+  )
+
+  expect(position).toBeDefined()
+  expect(outcome).toContain(
+    `Exact record retirement has missing or stale data for "${position?.id}"`
+  )
 })
 
 for (const interruption of ['editor', 'peer', 'closed'] as const) {

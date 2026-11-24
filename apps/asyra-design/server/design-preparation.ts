@@ -1,6 +1,7 @@
 import { DesignCurveError, unpairedControls } from './design-curve-repair'
 import type { DraftRepairTarget } from './design-source-recovery'
 import { DesignInputError, DesignVectorExtentError } from './design-input-error'
+import { DesignKeyConflictError } from './design-face'
 import { inspectDesignBudget } from './design-budget'
 import { createDesignCheckResults } from './design-check-results'
 import { createHash } from 'node:crypto'
@@ -15,6 +16,7 @@ import {
 import { deriveGroupBounds } from '@asyra/preset/group-bounds'
 import { randomUUID } from 'node:crypto'
 import {
+  DesignGeometryError,
   constructDesign,
   constructDesignSteps,
   completeDesignSteps,
@@ -37,6 +39,23 @@ import {
   type PreparedDesignEntry,
   type DesignFinding
 } from '../src/ai/prepared-design'
+
+export const isAuthoredDesignError = (error: unknown) =>
+  error instanceof DesignInputError ||
+  error instanceof DesignGeometryError ||
+  error instanceof DesignKeyConflictError
+
+export class RetainedPartitionCompilationError extends Error {
+  constructor(
+    readonly draftId: string,
+    cause: unknown
+  ) {
+    super(
+      cause instanceof Error ? cause.message : 'Partition compilation failed.',
+      { cause }
+    )
+  }
+}
 
 type AnalyzedDesign = PreparedDesign & {
   readonly sharedFillIds?: Readonly<Record<string, string>>
@@ -1467,20 +1486,31 @@ export const createDesignPreparationSession = (
         | Parameters<NonNullable<Parameters<typeof prepareDesign>[3]>>[0]
         | undefined
       let compiledFields: Readonly<Record<string, string>> = {}
-      let result = await compileAsync(
-        signal,
-        recipe,
-        artifactId,
-        (value) => {
-          sourceWork = value
-        },
-        (value) => {
-          reuse = value
-        },
-        (fields) => {
-          compiledFields = fields
+      let result: Awaited<ReturnType<typeof compileAsync>>
+
+      try {
+        result = await compileAsync(
+          signal,
+          recipe,
+          artifactId,
+          (value) => {
+            sourceWork = value
+          },
+          (value) => {
+            reuse = value
+          },
+          (fields) => {
+            compiledFields = fields
+          }
+        )
+      } catch (error) {
+        signal.throwIfAborted()
+        if (recovery && !isAuthoredDesignError(error)) {
+          throw new RetainedPartitionCompilationError(recovery.draftId, error)
         }
-      )
+
+        throw error
+      }
 
       signal.throwIfAborted()
       if (continuation) {

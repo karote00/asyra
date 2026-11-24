@@ -4919,12 +4919,17 @@ it('derives usage scope navigation only for usage and reuses retained delivery w
       scopes: Object.fromEntries(
         ['read_design_checks'].map((name) => [
           name,
-          { schemaPaths: ['/properties'] }
+          { schemaPaths: ['/anyOf/0/properties/view'] }
         ])
       )
     })
 
-    expect(fields.value.tools[0].schemaFragments).toHaveLength(1)
+    expect(fields.value.tools[0].schemaFragments).toEqual([
+      {
+        path: '/anyOf/0/properties/view',
+        schema: { enum: ['summary', 'details'] }
+      }
+    ])
     expect(scopes).not.toHaveBeenCalled()
     const usage = await run.call('read_design_resources', {
       names: ['read_design_checks'],

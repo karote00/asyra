@@ -541,6 +541,19 @@ it('continues only the failed retained part without resending geometry or recrea
   expect(first.recoveryInvocation, JSON.stringify(first)).toBeDefined()
   const retry = first.recoveryInvocation.arguments
 
+  const interrupted = first.parts.at(-1)
+
+  expect(interrupted).toMatchObject({
+    code: 'TOOL_EXECUTION_FAILED',
+    settlement: 'not-started',
+    draftId: first.parts[0].preparationInput.draftId
+  })
+  expect(retry.parts).toHaveLength(1)
+  expect(retry.parts[0].repair).toMatchObject({
+    draftId: interrupted.draftId,
+    partition: 1,
+    continueFromArtifact: first.parts[0].artifactId
+  })
   expect(JSON.stringify(retry)).not.toContain('vertices')
   expect(JSON.stringify(retry)).not.toContain('boundary')
   await expect(invoke(retry, AbortSignal.abort())).rejects.toThrow()

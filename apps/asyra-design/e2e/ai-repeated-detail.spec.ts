@@ -243,26 +243,47 @@ test('native workflow preserves Runtime permission rejection without claiming un
     const reply = fixture.toolReply('denied')
 
     expect(reply.success).toBe(false)
-    const text = reply.contentItems.map((item) => {
-      if (!('text' in item)) {
-        throw new Error('Expected text failure receipt')
-      }
+    expect(reply.contentItems).toHaveLength(1)
+    const [receipt] = reply.contentItems
 
-      return item.text
-    })
+    if (receipt.type !== 'inputText' || !('text' in receipt)) {
+      throw new Error('Expected one native text failure receipt')
+    }
 
-    expect(fixture.successorContent('denied')).toEqual(
-      text.map((text) => ({ type: 'input_text', text }))
-    )
-    expect(JSON.parse(text[text.length - 1])).toMatchObject({
+    const delivered = fixture.successorContent('denied')
+
+    expect(delivered).toBe(receipt.text)
+    if (typeof delivered !== 'string') {
+      throw new Error('Expected the native successor to receive a text result')
+    }
+
+    const failure = receipts[0].failure
+
+    if (!failure) {
+      throw new Error('Expected a rejected browser batch')
+    }
+
+    expect(JSON.parse(delivered)).toMatchObject({
+      available: false,
+      code: 'AI_PERMISSION_DENIED',
+      stage: 'permission',
+      settlement: 'not-started',
+      executionResult: {
+        actionResults: [],
+        failure: {
+          code: failure.code,
+          message: failure.message,
+          stage: failure.stage,
+          settlement: failure.settlement,
+          actionId: failure.actionId,
+          actionName: failure.actionName
+        }
+      },
       toolOutcome: { status: 'failed', settlement: 'not-started' }
     })
-    expect(text.join('\n')).not.toContain('TOOL_RESULT_INVALID')
-    expect(text.join('\n')).not.toContain('TOOL_DELIVERY_INVALID')
-    expect(text.join('\n')).not.toContain(
-      'Mutation target coverage is unavailable'
-    )
-    expect(text.join('\n')).toContain('AI_PERMISSION_DENIED')
+    expect(delivered).not.toContain('TOOL_RESULT_INVALID')
+    expect(delivered).not.toContain('TOOL_DELIVERY_INVALID')
+    expect(delivered).not.toContain('Mutation target coverage is unavailable')
   } finally {
     await fixture.dispose()
   }

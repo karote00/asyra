@@ -922,6 +922,7 @@ for (const scenario of [
           expect(workflowReply.outcome.status).toBe('partial')
           const recovery = workflowResult.recoveryInvocation
 
+          expect(recovery, workflowResult.failedPart).toBeDefined()
           expect(recovery.arguments.parts).toHaveLength(1)
           expect(JSON.stringify(recovery.arguments)).not.toContain('vertices')
           workflowReply = await invokeLocalTool(
@@ -1021,12 +1022,21 @@ for (const scenario of [
         .getByLabel('Message Agent')
         .fill('Apply the construction fixture')
       await page.getByRole('button', { name: 'Send', exact: true }).click()
-      await expect(page.getByTestId('ai-agent-message').last()).toHaveAttribute(
-        'data-outcome',
-        'success',
-        { timeout: 90000 }
-      )
-      expect(serverError).toBeUndefined()
+      await expect
+        .poll(
+          async () => {
+            if (serverError) {
+              throw serverError
+            }
+
+            return page
+              .getByTestId('ai-agent-message')
+              .last()
+              .getAttribute('data-outcome')
+          },
+          { timeout: 90000 }
+        )
+        .toBe('success')
       if (!workflowReply) {
         throw new Error('Missing workflow invocation reply')
       }
