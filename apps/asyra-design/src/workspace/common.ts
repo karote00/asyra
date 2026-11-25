@@ -16,6 +16,8 @@ import {
   vectorGeometry,
   viewportApis
 } from '../common-apis'
+import * as geometryPolicy from '../common-apis/element/geometry-policy'
+import { scaleElementAroundCenter } from '../common-apis/element/scale'
 import { createWorkspaceText, textCanvasApis } from '../common-apis/text-canvas'
 import {
   arrangeDesign,
@@ -88,7 +90,7 @@ interface RunCommonTransaction {
 const runTransaction: RunCommonTransaction = transactionApis.runTransaction
 
 export const common = {
-  element: elementApis,
+  element: { ...elementApis, ...geometryPolicy, scaleElementAroundCenter },
   viewport: viewportApis,
   selection: {
     ...selectionApis,

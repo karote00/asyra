@@ -143,6 +143,7 @@ export const commonPolicies = {
     deleteElement: 'deleteSelectedElement',
     deleteElements: 'deleteSelectedElement',
     resetElementSize: 'geometry',
+    scaleElementAroundCenter: 'geometry',
 
     changeElementGeometry: (_id: string, values: object) => [
       'geometry',
