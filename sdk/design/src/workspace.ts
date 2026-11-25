@@ -55,7 +55,7 @@ export async function mountWorkspace(
     throw new Error('Container already has an active Design editor')
   }
 
-  const { policy, controls, defaultControls, collaboration } =
+  const { policy, controls, defaultControls, collaboration, extensions } =
     resolveWorkspaceOptions(options)
   const {
     disabled,
@@ -282,8 +282,9 @@ export async function mountWorkspace(
   } satisfies Omit<Editor, keyof Commands | 'toolGroups' | 'common'>
 
   const groups = createToolGroups(
-    options.extensions ?? [],
+    extensions,
     options,
+    host.ownerDocument,
     () => editor,
     () => frame
   )

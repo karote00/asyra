@@ -17,7 +17,7 @@ export async function withConsumer(
   { development = false } = {}
 ) {
   if (entry === 'common.js' || entry === 'tool-layout.js') {
-    packages = [...packages, 'fixtures/canvas/extensions/position-row']
+    packages = [...packages, 'sdk/design-ui']
   }
 
   const scratch = path.join(root, 'tmp/native-canvas')
@@ -34,12 +34,7 @@ export async function withConsumer(
 
   const pack = (dir) => {
     const [{ filename, files }] = JSON.parse(
-      npm([
-        'pack',
-        dir,
-        ...(dir.endsWith('/position-row') ? [] : ['--ignore-scripts']),
-        '--json'
-      ])
+      npm(['pack', dir, '--ignore-scripts', '--json'])
     )
 
     if (dir === path.join(root, 'sdk/design')) {
@@ -80,10 +75,6 @@ export async function withConsumer(
     Object.keys(installed).filter(Boolean).sort(),
     packages
       .map((dir) => {
-        if (dir === 'fixtures/canvas/extensions/position-row') {
-          return 'node_modules/@example/position-row'
-        }
-
         return dir.startsWith('sdk/')
           ? 'node_modules/@asyra/' + path.basename(dir)
           : dir
@@ -106,6 +97,7 @@ export async function withConsumer(
 
   if (
     entry === 'react.js' ||
+    entry === 'ui-react.js' ||
     entry === 'common.js' ||
     entry === 'workspace.js' ||
     layoutDemo
@@ -140,7 +132,7 @@ export async function withConsumer(
     await cp(path.join(fixture, 'types/design.ts'), path.join(cwd, 'design.ts'))
   }
 
-  if (packages.includes('fixtures/canvas/extensions/position-row')) {
+  if (packages.includes('sdk/design-ui')) {
     await cp(
       path.join(fixture, 'types/extensions.ts'),
       path.join(cwd, 'extensions.ts')
@@ -164,6 +156,9 @@ export async function withConsumer(
       'bundler',
       'consumer.ts',
       ...designTypeTests,
+      ...(entry === 'ui-react.js'
+        ? ['--jsx', 'react-jsx', 'examples/PositionBoard.tsx']
+        : []),
       ...(entry === 'react.js'
         ? ['--jsx', 'react-jsx', 'examples/DesignBoard.tsx']
         : [])

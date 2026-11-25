@@ -116,7 +116,9 @@ activation, restore the previous policy before allowing a retry.
 ### Ready editor, packaged tools and persistent nodes
 
 React reports each ready editor through `onMount`. A host can install the
-Position row extension as a separate package with the public SDK as its peer.
+first-party Design UI package with the public SDK as its peer. The host lists
+standalone groups in `ui` and supplies optional HTML element IDs in `uiTargets`.
+The Position row observes and edits the same selected properties as the inspector.
 The app registers an extension's stable component type, scalar property schema
 and preset render strategy before validating a local or supplied document.
 Reads and rendering remain available while the owning extension is disabled.

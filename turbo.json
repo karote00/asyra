@@ -178,6 +178,15 @@
         "@asyra/utils#build:utils"
       ]
     },
+    "@asyra/design-ui#build:design-ui": {
+      "cache": false,
+      "outputs": [
+        "dist/**"
+      ],
+      "dependsOn": [
+        "@asyra/design#build:design"
+      ]
+    },
     "@asyra/factory#build:factory": {
       "cache": false,
       "outputs": [

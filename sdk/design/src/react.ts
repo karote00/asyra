@@ -17,6 +17,7 @@ type DesignElementProps = DetailedHTMLProps<
     | (WorkspaceOptions<string> &
         (
           | { extensions: NonNullable<WorkspaceOptions<string>['extensions']> }
+          | { ui: NonNullable<WorkspaceOptions<string>['ui']> }
           | { actions: NonNullable<WorkspaceOptions<string>['actions']> }
         ))
 }

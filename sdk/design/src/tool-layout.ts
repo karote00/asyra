@@ -17,7 +17,8 @@ export const placements: readonly ToolPlacement[] = [...slots, 'manual']
 
 export function resolveLayout(
   groups: ReadonlyMap<string, ToolGroup>,
-  input: ToolLayout = {}
+  input: ToolLayout = {},
+  targets: ReadonlyMap<string, HTMLElement>
 ): Layout {
   const result: Layout = dockedLayout()
   const seen = new Set<string>()
@@ -65,7 +66,7 @@ export function resolveLayout(
 
   for (const group of groups.values()) {
     if (!seen.has(group.id)) {
-      result[group.placement].push(group.id)
+      result[targets.has(group.id) ? 'manual' : group.placement].push(group.id)
     }
   }
 

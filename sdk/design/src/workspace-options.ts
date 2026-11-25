@@ -69,8 +69,12 @@ export function resolveWorkspaceOptions(options: WorkspaceOptions<string>) {
     )
   }
 
+  const extensions = [
+    ...(options.extensions ?? []),
+    ...(options.ui ?? []).map((group) => ({ id: group.id, ui: [group] }))
+  ]
   const { actions, ...policy } = createActions(
-    options,
+    { ...options, extensions },
     workspaceTools,
     workspaceFeatures,
     workspaceActions
@@ -117,5 +121,11 @@ export function resolveWorkspaceOptions(options: WorkspaceOptions<string>) {
     )
   }
 
-  return { policy, controls, defaultControls, collaboration } as const
+  return {
+    policy,
+    controls,
+    defaultControls,
+    collaboration,
+    extensions
+  } as const
 }

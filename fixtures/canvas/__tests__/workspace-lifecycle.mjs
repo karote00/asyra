@@ -1029,3 +1029,131 @@ test('packed board migrates a valid legacy snapshot and preserves an invalid ori
     assert.deepEqual(result, [true, true, null, true, '{'])
   })
 })
+
+test('packed Design React mounts first-party Position in the configured host toolbar', async () => {
+  await withConsumer(
+    [...react, 'sdk/design-ui'],
+    'ui-react.js',
+    async (page) => {
+      const input = page.locator('#my-toolbar').getByLabel('X', { exact: true })
+
+      await expect(input).toBeVisible()
+      await expect(input).toBeDisabled()
+      await page.locator('asyra-design').evaluate((el) => {
+        const e = el.editor
+
+        e.select([e.drawRectangle({ x: 18, y: 7, width: 30, height: 20 })])
+      })
+      await expect(input).toHaveValue('18')
+      await input.fill('42')
+      await input.press('Enter')
+      assert.equal(
+        await page
+          .locator('asyra-design')
+          .evaluate(
+            (el) =>
+              el.editor.getElementProperties(el.editor.getSelection()[0], ['x'])
+                .x
+          ),
+        42
+      )
+    }
+  )
+})
+
+test('packed Design resolves only configured UI targets and releases failed mounts', async () => {
+  await withConsumer(design, 'common.js', async (page) => {
+    await page.evaluate(() => globalThis.ready)
+    const state = await page.evaluate(async () => {
+      const { document, createDesign, positionRow } = globalThis
+      const host = document.body.appendChild(document.createElement('section'))
+      const bar = document.body.appendChild(document.createElement('aside'))
+
+      bar.id = 'custom-toolbar'
+
+      const open = (uiTargets) =>
+        createDesign(host, {
+          ui: [
+            positionRow,
+            {
+              id: 'anotherRow',
+              label: 'Another row',
+              placement: 'toolbar.top',
+
+              mount({ container }) {
+                container.textContent = 'Other control'
+              }
+            }
+          ],
+          uiTargets
+        })
+
+      const errors = []
+
+      for (const invalid of [
+        { positionRow: 'missing-toolbar' },
+        { missingGroup: bar.id }
+      ]) {
+        try {
+          await open(invalid)
+        } catch (error) {
+          errors.push(error.message)
+        }
+      }
+
+      const editor = await open({ positionRow: bar.id })
+
+      const numberMounted = () =>
+        bar.querySelectorAll('[data-tool-group="positionRow"]').length
+
+      const external = numberMounted()
+      const internal = host
+        .querySelector('iframe')
+        .contentDocument.querySelector(
+          '[data-tool-slot="toolbar.top"] [data-tool-group="anotherRow"]'
+        )?.textContent
+      const temporary = document.createElement('div')
+      const release = editor.toolGroups.mount(positionRow.id, temporary)
+      const moved =
+        temporary.querySelector('fieldset') !== null && numberMounted() === 0
+
+      release()
+      const restored = numberMounted()
+
+      await editor.setDisabledFeatures([positionRow.id])
+      const disabled = numberMounted()
+
+      await editor.setDisabledFeatures([])
+      await editor.reset()
+      const reset = numberMounted()
+
+      await editor.destroy()
+
+      return {
+        errors,
+        external,
+        internal,
+        moved,
+        restored,
+        disabled,
+        reset,
+        closed: numberMounted()
+      }
+    })
+
+    assert.match(state.errors[0], /missing-toolbar/)
+    assert.match(state.errors[1], /missingGroup/)
+    assert.match(state.internal, /Other control/)
+    assert.deepEqual(
+      [
+        state.external,
+        state.moved,
+        state.restored,
+        state.disabled,
+        state.reset,
+        state.closed
+      ],
+      [1, true, 1, 0, 1, 0]
+    )
+  })
+})

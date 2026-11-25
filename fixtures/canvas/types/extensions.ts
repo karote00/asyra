@@ -1,4 +1,4 @@
-import { positionRow } from '@example/position-row'
+import { positionRow } from '@asyra/design-ui'
 import { createDesign, type WorkspaceExtension } from '@asyra/design'
 
 const approval = {
@@ -8,7 +8,8 @@ const approval = {
 
 export async function openBoard(container: HTMLDivElement) {
   const editor = await createDesign(container, {
-    extensions: [approval, positionRow()],
+    extensions: [approval],
+    ui: [positionRow],
     storageKey: 'approvals'
   })
 

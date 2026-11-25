@@ -29,6 +29,7 @@ try {
       'run',
       'build:design',
       'build:simulation',
+      'build:design-ui',
       '--concurrency=1',
       '--output-logs=errors-only'
     ],

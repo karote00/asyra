@@ -190,30 +190,41 @@ reserved. Use a unique action ID such as `insertBadge` and include that ID in
 the toolbar. Reusing a built-in ID (including `group` or `fills`), or another
 action's ID, fails at startup.
 
-### Install a tool package
+### Add UI to a workspace
 
-A tool package declares `@asyra/design` as a peer. The Position row example
-shows X and Y for the current selection and edits them through the same
-element commands as the Design inspector. It can also live in a host toolbar
-when the workspace uses `hideUI: true`. Install the example tarball alongside
-the SDK, then import its factory:
+Import the Position row from the first-party `@asyra/design-ui` package.
+List groups in `ui`. By default, Position appears at the top of the properties
+panel. To place it in your own toolbar, give that element an HTML ID and map
+the row's ID to it in `uiTargets`.
 
 ```tsx
-import { positionRow } from '@example/position-row'
 import { AsyraDesign } from '@asyra/design/react'
-
-const options = { extensions: [positionRow()] }
+import { positionRow } from '@asyra/design-ui'
 
 export function Board() {
-  return <AsyraDesign options={options} />
+  return <>
+    <aside id="my-toolbar" />
+    <AsyraDesign options={{
+      ui: [positionRow],
+      uiTargets: { [positionRow.id]: 'my-toolbar' }
+    }} />
+  </>
 }
 ```
 
-The same options work with `createDesign(container, options)`. To mount the
-controls in a host toolbar, use `positionRow({ placement: 'manual' })` and
-call `editor.toolGroups.mount('positionRow', toolbarElement)`. Call its returned
-cleanup when the host removes the toolbar. The example package is distributed
-as a local tarball in the repository's packed-consumer fixture.
+The same options work with `createDesign(container, options)`. Only list
+overrides in `uiTargets`. Target IDs are looked up in the host document when
+the workspace opens. An unknown group or missing element rejects startup.
+Previously saved tool layout placements take precedence over these defaults.
+Explicit external targets also work with `hideUI: true`. If a target becomes
+available later, use `editor.toolGroups.mount(positionRow.id, element)` and
+call the returned cleanup when the host removes the control.
+
+Position subscribes to X and Y on this editor and updates selected elements
+using the same geometry commands as the Design inspector. Disabling
+`geometry` blocks coordinate edits. Disabling `positionRow` hides this UI
+group. Use `extensions` to install combined actions, node types and tool
+groups owned by one extension.
 
 ### Store a domain node
 

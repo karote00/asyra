@@ -21,12 +21,14 @@ import {
 export function createToolGroups(
   extensions: readonly WorkspaceExtension<string>[],
   options: WorkspaceOptions<string>,
+  hostDocument: Document,
   getEditor: () => DesignEditor<string, WorkspaceTool>,
   getFrame: () => HTMLIFrameElement
 ) {
   const groups = new Map<string, ToolGroup<string>>()
   const owners = new Map<string, string>()
   const outlets = new Map<ToolPlacement, { node: HTMLElement }>()
+  const targets = new Map<string, HTMLElement>()
   const manual = new Map<string, { container: HTMLElement }>()
   const mounted = new Map<
     string,
@@ -56,7 +58,25 @@ export function createToolGroups(
     }
   }
 
-  let layout = resolveLayout(groups, options.toolLayout)
+  const hostElement = hostDocument.defaultView?.HTMLElement
+
+  // Resolve explicit hosts before claiming the editor or mounting any controls.
+  for (const [id, targetId] of Object.entries(options.uiTargets ?? {})) {
+    if (!groups.has(id)) {
+      throw new TypeError('Unknown UI group in uiTargets: ' + id)
+    }
+
+    const target =
+      typeof targetId === 'string' && hostDocument.getElementById(targetId)
+
+    if (!hostElement || !(target instanceof hostElement)) {
+      throw new TypeError('Missing HTML target for ' + id + ': ' + targetId)
+    }
+
+    targets.set(id, target)
+  }
+
+  let layout = resolveLayout(groups, options.toolLayout, targets)
 
   function detach(id: string) {
     const entry = mounted.get(id)
@@ -144,7 +164,9 @@ export function createToolGroups(
       let index = 0
 
       for (const id of ids) {
-        const host = movable ? outletHost : manual.get(id)?.container
+        const host = movable
+          ? outletHost
+          : (manual.get(id)?.container ?? targets.get(id))
         const entry = mounted.get(id)
 
         const owner = owners.get(id)
@@ -213,7 +235,7 @@ export function createToolGroups(
       throw new Error('Design workspace is unavailable')
     }
 
-    const next = resolveLayout(groups, preference)
+    const next = resolveLayout(groups, preference, targets)
 
     if (JSON.stringify(next) === JSON.stringify(layout)) {
       return
@@ -390,7 +412,7 @@ export function createToolGroups(
 
           manual.delete(id)
           if (layout.manual.includes(id)) {
-            detach(id)
+            render()
           }
         }
       }
@@ -417,6 +439,7 @@ export function createToolGroups(
 
       outlets.clear()
       manual.clear()
+      targets.clear()
     }
   }
 }

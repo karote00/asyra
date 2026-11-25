@@ -1,5 +1,5 @@
 import { createDesign } from '@asyra/design'
-import { positionRow } from '@example/position-row'
+import { positionRow } from '@asyra/design-ui'
 
 const { document, localStorage } = globalThis
 
@@ -15,7 +15,7 @@ const read = () => JSON.parse(localStorage.getItem(preferenceKey()) ?? '{}')
 
 globalThis.ready = (async () => {
   const editor = await createDesign(document.querySelector('main'), {
-    extensions: [positionRow()],
+    ui: [positionRow],
     toolLayout: read(),
 
     onToolLayoutChange(layout) {

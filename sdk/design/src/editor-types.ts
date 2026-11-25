@@ -117,6 +117,10 @@ export interface WorkspaceOptions<
   /** Automatically restore and save committed edits in this browser under a stable board key. */
   storageKey?: string
   extensions?: readonly WorkspaceExtension<Id>[]
+  /** Standalone UI groups in their default placements, in display order. */
+  ui?: readonly (ToolGroup<NoInfer<Id>> & { readonly id: Id })[]
+  /** Optional host-document element IDs, keyed by installed UI group ID. */
+  uiTargets?: Readonly<Record<string, string>>
   toolLayout?: ToolLayout
   onToolLayoutChange?(layout: ToolLayout): void
   panels?: { layers?: boolean; properties?: boolean }
