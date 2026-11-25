@@ -628,6 +628,7 @@
             "normalize",
             "observe",
             "onPhase",
+            "onToolImageSubmitted",
             "outputs",
             "padEnd",
             "padStart",
