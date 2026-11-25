@@ -250,13 +250,22 @@ it.each(['failed', 'incomplete', 'in_progress'])(
 
 it('does not repeat a completed mutation after HTTP failure while handing its result to the next turn', async () => {
   let count = 0
-  const invoke = vi.fn(makeBinding().invoke)
+  const imageUrl = 'data:image/png;base64,aGVsbG8='
+  const onToolImageSubmitted = vi.fn(() => {
+    throw Error('diagnostics offline')
+  })
+  const invoke = vi.fn(async () => ({
+    contentItems: [
+      { type: 'inputText' as const, text: 'Reservation receipt' },
+      { type: 'inputImage' as const, imageUrl }
+    ]
+  }))
   const requests: Record<string, unknown>[] = []
   const provider = createResponsesAiProvider({
     apiKey: 'secret',
     model: 'm',
 
-    prepare: async () => makeBinding({ invoke }),
+    prepare: async () => makeBinding({ invoke, onToolImageSubmitted }),
 
     fetch: async (_url, init) => {
       requests.push(JSON.parse(String(init?.body)))
@@ -276,9 +285,15 @@ it('does not repeat a completed mutation after HTTP failure while handing its re
     status: 429,
     retryable: false
   })
+  expect(onToolImageSubmitted).not.toHaveBeenCalled()
   expect(
     await provider.requestActionBatch(input, { signal: signal() })
   ).toEqual(final)
+  expect(onToolImageSubmitted).toHaveBeenCalledExactlyOnceWith(
+    imageUrl,
+    'write',
+    1
+  )
   expect(invoke).toHaveBeenCalledTimes(1)
   expect(JSON.stringify(requests[2].input)).toContain('function_call_output')
   await provider.dispose?.()

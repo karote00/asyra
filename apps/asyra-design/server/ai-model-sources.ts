@@ -217,6 +217,7 @@ export const createToolCallingDesignSource = (configuration: {
               },
 
               invoke: tools.invoke,
+              onToolImageSubmitted: turn.retainToolImage,
 
               decode(answer) {
                 let result: unknown

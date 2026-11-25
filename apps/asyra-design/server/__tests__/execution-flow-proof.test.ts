@@ -560,7 +560,16 @@ it('execution proof preserves partial lookup full recovery and declaration const
     expect(entry.outputSchema).toBeUndefined()
   }
 
-  expect(menu.guidance.references).toContain('native web research')
+  expect(menu.guidance.references).toBeUndefined()
+  const noMatch = JSON.parse(
+    await tools.call(
+      'search_design_tools',
+      { query: 'an unfamiliar building reference photograph' },
+      new AbortController().signal
+    )
+  )
+
+  expect(noMatch.guidance.references).toContain('native web research')
   expect(execute).not.toHaveBeenCalled()
   const designs = createLocalDesignTools([
     {
