@@ -218,11 +218,6 @@ export interface DesignProviderToolOptions {
   readonly checkOnly?: boolean
   readonly evaluation?: ReturnType<typeof readEvaluationWindow>
   readonly workStopped?: () => boolean
-  readonly retainToolImage?: (
-    url: string,
-    callId: string,
-    index: number
-  ) => void
   readonly retainReference?: (
     image: { dataUrl: string; mediaType: string },
     attachmentIndex: number
@@ -1493,11 +1488,6 @@ export const createDesignProviderTools = async (
             outcome: { status, settlement }
           }
         })
-        reply.contentItems.forEach((item, index) => {
-          if (item.type === 'inputImage') {
-            options.retainToolImage?.(item.imageUrl, call.callId, index)
-          }
-        })
 
         return reply
       })
@@ -1527,11 +1517,24 @@ export const createDesignProviderTools = async (
     toolController.abort()
     for (const [component, cleanup] of [
       ['knowledge', () => knowledge.dispose()],
-      ['tool-host', () => host?.dispose()],
+      ['tool-host', host?.dispose.bind(host)],
       ['tool-store', () => storage.close()]
     ] as const) {
+      if (!cleanup) {
+        continue
+      }
+
+      const started = performance.now()
+
       try {
         await cleanup()
+        usage?.trace('host_observation', {
+          callId: 'provider-cleanup',
+          phase: 'cleanup',
+          executor: component,
+          status: 'completed',
+          durationMs: performance.now() - started
+        })
       } catch (error) {
         usage?.trace('host_observation', {
           callId: 'provider-cleanup',
@@ -1539,6 +1542,7 @@ export const createDesignProviderTools = async (
           executor: component,
           status: 'failed',
           code: 'TOOL_CLEANUP_FAILED',
+          durationMs: performance.now() - started,
           error: localToolErrorMessage(error)
         })
       }

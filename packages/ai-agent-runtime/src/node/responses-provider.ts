@@ -451,6 +451,26 @@ export const createResponsesAiProvider = (options: {
           })
         }
 
+        if (binding.onToolImageSubmitted) {
+          for (const result of checkpoint?.outputs ?? []) {
+            for (const [index, item] of result.output.entries()) {
+              if (item.type !== 'input_image') {
+                continue
+              }
+
+              try {
+                binding.onToolImageSubmitted(
+                  item.image_url,
+                  result.call_id,
+                  index
+                )
+              } catch {
+                /* Recording cannot change the acknowledged transport result. */
+              }
+            }
+          }
+        }
+
         let value: unknown
 
         try {

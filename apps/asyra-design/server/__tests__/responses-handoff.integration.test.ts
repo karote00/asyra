@@ -945,6 +945,16 @@ it.each([
       )
 
       expect(pixels).toHaveLength(1)
+      expect(captureRecord.mock.calls.flat()).toContainEqual(
+        expect.objectContaining({
+          stage: 'asset_retained',
+          evidence: expect.objectContaining({
+            status: 'submitted',
+            callId: 'call-3',
+            contentIndex: parts.indexOf(pixels[0])
+          })
+        })
+      )
       const overview = Buffer.from(pixels[0].image_url.split(',')[1], 'base64')
 
       expect(await sharp(overview).metadata()).toMatchObject({

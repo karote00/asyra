@@ -56,6 +56,12 @@ export interface ToolProviderBinding {
     readonly id: string
     readonly text: string
   }): AiActionBatch | Promise<AiActionBatch>
+  /** Diagnostic only. Called after transport accepts the correlated tool output. */
+  onToolImageSubmitted?(
+    imageUrl: string,
+    callId: string,
+    contentIndex: number
+  ): void
   observe?(event: ToolProviderObservation): void
   dispose?(): void | Promise<void>
 }

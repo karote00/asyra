@@ -1304,6 +1304,11 @@ text metadata and inspection IDs. Local transport submission does not prove
 provider perception or visual correctness. Suppressed/cancelled replies and
 transport exceptions cannot be labelled submitted. Asset-write failure remains
 recording failure and does not alter the tool outcome or replay completed work.
+For Responses, a successful HTTP status for the request carrying a function
+output establishes submission of its image parts. Preserve their call ID and
+position in that output. A rejected request may retain its output checkpoint;
+only a successful resubmission records those images. This evidence does not
+establish model perception or require the original tool to run again.
 Offline image restoration joins call identity and content order and verifies
 asset containment, bytes and SHA-256. Missing, corrupt, duplicate or incomplete
 image delivery evidence rejects complete analysis rather than fabricating pixels.

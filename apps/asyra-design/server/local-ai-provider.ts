@@ -584,6 +584,15 @@ const runLocalAiProvider = async (
 
           toolTasks.delete(task)
           session.reply(replyId, { success, contentItems })
+          contentItems.forEach((item, index) => {
+            if (item.type === 'inputImage') {
+              options.retainToolImage?.(
+                item.imageUrl,
+                String(params.callId),
+                index
+              )
+            }
+          })
           usage?.trace('provider_transport_event', {
             method: 'tool-result-submitted',
             tool: toolName,
