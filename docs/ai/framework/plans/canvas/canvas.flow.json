@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "projectId": "asyra",
   "flowId": "canvas",
-  "revision": 44,
+  "revision": 45,
   "definition": {
     "title": "Canvas SDK",
     "purpose": "Bind a blank host surface and opt into independent product SDKs.",
@@ -71,10 +71,10 @@
         "status": "passed",
         "binding": "c38b2e161f28f7082418941e56d6abd3b4c36335336d33abeb42ba672f85dd1b",
         "actor": "packed-consumer",
-        "executionId": "f0fd1947-c128-4213-be76-98ed4b889262",
+        "executionId": "11c7ea99-c3dd-4563-a0af-4ceb2f8b0381",
         "caseId": "canvas/consumer",
         "summary": "Separate packed base, design and simulation installations passed type, build and Chromium checks.",
-        "at": "2026-11-25T11:30:38.481Z"
+        "at": "2026-11-25T11:45:59.004Z"
       }
     ],
     "notes": [],

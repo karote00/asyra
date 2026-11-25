@@ -143,7 +143,7 @@ function refreshFromCanvas() {
 async function mount() {
   editor = await createDesign(host, { hideUI: true })
   globalThis.editor = editor
-  for (const feature of editor.listFeatures()) {
+  for (const feature of editor.features) {
     const label = document.createElement('label')
     const checkbox = document.createElement('input')
 

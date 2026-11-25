@@ -80,8 +80,6 @@ export function createActions<T extends DesignTools<string> = WorkspaceTools>(
     }
   }
 
-  const featureIds = Object.freeze([...supported])
-
   const validateDisabled = (ids?: readonly string[]) =>
     disabledActions(ids, supported)
 
@@ -146,7 +144,7 @@ export function createActions<T extends DesignTools<string> = WorkspaceTools>(
   return {
     actions,
 
-    listFeatures: () => featureIds,
+    features: Object.freeze([...supported]),
 
     disabled,
     runAction,

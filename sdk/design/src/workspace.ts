@@ -140,7 +140,7 @@ export async function mountWorkspace(
     validateDisabled,
     isEnabled,
     runtimePolicy,
-    listFeatures
+    features
   } = createActions(
     options,
     workspaceTools,
@@ -281,7 +281,9 @@ export async function mountWorkspace(
       }
     },
 
-    listFeatures,
+    get features() {
+      return features
+    },
 
     isFeatureEnabled(id) {
       current()

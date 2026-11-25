@@ -7,7 +7,6 @@ import type {
   WorkspaceAction,
   WorkspaceFeature
 } from './features.js'
-export { workspaceFeatures } from './features.js'
 export type { DesignTool, WorkspaceTool, WorkspaceFeature } from './features.js'
 import { createCanvas } from '@asyra/canvas'
 import { createActions } from './actions.js'
@@ -134,7 +133,7 @@ export type DesignEditor<
         readonly toolGroups: ToolGroups
       }
     : unknown) & {
-    listFeatures(): NonNullable<DesignOptions<Id, Tool>['disabledFeatures']>
+    readonly features: NonNullable<DesignOptions<Id, Tool>['disabledFeatures']>
     setDisabledFeatures(
       ids: NonNullable<DesignOptions<Id, Tool>['disabledFeatures']>
     ): Promise<void>
@@ -150,7 +149,7 @@ export async function attachDesignTools(
   options: CanvasOptions = {}
 ): Promise<
   DesignTools & {
-    listFeatures(): readonly CanvasFeature[]
+    readonly features: readonly CanvasFeature[]
     setDisabledFeatures(
       ids: NonNullable<CanvasOptions['disabledFeatures']>
     ): Promise<void>
@@ -168,7 +167,9 @@ export async function attachDesignTools(
   return {
     ...tools,
 
-    listFeatures: () => canvasFeatures
+    get features() {
+      return canvasFeatures
+    }
   }
 }
 
@@ -267,7 +268,10 @@ export async function createDesign(
 
     const editor = {
       ...tools,
-      listFeatures: policy.listFeatures,
+
+      get features() {
+        return policy.features
+      },
 
       async runAction(id: string) {
         if (listeners.signal.aborted) {

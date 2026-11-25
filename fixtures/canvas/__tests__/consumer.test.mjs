@@ -109,22 +109,26 @@ async function withConsumer(packages, entry, assertions) {
       "export const surface = createCanvas(document.createElement('canvas'))",
       ...(packages.includes('sdk/design')
         ? [
-            "import { createDesign, attachDesignTools, workspaceFeatures, type WorkspaceFeature } from '@asyra/design'",
+            "import { createDesign, attachDesignTools, type WorkspaceFeature } from '@asyra/design'",
             "const editor = await createDesign(document.body.appendChild(document.createElement('div')), { toolbar: false, actions: { revert: { label: 'Undo', run: tools => tools.undo() } } })",
             "await editor.runAction('revert')",
             'await editor.destroy()',
             "const extended = await createDesign(document.body, { extensions: [{ actions: { badge: { label: 'Badge', run(tools) { tools.drawOval({ x: 0, y: 0, width: 10, height: 10 }) } } } }], toolbar: ['badge'], disabledFeatures: ['text', 'pen', 'badge'], hideUI: true })",
             "await extended.runAction('badge')",
-            'const builtIns: readonly WorkspaceFeature[] = workspaceFeatures',
-            "const configured: readonly (WorkspaceFeature | 'badge')[] = extended.listFeatures()",
+            "const configured: readonly (WorkspaceFeature | 'badge')[] = extended.features",
             'await extended.setDisabledFeatures(configured)',
-            'await extended.setDisabledFeatures(builtIns)',
             '// @ts-expect-error An extension action is not a built-in feature.',
             "const invalidBuiltIn: WorkspaceFeature = 'badge'",
             "import type { WorkspaceExtension } from '@asyra/design'",
             "const group: WorkspaceExtension<'arrange'> = { actions: { arrange: { label: 'Arrange', run: () => {} } }, ui: [{ id: 'layout', placement: 'properties.top', mount({container,editor}) { const b = container.ownerDocument.createElement('button'); b.onclick = () => editor.runAction('arrange'); container.append(b); return () => b.remove() } }] }",
             "const grouped = await createDesign(document.body, { extensions: [group] }); await grouped.setDisabledFeatures(['arrange']); grouped.toolGroups.move('layout','toolbar.top',0)",
             "const workspace = await createDesign(document.body, { toolbar: ['group', 'ungroup', 'deleteSelectedElement', 'zoomFit', 'reset'] })",
+            'const builtIns: readonly WorkspaceFeature[] = workspace.features',
+            'await extended.setDisabledFeatures(builtIns)',
+            '// @ts-expect-error Feature discovery belongs to each editor.',
+            "type RemovedExport = typeof import('@asyra/design')['workspaceFeatures']",
+            '// @ts-expect-error The feature catalog is read-only.',
+            'workspace.features = []',
             "await workspace.runAction('zoomFit')",
             'workspace.deleteSelectedElement()',
             "const label = workspace.createText('Label', {x:0,y:0,width:50,height:20})",
@@ -683,7 +687,7 @@ test('opt-in design React component mounts and releases a packed editor', async 
 
       await workspace.getByTestId('tool-rectangle').click()
       assert.equal(
-        await host.evaluate((el) => el.editor.listFeatures().includes('pen')),
+        await host.evaluate((el) => el.editor.features.includes('pen')),
         true
       )
       const canvas = workspace.locator('canvas')
@@ -1666,7 +1670,7 @@ test('packed Design lists the exact features accepted by each editor', async () 
     async (page) => {
       await page.evaluate(() => globalThis.ready)
       const proof = await page.evaluate(async () => {
-        const { createDesign, document, editor, workspaceFeatures } = globalThis
+        const { createDesign, document, editor } = globalThis
         const target = document.body.appendChild(
           document.createElement('aside')
         )
@@ -1685,8 +1689,8 @@ test('packed Design lists the exact features accepted by each editor', async () 
         })
 
         try {
-          const builtIns = editor.listFeatures()
-          const registered = extended.listFeatures()
+          const builtIns = editor.features
+          const registered = extended.features
           const inherited = !extended.isFeatureEnabled('extensionAction')
 
           await extended.setDisabledFeatures(registered)
@@ -1698,14 +1702,13 @@ test('packed Design lists the exact features accepted by each editor', async () 
 
           return {
             builtIns,
-            exported: workspaceFeatures,
             registered,
             inherited,
             blocked,
-            frozen: [workspaceFeatures, builtIns, registered].every(
-              Object.isFrozen
-            ),
-            stable: extended.listFeatures() === registered,
+            frozen:
+              [builtIns, registered].every(Object.isFrozen) &&
+              !Reflect.set(extended, 'features', []),
+            stable: extended.features === registered,
             enabled: registered.every((id) => extended.isFeatureEnabled(id)),
             isolated:
               !editor.isFeatureEnabled('extension') &&
@@ -1717,11 +1720,10 @@ test('packed Design lists the exact features accepted by each editor', async () 
         }
       })
 
-      assert.deepEqual(proof.builtIns, proof.exported)
-      assert.equal(new Set(proof.exported).size, 23)
+      assert.equal(new Set(proof.builtIns).size, 23)
       assert.deepEqual(
         [...proof.registered].sort(),
-        [...proof.exported, 'hostAction', 'extension', 'extensionAction'].sort()
+        [...proof.builtIns, 'hostAction', 'extension', 'extensionAction'].sort()
       )
       for (const key of [
         'inherited',
@@ -1770,9 +1772,7 @@ test('packed Design borrowed canvas guards its own pointer, history and action p
         )
       })
       assert.deepEqual(
-        await page.evaluate(() =>
-          globalThis.editor.listFeatures().slice().sort()
-        ),
+        await page.evaluate(() => globalThis.editor.features.slice().sort()),
         ['localAction', 'rectangle', 'redo', 'select', 'undo']
       )
       assert.equal(
