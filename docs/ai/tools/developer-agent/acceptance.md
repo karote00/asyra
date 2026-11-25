@@ -242,3 +242,21 @@ For an authorized implementation, retain equivalent product behavior and data,
 then measure the first changed work owner plus downstream effects. Review actual
 invalidation and teardown, not just helper reuse, component count, build success
 or generated test count. Record host limitations and unexecuted checks explicitly.
+
+## Embedded assistant transfer exercise
+
+Use this request in a non-Design product with a registered bulk import operation:
+
+> Import these catalog entries. Some rows have invalid quantities. Let me fix
+> those rows together. Once the import succeeds, mark the imported items for
+> review. I may ask about an individual item later.
+
+Inspect the actual provider declarations, returned diagnostics, next call and
+canonical writes. Independent row errors must identify their original inputs.
+A correction must preserve unaffected rows. Verify that the final marking targets
+the imported items exactly once and that a later lookup still resolves the
+chosen item. Compare full input resubmissions and model calls used solely to
+forward IDs. A host binding, scoped App lookup or another demonstrated equivalent
+may satisfy those handoffs. Also try one valid single-row edit: it should be
+able to use its known operation directly. Record actual results and any limits
+of the product under test. This scenario is an exercise, not an executed trial.

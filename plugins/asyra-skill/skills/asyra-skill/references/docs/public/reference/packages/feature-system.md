@@ -1,0 +1,91 @@
+<!-- Generated from docs/public/reference/packages/feature-system.md; edit the source and regenerate. External links may describe a newer revision. -->
+
+# `@asyra/feature-system`
+
+Deterministic Feature registration, priority/exclusivity, interaction sessions,
+commands, cancellation, and non-mutating programmatic tasks.
+
+## Owns
+
+- Feature definitions, trigger resolution, priority, and exclusivity
+- one serialized interaction queue and active session lifecycle
+- start/update/end/cancel ordering and cancellation policy
+- one active non-mutating programmatic task per Feature with abort ownership
+
+## Does not own
+
+Raw environment listeners, app command meaning, canonical package mutation,
+transaction history, model-provider orchestration, or UI presentation.
+
+## Compose when
+
+Compose it when several inputs or commands need deterministic arbitration, a
+continuous session, or cancellable external planning work. Do not use a
+programmatic task for canonical mutation and do not create an app-local session
+queue beside the shared interaction runtime.
+
+## Public entrypoints and prerequisites
+
+Use `@asyra/feature-system`. Public surfaces include Feature definition/query,
+`SessionManager`, session handlers, `invokeFeatureTask(...)`,
+`cancelFeatureTask(...)`, stable Feature task errors, and Feature API exposure.
+Canonical sessions require a configured transaction owner and app mutation API.
+
+## Lifecycle, inputs, outputs, and failure
+
+A command or session enters the serialized interaction queue. A session starts,
+updates while active, then ends or cancels before conflicting work. Cancellation
+defaults to `commit-current`; explicit policies are `rollback` and
+`feature-defined`. Handler errors and timeouts enter forced cleanup. A
+programmatic task receives one Feature-owned abort signal, rejects overlap, and
+releases ownership on settlement.
+
+For a complete runtime shutdown, the lifecycle owner may call
+`disposeFeatureSystem(getSnapshot)`. It closes admission, rejects queued work,
+aborts tasks/sessions, forces provisional session rollback, and waits for real
+handler settlement, including handlers whose timeout already fired. Repeated
+calls share completion. Cleanup failure stays closed; an uncooperative Promise
+cannot be forcibly stopped. This does not clear canonical data or history.
+
+Only after all runtime owners finish cleanup may the lifecycle owner call
+`beginFeatureSystemRuntime()` and compose new Features. Retained old session
+managers and queue runners reject with `FeatureRuntimeClosedError`
+(`FEATURE_RUNTIME_CLOSED`). Arbitrary Feature API closures need their own
+App/Core lifetime guard; disposal is not a code sandbox. Ordinary load and
+cancel do not invoke this separate lifecycle automatically.
+
+## Relationships
+
+Input System and UI adapters provide intent. Factory owns the transaction
+opened around canonical session work. AI Runtime can run inside a Feature-owned
+programmatic lifecycle before a later accepted action enters one transaction.
+Core exposes public Feature registration and APIs.
+
+## Maintained use path
+
+Follow [Build a transaction-safe Feature](../../build/feature-session.md). The
+[app retrieval/action guide](../../build/app-retrieval-action.md) shows a
+registered Feature API as the only mutation path.
+
+## Replacement and disabled behavior
+
+Apps may define or unregister Features during open composition and replace
+their own handlers through declared registration lifecycle. When a Feature is
+absent or its condition does not match, the intent performs no hidden fallback
+mutation. Disabling a Feature must release its active session/task.
+
+## Support, migration, and deprecation
+
+The legacy five-argument `registerSession(...)` form remains compatible with
+default commit-current policy; the six-argument form adds explicit policy.
+Migration should make cancellation explicit and keep programmatic tasks
+non-mutating. Deep package internals are not supported APIs.
+
+## Canonical sources and release inventory
+
+- <a href="https://github.com/karote00/asyra/blob/main/docs/ai/framework/packages/feature-system.md" target="_blank" rel="noopener noreferrer">Package contract</a>
+- <a href="https://github.com/karote00/asyra/blob/main/packages/feature-system/package.json" target="_blank" rel="noopener noreferrer">Package manifest</a>
+- [Transaction-safe Feature guide](../../build/feature-session.md)
+
+The root entrypoint, version, and dependencies are generated from the manifest
+and checked against the release inventory.

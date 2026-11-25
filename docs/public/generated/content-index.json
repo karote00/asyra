@@ -1190,7 +1190,7 @@
       "wordCount": 525
     },
     {
-      "contentSha256": "26f56e906d01caeaf7446a04090675826ffe57ef159a3bb8fdd2a7d9c816dc4e",
+      "contentSha256": "af1464433583ca7b90db7b84785ee4d16097faccebbb81cc7d09e7b0ba999131",
       "description": "Expose bounded action schemas and permissions so AI intent uses the same canonical transaction paths as people.",
       "headings": [
         {
@@ -1204,6 +1204,18 @@
         {
           "depth": 2,
           "title": "Ownership"
+        },
+        {
+          "depth": 2,
+          "title": "Write the App prompt and tools together"
+        },
+        {
+          "depth": 3,
+          "title": "Hand a result to the next owner"
+        },
+        {
+          "depth": 2,
+          "title": "Diagnose an expensive or interrupted AI task"
         },
         {
           "depth": 2,
@@ -1266,7 +1278,7 @@
       "path": "build/ai-actions.md",
       "section": "Extend",
       "title": "Build registered AI actions",
-      "wordCount": 1186
+      "wordCount": 2478
     },
     {
       "contentSha256": "45dbd214f148ec37a72b7352baaa4632267c78b6a0132902532639c160d4c5cd",
@@ -2372,7 +2384,7 @@
       "wordCount": 372
     },
     {
-      "contentSha256": "96d66df52c5f73e156dc28a7b7d354769452d56677ea23a34fb9a38796ab24ff",
+      "contentSha256": "cedb22127fec0edb3b9d11ee683796d81c13c19f42d8c10e6f0d0dc66850affd",
       "description": "Optional official design-tool baseline with selectable defaults and replaceable providers.",
       "headings": [
         {
@@ -2421,6 +2433,10 @@
         },
         {
           "depth": 2,
+          "title": "Group geometry in the 2D defaults"
+        },
+        {
+          "depth": 2,
           "title": "Optional spatial picking"
         },
         {
@@ -2464,7 +2480,7 @@
       "path": "reference/packages/preset.md",
       "section": "Reference",
       "title": "@asyra/preset",
-      "wordCount": 1940
+      "wordCount": 2096
     },
     {
       "contentSha256": "28f044123e1b6f60c18a4f39910a2560f4301026e8850f1c4e91557fa5d5ac8e",

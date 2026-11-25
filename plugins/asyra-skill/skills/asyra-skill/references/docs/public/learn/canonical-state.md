@@ -68,4 +68,4 @@ transport and history policy; it does not create a different model.
 ## Next
 
 - [Learn transactions and durability](transactions-and-durability.md)
-- <a href="https://github.com/karote00/asyra/blob/main/docs/public/learn/validation-load-migration.md" target="_blank" rel="noopener noreferrer">Learn validation, load, and migration</a>
+- [Learn validation, load, and migration](validation-load-migration.md)

@@ -239,7 +239,7 @@ appropriate. Dispose subscriptions, timers, Workers, prepared receipts and
 renderer resources at their actual owning boundary. Aborting a signal or winning
 a timeout race is not proof that work has stopped. Test that late completion
 cannot publish a preview, mutate state or acknowledge persistence in a successor.
-See the <a href="https://github.com/karote00/asyra/blob/main/docs/public/reference/packages/core.md" target="_blank" rel="noopener noreferrer">Core lifecycle reference</a>.
+See the [Core lifecycle reference](../reference/packages/core.md).
 
 ## Current composition boundary
 
@@ -353,7 +353,7 @@ should use the existing transaction-safe Feature path. Do not create a second
 history system, an AI-only transaction engine, or a collaboration-specific
 replay path. See the
 [transaction-safe Feature guide](../build/feature-session.md) for the normal
-app-owned session flow and the <a href="https://github.com/karote00/asyra/blob/main/docs/public/reference/packages/factory.md" target="_blank" rel="noopener noreferrer">Factory reference</a>
+app-owned session flow and the [Factory reference](../reference/packages/factory.md)
 for the exact public contract.
 
 ## Validate the boundary
@@ -371,14 +371,14 @@ Prove the exact composition you claim:
 
 - <a href="https://github.com/karote00/asyra/blob/main/docs/ai/framework/ARCHITECTURE.md" target="_blank" rel="noopener noreferrer">Framework architecture</a>
 - <a href="https://github.com/karote00/asyra/blob/main/docs/ai/framework/packages/core.md" target="_blank" rel="noopener noreferrer">Core package contract</a>
-- <a href="https://github.com/karote00/asyra/blob/main/docs/public/reference/packages/core.md" target="_blank" rel="noopener noreferrer">Core package guide</a>
+- [Core package guide](../reference/packages/core.md)
 - <a href="https://github.com/karote00/asyra/blob/main/docs/ai/framework/rules/app-optimization-and-maintainability.md" target="_blank" rel="noopener noreferrer">App optimization and maintainability</a>
 - <a href="https://github.com/karote00/asyra/blob/main/docs/ai/framework/rules/computation-ownership-and-reuse.md" target="_blank" rel="noopener noreferrer">Computation ownership and reuse</a>
 - <a href="https://github.com/karote00/asyra/blob/main/docs/ai/apps/asyra-design/specs/socket-authoritative-document-session.md" target="_blank" rel="noopener noreferrer">Design document-session contract</a>
 
 ## Next
 
-- <a href="https://github.com/karote00/asyra/blob/main/docs/public/learn/information-models.md" target="_blank" rel="noopener noreferrer">Learn information models</a>
+- [Learn information models](../learn/information-models.md)
 - [Build a custom schema](../build/custom-schema.md)
 
 ## Use Starter as the complete App reference

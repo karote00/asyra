@@ -456,7 +456,7 @@ one intended transaction. That keeps the result editable, reversible,
 collaborative, and persistable through the ordinary owner model.
 
 See [Build registered AI actions](../build/ai-actions.md) and
-<a href="https://github.com/karote00/asyra/blob/main/docs/public/build/app-retrieval-action.md" target="_blank" rel="noopener noreferrer">Build app-owned retrieval and action</a>. Do not
+[Build app-owned retrieval and action](../build/app-retrieval-action.md). Do not
 send provider keys to the browser or let generated code call an unregistered
 mutation surface.
 

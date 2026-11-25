@@ -86,6 +86,25 @@ must name the desired catalog entries and respect dependency expansion.
 The root entrypoint, version, catalog dependencies, and package relationships
 are release-checked; version metadata remains generated from the manifest.
 
+## Group geometry in the 2D defaults
+
+An official Group's positive local scale is a transform inherited by its contents.
+Scaling the Group leaves its children's stored dimensions intact. For an
+explicit Group width or height edit, `projectGroupGeometryPropertyUpdates`
+from `@asyra/preset` takes the property changes and explicit Group target IDs.
+It computes the proportional local positions and sizes using live subtree
+bounds. Apply the projected updates through the product's transaction. An
+ordinary child edit leaves the Group's stored size snapshot alone. Derive current
+content bounds when reading them for a measurement.
+
+For insertion into an existing Group, `projectGroupInsertion` from
+`@asyra/preset/group-bounds` accepts incoming parent-local bounds and readers
+for Group hierarchy and element bounds. It returns the origin offset for the
+incoming children and geometry updates for affected existing elements. Subtract
+the offset from the incoming local positions and apply the returned updates
+in the insertion transaction to preserve placement through transformed
+ancestors. The projection itself makes no document writes.
+
 ## Optional spatial picking
 
 The optional spatial engine supports full-shape queries through Render/Core.

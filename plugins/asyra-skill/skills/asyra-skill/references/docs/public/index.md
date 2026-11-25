@@ -63,7 +63,7 @@ verification limits; it is not a new release announcement.
 Use [custom composition](start/custom-composition.md#build-one-complete-data-path)
 when you deliberately need a different Core App assembly. That guide covers
 transaction publications, persistence, scoped UI subscriptions, computation
-reuse, and runtime lifecycle. The <a href="https://github.com/karote00/asyra/blob/main/docs/public/start/preset-2d.md" target="_blank" rel="noopener noreferrer">official 2D Preset</a>
+reuse, and runtime lifecycle. The [official 2D Preset](start/preset-2d.md)
 is a selectable baseline, not a universal product behavior.
 
 The public documentation also uses five sections so readers can find the
@@ -75,7 +75,7 @@ starting path.
 Use the source-available Generic Starter above for a small editable example,
 or [create-asyra-design-app](start/create-design-app.md) for a published,
 complete design-tool product. Use the
-<a href="https://github.com/karote00/asyra/blob/main/docs/public/start/preset-2d.md" target="_blank" rel="noopener noreferrer">official 2D Preset</a> when you are building a visual product
+[official 2D Preset](start/preset-2d.md) when you are building a visual product
 from Framework packages and want Asyra's maintained baseline. Read the
 <a href="https://github.com/karote00/asyra/blob/main/docs/public/cases/asyra-design.md" target="_blank" rel="noopener noreferrer">Asyra Design case study</a> to see how the official app
 uses Framework owners without becoming the only supported product shape.
@@ -83,7 +83,7 @@ uses Framework owners without becoming the only supported product shape.
 ### Concepts
 
 Concepts explain how Asyra works before asking you to write implementation
-code. Begin with <a href="https://github.com/karote00/asyra/blob/main/docs/public/learn/information-models.md" target="_blank" rel="noopener noreferrer">information models</a>, then learn
+code. Begin with [information models](learn/information-models.md), then learn
 how Features accept intent, canonical owners settle state, transactions stay
 durable, load boundaries validate data, and projections remain separate from
 providers. Concept pages describe the architecture and link to the appropriate

@@ -126,6 +126,32 @@ test('maintained plugin is current, self-contained and has valid local reference
   }
 })
 
+test('standalone framework routes resolve every public package guide offline', () => {
+  const { packages } = JSON.parse(
+    read(ROOT, 'docs/public/generated/package-reference.json')
+  )
+  const root = fixture()
+
+  exportSkill(root, 'consumer/asyra-skill')
+  const destination = path.join(root, 'consumer/asyra-skill')
+  const routes = read(destination, 'SKILL.md')
+  const { documents } = JSON.parse(read(ROOT, `${PLUGIN}/bundle.config.json`))
+
+  for (const { guidePath, name } of packages) {
+    const reference = `references/${guidePath}`
+
+    assert.ok(
+      routes.includes(`](${reference})`),
+      `Missing offline route for ${name}`
+    )
+    assert.equal(
+      read(destination, reference),
+      renderReference(guidePath, read(ROOT, guidePath), documents),
+      name
+    )
+  }
+})
+
 test('standalone consumers receive the complete maintained Starter architecture', () => {
   const source = 'apps/starter-app/docs/ARCHITECTURE.md'
   const { documents } = JSON.parse(read(ROOT, `${PLUGIN}/bundle.config.json`))

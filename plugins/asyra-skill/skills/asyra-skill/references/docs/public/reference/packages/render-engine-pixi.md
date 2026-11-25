@@ -1,0 +1,83 @@
+<!-- Generated from docs/public/reference/packages/render-engine-pixi.md; edit the source and regenerate. External links may describe a newer revision. -->
+
+# `@asyra/render-engine-pixi`
+
+Official optional Pixi implementation of the public Render Engine contract.
+
+## Owns
+
+- Pixi application, surface, root container, graphics, mesh, ticker, event, and
+  resource lifecycle
+- engine-neutral command/query translation behind opaque handles
+- normalized pointer events and deterministic cleanup
+- explicit flush rendering without Pixi auto-render bypass
+
+## Does not own
+
+Render subscriptions/layers/strategies, Framework target mapping, canonical
+state, app Feature policy, custom-engine introspection, or fallback routing.
+
+## Compose when
+
+Use it for the official current Preset `2D` profile or explicitly select its
+provider in a custom browser composition. Apps using another engine should not
+import this package. Non-render packages never need it.
+
+## Public entrypoints and prerequisites
+
+Use `@asyra/render-engine-pixi`. It exports `PixiRenderEngine` and
+`createPixiRenderEngine(): RenderEngine`. A browser-capable host and current
+engine contract are required. Default consumers normally let Preset pass the
+provider through Core.
+
+## Lifecycle, inputs, outputs, and failure
+
+Initialization creates one owned application, canvas/input target, root handle,
+and standalone ticker. Commands/queries translate abstract operations. Frame
+callbacks only schedule; explicit `flush` calls `Application.render()`.
+`destroy()` releases ticker, objects, owned resources, and application with
+deterministic counts. Partial initialization failure cleans acquired resources
+and does not report ready.
+
+## Relationships
+
+Depends only on `@asyra/render-engine` within the Framework boundary plus Pixi.
+Preset `2D` selects `createPixiRenderEngine`. Render consumes only the abstract
+contract. Core owns provider activation and runtime cleanup.
+
+## Maintained use path
+
+Follow [Compose the official 2D baseline](../../start/preset-2d.md) for the
+official Pixi selection path. Custom engines follow the separate
+[render-boundary guide](../../build/render-boundary.md).
+
+## Replacement and disabled behavior
+
+Choose `PresetProfiles.CUSTOM` and bind a conforming app provider to replace
+Pixi. When this package is absent, Preset `2D` cannot supply its official
+provider; custom compositions remain free to use another engine. Failure never
+falls through to hidden Pixi output.
+
+## Support, migration, and deprecation
+
+This is the current official 2D provider. It is not evidence of production 3D
+or HYBRID support. Migration must keep Pixi imports isolated here, maintain
+abstract capability conformance, and preserve explicit dirty/flush behavior.
+
+## Rendered subtree inspection
+
+The optional engine `snapshot` query extracts the current target subtree as a
+PNG on white, using Pixi canvas extraction. It excludes camera framing and editor
+overlays, validates positive bounds, caps each side at 1024 pixels and the data
+URL at 8 MiB, and never substitutes a synthetic image on failure. Fractional
+local bounds use an enclosing integer extraction frame; returned bounds describe
+that same frame so review coordinates agree with the image.
+
+## Canonical sources and release inventory
+
+- <a href="https://github.com/karote00/asyra/blob/main/docs/ai/framework/packages/render-engine-pixi.md" target="_blank" rel="noopener noreferrer">Package contract</a>
+- <a href="https://github.com/karote00/asyra/blob/main/packages/render-engine-pixi/package.json" target="_blank" rel="noopener noreferrer">Package manifest</a>
+- [Preset 2D composition guide](../../start/preset-2d.md)
+
+The root entrypoint, version, and dependency on Render Engine are
+manifest-generated and release-checked.

@@ -140,9 +140,9 @@ prior-document preservation, and provider-failure tests for your app schema.
 
 - <a href="https://github.com/karote00/asyra/blob/main/docs/ai/framework/packages/persistence.md" target="_blank" rel="noopener noreferrer">Persistence contract</a>
 - <a href="https://github.com/karote00/asyra/blob/main/docs/ai/framework/packages/props-manager.md" target="_blank" rel="noopener noreferrer">Props Manager contract</a>
-- <a href="https://github.com/karote00/asyra/blob/main/docs/public/learn/validation-load-migration.md" target="_blank" rel="noopener noreferrer">Validation and load boundaries</a>
+- [Validation and load boundaries](../learn/validation-load-migration.md)
 
 ## Next
 
-- <a href="https://github.com/karote00/asyra/blob/main/docs/public/learn/validation-load-migration.md" target="_blank" rel="noopener noreferrer">Understand versioned loading and migration</a>
-- <a href="https://github.com/karote00/asyra/blob/main/docs/public/reference/packages/persistence.md" target="_blank" rel="noopener noreferrer">Read the Persistence guide</a>
+- [Understand versioned loading and migration](../learn/validation-load-migration.md)
+- [Read the Persistence guide](../reference/packages/persistence.md)

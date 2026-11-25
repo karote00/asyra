@@ -190,4 +190,4 @@ pixels as the only oracle.
 ## Next
 
 - [Learn registration and replacement](../learn/projection-registration-replacement.md)
-- <a href="https://github.com/karote00/asyra/blob/main/docs/public/reference/packages/render-engine.md" target="_blank" rel="noopener noreferrer">Read the Render Engine guide</a>
+- [Read the Render Engine guide](../reference/packages/render-engine.md)

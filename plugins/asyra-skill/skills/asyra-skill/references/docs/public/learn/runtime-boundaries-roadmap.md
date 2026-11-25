@@ -37,7 +37,7 @@ For a service that retrieves app information or requests actions today, keep
 the service and domain policy app-owned. Register bounded actions through the
 current AI runtime and route accepted work through the same canonical Feature
 and transaction paths. See
-<a href="https://github.com/karote00/asyra/blob/main/docs/public/build/app-retrieval-action.md" target="_blank" rel="noopener noreferrer">Build app-owned retrieval and action</a>.
+[Build app-owned retrieval and action](../build/app-retrieval-action.md).
 
 ## Do not claim yet
 
@@ -61,5 +61,5 @@ contracts, tests, and clean-consumer evidence.
 
 ## Next
 
-- <a href="https://github.com/karote00/asyra/blob/main/docs/public/learn/information-models.md" target="_blank" rel="noopener noreferrer">Model information before output</a>
+- [Model information before output](information-models.md)
 - [Read current support boundaries](../reference/support-release.md)

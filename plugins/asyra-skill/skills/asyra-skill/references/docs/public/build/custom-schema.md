@@ -121,9 +121,9 @@ Assert the canonical owner snapshot and relation graph, not only UI text.
 - <a href="https://github.com/karote00/asyra/blob/main/docs/ai/framework/packages/core.md" target="_blank" rel="noopener noreferrer">Core contract</a>
 - <a href="https://github.com/karote00/asyra/blob/main/docs/ai/framework/packages/props-manager.md" target="_blank" rel="noopener noreferrer">Props Manager contract</a>
 - <a href="https://github.com/karote00/asyra/blob/main/docs/ai/framework/packages/scene-tree.md" target="_blank" rel="noopener noreferrer">Scene Tree contract</a>
-- <a href="https://github.com/karote00/asyra/blob/main/docs/public/reference/packages/props-manager.md" target="_blank" rel="noopener noreferrer">Props Manager package guide</a>
+- [Props Manager package guide](../reference/packages/props-manager.md)
 
 ## Next
 
-- <a href="https://github.com/karote00/asyra/blob/main/docs/public/learn/validation-load-migration.md" target="_blank" rel="noopener noreferrer">Learn validation, load, and migration</a>
-- <a href="https://github.com/karote00/asyra/blob/main/docs/public/reference/packages/props-manager.md" target="_blank" rel="noopener noreferrer">Read the Props Manager guide</a>
+- [Learn validation, load, and migration](../learn/validation-load-migration.md)
+- [Read the Props Manager guide](../reference/packages/props-manager.md)

@@ -1,0 +1,103 @@
+<!-- Generated from docs/public/reference/packages/render-engine.md; edit the source and regenerate. External links may describe a newer revision. -->
+
+# `@asyra/render-engine`
+
+Engine-independent contract shared by Render, official engines, and custom
+provider implementations.
+
+## Owns
+
+- engine/surface lifecycle and one-shot frame scheduling
+- semantic commands, draw operations, queries, and normalized interactions
+- opaque object/resource handles and runtime identity forwarding
+- capability ids, unsupported-capability errors, and conformance utilities
+
+## Does not own
+
+Pixi or another SDK, canonical state subscriptions, render layers, Feature
+policy, a default engine singleton, or unimplemented production modes.
+
+## Compose when
+
+Implement this contract whenever an app or package provides a rendering engine.
+Render consumers depend on the abstraction, not a concrete SDK. Do not use it
+for app-domain draw commands that bypass Render strategy/projection ownership.
+
+## Public entrypoints and prerequisites
+
+- `@asyra/render-engine` for `RenderEngine`, `RenderEngineProvider`, commands,
+  queries, handles, events, capabilities, and errors
+- `@asyra/render-engine/testing` for `runRenderEngineContract(...)` and
+  `RecordingRenderEngine`
+
+An engine implements required lifecycle/command/query methods and declares the
+capabilities it actually supports.
+
+## Lifecycle, inputs, outputs, and failure
+
+`initialize(...)` may be asynchronous. `execute(...)`, `query(...)`, and
+`destroy()` are synchronous. `requestFrame(...)` owns one pending one-shot slot;
+only an explicit flush command draws. Missing required capabilities throw
+`UnsupportedRenderEngineCapabilityError`. Invalid handles, commands, queries,
+or cleanup must fail deterministically.
+
+## Relationships
+
+Render consumes the abstract contract. `@asyra/render-engine-pixi` implements
+it. Preset selects a provider policy; Core stores and activates the chosen
+provider. No dependency exists from the abstract contract back to Render or a
+concrete engine.
+
+## Maintained use path
+
+The [custom render guide](../../build/render-boundary.md) shows how a concrete
+Canvas translation sits behind semantic engine commands and which product
+behaviors must remain true when replacing the provider.
+
+## Replacement and disabled behavior
+
+Any conforming provider can replace Pixi before startup. Concrete SDK objects
+stay private behind opaque handles. A missing capability rejects the operation;
+adapters must not inspect the engine and fall back to Pixi. Without a provider,
+the abstract package creates no surface.
+
+## Support, migration, and deprecation
+
+Current formal capabilities are `objects`, `graphics`, `interaction`, and
+`resources`, plus optional `snapshot`. New capabilities require real implementations and contract tests.
+Migration must preserve synchronous command/query/destroy semantics, one-shot
+frames, handle isolation, and normalized interaction.
+
+## Rendered subtree inspection
+
+The optional `snapshot` capability admits the synchronous
+`{ type: 'snapshot', object, maxDimension }` query. Its result contains `dataUrl`,
+`width`, `height` and local `bounds`. Providers capture actual subtree content
+without editor overlays or camera framing, on a white background, with sides at
+most `maxDimension` (an integer from 1 through 1024) and a PNG data URL at most
+8 MiB. Invalid/empty targets and unsupported capture fail explicitly. Recording
+engines do not advertise this capability or manufacture image evidence.
+
+## Canonical sources and release inventory
+
+- <a href="https://github.com/karote00/asyra/blob/main/docs/ai/framework/packages/render-engine.md" target="_blank" rel="noopener noreferrer">Package contract</a>
+- <a href="https://github.com/karote00/asyra/blob/main/packages/render-engine/package.json" target="_blank" rel="noopener noreferrer">Package manifest</a>
+- [Custom render-boundary guide](../../build/render-boundary.md)
+
+Version plus `.` and `./testing` entrypoints are generated from the manifest and
+verified against the release inventory.
+
+## Optional spatial queries
+
+`SPATIAL_QUERIES` (`spatial-queries.v0`) is independent of descriptor rendering.
+The typed query/result unions support projection, screen ray, local/world point
+conversion, local/world bounds, ray intersections and overlay-first picking.
+Surface points are logical CSS coordinates; projection includes NDC depth and
+frustum visibility. Hit identity uses opaque handles and source-instance index
+plus stable ID. Existing 2D queries retain their meanings. Pixi and the
+default recording engine reject spatial queries explicitly.
+
+Neutral spatial instances require unique nonempty IDs and local quaternion poses.
+Mesh and instance scale must be positive; explicit shear/yaw transforms reject.
+Apps translate their narrower placement formats at their admission boundary.
+Mesh `castShadow` and `receiveShadow` flags are independent of selectability.
