@@ -44,6 +44,7 @@ import {
   parseLocalVectorArtifact,
   prepareLocalVectorArtifact,
   vectorArtifactSummary,
+  queryVectorPaths,
   type LocalVectorArtifact
 } from './local-vector-artifact'
 
@@ -125,8 +126,8 @@ const readImageRegion = (value: unknown) => {
         Number(value[key]) >= (key === 'x' || key === 'y' ? 0 : 1)
     )
   ) {
-    throw new Error(
-      'Image region must contain integer x, y, width and height within the oriented source image.'
+    throw new AiToolInputError(
+      'Image region must contain nonnegative integer x and y and positive integer width and height.'
     )
   }
 
@@ -409,11 +410,12 @@ export const createLocalImageTools = (
     }
   }
 
+  const maxPathPage = 64
   const vectorSummaryFields = {
     imageArtifactId: toolRequestReference,
     width: toolResultCount,
     height: toolResultCount,
-    paths: { type: 'array' },
+    pathCount: toolResultCount,
     componentTargets: { type: 'object' },
     sourceBounds: { type: 'object' },
     sourceRegion: { type: 'object' },
@@ -422,6 +424,53 @@ export const createLocalImageTools = (
     separation: { type: 'object' }
   }
   const definitions = [
+    {
+      type: 'function',
+      ...toolSemantics(
+        toolResultObject({
+          imageArtifactId: toolRequestReference,
+          paths: {
+            type: 'array',
+            maxItems: maxPathPage,
+            items: toolResultObject({
+              id: toolResultString,
+              fill: toolResultString,
+              bounds: toolResultObject({
+                x: { type: 'number' },
+                y: { type: 'number' },
+                width: { type: 'number' },
+                height: { type: 'number' }
+              }),
+              pointCount: toolResultCount,
+              subpathCount: toolResultCount
+            })
+          },
+          nextOffset: { type: ['integer', 'null'], minimum: 0 }
+        }),
+        'read',
+        ['request-artifacts']
+      ),
+      name: AiImageToolIds.QUERY_VECTOR_PATHS,
+      composition: 'allowed' as const,
+      executionAccess: AiToolAccess.INDEPENDENT,
+      description:
+        'Read a bounded page of retained vector path IDs, colors and bounds for local exclusion, component analysis or contour review before insertion. Region selects overlapping bounds in artifact-local pixels, not exact contour hits. Omit region for source order. Continue with nextOffset and the same region; null ends the list. Whole-artifact insertion needs only its reference.',
+      inputSchema: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['imageArtifactId'],
+        properties: {
+          imageArtifactId: toolRequestReference,
+          region: {
+            ...imageRegionSchema,
+            description:
+              'Rectangle in artifact-local pixels. A cropped trace starts at (0, 0).'
+          },
+          offset: { type: 'integer', minimum: 0 },
+          limit: { type: 'integer', minimum: 1, maximum: maxPathPage }
+        }
+      }
+    },
     {
       type: 'function',
       ...toolSemantics(
@@ -528,7 +577,7 @@ export const createLocalImageTools = (
             quality: { type: 'object' },
             requiresVisualReview: toolResultBoolean
           },
-          ['imageArtifactId', 'changes']
+          ['imageArtifactId', 'width', 'height', 'pathCount', 'changes']
         ),
         'prepare',
         ['request-artifacts'],
@@ -557,7 +606,12 @@ export const createLocalImageTools = (
     {
       type: 'function',
       ...toolSemantics(
-        toolResultObject(vectorSummaryFields, ['imageArtifactId']),
+        toolResultObject(vectorSummaryFields, [
+          'imageArtifactId',
+          'width',
+          'height',
+          'pathCount'
+        ]),
         'prepare',
         ['request-artifacts'],
         'request-artifact'
@@ -571,7 +625,12 @@ export const createLocalImageTools = (
     {
       type: 'function',
       ...toolSemantics(
-        toolResultObject(vectorSummaryFields, ['imageArtifactId']),
+        toolResultObject(vectorSummaryFields, [
+          'imageArtifactId',
+          'width',
+          'height',
+          'pathCount'
+        ]),
         'prepare',
         ['request-artifacts'],
         'request-artifact'
@@ -579,7 +638,7 @@ export const createLocalImageTools = (
       name: AiImageToolIds.VTRACER,
       composition: 'control-plane' as const,
       description:
-        'Prepare an image after YOUR visual decomposition decision. Required plan selects separate-background with native rect/oval parameters for an intended solid base, or preserve-vectors with a concrete reason no supported native base improves the reference. Do not choose preserve-vectors merely because foreground is complex or merged with the base. Native plans separate first and trace only foreground. Vectorize one submitted PNG/JPEG/WebP attachment. A preserve-vectors plan may select a native-pixel region for a local detail or oversized conversion; no resampling occurs and the returned coordinates are local to that region. Returns an imageArtifactId and path IDs with source-pixel bounds, colors, point counts and subpath counts. Use the reference in an insert/replace action with target bounds and optional excludePathIds and componentMappings from the returned componentTargets catalog. Consider relevant shapes for supported App component representations before drawing. The server creates all editable coordinates. Do not request code execution, SVG parsing or raster editing to use this result. Separate marks can be omitted by their path IDs.',
+        'Prepare an image after YOUR visual decomposition decision. Required plan selects separate-background with native rect/oval parameters for an intended solid base, or preserve-vectors with a concrete reason no supported native base improves the reference. Do not choose preserve-vectors merely because foreground is complex or merged with the base. Native plans separate first and trace only foreground. Vectorize one submitted PNG/JPEG/WebP attachment. A preserve-vectors plan may select a native-pixel region for a local detail or oversized conversion; no resampling occurs and the returned coordinates are local to that region. Returns a retained imageArtifactId, dimensions and path count. Use query_vector_paths only when individual path IDs or bounds are needed. Use the reference in an insert/replace action with target bounds and optional excludePathIds and componentMappings from the returned componentTargets catalog. Consider relevant shapes for supported App component representations before drawing. The server creates all editable coordinates. Do not request code execution, SVG parsing or raster editing to use this result. Separate marks can be omitted by their path IDs.',
       inputSchema: {
         type: 'object',
         additionalProperties: false,
@@ -994,6 +1053,57 @@ export const createLocalImageTools = (
         }
 
         return prepareReferences(args.attachmentIndexes as number[], signal)
+      }
+
+      if (name === AiImageToolIds.QUERY_VECTOR_PATHS) {
+        if (
+          !isRecord(args) ||
+          typeof args.imageArtifactId !== 'string' ||
+          Object.keys(args).some(
+            (key) =>
+              !['imageArtifactId', 'region', 'offset', 'limit'].includes(key)
+          )
+        ) {
+          throw new AiToolInputError(
+            'Provide an imageArtifactId and optional region, offset and limit.'
+          )
+        }
+
+        const artifact = artifacts.get(args.imageArtifactId)
+
+        if (!artifact) {
+          throw new AiToolInputError(
+            'Select an imageArtifactId retained in this request.'
+          )
+        }
+
+        const offset = args.offset === undefined ? 0 : args.offset
+        const limit = args.limit === undefined ? 24 : args.limit
+
+        if (
+          typeof offset !== 'number' ||
+          !Number.isSafeInteger(offset) ||
+          offset < 0 ||
+          typeof limit !== 'number' ||
+          !Number.isSafeInteger(limit) ||
+          limit < 1 ||
+          limit > maxPathPage
+        ) {
+          throw new AiToolInputError(
+            'Use a nonnegative offset and a limit between 1 and ' +
+              maxPathPage +
+              '.'
+          )
+        }
+
+        return JSON.stringify(
+          queryVectorPaths(
+            artifact,
+            readImageRegion(args.region),
+            offset,
+            limit
+          )
+        )
       }
 
       if (name === AiImageToolIds.REVIEW_VECTOR_CONTOURS) {

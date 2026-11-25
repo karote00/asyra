@@ -22,7 +22,8 @@ operations and native tools use `names`. `view: usage`
 returns purpose, the actual invocation route, a validated illustrative owner example
 when available, and canonical nested field/definition paths. Examples do not replace
 executable validation schemas or supply live credentials.
-A canonical action's `recipeDependency` identifies its qualified composition
+On an exact read, request `includeRecipeDependency: true` for recipe authoring.
+A canonical action's returned `recipeDependency` identifies its qualified composition
 route; foreign tools with similar names are separate choices. Select that route
 before obtaining the full recipe contract. A semantic name
 (such as `fill.updateFillsAtIndex`) belongs in discovery `names`; execution `operations[].name`
@@ -50,14 +51,14 @@ Examples use current public selectors:
 
 ```json
 {
-  "tool": "read_design_contracts",
+  "tool": "read_design_resources",
   "arguments": { "names": ["fill.updateFillsAtIndex"], "view": "usage" }
 }
 ```
 
 ```json
 {
-  "tool": "read_design_contracts",
+  "tool": "read_design_resources",
   "arguments": {
     "names": ["design_workflow.prepare_and_apply_design"],
     "scopes": { "design_workflow.prepare_and_apply_design": { "schemaPaths": ["/properties/draft"] } }

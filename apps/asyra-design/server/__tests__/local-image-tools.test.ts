@@ -22,7 +22,9 @@ describe('local provider image tools', () => {
       convert
     )
 
-    expect(tools.definitions).toHaveLength(6)
+    expect(tools.definitions.map(({ name }) => name)).toContain(
+      AiImageToolIds.QUERY_VECTOR_PATHS
+    )
     const signal = new AbortController().signal
 
     expect(
@@ -94,8 +96,10 @@ describe('local provider image tools', () => {
         metadata: {
           imageAttachments: [{ ...attachment, mediaType: 'image/gif' }]
         }
-      }).definitions
-    ).toHaveLength(6)
+      })
+        .definitions.map(({ name }) => name)
+        .sort()
+    ).toEqual(Object.values(AiImageToolIds).sort())
   })
 
   it('requires same-request analysis for mappings and reuses evidence during preparation', async () => {

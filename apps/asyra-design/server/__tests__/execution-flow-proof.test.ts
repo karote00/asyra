@@ -158,7 +158,7 @@ it('execution proof resolves batched semantic identities and applies ordered rea
         view: 'usage',
         includeResultSchema: true
       },
-      'read_design_contracts'
+      'read_design_resources'
     )
   )
 
@@ -482,7 +482,7 @@ it('execution proof preserves partial lookup full recovery and declaration const
     JSON.parse(await tools.call(toolName, args, new AbortController().signal))
       .apis[0]
 
-  const fragment = await read('read_design_contracts', {
+  const fragment = await read('read_design_resources', {
     names: [action.name],
     scopes: Object.fromEntries(
       [action.name].map((name) => [
@@ -508,10 +508,10 @@ it('execution proof preserves partial lookup full recovery and declaration const
   })
   expect(recovered.schemaFragments).toEqual(fragment.schemaFragments)
   expect(recovered.inputSchema).toBeUndefined()
-  const full = await read('read_design_contracts', { names: [action.name] })
+  const full = await read('read_design_resources', { names: [action.name] })
 
   expect(full.inputSchema).toEqual(action.inputSchema)
-  const repeated = await read('read_design_contracts', { names: [action.name] })
+  const repeated = await read('read_design_resources', { names: [action.name] })
 
   expect(repeated.definition.availableInResponse).toBe(true)
   expect(
@@ -525,7 +525,7 @@ it('execution proof preserves partial lookup full recovery and declaration const
   expect(JSON.stringify(fragment).length).toBeLessThan(
     JSON.stringify(full).length
   )
-  const inspection = await read('read_design_contracts', {
+  const inspection = await read('read_design_resources', {
     names: [AiActionNames.REVIEW_DESIGN]
   })
 
@@ -617,7 +617,7 @@ it('execution proof preserves partial lookup full recovery and declaration const
       (input, requestedTool) =>
         highLevel.call(requestedTool, input, new AbortController().signal),
       { names: [preparation.name], view: 'usage', includeResultSchema: true },
-      'read_design_contracts'
+      'read_design_resources'
     )
   ).tools[0]
 
@@ -643,7 +643,7 @@ it('execution proof preserves partial lookup full recovery and declaration const
       (input, requestedTool) =>
         highLevel.call(requestedTool, input, new AbortController().signal),
       usage.definition.recover.arguments,
-      'read_design_contracts'
+      'read_design_resources'
     )
   ).tools[0]
 
@@ -777,7 +777,7 @@ it('execution proof preserves registered native capability envelopes', async ({
               turnId: 'proof-turn',
               callId: 'discover',
               namespace: 'design_operations',
-              tool: 'read_design_contracts',
+              tool: 'read_design_resources',
               arguments: {
                 names: [
                   ...basicApiContracts.map(({ name }) => name),
@@ -955,7 +955,9 @@ it('execution proof preserves registered native capability envelopes', async ({
     expect(definition).toMatchObject({
       type: 'function',
       deferLoading:
-        definition.name !== AiDesignToolIds.READ_DESIGN_CONTRACTS &&
+        definition.name !== AiDesignToolIds.DISCOVER_KNOWLEDGE &&
+        definition.name !== AiDesignToolIds.READ_KNOWLEDGE &&
+        definition.name !== AiDesignToolIds.READ_DESIGN_RESOURCES &&
         definition.name !== AiDesignToolIds.SEARCH_DESIGN_TOOLS &&
         definition.name !== 'execute_design',
       name: expect.any(String),
@@ -966,9 +968,9 @@ it('execution proof preserves registered native capability envelopes', async ({
 
   const names = new Set(definitions.map(({ name }) => name))
 
-  expect(names.has(AiDesignToolIds.READ_DESIGN_CONTRACTS)).toBe(true)
+  expect(names.has(AiDesignToolIds.READ_DESIGN_RESOURCES)).toBe(true)
   const contractRead = definitions.find(
-    ({ name }) => name === AiDesignToolIds.READ_DESIGN_CONTRACTS
+    ({ name }) => name === AiDesignToolIds.READ_DESIGN_RESOURCES
   )
   const search = definitions.find(
     ({ name }) => name === AiDesignToolIds.SEARCH_DESIGN_TOOLS
@@ -1027,7 +1029,7 @@ it('execution proof preserves registered native capability envelopes', async ({
       .map((api) =>
         expect.objectContaining({
           name: api.name,
-          usage: expect.objectContaining({ tool: 'read_design_contracts' })
+          usage: expect.objectContaining({ tool: 'read_design_resources' })
         })
       )
   )
@@ -1122,7 +1124,7 @@ it('execution proof preserves registered native capability envelopes', async ({
   expect(catalog).toMatchObject({
     toolCount: definitions.length,
     toolDefinitionBytes: Buffer.byteLength(JSON.stringify(groups), 'utf8'),
-    eagerToolCount: 3,
+    eagerToolCount: 5,
     eagerToolDefinitionBytes: Buffer.byteLength(
       JSON.stringify(definitions.filter((tool) => !tool.deferLoading)),
       'utf8'
@@ -3305,18 +3307,12 @@ it('execution proof preserves a rejected mechanical repair as not-started across
 it('execution proof connects tool-first guidance to native selection and Runtime decision recovery', async () => {
   const { AI_APP_PROMPT } = await import('../ai-domain-prompt')
 
-  expect.soft(AI_APP_PROMPT).toContain('optional reference material')
-  expect.soft(AI_APP_PROMPT).toContain('not an additional acceptance standard')
-  expect.soft(AI_APP_PROMPT).toContain('No particular construction order')
-  expect
-    .soft(AI_APP_PROMPT)
-    .toContain('Final verification is your responsibility')
-  expect
-    .soft(AI_APP_PROMPT)
-    .not.toMatch(
-      /default method reference|representative route before repeating/
-    )
-  expect.soft(AI_APP_PROMPT).toContain('fresh request-owned evidence')
+  expect(AI_APP_PROMPT).toContain('Make design decisions')
+  expect(AI_APP_PROMPT).toContain('Confirm the requested result')
+  expect(AI_APP_PROMPT).toContain('current selection and real IDs')
+  expect(AI_APP_PROMPT).not.toMatch(
+    /default method reference|representative route before repeating/
+  )
   const checks = createDesignCheckResults()
   const revision = checks.record({
     id: 'unresolved',
@@ -3385,7 +3381,7 @@ it('execution proof connects tool-first guidance to native selection and Runtime
     const invoke = async (name: string, input: unknown) =>
       JSON.parse((await host.invoke({ name, input })).text)
 
-    const lookup = await invoke('design_operations.read_design_contracts', {
+    const lookup = await invoke('design_operations.read_design_resources', {
       names: ['design_operations.verify_design_checks']
     })
 
@@ -6524,7 +6520,7 @@ it('execution proof delivers bounded information through owner continuations wit
     }
   )
   const definition = owner.definitions.find(
-    (d) => d.name === 'read_design_contracts'
+    (d) => d.name === 'read_design_resources'
   )
 
   if (!definition) {
@@ -6933,7 +6929,7 @@ it('execution proof delivers selected operation contracts without exhaustive dis
     expect(candidate.rank).toBeGreaterThan(0)
     expect(candidate.match.metadataTerms.length).toBeGreaterThan(0)
     if (expected === 'api_hierarchy_groupElements') {
-      expect(candidate.description).toContain('Group existing elements')
+      expect(candidate.capability.purpose).toContain('Group existing elements')
     }
   }
 
@@ -6942,7 +6938,7 @@ it('execution proof delivers selected operation contracts without exhaustive dis
       (args, requestedTool) =>
         catalog.call(requestedTool, args, new AbortController().signal),
       { names: ['api_hierarchy_groupElements'], view: 'usage' },
-      'read_design_contracts'
+      'read_design_resources'
     )
   ).apis[0].usageGuide
   const groupPath = '/actionResults/0/result/value/groupId'
@@ -6982,7 +6978,7 @@ it('execution proof delivers selected operation contracts without exhaustive dis
   )
   const selectedUsage = JSON.parse(
     await selectedMutation.call(
-      'read_design_contracts',
+      'read_design_resources',
       {
         view: 'usage',
         includeResultSchema: true,
@@ -7080,14 +7076,15 @@ it('execution proof delivers selected operation contracts without exhaustive dis
     expect(candidate).toBeDefined()
     expect(candidate.usageGuide).toBeUndefined()
     expect(candidate.inputSchema).toBeUndefined()
-    expect(candidate.match.metadataTerms.length).toBeGreaterThan(0)
-    // A unique scoped owner retains its existing select-scope recovery route.
-    const selection =
-      candidate.usage?.arguments ?? candidate.definition.recover.arguments
+    expect(candidate.capability.purpose).toBeTruthy()
+    const selection = {
+      names: [candidate.namespace + '.' + candidate.name],
+      view: 'usage'
+    }
 
     expect(selection.names).toEqual(['design.prepare_and_apply_design'])
     const acquired = await read(
-      'read_design_contracts',
+      'read_design_resources',
       contractReadFixture(selection.names, {
         ...selection,
         inputScope: {
@@ -7197,7 +7194,7 @@ it('execution proof delivers selected operation contracts without exhaustive dis
   expect(execute).not.toHaveBeenCalled()
 
   const definition = operations.definitions.find(
-    (item) => item.name === 'read_design_contracts'
+    (item) => item.name === 'read_design_resources'
   )
 
   if (!definition) {
@@ -7237,7 +7234,7 @@ it('execution proof delivers selected operation contracts without exhaustive dis
       .usageGuide
   ).toEqual(first.tools[0].usageGuide)
   counts.splice(0)
-  const menu = await read('read_design_contracts', {
+  const menu = await read('read_design_resources', {
     names,
     view: 'usage',
     includeResultSchema: true
@@ -7255,7 +7252,7 @@ it('execution proof delivers selected operation contracts without exhaustive dis
   )
   expect(menu.tools[0].outputFields).toBeUndefined()
   counts.splice(0)
-  const queried = await read('read_design_contracts', {
+  const queried = await read('read_design_resources', {
     names,
     view: 'usage',
     includeResultSchema: true
@@ -7274,7 +7271,7 @@ it('execution proof delivers selected operation contracts without exhaustive dis
     guidance.example.arguments
   )
   const expectedBytes = counts.splice(0)
-  const actualScope = await read('read_design_contracts', {
+  const actualScope = await read('read_design_resources', {
     names: scopedNames,
     ...selectedQuery
   })
@@ -7283,10 +7280,10 @@ it('execution proof delivers selected operation contracts without exhaustive dis
   expect(counts).toHaveLength(expectedBytes.length)
   expect(counts.every((bytes) => bytes <= 24000)).toBe(true)
   counts.splice(0)
-  const full = await read('read_design_contracts', { names })
+  const full = await read('read_design_resources', { names })
   const fullCounts = counts.splice(0)
   const inputScope = { operation: 'draft', nodeTypes: ['vector'] }
-  const scoped = await read('read_design_contracts', {
+  const scoped = await read('read_design_resources', {
     names,
     scopes: Object.fromEntries(
       names.map((name) => [name, { inputScope: inputScope }])
@@ -7310,7 +7307,7 @@ it('execution proof delivers selected operation contracts without exhaustive dis
     ].inputScope
   ).toEqual(inputScope)
   counts.splice(0)
-  const guide = await read('read_design_contracts', {
+  const guide = await read('read_design_resources', {
     names,
     scopes: Object.fromEntries(
       names.map((name) => [name, { inputScope: inputScope }])
@@ -7346,7 +7343,7 @@ it('execution proof delivers selected operation contracts without exhaustive dis
     operation: 'draft',
     nodeTypes: ['projected-face', 'surface-grid']
   }
-  const combined = await read('read_design_contracts', {
+  const combined = await read('read_design_resources', {
     names,
     scopes: Object.fromEntries(
       names.map((name) => [name, { inputScope: mixedScope }])
@@ -7363,7 +7360,7 @@ it('execution proof delivers selected operation contracts without exhaustive dis
   const invocation = ownerInvocation(
     combined.tools[0].invocationExample.invocation
   )
-  const combinedFull = await read('read_design_contracts', {
+  const combinedFull = await read('read_design_resources', {
     names,
     scopes: Object.fromEntries(
       names.map((name) => [name, { inputScope: mixedScope }])
@@ -7417,7 +7414,7 @@ it('execution proof distinguishes inspection lookup coverage from completed read
     }
   )
   const definition = owner.definitions.find(
-    (d) => d.name === 'read_design_contracts'
+    (d) => d.name === 'read_design_resources'
   )
 
   if (!definition) {
@@ -8694,7 +8691,7 @@ it('execution proof delivers layered repetition before parameters with canonical
           ])
         )
       },
-      'read_design_contracts'
+      'read_design_resources'
     )
   )
   const tool = guide.tools[0]
@@ -9003,7 +9000,7 @@ it('execution proof delivers shared motifs through the main workflow without ext
       return raw
     },
     fixture.query,
-    'read_design_contracts'
+    'read_design_resources'
   )
   const tool = JSON.parse(body).tools[0]
 
@@ -9207,7 +9204,7 @@ it('execution proof follows union entry navigation and valid recovery without re
 
   const read = async (args: unknown) => {
     const definition = owner.definitions.find(
-      (tool) => tool.name === 'read_design_contracts'
+      (tool) => tool.name === 'read_design_resources'
     )
 
     if (!definition) {
@@ -9663,8 +9660,7 @@ it('execution proof preserves incremental UI publications without unrelated hier
 })
 
 it('execution proof preserves retained images during direct response reprojection', async () => {
-  const { localToolContent, localToolResultInstructions } =
-    await import('../local-operation-tools')
+  const { localToolContent } = await import('../local-operation-tools')
   const imageBytes = await sharp({
     create: { width: 2, height: 2, channels: 3, background: '#345678' }
   })
@@ -9696,9 +9692,6 @@ it('execution proof preserves retained images during direct response reprojectio
   }
 
   expect(JSON.parse(text.text).toolOutcome).toEqual(receipt.toolOutcome)
-  expect(localToolResultInstructions).not.toMatch(
-    /bindChecks|dataEvidence|define_design_criteria/
-  )
   const selected = structuredClone(selectedInspection.response)
   const captured = selected.fields.receipt.find(
     (entry) => entry.actionName === 'inspect_drawing'
@@ -9869,7 +9862,7 @@ it('execution proof delivers projected ovals through projection and canonical di
       return raw
     },
     fixture.query,
-    'read_design_contracts'
+    'read_design_resources'
   )
   const tool = JSON.parse(body).tools[0]
 
@@ -10468,7 +10461,7 @@ it('execution proof delivers complete non-scoped usage without mutation or a ful
     }
   )
   const definition = tools.definitions.find(
-    (d) => d.name === 'read_design_contracts'
+    (d) => d.name === 'read_design_resources'
   )
 
   if (!definition) {
@@ -10660,7 +10653,7 @@ it('execution proof declares the saved model receipt without internal result fie
       execute
     )
     const query = owner.definitions.find(
-      (d) => d.name === 'read_design_contracts'
+      (d) => d.name === 'read_design_resources'
     )
 
     if (!query) {
@@ -10795,7 +10788,7 @@ it('execution proof declares the saved model receipt without internal result fie
               ])
             )
           },
-          'read_design_contracts'
+          'read_design_resources'
         )
       ).tools[0]
       const example = acquired.invocationExample.invocation
@@ -11290,7 +11283,7 @@ it('execution proof preserves recoverable discovery identity selection without h
     dispatch
   )
   const definition = owner.definitions.find(
-    (tool) => tool.name === 'read_design_contracts'
+    (tool) => tool.name === 'read_design_resources'
   )
 
   if (!definition) {
@@ -11459,7 +11452,7 @@ it('execution proof uses named-step result contracts and corrects selectors befo
           })
         ).text,
       { names: ['fixture.a'], view: 'usage' },
-      'read_design_contracts'
+      'read_design_resources'
     )
 
     expect(JSON.parse(usage).tools, usage).toBeDefined()

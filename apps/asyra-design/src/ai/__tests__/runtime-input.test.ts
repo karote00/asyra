@@ -647,3 +647,31 @@ it('labels invalid owner output without blaming arguments or replaying execution
   })
   expect(execute).toHaveBeenCalledOnce()
 })
+
+it('publishes retained document receipts for large position, arrangement and material outputs', () => {
+  const runtime = createAiRuntimeInput({
+    permissionRules: {},
+    provider: { requestActionBatch: vi.fn() }
+  })
+
+  try {
+    for (const name of [
+      'apply_prescribed_positions',
+      'arrange_design',
+      'apply_prepared_material'
+    ]) {
+      const action = runtime.actionDefinitions.find(
+        (entry) => entry.name === name
+      )
+
+      expect(action?.delivery, name).toMatchObject({
+        path: '/modelResult',
+        receipt: { owner: 'design-context', path: '/retained' }
+      })
+    }
+  } finally {
+    for (const resource of runtime.ownedResources ?? []) {
+      resource.dispose()
+    }
+  }
+})

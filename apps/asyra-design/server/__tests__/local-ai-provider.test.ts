@@ -1012,18 +1012,14 @@ describe('local subscription AI backend', () => {
         expect(delivered).toBeDefined()
         expect(JSON.stringify(delivered)).not.toContain(nextIntent)
 
-        expect(thread.ephemeral).toBe(true)
+        // Each helper call owns a fresh source, but its thread is service-leased.
+        // The assertions above prove cold-source history restoration without replay.
+        expect(thread.ephemeral).toBe(false)
         if (server === secondServer) {
-          expect(thread.baseInstructions).toContain(
-            'metadata.conversationContext'
-          )
-          expect(thread.baseInstructions).toContain(
-            'Never replay prior actions'
-          )
+          expect(thread.baseInstructions).toContain('Prior turns')
+          expect(thread.baseInstructions).toContain('Never replay prior edits')
         } else {
-          expect(thread.baseInstructions).toContain(
-            'metadata.conversationContext'
-          )
+          expect(thread.baseInstructions).toContain('Prior turns')
         }
 
         expect(
@@ -1253,7 +1249,7 @@ describe('local subscription AI backend', () => {
 
       try {
         if (submit) {
-          const contract = await call('read_design_contracts', {
+          const contract = await call('read_design_resources', {
             names: [
               'design_preparation.prepare_design',
               'tool_library.submit_tool'
@@ -1310,7 +1306,7 @@ describe('local subscription AI backend', () => {
           ).toMatchObject({ ok: true })
         }
 
-        const found = await call('read_design_contracts', {
+        const found = await call('read_design_resources', {
           names: ['prepare-part', 'design_preparation.prepare_design']
         })
 
@@ -1336,7 +1332,7 @@ describe('local subscription AI backend', () => {
               (tool: { name: string }) => tool.name === 'prepare_design'
             ).definition
           ).toMatchObject({ availableInResponse: true })
-          const restored = await call('read_design_contracts', {
+          const restored = await call('read_design_resources', {
             names: ['design_preparation.prepare_design'],
             refresh: true,
             refreshReason: 'context-loss'
@@ -2414,15 +2410,14 @@ describe('local subscription AI backend', () => {
         ({ method }) => method === 'thread/start'
       )
 
-      expect(thread?.params.ephemeral).toBe(true)
+      // Fresh source ownership starts a leased thread; history remains in current input.
+      expect(thread?.params.ephemeral).toBe(false)
       if (server === secondServer) {
         expect(thread?.params.baseInstructions).toContain(
-          'current input.intent overrides'
+          'Current intent takes precedence'
         )
       } else {
-        expect(thread?.params.baseInstructions).toContain(
-          'metadata.conversationContext'
-        )
+        expect(thread?.params.baseInstructions).toContain('Prior turns')
       }
     }
 
@@ -2508,7 +2503,7 @@ describe('local subscription AI backend', () => {
         { names: ['position'] }
       ],
       [
-        'read_design_contracts',
+        'read_design_resources',
         { names: ['prepare_and_apply_design'] },
         { query: 'position' }
       ]
@@ -2526,115 +2521,21 @@ describe('local subscription AI backend', () => {
       ).toBeDefined()
     }
 
-    const instructions = thread?.developerInstructions as string
-
-    expect(instructions).toContain(
-      'Call registered tools directly with their JSON arguments'
-    )
-    const delivered = JSON.stringify({
-      base: thread?.baseInstructions,
-      instructions,
-      definitions
-    })
-
-    expect(delivered).not.toContain('For local changes, query workspace bounds')
-    expect(delivered).toContain(
-      'Known-value edits can proceed without a lookup'
-    )
-    expect(delivered).toContain('Use children for hierarchy questions')
-    expect(delivered).not.toContain('optional criteria')
-    expect(delivered).not.toContain('Name steps only to bind their results')
-    expect(delivered).toContain(
-      'Name steps for binding, retention or selected delivery'
-    )
-
-    for (const obsolete of [
-      'Code Mode',
-      'code-mode',
-      'functions.exec',
-      'store(',
-      'text(result)',
-      'load(deliveryKey)'
-    ]) {
-      expect(delivered).not.toContain(obsolete)
-    }
-
-    expect(thread?.config).toMatchObject({})
+    const instructions = String(thread?.developerInstructions)
     const base = String(thread?.baseInstructions)
 
-    expect(base).toContain('domain principles, common failure modes')
-    expect(base).toContain(
-      'even when you already know how to approach the design'
+    expect(instructions).toContain('final controls in input.actions')
+    expect(
+      definitions.find((tool) => tool.name === 'execute_design')?.description
+    ).toContain('Execute operations')
+    expect(base).toContain('Make design decisions')
+    expect(base).not.toMatch(
+      /Main tool scope:|prepare_and_apply_design|optionalInputs|map_retained_fills/
     )
-    const knowledgeGroup = (
-      thread?.dynamicTools as { name: string; description: string }[]
-    ).find((group) => group.name === 'design_knowledge')
-
-    expect(knowledgeGroup?.description).toContain('avoid re-deriving')
-    expect(knowledgeGroup?.description).toContain(
-      'reduce exploration or repeated correction'
-    )
-    expect(knowledgeGroup?.description).toContain(
-      'adds no detail or polish requirement'
-    )
-    expect(base).toContain('You choose visual intent, design parameters')
-    expect(base).toContain('Prefer a suitable existing direct tool')
-    expect(base).toContain(
-      'use submit_tool for a finite recipe and invoke_tool'
-    )
-    expect(base).toContain('cannot create missing primitive capabilities')
-    expect(base).toContain(
-      'save_tool retries failed saving without executing the drawing again'
-    )
-    expect(base).toContain('optional reference material')
-    expect(base).toContain('not an additional acceptance standard')
-    expect(base).toContain('Final verification is your responsibility')
-    expect(delivered).not.toMatch(
-      /default method reference|representative route before repeating|seamless height grade/
-    )
-    expect(base).not.toContain(
-      'submit ready geometry before later grid details'
-    )
-    expect(base).not.toContain('Draw each coherent ready part')
-    expect(base).not.toContain('Do not accumulate all stages in one draft')
-    expect(base).toContain('No particular construction order')
-    expect(base).toContain('Known-value edits can proceed without a lookup')
-    expect(base).toContain('Final verification is your responsibility')
-    expect(base).not.toContain('before committing those decisions')
-    process.stdout.write(
-      JSON.stringify({
-        measurement: 'composition-startup',
-        bytes: Buffer.byteLength(base),
-        sha256: createHash('sha256').update(base).digest('hex')
-      }) + '\n'
-    )
-    expect(Buffer.byteLength(base)).toBeLessThanOrEqual(30327)
     for (const example of designPreparationExamples) {
       expect(base).not.toContain(JSON.stringify(example))
     }
 
-    const scopeLine = base
-      .split('\n')
-      .find((line) => line.startsWith('Main tool scope: '))
-
-    expect(scopeLine).toBeDefined()
-    if (!scopeLine) {
-      throw new Error('Missing startup scope guidance')
-    }
-
-    const scope = JSON.parse(scopeLine.slice('Main tool scope: '.length))
-
-    expect(scope.inputScopes.operations).toEqual(['draft', 'repair', 'parts'])
-    expect(scope.operationUsage.draft).toContain('10000 expanded objects')
-    expect(scope.operationUsage.parts).toContain('each part artifact fits')
-    expect(
-      scope.example.arguments.scopes[scope.example.arguments.names[0]]
-        .inputScope.operation
-    ).toBe('draft')
-    expect(
-      scope.example.arguments.scopes[scope.example.arguments.names[0]]
-        .inputScope.nodeTypes
-    ).toEqual(['pattern'])
     const { createLocalDesignWorkflow } =
       await import('../local-design-workflow')
     const { createLocalOperationTools } =
@@ -2651,23 +2552,29 @@ describe('local subscription AI backend', () => {
     const canonical = workflow.definitions[0].inputSchema as {
       'x-design-input-scope': { selection: string }
     }
+    const menu = JSON.parse(
+      await readCompleteInformation(
+        (input, requestedTool) =>
+          operations.call(requestedTool, input, new AbortController().signal),
+        { names: ['design_workflow.prepare_and_apply_design'], view: 'usage' },
+        'read_design_resources'
+      )
+    )
     const selection = canonical['x-design-input-scope'].selection
 
-    expect(scope.inputScopes.selection).toBe(selection)
-    expect(selection).toContain('component contents')
-    expect(selection).toContain('Component order:')
-    expect(selection).toContain('Layer order: sibling patterns')
-    expect(Buffer.byteLength(selection)).toBeLessThanOrEqual(2363)
-    expect(selection).toContain('outer repetition')
-    expect(selection).toContain('pattern with members')
-    expect(selection).toContain('no extra query is needed')
-    expect(selection).toContain('define members once')
-    expect(selection).toContain('Independent world-space planar faces')
-    expect(selection).toContain('Omit unused optional inputs without rereading')
-    expect(scope.inputScopes.selection).toBe(selection)
-    expect(base.split(JSON.stringify(selection))).toHaveLength(2)
-    expect(scope.inputScopes).not.toHaveProperty('properties')
+    expect(menu.tools[0].inputScopes.selection).toBe(selection)
+    const { workflowQueryGuidance } =
+      await import('../design-workflow-discovery')
+    const scope = workflowQueryGuidance(
+      'design_workflow.prepare_and_apply_design',
+      workflow.definitions[0].inputSchema
+    )
 
+    if (!scope) {
+      throw Error('Missing owner workflow scope')
+    }
+
+    expect(base).not.toContain(selection)
     const selected = JSON.parse(
       await readCompleteInformation(
         (input, requestedTool) =>
@@ -2683,45 +2590,6 @@ describe('local subscription AI backend', () => {
       operation: 'design_workflow.prepare_and_apply_design'
     })
 
-    for (const name of [
-      'mechanicalSelection',
-      'verify_design_checks',
-      'repair_design_checks'
-    ]) {
-      expect(delivered).toContain(name)
-    }
-
-    expect(base).toContain('fresh request-owned evidence')
-    expect(instructions).not.toContain(
-      'Discover the relevant tools before composing calls'
-    )
-    expect(instructions).toContain('Known current contracts need no lookup')
-    // The delivered provider instruction must not override scoped acquisition
-    // with a second full-schema policy for a single unknown field.
-    expect(instructions).not.toContain(
-      'When nested fields appear as unknown or a constraint is unclear'
-    )
-    expect(base).toContain('For missing fields recover those paths')
-    expect(base).toContain('refresh preserves that scope')
-    expect(base).toContain(
-      'Full input/output and lifecycle contracts are required when authoring a reusable recipe with submit_tool'
-    )
-    expect(instructions).toContain('Runtime owns admitted finite iteration')
-    expect(instructions).toContain(
-      'input.actions lists final-response actions, not the complete capability catalog'
-    )
-    expect(instructions).not.toContain('Available App tool namespaces:')
-    expect(instructions).toContain(
-      'Discover tools by operation purpose using search_design_tools query'
-    )
-    expect(instructions).not.toContain('read_design_contracts query')
-    expect(instructions).toContain('read_design_contracts names')
-    expect(String(thread?.baseInstructions)).toContain(
-      'Use native web research'
-    )
-    expect(instructions).not.toContain(
-      'Only explicitly supplied App tools are available'
-    )
     expect(thread?.config).toMatchObject({
       web_search: 'live',
       'features.shell_tool': false
@@ -3232,8 +3100,10 @@ describe('local subscription AI backend', () => {
     )
 
     expect(afterEager.map((tool) => tool.name).sort()).toEqual([
+      'discover_knowledge',
       'execute_design',
-      'read_design_contracts',
+      'read_design_resources',
+      'read_knowledge',
       'search_design_tools'
     ])
     expect(afterEager).toEqual(beforeEager)
@@ -3287,9 +3157,11 @@ describe('local subscription AI backend', () => {
       expect(definition).toMatchObject({
         type: 'function',
         deferLoading: ![
+          'discover_knowledge',
+          'read_knowledge',
           'execute_design',
           'search_design_tools',
-          'read_design_contracts'
+          'read_design_resources'
         ].includes(String(definition.name)),
         name: expect.any(String),
         description: expect.any(String),
@@ -5700,7 +5572,7 @@ it('retains exact bounded discovery and field selectors for execution diagnosis'
   try {
     createAiExecutionProfiler(input, 'selected-model').trace('tool_started', {
       callId: 'query',
-      tool: 'read_design_contracts',
+      tool: 'read_design_resources',
       arguments: {
         names: ['api_core_getElementComputedData'],
         fields: ['bounds'],
@@ -5829,15 +5701,10 @@ it('exposes discovery and the single host entry eagerly with truthful advertised
 
     expect(contracts?.appOwnedInstructionBlocks).toEqual(expect.any(Array))
     const blocks = contracts?.appOwnedInstructionBlocks ?? []
-    const operationText = blocks.find(
-      (block) => block.source === 'operation-contract'
-    )?.text
 
-    expect(operationText).toContain(
-      'prefer map_retained_fills declarative query mappings'
-    )
-    expect(operationText).not.toContain(
-      'request x or y with delivery=reference, then use map_retained_fills'
+    expect(blocks.map((block) => block.source)).not.toContain('main-tool-scope')
+    expect(blocks.map((block) => block.source)).not.toContain(
+      'operation-contract'
     )
 
     for (const role of ['base', 'developer']) {
@@ -5870,8 +5737,10 @@ it('exposes discovery and the single host entry eagerly with truthful advertised
     )
 
     expect(eager.map((tool) => tool.name).sort()).toEqual([
+      'discover_knowledge',
       'execute_design',
-      'read_design_contracts',
+      'read_design_resources',
+      'read_knowledge',
       'search_design_tools'
     ])
     const reply = server.packets.find(
@@ -5885,7 +5754,7 @@ it('exposes discovery and the single host entry eagerly with truthful advertised
       records.find((record) => record.stage === 'capabilities_advertised')
         ?.evidence
     ).toMatchObject({
-      eagerToolCount: 3,
+      eagerToolCount: 5,
       eagerToolDefinitionBytes: Buffer.byteLength(JSON.stringify(eager), 'utf8')
     })
   } finally {
@@ -6696,7 +6565,7 @@ it('delivers attachment identity and prepares selected uses before capture and c
     }
     const text = packet.result.contentItems[0].text
 
-    if (tool === 'read_design_contracts') {
+    if (tool === 'read_design_resources') {
       discoveryCalls++
       discoveryBytes +=
         Buffer.byteLength(JSON.stringify(args)) + Buffer.byteLength(text)
@@ -6722,7 +6591,7 @@ it('delivers attachment identity and prepares selected uses before capture and c
             ].includes(name)
         )
       }
-      const delivered = await call('read_design_contracts', query)
+      const delivered = await call('read_design_resources', query)
 
       expect(
         delivered.tools.some(
@@ -6783,14 +6652,16 @@ it('delivers attachment identity and prepares selected uses before capture and c
 
     const instructions = thread.params.baseInstructions as string
 
-    expect(instructions).toContain('select_design_references')
     const guidance = instructions
       .split('\n')
-      .find((line) => line.startsWith('Optional record_design_facts'))
+      .filter(
+        (line) =>
+          line.includes('select_design_references') ||
+          line.includes('record_design_facts')
+      )
+      .join('\n')
 
-    if (!guidance) {
-      throw new Error('Missing attachment guidance')
-    }
+    expect(guidance).toBe('')
 
     const baselineBytes = recordedAttachmentHandoff.calls.reduce(
       (bytes, call) => bytes + call.input.bytes + call.output.bytes,
@@ -7060,12 +6931,13 @@ it('discovers and retrieves both knowledge contexts through the normal provider 
     (packet) => packet.method === 'thread/start'
   )?.params
 
-  expect(thread?.baseInstructions).toContain('discover_knowledge')
-  expect(thread?.baseInstructions).toContain('optional reference material')
+  expect(thread?.baseInstructions).toContain('Make design decisions')
   expect(thread?.baseInstructions).not.toContain('default method reference')
-  expect(thread?.baseInstructions).toContain(
-    'Known-value edits can proceed without a lookup'
-  )
+  expect(
+    groups
+      .find((g) => g.name === 'design_operations')
+      ?.tools.find((t) => t.name === 'execute_design')?.description
+  ).toContain('Execute operations')
   const knowledge = groups.find((group) => group.name === 'design_knowledge')
 
   expect(knowledge?.tools.map((tool) => tool.name)).toEqual([
@@ -7075,7 +6947,7 @@ it('discovers and retrieves both knowledge contexts through the normal provider 
   expect(JSON.stringify(knowledge)).not.toContain('## How')
   expect(
     knowledge?.tools.find((tool) => tool.name === 'read_knowledge')?.description
-  ).toContain('Do not read all siblings')
+  ).toContain('known')
   let id = 800
 
   const call = async (tool: string, args: unknown, success = true) => {
@@ -7107,27 +6979,14 @@ it('discovers and retrieves both knowledge contexts through the normal provider 
   }
 
   try {
-    const contracts = JSON.parse(
-      await readCompleteInformation(
-        async (selector, requestedTool) =>
-          JSON.stringify(await call(requestedTool, selector)),
-        { names: ['design_knowledge.read_knowledge'], view: 'full' },
-        'read_design_contracts'
-      )
+    const excluded = await call(
+      'read_design_resources',
+      { names: ['design_knowledge.read_knowledge'] },
+      false
     )
-    const contract = contracts.tools[0]
 
-    expect(contract.outputSchema.anyOf[0].properties.contextKey).toMatchObject({
-      type: 'string',
-      'x-runtime-value': 'request'
-    })
-    expect(
-      contract.outputSchema.anyOf[0].properties.documents.items.oneOf[1]
-        .properties.retainedFrom
-    ).toMatchObject({
-      type: 'string',
-      'x-runtime-value': 'request'
-    })
+    expect(excluded.missingNames).toEqual(['design_knowledge.read_knowledge'])
+    expect(excluded.candidates).toEqual([])
     const architecture = {
       ids: ['design.architectural-illustration'],
       contexts: ['architectural-illustration']
@@ -8162,7 +8021,7 @@ it('delivers canonical compact usage through the provider and consumes its actua
   })
   const server = fakeServer({
     toolCall: true,
-    toolName: 'read_design_contracts',
+    toolName: 'read_design_resources',
     toolArguments: { names: [action.name], view: 'usage' },
     followupTool: followup
   })
@@ -8237,7 +8096,7 @@ it('delivers capture controls and narrow deletion fields through the native prov
   vi.spyOn(console, 'info').mockImplementation(() => undefined)
   const server = fakeServer({
     toolCall: true,
-    toolName: 'read_design_contracts',
+    toolName: 'read_design_resources',
     toolArguments: { names: ['api_element_deleteElements'], view: 'usage' }
   })
 
@@ -8717,7 +8576,7 @@ it('executes the recorded target-bound group and captures through provider-visib
         async (args, requestedTool) =>
           (await call(requestedTool, args)).contentItems[0].text as string,
         { names: ['api_hierarchy_groupElements'], view: 'usage' },
-        'read_design_contracts'
+        'read_design_resources'
       )
     ).apis[0].usageGuide
     const path = '/actionResults/0/result/value/groupId'
@@ -8799,10 +8658,8 @@ it('delivers and executes the primary input-reuse example through the native pro
     const schema = nativeToolDefinitions(thread).find(
       (t) => t.name === 'execute_design'
     )?.inputSchema as { examples?: Record<string, unknown>[] }
-    const example = schema.examples?.[0]
 
-    expect(example).toHaveProperty('operations')
-    expect(JSON.stringify(example)).toContain('"kind":"named"')
+    expect(schema.examples).toBeUndefined()
     server.send({
       id: 882,
       method: 'item/tool/call',
@@ -8810,7 +8667,7 @@ it('delivers and executes the primary input-reuse example through the native pro
         threadId: 'thread-1',
         turnId: 'turn-1',
         callId: 'received-host-usage',
-        tool: 'read_design_contracts',
+        tool: 'read_design_resources',
         arguments: { names: ['execute_design'], view: 'usage' }
       }
     })
@@ -8825,7 +8682,10 @@ it('delivers and executes the primary input-reuse example through the native pro
     expect(usageReply.success, JSON.stringify(usageReply)).toBe(true)
     const usage = JSON.parse(usageReply.contentItems[0].text).tools[0]
 
-    expect(usage.invocationExample.invocation.arguments).toEqual(example)
+    const example = usage.invocationExample.invocation.arguments
+
+    expect(example).toHaveProperty('operations')
+    expect(JSON.stringify(example)).toContain('"kind":"named"')
     server.send({
       id: 881,
       method: 'item/tool/call',
@@ -9296,7 +9156,7 @@ it.each([
             view: 'usage',
             includeResultSchema: true
           },
-          'read_design_contracts'
+          'read_design_resources'
         )
       ).tools[0]
 
@@ -9570,7 +9430,7 @@ it.each(['prepare_design', 'prepare_and_apply_design'])(
                 }
               : {})
           },
-          'read_design_contracts'
+          'read_design_resources'
         )
       ).tools[0]
       const invocation = guide.invocationExample.invocation
@@ -9743,7 +9603,7 @@ it.each([
           ].find((entry) => entry.name === expected)
 
           return {
-            name: 'read_design_contracts',
+            name: 'read_design_resources',
             args: selected?.usage?.arguments ?? {
               names: [expected],
               view: 'usage'
@@ -9832,9 +9692,14 @@ it.each([
         `${query}: ${containing?.map((entry) => entry.name).join(', ')}`
       ).toBeGreaterThanOrEqual(0)
       if (expected === 'api_hierarchy_groupElements') {
-        expect(
-          (containing?.[index] as { description?: string })?.description
-        ).toContain('Group existing elements')
+        expect(containing?.[index]).toMatchObject({
+          capability: {
+            purpose: expect.stringContaining('Group existing elements'),
+            inputFields: ['elementIds']
+          },
+          execution: { kind: 'batch-action', tool: 'execute_design' }
+        })
+        expect(containing?.[index]).not.toHaveProperty('description')
       }
     } finally {
       vi.unstubAllGlobals()
@@ -9896,7 +9761,7 @@ it('replays current full discovery and delivery recovery through bounded provide
   try {
     const selector = { names: ['prepare_and_apply_design'], view: 'full' }
     const first = JSON.parse(
-      await readCompleteInformation(query, selector, 'read_design_contracts')
+      await readCompleteInformation(query, selector, 'read_design_resources')
     ).tools[0]
     const recovered = JSON.parse(
       await readCompleteInformation(
@@ -9906,7 +9771,7 @@ it('replays current full discovery and delivery recovery through bounded provide
           refresh: true,
           refreshReason: 'delivery-failure'
         },
-        'read_design_contracts'
+        'read_design_resources'
       )
     ).tools[0]
 
@@ -9988,7 +9853,7 @@ it.each([
         threadId: 'thread-1',
         turnId: 'turn-1',
         callId: 'delivery-1',
-        tool: 'read_design_contracts',
+        tool: 'read_design_resources',
         arguments: { names: ['create_rectangle'] }
       }
     })
@@ -9999,7 +9864,7 @@ it.each([
       item: {
         type: 'dynamicToolCall',
         id: 'delivery-1',
-        tool: 'read_design_contracts',
+        tool: 'read_design_resources',
         status: 'completed',
         success: true,
         contentItems
@@ -10062,7 +9927,7 @@ it('correlates interleaved native delivery results with their original calls and
 
   await untilTurn(server.packets)
   for (const [id, tool, args] of [
-    [91, 'read_design_contracts', recordedDiscoveryDelivery.calls[0].input],
+    [91, 'read_design_resources', recordedDiscoveryDelivery.calls[0].input],
     [
       92,
       'read_knowledge',
@@ -10092,7 +9957,7 @@ it('correlates interleaved native delivery results with their original calls and
   )
   for (const [id, tool] of [
     [92, 'read_knowledge'],
-    [91, 'read_design_contracts']
+    [91, 'read_design_resources']
   ] as const) {
     const response = server.packets.find((p) => p.id === id) as unknown as {
       result: { contentItems: { type: string; text: string }[] }
@@ -10227,7 +10092,7 @@ it('delivers unavailable field lookup and successful narrow recovery through nat
   vi.spyOn(console, 'info').mockImplementation(() => undefined)
   const server = fakeServer({
     toolCall: true,
-    toolName: 'read_design_contracts',
+    toolName: 'read_design_resources',
     toolArguments: {
       names: ['select_design_references'],
       scopes: Object.fromEntries(
@@ -10296,7 +10161,7 @@ it('delivers unavailable field lookup and successful narrow recovery through nat
 
   expect(
     nativeToolDefinitions(thread).find(
-      (t) => t.name === 'read_design_contracts'
+      (t) => t.name === 'read_design_resources'
     )?.description
   ).toContain('scopes maps each selected identity')
   expect(executeBatch).not.toHaveBeenCalled()
@@ -10506,7 +10371,7 @@ describe('bounded evaluation reporting', () => {
                       turnId,
                       callId: 'failed-app-tool',
                       tool: identityRepair
-                        ? 'read_design_contracts'
+                        ? 'read_design_resources'
                         : 'execute_design',
                       arguments:
                         sourceFixture?.input ??
@@ -10725,7 +10590,7 @@ describe('bounded evaluation reporting', () => {
 
           if (inputRepair) {
             const inputTool = identityRepair
-              ? 'read_design_contracts'
+              ? 'read_design_resources'
               : 'execute_design'
 
             server.notify('item/completed', {
@@ -10749,7 +10614,7 @@ describe('bounded evaluation reporting', () => {
               turnId: 'turn-1',
               callId: 'continue-after-visual-feedback',
               tool: identityRepair
-                ? 'read_design_contracts'
+                ? 'read_design_resources'
                 : 'search_design_tools',
               arguments: identityRepair
                 ? { names: ['fill.updateFillsAtIndex'], view: 'usage' }
@@ -11132,7 +10997,7 @@ it('delivers the request-local evaluation budget through actual native discovery
         threadId: 'thread-1',
         turnId: 'turn-1',
         callId: 'budget-delivery',
-        tool: 'read_design_contracts',
+        tool: 'read_design_resources',
         arguments: {
           names: ['prepare_and_apply_design'],
           view: 'usage',
@@ -12155,7 +12020,7 @@ it('repairs recorded canonical name input in the same recorded native turn witho
       )
     }
 
-    const usage = await call('read_design_contracts', {
+    const usage = await call('read_design_resources', {
       view: 'usage',
       names: ['core.updateElementProperties', 'core.updateElementData']
     })
@@ -12362,7 +12227,7 @@ it('delivers purpose and input-field discovery through actual native declaration
         threadId: 'thread-1',
         turnId: 'turn-1',
         callId: 'coordinate-contract',
-        tool: 'read_design_contracts',
+        tool: 'read_design_resources',
         arguments: { names: ['workspaceToElementLocal'], view: 'full' }
       }
     })

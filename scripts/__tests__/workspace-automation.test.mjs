@@ -1498,6 +1498,14 @@ test('Board, render contracts and functional E2E have independent required jobs'
   assert.match(main, /FLOW_E2E_RESULT: \$\{\{ needs\.design-e2e\.result \}\}/)
 })
 
+test('Design functional E2E reserves job time for setup and evidence upload', () => {
+  const job = yaml.load(readText('.github/workflows/e2e.yml')).jobs['e2e-tests']
+  const run = job.steps.find((step) => step.env?.E2E_SUITE === 'functional')
+
+  assert.equal(run['timeout-minutes'], 45)
+  assert.equal(job['timeout-minutes'] - run['timeout-minutes'], 5)
+})
+
 test('scope discovery checkout includes the accepted Git base required by CI evidence', () => {
   const workflow = readText('.github/workflows/main.yml')
   const scopeJob = workflow

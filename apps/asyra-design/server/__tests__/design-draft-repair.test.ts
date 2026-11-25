@@ -646,3 +646,74 @@ it('reuses unchanged retained source only after complete owner admission', () =>
   store.release(draftId)
   expect(() => store.repair(repair, () => true)).toThrow(/unavailable/)
 })
+
+it.each([false, true])(
+  'repairs authored anchors in nested vectors and shared placement templates after reordering - %s',
+  async (reverse) => {
+    const { createLocalDesignTools } = await import('../local-design-tools')
+    const designs = createLocalDesignTools([
+      { name: 'apply_prepared_design', description: 'Apply', inputSchema: {} }
+    ])
+
+    const run = async (args: unknown) =>
+      JSON.parse(
+        await designs.call('prepare_design', args, new AbortController().signal)
+      )
+
+    const rings = [
+      [
+        { x: 1, y: 1 },
+        { x: 4, y: 1 },
+        { x: 2, y: 4, outControl: { x: 1, y: 3 } }
+      ]
+    ]
+    const curve = {
+      type: 'vector',
+      name: 'Mark',
+      key: 'mark',
+      fill: '#112233',
+      rings
+    }
+    const copies = {
+      type: 'vector-pattern',
+      name: 'Stitches',
+      key: 'stitches',
+      template: { type: 'vector', fill: '#112233', rings },
+      placements: [
+        { x: 0, y: 0 },
+        { x: 12, y: 0 }
+      ]
+    }
+    const rows = reverse ? [copies, curve] : [curve, copies]
+    const draft = {
+      type: 'group',
+      name: 'Badge',
+      children: [
+        { type: 'group', key: 'inner', name: 'Inside', children: rows }
+      ]
+    }
+    const rejected = await run({ draft })
+    const repair = rejected.repairGuide.arguments.repair
+
+    expect(repair.replacements.map((r: { path: string }) => r.path)).toEqual(
+      rows.map(
+        (n, i) =>
+          '/children/0/children/' +
+          i +
+          (n.type === 'vector-pattern' ? '/template' : '') +
+          '/rings/0/0/inControl'
+      )
+    )
+    const fixed = await run({
+      repair: {
+        ...repair,
+        replacements: repair.replacements.map((r: { path: string }) => ({
+          ...r,
+          value: { x: 1, y: 2 }
+        }))
+      }
+    })
+
+    expect(fixed).toMatchObject({ available: true, elementCount: 5 })
+  }
+)

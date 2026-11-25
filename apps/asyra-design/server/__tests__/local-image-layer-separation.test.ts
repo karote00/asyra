@@ -224,7 +224,15 @@ describe('pre-trace image layer separation', () => {
       descriptors.slice(1).every((d: { type: string }) => d.type === 'vector')
     ).toBe(true)
     expect(
-      result.paths.every((p: { fill: string }) => p.fill !== '#008800')
+      drawing.slices
+        .flatMap(
+          (slice: { descriptors: { fills: { color: string }[] }[] }) =>
+            slice.descriptors
+        )
+        .slice(1)
+        .every(
+          (d: { fills: { color: string }[] }) => d.fills[0].color !== '#008800'
+        )
     ).toBe(true)
   })
 
@@ -303,7 +311,7 @@ it('keeps an oval native-only result and never invokes the tracer for an empty f
     await tools.call('vectorize_image_layers', args, signal())
   )
 
-  expect(result.paths).toEqual([])
+  expect(result.pathCount).toBe(0)
   expect(result.separation.clippedPixelCount).toBeGreaterThan(0)
   expect(convert).not.toHaveBeenCalled()
   const drawing = tools.resolveBatch(batch(result.imageArtifactId)).actions[0]
@@ -508,7 +516,7 @@ it('uses displayed JPEG orientation for native and foreground coordinates', asyn
     )
   )
 
-  expect(result).toMatchObject({ width: 4, height: 8, paths: [] })
+  expect(result).toMatchObject({ width: 4, height: 8, pathCount: 0 })
   expect(convert).not.toHaveBeenCalled()
 })
 
@@ -551,7 +559,7 @@ it.each(['image/png', 'image/webp'])(
       )
     )
 
-    expect(result.paths).toEqual([])
+    expect(result.pathCount).toBe(0)
   }
 )
 
@@ -640,8 +648,16 @@ it('real tracing keeps an admitted foreground contact and emits no faint fringe 
     )
   )
 
-  expect(result.paths).toHaveLength(1)
-  expect(result.paths[0]).toMatchObject({
+  expect(result.pathCount).toBe(1)
+  const { paths } = JSON.parse(
+    await tools.call(
+      'query_vector_paths',
+      { imageArtifactId: result.imageArtifactId },
+      signal()
+    )
+  )
+
+  expect(paths[0]).toMatchObject({
     fill: '#FFFFFF',
     bounds: { x: 0, y: 4, width: 6, height: 4 }
   })

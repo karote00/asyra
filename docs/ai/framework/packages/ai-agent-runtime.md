@@ -707,7 +707,10 @@ registry, invocation, schema validation, scheduler and lease owners remain
 authoritative; no automatic persistence or lease extension is implied.
 
 Request-sequence input bindings can use declared optional output paths with
-execution-time presence checks before dependent dispatch. A nullable object may
+execution-time presence checks before dependent dispatch. This includes a named
+member of a dictionary with a typed additionalProperties value and unrestricted
+key names. The actual member must exist and meet the consumer contract.
+A nullable object may
 also supply a declared field: admission projects the non-null branches, while an
 actual null result fails the binding before dependent dispatch. Other union
 branches must still declare the selected field. Durable recipes still require guaranteed paths. Request-sequence delivery may
@@ -804,3 +807,48 @@ results still use the existing App result store, scoped by document/conversation
 Provider disposal cancels active requests, waits for owned cleanup and does not
 clear a borrowed registry. The App remains responsible for native data retention,
 credential policy, project instruction admission and its transaction decisions.
+
+## Replaceable tool-calling sources
+
+The Node entry exports `PrepareToolProvider`, `ToolProviderBinding`,
+`ProviderContentItem`, `createProviderConversations`, `createResponsesConversations`
+and `createResponsesAiProvider`. Bindings provide instructions, qualified tool
+schemas, fresh turn input, canonical invocation and App-owned final decoding.
+Adapters translate the provider protocol and never implement App actions.
+
+```ts
+import {
+  createResponsesAiProvider,
+  createResponsesConversations
+} from '@asyra/ai-agent-runtime/node'
+
+const conversations = createResponsesConversations() // service lifetime
+const provider = createResponsesAiProvider({
+  apiKey: serverKey,
+  model: configuredModel,
+  conversations,
+  prepare: prepareCurrentAppTurn
+})
+// Use provider through the existing AiProvider/Runtime composition.
+// Dispose the provider after owned requests, and conversations at service shutdown.
+```
+
+`prepareCurrentAppTurn` returns the App's current `ToolProviderBinding`. Another
+source can consume the same binding through its own `AiProvider` implementation;
+tool execution, named result storage and transactions remain unchanged. The optional
+`observe` callback receives credential-free protocol bodies and normalized cumulative
+usage. Observers cannot change execution or replace a settled answer.
+
+Responses preserves namespace names, schema semantics and correlated text/image
+outputs. It uses explicit `strict: false` plus the existing strict Host validation,
+and client-executed tool search for deferred declarations. The App lists the available
+qualified names in its instructions. A native search call accepts an array of names.
+The adapter returns only the selected definitions in tool_search_output. The stored
+response chain keeps them available on later turns. Use `store: true` and
+`previous_response_id` with incremental inputs. Stable instructions appear in the
+initial developer message. The adapter needs no Conversations API access.
+No SDK dependency, automatic mutation retry or fallback source is installed.
+An unresolved invocation invalidates continuation; an acknowledged output survives
+a later HTTP failure. The adapter rejects incomplete responses as final answers.
+Service restart requires a durable App checkpoint. External credential, durable
+storage, transaction and evaluation policies belong to the composing App.

@@ -1,3 +1,4 @@
+import type { DraftRepairTarget } from './design-source-recovery'
 import { DesignInputError } from './design-input-error'
 import {
   partitionDesignBudget,
@@ -19,7 +20,12 @@ export const createDesignDraftRepairStore = (
 ) => {
   const drafts = new Map<
     string,
-    { source: string; bytes: number; plan: DesignPartitionPlan }
+    {
+      source: string
+      bytes: number
+      plan: DesignPartitionPlan
+      targets?: readonly DraftRepairTarget[]
+    }
   >()
   let retainedBytes = 0
 
@@ -63,6 +69,52 @@ export const createDesignDraftRepairStore = (
       retainedBytes += bytes
 
       return id
+    },
+
+    attachTargets(id: string, targets: readonly DraftRepairTarget[]) {
+      const draft = drafts.get(id)
+      const bytes = Buffer.byteLength(JSON.stringify(targets))
+
+      if (
+        !draft ||
+        draft.targets ||
+        retainedBytes + bytes > limits.retainedDraftBytes
+      ) {
+        return false
+      }
+
+      draft.targets = structuredClone(targets)
+      draft.bytes += bytes
+      retainedBytes += bytes
+
+      return true
+    },
+
+    readTargets(id: string, offset: number, limit: number) {
+      const targets = drafts.get(id)?.targets
+
+      if (
+        !targets ||
+        !Number.isSafeInteger(limit) ||
+        limit < 1 ||
+        limit > 100 ||
+        !Number.isSafeInteger(offset) ||
+        offset < 0 ||
+        offset >= targets.length
+      ) {
+        throw new DesignInputError(
+          'Repair diagnostics are unavailable for this draft revision or offset.'
+        )
+      }
+
+      const end = Math.min(offset + limit, targets.length)
+
+      return {
+        draftId: id,
+        total: targets.length,
+        items: structuredClone(targets.slice(offset, end)),
+        ...(end < targets.length ? { nextOffset: end } : {})
+      }
     },
 
     describe(draftId: string) {
@@ -178,7 +230,8 @@ export const createDesignDraftRepairStore = (
         }
 
         paths.add(replacement.path)
-        const parts = replacement.path
+        const pointer = replacement.path
+        const parts = pointer
           .slice(1)
           .split('/')
           .map((part) => part.replace(/~1/g, '/').replace(/~0/g, '~'))
@@ -191,15 +244,31 @@ export const createDesignDraftRepairStore = (
 
         let parent = result
 
-        for (const part of parts.slice(0, -1)) {
+        const unresolved = (index: number) => {
+          const prefix =
+            pointer
+              .split('/')
+              .slice(0, index + 1)
+              .join('/') || '/'
+          const owner =
+            record(parent) &&
+            typeof parent.type === 'string' &&
+            typeof parent.key === 'string'
+              ? ` (${parent.type} ${parent.key})`
+              : ''
+
+          return new DesignInputError(
+            `Repair path does not exist: ${replacement.path}. Resolved ${prefix}${owner}; unresolved segment ${parts[index]}.`
+          )
+        }
+
+        for (const [index, part] of parts.slice(0, -1).entries()) {
           if (
             !parent ||
             typeof parent !== 'object' ||
             !Object.hasOwn(parent, part)
           ) {
-            throw new DesignInputError(
-              `Repair path does not exist: ${replacement.path}`
-            )
+            throw unresolved(index)
           }
 
           parent = parent[part]
@@ -223,9 +292,7 @@ export const createDesignDraftRepairStore = (
           isMissingFieldDisallowed ||
           hasInvalidArrayIndex
         ) {
-          throw new DesignInputError(
-            `Repair path does not exist: ${replacement.path}`
-          )
+          throw unresolved(parts.length - 1)
         }
 
         if (!Object.hasOwn(parent, key)) {

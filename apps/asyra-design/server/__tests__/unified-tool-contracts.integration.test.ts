@@ -961,11 +961,48 @@ it.each([
       settlement: 'not-started'
     })
     expect(reply.message).toEqual(expect.any(String))
-    expect(reply.repairGuide).toBeUndefined()
+    if (failure === 'truncated') {
+      const guide = reply.repairGuide.arguments
+      const repair = route === 'single' ? guide.repair : guide.parts[0].repair
+      const expected = [
+        '/width',
+        ...Array.from({ length: 20 }, (_, i) => '/children/' + i)
+      ]
+
+      expect(
+        repair.replacements.map((item: { path: string }) => item.path)
+      ).toEqual(expected)
+      for (const target of repair.replacements) {
+        const child = draft.children?.[Number(target.path.split('/')[2])]
+
+        target.value =
+          target.path === '/width' ? 20 : { ...child, width: 1, height: 1 }
+      }
+
+      const prepared = JSON.parse(
+        await designs.call(
+          'prepare_design',
+          { repair },
+          new AbortController().signal
+        )
+      )
+
+      expect(prepared).toMatchObject({ available: true, elementCount: 21 })
+    } else if (failure === 'outer' && route === 'single') {
+      expect(reply.repairGuide).toMatchObject({
+        tool: 'prepare_design',
+        envelopeIssues: [
+          expect.objectContaining({ instancePath: '/inspection' })
+        ]
+      })
+    } else {
+      expect(reply.repairGuide).toBeUndefined()
+    }
+
     const retained = route === 'single' ? reply : reply.rejectedParts[0]
 
     expect(retained.draftId).toEqual(expect.any(String))
-    if (route === 'parts' && failure === 'outer') {
+    if (failure === 'outer') {
       // A part-local preparation correction stays valid; it cannot authorize
       // replaying the invalid main envelope or applying document changes.
       const corrected = structuredClone(retained.repairGuide.arguments)
@@ -991,7 +1028,7 @@ it.each([
       )
 
       expect(prepared).toMatchObject({ available: true, applicable: true })
-    } else {
+    } else if (failure !== 'truncated') {
       expect(retained.repairGuide).toBeUndefined()
     }
 
@@ -999,6 +1036,45 @@ it.each([
     expect(draft).toEqual(before)
   }
 )
+
+it('retains a valid source when only the workflow option needs correction', async () => {
+  const actions = [
+    { name: 'apply_prepared_design', description: 'Apply', inputSchema: {} }
+  ]
+  const tools = createLocalDesignTools(actions)
+  const write = vi.fn()
+  const workflow = createLocalDesignWorkflow(
+    tools,
+    createLocalOperationTools(actions, tools, write)
+  )
+  const source = {
+    type: 'frame',
+    name: 'Box',
+    width: 20,
+    height: 20,
+    children: []
+  }
+  const signal = new AbortController().signal
+  const result = await invokeLocalTool(
+    workflow,
+    workflow.definitions[0],
+    { draft: source, inspection: 'invalid' },
+    signal
+  )
+  const failure = JSON.parse(result.text)
+
+  expect(failure.repairGuide).toMatchObject({
+    tool: 'prepare_design',
+    arguments: { repair: { draftId: failure.draftId, replacements: [] } },
+    envelopeIssues: [{ instancePath: '/inspection' }]
+  })
+  expect(
+    JSON.parse(
+      await tools.call('prepare_design', failure.repairGuide.arguments, signal)
+    )
+  ).toMatchObject({ available: true })
+  expect(write).not.toHaveBeenCalled()
+})
 
 it.each(['definition', 'property'])(
   'preserves descendant %s reference addresses when sharing repeated schema parents',

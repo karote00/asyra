@@ -1,8 +1,8 @@
+import { requestEntries } from './responses-search-fixture'
 import { createPreparedDesignAction } from '../../src/ai/design-actions'
 // @vitest-environment node
 import { afterAll, beforeAll, expect, it, vi } from 'vitest'
 import { createServer } from 'node:http'
-import { fileURLToPath } from 'node:url'
 import { readFileSync } from 'node:fs'
 import * as files from 'node:fs/promises'
 import { applyPreset, PresetDefaults, PresetProfiles } from '@asyra/preset'
@@ -12,6 +12,7 @@ import {
 } from '@asyra/ai-agent-runtime'
 import core from '../../src/contexts'
 import { elementApis } from '../../src/common-apis'
+import sharp from 'sharp'
 import { initText } from '../../src/init/capabilities/init-text'
 import factory from '@asyra/factory'
 import { isRecord } from '@asyra/utils'
@@ -22,6 +23,8 @@ import { registerAiAgentFeature } from '../../src/features/ai-agent'
 import { createActionBatchMiddleware } from '../action-batch'
 import { requestConfiguredAiActionBatch } from '../ai-model-provider'
 import { AI_APP_PROMPT } from '../ai-domain-prompt'
+import { createDefaultAiModelSources } from '../ai-model-sources'
+import { operationContractIssue } from '@asyra/ai-agent-runtime/schema'
 import { createNativeProviderFixture } from './native-provider-fixture'
 
 // Observe real source IO only; keep its implementation and return values unchanged.
@@ -56,6 +59,7 @@ beforeAll(async () => {
     profile: PresetProfiles.CUSTOM,
     defaults: [
       PresetDefaults.BASIC_SHAPES,
+      PresetDefaults.VECTOR,
       PresetDefaults.CONTAINERS,
       PresetDefaults.SELECTION
     ]
@@ -95,6 +99,24 @@ const completion = {
     }
   ]
 }
+
+// Successful creation also saves a portable source-key mapping. Only its
+// navigation metadata belongs in subsequent provider context.
+const savedCreationMapping = () => ({
+  name: expect.stringMatching(/^created-[0-9a-f-]+$/),
+  type: 'array',
+  origin: {
+    operation: 'prepare_and_apply_design',
+    source: 'result',
+    path: '/createdTargets'
+  },
+  paths: [
+    { path: '', type: 'array', length: 1 },
+    { path: '/0', type: 'object' },
+    { path: '/0/compositionId', type: 'string' },
+    { path: '/0/keyToId', type: 'object' }
+  ]
+})
 
 it.each([undefined, 'alter-saved-input'] as const)(
   'hands retained stage input through the real controller HTTP exchange native Host and Core into a later turn: %s',
@@ -139,60 +161,74 @@ it.each([undefined, 'alter-saved-input'] as const)(
 
     let constructionIdentity: string | undefined
 
-    const acquiredSelection = () => {
-      const blocks = fixture.successorContent('purpose')
+    const searchReply = (callId: string) => {
+      const blocks = fixture.successorContent(callId)
 
       if (!Array.isArray(blocks)) {
-        throw Error('Missing actual discovery successor')
+        throw Error('Missing native search reply')
       }
 
-      const values: unknown[] = blocks
-        .filter(isRecord)
-        .flatMap((block) =>
-          block.type === 'input_text' && typeof block.text === 'string'
-            ? [JSON.parse(block.text)]
-            : []
-        )
-      const page = values
-        .filter(isRecord)
-        .find((value) => Array.isArray(value.tools))
+      for (const block of blocks.filter(isRecord)) {
+        if (block.type !== 'input_text' || typeof block.text !== 'string') {
+          continue
+        }
 
-      if (!page || !Array.isArray(page.tools)) {
-        throw Error('Missing candidate page')
+        const value = JSON.parse(block.text)
+
+        if (value.contentDelivery || Array.isArray(value.tools)) {
+          return value
+        }
       }
 
-      const candidate = page.tools
-        .filter(isRecord)
-        .find(
-          (value) =>
-            value.registeredName === 'design_workflow.prepare_and_apply_design'
-        )
+      throw Error('Missing search result')
+    }
 
-      expect(candidate, JSON.stringify(page)).toBeDefined()
-      if (
-        !candidate ||
-        typeof candidate.registeredName !== 'string' ||
-        !isRecord(candidate.usage) ||
-        !isRecord(candidate.usage.arguments)
-      ) {
-        throw Error('Missing executable candidate usage selector')
+    let searchContinuation = false
+
+    const selectWorkflow = () => {
+      let menu = searchReply('purpose')
+
+      if (menu.contentDelivery) {
+        const first = menu.contentDelivery
+        const last = searchReply('more-candidates').contentDelivery
+
+        expect(first.startByte).toBe(0)
+        expect(last.startByte).toBe(Buffer.byteLength(first.text))
+        expect(last.revision).toBe(first.revision)
+        expect(last.next).toBeNull()
+        const text = first.text + last.text
+
+        expect(Buffer.byteLength(text)).toBe(last.totalBytes)
+        menu = JSON.parse(text)
       }
 
-      expect(candidate).not.toHaveProperty('inputSchema')
-      expect(candidate.usage.tool).toBe('read_design_contracts')
-      expect(candidate.usage.arguments.names).toEqual([
-        candidate.registeredName
-      ])
-      constructionIdentity = candidate.registeredName
+      const candidate = menu.tools.find(
+        (tool: { namespace: string; name: string }) =>
+          tool.namespace === 'design_workflow' &&
+          tool.name === 'prepare_and_apply_design'
+      )
+
+      expect(candidate.capability.purpose).toBeTruthy()
+      const identity = candidate.namespace + '.' + candidate.name
+
+      constructionIdentity = identity
 
       return {
-        ...candidate.usage.arguments,
-        includeResultSchema: true,
-        scopes: {
-          [constructionIdentity]: {
-            inputScope: { operation: 'draft', nodeTypes: ['group', 'rect'] }
+        type: 'function_call',
+        id: 'contract',
+        call_id: 'contract',
+        namespace: 'design_operations',
+        name: 'read_design_resources',
+        arguments: JSON.stringify({
+          names: [constructionIdentity],
+          view: 'usage',
+          includeResultSchema: true,
+          scopes: {
+            [identity]: {
+              inputScope: { operation: 'draft', nodeTypes: ['group', 'rect'] }
+            }
           }
-        }
+        })
       }
     }
 
@@ -211,14 +247,27 @@ it.each([undefined, 'alter-saved-input'] as const)(
                   inputFields: ['draft']
                 })
               },
-              () => ({
-                type: 'function_call',
-                id: 'contract',
-                call_id: 'contract',
-                namespace: 'design_operations',
-                name: 'read_design_contracts',
-                arguments: JSON.stringify(acquiredSelection())
-              })
+              () => {
+                const first = searchReply('purpose')
+
+                if (!first.contentDelivery) {
+                  return selectWorkflow()
+                }
+
+                searchContinuation = true
+                const next = first.contentDelivery.next
+
+                steps.splice(2, 0, selectWorkflow)
+
+                return {
+                  type: 'function_call',
+                  id: 'more-candidates',
+                  call_id: 'more-candidates',
+                  namespace: 'design_operations',
+                  name: next.tool,
+                  arguments: JSON.stringify(next.arguments)
+                }
+              }
             ]
           : []),
         () => {
@@ -413,15 +462,17 @@ it.each([undefined, 'alter-saved-input'] as const)(
       }
 
       expect(requests).toBe(2)
-      expect(fixture.toolCalls()).toHaveLength(4)
+      expect(fixture.toolCalls()).toHaveLength(searchContinuation ? 5 : 4)
       expect(
         fixture.appPackets().filter((p) => p.method === 'thread/start')
       ).toHaveLength(1)
       expect(
         fixture.appPackets().filter((p) => p.method === 'thread/resume')
       ).toHaveLength(1)
-      expect(JSON.stringify(fixture.requests[4])).toContain('facadeSource')
-      const nativeInput = fixture.requests[4].input
+      const successor = fixture.requests.at(-2)
+
+      expect(JSON.stringify(successor)).toContain('facadeSource')
+      const nativeInput = successor?.input
 
       if (!Array.isArray(nativeInput)) {
         throw Error('Missing native input')
@@ -447,8 +498,12 @@ it.each([undefined, 'alter-saved-input'] as const)(
 
       const received = JSON.parse(body.text).input.metadata
 
-      expect(received.conversationResultNames).toEqual(['facadeSource'])
+      expect(received.conversationResultNames).toEqual([
+        received.conversationResults[0].name,
+        'facadeSource'
+      ])
       expect(received.conversationResults).toEqual([
+        savedCreationMapping(),
         expect.objectContaining({
           name: 'facadeSource',
           type: 'object',
@@ -463,7 +518,10 @@ it.each([undefined, 'alter-saved-input'] as const)(
           ])
         })
       ])
-      expect(received.conversationResults[0]).not.toHaveProperty('value')
+      for (const summary of received.conversationResults) {
+        expect(summary).not.toHaveProperty('value')
+      }
+
       expect(JSON.stringify(received.conversationResults)).not.toContain(
         JSON.stringify(draft)
       )
@@ -841,7 +899,8 @@ for (const { fault, title } of [
               path: '/documents/0/text'
             }
           },
-          body
+          body,
+          savedCreationMapping()
         ])
       } finally {
         elementApis.createElementsInParent = createElements
@@ -861,11 +920,18 @@ for (const { fault, title } of [
   )
 }
 
-for (const restricted of [false, true]) {
+for (const mode of ['success', 'restricted', 'partial']) {
+  const restricted = mode === 'restricted'
+  const expectedOutcome = {
+    success: 'success',
+    restricted: 'no-change',
+    partial: 'partial'
+  }[mode]
+
   it(
     restricted
-      ? 'rejects an unadvertised mutation through the real HTTP provider and preserves public failure history'
-      : 'carries actual HTTP contracts input correction and canonical settlement through later App turns',
+      ? 'rejects an unavailable mutation through Responses and continues the same App conversation'
+      : `uses provider declarations for correction canonical mutation and named reuse across Responses turns - ${mode}`,
     async () => {
       core.load({
         version: '1.0.0',
@@ -894,94 +960,192 @@ for (const restricted of [false, true]) {
       })
 
       if (!targetId) {
-        throw Error('Missing canonical HTTP target')
+        throw Error('Missing canonical Responses target')
       }
 
       factory.transact.reset()
       const actionName = 'api_element_updateElementProperties'
-      const received: {
-        body: unknown
-        authorization: string | undefined
-        x: unknown
-      }[] = []
-      const errors: string[] = []
-      const endpoint = createServer((request, response) => {
-        void (async () => {
-          const chunks: Buffer[] = []
+      const received: Record<string, unknown>[] = []
+      const errors: unknown[] = []
+      const positions: unknown[] = []
+      const progress: unknown[] = []
+      const sourceRequests: unknown[] = []
 
-          for await (const chunk of request) {
-            chunks.push(Buffer.from(chunk))
-          }
-
-          const body: unknown = JSON.parse(
-            Buffer.concat(chunks).toString('utf8')
-          )
-          const index = received.length
-
-          received.push({
-            body,
-            authorization: request.headers.authorization,
-            x: core.getElementComputedData(targetId)?.x
-          })
-          if (index > 2) {
-            throw Error('Unexpected extra HTTP model invocation')
-          }
-
-          const report = index === 2 || (restricted && index === 1)
-
-          response.setHeader('content-type', 'application/json')
-          response.end(
-            JSON.stringify({
-              batchId: `http-${index}`,
-              actions: [
+      const operation = (elementIds: unknown, x: number) => ({
+        operations: [
+          {
+            id: 'move',
+            name: `design_operations.${actionName}`,
+            arguments: { elementIds, values: { x } }
+          },
+          ...(mode === 'partial'
+            ? [
                 {
-                  id: `http-action-${index}`,
-                  name: report ? 'report_outcome' : actionName,
-                  arguments: report
-                    ? {
-                        outcome: 'completed',
-                        message: 'Observed the current document.'
-                      }
-                    : {
-                        elementIds:
-                          !restricted && index === 0 ? targetId : [targetId],
-                        values: { x: 21 }
-                      },
-                  summary: report
-                    ? 'Report current state'
-                    : 'Move the selected object'
+                  id: 'partial',
+                  name: 'api_element_setElementPositions',
+                  arguments: {
+                    positionsById: {
+                      [targetId]: { x, y: 20 },
+                      'missing-target': { x, y: 20 }
+                    }
+                  }
                 }
               ]
-            })
-          )
-        })().catch((error) => {
-          errors.push(String(error))
-          response.statusCode = 500
-          response.end()
-        })
+            : [])
+        ],
+        ...(Array.isArray(elementIds)
+          ? {
+              retain: {
+                selectedIds: {
+                  step: 'move',
+                  source: 'input',
+                  path: '/elementIds'
+                }
+              }
+            }
+          : {}),
+        delivery: 'status',
+        inspection: 'defer'
       })
 
-      await new Promise<void>((accept) =>
-        endpoint.listen(0, '127.0.0.1', accept)
-      )
-      const endpointAddress = endpoint.address()
+      const png = await sharp({
+        create: { width: 8, height: 8, channels: 4, background: '#123456' }
+      })
+        .png()
+        .toBuffer()
+      const selectedImage = `data:image/png;base64,${png.toString('base64')}`
+      const capture = vi.spyOn(core, 'captureElementSnapshot').mockReturnValue({
+        type: 'snapshot',
+        dataUrl: selectedImage,
+        width: 8,
+        height: 8,
+        bounds: { x: 0, y: 0, width: 30, height: 40 }
+      })
+      const root = '../../tmp/responses-continuation'
 
-      if (!endpointAddress || typeof endpointAddress === 'string') {
-        throw Error('Missing model listener')
-      }
+      await files.mkdir(root, { recursive: true })
+      const directory = await files.mkdtemp(root + '/canvas-')
 
-      const sourceRequests: unknown[] = []
+      let declared:
+        { name: string; parameters: Record<string, unknown> } | undefined
+
+      const openSources = () =>
+        createDefaultAiModelSources({
+          continuationDatabase: directory + '/state.sqlite',
+
+          fetch: async (_url, init) => {
+            try {
+              const body = JSON.parse(String(init?.body))
+              const index = received.length
+
+              expect(new Headers(init?.headers).get('authorization')).toBe(
+                'Bearer fixture-secret'
+              )
+              expect(JSON.stringify(body)).not.toContain('fixture-secret')
+              if (!body.previous_response_id) {
+                expect(body.input[0].role).toBe('developer')
+                expect(body.input[0].content[0].text).toContain(AI_APP_PROMPT)
+
+                return requestEntries('design_operations.execute_design')
+              } else if (index === 0) {
+                expect(body.previous_response_id).toBe('load-entries')
+                declared = body.input[0].tools[0].tools[0]
+              } else {
+                expect(body.previous_response_id).toBe(
+                  'response-' + (index - 1)
+                )
+                expect(JSON.stringify(body.input)).not.toContain(AI_APP_PROMPT)
+              }
+
+              received.push(body)
+              positions.push(core.getElementComputedData(targetId)?.x)
+              if (!declared || declared.name !== 'execute_design') {
+                throw Error('Missing loaded execute contract')
+              }
+
+              // Both calls use exactly the schema sent over the provider boundary.
+              let base = operation(
+                { kind: 'named', name: 'selectedIds', path: '' },
+                33
+              )
+
+              if (index === 0) {
+                base = operation(targetId, 21)
+              } else if (index === 1) {
+                base = operation([targetId], 21)
+              }
+
+              const args =
+                index === 3 && mode === 'success'
+                  ? {
+                      ...base,
+                      operations: [
+                        ...base.operations,
+                        {
+                          id: 'unselected',
+                          name: 'inspect_drawing',
+                          arguments: { arguments: { elementId: targetId } }
+                        },
+                        {
+                          id: 'selected',
+                          name: 'inspect_drawing',
+                          arguments: { arguments: { elementId: targetId } }
+                        }
+                      ],
+                      delivery: {
+                        fields: { image: { step: 'selected', path: '' } }
+                      }
+                    }
+                  : base
+
+              expect(
+                operationContractIssue({ workflow: args }, declared.parameters)
+              ).toBeUndefined()
+              const invoke = index < 2 || index === 3
+
+              return Response.json({
+                id: `response-${index}`,
+                status: 'completed',
+                output: invoke
+                  ? [
+                      {
+                        type: 'function_call',
+                        namespace: 'design_operations',
+                        name: declared.name,
+                        call_id: `move-${index}`,
+                        arguments: JSON.stringify({ workflow: args })
+                      }
+                    ]
+                  : [completion]
+              })
+            } catch (error) {
+              errors.push(error)
+              throw error
+            }
+          }
+        })
+
+      let sources = openSources()
       const middleware = createActionBatchMiddleware({
+        sources,
+
         requestModelActionBatch: (input, options) => {
           sourceRequests.push(structuredClone(input))
 
           return requestConfiguredAiActionBatch(input, {
             ...options,
+            sources,
+
+            onProgress: (event) => {
+              progress.push(event)
+              options.onProgress?.(event)
+            },
+
             environment: {
-              AI_PROVIDER_BACKEND: 'http',
-              AI_PROVIDER_ENDPOINT: `http://127.0.0.1:${endpointAddress.port}/model`,
-              AI_PROVIDER_MODEL: 'formal-http-model',
-              AI_PROVIDER_API_KEY: 'formal-http-secret'
+              AI_PROVIDER_BACKEND: 'openai-responses',
+              AI_PROVIDER_MODEL: 'fixture-model',
+              OPENAI_API_KEY: 'fixture-secret',
+              AI_EXECUTION_SOURCE_REVISION: 'fixture'
             }
           })
         }
@@ -994,21 +1158,26 @@ for (const restricted of [false, true]) {
       })
 
       await new Promise<void>((accept) => app.listen(0, '127.0.0.1', accept))
-      const appAddress = app.address()
+      const address = app.address()
 
-      if (!appAddress || typeof appAddress === 'string') {
+      if (!address || typeof address === 'string') {
         throw Error('Missing App listener')
       }
 
       const provider = createServerActionBatchProvider({
         fetch: (url, init) =>
-          fetch(new URL(url, `http://127.0.0.1:${appAddress.port}`), init),
+          fetch(new URL(url, `http://127.0.0.1:${address.port}`), init),
 
-        documentScope: () => 'formal-http-document'
+        documentScope: () => 'responses-document'
       })
       const input = createAiRuntimeInput({
         provider,
-        permissionRules: { [actionName]: 'allow', report_outcome: 'allow' }
+        permissionRules: {
+          [actionName]: 'allow',
+          api_element_setElementPositions: 'allow',
+          inspect_drawing: 'allow',
+          report_outcome: 'allow'
+        }
       })
       const runtime = createAiAgentRuntime({
         ...input,
@@ -1022,7 +1191,7 @@ for (const restricted of [false, true]) {
       const controller = createAiConversationController({
         feature: registration.api,
 
-        createConversationId: () => 'formal-http-conversation',
+        createConversationId: () => 'responses-canonical-conversation',
 
         getElementType: (id) => core.getElementMetadata(id)?.type
       })
@@ -1032,131 +1201,133 @@ for (const restricted of [false, true]) {
           'Move the existing object to local x 21.'
         )
 
-        expect(first.outcome, JSON.stringify(first.result)).toBe('failed')
-        expect(core.getElementComputedData(targetId)?.x).toBe(10)
-        const second = await controller.submit(
-          restricted
-            ? 'Report only; do not mutate.'
-            : 'Correct the element ID list and move to local x 21.'
-        )
-
-        expect(second.outcome, JSON.stringify(second.result)).toBe(
-          restricted ? 'no-change' : 'success'
+        expect(errors).toEqual([])
+        expect(first.outcome, JSON.stringify(first.result)).toBe(
+          expectedOutcome
         )
         expect(core.getElementComputedData(targetId)?.x).toBe(
           restricted ? 10 : 21
         )
-        const third = await controller.submit('Summarize the settled requests.')
-
-        expect(third.outcome, JSON.stringify(third.result)).toBe('no-change')
-        const evidence = await files.mkdtemp(
-          fileURLToPath(
-            new URL('../../../../tmp/conversation-http-', import.meta.url)
-          )
+        await Promise.all(sources.map((source) => source.dispose?.()))
+        sources = openSources()
+        const second = await controller.submit(
+          'Reuse the saved targets and move to local x 33.'
         )
 
-        await files.writeFile(
-          `${evidence}/observations.json`,
-          JSON.stringify(
-            {
-              restricted,
-              sourceRequests,
-              received: received.map(({ body, x }) => ({ body, x })),
-              outcomes: [first.outcome, second.outcome, third.outcome]
-            },
-            null,
-            2
-          )
-        )
         expect(errors).toEqual([])
-        expect(received).toHaveLength(3)
-        expect(received.map((record) => record.x)).toEqual([
-          10,
-          10,
-          restricted ? 10 : 21
-        ])
-        expect(received.map((record) => record.authorization)).toEqual(
-          Array(3).fill('Bearer formal-http-secret')
+        expect(second.outcome, JSON.stringify(second.result)).toBe(
+          expectedOutcome
         )
-        for (const [index, { body }] of received.entries()) {
-          expect(body).toMatchObject({
-            model: 'formal-http-model',
-            protocolVersion: 1
-          })
-          if (
-            !isRecord(body) ||
-            !isRecord(body.input) ||
-            !Array.isArray(body.input.actions)
-          ) {
-            throw Error('Missing actual HTTP action declarations')
-          }
+        expect(core.getElementComputedData(targetId)?.x).toBe(
+          restricted ? 10 : 33
+        )
+        expect(received).toHaveLength(5)
+        expect(positions).toEqual(
+          restricted ? [10, 10, 10, 10, 10] : [10, 10, 21, 21, 33]
+        )
+        const serializedFirst = JSON.stringify(received[1].input)
 
-          // Producer identity proves transport fidelity; semantic assertions below
-          // and real canonical effects remain independent of that comparison.
-          expect(body.input).toEqual(sourceRequests[index])
-          expect(body.systemPrompt).toBe(AI_APP_PROMPT)
-          expect(body.systemPrompt).toContain(
-            'Knowledge is optional reference material'
+        expect(serializedFirst).toContain('not-started')
+        if (!restricted) {
+          expect(JSON.stringify(received[2].input)).toContain('selectedIds')
+          expect(JSON.stringify(received[4].input)).toContain(
+            mode === 'partial' ? 'partial' : 'completed'
           )
-          expect(JSON.stringify(body)).not.toContain('formal-http-secret')
-          const actions = body.input.actions.filter(isRecord)
-
-          expect(actions.some((action) => action.name === actionName)).toBe(
-            !restricted
-          )
-          expect(
-            actions.some((action) => action.name === 'report_outcome')
-          ).toBe(true)
-          expect(
-            actions.some((action) => action.name === 'read_knowledge')
-          ).toBe(false)
-          if (!restricted) {
-            const declaration = actions.find(
-              (action) => action.name === actionName
-            )
-
-            expect(declaration).toHaveProperty(
-              'inputSchema.properties.elementIds.anyOf',
-              [
-                expect.objectContaining({
-                  type: 'array',
-                  items: expect.objectContaining({ type: 'string' })
-                }),
-                expect.objectContaining({
-                  type: 'object',
-                  required: ['snapshotId', 'leaseId', 'total']
-                })
-              ]
-            )
-            expect(declaration).toHaveProperty('outputSchema')
-          }
         }
 
-        expect(received[0].body).toHaveProperty(
-          'input.intent',
-          'Move the existing object to local x 21.'
+        // The stored response owns the earlier call and its exact correlated result.
+        expect(received[3].previous_response_id).toBe('response-2')
+        expect(JSON.stringify(received[3].input)).not.toContain('move-1')
+        expect(sourceRequests).toHaveLength(2)
+        expect(sourceRequests[1]).toHaveProperty(
+          'metadata.conversationContext.turns.0.outcome',
+          expectedOutcome
         )
-        expect(received[2].body).toHaveProperty(
-          'input.metadata.conversationContext.turns.0.outcome',
-          'failed'
-        )
-        expect(received[2].body).toHaveProperty(
-          'input.metadata.conversationContext.turns.1.outcome',
-          restricted ? 'no-change' : 'success'
-        )
+        for (const [callId, responseIndex] of Object.entries({
+          'move-0': 1,
+          'move-1': 2,
+          'move-3': 4
+        })) {
+          const terminal = progress.filter(
+            (event) =>
+              isRecord(event) &&
+              event.status === 'completed' &&
+              isRecord(event.activity) &&
+              event.activity.callId === callId
+          )
+
+          expect(terminal).toHaveLength(1)
+          // Retention selects recipe execution, whose failed partial member stops
+          // the sequence. The later resolved batch reports partial delivery.
+          // Status is independent of settlement; preserve each owner's exact pair.
+          let completedStatus = 'success'
+
+          if (mode === 'partial') {
+            completedStatus = callId === 'move-1' ? 'failed' : 'partial'
+          }
+
+          const expected =
+            callId === 'move-0' || restricted
+              ? { status: 'failed', settlement: 'not-started' }
+              : {
+                  status: completedStatus,
+                  settlement: mode === 'partial' ? 'partial' : 'completed'
+                }
+
+          expect(terminal[0]).toMatchObject({ activity: { outcome: expected } })
+          const continuation = received[responseIndex].input
+
+          if (!Array.isArray(continuation)) {
+            throw Error('Missing provider input')
+          }
+
+          const reply = continuation.find(
+            (entry) =>
+              entry.type === 'function_call_output' && entry.call_id === callId
+          )
+          const outcome = reply.output.find(
+            (entry: { type: string; text?: string }) =>
+              entry.type === 'input_text' && entry.text?.includes('toolOutcome')
+          )
+
+          expect(JSON.parse(outcome.text)).toMatchObject({
+            toolOutcome: expected
+          })
+        }
+
         expect(core.getCanonicalElementCount()).toBe(1)
+        if (mode === 'success') {
+          expect(capture).toHaveBeenCalledTimes(2)
+          const last = received[4].input
+
+          if (!Array.isArray(last)) {
+            throw Error('Missing actual provider continuation')
+          }
+
+          const output = last.find(
+            (entry) =>
+              isRecord(entry) &&
+              entry.type === 'function_call_output' &&
+              entry.call_id === 'move-3'
+          )
+
+          expect(
+            output.output.filter(
+              (entry: { type: string }) => entry.type === 'input_image'
+            )
+          ).toEqual([{ type: 'input_image', image_url: selectedImage }])
+        }
       } finally {
+        capture.mockRestore()
         await controller.dispose()
         await runtime.dispose()
         provider.dispose?.()
         registration.dispose()
         await middleware.dispose()
+        await Promise.all(sources.map((source) => source.dispose?.()))
+        await files.rm(directory, { recursive: true, force: true })
         app.closeAllConnections()
-        endpoint.closeAllConnections()
-        await Promise.all([
-          new Promise<void>((accept) => app.close(() => accept())),
-          new Promise<void>((accept) => endpoint.close(() => accept()))
-        ])
+        await new Promise<void>((accept) => app.close(() => accept()))
       }
     },
     30000
@@ -1170,7 +1341,7 @@ it('delivers one public result selector to the actual native successor', async (
       id: 'read-current-application',
       call_id: 'read-current-application',
       namespace: 'design_operations',
-      name: 'read_design_contracts',
+      name: 'read_design_resources',
       arguments: JSON.stringify({
         names: ['apply_prepared_design'],
         view: 'usage'
@@ -1310,3 +1481,976 @@ it('delivers actual nested selection coordinates and parent identity in the init
     factory.transact.reset()
   }
 }, 60000)
+
+function loadDrawingWorkspace() {
+  core.load({
+    version: '1.0.0',
+    props: {},
+    sceneTree: {
+      workspace: 'workspace',
+      workspaceList: ['workspace'],
+      elements: {
+        workspace: {
+          id: 'workspace',
+          type: 'workspace',
+          name: 'Workspace',
+          parentId: '',
+          children: [],
+          visible: true,
+          lock: false
+        }
+      }
+    }
+  })
+}
+
+it('applies the recorded Dome drawing through the published execute_design entry without discovery', async () => {
+  const { default: dome } = await import('./fixtures/dome-responses.json')
+  const { createConversationResults } = await import('@asyra/ai-agent-runtime')
+  const ledger = createConversationResults(() => 1)
+  const saved = ledger.open('dome')
+
+  loadDrawingWorkspace()
+  const before = new Set(core.deps.sceneTree.getAllElements().keys())
+  const png = await sharp({
+    create: { width: 8, height: 8, channels: 4, background: '#123456' }
+  })
+    .png()
+    .toBuffer()
+  const capture = vi.spyOn(core, 'captureElementSnapshot').mockReturnValue({
+    type: 'snapshot',
+    dataUrl: 'data:image/png;base64,' + png.toString('base64'),
+    width: 8,
+    height: 8,
+    bounds: { x: 0, y: 0, width: 25229, height: 10680 }
+  })
+  const requests: { input: { output: { text: string }[] }[] }[] = []
+  const sources = createDefaultAiModelSources({
+    continuationDatabase: ':memory:',
+
+    fetch: async (_url, init) => {
+      const body = JSON.parse(String(init?.body))
+
+      requests.push(body)
+
+      return Response.json({
+        id: 'dome-' + requests.length,
+        status: 'completed',
+        output:
+          requests.length === 1
+            ? [
+                {
+                  type: 'function_call',
+                  namespace: 'design_operations',
+                  name: 'execute_design',
+                  call_id: 'draw',
+                  arguments: JSON.stringify({ workflow: dome.drawing })
+                }
+              ]
+            : [completion]
+      })
+    }
+  })
+  const provider = {
+    requestActionBatch: (
+      input: Parameters<typeof requestConfiguredAiActionBatch>[0],
+      opts: Parameters<typeof requestConfiguredAiActionBatch>[1]
+    ) =>
+      requestConfiguredAiActionBatch(input, {
+        ...opts,
+        sources,
+
+        resultContext: async (command) => saved.exchange(command),
+
+        environment: {
+          AI_PROVIDER_BACKEND: 'openai-responses',
+          AI_PROVIDER_MODEL: 'fixture',
+          OPENAI_API_KEY: 'fixture',
+          AI_EXECUTION_SOURCE_REVISION: 'fixture'
+        }
+      })
+  }
+  const input = createAiRuntimeInput({
+    provider,
+    permissionRules: {
+      apply_prepared_design: 'allow',
+      inspect_drawing: 'allow',
+      report_outcome: 'allow'
+    }
+  })
+  const runtime = createAiAgentRuntime(input)
+  const registration = registerAiAgentFeature(runtime)
+  const controller = createAiConversationController({
+    feature: registration.api,
+
+    createConversationId: () => 'dome',
+
+    getElementType: (id) => core.getElementMetadata(id)?.type
+  })
+
+  try {
+    const answer = await controller.submit('Draw the entire Taipei Dome.')
+
+    expect(answer.outcome, JSON.stringify(answer.result).slice(-2400)).toBe(
+      'success'
+    )
+    expect(requests).toHaveLength(2)
+    expect(JSON.parse(requests[1].input[0].output[0].text)).toMatchObject({
+      toolOutcome: { status: 'success' },
+      saved: [{ name: 'domeDraft' }, { name: 'domeIDs' }]
+    })
+    const created = [...core.deps.sceneTree.getAllElements()]
+      .filter(([id]) => !before.has(id))
+      .map(([, e]) => e.get('type'))
+
+    expect(created.filter((t) => t === 'vector')).toHaveLength(411)
+    expect(created.filter((t) => t === 'group')).toHaveLength(1)
+  } finally {
+    capture.mockRestore()
+    await controller.dispose()
+    await runtime.dispose()
+    registration.dispose()
+    await Promise.all(sources.map((s) => s.dispose?.()))
+    ledger.clear()
+  }
+}, 30000)
+
+it('corrects only delivery on the recorded Dome submission and cannot dispatch twice', async () => {
+  const { default: dome } =
+    await import('./fixtures/dome-delivery-rejection.json')
+  const { createConversationResults } = await import('@asyra/ai-agent-runtime')
+  const ledger = createConversationResults(() => 1)
+  const saved = ledger.open('dome')
+
+  loadDrawingWorkspace()
+  const before = new Set(core.deps.sceneTree.getAllElements().keys())
+  const png = await sharp({
+    create: { width: 8, height: 8, channels: 4, background: '#123456' }
+  })
+    .png()
+    .toBuffer()
+  const capture = vi.spyOn(core, 'captureElementSnapshot').mockReturnValue({
+    type: 'snapshot',
+    dataUrl: 'data:image/png;base64,' + png.toString('base64'),
+    width: 8,
+    height: 8,
+    bounds: { x: 0, y: 0, width: 25229, height: 10680 }
+  })
+  const requests: { input: { output: { text: string }[] }[] }[] = []
+  let correction: { retryDelivery: string } | undefined
+  const { default: roof } = await import('./fixtures/dome-roof-repair.json')
+  let correctionBytes = 0
+  let appliedCount = 0
+  let rootId: string
+  let completeCount = 0
+  const sources = createDefaultAiModelSources({
+    continuationDatabase: ':memory:',
+
+    fetch: async (_url, init) => {
+      const body = JSON.parse(String(init?.body))
+
+      requests.push(body)
+
+      if (requests.length === 1) {
+        return requestEntries('design_operations.execute_design')
+      }
+
+      const count = core.deps.sceneTree.getAllElements().size
+      let args: unknown = dome
+
+      if (requests.length === 3) {
+        const rejected = JSON.parse(body.input[0].output[0].text)
+
+        expect(count).toBe(before.size)
+        expect(rejected.toolOutcome.settlement).toBe('not-started')
+        correction = rejected.inputIssues?.[0]?.correction
+        expect(correction).toMatchObject({ retryDelivery: expect.any(String) })
+      }
+
+      if (requests.length === 3 || requests.length === 4) {
+        args = {
+          workflow: {
+            ...correction,
+            delivery: {
+              fields: { roots: { step: 'arena', path: '/compositionIds' } }
+            }
+          }
+        }
+        correctionBytes = Buffer.byteLength(JSON.stringify(args))
+        expect(correctionBytes).toBeLessThan(220)
+      }
+
+      if (requests.length === 4) {
+        const applied = JSON.parse(body.input[0].output[0].text)
+
+        expect(
+          applied.toolOutcome.status,
+          JSON.stringify(applied).slice(0, 800)
+        ).toBe('success')
+        expect(applied.fields.roots).toHaveLength(1)
+        rootId = applied.fields.roots[0]
+        appliedCount = count
+        expect(count).toBeGreaterThan(before.size)
+      }
+
+      if (requests.length === 5) {
+        expect(
+          JSON.parse(body.input[0].output[0].text).toolOutcome.settlement
+        ).toBe('not-started')
+        expect(count).toBe(appliedCount)
+        const work = structuredClone(roof.draft)
+
+        work.workflow.operations[0].arguments.parentId = rootId
+        args = work
+      }
+
+      if (requests.length === 6) {
+        const rejected = JSON.parse(body.input[0].output[0].text)
+
+        expect(rejected.toolOutcome.settlement).toBe('not-started')
+        const retained = rejected.failure.execution.recovery.find(
+          (r: { value?: { draftId?: string } }) => r.value?.draftId
+        )
+
+        expect(retained?.value.draftId).toEqual(expect.any(String))
+        const work = structuredClone(roof.repair)
+
+        work.workflow.operations[0].arguments.parentId = rootId
+        work.workflow.operations[0].arguments.repair.draftId =
+          retained.value.draftId
+        args = work
+        expect(count).toBe(appliedCount)
+      }
+
+      if (requests.length === 7) {
+        expect(
+          JSON.parse(body.input[0].output[0].text).toolOutcome.status
+        ).toBe('success')
+        completeCount = count
+        expect(completeCount).toBeGreaterThan(appliedCount)
+        args = {
+          operations: [
+            {
+              name: 'design_operations.inspect_drawing',
+              arguments: { arguments: { elementId: rootId } }
+            }
+          ]
+        }
+      }
+
+      if (requests.length === 8) {
+        expect(
+          body.input[0].output.some(
+            (part: { type: string }) => part.type === 'input_image'
+          )
+        ).toBe(true)
+        expect(count).toBe(completeCount)
+      }
+
+      return Response.json({
+        id: 'dome-' + requests.length,
+        status: 'completed',
+        output:
+          requests.length === 8
+            ? [completion]
+            : [
+                {
+                  type: 'function_call',
+                  namespace: 'design_operations',
+                  name: 'execute_design',
+                  call_id: 'draw-' + requests.length,
+                  arguments: JSON.stringify(args)
+                }
+              ]
+      })
+    }
+  })
+  const provider = {
+    requestActionBatch: (
+      input: Parameters<typeof requestConfiguredAiActionBatch>[0],
+      opts: Parameters<typeof requestConfiguredAiActionBatch>[1]
+    ) =>
+      requestConfiguredAiActionBatch(input, {
+        ...opts,
+        sources,
+
+        resultContext: async (command) => saved.exchange(command),
+
+        environment: {
+          AI_PROVIDER_BACKEND: 'openai-responses',
+          AI_PROVIDER_MODEL: 'fixture',
+          OPENAI_API_KEY: 'fixture',
+          AI_EXECUTION_SOURCE_REVISION: 'fixture'
+        }
+      })
+  }
+  const input = createAiRuntimeInput({
+    provider,
+    permissionRules: {
+      apply_prepared_design: 'allow',
+      inspect_drawing: 'allow',
+      report_outcome: 'allow'
+    }
+  })
+  const runtime = createAiAgentRuntime(input)
+  const registration = registerAiAgentFeature(runtime)
+  const controller = createAiConversationController({
+    feature: registration.api,
+
+    createConversationId: () => 'dome',
+
+    getElementType: (id) => core.getElementMetadata(id)?.type
+  })
+
+  try {
+    const answer = await controller.submit('Draw the entire Taipei Dome.')
+
+    expect(answer.outcome, JSON.stringify(answer.result).slice(-2400)).toBe(
+      'success'
+    )
+    expect(requests).toHaveLength(8)
+    process.stdout.write(
+      JSON.stringify({
+        measurement: 'dome-delivery-replay',
+        originalBytes: Buffer.byteLength(JSON.stringify(dome)),
+        correctionBytes,
+        bodyCreated: appliedCount - before.size,
+        roofCreated: completeCount - appliedCount
+      }) + '\n'
+    )
+  } finally {
+    capture.mockRestore()
+    await controller.dispose()
+    await runtime.dispose()
+    registration.dispose()
+    await Promise.all(sources.map((s) => s.dispose?.()))
+    ledger.clear()
+  }
+}, 30000)
+
+it.each(['known', 'purpose', 'method', 'latest', 'recorded-square'])(
+  'edits color and position through the real Host using %s discovery',
+  async (lookup) => {
+    const { fillApis } = await import('../../src/common-apis')
+
+    core.load({
+      version: '1.0.0',
+      props: {},
+      sceneTree: {
+        workspace: 'workspace',
+        workspaceList: ['workspace'],
+        elements: {
+          workspace: {
+            id: 'workspace',
+            type: 'workspace',
+            name: 'Workspace',
+            parentId: '',
+            children: [],
+            visible: true,
+            lock: false
+          }
+        }
+      }
+    })
+    const target = elementApis.createElement({
+      type: 'rect',
+      workspacePosition: { x: 10, y: 20 },
+      width: 40,
+      height: 40
+    })
+
+    if (!target) {
+      throw Error('Missing test rectangle')
+    }
+
+    fillApis.updatePrimaryFillColor(target, '#FF0000')
+    expect(fillApis.getPrimaryFillColor(target)).toBe('#FF0000')
+    const bodies: string[] = []
+    const declarations: string[] = []
+    const receipts: unknown[] = []
+    let parameters: Record<string, unknown> | undefined
+    const queries = [
+      lookup === 'method'
+        ? { query: 'updatePrimaryFillColors' }
+        : { query: 'set solid fill color for element by id', category: 'fill' },
+      { query: 'move element to absolute position x y' }
+    ]
+
+    if (lookup === 'latest') {
+      queries[0] = { query: 'set solid fill color element', category: 'fill' }
+      queries[1] = { query: 'set absolute position element x y' }
+    }
+
+    if (lookup === 'recorded-square') {
+      queries[0] = { query: 'set solid fill color selected element' }
+      queries[1] = {
+        query: 'set element absolute position parent local x y move'
+      }
+    }
+
+    const searchBytes: number[] = []
+    let turn = 1
+    const sources = createDefaultAiModelSources({
+      continuationDatabase: ':memory:',
+
+      fetch: async (_, init) => {
+        const raw = String(init?.body)
+        const body = JSON.parse(raw)
+        const previous = bodies.length
+
+        bodies.push(raw)
+        if (previous) {
+          expect(body.previous_response_id).toBe('r' + previous)
+        }
+
+        const groups = [
+          ...body.tools,
+          ...body.input.flatMap((i: { type?: string; tools?: unknown[] }) =>
+            i.type === 'tool_search_output' ? (i.tools ?? []) : []
+          )
+        ]
+
+        for (const group of groups) {
+          for (const tool of group.tools ?? []) {
+            declarations.push(group.name + '.' + tool.name)
+            if (tool.name === 'execute_design') {
+              parameters = tool.parameters
+            }
+          }
+        }
+
+        let output
+
+        const reply =
+          body.input[0].type === 'function_call_output'
+            ? JSON.parse(body.input[0].output[0].text)
+            : undefined
+
+        if (reply && !reply.apis) {
+          receipts.push(JSON.parse(body.input[0].output[0].text))
+          output = [completion]
+        } else if (!parameters) {
+          output = [
+            {
+              type: 'tool_search_call',
+              execution: 'client',
+              status: 'completed',
+              call_id: 'load',
+              arguments: {
+                names: [
+                  ...(lookup === 'known'
+                    ? []
+                    : ['design_operations.search_design_tools']),
+                  'design_operations.execute_design'
+                ]
+              }
+            }
+          ]
+        } else if (
+          lookup === 'recorded-square' &&
+          turn === 1 &&
+          reply?.catalogSize
+        ) {
+          const names = [
+            'fill.updatePrimaryFillColors',
+            'fill.getPrimaryFillColor'
+          ]
+
+          for (const operation of names) {
+            expect(
+              reply.apis.find(
+                (entry: { operation: string }) => entry.operation === operation
+              )?.operationParameters
+            ).toBeUndefined()
+          }
+
+          output = [
+            {
+              type: 'tool_search_call',
+              execution: 'client',
+              status: 'completed',
+              call_id: 'load-reader',
+              arguments: { names: ['design_operations.read_design_resources'] }
+            }
+          ]
+        } else if (
+          lookup === 'recorded-square' &&
+          turn === 1 &&
+          body.input[0].call_id === 'load-reader'
+        ) {
+          output = [
+            {
+              type: 'function_call',
+              namespace: 'design_operations',
+              name: 'read_design_resources',
+              call_id: 'parameters',
+              arguments: JSON.stringify({
+                names: [
+                  'fill.updatePrimaryFillColors',
+                  'fill.getPrimaryFillColor'
+                ],
+                view: 'parameters'
+              })
+            }
+          ]
+        } else if (lookup !== 'known' && !reply) {
+          output = [
+            {
+              type: 'function_call',
+              namespace: 'design_operations',
+              name: 'search_design_tools',
+              call_id: 'lookup' + turn,
+              arguments: JSON.stringify(queries[turn - 1])
+            }
+          ]
+        } else {
+          const operation =
+            turn === 1
+              ? {
+                  name: 'api_fill_updatePrimaryFillColors',
+                  arguments: {
+                    updates: [{ elementId: target, color: '#0000FF' }]
+                  }
+                }
+              : {
+                  name: 'api_element_setElementPositions',
+                  arguments: { positionsById: { [target]: { x: 33, y: 45 } } }
+                }
+
+          const readback = {
+            name: 'fill.getPrimaryFillColor',
+            arguments: { elementId: target }
+          }
+          const pair = lookup === 'recorded-square' && turn === 1
+
+          if (pair) {
+            for (const item of [operation, readback]) {
+              const entry = reply.apis.find(
+                (api: { name: string; operation: string }) =>
+                  api.name === item.name || api.operation === item.name
+              )
+
+              expect(entry?.operationParameters).toBeDefined()
+              expect(
+                operationContractIssue(
+                  item.arguments,
+                  entry.operationParameters
+                )
+              ).toBeUndefined()
+              item.name = entry.operation
+            }
+
+            searchBytes.push(Buffer.byteLength(JSON.stringify(reply)))
+          } else if (reply) {
+            const candidate = reply.apis[0]
+            const bytes = Buffer.byteLength(JSON.stringify(reply))
+            const fillBaseline = lookup === 'method' ? 13401 : 2320
+            const baseline = turn === 2 ? 14191 : fillBaseline
+
+            searchBytes.push(bytes)
+            expect(candidate.name).toBe(operation.name)
+            expect(candidate.operationParameters).toBeDefined()
+            expect(candidate.operationParameters).not.toHaveProperty(
+              'x-design-discovery'
+            )
+            expect(
+              operationContractIssue(
+                operation.arguments,
+                candidate.operationParameters
+              )
+            ).toBeUndefined()
+            expect(
+              operationContractIssue({}, candidate.operationParameters)
+            ).toBeTruthy()
+            expect(candidate.execution.tool).toBe('execute_design')
+            expect(bytes).toBeLessThan(baseline)
+            if (lookup === 'method' && turn === 1) {
+              expect(reply.count).toBe(1)
+            }
+
+            for (const other of [...reply.apis.slice(1), ...reply.tools]) {
+              expect(other.capability.purpose).toBeTruthy()
+              expect(other.operationParameters).toBeUndefined()
+              expect(other.usage).toBeUndefined()
+            }
+
+            operation.name = candidate.name
+          }
+
+          const args = {
+            operations: pair ? [operation, readback] : [operation],
+            inspection: 'defer',
+            delivery: 'status'
+          }
+
+          expect(
+            operationContractIssue({ workflow: args }, parameters)
+          ).toBeUndefined()
+          output = [
+            {
+              type: 'function_call',
+              namespace: 'design_operations',
+              name: 'execute_design',
+              call_id: 'edit' + turn,
+              arguments: JSON.stringify({ workflow: args })
+            }
+          ]
+        }
+
+        return Response.json({
+          id: 'r' + bodies.length,
+          status: 'completed',
+          output
+        })
+      }
+    })
+    const runtime = createAiAgentRuntime(
+      createAiRuntimeInput({
+        permissionRules: {
+          release_design_context: 'allow',
+          inspect_drawing: 'allow',
+          api_fill_updatePrimaryFillColors: 'allow',
+          api_fill_getPrimaryFillColor: 'allow',
+          api_element_setElementPositions: 'allow',
+          report_outcome: 'allow'
+        },
+        provider: {
+          requestActionBatch: (request, options) =>
+            requestConfiguredAiActionBatch(request, {
+              ...options,
+              sources,
+              environment: {
+                OPENAI_API_KEY: 'fixture',
+                AI_PROVIDER_MODEL: 'fixture',
+                AI_PROVIDER_BACKEND: 'openai-responses',
+                AI_EXECUTION_SOURCE_REVISION: 'fixture'
+              }
+            })
+        }
+      })
+    )
+
+    const ask = (intent: string) =>
+      runtime.run({
+        intent,
+        signal: new AbortController().signal,
+        metadata: { conversationId: 'color-move', turnId: 'turn' + turn }
+      })
+
+    try {
+      await ask('Change the red square to blue.')
+      expect(fillApis.getPrimaryFillColor(target)).toBe('#0000FF')
+      const firstTurn = bodies.length
+
+      turn++
+      await ask('Move the same square to (33, 45).')
+      expect(core.getElementComputedData(target)).toMatchObject({
+        x: 33,
+        y: 45
+      })
+      expect(fillApis.getPrimaryFillColor(target)).toBe('#0000FF')
+      expect(receipts).toHaveLength(2)
+      for (const receipt of receipts) {
+        expect(receipt, JSON.stringify(receipt)).toMatchObject({
+          toolOutcome: { status: 'success', settlement: 'completed' }
+        })
+      }
+
+      const sizes = bodies.map((raw) => Buffer.byteLength(raw))
+
+      process.stdout.write(
+        JSON.stringify({
+          measurement: 'color-move',
+          lookup,
+          searchBytes,
+          sizes,
+          total: sizes.reduce((a, b) => a + b, 0),
+          firstTurn,
+          secondTurn: bodies.length - firstTurn
+        }) + '\n'
+      )
+      const index = JSON.parse(bodies[0])
+        .input[0].content[0].text.split('\n')
+        .filter((line: string) => /^design_(operations|knowledge)\./.test(line))
+
+      expect(index.map((line: string) => line.split(' - ')[0]).sort()).toEqual([
+        'design_knowledge.discover_knowledge',
+        'design_knowledge.read_knowledge',
+        'design_operations.execute_design',
+        'design_operations.read_design_resources',
+        'design_operations.search_design_tools'
+      ])
+      expect(declarations.sort()).toEqual(
+        lookup === 'known'
+          ? ['design_operations.execute_design']
+          : [
+              'design_operations.execute_design',
+              ...(lookup === 'recorded-square'
+                ? ['design_operations.read_design_resources']
+                : []),
+              'design_operations.search_design_tools'
+            ]
+      )
+      expect(JSON.parse(bodies[0]).tools).toEqual([
+        expect.objectContaining({ type: 'tool_search', execution: 'client' })
+      ])
+      expect(JSON.parse(bodies[1]).input[0]).toMatchObject({
+        type: 'tool_search_output',
+        status: 'completed',
+        execution: 'client',
+        call_id: 'load'
+      })
+      const searchTurns = lookup === 'recorded-square' ? 6 : 4
+
+      expect(firstTurn).toBe(lookup === 'known' ? 3 : searchTurns)
+      expect(bodies.length - firstTurn).toBe(lookup === 'known' ? 2 : 3)
+    } finally {
+      await runtime.dispose()
+      await Promise.all(sources.map((source) => source.dispose?.()))
+    }
+  },
+  30000
+)
+
+it('attaches a signed prepared subtree once in the corrected basis of existing nested groups', async () => {
+  const { prepareDesign } = await import('../design-preparation')
+  const { deliverPreparedDesign } = await import('../../src/ai/prepared-design')
+
+  core.load({
+    version: '1.0.0',
+    props: {},
+    sceneTree: {
+      workspace: 'workspace',
+      workspaceList: ['workspace'],
+      elements: {
+        workspace: {
+          id: 'workspace',
+          name: 'Workspace',
+          type: 'workspace',
+          visible: true,
+          lock: false,
+          children: [],
+          parentId: ''
+        }
+      }
+    }
+  })
+
+  const rect = (key: string, x: number) => ({
+    key,
+    type: 'rect',
+    name: key,
+    x,
+    width: 10,
+    height: 10
+  })
+
+  const seed = prepareDesign({
+    type: 'frame',
+    name: 'Paper',
+    key: 'paper',
+    x: -15,
+    y: 35,
+    width: 260,
+    height: 130,
+    children: [
+      {
+        type: 'group',
+        name: 'Outer',
+        key: 'outer',
+        x: 100,
+        y: 20,
+        children: [
+          {
+            type: 'group',
+            key: 'inner',
+            name: 'Inner',
+            x: 5,
+            children: [rect('a', 0)]
+          },
+          {
+            type: 'group',
+            key: 'other',
+            name: 'Other',
+            x: 35,
+            children: [rect('b', 0)]
+          }
+        ]
+      },
+      rect('frame-peer', 200)
+    ]
+  })
+  const context = { signal: new AbortController().signal }
+  const apply = createPreparedDesignAction(undefined, async () => undefined)
+
+  await apply.execute({ design: deliverPreparedDesign(seed) }, context)
+  const ids = seed.keyToId
+
+  const pos = (id: string) =>
+    core.getElementComputedData(id, ['x', 'y', 'width', 'height'])
+
+  const scenePoints = () => {
+    core.deps.render.updateLayers()
+
+    return [ids.a, ids.b, ids['frame-peer']].map((id) =>
+      core.elementLocalToWorkspace(id, { x: 0, y: 0 })
+    )
+  }
+
+  const originalPoints = scenePoints()
+
+  expect(originalPoints).toEqual([
+    { x: 90, y: 55 },
+    { x: 120, y: 55 },
+    { x: 185, y: 35 }
+  ])
+  const incoming = prepareDesign({
+    type: 'group',
+    name: 'New',
+    key: 'new',
+    children: [
+      {
+        type: 'vector',
+        key: 'path',
+        name: 'Signed',
+        rings: [
+          [
+            { x: -10, y: -4 },
+            { x: 2, y: 0 },
+            { x: 0, y: 2 }
+          ]
+        ]
+      },
+      ...Array.from({ length: 40 }, (_, i) => rect('r' + i, 0))
+    ]
+  })
+  const reads = vi.spyOn(core, 'getElementChildren')
+  const update = vi.spyOn(core, 'updateElementProperties')
+
+  try {
+    await apply.execute(
+      { design: deliverPreparedDesign(incoming), parentId: ids.inner },
+      context
+    )
+    expect(pos(ids.outer)).toMatchObject({
+      x: 95,
+      y: 16,
+      width: 50,
+      height: 14
+    })
+    expect(pos(ids.inner)).toMatchObject({ x: 0, y: 0, width: 20, height: 14 })
+    expect(pos(ids.a)).toMatchObject({ x: 10, y: 4 })
+    expect(pos(ids.other)).toMatchObject({ x: 40, y: 4 })
+    expect(pos(ids.b)).toMatchObject({ x: 0, y: 0 })
+    expect(pos(incoming.rootId)).toMatchObject({ x: 0, y: 0 })
+    expect(reads.mock.calls.map((call) => call[0])).toEqual([
+      ids.inner,
+      ids.outer
+    ])
+    expect(update).toHaveBeenCalledTimes(1)
+    expect(pos(ids.paper)).toMatchObject({
+      x: -15,
+      y: 35,
+      width: 260,
+      height: 130
+    })
+    expect(scenePoints()).toEqual(originalPoints)
+    expect(
+      core.elementLocalToWorkspace(incoming.keyToId.path, { x: 0, y: 0 })
+    ).toMatchObject({ x: 80, y: 51 })
+    expect(core.getElementChildren(ids.outer).elementIds).toEqual([
+      ids.inner,
+      ids.other
+    ])
+    expect(core.getElementChildren(ids.inner).elementIds).toEqual([
+      ids.a,
+      incoming.rootId
+    ])
+    // Another editor transaction expands the same groups one unit to the left.
+    // Its origin changes must be read from canonical scene geometry.
+    core.createElementInParent(
+      { type: 'rect', x: 0, y: 0, width: 1, height: 1 },
+      ids.inner
+    )
+    core.updateElementProperties([
+      { elementId: ids.outer, values: { x: 94, width: 51 } },
+      { elementId: ids.inner, values: { width: 21 } },
+      { elementId: ids.a, values: { x: 11 } },
+      { elementId: ids.other, values: { x: 41 } },
+      { elementId: incoming.rootId, values: { x: 1 } }
+    ])
+    // A subsequent flat partition is expressed in the original parent basis.
+    const root = incoming.entries[0]
+    const anchor = incoming.entries[1]
+    const more = prepareDesign({
+      type: 'group',
+      name: 'Next',
+      children: Array.from({ length: 34 }, (_, i) => rect('p' + i, -20 - i))
+    })
+    const members = more.entries.slice(1).map((entry) => ({
+      ...entry,
+      parentId: incoming.rootId,
+      descriptor: {
+        ...entry.descriptor,
+        x:
+          Number(entry.descriptor.x) +
+          Number(more.entries[0].descriptor.x) -
+          Number(root.descriptor.x),
+        y:
+          Number(entry.descriptor.y) +
+          Number(more.entries[0].descriptor.y) -
+          Number(root.descriptor.y)
+      }
+    }))
+    const continuation = deliverPreparedDesign({
+      ...more,
+      rootId: incoming.rootId,
+      continuation: {
+        anchor: {
+          id: anchor.descriptor.id,
+          x: Number(root.descriptor.x) + Number(anchor.descriptor.x),
+          y: Number(root.descriptor.y) + Number(anchor.descriptor.y)
+        }
+      },
+      entries: [root, ...members],
+      keyToId: Object.fromEntries(
+        [root, ...members].map((entry) => [entry.key, entry.descriptor.id])
+      )
+    })
+
+    // Scaling about this anchor leaves its position unchanged but changes
+    // every other member offset in the retained partition.
+    core.updateElementProperties([
+      { elementId: ids.inner, values: { scaleY: 2 } }
+    ])
+    await expect(
+      apply.execute({ design: continuation, parentId: ids.inner }, context)
+    ).rejects.toThrow(/attachment transform changed/)
+    expect(core.getElementMetadata(more.keyToId.p0)).toBeUndefined()
+    core.updateElementProperties([
+      { elementId: ids.inner, values: { scaleY: 1 } }
+    ])
+    await apply.execute({ design: continuation, parentId: ids.inner }, context)
+    expect(pos(ids.outer)).toMatchObject({
+      x: 52,
+      y: 16,
+      width: 93,
+      height: 14
+    })
+    expect(pos(ids.a)).toMatchObject({ x: 53, y: 4 })
+    expect(pos(ids.other)).toMatchObject({ x: 83, y: 4 })
+    expect(pos(more.keyToId.p0)).toMatchObject({ x: 33, y: 4 })
+    expect(pos(more.keyToId.p33)).toMatchObject({ x: 0, y: 4 })
+    expect(pos(anchor.descriptor.id)).toMatchObject({ x: 43, y: 0 })
+    expect(scenePoints()).toEqual(originalPoints)
+    core.updateElementProperties([
+      { elementId: anchor.descriptor.id, values: { x: 44 } }
+    ])
+    await expect(
+      apply.execute({ design: continuation, parentId: ids.inner }, context)
+    ).rejects.toThrow(/anchor moved/)
+  } finally {
+    reads.mockRestore()
+    update.mockRestore()
+  }
+})

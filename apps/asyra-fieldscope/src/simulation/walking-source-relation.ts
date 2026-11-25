@@ -123,6 +123,30 @@ function scalarWork(
   }
 }
 
+function scalarGcd(a: bigint, b: bigint, budget?: RationalArithmeticBudget) {
+  if (b !== 0n) {
+    // Every remainder is smaller in magnitude than its divisor. The initial
+    // operands determine the peak width, but every modulo still costs one step.
+    if (budget) {
+      scalarWork(budget, Math.max(integerBits(a), integerBits(b)))
+    }
+
+    for (;;) {
+      const remainder = a % b
+
+      a = b
+      b = remainder
+      if (b === 0n) {
+        break
+      }
+
+      budget?.count()
+    }
+  }
+
+  return a < 0n ? -a : a
+}
+
 const sum = (a: Dyadic, b: Dyadic): Dyadic => {
   const exponent = Math.min(a.exponent, b.exponent)
   const budget = scalarAccount(a, b)
@@ -1079,19 +1103,7 @@ function directionKey(axis: ExactPoint) {
     return value.significand << BigInt(value.exponent - exponent)
   })
 
-  const gcd = (a: bigint, b: bigint): bigint => {
-    while (b !== 0n) {
-      scalarWork(budget, Math.max(integerBits(a), integerBits(b)))
-      const next = a % b
-
-      a = b
-      b = next
-    }
-
-    return a < 0n ? -a : a
-  }
-
-  const divisor = integers.reduce((a, b) => gcd(a, b), 0n)
+  const divisor = integers.reduce((a, b) => scalarGcd(a, b, budget), 0n)
 
   if (divisor === 0n) {
     return ''
@@ -2985,18 +2997,12 @@ export class WalkingSourceRelationEvaluator {
 
     return this.observeStage('rationalNodeCompilation', () => {
       const budget = this.arithmeticBudget(template.maxBits)
-      let a = template.scale.significand,
-        b = dynamic.scale.significand
-
-      while (b !== 0n) {
-        scalarWork(budget, Math.max(integerBits(a), integerBits(b)))
-        const next = a % b
-
-        a = b
-        b = next
-      }
-
-      const factor = template.scale.significand / a
+      const divisor = scalarGcd(
+        template.scale.significand,
+        dynamic.scale.significand,
+        budget
+      )
+      const factor = template.scale.significand / divisor
 
       scalarWork(
         budget,
@@ -3120,18 +3126,6 @@ export class WalkingSourceRelationEvaluator {
 
       const check = (n: bigint) => scalarWork(budget, integerBits(n))
 
-      const gcd = (a: bigint, b: bigint) => {
-        while (b) {
-          scalarWork(budget, Math.max(integerBits(a), integerBits(b)))
-          const r = a % b
-
-          a = b
-          b = r
-        }
-
-        return a < 0n ? -a : a
-      }
-
       try {
         if (!Array.isArray(inputs) || !inputs.length) {
           throw new Error('Missing rational source frames')
@@ -3170,7 +3164,9 @@ export class WalkingSourceRelationEvaluator {
             let numerators = values.get(value.denominator)
 
             if (!numerators?.has(value.numerator)) {
-              if (gcd(value.numerator, value.denominator) !== 1n) {
+              if (
+                scalarGcd(value.numerator, value.denominator, budget) !== 1n
+              ) {
                 throw new Error('Noncanonical rational source scalar')
               }
 
@@ -3187,7 +3183,7 @@ export class WalkingSourceRelationEvaluator {
               continue
             }
 
-            const divisor = gcd(denominator, value.denominator),
+            const divisor = scalarGcd(denominator, value.denominator, budget),
               factor = denominator / divisor
 
             scalarWork(
@@ -4905,22 +4901,7 @@ export class WalkingSourceRelationEvaluator {
 
           return v.significand << BigInt(v.exponent - exponent)
         })
-        let divisor = 0n
-
-        for (const value of integers) {
-          let a = divisor,
-            b = value < 0n ? -value : value
-
-          while (b) {
-            scalarWork(budget, Math.max(integerBits(a), integerBits(b)))
-            const next = a % b
-
-            a = b
-            b = next
-          }
-
-          divisor = a
-        }
+        const divisor = integers.reduce((a, b) => scalarGcd(a, b, budget), 0n)
 
         if (!divisor) {
           throw new Error('Singular source direction matrix')

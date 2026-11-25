@@ -522,7 +522,7 @@ async function verifyPreparedDeliveryHistory(
     )
 
     recordPhase('preparation')
-    await operations.call(
+    const delivered = await operations.call(
       AiDesignToolIds.EXECUTE_DESIGN,
       {
         inspection: 'defer',
@@ -535,6 +535,20 @@ async function verifyPreparedDeliveryHistory(
       },
       new AbortController().signal
     )
+    const view = JSON.parse(delivered).actionResults[0].result
+
+    expect(view).toMatchObject({
+      compositionId: fixture.prepared.design.rootId,
+      appliedElementCount: fixture.prepared.design.entries.length
+    })
+    expect(view).not.toHaveProperty('keyToId')
+    expect(view).not.toHaveProperty('roleToElementIds')
+    expect(view).not.toHaveProperty('appliedElementIds')
+    const [key, id] = Object.entries(fixture.prepared.design.keyToId)[1]
+
+    expect(
+      designs.resolveTargets({ artifactId: prepared.artifactId, keys: [key] })
+    ).toEqual([id])
     recordPhase('dispatch')
     expect(dispatch).toHaveBeenCalledTimes(1)
     expect(compile).toHaveBeenCalledTimes(1)

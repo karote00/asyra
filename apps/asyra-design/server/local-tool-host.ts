@@ -1,13 +1,26 @@
-import { AiToolFailureCodes } from '../src/constants/ai-design'
+import { defaultFindingProjection } from './design-findings'
+import {
+  defaultCreationProjection,
+  type ProjectCreationText
+} from './created-target-delivery'
+import { withConversationResourceReads } from './local-design-resources'
+import {
+  AiToolFailureCodes,
+  isDesignProviderEntry
+} from '../src/constants/ai-design'
 import { requireSupportedToolSchemas } from '@asyra/ai-agent-runtime/schema'
 import type { AiToolImage } from '@asyra/ai-agent-runtime'
 import type { ExchangeConversationResults } from '@asyra/ai-agent-runtime'
-import { readNamedFields, type DeliveryRequest } from '@asyra/ai-agent-runtime'
+import { type DeliveryRequest } from '@asyra/ai-agent-runtime'
 import {
   createDesignResultDelivery,
   resolveConversationInputs
 } from './local-result-delivery'
-import { runtimeOperationSchema } from './local-operation-batch'
+import {
+  ordinaryOperationInput,
+  runtimeOperationSchema
+} from './local-operation-batch'
+import { randomUUID } from 'node:crypto'
 import { AsyncLocalStorage } from 'node:async_hooks'
 import {
   AiToolContractError,
@@ -39,8 +52,11 @@ import { createAiToolHostLibrary } from '@asyra/ai-agent-runtime/node'
 import {
   operationGroupName,
   createDesignSequencePlanner,
+  deliveryCorrectionSchema,
+  DeliverySelectionError,
   designStageOutcomes,
   sequenceDefinition,
+  standaloneInvocationSchema,
   resultReceiptSchema
 } from './local-design-sequence'
 import {
@@ -66,6 +82,7 @@ import {
 } from './local-tool-invocation'
 import {
   operationContractIssue,
+  operationInputIssues,
   operationInputIssue
 } from '@asyra/ai-agent-runtime/schema'
 import type { AiToolOwnership } from '@asyra/ai-agent-runtime/schema'
@@ -96,13 +113,37 @@ export interface LocalToolGroup {
   }
 }
 type Reply = Awaited<ReturnType<typeof invokeLocalTool>> & {
+  projectDefaultText?: ProjectCreationText
   media?: AiToolImage[]
   executionContract?: AiToolContract
 }
 
+/** Acquire request-local repair handles only when returning the actual rejection. */
+class OperationAdmissionError extends AiToolInputError {
+  constructor(
+    message: string,
+    readonly recovery: () => unknown[]
+  ) {
+    super(message)
+  }
+}
+
+const admissionFailureSchema = (definition?: LocalToolDefinition) =>
+  definition?.admissionRecoveryProperties
+    ? {
+        ...localToolFailureSchema,
+        properties: {
+          ...definition.admissionRecoveryProperties,
+          ...localToolFailureSchema.properties
+        }
+      }
+    : localToolFailureSchema
+
 /** One request host: registered metadata, guarded leaves and actual store ownership. */
 export const createLocalToolHost = (options: {
+  standaloneInvocations?: boolean
   requestId: string
+  history?: readonly unknown[]
   resultContext?: ExchangeConversationResults
   signal: AbortSignal
   store: AiToolStore
@@ -146,6 +187,8 @@ export const createLocalToolHost = (options: {
     requestId: options.requestId,
     capacity: options.artifactCapacity
   })
+  const pendingDeliveries = new Map<string, Record<string, unknown>>()
+  const authoredSequences = new WeakMap<object, Record<string, unknown>>()
   const schedule = createAiToolScheduler(options.signal)
   const ownership: AiToolOwnership = {
     requestId: options.requestId,
@@ -183,7 +226,10 @@ export const createLocalToolHost = (options: {
     {
       owner: LocalToolGroup['owner']
       definition: AiToolContract &
-        Pick<LocalToolDefinition, 'providerExposure' | 'resultPaths'>
+        Pick<
+          LocalToolDefinition,
+          'providerExposure' | 'resultPaths' | 'admissionRecoveryProperties'
+        >
       access?: AiToolAccess
     }
   >()
@@ -213,7 +259,7 @@ export const createLocalToolHost = (options: {
           inputSchema: binding.definition.inputSchema,
           outputSchema: false,
           partialOutputSchema: false,
-          recoveryOutputSchema: localToolFailureSchema
+          recoveryOutputSchema: admissionFailureSchema(binding.definition)
         }
       : undefined
     const selected = staticIssue
@@ -325,6 +371,7 @@ export const createLocalToolHost = (options: {
         owner: group.owner,
         definition: {
           ...definition,
+          admissionRecoveryProperties: source.admissionRecoveryProperties,
           providerExposure: source.providerExposure,
           resultPaths: source.resultPaths
         },
@@ -390,6 +437,52 @@ export const createLocalToolHost = (options: {
         ...operationOwner,
         definitions: operationOwner.definitions.filter((d) => d !== batch)
       }
+    }
+  }
+
+  const deliverImages = (images: AiToolImage[], name: string) => {
+    const call = context.getStore()
+
+    if (call) {
+      const prefix = '/fields/' + name.replace(/~/g, '~0').replace(/\//g, '~1')
+      const selected = (selectedImages.get(call) ?? []).filter(
+        (image) => image.path !== prefix && !image.path.startsWith(prefix + '/')
+      )
+
+      selected.push(...images)
+      selectedImages.set(call, selected)
+    }
+  }
+
+  if (!operationGroup && (options.resultContext || options.history)) {
+    groups.push({
+      name: 'design_operations',
+      description: 'Read saved conversation results.',
+      owner: {
+        definitions: [],
+
+        async call() {
+          throw Error('Unknown resource')
+        }
+      }
+    })
+  }
+
+  const resourceGroup = groups.findIndex(
+    (group) => group.name === 'design_operations'
+  )
+
+  if (resourceGroup >= 0) {
+    const group = groups[resourceGroup]
+
+    groups[resourceGroup] = {
+      ...group,
+      owner: withConversationResourceReads(
+        group.owner,
+        options.resultContext,
+        deliverImages,
+        options.history
+      )
     }
   }
 
@@ -467,7 +560,8 @@ export const createLocalToolHost = (options: {
   // the same canonical admission-failure alternative.
   const invocationContract = <T extends LocalToolDefinition>(
     name: string,
-    contract: T
+    contract: T,
+    forOperationLookup = false
   ) => {
     const binding = bindings.get(name)
 
@@ -477,7 +571,11 @@ export const createLocalToolHost = (options: {
 
     return {
       ...contract,
-      inputSchema: runtimeOperationSchema(binding.definition.inputSchema),
+      inputSchema: runtimeOperationSchema(
+        forOperationLookup
+          ? ordinaryOperationInput(binding.definition.inputSchema)
+          : binding.definition.inputSchema
+      ),
       ...Object.fromEntries(
         ['outputSchema', 'partialOutputSchema', 'recoveryOutputSchema'].map(
           (key) => [
@@ -543,7 +641,27 @@ export const createLocalToolHost = (options: {
     return library.describe(names?.[0] ?? name)
   }
 
-  const sequence = sequenceDefinition(batch)
+  const standaloneOwners = new Map<string, LocalToolDefinition>()
+
+  if (options.standaloneInvocations) {
+    for (const group of [
+      ...groups,
+      { name: 'tool_library', owner: controls }
+    ]) {
+      for (const definition of group.owner.definitions) {
+        if (
+          definition.providerExposure !== 'registry' &&
+          definition.composition !== 'allowed' &&
+          definition.composition !== 'request' &&
+          !isDesignProviderEntry(group.name, definition.name)
+        ) {
+          standaloneOwners.set(group.name + '.' + definition.name, definition)
+        }
+      }
+    }
+  }
+
+  const sequence = sequenceDefinition(batch, [...standaloneOwners.values()])
 
   const planSequence = createDesignSequencePlanner(
     batch,
@@ -597,7 +715,67 @@ export const createLocalToolHost = (options: {
     const admitted = library.admitInline(prepared.proposal, 'sequence')
 
     if (!admitted.ok) {
-      throw admissionError(admitted)
+      const error = admissionError(admitted)
+
+      if (!(error instanceof AiToolInputError)) {
+        throw error
+      }
+
+      throw new OperationAdmissionError(error.message, () => {
+        const issues = []
+        const indices = new Set(
+          admitted.issues.flatMap((issue) => {
+            const match = /^\/steps\/(\d+)\/input(?:\/|$)/.exec(issue.path)
+
+            return match ? [Number(match[1])] : []
+          })
+        )
+
+        for (const index of indices) {
+          const step = prepared.proposal.steps[index]
+          const leaf = bindings.get(step.tool)
+
+          if (
+            step.input.kind !== 'literal' ||
+            !leaf?.owner.rejectInput ||
+            step.revision !== leaf.definition.revision
+          ) {
+            continue
+          }
+
+          const schema = runtimeOperationSchema(
+            leaf.definition.inputSchema,
+            true
+          )
+          const invalid = operationInputIssues(step.input.value, schema)
+
+          if (!invalid) {
+            continue
+          }
+
+          const recovery = leaf.owner.rejectInput(
+            leaf.definition.name,
+            step.input.value,
+            invalid
+          )
+
+          if (recovery) {
+            const { draftId, ...details } = recovery
+
+            issues.push({
+              step: step.id,
+              operation: step.tool,
+              issues: invalid,
+              ...details,
+              ...(typeof draftId === 'string'
+                ? { correction: { draftId } }
+                : {})
+            })
+          }
+        }
+
+        return issues
+      })
     }
 
     const recipe = admitted.value.recipe
@@ -653,7 +831,7 @@ export const createLocalToolHost = (options: {
         }
 
         if (!source) {
-          throw new AiToolInputError(
+          throw new DeliverySelectionError(
             'Selected result requires a step output',
             AiToolFailureCodes.INPUT_INVALID
           )
@@ -707,7 +885,7 @@ export const createLocalToolHost = (options: {
                 localToolErrorMessage(error)
 
               throw error instanceof RecipeReferenceError
-                ? new AiToolInputError(message)
+                ? new DeliverySelectionError(message)
                 : new AiToolContractError('registration', message)
             }
           }
@@ -822,16 +1000,6 @@ export const createLocalToolHost = (options: {
                 })
               }
             : undefined
-
-        if (
-          !(args as Record<string, unknown>)?.operations &&
-          !(args as Record<string, unknown>)?.stages
-        ) {
-          return {
-            inputSchema: sequence.inputSchema,
-            outputSchema: resultReceiptSchema
-          }
-        }
 
         const plan = preparedFor(args)
 
@@ -1025,29 +1193,6 @@ export const createLocalToolHost = (options: {
 
     async call(_name: string, args: unknown, signal: AbortSignal) {
       const call = context.getStore()
-
-      const deliverImages = (images: AiToolImage[], name: string) => {
-        if (call) {
-          const prefix =
-            '/fields/' + name.replace(/~/g, '~0').replace(/\//g, '~1')
-          const selected = (selectedImages.get(call) ?? []).filter(
-            (image) =>
-              image.path !== prefix && !image.path.startsWith(prefix + '/')
-          )
-
-          selected.push(...images)
-          selectedImages.set(call, selected)
-        }
-      }
-
-      if (
-        !(args as Record<string, unknown>).operations &&
-        !(args as Record<string, unknown>).stages
-      ) {
-        return JSON.stringify(
-          await readNamedFields(args, options.resultContext, deliverImages)
-        )
-      }
 
       const plan = preparedFor(args)
 
@@ -1469,12 +1614,57 @@ export const createLocalToolHost = (options: {
       try {
         selection = selectInvocation(call)
       } catch (error) {
+        if (
+          error instanceof DeliverySelectionError &&
+          typeof call.input === 'object' &&
+          call.input
+        ) {
+          const authored = authoredSequences.get(call.input)
+
+          if (authored && pendingDeliveries.size < options.artifactCapacity) {
+            const retryDelivery = randomUUID()
+
+            pendingDeliveries.set(retryDelivery, structuredClone(authored))
+
+            return localToolFailureReply(
+              localToolErrorMessage(error),
+              error.code,
+              {
+                stage: 'admission',
+                settlement: 'not-started',
+                inputIssues: [
+                  {
+                    path: '/delivery',
+                    correction: { retryDelivery },
+                    message:
+                      'Use this request handle with corrected delivery; operations have not started.'
+                  }
+                ]
+              }
+            )
+          }
+        }
+
+        let inputIssues: unknown[] | undefined
+
+        if (error instanceof OperationAdmissionError) {
+          try {
+            inputIssues = error.recovery()
+          } catch {
+            // Optional recovery cannot turn a known pre-dispatch rejection into an unknown settlement.
+          }
+        }
+
         return localToolFailureReply(
           localToolErrorMessage(error),
           error instanceof AiToolInputError
             ? error.code
             : 'TOOL_CONTRACT_INVALID',
-          { stage: 'admission', settlement: 'not-started' }
+          {
+            stage: 'admission',
+            settlement: 'not-started',
+            ...(inputIssues?.length ? { inputIssues } : {})
+          }
         )
       }
 
@@ -1728,8 +1918,22 @@ export const createLocalToolHost = (options: {
           )
         }
 
-        const publicView = projectToolResultFields(view, localToolFailureSchema)
-        const issue = localToolFailureIssue(publicView, outcome, 'model')
+        const failureSchema =
+          failure.stage === 'admission'
+            ? admissionFailureSchema(binding?.definition)
+            : localToolFailureSchema
+        const publicView = projectToolResultFields(view, failureSchema)
+        const modelSchema =
+          failureSchema === localToolFailureSchema
+            ? localToolFailureModelSchema
+            : modelToolResultSchemas({ outputSchema: failureSchema })
+                .outputSchema
+        const issue = localToolFailureIssue(
+          publicView,
+          outcome,
+          'model',
+          modelSchema
+        )
 
         if (issue) {
           throw new Error(issue)
@@ -1737,7 +1941,7 @@ export const createLocalToolHost = (options: {
 
         return {
           value: publicView,
-          schema: localToolFailureModelSchema,
+          schema: modelSchema,
           outcome
         }
       }
@@ -1898,6 +2102,53 @@ export const createLocalToolHost = (options: {
             )
           }
 
+          // The executor transports standalone controls without
+          // making control-plane tools eligible as recipe dependencies.
+          if (
+            !internal &&
+            options.standaloneInvocations &&
+            call.name ===
+              'design_operations.' + AiDesignToolIds.EXECUTE_DESIGN &&
+            call.input &&
+            typeof call.input === 'object' &&
+            'invocation' in call.input
+          ) {
+            const issue = operationInputIssue(
+              call.input,
+              standaloneInvocationSchema
+            )
+            const target = call.input.invocation
+
+            if (
+              issue ||
+              !target ||
+              typeof target !== 'object' ||
+              !('namespace' in target) ||
+              typeof target.namespace !== 'string' ||
+              !('tool' in target) ||
+              typeof target.tool !== 'string' ||
+              !('arguments' in target)
+            ) {
+              return localToolFailureReply(
+                issue ?? 'Invalid standalone invocation.',
+                AiToolFailureCodes.INPUT_INVALID,
+                { settlement: 'not-started' }
+              )
+            }
+
+            const name = target.namespace + '.' + target.tool
+
+            if (!standaloneOwners.has(name)) {
+              return localToolFailureReply(
+                'Use a published standalone owner or submit a composable operation through operations.',
+                AiToolFailureCodes.INPUT_INVALID,
+                { settlement: 'not-started' }
+              )
+            }
+
+            call = { ...call, name, input: target.arguments }
+          }
+
           if (
             !internal &&
             call.name ===
@@ -1911,45 +2162,40 @@ export const createLocalToolHost = (options: {
               definition &&
               operationInputIssue(call.input, definition.inputSchema)
 
-            if (!definition || issue) {
-              return localToolFailureReply(
-                issue ?? 'Missing drawing owner',
-                AiToolFailureCodes.INPUT_INVALID,
-                { settlement: 'not-started' }
-              )
-            }
+            // Invalid submissions stay with the drawing owner, which retains the source.
+            if (definition && !issue) {
+              const { retain, delivery, ...arguments_ } = call.input as Record<
+                string,
+                unknown
+              > &
+                DeliveryRequest
 
-            const { retain, delivery, ...arguments_ } = call.input as Record<
-              string,
-              unknown
-            > &
-              DeliveryRequest
+              const selections = (value: DeliveryRequest['retain']) =>
+                value &&
+                Object.fromEntries(
+                  Object.entries(value).map(([key, selector]) => [
+                    key,
+                    { ...selector, step: 'draw' }
+                  ])
+                )
 
-            const selections = (value: DeliveryRequest['retain']) =>
-              value &&
-              Object.fromEntries(
-                Object.entries(value).map(([key, selector]) => [
-                  key,
-                  { ...selector, step: 'draw' }
-                ])
-              )
-
-            call = {
-              ...call,
-              name: 'design_operations.' + AiDesignToolIds.EXECUTE_DESIGN,
-              input: {
-                operations: [
-                  { id: 'draw', name: call.name, arguments: arguments_ }
-                ],
-                ...(retain ? { retain: selections(retain) } : {}),
-                ...(delivery
-                  ? {
-                      delivery:
-                        typeof delivery === 'object'
-                          ? { fields: selections(delivery.fields) }
-                          : delivery
-                    }
-                  : {})
+              call = {
+                ...call,
+                name: 'design_operations.' + AiDesignToolIds.EXECUTE_DESIGN,
+                input: {
+                  operations: [
+                    { id: 'draw', name: call.name, arguments: arguments_ }
+                  ],
+                  ...(retain ? { retain: selections(retain) } : {}),
+                  ...(delivery
+                    ? {
+                        delivery:
+                          typeof delivery === 'object'
+                            ? { fields: selections(delivery.fields) }
+                            : delivery
+                      }
+                    : {})
+                }
               }
             }
           }
@@ -1961,14 +2207,41 @@ export const createLocalToolHost = (options: {
             typeof call.input === 'object'
           ) {
             try {
-              call = {
-                ...call,
-                input: await resolveConversationInputs(
-                  call.input as Record<string, unknown>,
-                  options.resultContext,
-                  planSequence.authoredInput
+              let authored = call.input as Record<string, unknown>
+
+              if (Object.hasOwn(authored, 'retryDelivery')) {
+                const issue = operationInputIssue(
+                  authored,
+                  deliveryCorrectionSchema
                 )
+
+                if (issue) {
+                  throw new AiToolInputError(issue)
+                }
+
+                const id = authored.retryDelivery
+                const pending =
+                  typeof id === 'string' && pendingDeliveries.get(id)
+
+                if (!pending || typeof id !== 'string') {
+                  throw new AiToolInputError(
+                    'Delivery correction is unavailable in this request.'
+                  )
+                }
+
+                // Claim synchronously before any read or dispatch; a concurrent correction cannot replay it.
+                pendingDeliveries.delete(id)
+                authored = { ...pending, delivery: authored.delivery }
               }
+
+              const resolved = await resolveConversationInputs(
+                authored,
+                options.resultContext,
+                planSequence.authoredInput
+              )
+
+              authoredSequences.set(resolved, authored)
+              call = { ...call, input: resolved }
             } catch (error) {
               return localToolFailureReply(
                 localToolErrorMessage(error),
@@ -1999,8 +2272,36 @@ export const createLocalToolHost = (options: {
             reply.executionContract
           )
 
+          let projectDefaultText: ProjectCreationText | undefined
+
+          if (
+            call.input &&
+            typeof call.input === 'object' &&
+            !('delivery' in call.input)
+          ) {
+            const finalStep = () => sequenceFinalStep(call.input)
+
+            const creation = defaultCreationProjection(
+              call.name,
+              delivered.value,
+              delivered.outcome.status === 'success',
+              finalStep
+            )
+            const findings = defaultFindingProjection(
+              call.name,
+              delivered.value,
+              finalStep
+            )
+
+            projectDefaultText =
+              creation && findings
+                ? (receipt) => creation(findings(receipt))
+                : (creation ?? findings)
+          }
+
           return {
             ...reply,
+            ...(projectDefaultText ? { projectDefaultText } : {}),
             success: delivered.outcome.status === 'success',
             outcome: delivered.outcome,
             text: JSON.stringify(delivered.value)
@@ -2028,7 +2329,12 @@ export const createLocalToolHost = (options: {
 
           if (binding) {
             return {
-              ...invocationContract(definition.name, definition),
+              ...invocationContract(
+                definition.name,
+                definition,
+                binding.definition.providerExposure !== 'registry' &&
+                  ['allowed', 'request'].includes(definition.composition ?? '')
+              ),
               resultPaths: binding.definition.resultPaths,
               name: binding.definition.name,
               registeredName: definition.name,
@@ -2076,6 +2382,7 @@ export const createLocalToolHost = (options: {
     dispose() {
       closed = true
       closing ??= Promise.allSettled([...active]).then(async () => {
+        pendingDeliveries.clear()
         await library.dispose()
         await leases.dispose()
       })

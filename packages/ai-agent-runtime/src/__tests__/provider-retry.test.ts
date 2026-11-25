@@ -104,3 +104,25 @@ describe('AI provider request failure and retry', () => {
     )
   })
 })
+
+it('never retries an unavailable conversation or exposes its private contract', () => {
+  const failure = toAiProviderRequestFailure(
+    new AiProviderError({
+      code: 'AI_PROVIDER_SESSION_UNAVAILABLE',
+      message: 'private contract'
+    }),
+    1
+  )
+
+  expect(failure.message).toBe(
+    'AI provider conversation is unavailable; start a new conversation.'
+  )
+  expect(failure.retryable).toBe(false)
+  expect(
+    shouldRetryAiProviderFailure(failure, {
+      maxAttempts: 2,
+
+      shouldRetry: () => true
+    })
+  ).toBe(false)
+})

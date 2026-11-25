@@ -1,4 +1,7 @@
-import { DesignInputError } from './design-input-error'
+import { DesignCurveError, unpairedControls } from './design-curve-repair'
+import type { DraftRepairTarget } from './design-source-recovery'
+import { DesignInputError, DesignVectorExtentError } from './design-input-error'
+import { DesignKeyConflictError } from './design-face'
 import { inspectDesignBudget } from './design-budget'
 import { createDesignCheckResults } from './design-check-results'
 import { createHash } from 'node:crypto'
@@ -13,6 +16,7 @@ import {
 import { deriveGroupBounds } from '@asyra/preset/group-bounds'
 import { randomUUID } from 'node:crypto'
 import {
+  DesignGeometryError,
   constructDesign,
   constructDesignSteps,
   completeDesignSteps,
@@ -35,6 +39,23 @@ import {
   type PreparedDesignEntry,
   type DesignFinding
 } from '../src/ai/prepared-design'
+
+export const isAuthoredDesignError = (error: unknown) =>
+  error instanceof DesignInputError ||
+  error instanceof DesignGeometryError ||
+  error instanceof DesignKeyConflictError
+
+export class RetainedPartitionCompilationError extends Error {
+  constructor(
+    readonly draftId: string,
+    cause: unknown
+  ) {
+    super(
+      cause instanceof Error ? cause.message : 'Partition compilation failed.',
+      { cause }
+    )
+  }
+}
 
 type AnalyzedDesign = PreparedDesign & {
   readonly sharedFillIds?: Readonly<Record<string, string>>
@@ -136,7 +157,8 @@ const freeze = <T>(value: T): T => {
   return value
 }
 
-const admitDraft = (input: unknown): DraftNode => {
+const admitDraft = (input: unknown, authored: unknown): DraftNode => {
+  const invalidRings = new Map<unknown, string>()
   let count = 0,
     characters = 0,
     pathPoints = 0
@@ -230,7 +252,7 @@ const admitDraft = (input: unknown): DraftNode => {
         return fail('missing vector rings')
       }
 
-      const admitPoint = (value: unknown, control = false) => {
+      const admitPoint = (value: unknown) => {
         if (
           !record(value) ||
           Object.keys(value).some((k) => !['x', 'y'].includes(k))
@@ -238,8 +260,8 @@ const admitDraft = (input: unknown): DraftNode => {
           return fail('vector control')
         }
 
-        finite(value.x, `node ${key} vector x`, control ? -limits.dimension : 0)
-        finite(value.y, `node ${key} vector y`, control ? -limits.dimension : 0)
+        finite(value.x, `node ${key} vector x`, -limits.dimension)
+        finite(value.y, `node ${key} vector y`, -limits.dimension)
         if (++pathPoints > limits.expandedPathCommands) {
           return fail('vector point limit')
         }
@@ -264,30 +286,25 @@ const admitDraft = (input: unknown): DraftNode => {
 
           admitPoint({ x: anchor.x, y: anchor.y })
           if (anchor.inControl !== undefined) {
-            admitPoint(anchor.inControl, true)
+            admitPoint(anchor.inControl)
           }
 
           if (anchor.outControl !== undefined) {
-            admitPoint(anchor.outControl, true)
+            admitPoint(anchor.outControl)
           }
         }
 
-        ring.forEach((anchor, index) => {
-          const next = ring[(index + 1) % ring.length]
-
-          if (
-            (anchor.outControl !== undefined) !==
-            (next.inControl !== undefined)
-          ) {
-            pairIssues.push(
-              `rings[${ringIndex}] edge ${index} -> ${(index + 1) % ring.length}: unpaired cubic controls; pair outControl with the next inControl, or omit both for a straight edge`
-            )
-          }
-        })
+        for (const { start, end } of unpairedControls(ring)) {
+          pairIssues.push(
+            `rings[${ringIndex}] edge ${start} -> ${end}: unpaired cubic controls; pair outControl with the next inControl, or omit both for a straight edge`
+          )
+        }
       }
 
       if (pairIssues.length) {
-        fail(`node ${key}: ${pairIssues.join('; ')}`)
+        throw new DesignCurveError(
+          `Invalid design: node ${key}: ${pairIssues.join('; ')}`
+        )
       }
     }
 
@@ -373,17 +390,29 @@ const admitDraft = (input: unknown): DraftNode => {
         vectorBounds.set(node.rings, b)
       }
 
-      if (
-        b.width <= 0 ||
-        b.height <= 0 ||
-        b.x < 0 ||
-        b.y < 0 ||
-        b.x + b.width >
-          (deriveVectorDimensions ? limits.dimension : node.width) ||
-        b.y + b.height >
-          (deriveVectorDimensions ? limits.dimension : node.height)
+      if (b.width <= 0 || b.height <= 0) {
+        if (!invalidRings.has(node.rings)) {
+          const axis = [
+            b.width <= 0 && 'zero width',
+            b.height <= 0 && 'zero height'
+          ]
+            .filter(Boolean)
+            .join(' and ')
+
+          invalidRings.set(node.rings, `node ${key}: vector has ${axis}`)
+        }
+      } else if (
+        deriveVectorDimensions
+          ? b.width > limits.dimension || b.height > limits.dimension
+          : b.x < 0 ||
+            b.y < 0 ||
+            b.x + b.width > node.width ||
+            b.y + b.height > node.height
       ) {
-        fail(`node ${key}: vector exceeds declared bounds`)
+        invalidRings.set(
+          node.rings,
+          `node ${key}: vector exceeds ${deriveVectorDimensions ? 'allowed local bounds' : 'declared bounds'}`
+        )
       }
 
       node.vectorBounds = b
@@ -417,7 +446,50 @@ const admitDraft = (input: unknown): DraftNode => {
     return node
   }
 
-  return admit(input, 1, 'absolute', true)
+  const root = admit(input, 1, 'absolute', true)
+
+  if (invalidRings.size) {
+    const targets: DraftRepairTarget[] = []
+
+    const locate = (node: unknown, path: string) => {
+      if (!record(node)) {
+        return
+      }
+
+      const template =
+        node.type === 'vector-pattern' && record(node.template)
+          ? node.template
+          : undefined
+
+      if (template || node.type === 'vector') {
+        const message = invalidRings.get(template ? template.rings : node.rings)
+
+        if (message) {
+          targets.push({
+            path: path + (template ? '/template/rings' : '/rings'),
+            message
+          })
+        }
+      }
+
+      if (Array.isArray(node.children)) {
+        node.children.forEach((child, i) =>
+          locate(child, path + '/children/' + i)
+        )
+      }
+    }
+
+    locate(authored, '')
+    throw new DesignVectorExtentError(
+      'Invalid design: ' +
+        [...invalidRings.values()].slice(0, 8).join('; ') +
+        (invalidRings.size > 8 ? '; additional invalid vectors found' : '') +
+        '. Rings must span positive width and height within their local bounds.',
+      targets
+    )
+  }
+
+  return root
 }
 
 function* prepareDesignSteps(
@@ -539,7 +611,7 @@ function* prepareDesignSteps(
 
   onSourceWork?.(sourceWork)
   const admissionStarted = performance.now()
-  const root = admitDraft(draft)
+  const root = admitDraft(draft, input)
   const admissionMs = performance.now() - admissionStarted
   const compilationStarted = performance.now()
   const entries: PreparedDesignEntry[] = [],
@@ -1028,7 +1100,8 @@ export const createDesignPreparationSession = (
       recipeRevision: createHash('sha256')
         .update(JSON.stringify(recipes.get(artifactId)))
         .digest('hex'),
-      findings: artifact.findings
+      findings: artifact.findings,
+      review
     })
 
     return {
@@ -1335,6 +1408,14 @@ export const createDesignPreparationSession = (
       return rejectedDrafts.repair(input, admitMissing)
     },
 
+    attachRepairTargets: rejectedDrafts.attachTargets,
+
+    readRepairTargets(id: string, offset: number, limit: number) {
+      ownership?.assertOwned(id)
+
+      return rejectedDrafts.readTargets(id, offset, limit)
+    },
+
     describeRejectedDraft: rejectedDrafts.describe,
 
     async prepareAsync(
@@ -1405,20 +1486,31 @@ export const createDesignPreparationSession = (
         | Parameters<NonNullable<Parameters<typeof prepareDesign>[3]>>[0]
         | undefined
       let compiledFields: Readonly<Record<string, string>> = {}
-      let result = await compileAsync(
-        signal,
-        recipe,
-        artifactId,
-        (value) => {
-          sourceWork = value
-        },
-        (value) => {
-          reuse = value
-        },
-        (fields) => {
-          compiledFields = fields
+      let result: Awaited<ReturnType<typeof compileAsync>>
+
+      try {
+        result = await compileAsync(
+          signal,
+          recipe,
+          artifactId,
+          (value) => {
+            sourceWork = value
+          },
+          (value) => {
+            reuse = value
+          },
+          (fields) => {
+            compiledFields = fields
+          }
+        )
+      } catch (error) {
+        signal.throwIfAborted()
+        if (recovery && !isAuthoredDesignError(error)) {
+          throw new RetainedPartitionCompilationError(recovery.draftId, error)
         }
-      )
+
+        throw error
+      }
 
       signal.throwIfAborted()
       if (continuation) {

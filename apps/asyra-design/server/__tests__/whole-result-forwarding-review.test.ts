@@ -172,7 +172,7 @@ const fixture = (
           })
         ).text,
       { names: [name], view: 'usage', includeResultSchema: true },
-      'read_design_contracts'
+      'read_design_resources'
     )
     const result = JSON.parse(text)
 

@@ -39,7 +39,7 @@ const backendFailureDescriptions = new Map<
   [
     'ACTION_BATCH_SESSION_UNAVAILABLE',
     {
-      code: 'AI_PROVIDER_INVALID_CONFIGURATION',
+      code: 'AI_PROVIDER_SESSION_UNAVAILABLE',
       message:
         'The previous AI session is unavailable or its tools changed. Start a new conversation.'
     }

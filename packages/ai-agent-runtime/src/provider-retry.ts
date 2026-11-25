@@ -19,6 +19,8 @@ const providerRequestFailure = (
 
 const PROVIDER_FAILURE_MESSAGES: Readonly<Record<AiProviderErrorCode, string>> =
   Object.freeze({
+    AI_PROVIDER_SESSION_UNAVAILABLE:
+      'AI provider conversation is unavailable; start a new conversation.',
     AI_PROVIDER_ABORTED: 'AI provider request was aborted.',
     AI_PROVIDER_DISPOSED: 'AI provider has been disposed.',
     AI_PROVIDER_FETCH_UNAVAILABLE:

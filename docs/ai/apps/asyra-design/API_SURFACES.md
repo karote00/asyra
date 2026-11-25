@@ -1005,7 +1005,9 @@ Search returns paginated candidate metadata and exact read routes, never acquire
 execution contracts. A unique match remains a candidate. Empty results disclose
 coverage and category navigation; they do not prove a capability is unavailable.
 
-`read_design_contracts` accepts exact `names` (action names, semantic operations
+`read_design_resources` accepts a separate `savedFields: {label: {name, path, view?}}` request when the conversation result store is available. A value read delivers its selected media. A shape read returns types and paths. Execution binds known paths directly. Contract selection and saved-field selection are exclusive.
+
+Tool contract selection accepts exact `names` (action names, semantic operations
 or qualified native identities). `view: "usage"` returns actionable parameters and
 results; full view returns validation schemas. `scopes` maps each selected name
 to its own `schemaPaths` or owner-published `inputScope`. Schema paths return
@@ -1151,12 +1153,14 @@ and `bdd-features/text-canvas.feature` for lifecycle and accepted behavior.
 
 ### Native discovery entry
 
-With drawing operations enabled, `search_design_tools`, `read_design_contracts` and the single
+In the Codex CLI with drawing operations enabled, `search_design_tools`, `read_design_resources` and the single
 `execute_design` host entry are eagerly available native tools. Its declaration and dispatch still come from
-the existing operation owner. Domain tools remain deferred; no-operation and
+the existing operation owner. The knowledge namespace publishes its discovery and reading functions eagerly. Other domain tools remain deferred; no-operation and
 assessment requests do not add the entry. Native advertised counts/bytes reflect
 the actual registration. Qualified names, selected usage, scopes and batch/native
 execution envelopes retain their existing contracts.
+
+For Responses, the five admitted entries form a short index. Client-executed tool search loads selected definitions into the stored response chain on demand. Ordinary `execute_design` accepts `operations` with name, arguments and optional step ID. For advanced submissions read the exact Host contract and send its complete value under `workflow`. Standalone registered invocations use their admitted invocation envelope. The Host validates the full value before dispatch. The read entry accepts `history:{start,count}` (one-based) for a slice of the current conversation. Current attachment indexes and actual selected targets stay on the turn; correlation identifiers stay with the Host. Detailed drawing choices use operation discovery and the final-response route. Web research is authorized per conversation and activated by requesting `web_search` for the current turn.
 
 ### Capture recovery
 
@@ -1167,7 +1171,7 @@ current. Captures require no criterion IDs, binding step or final approval call.
 
 ### Executable usage result representation
 
-`read_design_contracts` with `view: "usage"` returns complete selected input
+`read_design_resources` with `view: "usage"` returns complete selected input
 constraints, owner examples, result fields and settlement/recovery meaning.
 `includeResultSchema: true` explicitly includes the full model-facing result
 validation schema for machine consumers. It requires usage view. Refresh, paging
@@ -1187,7 +1191,7 @@ its actual delivery mode and fields before invoking it; use host target bindings
 for known artifacts or current regions. Preserve complete/truncated semantics.
 No separate evidence protocol or judgment submission is required.
 
-Use search_design_tools for owner capability metadata and read_design_contracts for selected exact identities. Missing identities retain their successful siblings; purpose search is a separate request step. design_operations.execute_design accepts one ordered operations array.
+Use search_design_tools for complete ordinary arguments of a clearly matched action or registered tool. Other candidates supply a purpose and identity. Use read_design_resources for additional selected input, result and recovery details. Missing identities retain their successful siblings; purpose search is a separate request step. design_operations.execute_design accepts one ordered operations array.
 Each operation specifies a name and ordinary arguments. Optional id identifies
 an output for later arguments using {kind:"step",step:"id",path:"/field"}.
 A known operation can specify an artifact or region target; selectAt:"step"
@@ -1208,6 +1212,24 @@ Discovery joins artifact-key binding and action metadata for compound purpose
 queries. A matching action with a bindable owner example exposes artifactKeyExamples.
 Replace its illustrative artifactId and keys with current request values and use
 the displayed batch route. Other required arguments retain their actual nesting.
+
+### Design entries for OpenAI Responses
+
+A selected scope's `scopeRead` gives an executable `read_design_resources` selector. Read several known operations with `{names, view: "parameters"}` to get their ordinary input contracts and execution routes in one call. For a retained pre-dispatch delivery rejection, submit `{workflow: {retryDelivery, delivery}}` to the Responses execution entry. Use the handle from the rejection in the same request; a retry claims it once.
+
+Asyra Design publishes `search_design_tools`, `read_design_resources` and `execute_design` for Design operations. The independent knowledge namespace publishes `discover_knowledge` and `read_knowledge`. Tool categories and spelling candidates use only the admitted Design catalog. Knowledge discovery matches visible metadata, supports context and topic scope, and suggests visible IDs. A known ID reads directly.
+The Host retains the tool catalog. A known operation goes straight to
+execute_design. A standalone native or revision-pinned registered route uses
+execute_design with only `{invocation:{namespace,tool,arguments}}` and returns
+the selected owner's ordinary receipt. Composition, resource ownership and
+admission rules remain with their existing owners.
+
+Public reference imports retain the admitted raster for source-space operations.
+For Responses, the longest edge of a selected reference overview is at most
+1280 pixels. Smaller images keep their bytes. The reference metadata reports
+source dimensions, digest and index, while the delivered image reports its own
+dimensions. This policy applies to the public reference importer. Canvas
+captures and user attachments have independent delivery contracts.
 
 ### Recovering captured images
 
@@ -1238,8 +1260,8 @@ A later operation uses `{kind:"named", name:"alias", path:""}` in its arguments
 without model retrieval. Same-call aliases with a producer step compile to step
 bindings. For a decision use `delivery: {fields: {label: {step, path}}}`.
 Omitting step selects the final projected result (the existing receipt on the
-ready canvas route). Read a field of a saved snapshot with no operations and
-`delivery: {fields: {label: {name:"alias", path:"/field"}}}`.
+ready canvas route). Read a saved snapshot through
+`read_design_resources({savedFields:{label:{name:"alias",path:"/field"}}})`.
 If the path is unknown, add `view:"shape"` to that selector to return a bounded
 subtree description (paths, types and array lengths), without values. This is
 optional navigation; known paths bind directly without a preliminary read.
@@ -1511,8 +1533,8 @@ other required arguments; they reuse the same validated examples as purpose menu
 Its hostContract selector references the already available execute_design contract;
 it does not repeat the host input envelope or full host instructions. Native and
 registered tools retain their own invocation parameters. Exact full definitions
-remain available. Exploratory candidate menus omit recipeDependency; exact lookup
-retains authoring metadata. Only a canonical same-owner wrapper already represented
+remain available. Search candidates carry their owner execution route even on partial matches.
+Exact reads return recipeDependency only when includeRecipeDependency is true and a canonical composable wrapper exists. Only a canonical same-owner wrapper already represented
 by an admitted action route is suppressed; foreign same-name tools remain distinct.
 
 The AI chooses the views and canonical data needed for its decision and final
@@ -1576,12 +1598,14 @@ is admitted only for the current host sequence, never a reusable saved recipe.
 Reference import, explicit reference selection and drawing capture preserve their
 existing owner validation and result/media contracts through this route.
 
-Creation workflows accept includeTargets:true to select createdTargets, an ordered
-array of acknowledged {compositionId,keyToId} records. Omission returns an empty
-array without constructing/copying an additional mapping. Retain /createdTargets
-with status delivery to preserve targets without model transfer; consume a known
-key using a named JSON Pointer such as /0/keyToId/panel. This is historical
-creation identity, not current geometry or live group membership.
+Creation workflows return acknowledged `createdTargets` to the Host as an ordered
+array of {compositionId,keyToId} records. The App conversation saves that array.
+The default provider value contains createdElementCount, compositionIds and
+createdTargetsName. Bind /createdTargets/0/keyToId/panel in the same submission
+or bind /0/keyToId/panel under the saved name in a later submission. To inspect
+an ID, use read_design_resources.savedFields. Explicit delivery may select the
+whole array. If saving cannot be acknowledged, keep the full receipt available.
+These IDs identify created elements; subsequent operations validate current state.
 
 A named selector may consume a retain alias declared in the same submission.
 Authored-input aliases resolve the producer's declared ordinary input; result

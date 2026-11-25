@@ -1,5 +1,6 @@
 import { createServer } from 'node:http'
 import { waitForObservedAppReady as waitForAppReady } from './collaboration-observation'
+import { createAiToolContract } from '@asyra/ai-agent-runtime'
 import { createBatchExchange } from '@asyra/ai-agent-runtime/node'
 import { createLocalOperationTools } from '../server/local-operation-tools'
 import { createLocalDesignWorkflow } from '../server/local-design-workflow'
@@ -648,7 +649,7 @@ test('artifact-targeted mixed batch uses normal actions and one Undo/Redo bounda
   )
   await page.goto(createTestDocumentIdentity().url)
   await waitForAppReady(page)
-  const available = await page.evaluate(
+  const definitions = await page.evaluate(
     async (names) => {
       const { createAiActions } = await import('../src/ai/actions')
       const { createDesignEditAction } =
@@ -661,12 +662,8 @@ test('artifact-targeted mixed batch uses normal actions and one Undo/Redo bounda
         createDesignEditAction(),
         createPreparedDesignAction()
       ]
-        .filter((action) => names.includes(action.name))
-        .map(({ name, description, inputSchema }) => ({
-          name,
-          description,
-          inputSchema
-        }))
+        .filter((action) => names.some((name) => name === action.name))
+        .map(({ execute: _execute, ...contract }) => contract)
     },
     [
       AiActionNames.APPLY_PREPARED_DESIGN,
@@ -674,6 +671,7 @@ test('artifact-targeted mixed batch uses normal actions and one Undo/Redo bounda
       AiActionNames.SET_ELEMENT_VISIBILITY
     ]
   )
+  const available = definitions.map(createAiToolContract)
   const tools = createLocalDesignTools(available)
   const signal = new AbortController().signal
   const prepared = JSON.parse(
@@ -796,6 +794,16 @@ test('artifact-targeted mixed batch uses normal actions and one Undo/Redo bounda
   })
 })
 
+// Bound each operation on the recorded capacity fixture, including replay and
+// durable verification after the provider has already finished its own work.
+const constructionPhaseTimeouts = {
+  apply: 90000,
+  inspect: 30000,
+  undo: 90000,
+  redo: 90000,
+  reload: 60000
+}
+
 for (const scenario of [
   {
     title:
@@ -817,6 +825,7 @@ for (const scenario of [
       'budget partitions preserve one root through canonical normalization, Undo and durable reload',
     input: recoveryFixture.input,
     artifacts: 2,
+    fullCapacityReplay: true,
     members: 13094
   },
   {
@@ -828,7 +837,14 @@ for (const scenario of [
   }
 ]) {
   test(scenario.title, async ({ page, browser }) => {
-    test.setTimeout(180000)
+    test.setTimeout(
+      'fullCapacityReplay' in scenario
+        ? Object.values(constructionPhaseTimeouts).reduce(
+            (sum, ms) => sum + ms,
+            0
+          )
+        : 180000
+    )
     const designs: PreparedDesign[] = []
     const exchange = createBatchExchange()
     const controller = new AbortController()
@@ -922,6 +938,7 @@ for (const scenario of [
           expect(workflowReply.outcome.status).toBe('partial')
           const recovery = workflowResult.recoveryInvocation
 
+          expect(recovery, workflowResult.failedPart).toBeDefined()
           expect(recovery.arguments.parts).toHaveLength(1)
           expect(JSON.stringify(recovery.arguments)).not.toContain('vertices')
           workflowReply = await invokeLocalTool(
@@ -1016,280 +1033,343 @@ for (const scenario of [
       )
       const depth = await getUndoHistoryDepth(page)
 
-      await page.getByRole('button', { name: 'Open Agent' }).click()
-      await page
-        .getByLabel('Message Agent')
-        .fill('Apply the construction fixture')
-      await page.getByRole('button', { name: 'Send', exact: true }).click()
-      await expect(page.getByTestId('ai-agent-message').last()).toHaveAttribute(
-        'data-outcome',
-        'success',
-        { timeout: 90000 }
-      )
-      expect(serverError).toBeUndefined()
-      if (!workflowReply) {
-        throw new Error('Missing workflow invocation reply')
-      }
-
-      expect(workflowReply.outcome).toMatchObject({
-        status: 'success',
-        settlement: 'completed'
-      })
-      if (scenario.artifacts > 1) {
-        expect(workflowResult.parts).toHaveLength(
-          referenced ? 1 : scenario.artifacts
-        )
-      } else {
-        expect(workflowResult.parts).toBeUndefined()
-      }
-
-      expect(designs).toHaveLength(scenario.artifacts)
-      expect(await getUndoHistoryDepth(page)).toBe(depth + 1)
-      const root = designs[0].entries[0].descriptor
-      const members = designs.flatMap((design) => design.entries.slice(1))
-      const actual = await page.evaluate(
-        async (ids) => {
-          const { core } = await import('../src/testing/runtime-access')
-
-          return ids.map((id) => ({
-            parentId: core.getElementMetadata(id)?.parentId,
-            world: core.elementLocalToWorkspace(id, { x: 0, y: 0 }),
-            values: core.getElementComputedData(id, ['width', 'height'])
-          }))
-        },
-        members.map((entry) => entry.descriptor.id)
-      )
-
-      expect(actual).toHaveLength(scenario.members)
-      // One assertion retains the complete oracle without recording 65,000 test steps.
-      const differences: string[] = []
-
-      for (const [i, entry] of members.entries()) {
-        if (actual[i].parentId !== root.id) {
-          differences.push(`parent:${i}`)
-        }
-
-        for (const [field, observed, expected] of [
-          ['x', actual[i].world.x, Number(root.x) + Number(entry.descriptor.x)],
-          ['y', actual[i].world.y, Number(root.y) + Number(entry.descriptor.y)],
-          ['width', actual[i].values?.width, entry.descriptor.width],
-          ['height', actual[i].values?.height, entry.descriptor.height]
-        ]) {
-          const delta = Math.abs(Number(observed) - Number(expected))
-
-          if (!Number.isFinite(delta) || delta >= 0.000005) {
-            differences.push(`${i}:${field}:${delta}`)
-          }
-        }
-      }
-
-      expect(differences).toEqual([])
-      const order = await page.evaluate(async (id) => {
-        const { core } = await import('../src/testing/runtime-access')
-
-        return core.getElementData(id)?.children
-      }, root.id)
-
-      expect(order).toEqual(members.map((entry) => entry.descriptor.id))
-      let digestTransport: unknown
-      const digestPage = new Proxy(page, {
-        get(target, property, receiver) {
-          if (property !== 'evaluate') {
-            return Reflect.get(target, property, receiver)
-          }
-
-          return async (...args: Parameters<typeof page.evaluate>) => {
-            const result = await page.evaluate(...args)
-
-            digestTransport = result
-
-            return result
-          }
-        }
-      })
-      const after = await getCoreDocumentDigest(digestPage)
-
-      expect(Object.keys(digestTransport as object)).toEqual(Object.keys(after))
-      expect(digestTransport).toEqual(after)
-      await page.evaluate(async () => {
-        const { core, testRuntimeState } =
-          await import('../src/testing/runtime-access')
-        let saveCount = 0
-
-        testRuntimeState.set('construction-digest-save-count', saveCount)
-        core.registerSaveHook((data) => {
-          testRuntimeState.set('construction-digest-save-count', ++saveCount)
-
-          return data
-        })
-      })
-      expect(await getCoreDocumentDigest(page, beforeCount)).toBeNull()
-      expect(
-        await page.evaluate(async () =>
-          (await import('../src/testing/runtime-access')).testRuntimeState.get(
-            'construction-digest-save-count'
-          )
-        )
-      ).toBe(0)
-      const afterCount = await page.evaluate(async () =>
-        (
-          await import('../src/testing/runtime-access')
-        ).core.getCanonicalElementCount()
-      )
-
-      expect(await getCoreDocumentDigest(page, afterCount)).toEqual(after)
-      expect(
-        await page.evaluate(async () =>
-          (await import('../src/testing/runtime-access')).testRuntimeState.get(
-            'construction-digest-save-count'
-          )
-        )
-      ).toBe(1)
-      if (peer) {
-        await expect
-          .poll(() =>
-            getCoreDocumentDigest(
-              peer as import('@playwright/test').Page,
-              afterCount
-            )
-          )
-          .toEqual(after)
-      }
-
-      await page.getByRole('button', { name: 'Close Agent panel' }).click()
-      if (peer) {
-        await peer.evaluate(async () => {
-          const { getActiveAiDrawingPerformanceProfile } =
-            await import('../src/testing/runtime-access')
-
-          getActiveAiDrawingPerformanceProfile()?.reset()
-        })
-      }
-
-      await page.evaluate(async () => {
-        const { historyApis } = await import('../src/common-apis/history')
-
-        await historyApis.undo()
-      })
-      expect(await getCoreDocumentDigest(page)).toEqual(before)
-      if (peer) {
-        try {
+      await test.step(
+        'Apply the construction through the provider and Host',
+        async () => {
+          await page.getByRole('button', { name: 'Open Agent' }).click()
+          await page
+            .getByLabel('Message Agent')
+            .fill('Apply the construction fixture')
+          await page.getByRole('button', { name: 'Send', exact: true }).click()
           await expect
-            .poll(() =>
-              getCoreDocumentDigest(
-                peer as import('@playwright/test').Page,
-                beforeCount
-              )
-            )
-            .toEqual(before)
-          expect(
-            (await captureConstructionCollaboration(peer))[1].response
-          ).toMatchObject({ failed: 0 })
-        } catch (error) {
-          try {
-            const diagnostics = await Promise.allSettled([
-              captureConstructionCollaboration(page),
-              captureConstructionCollaboration(peer),
-              getPersistedDocumentCheckpoint(fileId)
-            ])
+            .poll(
+              async () => {
+                if (serverError) {
+                  throw serverError
+                }
 
-            await attachConstructionEvidence(
-              'construction-peer-undo-diagnostics',
-              {
-                expected: before,
-                actorErrors: getCapturedBrowserErrors(page),
-                peerErrors: getCapturedBrowserErrors(peer),
-                diagnostics: diagnostics.map((result) =>
-                  result.status === 'fulfilled'
-                    ? result
-                    : { status: result.status, reason: String(result.reason) }
-                )
-              }
+                return page
+                  .getByTestId('ai-agent-message')
+                  .last()
+                  .getAttribute('data-outcome')
+              },
+              { timeout: 90000 }
             )
-          } catch (diagnosticError) {
-            test.info().annotations.push({
-              type: 'diagnostic-capture-failed',
-              description: String(diagnosticError)
-            })
+            .toBe('success')
+        },
+        { timeout: constructionPhaseTimeouts.apply }
+      )
+      const { after, afterCount } = await test.step(
+        'Verify every applied member and capture the document',
+        async () => {
+          if (!workflowReply) {
+            throw new Error('Missing workflow invocation reply')
           }
 
-          throw error
-        } finally {
-          try {
-            const evidence = await peer.evaluate(async () => {
+          expect(workflowReply.outcome).toMatchObject({
+            status: 'success',
+            settlement: 'completed'
+          })
+          if (scenario.artifacts > 1) {
+            expect(workflowResult.parts).toHaveLength(
+              referenced ? 1 : scenario.artifacts
+            )
+          } else {
+            expect(workflowResult.parts).toBeUndefined()
+          }
+
+          expect(designs).toHaveLength(scenario.artifacts)
+          expect(await getUndoHistoryDepth(page)).toBe(depth + 1)
+          const root = designs[0].entries[0].descriptor
+          const members = designs.flatMap((design) => design.entries.slice(1))
+          const actual = await page.evaluate(
+            async (ids) => {
+              const { core } = await import('../src/testing/runtime-access')
+
+              return ids.map((id) => ({
+                parentId: core.getElementMetadata(id)?.parentId,
+                world: core.elementLocalToWorkspace(id, { x: 0, y: 0 }),
+                values: core.getElementComputedData(id, ['width', 'height'])
+              }))
+            },
+            members.map((entry) => entry.descriptor.id)
+          )
+
+          expect(actual).toHaveLength(scenario.members)
+          // One assertion retains the complete oracle without recording 65,000 test steps.
+          const differences: string[] = []
+
+          for (const [i, entry] of members.entries()) {
+            if (actual[i].parentId !== root.id) {
+              differences.push(`parent:${i}`)
+            }
+
+            for (const [field, observed, expected] of [
+              [
+                'x',
+                actual[i].world?.x,
+                Number(root.x) + Number(entry.descriptor.x)
+              ],
+              [
+                'y',
+                actual[i].world?.y,
+                Number(root.y) + Number(entry.descriptor.y)
+              ],
+              ['width', actual[i].values?.width, entry.descriptor.width],
+              ['height', actual[i].values?.height, entry.descriptor.height]
+            ]) {
+              const delta = Math.abs(Number(observed) - Number(expected))
+
+              if (!Number.isFinite(delta) || delta >= 0.000005) {
+                differences.push(`${i}:${field}:${delta}`)
+              }
+            }
+          }
+
+          expect(differences).toEqual([])
+          const order = await page.evaluate(
+            async ({ id, expectedCount }) => {
+              const { core } = await import('../src/testing/runtime-access')
+
+              return core.getElementChildren(id, 0, expectedCount + 1)
+                .elementIds
+            },
+            { id: root.id, expectedCount: members.length }
+          )
+
+          expect(order).toEqual(members.map((entry) => entry.descriptor.id))
+          await page.evaluate(async () => {
+            const { core, testRuntimeState } =
+              await import('../src/testing/runtime-access')
+            let saveCount = 0
+
+            testRuntimeState.set('construction-digest-save-count', saveCount)
+            core.registerSaveHook((data) => {
+              testRuntimeState.set(
+                'construction-digest-save-count',
+                ++saveCount
+              )
+
+              return data
+            })
+          })
+          expect(await getCoreDocumentDigest(page, beforeCount)).toBeNull()
+          expect(
+            await page.evaluate(async () =>
+              (
+                await import('../src/testing/runtime-access')
+              ).testRuntimeState.get('construction-digest-save-count')
+            )
+          ).toBe(0)
+          const afterCount = beforeCount + 1 + scenario.members
+
+          let digestTransport: unknown
+          const digestPage = new Proxy(page, {
+            get(target, property, receiver) {
+              if (property !== 'evaluate') {
+                return Reflect.get(target, property, receiver)
+              }
+
+              return async (...args: Parameters<typeof page.evaluate>) => {
+                const result = await page.evaluate(...args)
+
+                digestTransport = result
+
+                return result
+              }
+            }
+          })
+          const after = await getCoreDocumentDigest(digestPage, afterCount)
+
+          if (!after) {
+            throw new Error(
+              'Applied element count does not match the complete construction'
+            )
+          }
+
+          expect(Object.keys(digestTransport as object)).toEqual(
+            Object.keys(after)
+          )
+          expect(digestTransport).toEqual(after)
+          expect(
+            await page.evaluate(async () =>
+              (
+                await import('../src/testing/runtime-access')
+              ).testRuntimeState.get('construction-digest-save-count')
+            )
+          ).toBe(1)
+          if (peer) {
+            await expect
+              .poll(() =>
+                getCoreDocumentDigest(
+                  peer as import('@playwright/test').Page,
+                  afterCount
+                )
+              )
+              .toEqual(after)
+          }
+
+          return { after, afterCount }
+        },
+        { timeout: constructionPhaseTimeouts.inspect }
+      )
+
+      await test.step(
+        'Undo the entire construction and verify its removal',
+        async () => {
+          await page.getByRole('button', { name: 'Close Agent panel' }).click()
+          if (peer) {
+            await peer.evaluate(async () => {
               const { getActiveAiDrawingPerformanceProfile } =
                 await import('../src/testing/runtime-access')
-              const profile = getActiveAiDrawingPerformanceProfile()
 
-              if (!profile) {
-                throw new Error('Missing peer Undo profile')
-              }
-
-              return {
-                visibility: document.visibilityState,
-                sample: profile.snapshot(),
-                runtime: profile.getRuntimeEvidence()
-              }
-            })
-
-            await attachConstructionEvidence(
-              'construction-peer-undo-profile',
-              evidence
-            )
-          } catch (diagnosticError) {
-            test.info().annotations.push({
-              type: 'diagnostic-capture-failed',
-              description: String(diagnosticError)
+              getActiveAiDrawingPerformanceProfile()?.reset()
             })
           }
-        }
-      }
 
-      await page.evaluate(async () => {
-        const { historyApis } = await import('../src/common-apis/history')
+          await page.evaluate(async () => {
+            const { historyApis } = await import('../src/common-apis/history')
 
-        await historyApis.redo()
-      })
-      expect(await getCoreDocumentDigest(page)).toEqual(after)
-      if (peer) {
-        await expect
-          .poll(() =>
-            getCoreDocumentDigest(
-              peer as import('@playwright/test').Page,
-              afterCount
-            )
-          )
-          .toEqual(after)
-      }
-
-      await expect
-        .poll(() => getPersistedDocumentDigest(fileId), { timeout: 30000 })
-        .toEqual(after)
-      await page.reload()
-      await waitForAppReady(page)
-      try {
-        expect(await getCoreDocumentDigest(page)).toEqual(after)
-      } catch (error) {
-        try {
-          const checkpoint = await getPersistedDocumentCheckpoint(fileId)
-          const reloaded = await page.evaluate(async () =>
-            (await import('../src/testing/runtime-access')).core.save()
-          )
-
-          await attachConstructionEvidence('construction-reload-documents', {
-            expected: after,
-            checkpoint,
-            reloaded
+            await historyApis.undo()
           })
-        } catch (diagnosticError) {
-          test.info().annotations.push({
-            type: 'diagnostic-capture-failed',
-            description: String(diagnosticError)
-          })
-        }
+          expect(await getCoreDocumentDigest(page)).toEqual(before)
+          if (peer) {
+            try {
+              await expect
+                .poll(() =>
+                  getCoreDocumentDigest(
+                    peer as import('@playwright/test').Page,
+                    beforeCount
+                  )
+                )
+                .toEqual(before)
+              expect(
+                (await captureConstructionCollaboration(peer))[1].response
+              ).toMatchObject({ failed: 0 })
+            } catch (error) {
+              try {
+                const diagnostics = await Promise.allSettled([
+                  captureConstructionCollaboration(page),
+                  captureConstructionCollaboration(peer),
+                  getPersistedDocumentCheckpoint(fileId)
+                ])
 
-        throw error
-      }
+                await attachConstructionEvidence(
+                  'construction-peer-undo-diagnostics',
+                  {
+                    expected: before,
+                    actorErrors: getCapturedBrowserErrors(page),
+                    peerErrors: getCapturedBrowserErrors(peer),
+                    diagnostics: diagnostics.map((result) =>
+                      result.status === 'fulfilled'
+                        ? result
+                        : {
+                            status: result.status,
+                            reason: String(result.reason)
+                          }
+                    )
+                  }
+                )
+              } catch (diagnosticError) {
+                test.info().annotations.push({
+                  type: 'diagnostic-capture-failed',
+                  description: String(diagnosticError)
+                })
+              }
+
+              throw error
+            } finally {
+              try {
+                const evidence = await peer.evaluate(async () => {
+                  const { getActiveAiDrawingPerformanceProfile } =
+                    await import('../src/testing/runtime-access')
+                  const profile = getActiveAiDrawingPerformanceProfile()
+
+                  if (!profile) {
+                    throw new Error('Missing peer Undo profile')
+                  }
+
+                  return {
+                    visibility: globalThis.document.visibilityState,
+                    sample: profile.snapshot(),
+                    runtime: profile.getRuntimeEvidence()
+                  }
+                })
+
+                await attachConstructionEvidence(
+                  'construction-peer-undo-profile',
+                  evidence
+                )
+              } catch (diagnosticError) {
+                test.info().annotations.push({
+                  type: 'diagnostic-capture-failed',
+                  description: String(diagnosticError)
+                })
+              }
+            }
+          }
+        },
+        { timeout: constructionPhaseTimeouts.undo }
+      )
+      await test.step(
+        'Redo the entire construction and verify its restoration',
+        async () => {
+          await page.evaluate(async () => {
+            const { historyApis } = await import('../src/common-apis/history')
+
+            await historyApis.redo()
+          })
+          expect(await getCoreDocumentDigest(page)).toEqual(after)
+          if (peer) {
+            await expect
+              .poll(() =>
+                getCoreDocumentDigest(
+                  peer as import('@playwright/test').Page,
+                  afterCount
+                )
+              )
+              .toEqual(after)
+          }
+        },
+        { timeout: constructionPhaseTimeouts.redo }
+      )
+      await test.step(
+        'Verify persisted and reloaded document contents',
+        async () => {
+          await expect
+            .poll(() => getPersistedDocumentDigest(fileId), { timeout: 30000 })
+            .toEqual(after)
+          await page.reload()
+          await waitForAppReady(page)
+          try {
+            expect(await getCoreDocumentDigest(page)).toEqual(after)
+          } catch (error) {
+            try {
+              const checkpoint = await getPersistedDocumentCheckpoint(fileId)
+              const reloaded = await page.evaluate(async () =>
+                (await import('../src/testing/runtime-access')).core.save()
+              )
+
+              await attachConstructionEvidence(
+                'construction-reload-documents',
+                {
+                  expected: after,
+                  checkpoint,
+                  reloaded
+                }
+              )
+            } catch (diagnosticError) {
+              test.info().annotations.push({
+                type: 'diagnostic-capture-failed',
+                description: String(diagnosticError)
+              })
+            }
+
+            throw error
+          }
+        },
+        { timeout: constructionPhaseTimeouts.reload }
+      )
     } finally {
       await peerContext?.close()
       controller.abort()

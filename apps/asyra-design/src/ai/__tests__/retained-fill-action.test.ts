@@ -196,7 +196,7 @@ it('discovers the mapping by operation and admits the advertised input through t
   try {
     const result = JSON.parse(
       await tools.call(
-        'read_design_contracts',
+        'read_design_resources',
         { names: [action.name] },
         new AbortController().signal
       )

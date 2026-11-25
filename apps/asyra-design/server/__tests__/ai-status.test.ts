@@ -25,12 +25,12 @@ describe('AI readiness without inference', () => {
     )
     expect(await readAiStatus()).toEqual({ state: 'local-unavailable' })
   })
-  it('does not claim a configured HTTP endpoint was contacted', async () => {
+  it('rejects the removed HTTP source without a probe', async () => {
     vi.stubEnv('AI_PROVIDER_BACKEND', 'http')
     vi.stubEnv('AI_PROVIDER_MODEL', 'model')
     vi.stubEnv('AI_PROVIDER_ENDPOINT', 'https://example.test/model')
     vi.stubEnv('AI_PROVIDER_API_KEY', 'private')
-    expect(await readAiStatus()).toEqual({ state: 'configured' })
+    expect(await readAiStatus()).toEqual({ state: 'unconfigured' })
     expect(checkLocalAiProvider).not.toHaveBeenCalled()
   })
 })
@@ -83,4 +83,26 @@ describe('readiness route admission', () => {
       }
     }
   )
+})
+
+it('reports API configuration without making a paid request', async () => {
+  const { createDefaultAiModelSources } = await import('../ai-model-sources')
+  const fetcher = vi.fn<typeof fetch>()
+  const sources = createDefaultAiModelSources({ fetch: fetcher })
+
+  vi.stubEnv('AI_PROVIDER_BACKEND', 'openai-responses')
+  vi.stubEnv('AI_PROVIDER_MODEL', 'configured-model')
+  vi.stubEnv('OPENAI_API_KEY', 'test-secret')
+  try {
+    expect(await readAiStatus(undefined, sources)).toEqual({
+      state: 'configured'
+    })
+    vi.stubEnv('OPENAI_API_KEY', '')
+    expect(await readAiStatus(undefined, sources)).toEqual({
+      state: 'unconfigured'
+    })
+    expect(fetcher).not.toHaveBeenCalled()
+  } finally {
+    await Promise.all(sources.map((source) => source.dispose?.()))
+  }
 })

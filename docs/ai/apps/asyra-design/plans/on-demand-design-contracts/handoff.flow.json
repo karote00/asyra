@@ -1,0 +1,455 @@
+{
+  "schemaVersion": 1,
+  "projectId": "asyra",
+  "flowId": "on-demand-design-contracts",
+  "revision": 53,
+  "definition": {
+    "title": "On-demand Design contracts",
+    "purpose": "Publish five owner-scoped entries with independent tool and knowledge lookup, direct saved-field delivery, and one submission for decided dependencies.",
+    "nodes": [
+      {
+        "id": "publication",
+        "title": "Design provider tools",
+        "objective": "Design provides a five-line index of authorized entries. Responses sends a client loader, resolves exact selected schemas from the local publication and forwards correlated results on the stored chain. The native CLI retains its publication rules. Publish compact controls and execution envelopes; separate allowed research from per-turn activation. Keep tracking and historical turns off the initial wire.",
+        "owner": "Design provider tools",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [],
+        "criteria": [
+          {
+            "id": "handoff",
+            "title": "Design provides a five-line index of authorized entries. Responses sends a client loader, resolves exact selected schemas from the local publication and forwards correlated results on the stored chain. The native CLI retains its publication rules. Publish compact controls and execution envelopes; separate allowed research from per-turn activation. Keep tracking and historical turns off the initial wire.",
+            "kind": "manual"
+          }
+        ],
+        "specRefs": [
+          "docs/ai/apps/asyra-design/specs/local-ai-provider.md"
+        ],
+        "implementationRefs": [
+          "apps/asyra-design/server/design-provider-tools.ts",
+          "apps/asyra-design/server/ai-domain-prompt.ts",
+          "packages/ai-agent-runtime/src/node/responses-provider.ts",
+          "apps/asyra-design/server/ai-model-sources.ts",
+          "apps/asyra-design/src/constants/ai-design.ts",
+          "packages/ai-agent-runtime/src/node/responses-tool-search.ts",
+          "packages/ai-agent-runtime/src/node/tool-provider.ts"
+        ],
+        "actions": []
+      },
+      {
+        "id": "discovery",
+        "title": "Design operation discovery",
+        "objective": "Design registry lookup excludes knowledge. Unique exact methods select one owner. Every clearly matched executable owner delivers complete ordinary arguments independently of discovery metadata, schema size and workflow scopes; alternatives summarize purpose and remain individually readable. Resource reads accept named fields and deliver saved media through the App conversation context. Execution accepts work and binds prior results. Expose scoped historical turns and full host constraints on demand. Validate every execution at the canonical Host. Publish executable scoped reads and guaranteed delivery fields from the selected owner. The request Host retains only a delivery selection rejected before dispatch and consumes its correction once under full admission. Every candidate carries its owner execution route. Recipe dependency metadata is computed and delivered only when requested on an exact read. Validated creation keeps full identity mappings for step bindings and App storage. Default model delivery summarizes the final creation only after storage acknowledgment and preserves media. Project route-specific ordinary arguments. Failed literal preparation before dispatch retains source for owner-validated local repairs. Source-addressed curve findings and first unresolved pointer segments keep invalid input atomic.",
+        "owner": "Design operation discovery",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [
+          {
+            "flowId": "on-demand-design-contracts",
+            "nodeId": "publication"
+          }
+        ],
+        "criteria": [
+          {
+            "id": "handoff",
+            "title": "Design registry lookup excludes knowledge. Unique exact methods select one owner. Every clearly matched executable owner delivers complete ordinary arguments independently of discovery metadata, schema size and workflow scopes; alternatives summarize purpose and remain individually readable. Resource reads accept named fields and deliver saved media through the App conversation context. Execution accepts work and binds prior results. Expose scoped historical turns and full host constraints on demand. Validate every execution at the canonical Host. Publish executable scoped reads and guaranteed delivery fields from the selected owner. The request Host retains only a delivery selection rejected before dispatch and consumes its correction once under full admission. Every candidate carries its owner execution route. Recipe dependency metadata is computed and delivered only when requested on an exact read. Validated creation keeps full identity mappings for step bindings and App storage. Default model delivery summarizes the final creation only after storage acknowledgment and preserves media. Project route-specific ordinary arguments. Failed literal preparation before dispatch retains source for owner-validated local repairs. Source-addressed curve findings and first unresolved pointer segments keep invalid input atomic.",
+            "kind": "manual"
+          }
+        ],
+        "specRefs": [
+          "docs/ai/apps/asyra-design/specs/local-ai-provider.md"
+        ],
+        "implementationRefs": [
+          "apps/asyra-design/server/local-operation-tools.ts",
+          "apps/asyra-design/server/local-tool-host.ts",
+          "apps/asyra-design/server/local-design-sequence.ts",
+          "apps/asyra-design/server/local-knowledge.ts",
+          "apps/asyra-design/server/local-design-resources.ts",
+          "apps/asyra-design/server/catalog-spelling.ts",
+          "apps/asyra-design/server/local-tool-host.ts",
+          "apps/asyra-design/server/local-design-sequence.ts",
+          "apps/asyra-design/server/local-design-workflow.ts",
+          "apps/asyra-design/server/created-target-delivery.ts",
+          "apps/asyra-design/server/design-provider-tools.ts",
+          "packages/ai-agent-runtime/src/recipe-schema.ts",
+          "apps/asyra-design/server/local-operation-batch.ts",
+          "apps/asyra-design/server/design-construction.ts",
+          "apps/asyra-design/server/design-preparation.ts",
+          "apps/asyra-design/server/local-design-tools.ts",
+          "apps/asyra-design/server/design-draft-repair.ts",
+          "apps/asyra-design/server/design-curve-repair.ts",
+          "apps/asyra-design/server/local-tool-invocation.ts"
+        ],
+        "actions": []
+      },
+      {
+        "id": "proof",
+        "title": "Design provider integration",
+        "objective": "Independent registry enumeration checks every searchable action and registered tool against its actual input owner. Offline Responses capture checks the three recorded search menus, validates their ordinary arguments and applies both edits through Host and Core. Known operations still reuse one execute definition. Measure UTF-8 result bytes and exchanges. Exercise conditional web research, scoped history and compact cold requests through real provider preparation and scripted transport. Classify recorded submissions from their outer arguments and verify rectangle edits and a Dome delivery correction against actual provider receipts and Core mutations. Replay the partial Dome import query through published Responses and compare ordinary and recipe-authoring reads while preserving known edits and dependent ordering. Replay the 1,400 original Dome identities through Responses, including default delivery, selected media, named read and reuse, dependent execution and failed storage. Replay recorded requests 11–15 through provider search and Host. Count full resubmissions and local corrections, verify both contours, failed writes and retained source reuse.",
+        "owner": "Design provider integration",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [
+          {
+            "flowId": "on-demand-design-contracts",
+            "nodeId": "discovery"
+          }
+        ],
+        "criteria": [
+          {
+            "id": "handoff",
+            "title": "Independent registry enumeration checks every searchable action and registered tool against its actual input owner. Offline Responses capture checks the three recorded search menus, validates their ordinary arguments and applies both edits through Host and Core. Known operations still reuse one execute definition. Measure UTF-8 result bytes and exchanges. Exercise conditional web research, scoped history and compact cold requests through real provider preparation and scripted transport. Classify recorded submissions from their outer arguments and verify rectangle edits and a Dome delivery correction against actual provider receipts and Core mutations. Replay the partial Dome import query through published Responses and compare ordinary and recipe-authoring reads while preserving known edits and dependent ordering. Replay the 1,400 original Dome identities through Responses, including default delivery, selected media, named read and reuse, dependent execution and failed storage. Replay recorded requests 11–15 through provider search and Host. Count full resubmissions and local corrections, verify both contours, failed writes and retained source reuse.",
+            "kind": "manual"
+          }
+        ],
+        "specRefs": [
+          "docs/ai/apps/asyra-design/specs/local-ai-provider.md"
+        ],
+        "implementationRefs": [
+          "apps/asyra-design/server/__tests__/api-delivery-audit.integration.test.ts",
+          "apps/asyra-design/server/__tests__/responses-handoff.integration.test.ts",
+          "apps/asyra-design/server/__tests__/created-targets.integration.test.ts",
+          "apps/asyra-design/server/__tests__/conversation-production-handoff.integration.test.ts",
+          "apps/asyra-design/server/__tests__/design-provider-tools.test.ts",
+          "packages/ai-agent-runtime/src/node/__tests__/responses-provider.test.ts",
+          "apps/asyra-design/test-data/ai-drawing/recorded-submissions.mjs",
+          "packages/ai-agent-runtime/src/__tests__/recipe-admission.test.ts",
+          "apps/asyra-design/server/__tests__/design-draft-repair.test.ts",
+          "apps/asyra-design/server/__tests__/fixtures/retained-curve-submissions.json"
+        ],
+        "actions": []
+      },
+      {
+        "id": "vector-path-delivery",
+        "title": "Retained vector path delivery",
+        "objective": "Retain complete converted geometry at the request image owner. Deliver identity, dimensions and count without enumerating paths. Read path candidates only on demand, in artifact-local pixel bounds and stable source order. Whole-artifact preparation bypasses lookup. Unknown artifacts and invalid selectors fail before reading geometry. Canvas region selection continues to address scene elements.",
+        "owner": "Design request image tools",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [],
+        "criteria": [
+          {
+            "id": "handoff",
+            "title": "Retain complete converted geometry at the request image owner. Deliver identity, dimensions and count without enumerating paths. Read path candidates only on demand, in artifact-local pixel bounds and stable source order. Whole-artifact preparation bypasses lookup. Unknown artifacts and invalid selectors fail before reading geometry. Canvas region selection continues to address scene elements.",
+            "kind": "manual"
+          }
+        ],
+        "specRefs": [
+          "docs/ai/apps/asyra-design/specs/local-ai-provider.md"
+        ],
+        "implementationRefs": [
+          "apps/asyra-design/server/local-image-tools.ts",
+          "apps/asyra-design/server/ai-domain-prompt.ts",
+          "apps/asyra-design/server/local-vector-artifact.ts",
+          "apps/asyra-design/server/__tests__/local-vector-artifact.test.ts"
+        ],
+        "actions": []
+      },
+      {
+        "id": "reference-candidate-delivery",
+        "title": "Reference candidate pages",
+        "objective": "Import the selected reference once and retain its source inventory. A candidate continuation reads the retained metadata only. Reject an unknown page without acquisition. Explicit acquisition can deliver the same image again. Recovery preserves source-local failures.",
+        "owner": "Request reference acquisition",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [],
+        "criteria": [
+          {
+            "id": "handoff",
+            "title": "Import the selected reference once and retain its source inventory. A candidate continuation reads the retained metadata only. Reject an unknown page without acquisition. Explicit acquisition can deliver the same image again. Recovery preserves source-local failures.",
+            "kind": "manual"
+          }
+        ],
+        "specRefs": [
+          "docs/ai/apps/asyra-design/specs/ai-execution-flow.md"
+        ],
+        "implementationRefs": [
+          "apps/asyra-design/server/local-reference-tools.ts",
+          "apps/asyra-design/server/__tests__/reference-page-images.test.ts"
+        ],
+        "actions": []
+      },
+      {
+        "id": "bulk-mutation-delivery",
+        "title": "Bulk mutation receipts",
+        "objective": "Deliver small results inline. For bulk item and composition mutations retain complete results and preserve settlement, counts and recovery on the model route. Direct prepared application reuses its retained source for later child selection. Internal consumers must receive the full result. Storage failure must not replay a settled edit.",
+        "owner": "Design mutation owners and Host delivery",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [],
+        "criteria": [
+          {
+            "id": "handoff",
+            "title": "Deliver small results inline. For bulk item and composition mutations retain complete results and preserve settlement, counts and recovery on the model route. Direct prepared application reuses its retained source for later child selection. Internal consumers must receive the full result. Storage failure must not replay a settled edit.",
+            "kind": "manual"
+          }
+        ],
+        "specRefs": [
+          "docs/ai/apps/asyra-design/specs/ai-execution-flow.md"
+        ],
+        "implementationRefs": [
+          "apps/asyra-design/src/ai/bulk-mutation-receipt.ts",
+          "apps/asyra-design/src/ai/basic-api-actions.ts",
+          "apps/asyra-design/src/ai/design-actions.ts",
+          "apps/asyra-design/server/local-design-workflow.ts",
+          "apps/asyra-design/src/ai/__tests__/structural-delivery.test.ts",
+          "apps/asyra-design/server/__tests__/prepared-delivery.integration.test.ts"
+        ],
+        "actions": []
+      },
+      {
+        "id": "review-delivery",
+        "title": "Prepared and measured finding delivery",
+        "objective": "Share request check state from preparation through review. Project provider defaults by finding scope and version, preserve exact Host data, offer paged findings, and deliver each identical rejection explanation once.",
+        "owner": "Design check ledger, preparation and provider delivery",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [],
+        "criteria": [
+          {
+            "id": "handoff",
+            "title": "Share request check state from preparation through review. Project provider defaults by finding scope and version, preserve exact Host data, offer paged findings, and deliver each identical rejection explanation once.",
+            "kind": "manual"
+          }
+        ],
+        "specRefs": [
+          "docs/ai/apps/asyra-design/specs/ai-execution-flow.md"
+        ],
+        "implementationRefs": [
+          "apps/asyra-design/server/design-provider-tools.ts",
+          "apps/asyra-design/server/design-check-results.ts",
+          "apps/asyra-design/server/design-preparation.ts",
+          "apps/asyra-design/server/design-findings.ts",
+          "apps/asyra-design/server/local-design-tools.ts",
+          "apps/asyra-design/server/local-tool-host.ts",
+          "apps/asyra-design/server/created-target-delivery.ts",
+          "apps/asyra-design/server/local-prepared-design-review.ts",
+          "apps/asyra-design/server/local-operation-tools.ts",
+          "apps/asyra-design/server/__tests__/responses-handoff.integration.test.ts",
+          "apps/asyra-design/server/__tests__/local-prepared-design-review.test.ts",
+          "apps/asyra-design/server/__tests__/design-check-results.test.ts",
+          "apps/asyra-design/server/__tests__/local-tool-operation-composition.test.ts"
+        ],
+        "actions": []
+      },
+      {
+        "id": "entrance-recovery",
+        "title": "Native retained draft recovery",
+        "objective": "Native direct preparation preserves owner-declared rejection recovery. Repair discovery accepts the repair operation alone. Source geometry admission reports zero extents with exact authored paths; the next repair uses the retained corrected revision before any canvas write.",
+        "owner": "Design host admission, workflow discovery and vector preparation",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [],
+        "criteria": [
+          {
+            "id": "handoff",
+            "title": "Native direct preparation preserves owner-declared rejection recovery. Repair discovery accepts the repair operation alone. Source geometry admission reports zero extents with exact authored paths; the next repair uses the retained corrected revision before any canvas write.",
+            "kind": "manual"
+          }
+        ],
+        "specRefs": [
+          "docs/ai/apps/asyra-design/specs/ai-execution-flow.md"
+        ],
+        "implementationRefs": [
+          "apps/asyra-design/server/local-tool-host.ts",
+          "apps/asyra-design/server/local-tool-invocation.ts",
+          "apps/asyra-design/server/local-design-tools.ts",
+          "apps/asyra-design/server/local-design-workflow.ts",
+          "apps/asyra-design/server/design-workflow-discovery.ts",
+          "apps/asyra-design/server/design-input-error.ts",
+          "apps/asyra-design/server/design-preparation.ts",
+          "apps/asyra-design/server/__tests__/local-design-tools.test.ts",
+          "apps/asyra-design/server/__tests__/responses-handoff.integration.test.ts",
+          "apps/asyra-design/server/__tests__/fixtures/entrance-vector-submission.json"
+        ],
+        "actions": []
+      },
+      {
+        "id": "public-recovery",
+        "title": "Recovery from public tool replies",
+        "objective": "Preparation identifies correctable authored sources and bounds diagnostic delivery. The Host forwards owner recovery before settlement and preserves acknowledged effects. Verify native and composed replies and continuation without private target lookup.",
+        "owner": "Design host admission, workflow discovery and vector preparation",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [],
+        "criteria": [
+          {
+            "id": "handoff",
+            "title": "Preparation identifies correctable authored sources and bounds diagnostic delivery. The Host forwards owner recovery before settlement and preserves acknowledged effects. Verify native and composed replies and continuation without private target lookup.",
+            "kind": "manual"
+          }
+        ],
+        "specRefs": [
+          "docs/ai/apps/asyra-design/specs/ai-execution-flow.md",
+          "docs/ai/apps/asyra-design/specs/design-preparation.md"
+        ],
+        "implementationRefs": [
+          "apps/asyra-design/server/local-tool-host.ts",
+          "apps/asyra-design/server/local-tool-invocation.ts",
+          "apps/asyra-design/server/local-design-tools.ts",
+          "apps/asyra-design/server/local-design-workflow.ts",
+          "apps/asyra-design/server/design-workflow-discovery.ts",
+          "apps/asyra-design/server/design-input-error.ts",
+          "apps/asyra-design/server/design-preparation.ts",
+          "apps/asyra-design/server/__tests__/local-design-tools.test.ts",
+          "apps/asyra-design/server/__tests__/responses-handoff.integration.test.ts",
+          "apps/asyra-design/server/__tests__/fixtures/entrance-vector-submission.json",
+          "apps/asyra-design/server/design-source-recovery.ts",
+          "apps/asyra-design/server/design-draft-repair.ts",
+          "apps/asyra-design/server/local-operation-tools.ts",
+          "apps/asyra-design/server/__tests__/local-tool-invocation.test.ts",
+          "apps/asyra-design/server/design-provider-tools.ts",
+          "apps/asyra-design/server/local-design-resources.ts",
+          "packages/ai-agent-runtime/src/schema/validation.ts",
+          "apps/asyra-design/server/__tests__/unified-tool-contracts.integration.test.ts",
+          "apps/asyra-design/server/__tests__/local-design-workflow.test.ts",
+          "apps/asyra-design/server/__tests__/conversation-production-handoff.integration.test.ts"
+        ],
+        "actions": []
+      },
+      {
+        "id": "coordinate-preparation",
+        "title": "Prepare signed coordinates before insertion",
+        "objective": "Prepare signed paths and Groups before writes. When attaching to an existing Group, use the live sibling and ancestor basis, preserving world geometry and partial receipts.",
+        "owner": "Design preparation, Preset group geometry and the canonical application transaction",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [],
+        "criteria": [
+          {
+            "id": "geometry",
+            "title": "Recorded zero-width repair, equivalent signed curves, nested live sibling preservation and bounded work.",
+            "kind": "manual"
+          }
+        ],
+        "specRefs": [
+          "docs/ai/apps/asyra-design/specs/design-preparation.md"
+        ],
+        "implementationRefs": [
+          "apps/asyra-design/server/design-preparation.ts",
+          "apps/asyra-design/server/local-design-tools.ts",
+          "apps/asyra-design/server/__tests__/responses-handoff.integration.test.ts",
+          "apps/asyra-design/server/__tests__/design-preparation.test.ts",
+          "apps/asyra-design/src/ai/design-actions.ts",
+          "apps/asyra-design/src/ai/prepared-group-insertion.ts",
+          "apps/asyra-design/src/ai/__tests__/design-actions.test.ts",
+          "packages/preset/src/components/group.ts",
+          "packages/preset/src/group-bounds.ts",
+          "apps/asyra-design/server/__tests__/conversation-production-handoff.integration.test.ts",
+          "packages/preset/src/__tests__/group-bounds.test.ts",
+          "packages/preset/src/__tests__/group-operations.test.ts"
+        ],
+        "actions": []
+      }
+    ],
+    "criteria": []
+  },
+  "current": {
+    "observations": [
+      {
+        "nodeId": "publication",
+        "criterionId": "handoff",
+        "kind": "manual",
+        "status": "accepted",
+        "binding": "d755b104ccc156f851566e09556379457341b4eb579ca81d48bfbdfc2c7dd089",
+        "actor": "Codex",
+        "at": "2026-11-24T15:30:18.194Z",
+        "summary": "The offline square replay sent a 2,617-byte first request. With known operations it completed the two turns in three and two requests respectively. The provider and native execution suites passed."
+      },
+      {
+        "nodeId": "discovery",
+        "criterionId": "handoff",
+        "kind": "manual",
+        "status": "accepted",
+        "binding": "37d362c98479b7d7ff494cc8946966fba0b6b791700a3d5ca3ae9e97dc3097f4",
+        "actor": "Codex",
+        "at": "2026-11-24T15:30:18.197Z",
+        "summary": "Exact search across the registered inventory delivered the admitted arguments. Purpose and short-method discovery, separate Knowledge routes and direct execution passed the offline contract and Host tests."
+      },
+      {
+        "nodeId": "proof",
+        "criterionId": "handoff",
+        "kind": "manual",
+        "status": "accepted",
+        "binding": "064dfe583879c328cb0edb18ce7b4a46e93fc1fe74c18c33ebd8de6397d3bb51",
+        "actor": "Codex",
+        "at": "2026-11-24T15:30:18.199Z",
+        "summary": "Provider handoff, contract audit, created-targets and recipe admission suites passed. Source-addressed curve repairs, invalid-pointer rejection, one-call creation and ordering, and retained inputs used the production Host offline."
+      },
+      {
+        "nodeId": "vector-path-delivery",
+        "criterionId": "handoff",
+        "kind": "manual",
+        "status": "accepted",
+        "binding": "d3f44c21793f4cc47835bfb4df514978e7e881f7d853d3941b0b2326e62a9b48",
+        "actor": "Codex",
+        "at": "2026-11-24T15:30:18.200Z",
+        "summary": "The recorded trace and local path queries passed the owner and provider suites. The Chromium pre-trace decomposition case verified editable insertion and Undo."
+      },
+      {
+        "nodeId": "reference-candidate-delivery",
+        "criterionId": "handoff",
+        "kind": "manual",
+        "status": "accepted",
+        "binding": "1ad9ad277e39914aeb910e24d2d0b7389675aba4561d8feb3925aea36354df59",
+        "actor": "Codex",
+        "at": "2026-11-24T15:30:18.202Z",
+        "summary": "Reference page image and local image tests verified candidate paging, separate selected pixels, invalid lookups and ownership. Offline provider handoff passed."
+      },
+      {
+        "nodeId": "bulk-mutation-delivery",
+        "criterionId": "handoff",
+        "kind": "manual",
+        "status": "accepted",
+        "binding": "4d3d0d928a630a3af48f6a931f541056be4a0395e183a2b1d91cebc7bf0096a4",
+        "actor": "Codex",
+        "at": "2026-11-24T15:30:18.203Z",
+        "summary": "Structural, composition, prepared-delivery and provider tests verified bounded counts and names, retained IDs/roles, partial execution, selected child lookup and storage failures."
+      },
+      {
+        "nodeId": "review-delivery",
+        "criterionId": "handoff",
+        "kind": "manual",
+        "status": "accepted",
+        "binding": "abc5d3c141c4f5ca2f1ca434ad166cdb472625d6b9f3083d9f43abcd66916dae",
+        "actor": "Codex",
+        "at": "2026-11-24T15:30:18.205Z",
+        "summary": "Design checks, preparation and workflow regressions passed for full, repeated and scoped review, diagnosis paging, all blocking targets and correction through retained source."
+      },
+      {
+        "nodeId": "entrance-recovery",
+        "criterionId": "handoff",
+        "kind": "manual",
+        "status": "accepted",
+        "binding": "5d35b23319dd3d06f0d518762e172a8a424bdbf41a4246ba76c326c3693852ba",
+        "actor": "Codex",
+        "at": "2026-11-24T15:30:18.206Z",
+        "summary": "The original native entrance had one public rejection listing the four zero-width rings. One retained repair and zero full resubmissions produced one application receipt for 104 elements."
+      },
+      {
+        "nodeId": "public-recovery",
+        "criterionId": "handoff",
+        "kind": "manual",
+        "status": "accepted",
+        "binding": "19ad3a5a054b1e5dd48a9ee61d4c501663ab364a50f2e74983c08e250ac2c4d5",
+        "actor": "Codex",
+        "at": "2026-11-24T15:30:18.208Z",
+        "summary": "Native and Responses fixtures verified repair locations from the public reply, mixed admission errors, paged targets, cross-turn source and Knowledge reuse and partial settlement. Signed anchors needed no correction."
+      },
+      {
+        "nodeId": "coordinate-preparation",
+        "criterionId": "geometry",
+        "kind": "manual",
+        "status": "accepted",
+        "binding": "93eda121831128e2fffeba58d8217c00afc4a56ec39b0991a0241b9025314490",
+        "actor": "Codex",
+        "at": "2026-11-24T15:30:18.209Z",
+        "summary": "The recorded entrance, nested existing Groups and canonical render projection passed. The first live attachment read two sibling lists and submitted one property batch. The continuation accepted a true rebase and refused changed transforms or a moved anchor."
+      }
+    ],
+    "notes": [],
+    "progress": [],
+    "sources": [],
+    "warnings": []
+  }
+}

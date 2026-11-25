@@ -1932,3 +1932,36 @@ it('measures complete decision-advice delivery without loading unrelated topics'
     owner.dispose()
   }
 })
+
+it('matches advice metadata and suggests only visible topic IDs without substituting a document', async () => {
+  const owner = createLocalKnowledgeTools('advice-search')
+  const signal = new AbortController().signal
+
+  const find = async (args: unknown) =>
+    JSON.parse(await owner.call('discover_knowledge', args, signal))
+
+  try {
+    expect((await find({ query: 'typography' })).entries).toContainEqual(
+      expect.objectContaining({ id: 'typography' })
+    )
+    expect(await find({ query: 'typograhpy' })).toMatchObject({
+      entries: [],
+      suggestions: ['typography']
+    })
+    expect(await find({ ids: ['colros'] })).toMatchObject({
+      entries: [],
+      suggestions: ['colors']
+    })
+    expect(await find({ query: 'api_hierarchy_groupElements' })).toMatchObject({
+      entries: []
+    })
+    const hidden = await find({ query: 'design.docs-pag' })
+
+    expect(hidden.suggestions ?? []).not.toContain('design.docs-page')
+    await expect(
+      owner.call('read_knowledge', { ids: ['colros'] }, signal)
+    ).rejects.toThrow(/Suggested knowledge IDs: colors/)
+  } finally {
+    owner.dispose()
+  }
+})

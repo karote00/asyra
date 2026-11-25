@@ -1,6 +1,5 @@
-import type { AiProvider, AiProviderInput, AiActionBatch } from '../provider.js'
+import type { AiActionBatch, AiProvider, AiProviderInput } from '../provider.js'
 import { AiProviderError } from '../provider.js'
-type AiProviderRequestOptions = Parameters<AiProvider['requestActionBatch']>[1]
 import { createNativeProviderConfig } from './native-provider-config.js'
 import {
   createNativeRpcTransport,
@@ -10,9 +9,10 @@ import {
   createNativeConversations,
   createNativeSession,
   type NativeConversations,
-  type NativeContentItem,
   type NativeTurnResult
 } from './native-session.js'
+import type { ProviderContentItem } from './provider-content.js'
+type AiProviderRequestOptions = Parameters<AiProvider['requestActionBatch']>[1]
 
 export interface NativeToolCall {
   readonly namespace: string
@@ -28,7 +28,7 @@ export interface NativeTurnBinding {
   input(resumed: boolean): readonly unknown[]
   invoke(
     call: NativeToolCall
-  ): Promise<{ success: boolean; contentItems: readonly NativeContentItem[] }>
+  ): Promise<{ success: boolean; contentItems: readonly ProviderContentItem[] }>
   decode(result: NativeTurnResult): AiActionBatch | Promise<AiActionBatch>
   dispose?(): void | Promise<void>
 }

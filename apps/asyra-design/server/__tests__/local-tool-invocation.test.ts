@@ -784,28 +784,47 @@ it('distinguishes usable discovery pages from incomplete mutations through publi
     throw new Error('Discovery tool is not registered')
   }
 
-  const first = await invokeLocalTool(
-    operations,
-    tool,
-    { category: 'fill' },
-    signal()
-  )
+  const readPage = async (args: unknown) => {
+    const read = async (input: unknown) => {
+      const reply = await invokeLocalTool(operations, tool, input, signal())
 
-  expect(first.success).toBe(true)
-  const page = JSON.parse(first.text)
+      expect(reply.success).toBe(true)
+      expect(reply.outcome.status).toBe('success')
 
-  expect(page).toMatchObject({ complete: false })
-  expect(first.outcome).toMatchObject({ status: 'success' })
+      return JSON.parse(reply.text)
+    }
+
+    let page = await read(args)
+
+    if (!page.contentDelivery) {
+      return page
+    }
+
+    const revision = page.contentDelivery.revision
+    let content = ''
+    let offset = 0
+
+    for (;;) {
+      const fragment = page.contentDelivery
+
+      expect(fragment.revision).toBe(revision)
+      expect(fragment.startByte).toBe(offset)
+      expect(fragment.endByte).toBeGreaterThan(offset)
+      content += fragment.text
+      offset = fragment.endByte
+      if (fragment.lastPage) {
+        return JSON.parse(content)
+      }
+
+      page = await read(fragment.next.arguments)
+    }
+  }
+
+  const page = await readPage({ category: 'fill' })
+
+  expect(page.complete).toBe(false)
   expect(page.next.arguments.offset).toBe(page.apis.length)
-  const next = await invokeLocalTool(
-    operations,
-    tool,
-    page.next.arguments,
-    signal()
-  )
-
-  expect(next.success).toBe(true)
-  expect(JSON.parse(next.text).complete).toBe(true)
+  expect((await readPage(page.next.arguments)).complete).toBe(true)
   const call = vi
     .spyOn(operations, 'callInternal')
     .mockResolvedValue(JSON.stringify({ ...page, next: undefined }))

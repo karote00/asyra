@@ -1930,7 +1930,7 @@ it('preserves the original history snapshot while recording actual principal tra
   for (const [index, tool] of [
     'read_design_context',
     'review_design',
-    'read_design_contracts'
+    'read_design_resources'
   ].entries()) {
     projection.append({
       attempt: 1,

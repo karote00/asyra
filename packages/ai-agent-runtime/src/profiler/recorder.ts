@@ -10,7 +10,7 @@ const tokenFields = [
   'totalTokens'
 ] as const
 
-type TokenUsage = Record<(typeof tokenFields)[number], number>
+export type TokenUsage = Record<(typeof tokenFields)[number], number>
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -22,6 +22,13 @@ const correlationId = (value: unknown): string | undefined =>
 
 // Evidence is deliberately allowlisted: never retain raw prompts, provider events,
 // credentials, bitmap bytes, SVG/path coordinates or complete document payloads.
+const numericTokenKeys = new Set<string>([
+  ...tokenFields,
+  'cacheWriteTokens',
+  'cacheWrite30mTokens',
+  'cacheWrite12hTokens'
+])
+
 const evidenceKeys = new Set([
   'activity',
   'sourceWork',
@@ -950,6 +957,26 @@ export const createAiExecutionProfiler = (
               )
             : evidence
         )
+
+        if (
+          stage === 'provider_transport_event' &&
+          isRecord(evidence) &&
+          evidence.part === 'response-usage' &&
+          isRecord(summarized)
+        ) {
+          for (const key of numericTokenKeys) {
+            const value = evidence[key]
+
+            if (
+              typeof value === 'number' &&
+              Number.isSafeInteger(value) &&
+              value >= 0
+            ) {
+              summarized[key] = value
+            }
+          }
+        }
+
         const serialized = JSON.stringify(summarized)
         const record = {
           event: 'ai_request_trace',

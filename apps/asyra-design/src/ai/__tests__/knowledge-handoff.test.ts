@@ -403,7 +403,7 @@ it('carries the recorded material decision into initial preparation without chan
     )
     const described = JSON.parse(
       await operations.call(
-        'read_design_contracts',
+        'read_design_resources',
         {
           names: ['prepare_design'],
           scopes: Object.fromEntries(
@@ -696,7 +696,7 @@ it('routes recorded local material edits through actual discovery and artifact t
     )
     const usage = JSON.parse(
       await operations.call(
-        'read_design_contracts',
+        'read_design_resources',
         {
           view: 'usage',
           names: ['fill.updateFillsAtIndex', 'fill.detachFillsAtIndex']
@@ -1027,7 +1027,7 @@ it('hands a declared color-only method through exact discovery to retained mappi
     )
     const lookup = JSON.parse(
       await operations.call(
-        'read_design_contracts',
+        'read_design_resources',
         { view: 'full', names: [action.name] },
         activeSignal
       )
@@ -1205,7 +1205,7 @@ it('uses the current qualified route across partial, full and recovery retrieval
     const workflow = createLocalDesignWorkflow(designs, operations)
 
     const read = (input: unknown) =>
-      operations.call('read_design_contracts', input, signal()).then(JSON.parse)
+      operations.call('read_design_resources', input, signal()).then(JSON.parse)
 
     const name = 'design_workflow.prepare_and_apply_design'
     const usage = (await read({ names: [name], view: 'usage' })).tools[0]

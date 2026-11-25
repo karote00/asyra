@@ -267,7 +267,7 @@ it.each([
       view: 'usage',
       includeResultSchema: true
     }
-    const concise = await call('read_design_contracts', {
+    const concise = await call('read_design_resources', {
       ...query,
       includeResultSchema: false
     })
@@ -279,7 +279,7 @@ it.each([
     expect(concise.apis[0].usageGuide.results.interpretation).toContain(
       'separate toolOutcome acknowledgement'
     )
-    const reply = await call('read_design_contracts', {
+    const reply = await call('read_design_resources', {
       ...query,
       includeResultSchema: true
     })
@@ -308,7 +308,7 @@ it.each([
       { ...query, includeResultSchema: 'true' }
     ]) {
       expect(
-        (await invoke('read_design_contracts', invalid)).outcome.status
+        (await invoke('read_design_resources', invalid)).outcome.status
       ).toBe('failed')
     }
 
@@ -325,7 +325,7 @@ it.each([
     expect(api.usageGuide.instructions).toContain('Omit target-supplied')
     expect(api.usageGuide.parameters).toBeUndefined()
     expect(api.usageGuide.hostContract).toEqual({
-      tool: 'read_design_contracts',
+      tool: 'read_design_resources',
       arguments: { names: ['design_operations.execute_design'], view: 'usage' }
     })
     expect(JSON.stringify(api.usageGuide.operationParameters)).toContain(
@@ -349,7 +349,7 @@ it.each([
       })
 
       expect(inventory.count - baselineInventory.count).toBe(10000)
-      const expanded = await large.call('read_design_contracts', query)
+      const expanded = await large.call('read_design_resources', query)
 
       expect(expanded.resultKey).toEqual(expect.any(String))
       expect(reply.resultKey).toEqual(expect.any(String))
@@ -383,7 +383,7 @@ it.each([
     )
 
     expect(selected.usage).toEqual({
-      tool: 'read_design_contracts',
+      tool: 'read_design_resources',
       arguments: { view: 'usage', names: query.names }
     })
     const again = await call(
@@ -584,7 +584,7 @@ it.each([
           view: 'usage',
           includeResultSchema: true
         },
-        'read_design_contracts'
+        'read_design_resources'
       )
     )
 
@@ -599,7 +599,7 @@ it.each([
         async (input, requestedTool) =>
           JSON.stringify(await call(requestedTool, input)),
         { names: query.names, view: 'full' },
-        'read_design_contracts'
+        'read_design_resources'
       )
     )
 
@@ -616,7 +616,7 @@ it.each([
         async (input, requestedTool) =>
           JSON.stringify(await call(requestedTool, input)),
         nativeQuery,
-        'read_design_contracts'
+        'read_design_resources'
       )
     ).tools[0]
     const nativeInput = {
@@ -729,7 +729,7 @@ it.each([
         async (input, requestedTool) =>
           JSON.stringify(await call(requestedTool, input)),
         { names: nativeQuery.names, view: 'full' },
-        'read_design_contracts'
+        'read_design_resources'
       )
     ).tools[0]
 
@@ -737,7 +737,7 @@ it.each([
     expect(dependency.delivery.outputSchema).toBeDefined()
     expect(operationInputIssue(noChange, dependency.outputSchema)).toBeDefined()
     const fieldReply = await invoke(
-      'read_design_contracts',
+      'read_design_resources',
       api.fieldQuery.arguments
     )
 
@@ -755,7 +755,7 @@ it.each([
           async (input, requestedTool) =>
             JSON.stringify(await call(requestedTool, input)),
           selection,
-          'read_design_contracts'
+          'read_design_resources'
         )
       )
 
@@ -778,7 +778,7 @@ it.each([
           view: 'usage',
           includeResultSchema: true
         },
-        'read_design_contracts'
+        'read_design_resources'
       )
     ).apis[0]
     const editedReply = await invoke('execute_design', {
@@ -1075,7 +1075,7 @@ it.each(
         ).text
 
       const discovered = JSON.parse(
-        await readCompleteInformation(read, query, 'read_design_contracts')
+        await readCompleteInformation(read, query, 'read_design_resources')
       )
 
       expect(discovered.tools, JSON.stringify(discovered)).toBeDefined()
@@ -1269,7 +1269,7 @@ it.each(
         await readCompleteInformation(
           read,
           entry.definition.refresh.arguments,
-          'read_design_contracts'
+          'read_design_resources'
         )
       ).tools[0]
 
@@ -1353,8 +1353,12 @@ it('bounds the recorded fill and context short-name queries while retaining qual
   const { createRetainedFillAction } =
     await import('../../src/ai/retained-fill-action')
   const { createAiInspectionAction } = await import('../../src/ai/inspection')
+  const { createAiActions } = await import('../../src/ai/actions')
   const actions = [
     ...[
+      ...createAiActions().filter(
+        (owner) => owner.name === 'update_composition_elements'
+      ),
       createDocumentContextAction(),
       createRetainedFillAction({} as never),
       createAiInspectionAction()
@@ -1414,7 +1418,7 @@ it('bounds the recorded fill and context short-name queries while retaining qual
       },
       {
         ...query,
-        ...(toolName === 'read_design_contracts' ? { view: 'usage' } : {})
+        ...(toolName === 'read_design_resources' ? { view: 'usage' } : {})
       },
       toolName
     )
@@ -1423,6 +1427,15 @@ it('bounds the recorded fill and context short-name queries while retaining qual
   }
 
   try {
+    const update = await read('read_design_resources', {
+      names: ['update_composition_elements']
+    })
+
+    expect(update.apis[0].execution).toMatchObject({
+      kind: 'batch-action',
+      bindings: 'ready-arguments-only'
+    })
+    expect(update.apis[0].execution.guidance).toContain('named')
     for (const [names, budget, pages] of [
       [
         ['map_retained_fills', 'retain_design_targets', 'execute_design'],
@@ -1431,7 +1444,10 @@ it('bounds the recorded fill and context short-name queries while retaining qual
       ],
       [['read_design_context'], 20000, 1]
     ] as const) {
-      const short = await read('read_design_contracts', { names })
+      const short = await read('read_design_resources', {
+        names,
+        includeRecipeDependency: true
+      })
 
       expect(short.missingNames).toEqual([])
       expect(short.tools.map((entry: { name: string }) => entry.name)).toEqual(
@@ -1439,19 +1455,23 @@ it('bounds the recorded fill and context short-name queries while retaining qual
       )
       expect(short.apis[0].usageGuide.operationParameters).toBeDefined()
       const qualified = short.apis[0].recipeDependency.name
-      const byQuery = await read('read_design_contracts', { names: [names[0]] })
+      const byQuery = await read('read_design_resources', {
+        names: [names[0]],
+        includeRecipeDependency: true
+      })
 
       expect(byQuery.tools).toEqual([])
       expect(byQuery.apis[0].recipeDependency.name).toBe(qualified)
-      const machine = await read('read_design_contracts', {
+      const machine = await read('read_design_resources', {
         names: [names[0]],
+        includeRecipeDependency: true,
         includeResultSchema: true
       })
 
       expect(machine.apis[0].recipeDependency.name).toBe(qualified)
       expect(machine.tools).toEqual([])
 
-      const alternative = await read('read_design_contracts', {
+      const alternative = await read('read_design_resources', {
         names: [qualified]
       })
 
@@ -1460,7 +1480,7 @@ it('bounds the recorded fill and context short-name queries while retaining qual
       expect(alternative.tools[0].outputFields.length).toBeLessThan(40)
       expect(short.bytes).toBeLessThan(budget)
       expect(short.pages).toBeLessThanOrEqual(pages)
-      const explicit = await read('read_design_contracts', {
+      const explicit = await read('read_design_resources', {
         names: [names[0], qualified]
       })
 

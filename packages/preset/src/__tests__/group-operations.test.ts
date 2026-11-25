@@ -114,6 +114,22 @@ describe('official Preset Group operation planning', () => {
     expect(updateElementProperties).not.toHaveBeenCalled()
   })
 
+  it('applies Group scale once to rendered descendants and resets identity on reload', () => {
+    const group = new RenderGraphics()
+    const child = new RenderGraphics()
+
+    group.addChild(child)
+    const pose = { x: 0, y: 0, rotation: 0, width: 10, height: 10 }
+
+    RECTANGLE_RENDER_STRATEGY(child, { ...pose, fills: [] } as never)
+    GROUP_RENDER_STRATEGY(group, { ...pose, scaleX: 2, scaleY: 3 } as never)
+    expect(child.toGlobal({ x: 10, y: 10 })).toMatchObject({ x: 20, y: 30 })
+    expect(child.scale.x).toBe(1)
+    GROUP_RENDER_STRATEGY(group, pose as never)
+    expect(child.toGlobal({ x: 10, y: 10 })).toMatchObject({ x: 10, y: 10 })
+    group.destroy()
+  })
+
   it('isolates a semantic Group transform without changing its geometry', () => {
     const graphic = new RenderGraphics()
 
@@ -356,7 +372,7 @@ describe('official Preset Group geometry adapters', () => {
       [
         {
           elementId: 'nested-group',
-          values: { width: 50 }
+          values: { width: 180 }
         }
       ],
       ['nested-group']
@@ -365,19 +381,19 @@ describe('official Preset Group geometry adapters', () => {
     expect(request).toEqual([
       {
         elementId: 'nested-group',
-        values: { x: 0, y: 0, width: 90, height: 30 }
+        values: { x: 0, y: 0, width: 180, height: 30 }
       },
       {
         elementId: 'nested-leaf',
-        values: { x: 0, y: 5 }
+        values: { x: 0, y: 5, width: 80, height: 25 }
       },
       {
         elementId: 'first',
-        values: { x: 70, y: 0 }
+        values: { x: 140, y: 0, width: 40, height: 15 }
       },
       {
         elementId: 'outer',
-        values: { x: 130, y: 90, width: 90, height: 30 }
+        values: { x: 130, y: 90, width: 180, height: 30 }
       }
     ])
     expect(new Set(request.map(({ elementId }) => elementId)).size).toBe(

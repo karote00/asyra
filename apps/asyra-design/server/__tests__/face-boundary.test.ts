@@ -345,7 +345,7 @@ it('delivers and executes the selected boundary example with lower total bytes a
       return text
     },
     contractReadFixture(fixture.query.names, fixture.query),
-    'read_design_contracts'
+    'read_design_resources'
   )
 
   process.stdout.write(
@@ -541,6 +541,19 @@ it('continues only the failed retained part without resending geometry or recrea
   expect(first.recoveryInvocation, JSON.stringify(first)).toBeDefined()
   const retry = first.recoveryInvocation.arguments
 
+  const interrupted = first.parts.at(-1)
+
+  expect(interrupted).toMatchObject({
+    code: 'TOOL_EXECUTION_FAILED',
+    settlement: 'not-started',
+    draftId: first.parts[0].preparationInput.draftId
+  })
+  expect(retry.parts).toHaveLength(1)
+  expect(retry.parts[0].repair).toMatchObject({
+    draftId: interrupted.draftId,
+    partition: 1,
+    continueFromArtifact: first.parts[0].artifactId
+  })
   expect(JSON.stringify(retry)).not.toContain('vertices')
   expect(JSON.stringify(retry)).not.toContain('boundary')
   await expect(invoke(retry, AbortSignal.abort())).rejects.toThrow()

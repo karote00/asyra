@@ -21,6 +21,7 @@ export interface DesignContextQuery {
 }
 /** Canonical context column and page limits shared by browser and server admission. */
 export const designContextPageLimit = 200
+export const receiptPageLength = 8192
 
 export const designContextFields = Object.freeze([
   'x',

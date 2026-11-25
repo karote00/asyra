@@ -15,6 +15,10 @@ import {
   runAiMutation,
   type AiActionDefinition
 } from '@asyra/ai-agent-runtime'
+import {
+  originalParentPoint,
+  createPreparedSiblings
+} from './prepared-group-insertion'
 import { yieldToCooperativeHost } from '@asyra/core'
 import {
   elementApis,
@@ -46,11 +50,17 @@ export interface PreparedDesignApis {
     id: string
   ): { type: string; parentId?: string } | undefined
   getPlacement?(id: string): Readonly<Record<string, unknown>> | undefined
+  originalParentPoint?(
+    rootId: string,
+    parentId: string,
+    point: { x: number; y: number }
+  ): { x: number; y: number }
   isContainerType(type: string): boolean
   isLocked(id: string): boolean
   create(
     descriptors: readonly PreparedElementDescriptor[],
-    parentId: string
+    parentId: string,
+    attachment?: { rootId: string; continuation: boolean }
   ): readonly string[] | null
   select(ids: string[]): void
 }
@@ -63,10 +73,27 @@ const preparedElementReferences = {
   items: preparedElementReference
 }
 
+const preparedApplicationView = toolResultObject(
+  {
+    status: { const: 'complete' },
+    compositionId: preparedElementReference,
+    appliedElementCount: toolResultCount,
+    materialProvenance: toolResultObject(
+      {
+        status: { enum: ['available', 'unavailable'] },
+        message: { type: 'string' }
+      },
+      ['status']
+    )
+  },
+  ['status', 'compositionId', 'appliedElementCount']
+)
+
 const mutationOptions = Object.freeze({
   sharedDelivery: 'immediate',
   undoable: true
 } as const)
+
 const defaultApis: PreparedDesignApis = {
   getWorkspaceId: hierarchyApis.getWorkspaceId,
 
@@ -89,8 +116,10 @@ const defaultApis: PreparedDesignApis = {
 
   isLocked: (id) => core.getElementMetadata(id)?.lock === true,
 
-  create: (ds, id) =>
-    elementApis.createElementsInParent(ds, id, mutationOptions),
+  originalParentPoint,
+
+  create: (descriptors, parentId, attachment) =>
+    createPreparedSiblings(descriptors, parentId, mutationOptions, attachment),
 
   select: (ids) => selectionApis.selectElements(ids, mutationOptions)
 }
@@ -118,6 +147,7 @@ export const createPreparedDesignAction = (
           status: toolResultStatus,
           compositionId: preparedElementReference,
           timing: { type: 'object' },
+          modelResult: preparedApplicationView,
           materialProvenance: {
             type: 'object',
             required: ['status'],
@@ -153,7 +183,8 @@ export const createPreparedDesignAction = (
       }
     ]
   }),
-  revision: 3,
+  revision: 4,
+  delivery: { path: '/modelResult', outputSchema: preparedApplicationView },
   name: AiActionNames.APPLY_PREPARED_DESIGN,
   description:
     'Apply a server-prepared editable design with native text, shapes and illustration paths. Use the backend preparation receipt; never invent canonical descriptors.',
@@ -292,14 +323,28 @@ export const createPreparedDesignAction = (
         )
       }
 
+      const localAnchor = {
+        x: Number(placement.x) + Number(memberPlacement.x),
+        y: Number(placement.y) + Number(memberPlacement.y)
+      }
+      const originalAnchor =
+        apis.originalParentPoint?.(
+          design.rootId,
+          targetParentId,
+          localAnchor
+        ) ?? localAnchor
+
       for (const axis of ['x', 'y'] as const) {
-        const actual = Number(placement[axis]) + Number(memberPlacement[axis])
+        const actual = originalAnchor[axis]
         const tolerance =
           64 *
           Number.EPSILON *
           Math.max(1, Math.abs(anchor[axis]), Math.abs(actual))
 
-        if (Math.abs(actual - anchor[axis]) > tolerance) {
+        if (
+          !Number.isFinite(actual) ||
+          Math.abs(actual - anchor[axis]) > tolerance
+        ) {
           throw new Error(
             'The partition continuation anchor moved; do not replay completed work.'
           )
@@ -307,14 +352,19 @@ export const createPreparedDesignAction = (
       }
 
       return {
-        x: Number(design.entries[0].descriptor.x) - Number(placement.x),
-        y: Number(design.entries[0].descriptor.y) - Number(placement.y)
+        x:
+          Number(memberPlacement.x) -
+          (anchor.x - Number(design.entries[0].descriptor.x)),
+        y:
+          Number(memberPlacement.y) -
+          (anchor.y - Number(design.entries[0].descriptor.y))
       }
     }
 
     const checkCurrent = (parentId: string) => {
       checkAttachment()
-      continuationOffset()
+      const shift = continuationOffset()
+
       if (signal.aborted) {
         throw new Error('Design application cancelled.')
       }
@@ -329,6 +379,8 @@ export const createPreparedDesignAction = (
           'The target workspace is no longer available for editing.'
         )
       }
+
+      return shift
     }
 
     checkCurrent(workspaceId ?? '')
@@ -417,7 +469,8 @@ export const createPreparedDesignAction = (
             () => {
               const callbackStartedAt = now()
 
-              checkCurrent(parentId)
+              const shift = checkCurrent(parentId)
+
               if (appliedElementCount === 0 && args.attachmentEvidence) {
                 const attachment = args.attachmentEvidence
 
@@ -469,7 +522,6 @@ export const createPreparedDesignAction = (
               )
 
               try {
-                const shift = continuationOffset()
                 const values =
                   design.continuation && parentId === design.rootId
                     ? descriptors.map((d) => ({
@@ -478,6 +530,22 @@ export const createPreparedDesignAction = (
                         y: Number(d.y) + shift.y
                       }))
                     : descriptors
+
+                const continuation = Boolean(
+                  design.continuation && parentId === design.rootId
+                )
+
+                if (
+                  continuation ||
+                  (parentId === targetParentId &&
+                    targetParentId !== workspaceId &&
+                    apis.getElementMetadata(parentId)?.type === 'group')
+                ) {
+                  return apis.create(values, parentId, {
+                    rootId: design.rootId,
+                    continuation
+                  })
+                }
 
                 return apis.create(values, parentId)
               } finally {
@@ -569,12 +637,17 @@ export const createPreparedDesignAction = (
         )
       }
 
-      return {
+      const summary = {
         status: 'complete',
-        ...(materialProvenance ? { materialProvenance } : {}),
-        timing: timingSnapshot(),
         compositionId: design.rootId,
         appliedElementCount,
+        ...(materialProvenance ? { materialProvenance } : {})
+      }
+
+      return {
+        ...summary,
+        modelResult: summary,
+        timing: timingSnapshot(),
         appliedElementIds,
         keyToId: design.keyToId,
         roleToElementIds: Object.fromEntries(

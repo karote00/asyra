@@ -151,7 +151,7 @@ it('uses actual native inspection owners and retries only failed captures', asyn
     )
 
     expect(guide).toBeDefined()
-    const delivered = await call('read_design_contracts', {
+    const delivered = await call('read_design_resources', {
       names: ['inspect_drawing'],
       view: 'usage'
     })

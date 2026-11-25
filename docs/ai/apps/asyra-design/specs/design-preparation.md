@@ -438,7 +438,10 @@ identities, additional findings and uncertain outcomes retain their owner contra
 `delivery` is the sole public result selector; named retention is independent of it.
 Canonical validation and state tracking consume the complete receipt before model
 projection. Prepared application returns complete acknowledged IDs and counts; workflow
-createdTargets exposes their source-key mappings. Neither public nor internal
+createdTargets exposes their source-key mappings to the Host. After successful
+App storage the default creation value for the model is the count, ordered roots
+and saved name. Named bindings, reads and explicit result fields use the original
+mapping. Neither public nor internal
 inputs accept response or includeTargets. The Host applies delivery after owner
 validation, independently of binding and named retention.
 It does not bypass action registration, permission, confirmation, cancellation,
@@ -503,7 +506,14 @@ The preparation tool consumes the same published schema through the existing App
 operation-input validator before compilation. Independent field errors are collected
 with paths such as `arguments.draft.children[0].name`; diagnostics are bounded and
 explicitly request another validation pass when truncated. This is input admission,
-not a second geometry compiler or permission owner. Semantic geometry validation
+not a second geometry compiler or permission owner. A retained truncated source
+is checked by independent authored node. A rejected child identifies its editable
+subtree, including when a forbidden property must be removed. Small target lists
+are delivered inline. Larger lists supply a request-local draft revision and a
+continuation through `read_design_checks({draftIssuesFor, offset})` when storage
+permits. A storage limit must be explicit. A retained camera/layout rejection
+identifies the affected source fields. Declared vector bounds and collapsed axes
+identify their authored rings where that mapping exists. Semantic geometry validation
 remains authoritative and may reveal further errors after schema repair; a reported
 list is not a promise that every other property or visual requirement passed.
 
@@ -515,6 +525,20 @@ the face key and vertices; repair/split the plane rather than search again. Thes
 failures do not imply an unsuitable reference. Preparation still never modifies the
 canvas, relaxes geometric tolerances, invents visual approval or discards valid artifacts.
 Existing per-draft shared projection and request-owned artifacts remain the reuse owners.
+
+On a concrete failed preparation step the executor may return the owner's
+request-local draft ID before dispatch. Use draft-relative replacements and
+correct any Host options separately. An unsupported authored transform rejects
+the submitted operation without applying a different composition. A valid
+retained draft with an envelope-only correction can use empty replacements.
+Independent ready parts retain their original partial-settlement semantics.
+
+An unpaired cubic edge reports the missing control location in the retained
+source, including nested vectors and shared vector placement templates.
+Repair all identified controls in one submission, or replace their opposite
+anchors to make the edges straight. Revalidation covers the entire source.
+An unresolved repair pointer identifies its first unavailable segment and
+resolved parent. The rejected correction leaves the original draft reusable.
 
 ### Type-directed repair and construction choice
 
@@ -561,11 +585,20 @@ This does not infer a camera, invent depth or simplify the drawing.
 
 Projected positions and draft offsets can be negative within the coordinate
 budget. Group admission computes child bounds, adds the bounds origin to the
-Group position and subtracts it from every child. Final Group child positions
-are nonnegative (zero is valid), preserving each workspace point. This is not a
-camera adjustment or geometry repair. Dimensions remain positive where required;
-vector rings retain their local-coordinate contract. Frames retain explicit
-bounds and report overflow rather than silently relocating content.
+Group position and subtracts it from every child. The children's combined bounds start at the Group origin. A rotated shape's
+local placement can differ from its bounds origin. Vector anchors and controls
+accept signed local coordinates. With derived dimensions, the exact curve bounds
+determine placement before creation. With supplied dimensions the curve must fit
+the declared rectangle. Both measured spans must be positive.
+
+When attaching a prepared root or continuing a partition in a live Group, the
+application projects the incoming sibling batch together with its existing
+siblings before writing. Each changed Group supplies its projected bounds to
+its parent. Moving a Group origin compensates the positions of its direct
+children, preserving each branch's world geometry, rotation, scale and painter
+order. A fixed Frame or unchanged enclosing rectangle ends propagation. Commit
+the new siblings and coordinate adjustments together. A later partition uses
+the original attachment basis and rejects an anchor that actually moved.
 
 ### Reusable paint values
 

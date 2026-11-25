@@ -1133,6 +1133,15 @@ test('executes real staged template reuse and mechanical repair before applying 
   test.setTimeout(150000)
   const framePath = '/actionResults/0/result/compositionId'
   const frame = { kind: 'step', step: 'base-apply', path: framePath }
+  const adjustmentTarget = {
+    field: 'elementIds',
+    query: {
+      scope: 'region',
+      bounds: { x: 0, y: 0, width: 220, height: 180 },
+      filter: { name: { prefix: 'Adjustment target' } },
+      expectedCount: 1
+    }
+  }
   const grid = {
     type: 'surface-grid',
     key: 'marks',
@@ -1226,12 +1235,11 @@ test('executes real staged template reuse and mechanical repair before applying 
                 }
               },
               {
-                id: 'resize-base',
+                id: 'resize-child',
                 name: 'api_element_updateElementProperties',
-                arguments: {
-                  elementIds: [frame],
-                  values: { width: 100 }
-                }
+                arguments: { values: { width: 40 } },
+                selectAt: 'step',
+                target: adjustmentTarget
               }
             ]
           },
@@ -1282,15 +1290,7 @@ test('executes real staged template reuse and mechanical repair before applying 
                   name: 'api_element_updateElementProperties',
                   arguments: { values: { x: 10, y: 20 } },
                   selectAt: 'step',
-                  target: {
-                    field: 'elementIds',
-                    query: {
-                      scope: 'region',
-                      bounds: { x: 0, y: 0, width: 220, height: 180 },
-                      filter: { name: { prefix: 'Adjustment target' } },
-                      expectedCount: 1
-                    }
-                  }
+                  target: adjustmentTarget
                 }
               ],
               next: { kind: 'state', path: '' },
@@ -1387,7 +1387,7 @@ test('executes real staged template reuse and mechanical repair before applying 
     await page
       .getByLabel('Message Agent')
       .fill(
-        'Build the base, resize it to 100 pixels wide, correct its overflowing rectangle to local (10,20), then reuse the square motif in blue for the detail part.'
+        'Build the base, widen the adjustment rectangle to 40 pixels, move it to local (10,20) if it overflows, then reuse the square motif in blue for the detail part.'
       )
     await page.getByRole('button', { name: 'Send', exact: true }).click()
     await expect.poll(() => fixture.requests.length, { timeout: 60000 }).toBe(2)
@@ -1434,6 +1434,7 @@ test('executes real staged template reuse and mechanical repair before applying 
 
     expect(actions.map((action) => action.actionName)).toEqual([
       'apply_prepared_design',
+      'resolve_design_targets',
       'api_element_updateElementProperties',
       'review_design',
       'resolve_design_targets',
@@ -1442,11 +1443,11 @@ test('executes real staged template reuse and mechanical repair before applying 
       'apply_prepared_design',
       'inspect_drawing'
     ])
-    expect(actions[2]).toHaveProperty(
+    expect(actions[3]).toHaveProperty(
       'result.verification.status',
       'repairable'
     )
-    expect(actions[5]).toHaveProperty('result.verification.status', 'pass')
+    expect(actions[6]).toHaveProperty('result.verification.status', 'pass')
     const ids = { base: result.fields.baseId, detail: result.fields.detailId }
     const state = await page.evaluate(async (ids) => {
       const { default: core } = await import('../src/contexts')
@@ -1464,6 +1465,7 @@ test('executes real staged template reuse and mechanical repair before applying 
           .filter(([, e]) => e.get('type') !== 'workspace')
           .map(([, e]) => e.get('type'))
           .sort(),
+        baseWidth: core.getElementComputedData(ids.base)?.width,
         targetId: target[0],
         target: {
           ...core.getElementComputedData(target[0]),
@@ -1488,17 +1490,32 @@ test('executes real staged template reuse and mechanical repair before applying 
       'vector',
       'vector'
     ])
+    expect(actions[3]).toHaveProperty('result.findings', [
+      expect.objectContaining({
+        kind: 'container-overflow',
+        elementId: state.targetId,
+        parentId: ids.base,
+        right: 10
+      })
+    ])
+    expect(actions[6]).toHaveProperty('result.findings', [])
+    expect(state.baseWidth).toBe(140)
     expect(state.target).toMatchObject({
       x: 10,
       y: 20,
-      width: 10,
+      width: 40,
       height: 10,
       parentId: ids.base
     })
-    expect(actions[3]).toHaveProperty('result.elementIds', [state.targetId])
-    expect(actions[4]).toHaveProperty('result.value.acceptedIds', [
-      state.targetId
-    ])
+    for (const index of [1, 4]) {
+      expect(actions[index]).toHaveProperty('result.elementIds', [
+        state.targetId
+      ])
+      expect(actions[index + 1]).toHaveProperty('result.value.acceptedIds', [
+        state.targetId
+      ])
+    }
+
     expect(state.detailParent).toBe(ids.base)
     for (const [id, color] of [
       [ids.base, '#e02020'],

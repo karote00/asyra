@@ -102,7 +102,7 @@ it('compares complete model result contracts against the same owner declarations
             ...entry.query,
             includeResultSchema: true
           }),
-          'read_design_contracts'
+          'read_design_resources'
         )
 
         acquisition.push({ body: Buffer.byteLength(text), wire, pages, input })

@@ -16,7 +16,7 @@ it('reassembles escaped multibyte JSON without dropping a byte', () => {
   for (let i = 0; i < 50; i++) {
     const output = deliverInformation(
       raw,
-      'read_design_contracts',
+      'read_design_resources',
       args,
       'request'
     )

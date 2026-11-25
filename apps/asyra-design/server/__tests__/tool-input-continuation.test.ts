@@ -20,7 +20,7 @@ it('returns a correctable recorded lookup rejection without a recovery permissio
     dispatch
   )
   const definition = owner.definitions.find(
-    (entry) => entry.name === 'read_design_contracts'
+    (entry) => entry.name === 'read_design_resources'
   )
 
   if (!definition) {

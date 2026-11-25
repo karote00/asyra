@@ -499,7 +499,7 @@ const updateElementPropertiesApi = defineBasicApi({
   effect: 'write',
   parameters: [{ name: 'updates', schema: elementPropertyUpdatesSchema }],
   description:
-    'Update registered component properties and their declared aliases (for example x/y). Element metadata name/visible/lock belongs to core.updateElementData, not values here. Unsupported keys reject before property writes and return an input diagnostic. Plural canonical property value updates. Relationship lists such as fills/strokes contain reference IDs, not expanded computed objects. To edit linked records, use patchElementProperties records (one plural call for all targets), or the App fill/stroke APIs. Use App vector APIs for anchor/handle editing so coordinate and geometry invariants are preserved.'
+    'Update registered component properties and their declared aliases (for example x/y). Element metadata name/visible/lock belongs to core.updateElementData, not values here. Unsupported keys reject before property writes and return an input diagnostic. Use element.changeElementGeometry for Group dimensions. Frame and Workspace size edits are unavailable. Plural canonical property value updates. Relationship lists such as fills/strokes contain reference IDs, not expanded computed objects. To edit linked records, use patchElementProperties records (one plural call for all targets), or the App fill/stroke APIs. Use App vector APIs for anchor/handle editing so coordinate and geometry invariants are preserved.'
 })
 
 const patchElementPropertiesApi = defineBasicApi({
@@ -529,7 +529,7 @@ const patchElementPropertiesApi = defineBasicApi({
     }
   ],
   description:
-    'Plural patches require records (use [] with ordinary values); updateElementProperties also supports ordinary values. Preserve unrelated records and relationship IDs. For fill changes use patches:[{elementId,records:[{key:"fills",set:{[fillId]:{color,gradient}}}]} with only the fields being changed; Reuse known fillId; if unknown, obtain it from getElementComputedData fields:["fills"]. Combine all ready targets into one patches array. Likewise use the registered property key and record IDs for other linked records.'
+    'Patch property values and linked records across elements. For Group dimensions use element.changeElementGeometry. Frame and Workspace size edits are unavailable. Plural patches require records (use [] with ordinary values); updateElementProperties also supports ordinary values. Preserve unrelated records and relationship IDs. For fill changes use patches:[{elementId,records:[{key:"fills",set:{[fillId]:{color,gradient}}}]} with only the fields being changed; Reuse known fillId; if unknown, obtain it from getElementComputedData fields:["fills"]. Combine all ready targets into one patches array. Likewise use the registered property key and record IDs for other linked records.'
 })
 
 const updatePropertyComponentsApi = defineBasicApi({
@@ -545,7 +545,7 @@ const updatePropertyComponentsApi = defineBasicApi({
     }
   ],
   description:
-    'Plural updates of existing canonical property components by propertyId (not elementId). Use current component IDs; preserve relationship reference lists and patch linked records with patchElementProperties rather than copying computed projections.'
+    'Update existing canonical property components by propertyId (not elementId). Group dimension records require element.changeElementGeometry. Frame and Workspace size edits are unavailable. Use current component IDs; preserve relationship reference lists and patch linked records with patchElementProperties rather than copying computed projections.'
 })
 
 const updateElementDataApi = defineBasicApi({

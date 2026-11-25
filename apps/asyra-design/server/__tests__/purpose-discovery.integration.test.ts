@@ -14,6 +14,7 @@ import recorded from '../../test-data/ai-drawing/fixtures/position-discovery-202
 
 interface Candidate {
   name: string
+  operationParameters?: Record<string, unknown>
   operation: string
   rank: number
   capability: { purpose: string; boundaries: string[]; inputFields: string[] }
@@ -77,6 +78,7 @@ const setup = () => {
     const page = JSON.parse(response.text) as {
       apis: Candidate[]
       tools: Candidate[]
+      count: number
       recovery?: unknown
     }
 
@@ -199,3 +201,40 @@ describe('purpose and parameter discovery', () => {
     expect(page.tools[0].match.nameTerms).toEqual([])
   })
 })
+
+it.each([
+  [
+    { query: 'set solid fill color for element by id', category: 'fill' },
+    'fill.updatePrimaryFillColors',
+    { updates: [{ elementId: 'square', color: '#0000FF' }] }
+  ],
+  [
+    { query: 'updatePrimaryFillColors' },
+    'fill.updatePrimaryFillColors',
+    { updates: [{ elementId: 'square', color: '#0000FF' }] }
+  ],
+  [
+    { query: 'move element to absolute position x y' },
+    'element.setElementPositions',
+    { positionsById: { square: { x: 33, y: 45 } } }
+  ]
+] as const)(
+  'delivers executable owner arguments on the first recorded search %j',
+  async (query, operation, input) => {
+    const menu = await setup().query(query)
+    const selected = menu.apis[0]
+
+    expect(selected.operation).toBe(operation)
+    expect(selected.operationParameters).toBeDefined()
+    expect(selected.operationParameters).not.toHaveProperty(
+      'x-design-discovery'
+    )
+    expect(
+      operationInputIssue(input, selected.operationParameters)
+    ).toBeUndefined()
+    expect(operationInputIssue({}, selected.operationParameters)).toBeDefined()
+    if (query.query === 'updatePrimaryFillColors') {
+      expect(menu.count).toBe(1)
+    }
+  }
+)

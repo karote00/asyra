@@ -1,20 +1,20 @@
-import { stopRecordedDrawing } from '../test-data/ai-drawing/stop-recorded-drawing.mjs'
-import { createServer, type ServerResponse } from 'node:http'
+import { expect, test } from '@playwright/test'
 import { writeFile } from 'node:fs/promises'
+import { createServer, type ServerResponse } from 'node:http'
 import { prepareDesign } from '../server/design-preparation'
 import { deliverPreparedDesign } from '../src/ai/prepared-design'
-import { expect, test } from '@playwright/test'
+import { stopRecordedDrawing } from '../test-data/ai-drawing/stop-recorded-drawing.mjs'
 import { createPreparedDrawingArtifact } from './action-batch-interceptor'
 import {
-  createTestDocumentIdentity,
   createRectangle,
+  createTestDocumentIdentity,
+  dispatchHistoryShortcut,
   getActiveTool,
   getCoreDocumentDigest,
   getPersistedDocumentDigest,
   getUndoHistoryDepth,
-  dispatchHistoryShortcut,
-  undo,
   redo,
+  undo,
   waitForAppReady
 } from './test-utils'
 
@@ -309,11 +309,11 @@ for (const width of [360, 1280]) {
     await waitForAppReady(page)
     await page.setViewportSize({ width, height: 720 })
     await page.getByRole('button', { name: 'Open Agent' }).click()
-    const notice = page.getByRole('note', { name: 'Your AI subscription' })
+    const notice = page.getByRole('note', { name: 'Your AI account' })
 
     await expect(notice).toBeVisible()
     await expect(notice).toContainText(
-      'Local AI uses your own subscription and counts toward its usage limits.'
+      'AI uses your configured account. Subscription limits or API charges apply.'
     )
     await expect(page.getByLabel('Message Agent')).toBeEmpty()
     await expect(
@@ -1396,7 +1396,7 @@ for (const width of [360, 1280]) {
         ['read_design_context', 'Reading the design'],
         ['inspect_drawing', 'Reviewing the drawing'],
         ['search_design_tools', 'Finding available operations'],
-        ['read_design_contracts', 'Reading operation contracts']
+        ['read_design_resources', 'Reading operation contracts']
       ]
 
       for (const [tool, label] of inspectedOperations) {
@@ -1881,7 +1881,7 @@ test('panel text selection supports native copy after canvas focus', async ({
     .getByTestId('canvas-render-container')
     .locator('canvas')
     .click({ position: { x: 300, y: 250 } })
-  const title = page.getByText('Your AI subscription', { exact: true })
+  const title = page.getByText('Your AI account', { exact: true })
   const bounds = await title.boundingBox()
 
   if (!bounds) {
@@ -1898,7 +1898,7 @@ test('panel text selection supports native copy after canvas focus', async ({
   await page.mouse.up()
   const selected = await page.evaluate(() => window.getSelection()?.toString())
 
-  expect(selected).toBe('Your AI subscription')
+  expect(selected).toBe('Your AI account')
   await page.evaluate(() => navigator.clipboard.writeText('before-panel-copy'))
   await page.keyboard.press('ControlOrMeta+c')
   await expect

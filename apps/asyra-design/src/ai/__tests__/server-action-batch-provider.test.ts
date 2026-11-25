@@ -118,7 +118,7 @@ describe('server action-batch provider', () => {
 })
 
 it.each([
-  ['ACTION_BATCH_SESSION_UNAVAILABLE', 'AI_PROVIDER_INVALID_CONFIGURATION'],
+  ['ACTION_BATCH_SESSION_UNAVAILABLE', 'AI_PROVIDER_SESSION_UNAVAILABLE'],
   ['ACTION_BATCH_MODEL_TIMEOUT', 'AI_PROVIDER_TIMEOUT'],
   ['ACTION_BATCH_IMAGE_CONVERSION_FAILED', 'AI_PROVIDER_HTTP_STATUS'],
   [
@@ -1315,6 +1315,31 @@ it('binds saved input and target through the ordinary browser stream into a succ
     expect(replies.join('')).not.toContain('private-root-id')
     expect(replies.join('')).not.toContain('9876')
     expect(executeBatch).not.toHaveBeenCalled()
+  } finally {
+    provider.dispose()
+  }
+})
+
+it('preserves unavailable conversation through browser and runtime error projection', async () => {
+  const { toAiProviderRequestFailure } = await import('@asyra/ai-agent-runtime')
+  const provider = createServerActionBatchProvider({
+    fetch: async () =>
+      new Response('{}', {
+        status: 502,
+        headers: { 'x-ai-error-code': 'ACTION_BATCH_SESSION_UNAVAILABLE' }
+      })
+  })
+
+  try {
+    const result = await provider
+      .requestActionBatch(input, { signal: new AbortController().signal })
+      .catch((error: unknown) => error)
+
+    expect(toAiProviderRequestFailure(result, 1)).toMatchObject({
+      code: 'AI_PROVIDER_SESSION_UNAVAILABLE',
+      retryable: false,
+      message: expect.stringContaining('new conversation')
+    })
   } finally {
     provider.dispose()
   }

@@ -708,7 +708,7 @@ export const VECTOR_COMPONENT_DEFINITION: ComponentDefinition = {
     {
       name: PropertyTypes.POSITION,
       type: PropertyTypes.POSITION,
-      alias: ['x', 'y', 'rotation']
+      alias: ['x', 'y', 'rotation', 'scaleX', 'scaleY']
     },
     {
       name: PropertyTypes.DIMENSION,

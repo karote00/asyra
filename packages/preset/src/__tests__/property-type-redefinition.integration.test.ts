@@ -3,17 +3,12 @@ import {
   PropertyTypes,
   type FillAttrs,
   type StrokeAttrs,
-  type Unit
+  type PositionAttrs
 } from '@asyra/utils'
 import { describe, expect, it } from 'vitest'
 import { applyPreset, PresetDefaults, PresetProfiles } from '../index.js'
 
-interface AppPositionFields {
-  x: number
-  y: number
-  rotation: number
-  xUnit: Unit
-  yUnit: Unit
+interface AppPositionFields extends PositionAttrs {
   customAxis: number
 }
 
@@ -41,6 +36,8 @@ describe('preset property type redefinition integration', () => {
       'x',
       'y',
       'rotation',
+      'scaleX',
+      'scaleY',
       'xUnit',
       'yUnit'
     ])
@@ -111,6 +108,7 @@ describe('preset property type redefinition integration', () => {
       })
     )
 
+    expect(committed.fields.slice(0, -1)).toEqual(current?.fields)
     expect(committed.fields[committed.fields.length - 1]).toMatchObject({
       key: 'customAxis',
       persist: true,

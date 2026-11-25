@@ -1,0 +1,1388 @@
+{
+  "workflow": {
+    "operations": [
+      {
+        "name": "design_workflow.prepare_and_apply_design",
+        "id": "arena",
+        "arguments": {
+          "draft": {
+            "type": "group",
+            "name": "Taipei Dome · southeast elevation",
+            "projection": {
+              "azimuth": 32,
+              "elevation": 23,
+              "scale": 100,
+              "originX": 12000,
+              "originY": 8000
+            },
+            "brief": {
+              "intent": "Editable exterior architectural study, grade to crown, projected at 100 px per metre.",
+              "viewpoint": "Southeast elevated three-quarter, parallel projection, elevation 23 degrees.",
+              "sources": [
+                "Robin Kaljouw — Taipei Dome and Sun Yat-sen Memorial Hall, 2023, CC BY 2.0",
+                "Alexwikix — Gate 1, Taipei Dome, 2025, CC0",
+                "TYLin Taiwan: 230 × 170 m clear indoor span; Supertek: field 10.5 m below grade, 62 m interior crown above grade."
+              ],
+              "assumptions": [
+                "Approximate 240 × 180 m outer eave including perimeter structure; exterior crown approximately 64 m above grade. Secondary dimensions reconstructed from photographs, not survey data."
+              ]
+            },
+            "fillTemplates": {
+              "metal": {
+                "gradientType": "linear",
+                "gradientHandles": [
+                  {
+                    "x": 0,
+                    "y": 1
+                  },
+                  {
+                    "x": 0.86,
+                    "y": 0.12
+                  }
+                ],
+                "gradientStops": [
+                  {
+                    "position": 0,
+                    "color": "#586667",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 0.14,
+                    "color": "#A1ABA5",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 0.25,
+                    "color": "#EBEBDD",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 0.36,
+                    "color": "#C8CFC8",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 0.55,
+                    "color": "#A1ADAA",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 0.78,
+                    "color": "#839399",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 1,
+                    "color": "#687A82",
+                    "opacity": 1
+                  }
+                ]
+              },
+              "glass": {
+                "gradientType": "linear",
+                "gradientHandles": [
+                  {
+                    "x": 0.4,
+                    "y": 0
+                  },
+                  {
+                    "x": 0.54,
+                    "y": 1
+                  }
+                ],
+                "gradientStops": [
+                  {
+                    "position": 0,
+                    "color": "#2D4148",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 0.26,
+                    "color": "#536E75",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 0.65,
+                    "color": "#9CBEB8",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 0.77,
+                    "color": "#779A95",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 1,
+                    "color": "#556D6A",
+                    "opacity": 1
+                  }
+                ]
+              },
+              "pier": {
+                "gradientType": "linear",
+                "gradientHandles": [
+                  {
+                    "x": 0,
+                    "y": 0.5
+                  },
+                  {
+                    "x": 1,
+                    "y": 0.5
+                  }
+                ],
+                "gradientStops": [
+                  {
+                    "position": 0,
+                    "color": "#626B6C",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 0.26,
+                    "color": "#D3D3C9",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 0.6,
+                    "color": "#B1B7B4",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 1,
+                    "color": "#778286",
+                    "opacity": 1
+                  }
+                ]
+              }
+            },
+            "linearFields": {
+              "fascia": {
+                "frame": "world",
+                "start": {
+                  "x": -100,
+                  "y": 14,
+                  "z": 24
+                },
+                "end": {
+                  "x": 115,
+                  "y": 42,
+                  "z": 22
+                },
+                "gradientStops": [
+                  {
+                    "position": 0,
+                    "color": "#8E9A9D",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 0.27,
+                    "color": "#D6D8CF",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 0.45,
+                    "color": "#E1E0D5",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 0.76,
+                    "color": "#ADB8B7",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 1,
+                    "color": "#748086",
+                    "opacity": 1
+                  }
+                ]
+              }
+            },
+            "motifTemplates": {
+              "bay": [
+                {
+                  "key": "well",
+                  "name": "Recessed bay shadow",
+                  "fill": "#354145",
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 1
+                    },
+                    {
+                      "u": 0,
+                      "v": 1
+                    }
+                  ]
+                },
+                {
+                  "key": "door",
+                  "name": "Lower concourse glazing",
+                  "fill": {
+                    "template": "glass"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0.035,
+                      "v": 0.017
+                    },
+                    {
+                      "u": 0.985,
+                      "v": 0.017
+                    },
+                    {
+                      "u": 0.985,
+                      "v": 0.25
+                    },
+                    {
+                      "u": 0.035,
+                      "v": 0.25
+                    }
+                  ]
+                },
+                {
+                  "key": "balcony",
+                  "name": "Upper gallery glazing",
+                  "fill": {
+                    "template": "glass"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0.035,
+                      "v": 0.36
+                    },
+                    {
+                      "u": 0.99,
+                      "v": 0.36
+                    },
+                    {
+                      "u": 0.99,
+                      "v": 0.575
+                    },
+                    {
+                      "u": 0.035,
+                      "v": 0.575
+                    }
+                  ]
+                },
+                {
+                  "key": "head",
+                  "name": "Recessed upper lights",
+                  "fill": "#708387",
+                  "vertices": [
+                    {
+                      "u": 0.04,
+                      "v": 0.687
+                    },
+                    {
+                      "u": 0.99,
+                      "v": 0.687
+                    },
+                    {
+                      "u": 0.99,
+                      "v": 0.775
+                    },
+                    {
+                      "u": 0.04,
+                      "v": 0.775
+                    }
+                  ]
+                },
+                {
+                  "key": "stile",
+                  "name": "Anodized centre mullion",
+                  "fill": "#454F50",
+                  "vertices": [
+                    {
+                      "u": 0.49,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.51,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.51,
+                      "v": 0.78
+                    },
+                    {
+                      "u": 0.49,
+                      "v": 0.78
+                    }
+                  ]
+                },
+                {
+                  "key": "rail",
+                  "name": "Glass balustrade",
+                  "fill": "#8CA8A4",
+                  "vertices": [
+                    {
+                      "u": 0.02,
+                      "v": 0.34
+                    },
+                    {
+                      "u": 0.988,
+                      "v": 0.34
+                    },
+                    {
+                      "u": 0.988,
+                      "v": 0.395
+                    },
+                    {
+                      "u": 0.02,
+                      "v": 0.395
+                    }
+                  ]
+                },
+                {
+                  "key": "cap",
+                  "name": "Stainless handrail",
+                  "fill": "#CFD3CA",
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0.395
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.395
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.4
+                    },
+                    {
+                      "u": 0,
+                      "v": 0.4
+                    }
+                  ]
+                },
+                {
+                  "key": "pier",
+                  "name": "Cylindrical perimeter pier",
+                  "fill": {
+                    "template": "pier"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0.002,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.092,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.121,
+                      "v": 0.8
+                    },
+                    {
+                      "u": 0.017,
+                      "v": 0.8
+                    }
+                  ]
+                },
+                {
+                  "key": "sill",
+                  "name": "Gallery slab nosing",
+                  "materialField": "fascia",
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0.281
+                    },
+                    {
+                      "u": 0.998,
+                      "v": 0.281
+                    },
+                    {
+                      "u": 0.998,
+                      "v": 0.35
+                    },
+                    {
+                      "u": 0,
+                      "v": 0.35
+                    }
+                  ]
+                },
+                {
+                  "key": "lip",
+                  "name": "Upper fascia cassette",
+                  "materialField": "fascia",
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0.61
+                    },
+                    {
+                      "u": 0.997,
+                      "v": 0.61
+                    },
+                    {
+                      "u": 0.997,
+                      "v": 0.682
+                    },
+                    {
+                      "u": 0,
+                      "v": 0.682
+                    }
+                  ]
+                },
+                {
+                  "key": "clad",
+                  "name": "Eave skirt cassette",
+                  "materialField": "fascia",
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0.792
+                    },
+                    {
+                      "u": 0.995,
+                      "v": 0.792
+                    },
+                    {
+                      "u": 0.995,
+                      "v": 1
+                    },
+                    {
+                      "u": 0,
+                      "v": 1
+                    }
+                  ]
+                },
+                {
+                  "key": "louver",
+                  "name": "Ventilation slot",
+                  "fill": "#687579",
+                  "vertices": [
+                    {
+                      "u": 0.08,
+                      "v": 0.811
+                    },
+                    {
+                      "u": 0.94,
+                      "v": 0.811
+                    },
+                    {
+                      "u": 0.94,
+                      "v": 0.825
+                    },
+                    {
+                      "u": 0.08,
+                      "v": 0.825
+                    }
+                  ]
+                }
+              ]
+            },
+            "children": [
+              {
+                "type": "projected-face",
+                "key": "shadow",
+                "name": "Cast shadow · afternoon light",
+                "ellipse": {
+                  "center": {
+                    "x": 9,
+                    "y": -4,
+                    "z": 0
+                  },
+                  "u": {
+                    "x": 126,
+                    "y": 0,
+                    "z": 0
+                  },
+                  "v": {
+                    "x": 0,
+                    "y": 95,
+                    "z": 0
+                  }
+                },
+                "fill": {
+                  "gradientType": "linear",
+                  "gradientHandles": [
+                    {
+                      "x": 0,
+                      "y": 1
+                    },
+                    {
+                      "x": 1,
+                      "y": 0
+                    }
+                  ],
+                  "gradientStops": [
+                    {
+                      "position": 0,
+                      "color": "#535F65",
+                      "opacity": 0.4
+                    },
+                    {
+                      "position": 0.6,
+                      "color": "#718084",
+                      "opacity": 0.23
+                    },
+                    {
+                      "position": 1,
+                      "color": "#AAB4B6",
+                      "opacity": 0.03
+                    }
+                  ]
+                }
+              },
+              {
+                "type": "projected-face",
+                "key": "plinth",
+                "name": "Perimeter walk · pale granite",
+                "ellipse": {
+                  "center": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                  },
+                  "u": {
+                    "x": 123,
+                    "y": 0,
+                    "z": 0
+                  },
+                  "v": {
+                    "x": 0,
+                    "y": 93,
+                    "z": 0
+                  }
+                },
+                "fill": "#BFC2BA"
+              },
+              {
+                "type": "projected-face",
+                "key": "contact",
+                "name": "Continuous base reveal",
+                "ellipse": {
+                  "center": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0.1
+                  },
+                  "u": {
+                    "x": 120,
+                    "y": 0,
+                    "z": 0
+                  },
+                  "v": {
+                    "x": 0,
+                    "y": 90,
+                    "z": 0
+                  }
+                },
+                "fill": "#505C5D"
+              },
+              {
+                "type": "surface-grid",
+                "key": "bay01",
+                "name": "West return",
+                "boundary": [
+                  {
+                    "x": -108.76,
+                    "y": 38.04,
+                    "z": 0
+                  },
+                  {
+                    "x": -91.93,
+                    "y": 57.85,
+                    "z": 0
+                  },
+                  {
+                    "x": -91.93,
+                    "y": 57.85,
+                    "z": 27
+                  },
+                  {
+                    "x": -108.76,
+                    "y": 38.04,
+                    "z": 27
+                  }
+                ],
+                "rows": 1,
+                "columns": 7,
+                "order": "cell-major",
+                "motifs": {
+                  "template": "bay"
+                }
+              },
+              {
+                "type": "surface-grid",
+                "key": "bay02",
+                "name": "West gallery",
+                "boundary": [
+                  {
+                    "x": -91.93,
+                    "y": 57.85,
+                    "z": 0
+                  },
+                  {
+                    "x": -68.83,
+                    "y": 73.72,
+                    "z": 0
+                  },
+                  {
+                    "x": -68.83,
+                    "y": 73.72,
+                    "z": 27
+                  },
+                  {
+                    "x": -91.93,
+                    "y": 57.85,
+                    "z": 27
+                  }
+                ],
+                "rows": 1,
+                "columns": 7,
+                "order": "cell-major",
+                "motifs": {
+                  "template": "bay"
+                }
+              },
+              {
+                "type": "surface-grid",
+                "key": "bay03",
+                "name": "West concourse",
+                "boundary": [
+                  {
+                    "x": -68.83,
+                    "y": 73.72,
+                    "z": 0
+                  },
+                  {
+                    "x": -41.04,
+                    "y": 84.57,
+                    "z": 0
+                  },
+                  {
+                    "x": -41.04,
+                    "y": 84.57,
+                    "z": 27
+                  },
+                  {
+                    "x": -68.83,
+                    "y": 73.72,
+                    "z": 27
+                  }
+                ],
+                "rows": 1,
+                "columns": 8,
+                "order": "cell-major",
+                "motifs": {
+                  "template": "bay"
+                }
+              },
+              {
+                "type": "surface-grid",
+                "key": "bay04",
+                "name": "Southwest curtain wall",
+                "boundary": [
+                  {
+                    "x": -41.04,
+                    "y": 84.57,
+                    "z": 0
+                  },
+                  {
+                    "x": -10.46,
+                    "y": 89.66,
+                    "z": 0
+                  },
+                  {
+                    "x": -10.46,
+                    "y": 89.66,
+                    "z": 27
+                  },
+                  {
+                    "x": -41.04,
+                    "y": 84.57,
+                    "z": 27
+                  }
+                ],
+                "rows": 1,
+                "columns": 8,
+                "order": "cell-major",
+                "motifs": {
+                  "template": "bay"
+                }
+              },
+              {
+                "type": "surface-grid",
+                "key": "bay05",
+                "name": "South arcade",
+                "boundary": [
+                  {
+                    "x": -10.46,
+                    "y": 89.66,
+                    "z": 0
+                  },
+                  {
+                    "x": 20.84,
+                    "y": 88.63,
+                    "z": 0
+                  },
+                  {
+                    "x": 20.84,
+                    "y": 88.63,
+                    "z": 27
+                  },
+                  {
+                    "x": -10.46,
+                    "y": 89.66,
+                    "z": 27
+                  }
+                ],
+                "rows": 1,
+                "columns": 8,
+                "order": "cell-major",
+                "motifs": {
+                  "template": "bay"
+                }
+              },
+              {
+                "type": "surface-grid",
+                "key": "bay06",
+                "name": "South gallery",
+                "boundary": [
+                  {
+                    "x": 20.84,
+                    "y": 88.63,
+                    "z": 0
+                  },
+                  {
+                    "x": 50.71,
+                    "y": 81.57,
+                    "z": 0
+                  },
+                  {
+                    "x": 50.71,
+                    "y": 81.57,
+                    "z": 27
+                  },
+                  {
+                    "x": 20.84,
+                    "y": 88.63,
+                    "z": 27
+                  }
+                ],
+                "rows": 1,
+                "columns": 8,
+                "order": "cell-major",
+                "motifs": {
+                  "template": "bay"
+                }
+              },
+              {
+                "type": "surface-grid",
+                "key": "bay07",
+                "name": "Southeast concourse",
+                "boundary": [
+                  {
+                    "x": 50.71,
+                    "y": 81.57,
+                    "z": 0
+                  },
+                  {
+                    "x": 77.13,
+                    "y": 68.94,
+                    "z": 0
+                  },
+                  {
+                    "x": 77.13,
+                    "y": 68.94,
+                    "z": 27
+                  },
+                  {
+                    "x": 50.71,
+                    "y": 81.57,
+                    "z": 27
+                  }
+                ],
+                "rows": 1,
+                "columns": 8,
+                "order": "cell-major",
+                "motifs": {
+                  "template": "bay"
+                }
+              },
+              {
+                "type": "surface-grid",
+                "key": "bay08",
+                "name": "Entrance gallery",
+                "boundary": [
+                  {
+                    "x": 77.13,
+                    "y": 68.94,
+                    "z": 0
+                  },
+                  {
+                    "x": 98.3,
+                    "y": 51.62,
+                    "z": 0
+                  },
+                  {
+                    "x": 98.3,
+                    "y": 51.62,
+                    "z": 27
+                  },
+                  {
+                    "x": 77.13,
+                    "y": 68.94,
+                    "z": 27
+                  }
+                ],
+                "rows": 1,
+                "columns": 7,
+                "order": "cell-major",
+                "motifs": {
+                  "template": "bay"
+                }
+              },
+              {
+                "type": "surface-grid",
+                "key": "bay09",
+                "name": "East entrance",
+                "boundary": [
+                  {
+                    "x": 98.3,
+                    "y": 51.62,
+                    "z": 0
+                  },
+                  {
+                    "x": 112.76,
+                    "y": 30.78,
+                    "z": 0
+                  },
+                  {
+                    "x": 112.76,
+                    "y": 30.78,
+                    "z": 27
+                  },
+                  {
+                    "x": 98.3,
+                    "y": 51.62,
+                    "z": 27
+                  }
+                ],
+                "rows": 1,
+                "columns": 6,
+                "order": "cell-major",
+                "motifs": {
+                  "template": "bay",
+                  "overrides": {
+                    "door": {
+                      "fill": "#344D53"
+                    },
+                    "balcony": {
+                      "fill": "#6A8587"
+                    }
+                  }
+                }
+              },
+              {
+                "type": "surface-grid",
+                "key": "bay10",
+                "name": "East portico",
+                "boundary": [
+                  {
+                    "x": 112.76,
+                    "y": 30.78,
+                    "z": 0
+                  },
+                  {
+                    "x": 119.54,
+                    "y": 7.84,
+                    "z": 0
+                  },
+                  {
+                    "x": 119.54,
+                    "y": 7.84,
+                    "z": 27
+                  },
+                  {
+                    "x": 112.76,
+                    "y": 30.78,
+                    "z": 27
+                  }
+                ],
+                "rows": 1,
+                "columns": 6,
+                "order": "cell-major",
+                "motifs": {
+                  "template": "bay"
+                }
+              },
+              {
+                "type": "surface-grid",
+                "key": "bay11",
+                "name": "East return",
+                "boundary": [
+                  {
+                    "x": 119.54,
+                    "y": 7.84,
+                    "z": 0
+                  },
+                  {
+                    "x": 118.18,
+                    "y": -15.63,
+                    "z": 0
+                  },
+                  {
+                    "x": 118.18,
+                    "y": -15.63,
+                    "z": 27
+                  },
+                  {
+                    "x": 119.54,
+                    "y": 7.84,
+                    "z": 27
+                  }
+                ],
+                "rows": 1,
+                "columns": 6,
+                "order": "cell-major",
+                "motifs": {
+                  "template": "bay"
+                }
+              },
+              {
+                "type": "surface-grid",
+                "key": "bay12",
+                "name": "Northeast return",
+                "boundary": [
+                  {
+                    "x": 118.18,
+                    "y": -15.63,
+                    "z": 0
+                  },
+                  {
+                    "x": 108.76,
+                    "y": -38.04,
+                    "z": 0
+                  },
+                  {
+                    "x": 108.76,
+                    "y": -38.04,
+                    "z": 27
+                  },
+                  {
+                    "x": 118.18,
+                    "y": -15.63,
+                    "z": 27
+                  }
+                ],
+                "rows": 1,
+                "columns": 6,
+                "order": "cell-major",
+                "motifs": {
+                  "template": "bay"
+                }
+              },
+              {
+                "type": "vector",
+                "key": "shell",
+                "name": "Asymmetric titanium shell · rolled perimeter",
+                "fill": {
+                  "template": "metal"
+                },
+                "rings": [
+                  [
+                    {
+                      "x": 758,
+                      "y": 4530,
+                      "inControl": {
+                        "x": 610,
+                        "y": 6350
+                      },
+                      "outControl": {
+                        "x": 900,
+                        "y": 2020
+                      }
+                    },
+                    {
+                      "x": 7230,
+                      "y": 740,
+                      "inControl": {
+                        "x": 3660,
+                        "y": 650
+                      },
+                      "outControl": {
+                        "x": 12950,
+                        "y": 500
+                      }
+                    },
+                    {
+                      "x": 21930,
+                      "y": 4410,
+                      "inControl": {
+                        "x": 19750,
+                        "y": 2260
+                      },
+                      "outControl": {
+                        "x": 22980,
+                        "y": 5300
+                      }
+                    },
+                    {
+                      "x": 23242,
+                      "y": 6500,
+                      "inControl": {
+                        "x": 23360,
+                        "y": 6030
+                      },
+                      "outControl": {
+                        "x": 23250,
+                        "y": 8420
+                      }
+                    },
+                    {
+                      "x": 14800,
+                      "y": 9320,
+                      "inControl": {
+                        "x": 19800,
+                        "y": 9600
+                      },
+                      "outControl": {
+                        "x": 7770,
+                        "y": 9130
+                      }
+                    }
+                  ]
+                ]
+              },
+              {
+                "type": "vector",
+                "key": "eavebead",
+                "name": "Eave drip edge and continuous shadow joint",
+                "fill": "#576363",
+                "rings": [
+                  [
+                    {
+                      "x": 758,
+                      "y": 4530,
+                      "outControl": {
+                        "x": 610,
+                        "y": 6350
+                      }
+                    },
+                    {
+                      "x": 14800,
+                      "y": 9320,
+                      "inControl": {
+                        "x": 7770,
+                        "y": 9130
+                      },
+                      "outControl": {
+                        "x": 19800,
+                        "y": 9600
+                      }
+                    },
+                    {
+                      "x": 23242,
+                      "y": 6500,
+                      "inControl": {
+                        "x": 23250,
+                        "y": 8420
+                      }
+                    },
+                    {
+                      "x": 23240,
+                      "y": 6520,
+                      "outControl": {
+                        "x": 23245,
+                        "y": 8450
+                      }
+                    },
+                    {
+                      "x": 14800,
+                      "y": 9360,
+                      "inControl": {
+                        "x": 19800,
+                        "y": 9640
+                      },
+                      "outControl": {
+                        "x": 7770,
+                        "y": 9170
+                      }
+                    },
+                    {
+                      "x": 758,
+                      "y": 4565,
+                      "inControl": {
+                        "x": 610,
+                        "y": 6390
+                      }
+                    }
+                  ]
+                ]
+              },
+              {
+                "type": "vector",
+                "key": "sweep",
+                "name": "Lower shell expansion joint",
+                "fill": "#778482",
+                "rings": [
+                  [
+                    {
+                      "x": 1570,
+                      "y": 2520,
+                      "outControl": {
+                        "x": 280,
+                        "y": 5330
+                      }
+                    },
+                    {
+                      "x": 13800,
+                      "y": 8200,
+                      "inControl": {
+                        "x": 7610,
+                        "y": 7820
+                      },
+                      "outControl": {
+                        "x": 18300,
+                        "y": 8510
+                      }
+                    },
+                    {
+                      "x": 22670,
+                      "y": 5160,
+                      "inControl": {
+                        "x": 23130,
+                        "y": 7560
+                      }
+                    },
+                    {
+                      "x": 22677,
+                      "y": 5180,
+                      "outControl": {
+                        "x": 23150,
+                        "y": 7580
+                      }
+                    },
+                    {
+                      "x": 13800,
+                      "y": 8224,
+                      "inControl": {
+                        "x": 18300,
+                        "y": 8540
+                      },
+                      "outControl": {
+                        "x": 7610,
+                        "y": 7844
+                      }
+                    },
+                    {
+                      "x": 1556,
+                      "y": 2540,
+                      "inControl": {
+                        "x": 260,
+                        "y": 5350
+                      }
+                    }
+                  ]
+                ]
+              },
+              {
+                "type": "vector",
+                "key": "crownseam",
+                "name": "Upper shell perimeter · standing seam",
+                "fill": "#7B898B",
+                "rings": [
+                  [
+                    {
+                      "x": 3080,
+                      "y": 1510,
+                      "outControl": {
+                        "x": 1890,
+                        "y": 3210
+                      }
+                    },
+                    {
+                      "x": 11860,
+                      "y": 5430,
+                      "inControl": {
+                        "x": 7180,
+                        "y": 5030
+                      },
+                      "outControl": {
+                        "x": 16500,
+                        "y": 5810
+                      }
+                    },
+                    {
+                      "x": 18650,
+                      "y": 2940,
+                      "inControl": {
+                        "x": 19770,
+                        "y": 4980
+                      }
+                    },
+                    {
+                      "x": 18662,
+                      "y": 2956,
+                      "outControl": {
+                        "x": 19795,
+                        "y": 5000
+                      }
+                    },
+                    {
+                      "x": 11860,
+                      "y": 5456,
+                      "inControl": {
+                        "x": 16500,
+                        "y": 5840
+                      },
+                      "outControl": {
+                        "x": 7180,
+                        "y": 5060
+                      }
+                    },
+                    {
+                      "x": 3060,
+                      "y": 1530,
+                      "inControl": {
+                        "x": 1865,
+                        "y": 3230
+                      }
+                    }
+                  ]
+                ]
+              },
+              {
+                "type": "vector",
+                "key": "apexseam",
+                "name": "Offset crown panel joint",
+                "fill": "#828F90",
+                "rings": [
+                  [
+                    {
+                      "x": 4810,
+                      "y": 1010,
+                      "outControl": {
+                        "x": 4070,
+                        "y": 2080
+                      }
+                    },
+                    {
+                      "x": 9880,
+                      "y": 2990,
+                      "inControl": {
+                        "x": 7780,
+                        "y": 2860
+                      },
+                      "outControl": {
+                        "x": 12430,
+                        "y": 3160
+                      }
+                    },
+                    {
+                      "x": 14000,
+                      "y": 1635,
+                      "inControl": {
+                        "x": 14450,
+                        "y": 2740
+                      }
+                    },
+                    {
+                      "x": 14016,
+                      "y": 1645,
+                      "outControl": {
+                        "x": 14480,
+                        "y": 2760
+                      }
+                    },
+                    {
+                      "x": 9880,
+                      "y": 3012,
+                      "inControl": {
+                        "x": 12430,
+                        "y": 3180
+                      },
+                      "outControl": {
+                        "x": 7780,
+                        "y": 2885
+                      }
+                    },
+                    {
+                      "x": 4790,
+                      "y": 1020,
+                      "inControl": {
+                        "x": 4040,
+                        "y": 2100
+                      }
+                    }
+                  ]
+                ]
+              },
+              {
+                "type": "vector",
+                "key": "ridge",
+                "name": "Longitudinal maintenance ridge · light edge",
+                "fill": "#C2C9C4",
+                "rings": [
+                  [
+                    {
+                      "x": 4910,
+                      "y": 1090,
+                      "outControl": {
+                        "x": 7860,
+                        "y": 1110
+                      }
+                    },
+                    {
+                      "x": 20450,
+                      "y": 4450,
+                      "inControl": {
+                        "x": 16390,
+                        "y": 2450
+                      }
+                    },
+                    {
+                      "x": 20460,
+                      "y": 4475,
+                      "outControl": {
+                        "x": 16390,
+                        "y": 2480
+                      }
+                    },
+                    {
+                      "x": 4910,
+                      "y": 1105,
+                      "inControl": {
+                        "x": 7860,
+                        "y": 1130
+                      }
+                    }
+                  ]
+                ]
+              }
+            ]
+          }
+        }
+      }
+    ],
+    "delivery": {
+      "fields": {
+        "roots": {
+          "step": "arena",
+          "path": "/compositionIds"
+        },
+        "status": {
+          "step": "arena",
+          "path": "/status"
+        },
+        "storage": {
+          "step": "arena",
+          "path": "/storage"
+        }
+      }
+    }
+  }
+}

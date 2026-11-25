@@ -890,6 +890,21 @@ export const recipeSchemaAt = (
       return visit(current.properties[key], rest, lifetime)
     }
 
+    // A typed dictionary declares the value contract for each key. Existence
+    // is checked against the completed result before dispatching the consumer.
+    if (
+      requireAtExecution &&
+      current.type === 'object' &&
+      typeof current.additionalProperties === 'object' &&
+      !['never', 'opaque'].includes(
+        recipeResolve(current.additionalProperties).type
+      ) &&
+      current.propertyNames === undefined &&
+      !recipeOwn(current.properties, key)
+    ) {
+      return visit(current.additionalProperties, rest, lifetime)
+    }
+
     if (
       current.type === 'array' &&
       /^(0|[1-9][0-9]*)$/u.test(key) &&

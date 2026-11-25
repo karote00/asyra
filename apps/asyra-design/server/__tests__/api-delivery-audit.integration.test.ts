@@ -13,7 +13,10 @@ import { readCompleteInformation } from './tool-contract-assertions'
 import { afterAll, afterEach, expect, it, vi } from 'vitest'
 import * as nativeSchemaOwner from '@asyra/ai-agent-runtime/schema'
 import { basicApiContracts } from '../../src/ai/basic-api-catalog'
-import { invokeLocalTool } from '../local-tool-invocation'
+import {
+  invokeLocalTool,
+  localToolFailureSchema
+} from '../local-tool-invocation'
 import { operationInputIssue } from '@asyra/ai-agent-runtime/schema'
 import { writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
@@ -209,7 +212,7 @@ it.each([false, true])(
       .definitions()
       .find(
         (tool) =>
-          tool.registeredName === 'design_operations.read_design_contracts'
+          tool.registeredName === 'design_operations.read_design_resources'
       )
 
     if (!definition) {
@@ -299,7 +302,7 @@ it.each(basicApiContracts)(
   '$name delivers the same owner parameters and an executable batch route - case %#',
   async (contract) => {
     const definition = operations.definitions.find(
-      (d) => d.name === 'read_design_contracts'
+      (d) => d.name === 'read_design_resources'
     )
 
     if (!definition) {
@@ -662,10 +665,10 @@ const canonicalWorkflowScope = (input: unknown, scope: unknown): unknown => {
     : []
 
   for (const name of ['retain', 'delivery']) {
-    expect(Object.hasOwn(properties, name)).toBe(true)
-    if (!selected.includes(name)) {
-      properties[name] = false
-    }
+    expect(
+      Object.hasOwn(properties, name),
+      'Host-only control in operation arguments'
+    ).toBe(false)
   }
 
   const draft = definitions.readyDraft
@@ -759,6 +762,7 @@ it.each([
   'equivalent-union',
   'weaken-message',
   'open-draft',
+  'expose-host-control',
   'remove-operation'
 ])(
   'checks canonical scope preservation through discovery - %s',
@@ -801,6 +805,8 @@ it.each([
         selected.properties.message.maxLength = 2000
       } else if (fault === 'open-draft') {
         selected.$defs.readyDraft.additionalProperties = true
+      } else if (fault === 'expose-host-control') {
+        selected.properties.delivery = { const: 'status' }
       } else if (fault === 'remove-operation') {
         delete selected.oneOf
       } else if (fault === 'equivalent-reference') {
@@ -835,7 +841,7 @@ it.each([
           view: 'usage',
           scopes: { [name]: { inputScope: scope } }
         },
-        'read_design_contracts'
+        'read_design_resources'
       )
       const response = JSON.parse(responseText).tools?.[0]
 
@@ -866,7 +872,12 @@ it.each([
         )
 
       if (
-        ['weaken-message', 'open-draft', 'remove-operation'].includes(fault)
+        [
+          'weaken-message',
+          'open-draft',
+          'expose-host-control',
+          'remove-operation'
+        ].includes(fault)
       ) {
         expect(audit).toThrow(
           /Selected contract must preserve canonical scope constraints/
@@ -910,7 +921,7 @@ it.each(
           view: 'usage',
           includeResultSchema: true
         },
-        'read_design_contracts'
+        'read_design_resources'
       )
 
       return JSON.parse(text).tools[0].usageGuide
@@ -1054,7 +1065,7 @@ it.each(['none', 'weaken-input', 'open-result'])(
           view: 'usage',
           includeResultSchema: true
         },
-        'read_design_contracts'
+        'read_design_resources'
       )
       const guide = JSON.parse(text).tools[0].usageGuide
       const facts = [{ id: 'source', statement: 'Requested dimensions' }]
@@ -1157,7 +1168,7 @@ it.each(['none', 'omit-parts'])(
             })
           ).text,
         { names: ['design_workflow.prepare_and_apply_design'], view: 'usage' },
-        'read_design_contracts'
+        'read_design_resources'
       )
 
       const assertScopes = () =>
@@ -1474,7 +1485,7 @@ it.each(native)(
   '$definition.name delivers observed usage parameters and results through its advertised route - case %#',
   async ({ definition, namespace }) => {
     const query = operations.definitions.find(
-      (d) => d.name === 'read_design_contracts'
+      (d) => d.name === 'read_design_resources'
     )
 
     if (!query) {
@@ -1495,11 +1506,8 @@ it.each(native)(
           })
         ).text,
       args,
-      'read_design_contracts'
+      'read_design_resources'
     )
-    const entry = JSON.parse(text).tools[0]
-
-    expect(entry, text.slice(0, 1000)).toBeDefined()
     const registeredDefinition = host
       .definitions()
       .find((d) => d.registeredName === `${namespace}.${definition.name}`)
@@ -1507,6 +1515,29 @@ it.each(native)(
     if (!registeredDefinition) {
       throw new Error('Missing host registration')
     }
+
+    const menu = JSON.parse(text)
+
+    if (namespace === 'design_knowledge') {
+      expect(menu.missingNames).toEqual([registeredDefinition.registeredName])
+      expect(menu.tools).toEqual([])
+      expect(registeredDefinition.inputSchema).toEqual(definition.inputSchema)
+      const input = { ids: ['colors'] }
+
+      expect(
+        operationInputIssue(input, registeredDefinition.inputSchema)
+      ).toBeUndefined()
+      // Successful knowledge responses are exercised at their separately published
+      // provider entries. This reader must return neither tool nor advice here.
+      expect(menu.code).toBe('IDENTITY_UNRESOLVED')
+      expect(execute).not.toHaveBeenCalled()
+
+      return
+    }
+
+    const entry = menu.tools[0]
+
+    expect(entry, text.slice(0, 1000)).toBeDefined()
 
     const scopes = workflowInputScopes(registeredDefinition.inputSchema)
 
@@ -1517,13 +1548,7 @@ it.each(native)(
         { operation, optionalInputs: undefined },
         {
           operation,
-          optionalInputs: [
-            'retain',
-            'delivery',
-            'layout',
-            'relations',
-            'sharedFills'
-          ]
+          optionalInputs: ['layout', 'relations', 'sharedFills']
         }
       ])
 
@@ -1548,7 +1573,7 @@ it.each(native)(
                 args.names.map((name) => [name, { inputScope }])
               )
             },
-            'read_design_contracts'
+            'read_design_resources'
           )
         ).tools[0]
         const invocation = selected.invocationExample?.invocation
@@ -1639,11 +1664,19 @@ it.each(native)(
   }
 )
 
+// A qualified wrapper can cache the same usage page. Trace the cold producer
+// independently of the native-registration cases that ran before this group.
+const actionUsageFixture = createDeliveryAuditFixture()
+
+afterAll(() => actionUsageFixture.dispose())
+
 it.each(runtime.actionDefinitions)(
   '$name selected action usage retains parameters independently of its effect - case %#',
   async (action) => {
+    const { operations, host, preparation, actions, execute } =
+      actionUsageFixture
     const query = operations.definitions.find(
-      (d) => d.name === 'read_design_contracts'
+      (d) => d.name === 'read_design_resources'
     )
 
     if (!query) {
@@ -1664,7 +1697,7 @@ it.each(runtime.actionDefinitions)(
           })
         ).text,
       args,
-      'read_design_contracts'
+      'read_design_resources'
     )
     const entry = JSON.parse(text).apis[0]
 
@@ -1739,7 +1772,7 @@ it.each(runtime.actionDefinitions)(
 
 it('executes a delivered final-response contract through its real control owner without a batch', async () => {
   const definition = operations.definitions.find(
-    (d) => d.name === 'read_design_contracts'
+    (d) => d.name === 'read_design_resources'
   )
 
   if (!definition) {
@@ -1892,6 +1925,26 @@ it.each(host.definitions())(
 it.each(host.definitions())(
   '$registeredName declares its actual admission failure without dispatch - case %#',
   async (registration) => {
+    if (registration.namespace === 'design_knowledge') {
+      const reply = await host.invoke({
+        name: registration.registeredName,
+        input: null
+      })
+      const result = JSON.parse(reply.text)
+
+      expect(reply.success).toBe(false)
+      expect(result).toMatchObject({
+        code: 'TOOL_INPUT_INVALID',
+        toolOutcome: { status: 'failed', settlement: 'not-started' }
+      })
+      expect(
+        operationInputIssue(result, localToolFailureSchema)
+      ).toBeUndefined()
+      expect(execute).not.toHaveBeenCalled()
+
+      return
+    }
+
     const scopes = workflowInputScopes(registration.inputSchema)
     const inputScope = scopes
       ? {
@@ -1917,7 +1970,7 @@ it.each(host.definitions())(
             })
           ).text,
         query,
-        'read_design_contracts'
+        'read_design_resources'
       )
     ).tools[0]
     const registered = entry.execution.kind === 'registered-tool'
@@ -1992,3 +2045,98 @@ it('exposes only current result delivery controls across the registered tool inv
     await current.dispose()
   }
 })
+
+it('delivers the complete execution input for every independently registered action and native tool through exact search', async () => {
+  const catalog = host.definitions()
+  const measurements: { query: string; pages: number; bytes: number }[] = []
+  const allTools = catalog.filter(
+    (tool) => tool.namespace !== 'design_knowledge'
+  )
+  const visibleNames = native
+    .filter((tool) => tool.namespace !== 'design_knowledge')
+    .map((tool) => tool.namespace + '.' + tool.definition.name)
+
+  expect(allTools.map((tool) => tool.registeredName)).toEqual(
+    expect.arrayContaining(visibleNames)
+  )
+
+  const check = async (
+    query: string,
+    category: string | undefined,
+    kind: 'apis' | 'tools',
+    expected: unknown
+  ) => {
+    let pages = 0
+    const text = await readCompleteInformation(
+      async (input, tool) => {
+        const response = await host.invoke({
+          name: 'design_operations.' + tool,
+          input
+        })
+
+        pages++
+        expect(response.outcome.status, query).toBe('success')
+
+        return response.text
+      },
+      category ? { query, category } : { query },
+      'search_design_tools'
+    )
+    const page = JSON.parse(text)
+
+    expect(page.count, query).toBe(1)
+    const item = page[kind][0]
+
+    expect(item.operationParameters, query).toBeDefined()
+    const routeOwner =
+      kind === 'apis' && item.execution.kind === 'host-operation'
+        ? catalog.find(
+            (tool) => tool.registeredName === item.execution.operation
+          )?.inputSchema
+        : expected
+
+    expect(routeOwner, query).toBeDefined()
+    if (!isRecord(routeOwner)) {
+      throw new Error('Missing admitted input for ' + query)
+    }
+
+    const {
+      'x-design-discovery': _metadata,
+      'x-design-input-scope': _scopes,
+      ...ordinary
+    } = routeOwner
+
+    expect(
+      equivalentDeliveredSchema(item.operationParameters, ordinary),
+      query
+    ).toBe(true)
+    measurements.push({ query, pages, bytes: Buffer.byteLength(text) })
+  }
+
+  for (const action of preparation.modelActions(actions)) {
+    const basic = basicApiContracts.find((entry) => entry.name === action.name)
+
+    await check(
+      basic?.operation ?? action.name,
+      basic?.category ?? 'design',
+      'apis',
+      action.inputSchema
+    )
+  }
+
+  for (const tool of allTools) {
+    await check(tool.registeredName, undefined, 'tools', tool.inputSchema)
+  }
+
+  process.stdout.write(
+    JSON.stringify({
+      measurement: 'search-catalog',
+      actions: actions.length,
+      tools: allTools.length,
+      searches: measurements.length,
+      paged: measurements.filter((m) => m.pages > 1),
+      maximum: Math.max(...measurements.map((m) => m.pages))
+    }) + '\n'
+  )
+  expect(execute).not.toHaveBeenCalled()
+}, 60000)

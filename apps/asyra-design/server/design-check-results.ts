@@ -1,3 +1,5 @@
+import { AiToolInputError } from '@asyra/ai-agent-runtime'
+import { findingTargetMatches, inlineFindingLimit } from './design-findings'
 import {
   toolInternalResult,
   toolResultObject,
@@ -64,6 +66,10 @@ export const designCheckSummarySchema = toolResultObject(
 )
 
 export interface DesignCheckDeliveryOptions {
+  findingsFor?: string
+  target?: string
+  kind?: string
+  briefFor?: string
   view?: 'summary' | 'details'
   ids?: string[]
   includePassed?: boolean
@@ -76,6 +82,16 @@ export const designCheckDeliverySchema = toolResultObject(
     ...designCheckResultsSchema.properties,
     revision: toolResultCount,
     firstPendingId: toolResultString,
+    findingPage: toolResultObject(
+      {
+        total: toolResultCount,
+        revision: { type: 'integer', minimum: 1 },
+        items: { type: 'array' },
+        nextOffset: toolResultCount
+      },
+      ['total', 'revision', 'items']
+    ),
+    preparedReview: { type: 'object' },
     nextOffset: toolResultCount
   },
   ['countsScope', 'counts', 'visitedResults', 'revision']
@@ -89,7 +105,13 @@ export interface DesignCheckSelection {
 /** Canonical producer metadata; diagnostic prose is never executable provenance. */
 export type DesignCheckRecheck =
   | { kind: 'measurement'; elementId: string; findings: readonly unknown[] }
-  | { kind: 'prepared'; artifactId: string; recipeRevision: string }
+  | {
+      kind: 'prepared'
+      artifactId: string
+      recipeRevision: string
+      findings?: readonly unknown[]
+      review?: object
+    }
 
 export const designCheckSelectionSchema = {
   type: 'array',
@@ -338,6 +360,7 @@ export const createDesignCheckResults = () => {
     },
 
     recordPreparedSource(input: {
+      review?: object
       artifactId: string
       recipeRevision: string
       findings: readonly unknown[]
@@ -389,18 +412,41 @@ export const createDesignCheckResults = () => {
           finding.kind !== 'text-metrics-required'
       )
 
+      const published = results.get(`prepared:${artifactId}:data`)?.recheck
+      const retained = [published, prior?.recheck].find(
+        (source) =>
+          source?.kind === 'prepared' &&
+          source.recipeRevision === recipeRevision
+      )
+      const sourceReview =
+        input.review ??
+        (retained?.kind === 'prepared' ? retained.review : undefined)
+      let evidence =
+        'Compiler geometry, keys, references and explicit numeric constraints passed.'
+
+      if (failures.length) {
+        evidence =
+          failures.length > inlineFindingLimit
+            ? `Compiler reported ${failures.length} blocking findings.`
+            : JSON.stringify(failures)
+      }
+
       owner.record(
         {
           id,
           origin: 'tool',
           status: failures.length ? 'fail' : 'pass',
-          evidence: failures.length
-            ? JSON.stringify(failures)
-            : 'Compiler geometry, keys, references and explicit numeric constraints passed.',
+          evidence,
           scope: [artifactId],
           dependencies: { [dependency]: recipeRevision }
         },
-        { kind: 'prepared', artifactId, recipeRevision }
+        {
+          kind: 'prepared',
+          artifactId,
+          recipeRevision,
+          findings: input.findings,
+          review: sourceReview
+        }
       )
       if (current && current !== lineage) {
         const duplicateId = `prepared:${current}:data`
@@ -559,6 +605,13 @@ export const createDesignCheckResults = () => {
       firstPendingId?: string
       items?: DesignCheckResult[]
       nextOffset?: number
+      preparedReview?: object
+      findingPage?: {
+        items: unknown[]
+        total: number
+        revision: number
+        nextOffset?: number
+      }
     } {
       const { ids, view, includePassed, revision } = options
       const offset = options.offset ?? 0
@@ -574,6 +627,90 @@ export const createDesignCheckResults = () => {
         throw new Error(
           'Invalid check detail page; limit must be 1-100 and offset nonnegative.'
         )
+      }
+
+      if (options.briefFor || options.findingsFor) {
+        const id = options.briefFor ?? options.findingsFor
+
+        if (!id) {
+          throw new AiToolInputError('Select a retained check.')
+        }
+
+        const result = results.get(id)
+
+        if (!result?.recheck) {
+          throw new AiToolInputError('Unknown retained check.')
+        }
+
+        const base = owner.summary([id])
+
+        if (options.briefFor) {
+          if (result.recheck.kind !== 'prepared' || !result.recheck.review) {
+            throw new AiToolInputError('No prepared brief for this check.')
+          }
+
+          return {
+            ...base,
+            revision: ledgerRevision,
+            preparedReview: structuredClone(result.recheck.review)
+          }
+        }
+
+        if (
+          (offset > 0 && revision === undefined) ||
+          (revision !== undefined && revision !== result.revision)
+        ) {
+          throw new AiToolInputError(
+            'Finding page requires the current check revision.'
+          )
+        }
+
+        const items: unknown[] = []
+        let total = 0
+
+        for (const finding of result.recheck.findings ?? []) {
+          if (
+            options.target &&
+            !findingTargetMatches(finding, options.target)
+          ) {
+            continue
+          }
+
+          if (
+            options.kind &&
+            !(
+              finding &&
+              typeof finding === 'object' &&
+              'kind' in finding &&
+              finding.kind === options.kind
+            )
+          ) {
+            continue
+          }
+
+          if (total++ >= offset && items.length < limit) {
+            items.push(structuredClone(finding))
+          }
+        }
+
+        if (offset > total) {
+          throw new AiToolInputError(
+            'Finding offset exceeds the current selection.'
+          )
+        }
+
+        return {
+          ...base,
+          revision: ledgerRevision,
+          findingPage: {
+            total,
+            revision: result.revision,
+            items,
+            ...(offset + items.length < total
+              ? { nextOffset: offset + items.length }
+              : {})
+          }
+        }
       }
 
       if (

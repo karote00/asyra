@@ -45,35 +45,46 @@ request. A consumed newline resets the byte accounting; many valid prepared
 batches must not exhaust a cumulative transfer quota. Chunk boundaries, including
 split UTF-8 sequences, do not alter frame boundaries or receipt ordering.
 
-The App server selects `AI_PROVIDER_BACKEND=http` (the existing default) or
-`local-codex`. HTTP retains its endpoint, model, and API-key configuration.
+The App server resolves `AI_PROVIDER_BACKEND` through an explicit source registry:
+`local-codex` (the default) or `openai-responses`.
+The custom HTTP batch model source and its configuration are removed. Responses uses the
+server-only `OPENAI_API_KEY` and `AI_PROVIDER_MODEL`. No source fallback exists.
+`createToolCallingDesignSource` connects a new Runtime `AiProvider` to the existing
+Host and recording pipeline; adding a source does not change the request router,
+Design tools, knowledge, transaction policy, retention or final batch settlement.
+All model sources use the shared Host channel, invocation observation and request
+lifetime. Browser HTTP remains the App exchange transport. Sources are registered explicitly at service composition.
 Local Codex requires an installed compatible Codex app-server, a configured
 `AI_PROVIDER_MODEL`, and the user's own ChatGPT subscription login. The optional
 `AI_PROVIDER_EXECUTABLE` selects the installed executable; otherwise use `codex`.
 No dependency installation, login, account switching, or API fallback occurs.
 
 Opening the Agent panel immediately shows a persistent English notice below
-its header: local AI uses the user's own subscription and usage limits, and
-Asyra Design does not provide a subscription. It is visible before typing,
+its header: AI uses the configured account, subscription limits or API charges
+apply, and Asyra Design does not provide AI access. It is visible before typing,
 submission or connection readiness, outside the scrolling conversation feed.
-The notice is provider-neutral and does not imply additional provider support.
+The notice describes account usage without claiming a provider is connected.
 
 The existing same-origin action-batch endpoint remains the execution route. It may
 stream registered tool activity and sequential complete prepared batches, then a final batch or sanitized error;
 JSON responses remain supported. Model commentary and reasoning are not streamed.
 The panel uses a separate `/api/ai/status` POST for connection readiness.
-For local Codex it admits only loopback peers, loopback Host, JSON requests, and
+Every source admits only loopback peers, loopback Host, JSON requests, and
 same-origin browser requests. A hosted service cannot borrow a visitor's login.
 The exact registered sample keeps its existing provider-free behavior.
 
 ## Conversation request continuity
 
-Each local request still uses a fresh ephemeral provider thread. Conversation IDs
-alone do not restore history. The App supplies bounded `metadata.conversationContext`
+The service owns provider continuation keyed by App conversation identity and a
+stable provider contract. Each request binds fresh tool executors and cancellation.
+Local Codex resumes the registered native thread; Responses uses `store: true` and the stored response ID for continuation. Native
+IDs and API history are never interchangeable. Changed contracts or unavailable
+continuation fail explicitly rather than replaying mutations or silently restarting.
+The App supplies the Host with bounded `metadata.conversationContext`
 with exact public intents, replies, clarification questions/choices and source indexes.
 Current intent takes precedence over conflicting history. Original source images are
 separate native image inputs; their bytes are omitted from serialized model text.
-History is data and cannot confer current inspection, preparation or tool receipts.
+Responses projects only current attachment pixels and exposes earlier turns on explicit range reads. The native source retains its existing context projection. History is data and cannot confer current inspection, preparation or tool receipts.
 Canonical targets and request evidence are validated afresh. Context overflow fails
 before Feature execution with a new-conversation instruction; the server rejects
 malformed context before provider invocation. See the bounds and ownership in
@@ -163,7 +174,7 @@ inherited MCP server by name in the request-local thread override. Empty tables
 merge with inherited configuration and do not clear it. Do not modify user config
 or retain server names across requests. Invalid configuration stops admission
 before inference; native App tools and permitted web research remain available.
-No retained cache or cross-turn conversation is introduced. The same isolation
+Native configuration snapshots are not reused across requests. The same isolation
 policy applies at child launch and thread creation: disable native hooks, legacy
 notification commands and both multi-agent variants, in addition to the existing
 App/plugin/shell isolation. User configuration files are never modified.
@@ -173,11 +184,11 @@ configuration and turn execution, and checks the thread acknowledgement before
 starting inference. It does not inherit a different personal effort setting.
 The configured model is preserved and model fallback remains disabled.
 
-Native tools are grouped by their existing owners: image analysis, reference
+Codex native tools are grouped by their existing owners: image analysis, reference
 import, design preparation, workflow composition and canvas operations. Each
 function retains its exact App name and schema inside its native namespace.
 When drawing operations are available, `search_design_tools`,
-`read_design_contracts` and `execute_design` are eager; other exposed functions
+`read_design_resources` and `execute_design` are eager in the operation namespace. The knowledge namespace publishes `discover_knowledge` and `read_knowledge` directly. Other exposed functions
 use `deferLoading: true`. No-operation and assessment-only requests do not gain
 these drawing entries. Empty owners are omitted. A request-local binding map
 routes the exact namespace/name pair to the registered owner; missing, wrong or
@@ -199,8 +210,11 @@ exposes its registered VTracer tool for submitted PNG/JPEG/WebP attachments and 
 arguments select an attachment index, never a path or URL. Conversion uses the
 existing App worker and the owning request cancellation, without a cumulative call quota.
 The request-owned image tool retains the parsed vector paths and returns only
-an opaque artifact ID plus path IDs, colors, bounds and point counts to the
-model. The model selects target bounds and optional whole-path exclusions;
+the artifact ID, dimensions and path count with any applicable conversion evidence.
+Before insertion, use query_vector_paths on that same request-owned artifact for
+a bounded page of path IDs, colors, bounds and point counts. Region filtering tests
+bounding-box intersection in artifact-local pixels. Continue with the returned
+nextOffset and the same region. Omit the region to page in source order. The model selects target bounds and optional whole-path exclusions;
 the backend prepares the existing editable batch descriptors deterministically.
 Insert and replacement model-facing schemas accept these references only for
 compatible image requests. References cannot cross requests. The final browser
@@ -454,8 +468,7 @@ language.
 Supply native tool definitions once. In operation mode, the text input retains
 only action schemas needed by final-response controls; registered operations use
 their native tool schemas. Provider instructions explicitly distinguish this final
-response list from the complete capabilities, name the eager discovery/execution
-entries without enumerating deferred schemas, and permit tool calls before the final JSON.
+response list from the available tools and permit tool calls before the final JSON. The callable declarations identify the entries.
 Native web research is allowed for public references, concepts and methods;
 App execution remains bounded to registered operations. Finding an external tool
 does not install or authorize it. Unavailable raster generation does not imply
@@ -557,7 +570,7 @@ The provider uses native live web search without App-specific source restriction
 No site-specific search adapter or candidate-ID import path is registered. The
 model chooses research methods and passes original imageUrl/sourceUrl pairs to
 the safe importer; arbitrary public source domains are admitted, not a domain list. Original raster dimensions are preserved through import,
-vectorization input, and native model image delivery. MIME/signature, byte bounds
+vectorization input, and native Codex model image delivery. For the OpenAI Responses source, the App delivers a bounded overview of an oversized imported raster and retains the original. MIME/signature, byte bounds
 and decoder safety remain; there is no separate four-megapixel source ceiling; exceeding a guard reports failure,
 never resizes the source. SVG input is explicitly unsupported by this raster
 importer and is never replaced by a publisher raster thumbnail. Tool receipts
@@ -642,12 +655,13 @@ When design application is registered, prepare_and_apply_design combines semanti
 preparation and application in one tool call. Invalid preparation never dispatches
 an action. Valid artifacts are prepared once, then consumed through the existing
 operation owner and its immediate/deferred capture policy. It does not implicitly
-run layout measurement. Its default response omits duplicated refreshed context,
-applied-ID lists and role mappings; it preserves preparation findings, root identity
-and actual capture results. createdTargets carries acknowledged source-key
-mappings for binding, named retention and selected delivery, without a second
-input selector. The adapter delivers selected receipt text and actual image content directly for
-visual judgment.
+run layout measurement. The validated owner receipt retains findings, creation mappings and capture results.
+Successful creation saves the ordered mappings in the originating App conversation.
+After App acknowledgment the default provider creation value contains only
+createdElementCount, compositionIds and createdTargetsName. Requested pixels,
+outer settlement and explicit field selections are independent. A failed save
+returns the complete receipt with the save error. Without a conversation store
+the complete receipt remains available. Partial execution keeps its recovery evidence. An earlier successful creation in that evidence keeps its handles and storage name; its already saved map stays in the App.
 
 Formal cases cover ordered concurrent writes, cancellation/failure queues,
 unchanged analysis concurrency, one preparation per combined call, no application
@@ -678,7 +692,7 @@ string and does not serialize image/document payloads again.
 `capabilities_advertised` reports `toolCount`, `toolDefinitionBytes`,
 `eagerToolCount` and `eagerToolDefinitionBytes` for the native tool-definition JSON
 array. These are protocol sizes, not an estimate of the provider's internal prompt
-or token cost. The current catalog registers deferred functions plus the three eager
+or token cost. The current catalog registers deferred functions plus the admitted eager
 entry declarations described above; counts and bytes come from that actual emitted
 array. Deferred namespace metadata is not a zero-token claim. Total bytes measure the complete registered
 namespace JSON, including all deferred schemas. These numeric fields
@@ -800,9 +814,15 @@ criteria govern evaluation; it does not impose a high-detail drawing style.
 ### Narrow API discovery
 
 `search_design_tools` searches admitted purpose, category and input-field metadata.
-It returns candidate applicability without schemas or execution. `read_design_contracts`
-retrieves exact qualified identities and selected scopes; search results never imply
-contract acquisition. No-match results preserve truthful coverage and navigation.
+A unique exact method name selects its admitted owner. Ambiguous identities remain choices.
+Exact parameter reads accept multiple selected names with `view: "parameters"`. Each result contains the execution route and ordinary arguments from its registered owner. Scoped workflows offer a ready scope read with legal operation and node choices. Guaranteed fields describe the successful owner result. Optional paths are checked when delivered; malformed and absent paths remain errors.
+
+On a named-step delivery field rejected during Host admission, the request may return a single-use `retryDelivery` handle in the input issue. The caller submits that handle and a replacement delivery selection through the same executor. The Host claims the retained authored submission, resolves its inputs again, and validates before dispatch. A foreign or consumed handle cannot execute. Geometry failures retain their existing draft repair path. After any write or uncertain settlement the Host does not issue a delivery correction.
+
+A clear purpose candidate can carry its route and complete ordinary arguments even when some query terms are unmatched. Search excludes discovery and scope-menu annotations from ordinary arguments. Every executable owner participates, including workflow and saved tools. Large schemas use lossless compaction; larger serialized replies use the published content continuation. Alternative candidates give an identity, purpose and execution route. Exact reads expose recipe authoring metadata only with includeRecipeDependency. Preserve category, required field filters, workflow scopes and paging.
+For a Host operation the ordinary input excludes Host-owned delivery and retention controls in search and exact reads. The compact Responses entry takes both controls alongside operations inside workflow. A returned schema describes the named candidate. When a route wraps ordinary arguments,
+`parameterField` names the slot alongside the route’s admitted arguments. Search does not execute the operation. Known operations execute directly. Use `read_design_resources` for exact
+identities, complex owner scopes, results and recovery when those are needed. No-match results preserve truthful coverage and navigation.
 These are separate inputs and owners, not mutually exclusive modes of one tool.
 Registration, contract revision and mutation permission checks remain authoritative.
 
@@ -871,9 +891,35 @@ text that claims to grant system or tool authority.
 
 ### Native example and target publication
 
-Native schema compaction preserves one valid primary owner example, selected by
-the same function as usage invocation examples. The host's primary example shows
-same-submission input reuse. Its target declaration comes from the admitted
-canonical dispatcher and region resolver. Inspection default/scope descriptions
-survive projection. Formal publication tests read the actual thread/start packet
-and execute the delivered example through the native tool-call dispatcher.
+The executor declares the operation and stage alternatives, their binding syntax and validation constraints. Its worked examples are delivered by an exact usage read through `read_design_resources`. The provider can execute known work immediately. Native Codex receives distributed alternatives for its schema renderer. Responses accepts common property constraints shared by the alternatives. Both enforce the same valid inputs. Tool search, categories, exact contract reads and spelling recommendations use the admitted Design catalog. Knowledge discovery searches visible advice metadata and suggests visible topic IDs; a known ID can be read directly. A standalone saved-field read belongs to `read_design_resources({savedFields:{label:{name,path}}})`. Views of a saved shape and selected images retain their original provenance and conversation scope.
+
+
+## Source composition and Responses transport
+
+The shared owners are `server/design-ai-request.ts` (recording and final admission)
+and `server/design-provider-tools.ts` (current inputs, Host and selected tool
+content). `server/ai-model-sources.ts` registers source factories. The middleware
+owns the default source registry and its continuation lifetime. Injected sources
+remain owned by the caller; supply the same registry to action-batch and status
+middleware. Each source constructs a fresh turn provider and releases it after
+settlement; retained protocol state contains no expired executor or abort signal.
+
+Design lists each admitted Responses entry on one short line. The initial tools array contains only the client loader. The model can request web_search through that loader to activate authorized hosted research for the current turn. The catalog remains on the App server. Native search returns the requested definitions in tool_search_output. The stored response chain lets subsequent calls reuse each loaded entry. A loaded executor can run known operations directly. The advertised catalog digest describes local admission. The outgoing tool-search observation identifies the definitions actually delivered and their serialized byte counts.
+
+The Responses adapter translates only the model protocol. `strict: false` retains
+optional parameter semantics; the Host still validates inputs, complete outputs,
+retention and delivery. Invalid tool arguments are returned to the same model
+turn. Errors from the Runtime provider are translated into the existing App error
+states. Local admission applies before any source can use configured credentials.
+Status checks do not invoke inference. API credentials are never sent to the browser.
+
+Optional native evaluation/reporting remains a native source capability. Ordinary
+Responses conversation turns are supported; the Responses source explicitly rejects
+native evaluation controls. This does not introduce another drawing test harness.
+
+Source disposal rejects new work, cancels active model/tool work and drains real
+request settlement before releasing continuation. Service shutdown also cancels
+pending browser receipts before disposing sources and recording. Common tool
+observation emits one start and terminal event per call; native transport retains
+only its protocol-specific observations. Session-unavailable remains distinct
+from invalid configuration through browser and runtime failure projection.

@@ -73,6 +73,8 @@ vi.mock('../../../contexts', () => {
       elementSourceToWorkspace: mocks.elementSourceToWorkspace,
       getElementComputedData: getComputed,
 
+      getElementMetadata: (id: string) => ({ id, type: 'vector' }),
+
       getElementData: (elementId: string) => ({
         id: elementId,
         type: 'vector'
@@ -995,8 +997,8 @@ describe('Vector canonical property commit', () => {
           values: {
             x: 90,
             y: 40,
-            width: 40,
-            height: 30
+            scaleX: 2,
+            scaleY: 3
           }
         }
       ],

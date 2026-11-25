@@ -28,7 +28,7 @@ canonical locks and host/external security boundaries remain enforced.
 
 ### Native discovery bootstrap
 
-When drawing operations are available, canonical `search_design_tools`, `read_design_contracts` and
+When drawing operations are available, canonical `search_design_tools`, `read_design_resources` and
 `execute_design` are directly available in the initial native registration. Other native domain
 tools remain deferred. Initial metadata counts and bytes derive from actual
 registration; unrelated catalog growth must not enlarge the bootstrap. No-operation
@@ -308,7 +308,13 @@ positive purpose evidence. Exact identity resolution remains unchanged.
 Descriptive query `inputFields` optionally requires declared leaf names or slash-
 separated paths. Open records do not prove arbitrary property support. Candidates
 return purpose, boundaries, top-level input fields and requested matching paths;
-this navigation is not an executable contract or value validation. Natural-language
+this navigation is not an executable contract or value validation. Purpose search
+delivers each purpose once, with the execution and selected-usage routes. Result
+contracts belong to the selected read. If no candidate covers the full query
+vocabulary, the first page previews related matches and identifies terms absent
+from all matching candidates' declared purposes in scope. This is lexical
+evidence, not a claim of capability absence. The existing cursor reaches every
+remaining candidate at its original rank. Natural-language
 queries remain supported, including custom tools with opaque names. Input enum/const choices and schema descriptions remain secondary search evidence;
 examples and incidental schema prose do not establish purpose or field acceptance. Ordinary plural normalization never rewrites identities.
 
@@ -348,13 +354,7 @@ constraints and acceptance criteria, not a complete geometry inventory. Ready
 coherent retained parts may be emitted in a shared coordinate system; keep unresolved detail pending
 without weakening the final acceptance contract.
 
-Always-present App instructions explain Knowledge value before tool names: domain
-principles, common failure modes and mappings to supported App capabilities can
-reduce repeated derivation, exploration and correction attempts, including for
-familiar tasks. Uncertain methods or adjustments that repeatedly miss their target
-are useful occasions to consult relevant advice about a cause or supported tool.
-Native namespace metadata exposes that purpose before deferred tool loading.
-This adds no detail or polish requirement and introduces no lookup gate.
+The resident instruction assigns design decisions to the agent. The entry index identifies optional advice discovery and direct topic reads. Knowledge entry contracts and selected documents explain the domain principles, failure modes and supported capabilities relevant to a decision. Consulting advice is optional.
 Domain knowledge is optional reference material, not a default method or an
 additional acceptance standard. Global guidance does not prescribe representative
 sampling, construction order or refinement sequence. Exact tool contracts and
@@ -430,10 +430,10 @@ limits remain specific to canvas inspection.
 current admitted catalog. Empty input returns categories and counts. Purpose,
 category and declared input-field filters select metadata, never schemas or an
 executable adapter. No match preserves truthful empty coverage and navigation.
-`read_design_contracts` resolves exact semantic `owner.method` identities or
+`read_design_resources` resolves exact semantic `owner.method` identities or
 registered names and independently scoped contracts through `names` and `scopes`.
 Category browsing cannot acquire schemas; search has no `includeSchemas` option.
-Each declaration carries purpose, category, input and result meaning.
+Selected contracts carry the complete input and result meaning. Search candidates give the purpose, input boundary and route to that contract.
 Capability lookup does not search external subjects, images or source pages.
 Research uses native web research, followed by reference import when needed.
 Unknown subject terms never imply an unavailable drawing capability. Menus omit
@@ -447,7 +447,7 @@ partial and repeated contract reads obey the same admitted catalog owner.
 Use exact names for an action schema fragment, or a qualified native name
 for its wrapper fragment; their field paths are intentionally different.
 Lookup indexes live only for that admitted request registry. Known semantic
-operations are selected together through read_design_contracts.names. Unknown entries preserve other matches; ambiguous native or
+operations are selected together through read_design_resources.names. Unknown entries preserve other matches; ambiguous native or
 action identities return explicit candidates rather than choosing a route.
 Plural lookup does not rescan the catalog or perform a canvas exchange.
 Known operations
@@ -1623,8 +1623,9 @@ nullable values remain valid. Preparation rejection receipts retain the owner's
 specific reason before canvas dispatch. No aliases, guessed intent or silent parameter repair are applied.
 
 The invocation acknowledgement carries status `success`, `failed`, `partial`, or
-`unknown`, independent settlement and bounded issues. Native transport sends this
-as a separate `toolOutcome` text item after owner data and images; it does not
+`unknown`, independent settlement and bounded issues. The shared App tool delivery
+sends this as a separate `toolOutcome` text item after owner data and images for
+all registered model sources; protocol adapters preserve its content. It does not
 inject that field into every owner value. A returned string is not proof of usable output.
 Negative visual judgments and successful requested region captures are usable
 results; image scope is not execution completeness. Canonical status=partial or
@@ -1918,7 +1919,9 @@ Native API lookup can recover complete registered descriptions and schemas when
 native declarations abbreviate them, using the same revision and refresh policy as
 action lookup. Reference imports reuse acquired original bytes within the request.
 Explicit delivery selects images independently of acquisition; repeated selections
-redisplay the cached original without refresh or redownload. Failed sources remain
+redisplay the cached view without refresh or redownload. OpenAI Responses receives a
+maximum 1280-pixel longest-edge overview of an oversized imported public image.
+The App uses the original raster and dimensions for source-space operations. Failed sources remain
 recoverable under their typed owner outcome. Recording-only initial fit runs in the browser independently of
 screenshot capture so a slow capture cannot postpone viewport navigation.
 
@@ -2205,7 +2208,7 @@ repeat/rehydrate, cancellation and stale-content recovery without write replay.
 
 Existing read tools accept fromResult to redisplay exact selected content already
 resolved in this request. read_knowledge uses a previous contextKey and ids;
-read_design_contracts uses a returned resultKey and names. This mode returns actual
+read_design_resources uses a returned resultKey and names. This mode returns actual
 text/contracts, not omission markers, and cannot combine with fresh-query modes
 (rehydrate/reuseFrom or refresh/view/scopes). Normal reads and
 refresh remain available to obtain a different current composition or scope.
@@ -2464,7 +2467,10 @@ and reference dependencies and do not constitute standalone validation schemas.
 Category and lexical discovery return bounded pages with explicit continuation;
 unknown operations return registered candidates, never inferred executable aliases.
 Reference pages retain other linked/structured image candidates alongside the
-representative declaration. Candidate pages do not fetch alternatives or certify
+representative declaration. Successful import returns the selected image, inventory
+count and continuation. Reading that continuation returns at most 16 candidate
+records and matching attempt evidence without redisplaying pixels or downloading
+images. An unimported source has no inventory. Candidate pages do not certify
 subject suitability. Selecting an explicit candidate uses the ordinary immutable
 image acquisition/reuse path. Explicit acquisition of any known gallery candidate
 updates the page's selected asset, including after representative acquisition
@@ -3630,8 +3636,7 @@ outweigh the requested operation through repeated substrings. Examples/default
 values are not capability declarations. Existing request-owned catalog generation
 owns descriptor traversal and corpus reuse; no second registry or cache owner.
 
-All search matches remain metadata, including unique or exact-name matches.
-Returned usage routes select exact read_design_contracts names. Exact reads do not
+An unambiguous identity or leading purpose match delivers ordinary executable arguments when available. Other candidates carry their identity and purpose for exact read_design_resources selection. Exact reads do not
 fall back to lexical search. Short/semantic action names select the primary action;
 qualified native names select native envelopes. Ambiguous native namespaces return
 choices without choosing one. Missing names preserve other matches and candidates.
@@ -3782,16 +3787,13 @@ selection and invalid/stale revisions. No extra preliminary lookup or larger lim
 
 ### Next-part operation selection
 
-The initial provider Main tool scope must include the canonical owner's selection
-conditions before the first scoped query, together with its existing legal choices
-and example. Forward the existing selection verbatim, once; deferred tool schema
-registration is not a substitute. This adds no discovery request and preloads no
-child schema. Bounded scope-error recovery retains legal choices and its executable
-correction example without repeating the complete selection prose. Preserve explicit independent geometry, translated mixed components,
-root/container distinctions and optional-input choices without forcing adoption.
-DoD: inspect the actual native thread/start request and compare selection with the
-owner declaration; execute direct selected examples, preserve bounded delivery
-under unrelated catalog growth, budget failures, partial receipts and no replay.
+The preparation owner publishes its legal choices, selection conditions and executable
+scope example when selected. The initial provider instructions describe discovery and
+direct execution. They do not preload preparation scope for unrelated edits.
+A known scope is usable immediately. Bounded scope-error recovery retains legal
+choices and a correction example. Inspect actual provider publication, read the
+selected owner and execute the returned example. Preserve independent geometry,
+translated components, root/container distinctions, optional inputs and no replay.
 
 The first selection reply and direct selected usage distinguish the draft root from
 its children. Every draft guide already includes group/frame root contracts;
@@ -4098,6 +4100,15 @@ outer envelope must not produce a purported complete recovery invocation.
 Execution failures continue to expose only unfinished work; admission recovery
 never implies that any mutation already ran.
 
+Direct drawing admission delivers the preparation owner's retained draft reference
+to the provider, including when the submission requests explicit result delivery.
+A repair-only contract read accepts the operation without node types. Measured
+vector rings must span positive width and height even when dimensions are omitted.
+Within one geometry rejection, identify the collapsed axes and the authored rings
+that need correction. Repeated placements address their shared source template.
+A rejected repair retains its updated source revision for the next repair in the
+same request. Apply only after the complete corrected source passes admission.
+
 Every public API requires actual-owner semantic evidence through its delivered
 entry, with applicable success, no-op, invalid input/output, cancellation, partial
 result, stale identity and recovery cases. Format-only admission, mocked delegation
@@ -4324,8 +4335,8 @@ A later operation uses `{kind:"named", name:"alias", path:""}` in its arguments
 without model retrieval. Same-call aliases with a producer step compile to step
 bindings. For a decision use `delivery: {fields: {label: {step, path}}}`.
 Omitting step selects the final projected result (the existing receipt on the
-ready canvas route). Read a field of a saved snapshot with no operations and
-`delivery: {fields: {label: {name:"alias", path:"/field"}}}`.
+ready canvas route). Read a previously saved snapshot through
+`read_design_resources({savedFields:{label:{name:"alias",path:"/field"}}})`. Select `view:"shape"` for paths and types. Bind a known value directly in a later operation.
 
 Names survive subsequent requests in the same open App document and
 conversation. The browser owns bounded immutable JSON snapshots.
@@ -4418,8 +4429,8 @@ remove those fields from native discovery while retaining the original scope
 declaration. Invalid scopes still fail; nested direct delivery options still fail
 before writes.
 
-The single `execute_design` host entry, `search_design_tools` and `read_design_contracts` are eager native
-declarations. Domain-specific operations remain deferred; acquiring their contracts
+On the local Codex transport, the single `execute_design` host entry, `search_design_tools` and `read_design_resources` are eager native
+declarations. The separate knowledge namespace publishes discover_knowledge and read_knowledge directly. Other domain operations remain deferred; acquiring their contracts
 does not require searching again for the host entry. Optional authored facts,
 calculations and reference notes are ordinary composable context. They are not
 prerequisites for drawing or verification.
@@ -4624,8 +4635,8 @@ other required arguments; they reuse the same validated examples as purpose menu
 Its hostContract selector references the already available execute_design contract;
 it does not repeat the host input envelope or full host instructions. Native and
 registered tools retain their own invocation parameters. Exact full definitions
-remain available. Exploratory candidate menus omit recipeDependency; exact lookup
-retains authoring metadata. Only a canonical same-owner wrapper already represented
+remain available. Search candidates carry their owner execution route even on partial matches.
+Exact reads return recipeDependency only when includeRecipeDependency is true and a canonical composable wrapper exists. Only a canonical same-owner wrapper already represented
 by an admitted action route is suppressed; foreign same-name tools remain distinct.
 
 The AI chooses the views and canonical data needed for its decision and final
@@ -4681,13 +4692,15 @@ run, and selected delivery must carry every caller-selected image.
 
 Purpose lookup ranks the admitted metadata corpus using purpose and input-field
 applicability. Candidate responses are metadata only, even for one complete match.
-Exact contract acquisition remains read_design_contracts. Search does not execute
+Exact contract acquisition remains read_design_resources. Search does not execute
 or acquire a tool; qualified identity ambiguity is never resolved by relevance.
 
 Applied creation mapping is portable source-key to acknowledged document-ID
 output. createdTargets preserves acknowledged composition order and each keyToId
-map without an input selector. It can be retained in conversation context with
-status delivery, or selected for the model with delivery.fields. Both routes use
+map without an input selector. Successful application saves the array in the App
+conversation. Default provider delivery returns createdElementCount, compositionIds
+and createdTargetsName after acknowledgment; delivery.fields can explicitly select
+the array. Both routes use
 the same validated mapping; no re-preparation or additional query is required.
 Saved metadata describes bounded shape/navigation, not values; derive
 it once on save. Canonical consumers recheck existence and permissions. Neither
@@ -4832,7 +4845,7 @@ they do not borrow an unrelated generic admission receipt as their output contra
 
 Purpose search returns candidate metadata through `search_design_tools`; optional
 category and declared input-field filters refine the same search. Exact contract
-reads use `read_design_contracts` with names and independently keyed scopes. No
+reads use `read_design_resources` with names and independently keyed scopes. No
 search result silently becomes acquired execution usage. Both reads and read-only
 Knowledge can execute as request steps through execute_design. Lifecycle controls
 remain outside composition. Durable recipes cannot retain these request owners.
@@ -4841,7 +4854,7 @@ The mixed-selector public discovery entry is removed without an alias.
 ### Provider instruction and evaluation continuity
 
 Purpose discovery uses `search_design_tools` with `query`; exact contract reads
-use `read_design_contracts` with `names` and optional scoped selection. Provider
+use `read_design_resources` with `names` and optional scoped selection. Provider
 instruction assembly and delivered declarations must agree. Known current IDs
 and contracts require no preliminary read. Type filters match the registered
 metadata identity exactly, including custom types; a zero-match result is legal.
@@ -4910,3 +4923,43 @@ forwarding or alternate dispatch path. The App keeps authored Design translation
 canonical tool outcomes, selected image production, catalog/model/prompt choices,
 endpoint budgets, document scope, failure presentation and evaluation controls.
 Transaction settlement remains the existing App transaction adapter's decision.
+
+### Editable dimensions, local scale and execution routes
+
+The composition update accepts positive local scale factors on Rectangle, Oval,
+Vector, Text and Group. Multiply only the target transform around its local box
+center. Rendering inherits that transform. A child with local width 10 under a
+Group scaled by 2 still has width 10 in the document and spans 20 in workspace coordinates when its other ancestors have unit scale. Undo, redo and document reload use the same pose.
+
+Changing a leaf's dimensions edits its local geometry. Giving a Group a new
+width or height resizes the positions and local dimensions of its contents in
+proportion to the current content bounds. Its scale remains unchanged. A Frame
+or Workspace cannot be the target of a size edit. A Group dimension request
+that would resize a Frame is rejected before mutation. Signed Frame resizing
+applies only to the Frame itself when introduced in a future contract.
+
+The execution route published by tool search and contract lookup identifies
+ready-arguments-only actions when their individual wrapper cannot be composed.
+Pass concrete arguments in an ordinary batch. Named or previous-step inputs,
+step-time selection and individually retained or delivered outputs require a
+composable wrapper. A direct native invocation takes ordinary concrete arguments.
+
+
+### Bulk mutation receipt delivery
+
+Composition insertion, replacement, update and removal, arrangement, prescribed positions and prepared material application keep their complete mutation receipts for Host bindings. When the receipt exceeds one document receipt page, the browser retains the complete value and ordered distinct applied targets for the request. Default model delivery reports settlement, counts, root identity when available, and the first skipped or unavailable target when applicable. Material provenance and storage failure remain distinguishable from mutation success. Read the snapshot with `read_design_context`, `scope: snapshot`, `delivery: receipt` for full details. Small receipts remain inline. An unavailable receipt store must report delivery failure without replaying the mutation.
+
+The same page boundary applies to ordered basic create results and per-target visibility, fill and stroke statuses. Large receipts report counts by outcome and the first issue index. The source result preserves input order, null creation slots and all per-item statuses. Successful direct application of a prepared design reports the root and applied count. Its existing preparation artifact resolves child keys or target sets; internal consumers keep the actual IDs and complete mapping.
+
+Preparation and mechanical review share request-scoped check records. Default delivery includes actionable small findings or a counted sample with a check reference. Exact finding reads select a check revision and can filter by target or kind and page through matches. Partial source review limits returned findings while preserving whole-source admission. Rechecking unchanged evidence can reuse its receipt. Full operation results remain available to bindings and explicit field delivery. A provider rejection preserves settlement, recovery and distinct issues while delivering identical error prose once.
+
+
+### Source recovery in composed admission
+
+Direct and literal composed calls use the registered operation owner's same
+admission recovery for a concrete rejected source. The Host reports the step,
+operation, validation issues and actual settlement. Preparation supplies the
+request-local draft and editable paths. Invalid workflow options remain explicit. A guide for that source prepares only;
+applying requires correcting the workflow options. Recovery cannot apply a partial source or
+retry acknowledged actions. A dynamic binding error without a concrete source
+does not create a retained drawing.

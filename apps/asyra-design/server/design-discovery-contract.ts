@@ -3,7 +3,7 @@ import { operationInputIssue } from '@asyra/ai-agent-runtime/schema'
 
 export const isDiscoveryTool = (name: string) =>
   name === AiDesignToolIds.SEARCH_DESIGN_TOOLS ||
-  name === AiDesignToolIds.READ_DESIGN_CONTRACTS
+  name === AiDesignToolIds.READ_DESIGN_RESOURCES
 
 const scopeSchema = {
   type: 'object',
@@ -40,7 +40,7 @@ const scopeSchema = {
 export const discoveryInputSchema = (name: string, categories: string[]) => ({
   type: 'object',
   additionalProperties: false,
-  ...(name === AiDesignToolIds.READ_DESIGN_CONTRACTS
+  ...(name === AiDesignToolIds.READ_DESIGN_RESOURCES
     ? { required: ['names'] }
     : {}),
   properties:
@@ -73,7 +73,17 @@ export const discoveryInputSchema = (name: string, categories: string[]) => ({
             description:
               'Exact action, semantic operation or namespace-qualified tool identities.'
           },
-          view: { type: 'string', enum: ['usage', 'full'] },
+          view: {
+            type: 'string',
+            enum: ['parameters', 'usage', 'full'],
+            description:
+              'Use parameters for executable arguments. For scoped workflows use the published scopeRead.'
+          },
+          includeRecipeDependency: {
+            type: 'boolean',
+            description:
+              'Include the canonical action wrapper, when available, for saving a recipe.'
+          },
           includeResultSchema: {
             type: 'boolean',
             description:

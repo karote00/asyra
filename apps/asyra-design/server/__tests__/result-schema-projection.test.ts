@@ -87,7 +87,7 @@ const discover = (outputSchema: object) => {
 
   return () =>
     owner.call(
-      'read_design_contracts',
+      'read_design_resources',
       { names: ['numbers.a'], view: 'usage' },
       new AbortController().signal
     )

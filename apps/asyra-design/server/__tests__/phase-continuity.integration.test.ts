@@ -44,12 +44,10 @@ it('exposes saved subtree shape through the existing host read route without dis
 
   try {
     const reply = await host.invoke({
-      name: 'design_operations.execute_design',
+      name: 'design_operations.read_design_resources',
       input: {
-        delivery: {
-          fields: {
-            shape: { name: 'bodySource', path: '/children/0', view: 'shape' }
-          }
+        savedFields: {
+          shape: { name: 'bodySource', path: '/children/0', view: 'shape' }
         }
       }
     })

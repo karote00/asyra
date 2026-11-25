@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest'
-import { createNativeConversations } from '@asyra/ai-agent-runtime/node'
+import { createDefaultAiModelSources } from '../ai-model-sources'
 import { requestConfiguredAiActionBatch } from '../ai-model-provider'
 import {
   createNativeProviderFixture,
@@ -11,10 +11,12 @@ it.skipIf(!nativeProviderExecutable)(
   'continues a normal App conversation without replaying projected history',
   async () => {
     const fixture = await createNativeProviderFixture([])
-    const conversations = createNativeConversations()
+    const sources = createDefaultAiModelSources({
+      continuationDatabase: ':memory:'
+    })
     const options = {
       environment: fixture.environment,
-      conversations,
+      sources,
       signal: AbortSignal.timeout(45000)
     }
     const input = {
@@ -73,7 +75,7 @@ it.skipIf(!nativeProviderExecutable)(
       expect(JSON.stringify(fixture.requests[1].input)).toContain(input.intent)
       expect(JSON.stringify(turns[1])).toContain('new')
     } finally {
-      conversations.dispose()
+      await Promise.all(sources.map((source) => source.dispose?.()))
       await fixture.dispose()
     }
   },

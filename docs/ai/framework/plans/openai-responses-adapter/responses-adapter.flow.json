@@ -1,0 +1,198 @@
+{
+  "schemaVersion": 1,
+  "projectId": "asyra",
+  "flowId": "openai-responses-adapter",
+  "revision": 32,
+  "definition": {
+    "title": "Replaceable model sources and Responses adapter",
+    "purpose": "Keep one App execution pipeline and replace model protocol adapters through explicit source registration.",
+    "nodes": [
+      {
+        "id": "lifetime",
+        "title": "App source and service",
+        "owner": "App source and service",
+        "objective": "App admission and fresh request -> stable developer input or stored response pointer plus new content -> validated Host output checkpoint -> accepted successor; unresolved effects block replay",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [],
+        "criteria": [
+          {
+            "id": "behavior",
+            "title": "Formal regression and direct handoff review",
+            "kind": "manual"
+          }
+        ],
+        "specRefs": [
+          "docs/ai/framework/specs/openai-responses-adapter.md",
+          "docs/ai/apps/asyra-design/specs/local-ai-provider.md"
+        ],
+        "implementationRefs": [
+          "apps/asyra-design/server/design-model-source.ts",
+          "apps/asyra-design/server/action-batch.ts",
+          "apps/asyra-design/server/design-provider-tools.ts",
+          "packages/ai-agent-runtime/src/node/responses-provider.ts",
+          "apps/asyra-design/server/ai-model-sources.ts",
+          "apps/asyra-design/server/responses-checkpoint-store.ts"
+        ],
+        "actions": []
+      },
+      {
+        "id": "observation",
+        "title": "Shared Design invocation owner",
+        "owner": "Shared Design invocation owner",
+        "objective": "Design Responses publication of three available entries -> full Host registry execution -> original reference retained and selected bounded overview delivered with source identity -> one terminal observation; native publication remains source-owned",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [
+          {
+            "flowId": "openai-responses-adapter",
+            "nodeId": "lifetime"
+          }
+        ],
+        "criteria": [
+          {
+            "id": "behavior",
+            "title": "Formal regression and direct handoff review",
+            "kind": "manual"
+          }
+        ],
+        "specRefs": [
+          "docs/ai/framework/specs/openai-responses-adapter.md",
+          "docs/ai/apps/asyra-design/API_SURFACES.md"
+        ],
+        "implementationRefs": [
+          "apps/asyra-design/server/design-provider-tools.ts",
+          "apps/asyra-design/server/local-ai-provider.ts",
+          "apps/asyra-design/server/local-reference-tools.ts",
+          "apps/asyra-design/server/design-ai-request.ts"
+        ],
+        "actions": []
+      },
+      {
+        "id": "routing",
+        "title": "App source registry and browser",
+        "owner": "App source registry and browser",
+        "objective": "Explicit supported source and exact failure code -> same App exchange and runtime failure",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [
+          {
+            "flowId": "openai-responses-adapter",
+            "nodeId": "observation"
+          }
+        ],
+        "criteria": [
+          {
+            "id": "behavior",
+            "title": "Formal regression and direct handoff review",
+            "kind": "manual"
+          }
+        ],
+        "specRefs": [
+          "docs/ai/framework/specs/openai-responses-adapter.md",
+          "docs/ai/apps/asyra-design/specs/local-ai-provider.md"
+        ],
+        "implementationRefs": [
+          "apps/asyra-design/server/ai-model-sources.ts",
+          "apps/asyra-design/src/ai/server-action-batch-provider.ts"
+        ],
+        "actions": []
+      },
+      {
+        "id": "proof",
+        "title": "Runtime and App formal tests",
+        "owner": "Runtime and App formal tests",
+        "objective": "Actual advertised contract -> model input -> canonical owner -> browser receipt -> provider delivery and next turn",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [
+          {
+            "flowId": "openai-responses-adapter",
+            "nodeId": "routing"
+          }
+        ],
+        "criteria": [
+          {
+            "id": "behavior",
+            "title": "Formal regression and direct handoff review",
+            "kind": "manual"
+          }
+        ],
+        "specRefs": [
+          "docs/ai/framework/specs/openai-responses-adapter.md",
+          "docs/ai/apps/asyra-design/specs/local-ai-provider.md"
+        ],
+        "implementationRefs": [
+          "packages/ai-agent-runtime/src/node/__tests__/responses-provider.test.ts",
+          "apps/asyra-design/server/__tests__/responses-handoff.integration.test.ts"
+        ],
+        "actions": []
+      }
+    ],
+    "criteria": [
+      {
+        "id": "integrated",
+        "title": "Native preservation and Responses complete handoff",
+        "kind": "manual"
+      }
+    ]
+  },
+  "current": {
+    "observations": [
+      {
+        "nodeId": "lifetime",
+        "criterionId": "behavior",
+        "kind": "manual",
+        "status": "accepted",
+        "binding": "0a3bbe6ce032aa2bfb01bdc18805ecae9ca213270a9da1e4fb643c98c0341254",
+        "actor": "Codex",
+        "summary": "Responses continuation and App integration tests passed for interleaved conversations, process restart, submitted outputs, failure recovery and protection from duplicate dispatch.",
+        "at": "2026-11-22T12:20:21.598Z"
+      },
+      {
+        "nodeId": "observation",
+        "criterionId": "behavior",
+        "kind": "manual",
+        "status": "accepted",
+        "binding": "7b100f35be65aeaabda2f65c89425ca0a322b7dba9e06b5cb0cab974e2f99a15",
+        "actor": "Codex",
+        "summary": "Provider handoff tests verified three advertised Design entries, Host execution, terminal receipts and bounded reference image delivery. The live Dome run used two references and retained their source images.",
+        "at": "2026-11-22T12:20:21.601Z"
+      },
+      {
+        "nodeId": "routing",
+        "criterionId": "behavior",
+        "kind": "manual",
+        "status": "accepted",
+        "binding": "da89af5b7b145bb91849d0fac13a8d0e9d19028439913d8ab0b9916c57459ece",
+        "actor": "Codex",
+        "summary": "Native and Responses handoff suites passed. The native search tests verified the selected group operation, its input fields, its declared execution route and on-demand usage.",
+        "at": "2026-11-22T12:20:21.602Z"
+      },
+      {
+        "nodeId": "proof",
+        "criterionId": "behavior",
+        "kind": "manual",
+        "status": "accepted",
+        "binding": "178aebdb132d12a7b6d4552e8ab3738bdec086e105fe86073251a6bc44fceb49",
+        "actor": "Codex",
+        "summary": "Runtime, Design server, browser component and Chromium cases passed. The Dome recording independently shows a completed model turn with twelve Responses requests and a saved drawing.",
+        "at": "2026-11-22T12:20:21.604Z"
+      },
+      {
+        "nodeId": "integration",
+        "criterionId": "integrated",
+        "kind": "manual",
+        "status": "accepted",
+        "binding": "628a89767d98b7f5cd3bfe84123432669617d9751ffeb897a95e6d3ffa8d474a",
+        "actor": "Codex",
+        "summary": "Validated 1,102 feature and browser cases across both sources and six TypeScript configurations. The recorded GPT-6.2 Astra drawing completed in four minutes and thirteen seconds.",
+        "at": "2026-11-22T12:20:21.605Z"
+      }
+    ],
+    "notes": [],
+    "progress": [],
+    "sources": [],
+    "warnings": []
+  }
+}

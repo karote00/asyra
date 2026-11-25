@@ -218,6 +218,7 @@ export const projectWorkflowInput = (input: unknown, scope: unknown) => {
     choices.operations.includes(scope.operation)
   const hasInvalidNodeTypes =
     hasSupportedOperation &&
+    !(scope.operation === 'repair' && scope.nodeTypes === undefined) &&
     (choices.nodeTypes.length > 0
       ? !Array.isArray(scope.nodeTypes) ||
         !scope.nodeTypes.length ||
@@ -254,6 +255,14 @@ export const projectWorkflowInput = (input: unknown, scope: unknown) => {
         const values = scope[field]
 
         if (field === 'optionalInputs' && values === undefined) {
+          return false
+        }
+
+        if (
+          field === 'nodeTypes' &&
+          scope.operation === 'repair' &&
+          values === undefined
+        ) {
           return false
         }
 
@@ -470,7 +479,7 @@ export const projectWorkflowInput = (input: unknown, scope: unknown) => {
   exclude(schema, [])
   const repetition = projectRepetition(source, selectedTypes)
 
-  if (source.declaration.nodes !== undefined) {
+  if (source.declaration.nodes !== undefined && selectedTypes.length) {
     replace(source.declaration.nodes, [
       ...source.nodes.flatMap((branch) => {
         const retained = nodeTypes(branch).filter((type) =>
@@ -1145,7 +1154,7 @@ export const workflowQueryGuidance = (name: string, input: unknown) => {
       choices.operations.map((key) => [key, meanings[key]])
     ),
     example: {
-      tool: AiDesignToolIds.READ_DESIGN_CONTRACTS,
+      tool: AiDesignToolIds.READ_DESIGN_RESOURCES,
       arguments: contractReadArguments({
         names: [name],
         view: 'usage',
