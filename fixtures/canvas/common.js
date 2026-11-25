@@ -1,5 +1,5 @@
 import { createDesign } from '@asyra/design'
-import { alignmentTools, bindAlignmentButton } from '@example/alignment-tools'
+import { positionRow } from '@example/position-row'
 
 function host() {
   const container = globalThis.document.createElement('div')
@@ -11,7 +11,7 @@ function host() {
 }
 
 globalThis.ready = (async () => {
-  const options = { hideUI: true, extensions: [alignmentTools()] }
+  const options = { hideUI: true, extensions: [positionRow()] }
   const full = await createDesign(host(), options)
   const rect = full.drawRectangle({ x: 10, y: 10, width: 80, height: 40 })
   const restricted = await createDesign(host(), {
@@ -27,5 +27,5 @@ globalThis.ready = (async () => {
     ]
   })
 
-  Object.assign(globalThis, { full, restricted, rect, bindAlignmentButton })
+  Object.assign(globalThis, { full, restricted, rect })
 })()

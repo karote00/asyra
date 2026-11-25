@@ -1,4 +1,4 @@
-import { alignmentTools } from '@example/alignment-tools'
+import { positionRow } from '@example/position-row'
 import { createDesign, type WorkspaceExtension } from '@asyra/design'
 
 const approval = {
@@ -8,12 +8,12 @@ const approval = {
 
 export async function openBoard(container: HTMLDivElement) {
   const editor = await createDesign(container, {
-    extensions: [approval, alignmentTools()],
+    extensions: [approval, positionRow()],
     storageKey: 'approvals'
   })
 
-  await editor.runAction('alignLeft')
-  await editor.setDisabledFeatures(['alignment', 'approval'])
+  editor.isFeatureEnabled('positionRow')
+  await editor.setDisabledFeatures(['positionRow', 'approval'])
 
   // @ts-expect-error An unregistered command is absent from the combined catalog.
   await editor.runAction('unknownExtensionCommand')

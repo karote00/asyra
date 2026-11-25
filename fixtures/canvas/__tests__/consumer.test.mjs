@@ -2401,139 +2401,103 @@ test('packed Design exposes every common API on two isolated editor sessions', a
   )
 })
 
-test('packed Design selection extension updates only its own control and aligns with one Undo', async () => {
+test('packed Position row updates selected coordinates with one Undo and releases its observers', async () => {
   await withConsumer(
     ['sdk/canvas', 'sdk/design'],
     'common.js',
     async (page) => {
-      await page.evaluate(() => globalThis.ready)
-      const proof = await page.evaluate(async () => {
-        const { full, restricted, rect, bindAlignmentButton } = globalThis
-        const button = globalThis.document.createElement('button')
+      await page.evaluate(async () => {
+        await globalThis.ready
+        const { full, rect, restricted } = globalThis
+        const host = globalThis.document.createElement('section')
 
-        globalThis.document.body.append(button)
-        const keys = []
-        let notifications = 0
-        let writes = 0
-        const state = Object.getOwnPropertyDescriptor(
-          globalThis.HTMLButtonElement.prototype,
-          'disabled'
-        )
+        globalThis.document.body.append(host)
+        const original = full.observe
+        const calls = (globalThis.calls = [])
 
-        Object.defineProperty(button, 'disabled', {
-          get: () => state.get.call(button),
+        full.observe = (key, listener) =>
+          original(key, (value) => {
+            calls.push(key)
+            listener(value)
+          })
+        try {
+          globalThis.release = full.toolGroups.mount('positionRow', host)
+        } finally {
+          full.observe = original
+        }
 
-          set(value) {
-            writes++
-            state.set.call(button, value)
-          }
-        })
-        const stop = bindAlignmentButton(
-          {
-            runAction: (id) => full.runAction(id),
-
-            observe(key, notify) {
-              keys.push(key)
-
-              return full.observe(key, (value) => {
-                notifications++
-                notify(value)
-              })
-            }
-          },
-          button
-        )
-
-        const frame = () =>
-          new Promise((resolve) =>
-            globalThis.requestAnimationFrame(() =>
-              globalThis.requestAnimationFrame(resolve)
-            )
-          )
-
-        const second = full.drawRectangle({
+        globalThis.second = full.drawRectangle({
           x: 140,
           y: 10,
           width: 80,
           height: 40
         })
-
-        full.select([rect, second])
-        await frame()
-        const enabled = !button.disabled
-        const before = [notifications, writes]
-
-        full.common.viewport.panTo(15, 10)
-        full.common.element.changeElementGeometry(second, { height: 52 })
-        const peer = restricted.drawOval({
-          x: 220,
-          y: 0,
-          width: 40,
-          height: 40
-        })
-
-        restricted.select([rect, peer])
-        await frame()
-        const after = [notifications, writes]
-        let blocked = false
-
-        try {
-          await restricted.runAction('alignLeft')
-        } catch (error) {
-          blocked = error.message === 'Disabled Design feature: moveElements'
-        }
-
-        const x = () => full.getElementProperties(second, ['x']).x
-
-        const original = x()
-
-        button.click()
-        await frame()
-        const aligned = x()
-
-        await full.undo()
-        await frame()
-        const undone = x()
-        const peerX = restricted.getElementProperties(peer, ['x']).x
-
-        full.select([rect])
-        await frame()
-        const disabled = button.disabled
-
-        stop()
-        const stopped = [notifications, writes]
-
-        full.select([rect, second])
-        await frame()
-        const final = [notifications, writes]
-
-        await restricted.destroy()
-        await full.destroy()
-
-        return {
-          keys,
-          enabled,
-          before,
-          after,
-          blocked,
-          original,
-          aligned,
-          undone,
-          peerX,
-          disabled,
-          stopped,
-          final
-        }
+        full.select([rect, globalThis.second])
+        restricted.select([rect])
       })
+      const row = page.getByRole('group', { name: 'Position' })
+      const x = row.getByLabel('X', { exact: true })
+      const y = row.getByLabel('Y', { exact: true })
 
-      assert.deepEqual(proof.keys, ['disabledFeatures', 'elementSelection'])
-      assert.ok(proof.enabled && proof.disabled && proof.blocked)
-      assert.deepEqual(proof.after, proof.before)
-      assert.deepEqual(proof.final, proof.stopped)
-      assert.deepEqual(
-        [proof.original, proof.aligned, proof.undone, proof.peerX],
-        [140, 10, 140, 220]
+      await expect(y).toHaveValue('10')
+      await expect(x).toHaveAttribute('placeholder', 'MIX')
+      await page.evaluate(() => {
+        globalThis.calls.length = 0
+        globalThis.full.common.viewport.panTo(15, 10)
+        globalThis.full.common.element.updateElementProperties(
+          [globalThis.second],
+          { height: 55 }
+        )
+        globalThis.restricted.common.element.updateElementProperties(
+          [globalThis.rect],
+          { x: 220 }
+        )
+      })
+      assert.deepEqual(await page.evaluate(() => globalThis.calls), [])
+      await x.fill('invalid')
+      await x.press('Enter')
+      await expect(x).toHaveValue('')
+      await x.fill('-12.5')
+      await x.press('Enter')
+
+      const positions = () =>
+        page.evaluate(() =>
+          globalThis.full
+            .getSelection()
+            .map((id) => globalThis.full.getElementProperties(id, ['x']).x)
+        )
+
+      assert.deepEqual(await positions(), [-12.5, -12.5])
+      await expect(x).toHaveValue('-12.5')
+      await page.evaluate(() => globalThis.full.undo())
+      assert.deepEqual(await positions(), [10, 140])
+      await expect(x).toHaveAttribute('placeholder', 'MIX')
+      await page.evaluate(() => globalThis.full.select([globalThis.rect]))
+      await expect(x).toHaveValue('10')
+      await y.fill('30')
+      await y.press('Enter')
+      assert.equal(
+        await page.evaluate(
+          () => globalThis.full.getElementProperties(globalThis.rect, ['y']).y
+        ),
+        30
       )
+      assert.equal(
+        await page.evaluate(
+          () =>
+            globalThis.restricted.getElementProperties(globalThis.rect, ['x']).x
+        ),
+        220
+      )
+      await page.evaluate(() => globalThis.full.select([]))
+      await expect(x).toBeDisabled()
+      await page.evaluate(() => {
+        globalThis.release()
+        globalThis.calls.length = 0
+        globalThis.full.select([globalThis.rect])
+      })
+      assert.deepEqual(await page.evaluate(() => globalThis.calls), [])
+      await expect(row).toHaveCount(0)
     }
   )
 })
@@ -2545,7 +2509,7 @@ test('packed Design moves extension UI between slots and restores each profile w
     async (page) => {
       await page.evaluate(() => globalThis.ready)
       const frame = page.frameLocator('main iframe')
-      const group = '[data-tool-group="alignment"]'
+      const group = '[data-tool-group="positionRow"]'
 
       const slot = (name) => frame.locator('[data-tool-slot="' + name + '"]')
 
@@ -2553,7 +2517,7 @@ test('packed Design moves extension UI between slots and restores each profile w
 
       await expect(slot('properties.top').locator(group)).toHaveCount(1)
       await expect(
-        frame.getByRole('button', { name: 'Align left', exact: true })
+        slot('properties.top').locator(group).getByLabel('X', { exact: true })
       ).toBeDisabled()
       await action('Select two rectangles').click()
       await page.evaluate(() => {
@@ -2563,7 +2527,7 @@ test('packed Design moves extension UI between slots and restores each profile w
           .contentDocument.querySelector('[data-tool-group]')
       })
       await slot('properties.top')
-        .getByRole('button', { name: 'Move Alignment' })
+        .getByRole('button', { name: 'Move Position' })
         .dragTo(slot('toolbar.top'))
       await expect(slot('toolbar.top').locator(group)).toHaveCount(1)
       assert.ok(
@@ -2573,35 +2537,34 @@ test('packed Design moves extension UI between slots and restores each profile w
             'toolbar.top'
         )
       )
-      await page.getByLabel('Enable alignment tools').uncheck()
+      await page.getByLabel('Enable Position row').uncheck()
       await expect(slot('toolbar.top').locator(group)).toHaveCount(0)
-      await assert.rejects(
-        page.evaluate(() => globalThis.editor.runAction('alignLeft')),
-        /Disabled Design feature: alignLeft/
-      )
       assert.equal(
         await page.evaluate(() =>
-          globalThis.editor.isFeatureEnabled('moveElements')
+          globalThis.editor.isFeatureEnabled('geometry')
         ),
         true
       )
-      await page.getByLabel('Enable alignment tools').check()
+      await page.getByLabel('Enable Position row').check()
       await expect(slot('toolbar.top').locator(group)).toHaveCount(1)
-      await page.getByLabel('Disable movement').check()
-      await expect(
-        slot('toolbar.top').getByRole('button', {
-          name: 'Align left',
-          exact: true
-        })
-      ).toBeDisabled()
+      await page.getByLabel('Disable geometry editing').check()
+      const coordinate = slot('toolbar.top')
+        .locator(group)
+        .getByLabel('X', { exact: true })
+
+      await expect(coordinate).toBeDisabled()
       await assert.rejects(
-        page.evaluate(() => globalThis.editor.runAction('alignLeft')),
-        /Disabled Design feature: moveElements/
+        page.evaluate(() =>
+          globalThis.editor.common.element.updateElementProperties(
+            globalThis.editor.getSelection(),
+            { x: 24 }
+          )
+        ),
+        /Disabled Design feature: geometry/
       )
-      await page.getByLabel('Disable movement').uncheck()
-      await slot('toolbar.top')
-        .getByRole('button', { name: 'Align left', exact: true })
-        .click()
+      await page.getByLabel('Disable geometry editing').uncheck()
+      await coordinate.fill('36')
+      await coordinate.press('Enter')
 
       const positions = () =>
         page.evaluate(() =>
@@ -2611,18 +2574,18 @@ test('packed Design moves extension UI between slots and restores each profile w
             .sort((a, b) => a - b)
         )
 
-      assert.deepEqual(await positions(), [24, 24])
+      assert.deepEqual(await positions(), [36, 36])
       await page.evaluate(() => globalThis.editor.undo())
       assert.deepEqual(await positions(), [24, 150])
       await page.getByLabel('Layout profile').selectOption('Sam')
       await expect(slot('properties.top').locator(group)).toHaveCount(1)
-      await page.getByLabel('Alignment position').selectOption('manual')
+      await page.getByLabel('Position row placement').selectOption('manual')
       await expect(
-        page
-          .locator('#external')
-          .getByRole('button', { name: 'Align left', exact: true })
+        page.locator('#external').getByLabel('X', { exact: true })
       ).toBeEnabled()
-      await page.getByLabel('Alignment position').selectOption('selectionMenu')
+      await page
+        .getByLabel('Position row placement')
+        .selectOption('selectionMenu')
       await expect(slot('selectionMenu').locator(group)).toBeVisible()
       assert.ok(
         await page.evaluate(() => globalThis.original === globalThis.editor)
@@ -2646,9 +2609,9 @@ test('a tool group follows the pointer onto the canvas and host page, restores i
       const frame = page.frameLocator('main iframe')
 
       const grip = (root) =>
-        root.getByRole('button', { name: 'Move Alignment', exact: true })
+        root.getByRole('button', { name: 'Move Position', exact: true })
 
-      const floating = page.locator('[data-tool-group="alignment"]')
+      const floating = page.locator('[data-tool-group="positionRow"]')
       const dock = frame.locator('[data-tool-slot="properties.top"]')
 
       async function drag(handle, x, y, beforeDrop) {
@@ -2685,9 +2648,9 @@ test('a tool group follows the pointer onto the canvas and host page, restores i
       await expect(grip(dock)).toBeVisible()
       await page.getByLabel('Layout profile').selectOption('Alex')
       assert.deepEqual(await position(), outside)
-      await page.getByLabel('Enable alignment tools').uncheck()
+      await page.getByLabel('Enable Position row').uncheck()
       await expect(floating).toHaveCount(0)
-      await page.getByLabel('Enable alignment tools').check()
+      await page.getByLabel('Enable Position row').check()
       assert.deepEqual(await position(), outside)
       await page.setViewportSize({ width: 390, height: 700 })
       const narrow = await floating.boundingBox()

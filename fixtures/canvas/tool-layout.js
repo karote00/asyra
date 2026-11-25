@@ -1,5 +1,5 @@
 import { createDesign } from '@asyra/design'
-import { alignmentTools, mountAlignmentTools } from '@example/alignment-tools'
+import { positionRow } from '@example/position-row'
 
 const { document, localStorage } = globalThis
 
@@ -15,7 +15,7 @@ const read = () => JSON.parse(localStorage.getItem(preferenceKey()) ?? '{}')
 
 globalThis.ready = (async () => {
   const editor = await createDesign(document.querySelector('main'), {
-    extensions: [alignmentTools()],
+    extensions: [positionRow()],
     toolLayout: read(),
 
     onToolLayoutChange(layout) {
@@ -27,11 +27,11 @@ globalThis.ready = (async () => {
   globalThis.editor = editor
 
   function reflect(layout) {
-    placement.value = layout.floating?.alignment
+    placement.value = layout.floating?.positionRow
       ? 'floating'
       : Object.keys(layout).find(
           (slot) =>
-            Array.isArray(layout[slot]) && layout[slot].includes('alignment')
+            Array.isArray(layout[slot]) && layout[slot].includes('positionRow')
         )
   }
 
@@ -39,7 +39,7 @@ globalThis.ready = (async () => {
     editor.toolGroups.setLayout(read())
     reflect(editor.toolGroups.getLayout())
     if (placement.value === 'manual') {
-      mountAlignmentTools(external, editor)
+      editor.toolGroups.mount('positionRow', external)
     }
   }
 
@@ -47,7 +47,7 @@ globalThis.ready = (async () => {
   profile.onchange = restore
   placement.onchange = () => {
     if (placement.value === 'floating') {
-      editor.toolGroups.float('alignment', {
+      editor.toolGroups.float('positionRow', {
         x: globalThis.innerWidth / 3,
         y: globalThis.innerHeight / 3
       })
@@ -56,9 +56,9 @@ globalThis.ready = (async () => {
     }
 
     if (placement.value === 'manual') {
-      mountAlignmentTools(external, editor)
+      editor.toolGroups.mount('positionRow', external)
     } else {
-      editor.toolGroups.move('alignment', placement.value)
+      editor.toolGroups.move('positionRow', placement.value)
     }
   }
 
@@ -66,11 +66,11 @@ globalThis.ready = (async () => {
     const disabled = []
 
     if (field('limited').checked) {
-      disabled.push('moveElements')
+      disabled.push('geometry')
     }
 
     if (!field('entitled').checked) {
-      disabled.push('alignment')
+      disabled.push('positionRow')
     }
 
     return editor.setDisabledFeatures(disabled)

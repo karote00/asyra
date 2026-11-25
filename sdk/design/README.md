@@ -192,15 +192,17 @@ action's ID, fails at startup.
 
 ### Install a tool package
 
-A tool package declares `@asyra/design` as a peer. The alignment example
-exports six actions and a UI group that defaults to the top of the properties
-panel. Install the example tarball alongside the SDK, then import its factory:
+A tool package declares `@asyra/design` as a peer. The Position row example
+shows X and Y for the current selection and edits them through the same
+element commands as the Design inspector. It can also live in a host toolbar
+when the workspace uses `hideUI: true`. Install the example tarball alongside
+the SDK, then import its factory:
 
 ```tsx
-import { alignmentTools } from '@example/alignment-tools'
+import { positionRow } from '@example/position-row'
 import { AsyraDesign } from '@asyra/design/react'
 
-const options = { extensions: [alignmentTools()] }
+const options = { extensions: [positionRow()] }
 
 export function Board() {
   return <AsyraDesign options={options} />
@@ -208,8 +210,8 @@ export function Board() {
 ```
 
 The same options work with `createDesign(container, options)`. To mount the
-controls in a host toolbar, use `alignmentTools({ placement: 'manual' })` and
-call `editor.toolGroups.mount('alignment', toolbarElement)`. Call its returned
+controls in a host toolbar, use `positionRow({ placement: 'manual' })` and
+call `editor.toolGroups.mount('positionRow', toolbarElement)`. Call its returned
 cleanup when the host removes the toolbar. The example package is distributed
 as a local tarball in the repository's packed-consumer fixture.
 

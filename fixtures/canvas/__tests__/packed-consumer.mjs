@@ -17,7 +17,7 @@ export async function withConsumer(
   { development = false } = {}
 ) {
   if (entry === 'common.js' || entry === 'tool-layout.js') {
-    packages = [...packages, 'fixtures/canvas/extensions/alignment-tools']
+    packages = [...packages, 'fixtures/canvas/extensions/position-row']
   }
 
   const scratch = path.join(root, 'tmp/native-canvas')
@@ -37,7 +37,7 @@ export async function withConsumer(
       npm([
         'pack',
         dir,
-        ...(dir.endsWith('/alignment-tools') ? [] : ['--ignore-scripts']),
+        ...(dir.endsWith('/position-row') ? [] : ['--ignore-scripts']),
         '--json'
       ])
     )
@@ -80,8 +80,8 @@ export async function withConsumer(
     Object.keys(installed).filter(Boolean).sort(),
     packages
       .map((dir) => {
-        if (dir === 'fixtures/canvas/extensions/alignment-tools') {
-          return 'node_modules/@example/alignment-tools'
+        if (dir === 'fixtures/canvas/extensions/position-row') {
+          return 'node_modules/@example/position-row'
         }
 
         return dir.startsWith('sdk/')
@@ -140,7 +140,7 @@ export async function withConsumer(
     await cp(path.join(fixture, 'types/design.ts'), path.join(cwd, 'design.ts'))
   }
 
-  if (packages.includes('fixtures/canvas/extensions/alignment-tools')) {
+  if (packages.includes('fixtures/canvas/extensions/position-row')) {
     await cp(
       path.join(fixture, 'types/extensions.ts'),
       path.join(cwd, 'extensions.ts')
