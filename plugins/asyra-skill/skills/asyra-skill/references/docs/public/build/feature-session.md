@@ -190,4 +190,4 @@ and cleanup cases that prove no partial state or active transaction remains.
 ## Next
 
 - [Learn transactions and durability](../learn/transactions-and-durability.md)
-- <a href="https://github.com/karote00/asyra/blob/main/docs/public/reference/packages/feature-system.md" target="_blank" rel="noopener noreferrer">Read the Feature System guide</a>
+- [Read the Feature System guide](../reference/packages/feature-system.md)

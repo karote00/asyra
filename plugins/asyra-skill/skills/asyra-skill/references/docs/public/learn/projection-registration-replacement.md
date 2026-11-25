@@ -83,4 +83,4 @@ the renderer.
 ## Next
 
 - [Customize a render boundary](../build/render-boundary.md)
-- <a href="https://github.com/karote00/asyra/blob/main/docs/public/reference/packages/render-engine.md" target="_blank" rel="noopener noreferrer">Read the Render Engine reference</a>
+- [Read the Render Engine reference](../reference/packages/render-engine.md)

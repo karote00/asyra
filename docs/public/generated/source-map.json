@@ -316,7 +316,7 @@
     },
     {
       "id": "build/ai-actions",
-      "pageSha256": "26f56e906d01caeaf7446a04090675826ffe57ef159a3bb8fdd2a7d9c816dc4e",
+      "pageSha256": "af1464433583ca7b90db7b84785ee4d16097faccebbb81cc7d09e7b0ba999131",
       "sources": [
         {
           "path": "docs/ai/framework/packages/ai-agent-runtime.md",
@@ -694,7 +694,7 @@
     },
     {
       "id": "reference/packages/preset",
-      "pageSha256": "96d66df52c5f73e156dc28a7b7d354769452d56677ea23a34fb9a38796ab24ff",
+      "pageSha256": "cedb22127fec0edb3b9d11ee683796d81c13c19f42d8c10e6f0d0dc66850affd",
       "sources": [
         {
           "path": "docs/ai/framework/packages/preset.md",

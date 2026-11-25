@@ -1,6 +1,6 @@
 ---
 name: asyra-skill
-description: Build or extend an Asyra product, turn a product idea into an Asyra App, assess Asyra adoption or optimization in an existing project, or diagnose Asyra integration and ownership problems. Use for Asyra development and feasibility requests; exclude unrelated development and operating the in-app AI chat.
+description: Build or extend an Asyra product, turn a product idea into an Asyra App, assess Asyra adoption or optimization in an existing project, diagnose Asyra integration and ownership problems, or design an embedded AI assistant with App prompts, registered tools and provider handoffs. Use for Asyra development and feasibility requests; exclude unrelated development and operating the in-app AI chat.
 ---
 
 # Asyra Skill
@@ -95,7 +95,8 @@ supply package names or an architecture design you can establish yourself.
    adoption and cutover rules, and read composition before implementing a chosen
    Asyra slice. Preserve one write authority per concern; verify public package
    dependencies and environment support before proposing a drop-in replacement.
-   Read only the relevant guides:
+   Use the [Framework owner map](#choose-the-framework-owner) for package-level
+   contracts. Read only the relevant guides:
 
    | Need                                          | Guide                                                                                                                                   |
    | --------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
@@ -154,6 +155,32 @@ existing project tests for affected Asyra contracts; add a permanent regression
 only when needed. Report checks actually executed separately from suggested
 checks and host capability limitations.
 
+## Choose the Framework owner
+
+Read the linked package guides for the operation you are implementing. Each guide
+identifies its public entrypoints, prerequisites, failure behavior and cleanup.
+
+| When the product needs to… | Follow the handoff |
+| --- | --- |
+| Install or replace a runtime | [Core](references/docs/public/reference/packages/core.md) coordinates registration, startup and awaited teardown. The optional [Preset](references/docs/public/reference/packages/preset.md) installs selected defaults and a render profile before startup. Check the [runtime boundaries](references/docs/public/learn/runtime-boundaries-roadmap.md) before promising server execution or isolated concurrent runtimes. |
+| Turn a gesture into one undoable edit | [Input System](references/docs/public/reference/packages/input-system.md) normalizes host input. [Feature System](references/docs/public/reference/packages/feature-system.md) resolves priority, sessions and cancellation. The product command writes through Core; [Factory](references/docs/public/reference/packages/factory.md) records the transaction and owns replay. |
+| Model, move or resize an entity | [Scene Tree](references/docs/public/reference/packages/scene-tree.md) owns IDs, parentage and order. [Props Manager](references/docs/public/reference/packages/props-manager.md) owns property values, schemas and shared relations. For official Groups, use the [hierarchy guide](references/docs/public/build/hierarchy-groups.md) and the Preset geometry adapters. Verify local geometry and displayed bounds separately. |
+| Show selection, mode or derived UI | [Selection](references/docs/public/reference/packages/selection.md) owns selected IDs per channel. [System Context](references/docs/public/reference/packages/system-context.md) holds registered runtime properties. [UI Context](references/docs/public/reference/packages/ui-context.md) derives observable values. [Design System](references/docs/public/reference/packages/design-system.md) supplies optional React controls. |
+| Communicate a change or calculate geometry | [Reactive Events](references/docs/public/reference/packages/reactive-events.md) carries typed owner signals. [Utils](references/docs/public/reference/packages/utils.md) supplies shared contracts and geometry helpers. Keep the canonical write in its owner. |
+| Draw, pick or capture a subtree | [Render](references/docs/public/reference/packages/render.md) owns projection, layers and frame scheduling. [Render Engine](references/docs/public/reference/packages/render-engine.md) defines provider capabilities; [Pixi](references/docs/public/reference/packages/render-engine-pixi.md) implements the 2D backend. Check the capability and use Core's capture/query facade. |
+| Load a document or deliver committed changes | [Persistence](references/docs/public/reference/packages/persistence.md) supplies providers and synchronous hooks. Factory publishes completed changes; the App owns storage acknowledgements. Optional [Collaboration](references/docs/public/reference/packages/collaboration.md) transports publications and separate ephemeral awareness. |
+| Execute AI actions or change model source | [AI Agent Runtime](references/docs/public/reference/packages/ai-agent-runtime.md) orchestrates registered actions. Its optional Node adapters bind a model source to the same tool executor. The App supplies permissions, transaction policy, result storage and conversation scope. Use the [action guide](references/docs/public/build/ai-actions.md) to test the canonical effect and continuation independently. |
+
+For an embedded assistant, use [Write the App prompt and tools together](references/docs/public/build/ai-actions.md#write-the-app-prompt-and-tools-together).
+Take one user request through the prompt, current context, tool contract, App
+permission, canonical write and model-visible result. When defining a tool,
+identify the next consumer of its output. Bind known dependent steps at the host;
+return choices to the model or user when judgment is needed. Check correction
+and cross-turn reuse with the same registered executor. For repeated searches,
+large replies or draft resubmissions, use the [Design-derived diagnostic guide](references/docs/public/build/ai-actions.md#diagnose-an-expensive-or-interrupted-ai-task)
+and compare the delivered receipt with the model's next call before proposing
+a change to the prompt or tool.
+
 ## Whole-App Standard
 
 These are Asyra composition boundaries, not a mandate to rewrite an unrelated
@@ -169,7 +196,7 @@ product. Apply only the capabilities selected for the authorized scope.
   consumes the value. Prove canonical reads and notification/render counts, not
   only component splitting. Do not use `React.memo` to conceal broad updates.
 - Keep canonical document data in its Core owners, read-only rows in projections,
-  transient selection/pending/feedback in UI properties, and incomplete input in
+  selection IDs in registered channels, derived selection and feedback in UI properties, and incomplete input in
   local drafts. Controllers coordinate actions and structured outcomes; never
   infer success or history changes from display text, including translations.
 - Undo/Redo performs one supported operation per request. Factory owns stacks

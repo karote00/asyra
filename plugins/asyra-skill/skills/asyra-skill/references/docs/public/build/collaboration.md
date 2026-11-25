@@ -124,9 +124,9 @@ canonical owner state, not merely sent messages or transport logs.
 
 - <a href="https://github.com/karote00/asyra/blob/main/docs/ai/framework/packages/collaboration.md" target="_blank" rel="noopener noreferrer">Collaboration contract</a>
 - <a href="https://github.com/karote00/asyra/blob/main/docs/ai/apps/asyra-design/modules/collaboration-reference.md" target="_blank" rel="noopener noreferrer">Asyra Design reference composition</a>
-- <a href="https://github.com/karote00/asyra/blob/main/docs/public/reference/packages/collaboration.md" target="_blank" rel="noopener noreferrer">Collaboration package guide</a>
+- [Collaboration package guide](../reference/packages/collaboration.md)
 
 ## Next
 
-- <a href="https://github.com/karote00/asyra/blob/main/docs/public/reference/packages/collaboration.md" target="_blank" rel="noopener noreferrer">Read the Collaboration guide</a>
+- [Read the Collaboration guide](../reference/packages/collaboration.md)
 - <a href="https://github.com/karote00/asyra/blob/main/docs/public/cases/asyra-design.md" target="_blank" rel="noopener noreferrer">Study the complete Asyra Design product</a>

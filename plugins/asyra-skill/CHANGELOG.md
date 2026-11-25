@@ -1,5 +1,17 @@
 # Asyra Skill releases
 
+## 0.1.15 - Offline Framework ownership guides
+
+- Route Framework tasks to the public guides for every Framework package,
+  including selection channels, geometry projection, engine capabilities,
+  persistence, collaboration and replaceable AI sources.
+- Add an inventory example for authoring App prompts, tools, optional knowledge
+  and result handoffs with the AI Agent Runtime.
+- Use recorded Design handoffs to diagnose repeated discovery, ID forwarding,
+  oversized inspection, draft resubmission and duplicate review findings.
+- Bundle the official Group and retrieval guides with their prerequisites.
+  Distinguish inherited Group scale from proportional dimension edits.
+
 ## 0.1.14 - Runtime ownership and native conversation guidance candidate
 
 - Synchronize the bundled AI action guide with optional Runtime adapters,

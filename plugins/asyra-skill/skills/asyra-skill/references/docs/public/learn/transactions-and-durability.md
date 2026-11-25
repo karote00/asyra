@@ -25,7 +25,7 @@ already owns the action. Follow
 [Build a transaction-safe Feature session](../build/feature-session.md) for the
 complete start, update, commit, cancellation, rollback, and replay path.
 
-The <a href="https://github.com/karote00/asyra/blob/main/docs/public/reference/packages/factory.md" target="_blank" rel="noopener noreferrer">Factory package guide</a> documents the
+The [Factory package guide](../reference/packages/factory.md) documents the
 transaction owner API for Framework composition. It is not a second product
 recipe to duplicate beside every Feature. Keep event inversion and replay
 registered with the canonical owner that applies the corresponding state.
