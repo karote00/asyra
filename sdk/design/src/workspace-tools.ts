@@ -99,6 +99,7 @@ export interface WorkspaceObservations {
 }
 
 export interface WorkspaceEditingTools {
+  readonly observeKeys: readonly string[]
   getLayers(): {
     workspaceId: string | null
     ids: string[]

@@ -23,7 +23,8 @@ import { resetCollaborationDocument } from './collaboration/lifecycle'
 import type { RenderSession } from './render-app'
 import { deleteElementFeature } from './features/delete-element'
 import { zoomFitFeature } from './features/zoom-fit'
-import { workspaceCommands, observeWorkspace } from './workspace/commands'
+import { createWorkspaceObservations } from './workspace/observations'
+import { workspaceCommands } from './workspace/commands'
 import './index.css'
 import '@asyra/design-system/index.css'
 
@@ -132,7 +133,7 @@ export function mount(options: WorkspaceOptions) {
   let closing: Promise<void> | undefined
 
   return {
-    ready,
+    ready: ready.then(createWorkspaceObservations),
 
     async updateFeatures(ids: readonly string[]) {
       await updateWorkspaceFeatures(ids)
@@ -142,7 +143,6 @@ export function mount(options: WorkspaceOptions) {
 
     common: createCommonSession(lifetime.signal),
     commands: workspaceCommands(options.reopen),
-    observe: observeWorkspace,
 
     getTool() {
       const active = core.getSystemProperty(

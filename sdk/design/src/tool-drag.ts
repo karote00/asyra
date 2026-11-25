@@ -18,14 +18,20 @@ function toolDropTarget(
   y: number,
   source: HTMLElement
 ) {
-  const host = frame.ownerDocument
-  let top = host.elementFromPoint(x, y)
+  // Each document or shadow root reports the element visible in its own tree.
+  const hit = (root: Document | ShadowRoot) =>
+    root.elementsFromPoint(x, y).find((element) => !source.contains(element))
 
-  if (source.contains(top)) {
-    top =
-      host
-        .elementsFromPoint(x, y)
-        .find((element) => !source.contains(element)) ?? null
+  let top = hit(frame.ownerDocument)
+
+  while (top?.shadowRoot) {
+    const inner = hit(top.shadowRoot)
+
+    if (!inner || inner === top) {
+      break
+    }
+
+    top = inner
   }
 
   if (top !== frame) {

@@ -1,29 +1,20 @@
-import { workspaceOnlyTools, workspaceFeatures } from './features.js'
-import type { WorkspaceAction } from './features.js'
+import { openLocalDocument } from './local-document.js'
+import { resolveWorkspaceOptions } from './workspace-options.js'
+import {
+  startWorkspaceFrame,
+  type Session,
+  type Commands
+} from './workspace-frame.js'
 import { createToolGroups } from './tool-groups.js'
-import { createActions } from './actions.js'
-import { assets } from './workspace-assets.js'
 import type {
   DesignEditor,
   WorkspaceOptions,
   WorkspaceTool,
-  WorkspaceTools,
-  WorkspaceEditingTools
+  WorkspaceTools
 } from './index.js'
 type Editor = DesignEditor<string, WorkspaceTool>
-type Commands = Omit<WorkspaceEditingTools, 'observe'>
 type Common = WorkspaceTools['common']
-type Session = Omit<WorkspaceTools, keyof Commands> & {
-  commands: Commands
-  ready: Promise<void>
-  updateFeatures(ids: readonly string[]): Promise<void>
-  destroy(): Promise<void>
-}
 type Observer = (value: unknown) => void
-type RuntimeWindow = Window & {
-  workspaceAssets: typeof assets
-  DesignWorkspaceRuntime: { mount(options: object): Session }
-}
 
 // Late binding keeps retained methods attached to the current editor session.
 function bindMethods<T extends object>(catalog: T, current: () => T): T {
@@ -54,67 +45,6 @@ function bindCommonGroup<K extends keyof Common>(
 }
 
 const occupied = new WeakSet<HTMLElement>()
-const workspaceTools = Object.fromEntries(
-  workspaceOnlyTools.map((id) => [
-    id,
-    {
-      label: id[0].toUpperCase() + id.slice(1),
-
-      run: (tools: WorkspaceTools) => tools.setTool(id)
-    }
-  ])
-)
-const workspaceActions = {
-  group: {
-    label: 'Group',
-
-    run(tools: WorkspaceTools) {
-      tools.group()
-    }
-  },
-  ungroup: {
-    label: 'Ungroup',
-
-    run(tools: WorkspaceTools) {
-      tools.ungroup()
-    }
-  },
-  deleteSelectedElement: {
-    label: 'Delete selection',
-
-    run: (tools: WorkspaceTools) => tools.deleteSelectedElement()
-  },
-  zoomFit: {
-    label: 'Zoom to fit',
-
-    run: (tools: WorkspaceTools) => tools.zoomFit()
-  },
-  reset: {
-    label: 'Reset document',
-
-    run: (tools: WorkspaceTools) => tools.reset()
-  }
-} satisfies Record<
-  WorkspaceAction,
-  { label: string; run(tools: WorkspaceTools): void | Promise<void> }
->
-
-function loadResource(
-  element: HTMLElement,
-  parent: HTMLElement,
-  signal: AbortSignal
-) {
-  return new Promise<void>((resolve, reject) => {
-    signal.throwIfAborted()
-    signal.addEventListener('abort', () => reject(signal.reason), {
-      once: true
-    })
-    element.onload = () => resolve()
-    element.onerror = () =>
-      reject(new Error('Unable to load Design workspace asset'))
-    parent.append(element)
-  })
-}
 
 export async function mountWorkspace(
   host: HTMLElement,
@@ -125,73 +55,25 @@ export async function mountWorkspace(
     throw new Error('Container already has an active Design editor')
   }
 
-  if (
-    options.toolbar !== undefined &&
-    options.toolbar !== false &&
-    !Array.isArray(options.toolbar)
-  ) {
-    throw new TypeError('Expected an ordered toolbar list or false')
-  }
-
+  const { policy, controls, defaultControls, collaboration } =
+    resolveWorkspaceOptions(options)
   const {
-    actions,
     disabled,
     runAction,
     validateDisabled,
     isEnabled,
     runtimePolicy,
     features
-  } = createActions(
-    options,
-    workspaceTools,
-    workspaceFeatures,
-    workspaceActions
-  )
-  const defaultControls = options.toolbar === undefined
-  const ids = defaultControls
-    ? [
-        'undo',
-        'redo',
-        ...(options.extensions ?? []).flatMap((extension) =>
-          extension.ui?.length ? [] : Object.keys(extension.actions ?? {})
-        ),
-        ...Object.keys(options.actions ?? {})
-      ]
-    : (options.toolbar ?? [])
-  const controls =
-    options.hideUI || ids === false
-      ? false
-      : ids.map((id) => {
-          const action = actions.get(id)
-
-          if (!action) {
-            throw new TypeError('Unknown Design action: ' + id)
-          }
-
-          return { id, label: action.label }
-        })
-
-  const collaboration = options.collaboration && {
-    ...options.collaboration,
-    actorId: options.collaboration.actorId ?? globalThis.crypto.randomUUID()
-  }
-
-  if (
-    collaboration &&
-    (!collaboration.fileId?.trim() ||
-      !['ws:', 'wss:'].includes(
-        new globalThis.URL(collaboration.endpoint).protocol
-      ) ||
-      options.document !== undefined)
-  ) {
-    throw new TypeError(
-      'Collaboration requires a file ID, a WebSocket endpoint and a server-owned document'
-    )
-  }
+  } = policy
 
   if (!host.isConnected) {
     throw new Error('Attach the Design workspace container before mounting')
   }
+
+  const { storageKey } = options
+  const localDocument = storageKey
+    ? openLocalDocument(globalThis.localStorage, storageKey)
+    : undefined
 
   let lifetime = new globalThis.AbortController()
 
@@ -199,6 +81,7 @@ export async function mountWorkspace(
 
   signal?.throwIfAborted()
   let frame: HTMLIFrameElement
+  let observeKeys: readonly string[]
   let session: Session | undefined
   let closing: Promise<void> | undefined
   let active = true
@@ -209,7 +92,16 @@ export async function mountWorkspace(
     detach?: () => void
   }>()
   const availabilityListeners = new Set<Observer>()
-  let changes = Promise.resolve()
+  // Feature changes and frame replacements must see each other's completed session.
+  let operations = Promise.resolve()
+
+  function enqueue(operation: () => Promise<void>) {
+    const result = operations.then(operation)
+
+    operations = result.catch(() => undefined)
+
+    return result
+  }
 
   function detachObservers() {
     for (const entry of observations) {
@@ -242,7 +134,22 @@ export async function mountWorkspace(
 
     zoomFit: () => current().zoomFit(),
 
-    reset: () => current().reset(),
+    async reset() {
+      if (!active) {
+        throw new Error('Design workspace is unavailable')
+      }
+
+      if (!isEnabled('reset')) {
+        throw new Error('Disabled Design feature: reset')
+      }
+
+      if (pending) {
+        return pending
+      }
+
+      // Without a session, retry the frame load for the previously admitted reset.
+      return session ? session.reset() : reopen()
+    },
 
     group: () => current().group(),
 
@@ -257,6 +164,12 @@ export async function mountWorkspace(
     redo: () => current().redo(),
 
     save: () => current().save(),
+
+    get observeKeys() {
+      current()
+
+      return observeKeys
+    },
 
     observe(key: string, listener: Observer) {
       if (typeof listener !== 'function') {
@@ -294,7 +207,7 @@ export async function mountWorkspace(
     async setDisabledFeatures(ids) {
       const next = validateDisabled(ids)
 
-      const apply = async () => {
+      return enqueue(async () => {
         const live = current()
 
         if (
@@ -304,24 +217,38 @@ export async function mountWorkspace(
           return
         }
 
-        await live.updateFeatures(runtimePolicy(next))
-        current()
-        disabled.clear()
-        for (const id of next) {
-          disabled.add(id)
+        const previous = new Set(disabled)
+
+        const apply = async (mask: Set<string>) => {
+          await live.updateFeatures(runtimePolicy(mask))
+          current()
+          disabled.clear()
+          for (const id of mask) {
+            disabled.add(id)
+          }
         }
 
-        groups.refresh()
-        for (const notify of availabilityListeners) {
-          notify([...disabled])
+        await apply(next)
+        const listeners = [...availabilityListeners]
+
+        try {
+          groups.refresh()
+        } catch (error) {
+          await apply(previous)
+          groups.refresh()
+          throw error
         }
-      }
 
-      const result = changes.then(apply)
-
-      changes = result.catch(() => undefined)
-
-      return result
+        for (const notify of listeners) {
+          if (availabilityListeners.has(notify)) {
+            try {
+              notify([...disabled])
+            } catch (error) {
+              globalThis.reportError(error)
+            }
+          }
+        }
+      })
     },
 
     async runAction(id) {
@@ -339,7 +266,7 @@ export async function mountWorkspace(
       stop()
       closing ??= (async () => {
         try {
-          await pending?.catch(() => undefined)
+          await operations
           await session?.destroy()
         } finally {
           session = undefined
@@ -367,96 +294,39 @@ export async function mountWorkspace(
     frame.title = 'Design editor'
     frame.style.cssText = 'display:block;border:0;width:100%;height:100%;'
     host.append(frame)
-    const doc = frame.contentDocument
+    session = await startWorkspaceFrame(
+      frame,
+      lifetime,
+      {
+        document: documentData,
+        collaboration,
+        slots: groups.refs,
+        toolbar:
+          controls === false
+            ? false
+            : {
+                includeTools: defaultControls,
+                actions: controls.map(({ id, label }) => ({
+                  id,
+                  label,
 
-    if (!doc) {
-      throw new Error('Design workspace is unavailable')
-    }
+                  run: () => base.runAction(id)
+                }))
+              },
+        disabledFeatures: runtimePolicy(disabled),
+        hideUI: options.hideUI === true,
+        panels: options.hideUI
+          ? { layers: false, properties: false }
+          : options.panels,
 
-    const realm = frame.contentWindow as RuntimeWindow
-
-    realm.workspaceAssets = assets
-    const stylesheet = doc.createElement('link')
-
-    stylesheet.rel = 'stylesheet'
-    const style = Object.entries(assets).find(([name]) => name.endsWith('.css'))
-
-    if (!style) {
-      throw new Error('Design workspace stylesheet is unavailable')
-    }
-
-    stylesheet.href = style[1]
-    const script = doc.createElement('script')
-
-    script.src = assets['workspace.js']
-    await Promise.all([
-      loadResource(stylesheet, doc.head, lifetime.signal),
-      loadResource(script, doc.head, lifetime.signal)
-    ])
-    lifetime.signal.throwIfAborted()
-    session = realm.DesignWorkspaceRuntime.mount({
-      document: documentData,
-      collaboration,
-      slots: groups.refs,
-      toolbar:
-        controls === false
-          ? false
-          : {
-              includeTools: defaultControls,
-              actions: controls.map(({ id, label }) => ({
-                id,
-                label,
-
-                run: () => base.runAction(id)
-              }))
-            },
-      disabledFeatures: runtimePolicy(disabled),
-      hideUI: options.hideUI === true,
-      panels: options.hideUI
-        ? { layers: false, properties: false }
-        : options.panels,
-
-      reopen: () => reopen()
-    })
-
-    const abortMount = () => {
-      void session?.destroy()
-    }
-
-    lifetime.signal.addEventListener('abort', abortMount, { once: true })
-    try {
-      await session.ready
-    } finally {
-      lifetime.signal.removeEventListener('abort', abortMount)
-    }
-
-    let departingDocument: unknown
-
-    if (!collaboration) {
-      realm.addEventListener(
-        'pagehide',
-        () => {
-          if (active && session) {
-            departingDocument = session.save()
-          }
-        },
-        { once: true, signal: lifetime.signal }
-      )
-    }
-
-    frame.addEventListener(
-      'load',
-      () => {
-        // A traditional DOM reparent replaces an iframe document. Reopen the
-        // saved document; native state-preserving moves keep the live session.
-        if (active && frame.contentDocument && frame.contentDocument !== doc) {
-          void reopen(departingDocument).catch((error) =>
-            globalThis.reportError(error)
-          )
-        }
+        reopen: () => reopen()
       },
-      { signal: lifetime.signal }
+      reopen
     )
+    localDocument?.bind(session, lifetime.signal)
+    observeKeys = Object.freeze([
+      ...new Set([...session.observeKeys, 'disabledFeatures'])
+    ])
   }
 
   function reopen(documentToRestore?: unknown) {
@@ -464,27 +334,42 @@ export async function mountWorkspace(
       return pending ?? Promise.resolve()
     }
 
-    pending = (async () => {
+    pending = enqueue(async () => {
+      if (!active) {
+        return
+      }
+
       groups.pause()
       detachObservers()
-      const previous = current()
+      const previous = session
 
       session = undefined
       const data = await documentToRestore
 
       lifetime.abort()
-      await previous.destroy()
+      await previous?.destroy()
       frame.remove()
       if (active) {
         lifetime = new globalThis.AbortController()
-        await start(data)
+        try {
+          await start(data)
+          if (documentToRestore === undefined) {
+            localDocument?.clear()
+          }
+        } catch (error) {
+          lifetime.abort()
+          session = undefined
+          frame.remove()
+          throw error
+        }
+
         for (const entry of observations) {
           entry.detach = current().observe(entry.key, entry.listener)
         }
 
         groups.activate()
       }
-    })().finally(() => {
+    }).finally(() => {
       pending = undefined
     })
 
@@ -492,7 +377,7 @@ export async function mountWorkspace(
   }
 
   try {
-    await start(options.document)
+    await start(localDocument ? localDocument.read() : options.document)
     const common = Object.fromEntries(
       (Object.keys(current().common) as (keyof Common)[]).map((key) =>
         bindCommonGroup(key, () => current().common)

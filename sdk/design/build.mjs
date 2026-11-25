@@ -1,6 +1,6 @@
 import { buildWorkspace } from '@asyra/asyra-design/sdk-build'
 import { execFileSync } from 'node:child_process'
-import { mkdir, mkdtemp, rename, rm, writeFile } from 'node:fs/promises'
+import { cp, mkdir, mkdtemp, rename, rm, writeFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
 import path from 'node:path'
 import process from 'node:process'
@@ -10,6 +10,7 @@ import { build } from 'vite'
 const root = fileURLToPath(new URL('.', import.meta.url))
 const scratch = path.resolve(root, '../../tmp/canvas')
 const src = path.join(root, 'src')
+const inputs = path.join(root, 'build-inputs')
 const tsc = createRequire(import.meta.url).resolve('typescript/bin/tsc')
 
 function compile(project) {
@@ -27,15 +28,20 @@ try {
   compile('tsconfig.workspace.json')
   await buildWorkspace(output, path.join(root, 'build-inputs/workspace.ts'))
   const project = path.join(temp, 'tsconfig.json')
+  const compiled = path.join(temp, 'compiled')
 
   await writeFile(
     project,
     JSON.stringify({
       extends: path.join(root, 'tsconfig.json'),
-      compilerOptions: { rootDirs: [src, output], outDir: output }
+      compilerOptions: { rootDirs: [src, inputs, output], outDir: compiled }
     })
   )
   compile(project)
+  await cp(path.join(compiled, 'src'), output, { recursive: true })
+  for (const name of ['runtime.d.ts', 'canvas-engine.d.ts']) {
+    await cp(path.join(compiled, 'build-inputs', name), path.join(output, name))
+  }
 
   // Each borrowed canvas needs its own framework module state. Evaluate the bundled
   // engine and factory inside createRuntime for each new canvas.
@@ -49,7 +55,7 @@ try {
       target: 'es2022',
       reportCompressedSize: false,
       lib: {
-        entry: path.join(src, 'runtime.ts'),
+        entry: path.join(inputs, 'runtime.ts'),
         name: 'canvasRuntime',
         formats: ['iife']
       },
@@ -64,7 +70,6 @@ try {
       script +
       '\nreturn canvasRuntime.createRuntime()\n}\n'
   )
-  await rm(path.join(output, 'canvas-engine.js'))
   const dist = path.join(root, 'dist')
 
   await rm(dist, { recursive: true, force: true })

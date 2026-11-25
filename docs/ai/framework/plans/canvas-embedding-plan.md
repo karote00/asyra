@@ -105,3 +105,10 @@ publish document mutations. Availability changes update command admission,
 input registrations and visible controls on the live session. The packed
 consumer proves disposal, independent editors, layout restoration and feature
 switching through actual UI and SDK entry points.
+
+The packed React quickstart must automatically save committed edits with a stable local storage key and reopen the board in
+both a default Vite development server and production preview. Replacing the
+document reference or collaboration identity on a declarative host retires
+the old editor before opening its successor. Keep built-in feature IDs
+reserved for their owning commands. If extension UI fails to mount during
+activation, restore the previous policy before allowing a retry.

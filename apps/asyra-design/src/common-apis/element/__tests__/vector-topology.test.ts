@@ -1,5 +1,10 @@
-import { describe, expect, it } from 'vitest'
-import { isVectorTopology } from '../vector-topology'
+import { assert, describe, expect, it } from 'vitest'
+import {
+  appendAnchorPointToTopology,
+  createVectorTopologyFromSinglePoint,
+  isVectorTopology,
+  setAnchorHandleInTopology
+} from '../vector-topology'
 import { scaleVectorTopologyAroundCenter } from '../vector-consistency'
 
 describe('isVectorTopology', () => {
@@ -103,4 +108,35 @@ describe('scaleVectorTopologyAroundCenter', () => {
       'controlA'
     ])
   })
+})
+
+it('reuses segment records while moving a connected handle and detaches them when removing it', () => {
+  const line = appendAnchorPointToTopology(
+    createVectorTopologyFromSinglePoint('a', { x: 10, y: 10 }),
+    'b',
+    { x: 40, y: 60 }
+  )
+  const id = Object.keys(line.segments)[0]
+  const withHandle = setAnchorHandleInTopology(line, 'a', 'out', {
+    x: 20,
+    y: 30
+  })
+  const handleId = withHandle.segments[id].outControlId
+
+  assert.isString(handleId)
+
+  expect(withHandle.points[handleId]).toMatchObject({ x: 20, y: 30 })
+  expect(line.segments[id].outControlId).toBeNull()
+  const moved = setAnchorHandleInTopology(withHandle, 'a', 'out', {
+    x: 22,
+    y: 24
+  })
+
+  expect(moved.segments).toBe(withHandle.segments)
+  expect(moved.points[handleId]).toMatchObject({ x: 22, y: 24 })
+  const removed = setAnchorHandleInTopology(moved, 'a', 'out', null)
+
+  expect(removed.segments[id].outControlId).toBeNull()
+  expect(removed.points[handleId]).toBeUndefined()
+  expect(moved.segments[id].outControlId).toBe(handleId)
 })

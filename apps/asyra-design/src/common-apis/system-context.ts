@@ -136,7 +136,7 @@ export const systemContextApis = {
   /**
    * Get the current system context snapshot
    */
-  getSystemContextSnapshot: () => {
+  getSnapshot: () => {
     return core.getSystemContextSnapshot()
   },
 

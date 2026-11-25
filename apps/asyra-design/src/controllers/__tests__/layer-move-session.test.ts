@@ -25,7 +25,7 @@ vi.mock('@asyra/core', async (importOriginal) => ({
 
 vi.mock('../../common-apis', () => ({
   systemContextApis: {
-    getSystemContextSnapshot: mocks.getSnapshot
+    getSnapshot: mocks.getSnapshot
   }
 }))
 

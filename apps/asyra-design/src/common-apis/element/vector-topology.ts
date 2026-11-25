@@ -714,7 +714,7 @@ export const setAnchorHandleInTopology = (
 ): VectorTopology => {
   const controlId = getControlId(pointId, role)
   let nextPoints = { ...topology.points }
-  const nextSegments: Record<string, VectorSegment> = {}
+  let nextSegments = topology.segments
   const nextControlId = position ? controlId : null
 
   if (position) {
@@ -730,35 +730,20 @@ export const setAnchorHandleInTopology = (
     nextPoints = omitKey(nextPoints, controlId)
   }
 
+  const outgoing = role === VECTOR_TOKENS.CONTROL.ROLE.OUT
+  const field = outgoing ? 'outControlId' : 'inControlId'
+  const endpoint = outgoing ? 'startId' : 'endId'
+
   Object.entries(topology.segments).forEach(([segmentId, segment]) => {
-    if (
-      role === VECTOR_TOKENS.CONTROL.ROLE.OUT &&
-      segment.startId === pointId
-    ) {
-      nextSegments[segmentId] =
-        segment.outControlId === nextControlId
-          ? segment
-          : {
-              ...segment,
-              outControlId: nextControlId
-            }
-
+    if (segment[endpoint] !== pointId || segment[field] === nextControlId) {
       return
     }
 
-    if (role === VECTOR_TOKENS.CONTROL.ROLE.IN && segment.endId === pointId) {
-      nextSegments[segmentId] =
-        segment.inControlId === nextControlId
-          ? segment
-          : {
-              ...segment,
-              inControlId: nextControlId
-            }
-
-      return
+    if (nextSegments === topology.segments) {
+      nextSegments = { ...topology.segments }
     }
 
-    nextSegments[segmentId] = segment
+    nextSegments[segmentId] = { ...segment, [field]: nextControlId }
   })
 
   return {

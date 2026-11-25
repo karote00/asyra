@@ -3,6 +3,10 @@
 Place the editor directly in your page. Install `@asyra/design` and its
 `@asyra/canvas` peer.
 
+```sh
+npm install @asyra/design @asyra/canvas
+```
+
 ### React
 
 ```tsx
@@ -12,6 +16,35 @@ export default function App() {
   return <AsyraDesign />
 }
 ```
+
+### Automatically save your first board
+
+Give each local board a stable key. Draw a rectangle and reload the page.
+The editor restores the drawing from local storage in this browser and origin.
+
+```tsx
+import { AsyraDesign } from '@asyra/design/react'
+
+export default function SavedBoard() {
+  return <AsyraDesign options={{ storageKey: 'my-board' }} />
+}
+```
+
+The same option works with `createDesign(container, { storageKey: 'my-board' })`.
+Committed edits, Undo and Redo are saved automatically. Reset clears the saved
+board. Use separate keys for independent boards. For a shared board, use the
+collaboration service, which owns persistence for all participants.
+
+### Choose an integration
+
+| Product requirement | Starting point | Host responsibility |
+| --- | --- | --- |
+| Embed the Design app's vector, text, layer and appearance tools | React 19 component or the web component below | Size the container and choose a storage key for local autosave |
+| Build branded controls for the full workspace | Pass a container to `createDesign(container, { hideUI: true })` | Call `editor.common` and subscribe to the keys in `editor.observeKeys` |
+| Ship a separately installed tool and its controls | Supply an extension with actions and UI groups | Choose placement and apply each customer's feature availability |
+| Add drawing to an existing HTML canvas | Pass that canvas to `createDesign(canvas)` | Use the lightweight rectangle, selection and history API |
+| Build a product with a new persistent shape schema or pointer tool | Validate one complete tool against the underlying framework | Own the domain schema, input behavior and serialization |
+| Collaborate on a shared document | Configure `collaboration` with a file ID and endpoint | Operate the collaboration and persistence services, authorize access and measure the intended load |
 
 ### JavaScript
 
@@ -95,7 +128,13 @@ const editor = await createDesign(container)
 Set the container height to choose the size. Call `await editor.destroy()` to
 release it. A container gets the full workspace. Passing an existing HTMLCanvasElement
 selects the lightweight Rectangle/Select API and preserves the borrowed canvas
-on disposal.
+on disposal. In TypeScript, a known container such as an `HTMLDivElement`
+exposes the workspace methods. With a general `HTMLElement`, narrow the
+returned editor with `'toolGroups' in editor` before calling workspace methods.
+
+If the host moves during initialization, retry mounting after the move settles.
+If a resource fails to load during a reset, retry `await editor.reset()` on the
+same editor. Feature changes issued during a reset apply to the reopened session.
 
 ## Customize the tools
 
@@ -128,8 +167,10 @@ const editor = await createDesign(container, {
 })
 ```
 
-Each extension receives the same workspace tools. Duplicate action IDs fail
-at startup.
+Each extension receives the same workspace tools. Built-in feature IDs are
+reserved. Use a unique action ID such as `insertBadge` and include that ID in
+the toolbar. Reusing a built-in ID (including `group` or `fills`), or another
+action's ID, fails at startup.
 
 ### Place and move extension UI
 
@@ -165,7 +206,7 @@ const editor = await createDesign(host, {
 })
 ```
 
-An extension can declare a unique feature ID. Pass that ID in `disabledFeatures` to disable all of its actions and unmount its tool groups. Enabling it mounts each group at its saved position. The same option works at creation and during a session. For example, a host can apply a subscription change with `await editor.setDisabledFeatures(paid ? [] : ['navigationTools'])`. This replaces the entire disabled list. Include any other features the host wants to keep disabled. In React, update the option on the existing component:
+An extension can declare a unique feature ID. Pass that ID in `disabledFeatures` to disable all of its actions and unmount its tool groups. Enabling it mounts each group at its saved position. The same option works at creation and during a session. For example, a host can apply a subscription change with `await editor.setDisabledFeatures(paid ? [] : ['navigationTools'])`. If a tool group fails to mount during activation, the promise rejects and the previous feature policy remains active. Fix the mount and retry the same list. This replaces the entire disabled list. Include any other features the host wants to keep disabled. In React, update the option on the existing component:
 
 ```jsx
 <AsyraDesign options={{ extensions: [extension], disabledFeatures: paid ? [] : ['navigationTools'] }} />
@@ -211,10 +252,15 @@ const close = async () => {
 `getLayers()` returns the workspace ID, ordered layer IDs and per-layer data.
 `getElementProperties(id, fields?)` reads computed properties, including
 fill and stroke records with the IDs used for editing. Use `observe(key, fn)`
-for a current value and subsequent updates. Examples include
+for a current value and subsequent updates. Read `editor.observeKeys` for the
+complete read-only list accepted by this workspace. It is built at startup from
+registered sources and refreshed when the session is replaced. Disabling an
+editing command keeps its readable document properties available. Examples include
 `elementDataMap`, `flattenedElementIds`, `elementSelection`, `primaryTool`,
 `hoveredElementId`, `viewportPosition`, `zoom`, `fills`, `strokes` and `collaboration`.
 Observations survive reset, and unsubscribe or destroy releases them.
+For a one-time read of the current interaction state, call
+`editor.common.systemContext.getSnapshot()` on the workspace editor.
 
 Text creation, marquee bounds and path anchors use workspace coordinates.
 `moveElements` takes absolute element positions in their parent.
@@ -231,7 +277,15 @@ provides the tools directly. The caller owns the UI and calls
 
 ## Document and collaboration settings
 
-For a local document, pass a previously saved snapshot as `{ document }`.
+Choose one persistence owner: `storageKey` for browser autosave, `document` for a host-managed snapshot, or `collaboration` for a server-owned document. Omitting all three opens a temporary board. Browser storage errors surface through the browser error handler.
+On the React or web component, a new `options.document` reference opens a
+fresh editor, as does a change to the storage key or collaboration endpoint, file ID or actor
+ID. Save pending edits before switching. Keep the snapshot reference stable
+during unrelated renders. Wait for `design-ready` or read the current
+element's `editor` after readiness before sending commands. A feature-only
+update keeps the live editor. For two empty boards with no snapshot or room
+identity, give the React component a different `key={boardId}`.
+
 For a shared document, supply its service and identity at startup:
 
 ```js
@@ -260,29 +314,41 @@ Workspace actions can use `setTool`, `drawRectangle`, `drawOval`, `select`,
 import { createDesign } from '@asyra/design'
 
 const editor = await createDesign(container, {
-  disabledFeatures: ['pen', 'text'],
+  disabledFeatures: ['text'],
   hideUI: true
 })
 ```
 
 Omit both options for the complete default workspace. The custom element accepts
-the same object through its `options` property before connection. Each editor
-owns its live runtime policy. Call `await editor.setDisabledFeatures(ids)` to replace it. The same document, collaboration connection and editor stay mounted. Subscribe with `editor.observe('disabledFeatures', listener)` to update custom controls. All instances use the same package
-and bundle. Disabled tools disappear from the controls, ignore their gestures
-and shortcuts, and reject explicit SDK requests. Existing document content
-still loads, renders and saves. A custom action receives the same guarded tools.
+the same object through its `options` property before connection.
 
-Read `editor.features` for the IDs this editor accepts in `disabledFeatures`, including registered extensions and actions. This read-only array includes disabled features. Use `editor.isFeatureEnabled(id)` to check the current state. TypeScript users can import the `WorkspaceFeature` type for built-in workspace IDs.
+A disabled feature stays registered and its code stays in the bundle.
+For example, disabling `fills` blocks fill edits in the built-in Inspector
+and through SDK commands called by custom controls.
+Existing fills still render, load and save. A custom Inspector can keep reading
+them through `editor.observe('fills', listener)`.
+
+| Question | Workspace API |
+| --- | --- |
+| Which feature IDs does this editor accept, including disabled IDs and registered extensions? | `editor.features` |
+| Can the user choose the pen tool now? | `editor.isFeatureEnabled('pen')` |
+| Is the pen the active tool? | `editor.getTool() === 'pen'` |
+
+`setDisabledFeatures(ids)` replaces the **entire** disabled list on the mounted
+editor. Keep every restriction that still applies in the next array:
 
 ```js
-import { createDesign } from '@asyra/design'
+// Text editing stays disabled while fill editing is switched off and back on.
+await editor.setDisabledFeatures(['text', 'fills'])
+await editor.setDisabledFeatures(['text'])
 
-const editor = await createDesign(host, { disabledFeatures: ['pen'] })
-const controls = editor.features.map(id => ({
-  id,
-  enabled: editor.isFeatureEnabled(id)
-}))
+// Enable all registered features.
+await editor.setDisabledFeatures([])
 ```
+
+The document and collaboration connection stay open during these changes.
+Custom controls can subscribe with `editor.observe('disabledFeatures', listener)`.
+TypeScript users can import `WorkspaceFeature` for built-in workspace IDs.
 
 The full workspace accepts these feature IDs:
 

@@ -23,7 +23,7 @@ const mocks = vi.hoisted(() => ({
   getMousePosInWorkspace: vi.fn(
     (position: { x: number; y: number }) => position
   ),
-  getSystemContextSnapshot: vi.fn(() => ({
+  getSnapshot: vi.fn(() => ({
     mousePosition: { x: 80, y: 90 }
   })),
   getVectorAnchorPoints: vi.fn(() => [
@@ -120,7 +120,7 @@ vi.mock('../../../common-apis', () => ({
     selectVectorSegments: mocks.selectVectorSegments
   },
   systemContextApis: {
-    getSystemContextSnapshot: mocks.getSystemContextSnapshot,
+    getSnapshot: mocks.getSnapshot,
     setPathEditingVectorId: mocks.setPathEditingVectorId,
     setPathEditingStartNewSubpath: mocks.setPathEditingStartNewSubpath,
     setPathEditingContinuation: mocks.setPathEditingContinuation,
@@ -330,7 +330,7 @@ describe('Pen Tool transient preview cancellation', () => {
       runtimeBefore
     }
 
-    mocks.getSystemContextSnapshot
+    mocks.getSnapshot
       .mockReturnValueOnce({ mousePosition: { x: 80, y: 90 } })
       .mockReturnValueOnce({ mousePosition: { x: 90, y: 100 } })
 

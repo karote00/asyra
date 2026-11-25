@@ -1,11 +1,11 @@
 import { mountWorkspace } from './workspace.js'
-import type { createDesign, WorkspaceOptions } from './index.js'
+import type { DesignEditor, WorkspaceTool, WorkspaceOptions } from './index.js'
 
 export const designTag = 'asyra-design'
 
 export interface DesignElement extends HTMLElement {
   options?: WorkspaceOptions<string>
-  readonly editor: Awaited<ReturnType<typeof createDesign<string>>> | undefined
+  readonly editor: DesignEditor<string, WorkspaceTool> | undefined
 }
 
 declare global {
@@ -73,6 +73,33 @@ if (globalThis.customElements && !globalThis.customElements.get(designTag)) {
       const previous = this.#options
 
       this.#options = value
+      const room = previous?.collaboration
+      const nextRoom = value?.collaboration
+
+      if (
+        previous?.document !== value?.document ||
+        previous?.storageKey !== value?.storageKey ||
+        room?.fileId !== nextRoom?.fileId ||
+        room?.endpoint !== nextRoom?.endpoint ||
+        room?.actorId !== nextRoom?.actorId
+      ) {
+        this.#startup?.abort()
+        const previousEditor = this.#editor
+
+        this.#editor = undefined
+        if (previousEditor) {
+          const closing = previousEditor.destroy()
+
+          this.#work = this.#work.then(() => closing)
+        }
+      }
+
+      if (!this.#editor && this.isConnected) {
+        this.#schedule()
+
+        return
+      }
+
       if (
         this.#editor &&
         previous?.disabledFeatures !== value?.disabledFeatures
@@ -105,49 +132,55 @@ if (globalThis.customElements && !globalThis.customElements.get(designTag)) {
 
     #schedule() {
       this.#work = this.#work
-        .then(async () => {
-          if (!this.isConnected) {
-            const editor = this.#editor
-
-            this.#editor = undefined
-            await editor?.destroy()
-          } else if (!this.#editor) {
-            const startup = new globalThis.AbortController()
-
-            this.#startup = startup
-            try {
-              const initial = this.options ?? {}
-
-              this.#editor = await mountWorkspace(
-                this.#host,
-                initial,
-                startup.signal
-              )
-              if (initial.disabledFeatures !== this.options?.disabledFeatures) {
-                await this.#editor.setDisabledFeatures(
-                  this.options?.disabledFeatures ?? []
-                )
-              }
-            } catch (error) {
-              if (!startup.signal.aborted) {
-                throw error
-              }
-
-              return
-            } finally {
-              this.#startup = undefined
-            }
-
-            if (this.isConnected) {
-              this.dispatchEvent(
-                new globalThis.CustomEvent('design-ready', {
-                  detail: this.#editor
-                })
-              )
-            }
-          }
-        })
+        .then(() => this.#syncConnection())
         .catch((error) => globalThis.reportError(error))
+    }
+
+    async #syncConnection() {
+      if (!this.isConnected) {
+        const editor = this.#editor
+
+        this.#editor = undefined
+        await editor?.destroy()
+
+        return
+      }
+
+      if (this.#editor) {
+        return
+      }
+
+      const startup = new globalThis.AbortController()
+      const initial = this.options ?? {}
+
+      this.#startup = startup
+      try {
+        const editor = await mountWorkspace(this.#host, initial, startup.signal)
+
+        try {
+          if (initial.disabledFeatures !== this.options?.disabledFeatures) {
+            await editor.setDisabledFeatures(
+              this.options?.disabledFeatures ?? []
+            )
+          }
+
+          startup.signal.throwIfAborted()
+        } catch (error) {
+          await editor.destroy()
+          throw error
+        }
+
+        this.#editor = editor
+        this.dispatchEvent(
+          new globalThis.CustomEvent('design-ready', { detail: editor })
+        )
+      } catch (error) {
+        if (!startup.signal.aborted) {
+          throw error
+        }
+      } finally {
+        this.#startup = undefined
+      }
     }
   }
   globalThis.customElements.define(designTag, DesignHost)

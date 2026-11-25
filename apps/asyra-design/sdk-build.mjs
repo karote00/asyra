@@ -72,11 +72,39 @@ export async function buildWorkspace(outDir, entry) {
   }
 
   await writeFile(
+    path.join(outDir, 'workspace-production.js'),
+    'const assets = {\n' +
+      urls.join(',\n') +
+      '\n}\nexport function getAssets() { return assets }\n'
+  )
+
+  // The dev optimizer relocates JS modules. Its stylesheet URL still points
+  // into the installed package, alongside the original script and worker.
+  const stylesheet = result.output.find((asset) =>
+    asset.fileName.endsWith('.css')
+  )
+
+  if (!stylesheet) {
+    throw new Error('Design workspace stylesheet is unavailable')
+  }
+
+  const names = result.output.map((asset) => asset.fileName)
+
+  await writeFile(
+    path.join(outDir, 'workspace-development.js'),
+    `import stylesheet from ${JSON.stringify('./workspace/' + stylesheet.fileName + '?url')}
+export function getAssets(baseURI) {
+  const base = new URL(stylesheet, baseURI)
+  return Object.fromEntries(${JSON.stringify(names)}.map(name => [name, new URL(name, base).href]))
+}
+`
+  )
+  await writeFile(
     path.join(outDir, 'workspace-assets.js'),
-    'export const assets = {\n' + urls.join(',\n') + '\n}\n'
+    "export { getAssets } from '@asyra/design/internal/workspace-assets'\n"
   )
   await writeFile(
     path.join(outDir, 'workspace-assets.d.ts'),
-    'export declare const assets: Readonly<Record<string, string>>\n'
+    'export declare function getAssets(baseURI: string): Readonly<Record<string, string>>\n'
   )
 }

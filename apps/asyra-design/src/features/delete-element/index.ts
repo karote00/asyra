@@ -44,7 +44,7 @@ export const deleteElementFeature = defineFeature(
 
     api: {
       deleteSelectedElement: () =>
-        deleteSelectedElement(systemContextApis.getSystemContextSnapshot())
+        deleteSelectedElement(systemContextApis.getSnapshot())
     },
     execution: deleteSelectedElement
   }

@@ -1,227 +1,15 @@
 import assert from 'node:assert/strict'
-import { execFileSync } from 'node:child_process'
-import { cp, mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises'
+import { readFile } from 'node:fs/promises'
 import path from 'node:path'
-import process from 'node:process'
-import { URL, fileURLToPath } from 'node:url'
 import test from 'node:test'
-import { build, preview } from 'vite'
-import { chromium } from 'playwright'
+import { URL } from 'node:url'
 import { expect } from '@playwright/test'
 import sharp from 'sharp'
 import { commonInventory } from './common-inventory.mjs'
 import { withDocumentServices } from '../services.mjs'
-
-const fixture = fileURLToPath(new URL('../', import.meta.url))
-const root = path.resolve(fixture, '../..')
-
-async function withConsumer(packages, entry, assertions) {
-  const scratch = path.join(root, 'tmp/native-canvas')
-
-  await mkdir(scratch, { recursive: true })
-  const cwd = await mkdtemp(path.join(scratch, 'consumer-'))
-
-  const npm = (args) =>
-    execFileSync('npm', args, {
-      cwd,
-      encoding: 'utf8',
-      env: { ...process.env, npm_config_cache: path.join(scratch, 'npm-cache') }
-    })
-
-  const pack = (dir) => {
-    const [{ filename, files }] = JSON.parse(
-      npm(['pack', dir, '--ignore-scripts', '--json'])
-    )
-
-    if (dir === path.join(root, 'sdk/design')) {
-      const paths = new Set(files.map((file) => file.path))
-
-      for (const entry of ['index', 'element', 'react']) {
-        assert.ok(paths.has('dist/' + entry + '.js'))
-        assert.ok(paths.has('dist/' + entry + '.d.ts'))
-      }
-
-      assert.ok(
-        !paths.has('dist/vue.d.ts') && !paths.has('dist/design-board.vue')
-      )
-    }
-
-    return './' + filename
-  }
-
-  await writeFile(
-    path.join(cwd, 'package.json'),
-    JSON.stringify({ private: true, type: 'module' })
-  )
-  const archives = packages.map((dir) => pack(path.join(root, dir)))
-
-  npm([
-    'install',
-    '--offline',
-    '--ignore-scripts',
-    '--no-audit',
-    '--no-fund',
-    ...archives
-  ])
-  const { packages: installed } = JSON.parse(
-    await readFile(path.join(cwd, 'package-lock.json'), 'utf8')
-  )
-
-  assert.deepEqual(
-    Object.keys(installed).filter(Boolean).sort(),
-    packages
-      .map((dir) =>
-        dir.startsWith('sdk/')
-          ? 'node_modules/@asyra/' + path.basename(dir)
-          : dir
-      )
-      .sort()
-  )
-  const headless = entry === 'headless.js'
-  const layoutDemo = entry === 'tool-layout.js'
-
-  await cp(
-    path.join(
-      fixture,
-      headless || layoutDemo ? entry.replace('.js', '.html') : 'index.html'
-    ),
-    path.join(cwd, 'index.html')
-  )
-  if (headless) {
-    await cp(path.join(fixture, 'headless.css'), path.join(cwd, 'headless.css'))
-  }
-
-  if (entry === 'react.js' || entry === 'common.js' || layoutDemo) {
-    await cp(path.join(fixture, 'examples'), path.join(cwd, 'examples'), {
-      recursive: true
-    })
-  }
-
-  await cp(
-    path.join(fixture, entry),
-    path.join(cwd, headless ? entry : 'main.js')
-  )
-
-  await writeFile(
-    path.join(cwd, 'consumer.ts'),
-    [
-      "import { createCanvas } from '@asyra/canvas'",
-      "export const surface = createCanvas(document.createElement('canvas'))",
-      ...(packages.includes('sdk/design')
-        ? [
-            "import { createDesign, attachDesignTools, type WorkspaceFeature } from '@asyra/design'",
-            "const editor = await createDesign(document.body.appendChild(document.createElement('div')), { toolbar: false, actions: { revert: { label: 'Undo', run: tools => tools.undo() } } })",
-            "await editor.runAction('revert')",
-            'await editor.destroy()',
-            "const extended = await createDesign(document.body, { extensions: [{ actions: { badge: { label: 'Badge', run(tools) { tools.drawOval({ x: 0, y: 0, width: 10, height: 10 }) } } } }], toolbar: ['badge'], disabledFeatures: ['text', 'pen', 'badge'], hideUI: true })",
-            "await extended.runAction('badge')",
-            "const configured: readonly (WorkspaceFeature | 'badge')[] = extended.features",
-            'await extended.setDisabledFeatures(configured)',
-            '// @ts-expect-error An extension action is not a built-in feature.',
-            "const invalidBuiltIn: WorkspaceFeature = 'badge'",
-            "import type { WorkspaceExtension } from '@asyra/design'",
-            "const group: WorkspaceExtension<'arrange'> = { actions: { arrange: { label: 'Arrange', run: () => {} } }, ui: [{ id: 'layout', placement: 'properties.top', mount({container,editor}) { const b = container.ownerDocument.createElement('button'); b.onclick = () => editor.runAction('arrange'); container.append(b); return () => b.remove() } }] }",
-            "const grouped = await createDesign(document.body, { extensions: [group] }); await grouped.setDisabledFeatures(['arrange']); grouped.toolGroups.move('layout','toolbar.top',0)",
-            "const workspace = await createDesign(document.body, { toolbar: ['group', 'ungroup', 'deleteSelectedElement', 'zoomFit', 'reset'] })",
-            'const builtIns: readonly WorkspaceFeature[] = workspace.features',
-            'await extended.setDisabledFeatures(builtIns)',
-            '// @ts-expect-error Feature discovery belongs to each editor.',
-            "type RemovedExport = typeof import('@asyra/design')['workspaceFeatures']",
-            '// @ts-expect-error The feature catalog is read-only.',
-            'workspace.features = []',
-            "await workspace.runAction('zoomFit')",
-            'workspace.deleteSelectedElement()',
-            "const label = workspace.createText('Label', {x:0,y:0,width:50,height:20})",
-            'workspace.setLayerLocked(label, false)',
-            'workspace.common.viewport.getCanvasPositionFromWorkspace({x:1,y:2})',
-            'workspace.common.transaction.runTransaction(() => workspace.common.element.setElementLock(label,true))',
-            "workspace.observe('collaboration', state => state?.sync)",
-            "workspace.updateStroke(label, 'stroke', {width:3, joinType:'round'})",
-            'workspace.getPath(label)?.anchors.forEach(anchor => workspace.moveAnchor(label,anchor.id,anchor))',
-            'await workspace.reset()',
-            'const tools = await attachDesignTools(surface)',
-            "tools.setTool('select')",
-            'await tools.undo()'
-          ]
-        : []),
-      ...(packages.includes('sdk/simulation')
-        ? [
-            "import { attachSimulationTools } from '@asyra/simulation'",
-            'const tools = await attachSimulationTools(surface)',
-            'tools.play(0, 1, seconds => seconds.toFixed(2), () => tools.pause())'
-          ]
-        : [])
-    ].join('\n')
-  )
-  execFileSync(
-    process.execPath,
-    [
-      path.join(root, 'node_modules/typescript/bin/tsc'),
-      '--noEmit',
-      '--strict',
-      '--typeRoots',
-      './node_modules/@types',
-      '--target',
-      'ES2022',
-      '--module',
-      'ESNext',
-      '--moduleResolution',
-      'bundler',
-      'consumer.ts',
-      ...(entry === 'react.js'
-        ? ['--jsx', 'react-jsx', 'examples/DesignBoard.tsx']
-        : [])
-    ],
-    { cwd }
-  )
-  const result = await build({
-    esbuild: { jsx: 'automatic' },
-    root: cwd,
-    configFile: false,
-    logLevel: 'error'
-  })
-
-  for (const chunk of result.output.filter((entry) => entry.type === 'chunk')) {
-    for (const id of chunk.moduleIds) {
-      if (path.isAbsolute(id)) {
-        assert.ok(
-          id.startsWith(cwd + path.sep),
-          'Module escaped the clean consumer: ' + id
-        )
-      }
-    }
-  }
-
-  const server = await preview({
-    root: cwd,
-    configFile: false,
-    preview: { port: 0, host: '127.0.0.1' }
-  })
-  let browser
-
-  try {
-    browser = await chromium.launch({
-      channel:
-        process.env.PLAYWRIGHT_CHANNEL ||
-        (process.env.CI ? 'chrome' : undefined),
-      args: ['--enable-unsafe-swiftshader']
-    })
-    const page = await browser.newPage({
-      viewport: { width: 850, height: 1080 }
-    })
-    const errors = []
-
-    page.on('pageerror', (error) => {
-      errors.push(error.message)
-    })
-    await page.goto(server.resolvedUrls.local[0])
-    await assertions(page, cwd)
-    assert.deepEqual(errors, [])
-  } finally {
-    await browser?.close()
-    await new Promise((resolve) => server.httpServer.close(resolve))
-  }
-}
+import { root, withConsumer } from './packed-consumer.mjs'
+import './workspace-lifecycle.mjs'
+import './feature-parity.mjs'
 
 test('a standalone canvas binding preserves host pixels and owns only mount and disposal', async () => {
   await withConsumer(['sdk/canvas'], 'bare.js', async (page) => {
@@ -1024,7 +812,7 @@ test('packed Design workspace edits with the Design app tools, panels and docume
   )
 })
 
-test('packed Design workspaces use the app collaboration transport and durable document service', async () => {
+async function verifyCollaboration(development) {
   await withConsumer(
     ['sdk/canvas', 'sdk/design'],
     'workspace.js',
@@ -1209,9 +997,16 @@ test('packed Design workspaces use the app collaboration transport and durable d
           }
         }
       )
-    }
+    },
+    { development }
   )
-})
+}
+
+test('packed Design workspaces use the app collaboration transport and durable document service', () =>
+  verifyCollaboration(false))
+
+test('packed Design development server loads the collaboration worker and restores shared documents', () =>
+  verifyCollaboration(true))
 
 test('packed Design actions edit and group through the app with isolated histories', async () => {
   await withConsumer(
@@ -1227,11 +1022,11 @@ test('packed Design actions edit and group through the app with isolated histori
         panel.style.height = '360px'
         globalThis.custom = await globalThis.createDesign(panel, {
           panels: { layers: false, properties: false },
-          toolbar: ['group', 'undo', 'redo'],
+          toolbar: ['insertBadge', 'undo', 'redo'],
           extensions: [
             {
               actions: {
-                group: {
+                insertBadge: {
                   label: 'Insert badge',
 
                   run(tools) {

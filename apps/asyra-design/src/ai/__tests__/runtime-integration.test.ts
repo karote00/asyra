@@ -139,7 +139,7 @@ const prepareCommonApis = () => {
     'shape-1',
     'shape-2'
   ])
-  vi.spyOn(systemContextApis, 'getSystemContextSnapshot').mockReturnValue({
+  vi.spyOn(systemContextApis, 'getSnapshot').mockReturnValue({
     activeElementId: null,
     hoveredElementId: null,
     keyAlt: false,

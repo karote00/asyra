@@ -1,6 +1,6 @@
 import { cloneDeep } from 'lodash'
 import type { MoveHierarchyRequest, PositionData, Rect } from '@asyra/utils'
-import { TextSizing, PresetSystemPropertyKeys } from '@asyra/preset'
+import { TextSizing } from '@asyra/preset'
 import core from '../contexts'
 import { edit, enabled, editable, position, rectangle } from './command-inputs'
 import { appearanceCommands } from './appearance-commands'
@@ -155,39 +155,4 @@ export function workspaceCommands(reopen: () => Promise<void>) {
 
     downloadRecoveryFile: () => downloadRecoveryFile(recovery())
   }
-}
-
-export function observeWorkspace(
-  key: string,
-  listener: (value: unknown) => void
-) {
-  if (key === 'collaboration') {
-    const session = getActiveCollaborationHandle()
-
-    listener(structuredClone(session?.getSessionState() ?? null))
-
-    return (
-      session?.onSessionStateChange((state) =>
-        listener(structuredClone(state))
-      ) ?? (() => undefined)
-    )
-  }
-
-  if (key === PresetSystemPropertyKeys.VIEWPORT_POSITION) {
-    const source = core.getSystemPropertyObservable<PositionData>(key)
-
-    if (!source) {
-      throw new Error('Viewport observation is unavailable')
-    }
-
-    const subscription = source.subscribe((value) => listener({ ...value }))
-
-    return () => subscription.unsubscribe()
-  }
-
-  if (!core.getUIPropertySubject(key)) {
-    throw new TypeError('Unknown workspace observation: ' + key)
-  }
-
-  return core.onUIPropertyChange(key, (value) => listener(cloneDeep(value)))
 }

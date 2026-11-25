@@ -1,7 +1,8 @@
 import core from '../../contexts'
 import type {
   ActiveGradientFillState,
-  GradientHandleState
+  GradientHandleState,
+  GradientStopState
 } from '../../common-apis/system-context'
 import { registerGradientFillHandlesRenderLayer } from '../../render-layers/gradient-fill-handles-render-layer'
 
@@ -22,6 +23,15 @@ export const initGradientFillEditing = () => {
   )
   core.defineSystemProperty<GradientHandleState | null>(
     'selectedGradientHandle',
+    null
+  )
+
+  core.defineSystemProperty<GradientStopState | null>(
+    'hoveredGradientStop',
+    null
+  )
+  core.defineSystemProperty<GradientStopState | null>(
+    'selectedGradientStop',
     null
   )
 

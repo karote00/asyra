@@ -22,6 +22,14 @@
     "./react": {
       "types": "./dist/react.d.ts",
       "default": "./dist/react.js"
+    },
+    "./internal/workspace-assets": {
+      "browser": {
+        "webpack": "./dist/workspace-production.js",
+        "development": "./dist/workspace-development.js",
+        "default": "./dist/workspace-production.js"
+      },
+      "default": "./dist/workspace-production.js"
     }
   },
   "scripts": {

@@ -43,7 +43,7 @@ export function createActions<T extends DesignTools<string> = WorkspaceTools>(
 ) {
   const { actions: custom = {}, extensions = [] } = options
   const actions = new Map<string, Action<T>>(
-    Object.entries({ ...commands, ...extra })
+    Object.entries({ ...commands, ...extra, ...defaults })
   )
 
   const entries = [
@@ -107,6 +107,7 @@ export function createActions<T extends DesignTools<string> = WorkspaceTools>(
   for (const [id, action] of entries) {
     if (
       !id.trim() ||
+      features.includes(id) ||
       actions.has(id) ||
       !action ||
       typeof action.label !== 'string' ||
@@ -119,12 +120,6 @@ export function createActions<T extends DesignTools<string> = WorkspaceTools>(
     }
 
     actions.set(id, action)
-  }
-
-  for (const [id, action] of Object.entries(defaults)) {
-    if (!actions.has(id)) {
-      actions.set(id, action)
-    }
   }
 
   async function runAction(id: string, tools: T) {

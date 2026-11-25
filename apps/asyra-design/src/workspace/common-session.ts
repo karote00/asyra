@@ -1,3 +1,4 @@
+import { cloneDeep } from 'lodash'
 import { common } from './common'
 import { commonPolicy } from './common-policy'
 import { featureEnabled, hasDisabledFeatures } from '../workspace-features'
@@ -121,7 +122,10 @@ export function createCommonSession(signal: AbortSignal) {
     // Transaction callbacks and history groups can deliberately exchange opaque
     // values. Ordinary document reads never hand live mutable records to a host.
     if (result && typeof result === 'object' && !(result instanceof Promise)) {
-      return structuredClone(result)
+      // Hierarchy snapshots can contain reactive records nested inside groups.
+      return group === 'hierarchy' && method === 'getElementDataMap'
+        ? cloneDeep(result)
+        : structuredClone(result)
     }
 
     return result

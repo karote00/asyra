@@ -1006,28 +1006,26 @@ const createVectorPointMutationPatch = (
     previousTopology,
     nextTopology
   )
-  const pointsSet: Record<string, DataTypes> = {}
-
-  Object.entries(nextTopology.points).forEach(([pointId, point]) => {
-    if (!isEqual(previousTopology.points[pointId], point)) {
-      pointsSet[pointId] = point as unknown as DataTypes
-    }
-  })
-
-  const values: Record<string, DataTypes> = {
-    ...geometry,
-    closed: closed ?? isClosedVectorTopology(nextTopology)
-  }
+  const points = createRecordComputedPatch(
+    previousTopology.points,
+    nextTopology.points
+  )
+  const segments =
+    previousTopology.segments === nextTopology.segments
+      ? null
+      : createRecordComputedPatch(
+          previousTopology.segments,
+          nextTopology.segments
+        )
 
   return {
-    values,
+    values: {
+      ...geometry,
+      closed: closed ?? isClosedVectorTopology(nextTopology)
+    },
     records:
-      Object.keys(pointsSet).length > 0
-        ? {
-            points: {
-              set: pointsSet
-            }
-          }
+      points || segments
+        ? { ...(points && { points }), ...(segments && { segments }) }
         : undefined
   }
 }
@@ -1138,9 +1136,24 @@ const getOperationAllowedPointSetIds = (
   nextTopology: VectorTopology
 ) => {
   if (operation.type === 'appendAnchor' || operation.type === 'splitSegment') {
-    return new Set(
+    const allowed = new Set(
       getAddedRecordIds(previousTopology.points, nextTopology.points)
     )
+
+    if (operation.type === 'splitSegment') {
+      // Subdivision shortens the original segment's two control handles.
+      const segment = previousTopology.segments[operation.segmentId]
+
+      if (segment.outControlId) {
+        allowed.add(segment.outControlId)
+      }
+
+      if (segment.inControlId) {
+        allowed.add(segment.inControlId)
+      }
+    }
+
+    return allowed
   }
 
   if (operation.type === 'setAnchorType') {
@@ -1384,7 +1397,7 @@ const commitVectorPointMutation = (
     )
 
     if (
-      pointPatchCount === 0 &&
+      !patch.records &&
       Object.keys(patch.values ?? {}).every((key) => {
         const computed = getVectorComputed(elementId)
 

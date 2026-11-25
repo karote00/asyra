@@ -304,7 +304,7 @@ const setSelectedAnchorPoint = (
 }
 
 const getCurrentMouseWorkspacePos = () => {
-  const snapshot = systemContextApis.getSystemContextSnapshot()
+  const snapshot = systemContextApis.getSnapshot()
 
   return elementApis.getMousePosInWorkspace({
     x: snapshot.mousePosition.x,

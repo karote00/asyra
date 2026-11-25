@@ -1,158 +1,43 @@
-import { canvasFeatures } from './features.js'
-import type {
-  CanvasFeature,
-  DesignTool,
-  HistoryCommand,
-  WorkspaceTool,
-  WorkspaceAction,
-  WorkspaceFeature
+import { createCanvas, type CanvasBinding } from '@asyra/canvas'
+import {
+  canvasFeatures,
+  type CanvasFeature,
+  type DesignTool,
+  type WorkspaceTool
 } from './features.js'
-export type { DesignTool, WorkspaceTool, WorkspaceFeature } from './features.js'
-import { createCanvas } from '@asyra/canvas'
 import { createActions } from './actions.js'
 import { createToolbar } from './toolbar.js'
 import { mountWorkspace } from './workspace.js'
 import { createRuntime } from './runtime.js'
-import type { common } from './common.js'
-import type { CanvasBinding } from '@asyra/canvas'
+import type {
+  DesignTools,
+  DesignEditor,
+  DesignOptions,
+  WorkspaceOptions
+} from './editor-types.js'
 
-import type { WorkspaceEditingTools } from './workspace-tools.js'
+export type { DesignTool, WorkspaceTool, WorkspaceFeature } from './features.js'
+export type * from './editor-types.js'
 export type * from './workspace-tools.js'
 
-export interface Rectangle {
-  x: number
-  y: number
-  width: number
-  height: number
-}
-export interface DesignTools<Tool extends string = DesignTool> {
-  getTool(): Tool | null
-  setTool(tool: Tool): void
-  drawRectangle(rectangle: Rectangle): string
-  getSelection(): readonly string[]
-  undo(): Promise<void>
-  redo(): Promise<void>
-  save(): Promise<unknown>
-}
 interface CanvasOptions {
   document?: unknown
+  /** Features to disable on this canvas. Existing document content remains visible. */
   disabledFeatures?: readonly CanvasFeature[]
 }
-export interface WorkspaceTools
-  extends DesignTools<WorkspaceTool>, WorkspaceEditingTools {
-  readonly common: typeof common
-  drawOval(bounds: Rectangle): string
-  select(ids: readonly string[]): void
-  deleteSelectedElement(): void
-  zoomFit(): void
-  reset(): Promise<void>
-  group(): string | null
-  ungroup(): readonly string[]
-  updateElement(edit: {
-    elementId: string
-    name?: string
-    properties?: Record<string, string | number>
-    fillColor?: string
-    strokeColor?: string
-  }): boolean
-}
-
-type ToolsFor<Tool extends string> = WorkspaceTool extends Tool
-  ? WorkspaceTools
-  : DesignTools<Tool>
-
-export interface DesignAction<Tool extends string = WorkspaceTool> {
-  label: string
-  run(tools: ToolsFor<Tool>): void | Promise<void>
-}
-
-type Command<Tool extends string> =
-  Tool | HistoryCommand | (WorkspaceTool extends Tool ? WorkspaceAction : never)
-
-export interface DesignOptions<
-  Id extends string = never,
-  Tool extends string = WorkspaceTool
-> {
-  hideUI?: boolean
-  disabledFeatures?: readonly (
-    | Command<Tool>
-    | NoInfer<Id>
-    | (WorkspaceTool extends Tool ? WorkspaceFeature : never)
-  )[]
-  actions?: Partial<Record<Id, DesignAction<Tool>>>
-  document?: unknown
-  toolbar?: false | readonly (Command<Tool> | NoInfer<Id>)[]
-}
-
-export type ToolPlacement =
-  'properties.top' | 'toolbar.top' | 'selectionMenu' | 'manual'
-export type ToolLayout = Partial<Record<ToolPlacement, readonly string[]>> & {
-  floating?: Record<string, { x: number; y: number }>
-}
-
-export interface ToolGroup<Id extends string = string> {
-  readonly id: string
-  readonly label?: string
-  readonly placement: ToolPlacement
-  mount(context: {
-    container: HTMLElement
-    editor: DesignEditor<Id, WorkspaceTool>
-  }): undefined | (() => void)
-}
-
-export interface ToolGroups {
-  getLayout(): ToolLayout
-  setLayout(layout: ToolLayout): void
-  move(id: string, placement: ToolPlacement, index?: number): void
-  float(id: string, point: { x: number; y: number }): void
-  mount(id: string, container: HTMLElement): () => void
-}
-
-export interface WorkspaceExtension<Id extends string = string> {
-  readonly id?: Id
-  actions?: Partial<Record<Id, DesignAction>>
-  ui?: readonly ToolGroup<Id>[]
-}
-
-export interface WorkspaceOptions<
-  Id extends string = never
-> extends DesignOptions<Id> {
-  extensions?: readonly WorkspaceExtension<Id>[]
-  toolLayout?: ToolLayout
-  onToolLayoutChange?(layout: ToolLayout): void
-  panels?: { layers?: boolean; properties?: boolean }
-  collaboration?: { fileId: string; endpoint: string; actorId?: string }
-}
-
-export type DesignEditor<
-  Id extends string,
-  Tool extends string
-> = ToolsFor<Tool> &
-  (WorkspaceTool extends Tool
-    ? {
-        readonly toolGroups: ToolGroups
-      }
-    : unknown) & {
-    readonly features: NonNullable<DesignOptions<Id, Tool>['disabledFeatures']>
-    setDisabledFeatures(
-      ids: NonNullable<DesignOptions<Id, Tool>['disabledFeatures']>
-    ): Promise<void>
-    isFeatureEnabled(
-      id: NonNullable<DesignOptions<Id, Tool>['disabledFeatures']>[number]
-    ): boolean
-    runAction(id: Command<Tool> | Id): Promise<void>
-    destroy(): Promise<void>
-  }
 
 export async function attachDesignTools(
   canvas: CanvasBinding,
   options: CanvasOptions = {}
 ): Promise<
   DesignTools & {
+    /** All feature IDs registered with this canvas, including disabled IDs. */
     readonly features: readonly CanvasFeature[]
+    /** Replace the entire disabled list. Pass [] to enable all registered features. */
     setDisabledFeatures(
       ids: NonNullable<CanvasOptions['disabledFeatures']>
     ): Promise<void>
+    /** Whether this canvas currently allows the feature. */
     isFeatureEnabled(
       id: NonNullable<CanvasOptions['disabledFeatures']>[number]
     ): boolean
@@ -185,6 +70,10 @@ function mountTools(
     'disabled' | 'validateDisabled' | 'isEnabled'
   >
 ) {
+  if ('storageKey' in options && options.storageKey !== undefined) {
+    throw new TypeError('Local autosave requires a workspace container')
+  }
+
   return canvas.mount(async (target) => {
     const { destroy, updateAvailability, ...tools } =
       await createRuntime().start(target, {
@@ -211,10 +100,17 @@ export function createDesign<Id extends string = never>(
   target: HTMLCanvasElement,
   options?: DesignOptions<Id, DesignTool>
 ): Promise<DesignEditor<Id, DesignTool>>
-export function createDesign<Id extends string = never>(
-  target: HTMLElement,
+export function createDesign<
+  Id extends string = never,
+  Host extends HTMLElement = HTMLElement
+>(
+  target: Host & { getContext?: never },
   options?: WorkspaceOptions<Id>
-): Promise<DesignEditor<Id, WorkspaceTool>>
+): Promise<
+  HTMLCanvasElement extends Host
+    ? DesignEditor<Id, DesignTool> | DesignEditor<Id, WorkspaceTool>
+    : DesignEditor<Id, WorkspaceTool>
+>
 export async function createDesign(
   host: HTMLElement,
   options: WorkspaceOptions<string> | DesignOptions<string, DesignTool> = {}

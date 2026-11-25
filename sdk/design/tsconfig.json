@@ -6,8 +6,8 @@
     "strict": true,
     "skipLibCheck": true,
     "types": [],
-    "rootDir": "src",
-    "rootDirs": ["src", "dist"],
+    "rootDir": ".",
+    "rootDirs": ["src", "build-inputs", "dist"],
     "outDir": "dist",
     "declaration": true,
     "noEmitOnError": true
