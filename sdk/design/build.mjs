@@ -40,6 +40,7 @@ for (const name of [
   'actions.js',
   'workspace.js',
   'tool-groups.js',
+  'tool-drag.js',
   'element.js',
   'element.d.ts',
   'react.js',

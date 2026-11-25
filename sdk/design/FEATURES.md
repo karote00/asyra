@@ -56,7 +56,7 @@ This inventory follows the maintained app in `apps/asyra-design/src` and the pub
 
 An optional extension ID controls its registered actions and tool groups together. The host can update the disabled feature list on the mounted editor. Re-enabling a group restores its configured placement.
 
-Extension UI mounts on a named workspace outlet or a host element. Each editor
+Extension UI mounts on a named workspace outlet, in a floating toolbar, or on a host element. Dragging a group outside an outlet saves its viewport position in the editor layout. Each editor
 owns its layout, mounts and observers. Host preference callbacks receive only
 ordered group IDs. Applying a feature list updates the live editor. The input
 registry skips disabled features, shared commands check the current policy,

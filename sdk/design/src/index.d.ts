@@ -108,7 +108,9 @@ export type WorkspaceFeature =
 
 export type ToolPlacement =
   'properties.top' | 'toolbar.top' | 'selectionMenu' | 'manual'
-export type ToolLayout = Partial<Record<ToolPlacement, readonly string[]>>
+export type ToolLayout = Partial<Record<ToolPlacement, readonly string[]>> & {
+  floating?: Record<string, { x: number; y: number }>
+}
 
 export interface ToolGroup<Id extends string = string> {
   readonly id: string
@@ -124,6 +126,7 @@ export interface ToolGroups {
   getLayout(): ToolLayout
   setLayout(layout: ToolLayout): void
   move(id: string, placement: ToolPlacement, index?: number): void
+  float(id: string, point: { x: number; y: number }): void
   mount(id: string, container: HTMLElement): () => void
 }
 

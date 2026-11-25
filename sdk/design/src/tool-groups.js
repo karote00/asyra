@@ -1,7 +1,9 @@
+import { trackToolDrag, toolDropTarget } from './tool-drag.js'
+
 const slots = ['toolbar.top', 'properties.top', 'selectionMenu']
 const placements = [...slots, 'manual']
 
-export function createToolGroups(extensions, options, editor) {
+export function createToolGroups(extensions, options, editor, getFrame) {
   const groups = new Map()
   const owners = new Map()
   const outlets = new Map()
@@ -9,7 +11,7 @@ export function createToolGroups(extensions, options, editor) {
   const mounted = new Map()
   let ready = false
   let closed = false
-  let dragging
+  let drag
 
   for (const extension of extensions) {
     for (const group of extension.ui ?? []) {
@@ -35,13 +37,20 @@ export function createToolGroups(extensions, options, editor) {
     const result = Object.fromEntries(placements.map((slot) => [slot, []]))
     const seen = new Set()
 
-    for (const [slot, ids] of Object.entries(input)) {
-      if (!placements.includes(slot) || !Array.isArray(ids)) {
+    const floating = new Map()
+
+    for (const [slot, value] of Object.entries(input)) {
+      const free = slot === 'floating'
+
+      if (
+        free
+          ? !value || typeof value !== 'object' || Array.isArray(value)
+          : !placements.includes(slot) || !Array.isArray(value)
+      ) {
         throw new TypeError('Invalid tool layout')
       }
 
-      for (const id of ids) {
-        // A preference can outlive the extension that supplied a group.
+      for (const id of free ? Object.keys(value) : value) {
         if (!groups.has(id)) {
           continue
         }
@@ -51,8 +60,22 @@ export function createToolGroups(extensions, options, editor) {
         }
 
         seen.add(id)
-        result[slot].push(id)
+        if (free) {
+          const point = value[id]
+
+          if (!Number.isFinite(point?.x) || !Number.isFinite(point?.y)) {
+            throw new TypeError('Expected a floating tool position')
+          }
+
+          floating.set(id, { x: point.x, y: point.y })
+        } else {
+          result[slot].push(id)
+        }
       }
+    }
+
+    if (floating.size) {
+      result.floating = Object.fromEntries(floating)
     }
 
     for (const group of groups.values()) {
@@ -73,6 +96,10 @@ export function createToolGroups(extensions, options, editor) {
       return
     }
 
+    if (drag?.id === id) {
+      drag.cancel()
+    }
+
     mounted.delete(id)
     try {
       entry.unmount?.()
@@ -90,24 +117,18 @@ export function createToolGroups(extensions, options, editor) {
     const node = doc.createElement('div')
 
     node.dataset.toolGroup = id
-    node.style.cssText = 'display:inline-flex;align-items:center;gap:4px'
+    node.style.cssText = 'display:inline-flex;align-items:flex-start;gap:4px'
     if (movable) {
       const grip = doc.createElement('button')
 
       grip.type = 'button'
-      grip.draggable = true
       grip.textContent = '⠿'
-      grip.title = 'Move ' + (group.label ?? id)
-      grip.setAttribute('aria-label', grip.title)
-      grip.style.cursor = 'grab'
-      grip.addEventListener('dragstart', (event) => {
-        dragging = id
-        event.dataTransfer.effectAllowed = 'move'
-        event.dataTransfer.setData('text/plain', id)
-      })
-      grip.addEventListener('dragend', () => {
-        dragging = undefined
-      })
+      grip.setAttribute('aria-label', 'Move ' + (group.label ?? id))
+      grip.title = 'Drag to float or dock ' + (group.label ?? id)
+      grip.style.cssText = 'cursor:grab;touch-action:none;user-select:none'
+      grip.addEventListener('pointerdown', (event) =>
+        startDrag(event, id, node)
+      )
       node.append(grip)
     }
 
@@ -134,15 +155,18 @@ export function createToolGroups(extensions, options, editor) {
       return
     }
 
-    for (const [slot, ids] of Object.entries(layout)) {
+    for (const [slot, value] of Object.entries(layout)) {
+      const free = slot === 'floating'
+      const ids = free ? Object.keys(value) : value
       const movable = slot !== 'manual'
+      const outletHost = free
+        ? getFrame().ownerDocument.body
+        : outlets.get(slot)?.node
 
       let index = 0
 
       for (const id of ids) {
-        const host = movable
-          ? outlets.get(slot)?.node
-          : manual.get(id)?.container
+        const host = movable ? outletHost : manual.get(id)?.container
         const entry = mounted.get(id)
 
         if (
@@ -167,7 +191,26 @@ export function createToolGroups(extensions, options, editor) {
 
         const node = mounted.get(id).node
 
-        if (movable) {
+        if (free) {
+          const { x, y } = value[id]
+
+          Object.assign(node.style, {
+            position: 'fixed',
+            left: '0',
+            top: '0',
+            zIndex: '2147483646',
+            maxWidth: '100vw',
+            maxHeight: '100dvh',
+            overflow: 'auto',
+            background: 'Canvas',
+            color: 'CanvasText',
+            outline: '1px solid currentColor',
+            transform: `translate(clamp(0px, ${x}px, 100vw - 100%), clamp(0px, ${y}px, 100dvh - 100%))`
+          })
+          if (node.parentElement !== host) {
+            host.append(node)
+          }
+        } else if (movable) {
           const before = host.children[index] ?? null
 
           index++
@@ -207,9 +250,9 @@ export function createToolGroups(extensions, options, editor) {
     options.onToolLayoutChange?.(globalThis.structuredClone(layout))
   }
 
-  function move(id, slot, index) {
-    if (!groups.has(id) || !placements.includes(slot)) {
-      throw new TypeError('Unknown tool group or placement')
+  function withoutGroup(id) {
+    if (!groups.has(id)) {
+      throw new TypeError('Unknown tool group')
     }
 
     const next = Object.fromEntries(
@@ -218,6 +261,30 @@ export function createToolGroups(extensions, options, editor) {
         layout[name].filter((item) => item !== id)
       ])
     )
+    const remaining = Object.entries(layout.floating ?? {}).filter(
+      ([key]) => key !== id
+    )
+
+    if (remaining.length) {
+      next.floating = Object.fromEntries(remaining)
+    }
+
+    return next
+  }
+
+  function float(id, point) {
+    const next = withoutGroup(id)
+
+    next.floating = { ...next.floating, [id]: point }
+    setLayout(next)
+  }
+
+  function move(id, slot, index) {
+    if (!placements.includes(slot)) {
+      throw new TypeError('Unknown tool placement')
+    }
+
+    const next = withoutGroup(id)
 
     if (
       index !== undefined &&
@@ -231,49 +298,59 @@ export function createToolGroups(extensions, options, editor) {
   }
 
   function outlet(slot, node) {
-    outlets.get(slot)?.remove()
-    outlets.delete(slot)
     if (node) {
-      const over = (event) => {
-        if (dragging) {
-          event.preventDefault()
-        }
-      }
-
-      const drop = (event) => {
-        if (!dragging) {
-          return
-        }
-
-        event.preventDefault()
-        const id = dragging
-
-        dragging = undefined
-        const target =
-          event.target.closest?.('[data-tool-group]')?.dataset.toolGroup
-
-        if (target === id) {
-          return
-        }
-
-        const index = layout[slot].filter((item) => item !== id).indexOf(target)
-
-        move(id, slot, index < 0 ? undefined : index)
-      }
-
-      node.addEventListener('dragover', over)
-      node.addEventListener('drop', drop)
-      outlets.set(slot, {
-        node,
-
-        remove() {
-          node.removeEventListener('dragover', over)
-          node.removeEventListener('drop', drop)
-        }
-      })
+      outlets.set(slot, { node })
+    } else {
+      outlets.delete(slot)
     }
 
     render()
+  }
+
+  function startDrag(event, id, node) {
+    if (!event.isPrimary || event.button !== 0) {
+      return
+    }
+
+    drag?.cancel()
+    const frame = getFrame()
+    const cancel = trackToolDrag(
+      event,
+      node,
+      groups.get(id).label ?? id,
+      frame,
+      (point, position) => {
+        const target = toolDropTarget(frame, point)
+
+        for (const [slot, { node: outletNode }] of outlets) {
+          if (!target || !outletNode.contains(target)) {
+            continue
+          }
+
+          const targetId =
+            target.closest('[data-tool-group]')?.dataset.toolGroup
+
+          if (targetId === id) {
+            return
+          }
+
+          const index = layout[slot]
+            .filter((item) => item !== id)
+            .indexOf(targetId)
+
+          move(id, slot, index < 0 ? undefined : index)
+
+          return
+        }
+
+        float(id, position)
+      },
+      () => {
+        drag = undefined
+      }
+    )
+
+    drag = { id, cancel }
   }
 
   return {
@@ -287,6 +364,7 @@ export function createToolGroups(extensions, options, editor) {
 
       setLayout,
       move,
+      float,
 
       mount(id, container) {
         if (
@@ -341,6 +419,7 @@ export function createToolGroups(extensions, options, editor) {
 
     pause() {
       ready = false
+      drag?.cancel()
       for (const id of [...mounted.keys()]) {
         detach(id)
       }
@@ -349,9 +428,6 @@ export function createToolGroups(extensions, options, editor) {
     destroy() {
       closed = true
       this.pause()
-      for (const entry of outlets.values()) {
-        entry.remove()
-      }
 
       outlets.clear()
       manual.clear()

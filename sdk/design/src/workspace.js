@@ -277,7 +277,12 @@ export async function mountWorkspace(host, options, signal) {
     }
   }
 
-  const groups = createToolGroups(options.extensions ?? [], options, editor)
+  const groups = createToolGroups(
+    options.extensions ?? [],
+    options,
+    editor,
+    () => frame
+  )
 
   editor.toolGroups = groups.api
   occupied.add(host)

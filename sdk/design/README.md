@@ -187,14 +187,14 @@ An extension can declare a unique feature ID. Pass that ID in `disabledFeatures`
 ```
 
 Built-in outlets are `properties.top`, `toolbar.top` and `selectionMenu`
-(visible with a selection). Drag the grip to another outlet or drop it before
+(visible with a selection). Drag the grip to a free position on the canvas or host page, to another outlet, or drop it before
 another group to reorder. For keyboard controls or product-owned menus call
 `editor.toolGroups.move('navigation', 'toolbar.top', 0)`. To place a group in a
 host element, use `const unmount = editor.toolGroups.mount('navigation', element)`
 and release the mount with `unmount()`. Configure `placement: 'manual'` to wait
 for a host element. Manual mounts also work with `hideUI: true`.
 
-The layout maps outlet names to ordered group IDs. The host chooses the
+Call `editor.toolGroups.float(id, { x, y })` to place a group in host viewport coordinates (CSS pixels from the top left). Floating groups stay within the visible viewport. The layout maps outlet names to ordered group IDs and stores free positions in `layout.floating`, keyed by group ID. The host chooses the
 preference storage and user key. Restore a profile with `setLayout(layout)` or
 restore extension defaults with `setLayout({})`. Moving groups preserves the
 document and editing session. A hidden outlet has no visible controls.

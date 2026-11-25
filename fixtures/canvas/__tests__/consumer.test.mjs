@@ -2721,6 +2721,74 @@ test('packed Design moves extension UI between slots and restores each profile w
   )
 })
 
+test('a tool group follows the pointer onto the canvas and host page, restores its position and docks again', async () => {
+  await withConsumer(
+    ['sdk/canvas', 'sdk/design'],
+    'tool-layout.js',
+    async (page) => {
+      await page.evaluate(() => globalThis.ready)
+      const frame = page.frameLocator('main iframe')
+
+      const grip = (root) =>
+        root.getByRole('button', { name: 'Move Alignment', exact: true })
+
+      const floating = page.locator('[data-tool-group="alignment"]')
+      const dock = frame.locator('[data-tool-slot="properties.top"]')
+
+      async function drag(handle, x, y) {
+        const rect = await handle.boundingBox()
+        const start = { x: rect.x + 4, y: rect.y + 4 }
+
+        await page.mouse.move(start.x, start.y)
+        await page.mouse.down()
+        await page.mouse.move(x, y, { steps: 12 })
+        await page.mouse.up()
+      }
+
+      const surface = await frame.locator('canvas').first().boundingBox()
+      const x = Math.round(surface.x + surface.width / 2)
+      const y = Math.round(surface.y + surface.height / 2)
+
+      await drag(grip(dock), x, y)
+      await expect(floating).toBeVisible({ timeout: 2000 })
+
+      const position = () => grip(floating).boundingBox()
+
+      const at = await position()
+
+      assert.ok(Math.abs(at.x + 4 - x) <= 2 && Math.abs(at.y + 4 - y) <= 2)
+      await drag(grip(floating), 220, 16)
+      const outside = await position()
+
+      assert.ok(Math.abs(outside.x - 216) <= 2 && Math.abs(outside.y - 12) <= 2)
+      await page.reload()
+      await page.evaluate(() => globalThis.ready)
+      assert.deepEqual(await position(), outside)
+      await page.getByLabel('Layout profile').selectOption('Sam')
+      await expect(grip(dock)).toBeVisible()
+      await page.getByLabel('Layout profile').selectOption('Alex')
+      assert.deepEqual(await position(), outside)
+      await page.getByLabel('Enable alignment tools').uncheck()
+      await expect(floating).toHaveCount(0)
+      await page.getByLabel('Enable alignment tools').check()
+      assert.deepEqual(await position(), outside)
+      await page.setViewportSize({ width: 390, height: 700 })
+      const narrow = await floating.boundingBox()
+
+      assert.ok(narrow.x >= 0 && narrow.x + narrow.width <= 391)
+      await page.setViewportSize({ width: 1280, height: 720 })
+      const panel = await dock.boundingBox()
+
+      await drag(grip(floating), panel.x + 10, panel.y + 10)
+      await expect(grip(dock)).toBeVisible()
+      await expect(floating).toHaveCount(0)
+      await page.reload()
+      await page.evaluate(() => globalThis.ready)
+      await expect(grip(dock)).toBeVisible()
+    }
+  )
+})
+
 test('packed Design changes feature admission in place and releases manual extension mounts per editor', async () => {
   await withConsumer(
     ['sdk/canvas', 'sdk/design'],

@@ -30,9 +30,12 @@ globalThis.ready = (async () => {
   globalThis.editor = editor
 
   function reflect(layout) {
-    placement.value = Object.keys(layout).find((slot) =>
-      layout[slot].includes('alignment')
-    )
+    placement.value = layout.floating?.alignment
+      ? 'floating'
+      : Object.keys(layout).find(
+          (slot) =>
+            Array.isArray(layout[slot]) && layout[slot].includes('alignment')
+        )
   }
 
   function restore() {
@@ -46,6 +49,15 @@ globalThis.ready = (async () => {
   restore()
   profile.onchange = restore
   placement.onchange = () => {
+    if (placement.value === 'floating') {
+      editor.toolGroups.float('alignment', {
+        x: globalThis.innerWidth / 3,
+        y: globalThis.innerHeight / 3
+      })
+
+      return
+    }
+
     if (placement.value === 'manual') {
       mountAlignmentTools(external, editor)
     } else {
