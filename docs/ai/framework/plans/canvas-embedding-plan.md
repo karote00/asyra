@@ -95,6 +95,8 @@ and independent documents with two editors in a packed plain JavaScript consumer
 
 ### Extension UI and live availability
 
+The Design SDK exports its built-in workspace feature IDs. Each editor lists its own accepted IDs, including disabled features, host actions and registered extensions, from the same registry used for validation.
+
 The container editor owns stable tool group IDs, manual host mounts and ordered
 placements in the toolbar, properties panel and selection menu. During a drag, each visible panel marks its docking area. The entire Properties panel and toolbar route a drop to their own outlet. A grip released outside a docking area floats its group at the pointer in host viewport coordinates. The same grip can move it again or dock it. The host restores floating coordinates through its existing layout preference. Extensions own
 their DOM and listeners. Moving a group in one document preserves its mount.

@@ -1,3 +1,5 @@
+import { workspaceOnlyTools, workspaceFeatures } from './features.js'
+import type { WorkspaceAction } from './features.js'
 import { createToolGroups } from './tool-groups.js'
 import { createActions } from './actions.js'
 import { assets } from './workspace-assets.js'
@@ -53,7 +55,7 @@ function bindCommonGroup<K extends keyof Common>(
 
 const occupied = new WeakSet<HTMLElement>()
 const workspaceTools = Object.fromEntries(
-  (['oval', 'pen', 'text'] as const).map((id) => [
+  workspaceOnlyTools.map((id) => [
     id,
     {
       label: id[0].toUpperCase() + id.slice(1),
@@ -92,7 +94,10 @@ const workspaceActions = {
 
     run: (tools: WorkspaceTools) => tools.reset()
   }
-}
+} satisfies Record<
+  WorkspaceAction,
+  { label: string; run(tools: WorkspaceTools): void | Promise<void> }
+>
 
 function loadResource(
   element: HTMLElement,
@@ -134,23 +139,12 @@ export async function mountWorkspace(
     runAction,
     validateDisabled,
     isEnabled,
-    runtimePolicy
+    runtimePolicy,
+    listFeatures
   } = createActions(
     options,
     workspaceTools,
-    [
-      'moveElements',
-      'hoverElement',
-      'moveLayerHierarchy',
-      'pan',
-      'zoom',
-      'geometry',
-      'fills',
-      'strokes',
-      'lock',
-      'visibility',
-      'rename'
-    ],
+    workspaceFeatures,
     workspaceActions
   )
   const defaultControls = options.toolbar === undefined
@@ -286,6 +280,8 @@ export async function mountWorkspace(
         observations.delete(entry)
       }
     },
+
+    listFeatures,
 
     isFeatureEnabled(id) {
       current()

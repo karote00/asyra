@@ -272,6 +272,19 @@ and bundle. Disabled tools disappear from the controls, ignore their gestures
 and shortcuts, and reject explicit SDK requests. Existing document content
 still loads, renders and saves. A custom action receives the same guarded tools.
 
+Import `workspaceFeatures` for the built-in IDs. Its values define the TypeScript union `WorkspaceFeature`. Call `editor.listFeatures()` for the IDs that this editor accepts in `disabledFeatures`, including registered extension IDs and action IDs. Both lists are read-only and include currently disabled features. Use `editor.isFeatureEnabled(id)` for availability. An unregistered ID returns false.
+
+```js
+import { createDesign, workspaceFeatures } from '@asyra/design'
+
+const editor = await createDesign(host, { disabledFeatures: ['pen'] })
+const builtInCount = workspaceFeatures.length
+const controls = editor.listFeatures().map(id => ({
+  id,
+  enabled: editor.isFeatureEnabled(id)
+}))
+```
+
 The full workspace accepts these feature IDs:
 
 - Primary tools: `select`, `rectangle`, `oval`, `pen`, `text`. Pen includes

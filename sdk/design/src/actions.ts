@@ -1,3 +1,5 @@
+import { canvasFeatures } from './features.js'
+import type { CanvasFeature } from './features.js'
 import type { DesignTools, WorkspaceTools } from './index.js'
 
 interface Action<T> {
@@ -6,7 +8,7 @@ interface Action<T> {
 }
 type Actions<T> = Record<string, Action<T> | undefined>
 
-const commands: Record<string, Action<DesignTools<string>>> = {
+const commands: Record<CanvasFeature, Action<DesignTools<string>>> = {
   rectangle: {
     label: 'Rectangle',
 
@@ -36,7 +38,7 @@ export function createActions<T extends DesignTools<string> = WorkspaceTools>(
     disabledFeatures?: readonly string[]
   } = {},
   extra: Record<string, Action<T>> = {},
-  features: readonly string[] = [],
+  features: readonly string[] = canvasFeatures,
   defaults: Record<string, Action<T>> = {}
 ) {
   const { actions: custom = {}, extensions = [] } = options
@@ -51,12 +53,11 @@ export function createActions<T extends DesignTools<string> = WorkspaceTools>(
     ...Object.entries(custom)
   ]
 
-  const supported = [
-    ...actions.keys(),
-    ...entries.map(([id]) => id),
-    ...features,
-    ...Object.keys(defaults)
-  ]
+  const supported = new Set<string>(features)
+
+  for (const [id] of entries) {
+    supported.add(id)
+  }
 
   const owners = new Map<string, string>()
 
@@ -68,16 +69,18 @@ export function createActions<T extends DesignTools<string> = WorkspaceTools>(
     if (
       typeof extension.id !== 'string' ||
       !extension.id.trim() ||
-      supported.includes(extension.id)
+      supported.has(extension.id)
     ) {
       throw new TypeError('Expected a unique extension ID')
     }
 
-    supported.push(extension.id)
+    supported.add(extension.id)
     for (const id of Object.keys(extension.actions ?? {})) {
       owners.set(id, extension.id)
     }
   }
+
+  const featureIds = Object.freeze([...supported])
 
   const validateDisabled = (ids?: readonly string[]) =>
     disabledActions(ids, supported)
@@ -87,7 +90,11 @@ export function createActions<T extends DesignTools<string> = WorkspaceTools>(
   const isEnabled = (id: string, mask = disabled) => {
     const owner = owners.get(id)
 
-    return !mask.has(id) && (owner === undefined || !mask.has(owner))
+    return (
+      supported.has(id) &&
+      !mask.has(id) &&
+      (owner === undefined || !mask.has(owner))
+    )
   }
 
   function runtimePolicy(mask: Set<string>) {
@@ -138,6 +145,9 @@ export function createActions<T extends DesignTools<string> = WorkspaceTools>(
 
   return {
     actions,
+
+    listFeatures: () => featureIds,
+
     disabled,
     runAction,
     validateDisabled,
@@ -148,16 +158,14 @@ export function createActions<T extends DesignTools<string> = WorkspaceTools>(
 
 function disabledActions(
   ids: readonly string[] = [],
-  supported: readonly string[]
+  supported: ReadonlySet<string>
 ) {
   if (!Array.isArray(ids)) {
     throw new TypeError('Expected a disabledFeatures list')
   }
 
-  const available = new Set(supported)
-
   for (const id of ids) {
-    if (!available.has(id)) {
+    if (!supported.has(id)) {
       throw new TypeError('Unknown Design feature: ' + id)
     }
   }

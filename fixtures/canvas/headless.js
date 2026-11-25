@@ -7,42 +7,6 @@ const field = (id) => document.getElementById(id)
 const host = field('host')
 const controls = document.querySelector('main')
 const flags = field('flags')
-const features = [
-  'text',
-  'pen',
-  'fills',
-  'strokes',
-  'rename',
-  'moveLayerHierarchy',
-  'lock',
-  'visibility',
-  'rectangle',
-  'oval',
-  'select',
-  'moveElements',
-  'hoverElement',
-  'geometry',
-  'group',
-  'ungroup',
-  'deleteSelectedElement',
-  'undo',
-  'redo',
-  'pan',
-  'zoom',
-  'zoomFit',
-  'reset'
-]
-
-for (const feature of features) {
-  const label = document.createElement('label')
-  const checkbox = document.createElement('input')
-
-  checkbox.type = 'checkbox'
-  checkbox.value = feature
-  label.append(checkbox, feature)
-  flags.append(label)
-}
-
 let editor
 let disabled = new Set()
 let target = ''
@@ -179,6 +143,16 @@ function refreshFromCanvas() {
 async function mount() {
   editor = await createDesign(host, { hideUI: true })
   globalThis.editor = editor
+  for (const feature of editor.listFeatures()) {
+    const label = document.createElement('label')
+    const checkbox = document.createElement('input')
+
+    checkbox.type = 'checkbox'
+    checkbox.value = feature
+    label.append(checkbox, feature)
+    flags.append(label)
+  }
+
   editor.observe('elementDataMap', refreshFromCanvas)
   editor.observe('flattenedElementIds', refreshFromCanvas)
   editor.observe('elementSelection', (ids) => {

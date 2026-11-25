@@ -109,12 +109,18 @@ async function withConsumer(packages, entry, assertions) {
       "export const surface = createCanvas(document.createElement('canvas'))",
       ...(packages.includes('sdk/design')
         ? [
-            "import { createDesign, attachDesignTools } from '@asyra/design'",
+            "import { createDesign, attachDesignTools, workspaceFeatures, type WorkspaceFeature } from '@asyra/design'",
             "const editor = await createDesign(document.body.appendChild(document.createElement('div')), { toolbar: false, actions: { revert: { label: 'Undo', run: tools => tools.undo() } } })",
             "await editor.runAction('revert')",
             'await editor.destroy()',
             "const extended = await createDesign(document.body, { extensions: [{ actions: { badge: { label: 'Badge', run(tools) { tools.drawOval({ x: 0, y: 0, width: 10, height: 10 }) } } } }], toolbar: ['badge'], disabledFeatures: ['text', 'pen', 'badge'], hideUI: true })",
             "await extended.runAction('badge')",
+            'const builtIns: readonly WorkspaceFeature[] = workspaceFeatures',
+            "const configured: readonly (WorkspaceFeature | 'badge')[] = extended.listFeatures()",
+            'await extended.setDisabledFeatures(configured)',
+            'await extended.setDisabledFeatures(builtIns)',
+            '// @ts-expect-error An extension action is not a built-in feature.',
+            "const invalidBuiltIn: WorkspaceFeature = 'badge'",
             "import type { WorkspaceExtension } from '@asyra/design'",
             "const group: WorkspaceExtension<'arrange'> = { actions: { arrange: { label: 'Arrange', run: () => {} } }, ui: [{ id: 'layout', placement: 'properties.top', mount({container,editor}) { const b = container.ownerDocument.createElement('button'); b.onclick = () => editor.runAction('arrange'); container.append(b); return () => b.remove() } }] }",
             "const grouped = await createDesign(document.body, { extensions: [group] }); await grouped.setDisabledFeatures(['arrange']); grouped.toolGroups.move('layout','toolbar.top',0)",
@@ -676,6 +682,10 @@ test('opt-in design React component mounts and releases a packed editor', async 
       const workspace = host.frameLocator('iframe')
 
       await workspace.getByTestId('tool-rectangle').click()
+      assert.equal(
+        await host.evaluate((el) => el.editor.listFeatures().includes('pen')),
+        true
+      )
       const canvas = workspace.locator('canvas')
 
       assert.equal(await canvas.count(), 1)
@@ -1649,6 +1659,91 @@ test('packed Design disabled features guard gestures, shortcuts and API while sa
   )
 })
 
+test('packed Design lists the exact features accepted by each editor', async () => {
+  await withConsumer(
+    ['sdk/canvas', 'sdk/design'],
+    'workspace.js',
+    async (page) => {
+      await page.evaluate(() => globalThis.ready)
+      const proof = await page.evaluate(async () => {
+        const { createDesign, document, editor, workspaceFeatures } = globalThis
+        const target = document.body.appendChild(
+          document.createElement('aside')
+        )
+        const action = {
+          label: 'Run',
+
+          run: (tools) => tools.getSelection()
+        }
+        const extended = await createDesign(target, {
+          hideUI: true,
+          actions: { hostAction: action },
+          extensions: [
+            { id: 'extension', actions: { extensionAction: action } }
+          ],
+          disabledFeatures: ['extension']
+        })
+
+        try {
+          const builtIns = editor.listFeatures()
+          const registered = extended.listFeatures()
+          const inherited = !extended.isFeatureEnabled('extensionAction')
+
+          await extended.setDisabledFeatures(registered)
+          const blocked = registered.every(
+            (id) => !extended.isFeatureEnabled(id)
+          )
+
+          await extended.setDisabledFeatures([])
+
+          return {
+            builtIns,
+            exported: workspaceFeatures,
+            registered,
+            inherited,
+            blocked,
+            frozen: [workspaceFeatures, builtIns, registered].every(
+              Object.isFrozen
+            ),
+            stable: extended.listFeatures() === registered,
+            enabled: registered.every((id) => extended.isFeatureEnabled(id)),
+            isolated:
+              !editor.isFeatureEnabled('extension') &&
+              editor.isFeatureEnabled('pen')
+          }
+        } finally {
+          await extended.destroy()
+          target.remove()
+        }
+      })
+
+      assert.deepEqual(proof.builtIns, proof.exported)
+      assert.equal(new Set(proof.exported).size, 23)
+      assert.deepEqual(
+        [...proof.registered].sort(),
+        [...proof.exported, 'hostAction', 'extension', 'extensionAction'].sort()
+      )
+      for (const key of [
+        'inherited',
+        'blocked',
+        'enabled',
+        'isolated',
+        'frozen',
+        'stable'
+      ]) {
+        assert.equal(proof[key], true, key)
+      }
+
+      await assert.rejects(
+        page.evaluate(() =>
+          globalThis.editor.setDisabledFeatures(['unregistered'])
+        ),
+        /Unknown Design feature/
+      )
+    }
+  )
+})
+
 test('packed Design borrowed canvas guards its own pointer, history and action paths', async () => {
   await withConsumer(
     ['sdk/canvas', 'sdk/design'],
@@ -1663,10 +1758,23 @@ test('packed Design borrowed canvas guards its own pointer, history and action p
           globalThis.document.querySelector('#first'),
           {
             hideUI: true,
+            actions: {
+              localAction: {
+                label: 'Local',
+
+                run: (tools) => tools.getSelection()
+              }
+            },
             disabledFeatures: ['rectangle', 'select', 'undo', 'redo']
           }
         )
       })
+      assert.deepEqual(
+        await page.evaluate(() =>
+          globalThis.editor.listFeatures().slice().sort()
+        ),
+        ['localAction', 'rectangle', 'redo', 'select', 'undo']
+      )
       assert.equal(
         await page.getByRole('group', { name: 'Design tools' }).count(),
         0

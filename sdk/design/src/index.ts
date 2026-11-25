@@ -1,3 +1,14 @@
+import { canvasFeatures } from './features.js'
+import type {
+  CanvasFeature,
+  DesignTool,
+  HistoryCommand,
+  WorkspaceTool,
+  WorkspaceAction,
+  WorkspaceFeature
+} from './features.js'
+export { workspaceFeatures } from './features.js'
+export type { DesignTool, WorkspaceTool, WorkspaceFeature } from './features.js'
 import { createCanvas } from '@asyra/canvas'
 import { createActions } from './actions.js'
 import { createToolbar } from './toolbar.js'
@@ -15,10 +26,6 @@ export interface Rectangle {
   width: number
   height: number
 }
-export type DesignTool = 'rectangle' | 'select'
-
-export type WorkspaceTool = DesignTool | 'oval' | 'pen' | 'text'
-
 export interface DesignTools<Tool extends string = DesignTool> {
   getTool(): Tool | null
   setTool(tool: Tool): void
@@ -30,7 +37,7 @@ export interface DesignTools<Tool extends string = DesignTool> {
 }
 interface CanvasOptions {
   document?: unknown
-  disabledFeatures?: readonly (DesignTool | 'undo' | 'redo')[]
+  disabledFeatures?: readonly CanvasFeature[]
 }
 export interface WorkspaceTools
   extends DesignTools<WorkspaceTool>, WorkspaceEditingTools {
@@ -60,13 +67,8 @@ export interface DesignAction<Tool extends string = WorkspaceTool> {
   run(tools: ToolsFor<Tool>): void | Promise<void>
 }
 
-type WorkspaceAction =
-  'group' | 'ungroup' | 'deleteSelectedElement' | 'zoomFit' | 'reset'
 type Command<Tool extends string> =
-  | Tool
-  | 'undo'
-  | 'redo'
-  | (WorkspaceTool extends Tool ? WorkspaceAction : never)
+  Tool | HistoryCommand | (WorkspaceTool extends Tool ? WorkspaceAction : never)
 
 export interface DesignOptions<
   Id extends string = never,
@@ -82,23 +84,6 @@ export interface DesignOptions<
   document?: unknown
   toolbar?: false | readonly (Command<Tool> | NoInfer<Id>)[]
 }
-
-export type WorkspaceFeature =
-  | WorkspaceTool
-  | 'undo'
-  | 'redo'
-  | WorkspaceAction
-  | 'hoverElement'
-  | 'moveElements'
-  | 'moveLayerHierarchy'
-  | 'pan'
-  | 'zoom'
-  | 'geometry'
-  | 'fills'
-  | 'strokes'
-  | 'lock'
-  | 'visibility'
-  | 'rename'
 
 export type ToolPlacement =
   'properties.top' | 'toolbar.top' | 'selectionMenu' | 'manual'
@@ -149,6 +134,7 @@ export type DesignEditor<
         readonly toolGroups: ToolGroups
       }
     : unknown) & {
+    listFeatures(): NonNullable<DesignOptions<Id, Tool>['disabledFeatures']>
     setDisabledFeatures(
       ids: NonNullable<DesignOptions<Id, Tool>['disabledFeatures']>
     ): Promise<void>
@@ -164,6 +150,7 @@ export async function attachDesignTools(
   options: CanvasOptions = {}
 ): Promise<
   DesignTools & {
+    listFeatures(): readonly CanvasFeature[]
     setDisabledFeatures(
       ids: NonNullable<CanvasOptions['disabledFeatures']>
     ): Promise<void>
@@ -176,7 +163,13 @@ export async function attachDesignTools(
     disabledFeatures: options.disabledFeatures
   })
 
-  return mountTools(canvas, options, policy)
+  const tools = await mountTools(canvas, options, policy)
+
+  return {
+    ...tools,
+
+    listFeatures: () => canvasFeatures
+  }
 }
 
 function mountTools(
@@ -184,8 +177,12 @@ function mountTools(
   options: { document?: unknown },
   {
     disabled,
-    validateDisabled
-  }: Pick<ReturnType<typeof createActions>, 'disabled' | 'validateDisabled'>
+    validateDisabled,
+    isEnabled
+  }: Pick<
+    ReturnType<typeof createActions>,
+    'disabled' | 'validateDisabled' | 'isEnabled'
+  >
 ) {
   return canvas.mount(async (target) => {
     const { destroy, updateAvailability, ...tools } =
@@ -202,7 +199,7 @@ function mountTools(
           updateAvailability(validateDisabled(ids))
         },
 
-        isFeatureEnabled: (id: string) => !disabled.has(id)
+        isFeatureEnabled: isEnabled
       },
       destroy
     }
@@ -270,6 +267,7 @@ export async function createDesign(
 
     const editor = {
       ...tools,
+      listFeatures: policy.listFeatures,
 
       async runAction(id: string) {
         if (listeners.signal.aborted) {
