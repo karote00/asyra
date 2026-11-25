@@ -1,3 +1,5 @@
+import { registerWorkspaceNodes } from './workspace/register-nodes'
+import type { WorkspaceNode } from './workspace/nodes'
 import { createCommonSession } from './workspace/common-session'
 import React from 'react'
 import { createRoot } from 'react-dom/client'
@@ -62,6 +64,7 @@ function createShape(type: 'rect' | 'oval', { x, y, width, height }: Bounds) {
 }
 
 interface WorkspaceOptions {
+  nodes?: readonly { id: string; node: WorkspaceNode }[]
   surface: RenderSession['surface']
   document?: RenderSession['document']
   collaboration?: RenderSession['collaboration']
@@ -75,6 +78,7 @@ interface WorkspaceOptions {
 
 export function mount(options: WorkspaceOptions) {
   initDesign({ disabledFeatures: options.disabledFeatures })
+  registerWorkspaceNodes(options.nodes ?? [])
   if (
     options.document !== undefined &&
     (!options.document || core.preflightLoad(options.document).length)

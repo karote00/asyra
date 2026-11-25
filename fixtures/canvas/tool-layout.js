@@ -1,8 +1,5 @@
 import { createDesign } from '@asyra/design'
-import {
-  alignmentTools,
-  mountAlignmentTools
-} from './examples/align-selection.js'
+import { alignmentTools, mountAlignmentTools } from '@example/alignment-tools'
 
 const { document, localStorage } = globalThis
 

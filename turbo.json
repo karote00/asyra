@@ -165,6 +165,7 @@
         "@asyra/asyra-design#react:build",
         "@asyra/canvas#build:canvas",
         "@asyra/core#build:core",
+        "@asyra/persistence#build:persistence",
         "@asyra/preset#build:preset"
       ]
     },

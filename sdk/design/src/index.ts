@@ -13,7 +13,8 @@ import type {
   DesignTools,
   DesignEditor,
   DesignOptions,
-  WorkspaceOptions
+  WorkspaceOptions,
+  WorkspaceExtension
 } from './editor-types.js'
 
 export type { DesignTool, WorkspaceTool, WorkspaceFeature } from './features.js'
@@ -100,6 +101,28 @@ export function createDesign<Id extends string = never>(
   target: HTMLCanvasElement,
   options?: DesignOptions<Id, DesignTool>
 ): Promise<DesignEditor<Id, DesignTool>>
+// Infer each installed package independently, then expose their combined IDs.
+export function createDesign<
+  const Extensions extends readonly [string, string, ...string[]],
+  Id extends string = never,
+  Host extends HTMLElement = HTMLElement
+>(
+  target: Host & { getContext?: never },
+  options: Omit<
+    WorkspaceOptions<Extensions[number] | Id>,
+    'extensions' | 'actions'
+  > & {
+    extensions: readonly [
+      ...{ [Index in keyof Extensions]: WorkspaceExtension<Extensions[Index]> }
+    ]
+    actions?: DesignOptions<Id>['actions']
+  }
+): Promise<
+  HTMLCanvasElement extends Host
+    ? | DesignEditor<Extensions[number] | Id, DesignTool>
+      | DesignEditor<Extensions[number] | Id, WorkspaceTool>
+    : DesignEditor<Extensions[number] | Id, WorkspaceTool>
+>
 export function createDesign<
   Id extends string = never,
   Host extends HTMLElement = HTMLElement

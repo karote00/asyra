@@ -1,3 +1,11 @@
+import type {
+  DesignEditor,
+  ToolPlacement,
+  WorkspaceExtension,
+  WorkspaceTool,
+  WorkspaceTools
+} from '@asyra/design'
+
 const alignments = [
   ['alignLeft', 'Align left', 'horizontal', 'start'],
   ['alignCenter', 'Align horizontal centers', 'horizontal', 'center'],
@@ -5,7 +13,11 @@ const alignments = [
   ['alignTop', 'Align top', 'vertical', 'start'],
   ['alignMiddle', 'Align vertical centers', 'vertical', 'center'],
   ['alignBottom', 'Align bottom', 'vertical', 'end']
-]
+] as const
+
+type ActionId = (typeof alignments)[number][0]
+type ExtensionId = ActionId | 'alignment'
+type Editor = DesignEditor<ExtensionId, WorkspaceTool>
 
 const actions = Object.fromEntries(
   alignments.map(([id, label, axis, alignment]) => [
@@ -13,7 +25,7 @@ const actions = Object.fromEntries(
     {
       label,
 
-      run(editor) {
+      run(editor: WorkspaceTools) {
         const elementIds = editor.common.selection.getSelectedIds()
 
         if (elementIds.length >= 2) {
@@ -29,7 +41,9 @@ const actions = Object.fromEntries(
   ])
 )
 
-export function alignmentTools({ placement = 'properties.top' } = {}) {
+export function alignmentTools({
+  placement = 'properties.top'
+}: { placement?: ToolPlacement } = {}): WorkspaceExtension<ExtensionId> {
   return {
     id: 'alignment',
     actions,
@@ -74,13 +88,19 @@ export function alignmentTools({ placement = 'properties.top' } = {}) {
   }
 }
 
-export function mountAlignmentTools(container, editor) {
+export function mountAlignmentTools(
+  container: HTMLElement,
+  editor: Pick<Editor, 'toolGroups'>
+) {
   return editor.toolGroups.mount('alignment', container)
 }
 
-function bindAvailability(editor, buttons) {
+function bindAvailability(
+  editor: Editor,
+  buttons: readonly { id: ActionId; button: HTMLButtonElement }[]
+) {
   let count = 0
-  let disabled = new Set()
+  let disabled = new Set<string>()
 
   function update() {
     for (const { id, button } of buttons) {
@@ -111,7 +131,7 @@ function bindAvailability(editor, buttons) {
   }
 }
 
-export function bindAlignmentButton(editor, button) {
+export function bindAlignmentButton(editor: Editor, button: HTMLButtonElement) {
   const unbind = bindAvailability(editor, [{ id: 'alignLeft', button }])
 
   const align = () => editor.runAction('alignLeft')

@@ -1,3 +1,4 @@
+import { requireNodeFields } from '../../workspace/nodes'
 import { CommonApiInputError } from '../common-api-input-error'
 import { hasSizeEdit, requireSizeEditTarget } from './geometry-policy'
 import { runTransaction, type PropertyMutationReceipt } from '@asyra/core'
@@ -19,6 +20,8 @@ export const updateElementProperties = (
   options?: EVENT_OPTIONS
 ): PropertyMutationReceipt => {
   const entries = Object.entries(values ?? {})
+
+  requireNodeFields(elementIds, values)
 
   if (elementIds.length === 0) {
     return Object.freeze({ acceptedIds: Object.freeze([]), changed: false })

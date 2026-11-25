@@ -30,6 +30,7 @@ export interface VectorComputedSnapshot extends Partial<VectorPathStyle> {
 }
 
 export interface CreateElementOptions {
+  fields?: Readonly<Record<string, string | boolean | number>>
   type: EntityType
   clientPosition?: PositionData
   workspacePosition?: PositionData

@@ -71,9 +71,7 @@ export async function mountWorkspace(
   }
 
   const { storageKey } = options
-  const localDocument = storageKey
-    ? openLocalDocument(globalThis.localStorage, storageKey)
-    : undefined
+  let localDocument: Awaited<ReturnType<typeof openLocalDocument>> | undefined
 
   let lifetime = new globalThis.AbortController()
 
@@ -267,7 +265,11 @@ export async function mountWorkspace(
       closing ??= (async () => {
         try {
           await operations
-          await session?.destroy()
+          try {
+            await session?.destroy()
+          } finally {
+            await localDocument?.close()
+          }
         } finally {
           session = undefined
           frame?.remove()
@@ -299,6 +301,17 @@ export async function mountWorkspace(
       lifetime,
       {
         document: documentData,
+        nodes: options.extensions?.flatMap((extension) => {
+          if (!extension.node) {
+            return []
+          }
+
+          if (!extension.id) {
+            throw new TypeError('A node extension requires a stable ID')
+          }
+
+          return [{ id: extension.id, node: structuredClone(extension.node) }]
+        }),
         collaboration,
         slots: groups.refs,
         toolbar:
@@ -354,7 +367,7 @@ export async function mountWorkspace(
         try {
           await start(data)
           if (documentToRestore === undefined) {
-            localDocument?.clear()
+            await localDocument?.clear()
           }
         } catch (error) {
           lifetime.abort()
@@ -377,7 +390,20 @@ export async function mountWorkspace(
   }
 
   try {
-    await start(localDocument ? localDocument.read() : options.document)
+    if (storageKey) {
+      localDocument = await openLocalDocument(storageKey)
+    }
+
+    const initialDocument = localDocument
+      ? await localDocument.read()
+      : options.document
+
+    lifetime.signal.throwIfAborted()
+    await start(initialDocument)
+    if (localDocument) {
+      await localDocument.migrate(current())
+    }
+
     const common = Object.fromEntries(
       (Object.keys(current().common) as (keyof Common)[]).map((key) =>
         bindCommonGroup(key, () => current().common)

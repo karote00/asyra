@@ -4,6 +4,7 @@ import path from 'node:path'
 import process from 'node:process'
 import test from 'node:test'
 import { expect } from '@playwright/test'
+import sharp from 'sharp'
 import { withDocumentServices } from '../services.mjs'
 import { root, withConsumer } from './packed-consumer.mjs'
 
@@ -644,31 +645,46 @@ test('packed Design local autosave coalesces commits and restores Undo, Redo and
       const other = globalThis.document.body.appendChild(
         globalThis.document.createElement('section')
       )
-      const storage = globalThis.localStorage
+      const records = globalThis.IDBObjectStore.prototype
       const writes = []
-      const original = globalThis.Storage.prototype.setItem
+      const original = records.put
 
-      globalThis.Storage.prototype.setItem = function (key, value) {
+      records.put = function (value, key) {
         if (key === 'board-a' || key === 'board-b') {
           writes.push(key)
         }
 
-        return original.call(this, key, value)
+        return original.call(this, value, key)
       }
 
       const open = (el, storageKey) =>
         globalThis.createDesign(el, { storageKey, hideUI: true })
 
-      const contains = (key, id) =>
-        Boolean(
-          JSON.parse(storage.getItem(key) ?? 'null')?.sceneTree.elements[id]
+      const requestValue = (request) =>
+        new Promise((resolve, reject) => {
+          request.onsuccess = () => resolve(request.result)
+          request.onerror = () => reject(request.error)
+        })
+
+      let database
+
+      const read = (key) =>
+        requestValue(
+          database.transaction('documents').objectStore('documents').get(key)
         )
+
+      const contains = async (key, id) =>
+        Boolean((await read(key))?.sceneTree.elements[id])
 
       const settle = () =>
         new Promise((resolve) => globalThis.setTimeout(resolve, 0))
 
       let a = await open(slot, 'board-a')
       const b = await open(other, 'board-b')
+
+      database = await requestValue(
+        globalThis.indexedDB.open('design-workspace-documents')
+      )
 
       try {
         const initial = writes.length
@@ -680,22 +696,26 @@ test('packed Design local autosave coalesces commits and restores Undo, Redo and
         await settle()
         const coalesced = [...writes]
 
-        const shapes = (key) =>
-          Object.values(JSON.parse(storage.getItem(key)).sceneTree.elements)
+        const shapes = async (key) =>
+          Object.values((await read(key)).sceneTree.elements)
             .map((el) => el.type)
             .filter((type) => type === 'oval' || type === 'rect')
             .sort()
 
-        const isolated = [shapes('board-a'), shapes('board-b')]
+        const isolated = await Promise.all([
+          shapes('board-a'),
+          shapes('board-b')
+        ])
 
         await a.undo()
         await settle()
         const undone =
-          contains('board-a', first) && !contains('board-a', second)
+          (await contains('board-a', first)) &&
+          !(await contains('board-a', second))
 
         await a.redo()
         await settle()
-        const redone = contains('board-a', second)
+        const redone = await contains('board-a', second)
         const last = a.drawRectangle(bounds)
 
         await a.destroy()
@@ -714,10 +734,12 @@ test('packed Design local autosave coalesces commits and restores Undo, Redo and
           redone,
           restored,
           reset: !a.getLayers().ids.includes(last),
-          peer: contains('board-b', peer)
+          peer: await contains('board-b', peer),
+          legacy: globalThis.localStorage.getItem('board-a')
         }
       } finally {
-        globalThis.Storage.prototype.setItem = original
+        database.close()
+        records.put = original
         await a.destroy()
         await b.destroy()
       }
@@ -731,7 +753,279 @@ test('packed Design local autosave coalesces commits and restores Undo, Redo and
       redone: true,
       restored: true,
       reset: true,
-      peer: true
+      peer: true,
+      legacy: null
     })
+  })
+})
+
+test('packed Design React onMount receives the ready editor once per board identity', async () => {
+  await withConsumer(react, 'react.js', async (page) => {
+    const render = (key) =>
+      page.evaluate((key) => {
+        globalThis.mounts ??= []
+        globalThis.renderMountedBoard(key, (editor) =>
+          globalThis.mounts.push(editor)
+        )
+      }, key)
+
+    await render('first')
+    await expect
+      .poll(() => page.evaluate(() => globalThis.mounts.length))
+      .toBe(1)
+    await render('first')
+    await render('second')
+    await expect
+      .poll(() => page.evaluate(() => globalThis.mounts.length))
+      .toBe(2)
+    assert.equal(
+      await page.evaluate(
+        () =>
+          globalThis.mounts[1] ===
+            globalThis.document.querySelector('asyra-design').editor &&
+          globalThis.mounts[0] !== globalThis.mounts[1]
+      ),
+      true
+    )
+  })
+})
+
+test('packed node extension restores its own type, appearance and fields on a disabled board', async () => {
+  await workspace(async (page) => {
+    const open = (disabled) =>
+      page.evaluate(async (disabled) => {
+        await globalThis.editor.destroy()
+        globalThis.editor = await globalThis.createDesign(globalThis.host, {
+          extensions: [globalThis.approvalNode],
+          storageKey: 'approvals',
+          hideUI: true,
+          disabledFeatures: disabled
+        })
+      }, disabled)
+
+    await open([])
+    const id = await page.evaluate(async () => {
+      const editor = globalThis.editor
+
+      await editor.runAction('insertApproval')
+
+      return editor
+        .getLayers()
+        .ids.find((id) => editor.getLayers().elements[id].type === 'approval')
+    })
+
+    assert.ok(id)
+    const state = await page.evaluate(async (id) => {
+      const e = globalThis.editor
+
+      const read = () =>
+        e.getElementProperties(id, ['status', 'reviewed', 'width', 'x'])
+
+      const initial = read()
+
+      e.select([id])
+      e.common.element.updateElementProperties([id], {
+        status: 'approved',
+        width: 120,
+        x: 160
+      })
+      const edited = read()
+
+      await e.undo()
+      const undone = read()
+
+      await e.redo()
+
+      return {
+        initial,
+        edited,
+        undone,
+        redone: read(),
+        selection: e.getSelection()
+      }
+    }, id)
+
+    assert.deepEqual(state.initial, {
+      status: 'pending',
+      reviewed: true,
+      width: 100,
+      x: 140
+    })
+    assert.deepEqual(state.edited, {
+      status: 'approved',
+      reviewed: true,
+      width: 120,
+      x: 160
+    })
+    assert.deepEqual(state.undone, state.initial)
+    assert.deepEqual(state.redone, state.edited)
+    assert.deepEqual(state.selection, [id])
+    await page.reload()
+    await page.waitForFunction(() => Boolean(globalThis.editor))
+    await open(['approval'])
+    const properties = await page.evaluate(
+      (id) =>
+        globalThis.editor.getElementProperties(id, [
+          'status',
+          'reviewed',
+          'width',
+          'x',
+          'fills'
+        ]),
+      id
+    )
+    const { fills, ...persisted } = properties
+
+    assert.deepEqual(persisted, state.edited)
+    assert.match(JSON.stringify(fills), /e24989/i)
+    // Check the restored renderer and its hit target with the extension disabled.
+    const frame = page.locator('main iframe')
+    let center
+
+    await expect
+      .poll(async () => {
+        const { data, info } = await sharp(await frame.screenshot())
+          .removeAlpha()
+          .raw()
+          .toBuffer({ resolveWithObject: true })
+        let minX = info.width,
+          minY = info.height,
+          maxX = -1,
+          maxY = -1,
+          count = 0
+
+        for (let y = 0; y < info.height; y++) {
+          for (let x = 0; x < info.width; x++) {
+            const offset = (y * info.width + x) * 3
+
+            if (
+              data[offset] === 226 &&
+              data[offset + 1] === 73 &&
+              data[offset + 2] === 137
+            ) {
+              count++
+              minX = Math.min(x, minX)
+              maxX = Math.max(x, maxX)
+              minY = Math.min(y, minY)
+              maxY = Math.max(y, maxY)
+            }
+          }
+        }
+
+        if (!count) {
+          return false
+        }
+
+        center = { x: (minX + maxX) / 2, y: (minY + maxY) / 2 }
+        const area = (maxX - minX + 1) * (maxY - minY + 1)
+
+        return count > 100 && count / area > 0.73 && count / area < 0.84
+      })
+      .toBe(true)
+    await frame.click({ position: center })
+    assert.deepEqual(
+      await page.evaluate(() => globalThis.editor.getSelection()),
+      [id]
+    )
+    await assert.rejects(
+      page.evaluate(() => globalThis.editor.runAction('insertApproval')),
+      /disabled/i
+    )
+    await assert.rejects(
+      page.evaluate(() =>
+        globalThis.approvalNode.actions.insertApproval.run(globalThis.editor)
+      ),
+      /disabled/i
+    )
+    await assert.rejects(
+      page.evaluate(
+        (id) =>
+          globalThis.editor.common.element.updateElementProperties([id], {
+            status: 'blocked'
+          }),
+        id
+      ),
+      /disabled/i
+    )
+    await page.evaluate(() => globalThis.editor.setDisabledFeatures([]))
+    await page.evaluate(() => globalThis.editor.runAction('insertApproval'))
+    assert.equal(
+      await page.evaluate(() => globalThis.editor.getLayers().ids.length),
+      2
+    )
+  })
+})
+
+test('packed board migrates a valid legacy snapshot and preserves an invalid original', async () => {
+  await workspace(async (page) => {
+    const result = await page.evaluate(async () => {
+      const id = globalThis.editor.drawRectangle({
+        x: 10,
+        y: 10,
+        width: 20,
+        height: 20
+      })
+      const snapshot = await globalThis.editor.save()
+
+      globalThis.localStorage.setItem('previous', JSON.stringify(snapshot))
+      globalThis.localStorage.setItem('invalid', '{')
+      const slot = globalThis.document.createElement('div')
+
+      globalThis.document.body.append(slot)
+
+      const open = (storageKey) =>
+        globalThis.createDesign(slot, { storageKey, hideUI: true })
+
+      const first = await open('previous')
+
+      await first.destroy()
+      const put = globalThis.IDBObjectStore.prototype.add
+
+      globalThis.localStorage.setItem('retry', JSON.stringify(snapshot))
+      globalThis.IDBObjectStore.prototype.add = function (...args) {
+        const request = put.apply(this, args)
+
+        this.transaction.abort()
+
+        return request
+      }
+
+      let retryPreserved
+
+      try {
+        await open('retry')
+      } catch {
+        retryPreserved =
+          globalThis.localStorage.getItem('retry') === JSON.stringify(snapshot)
+      } finally {
+        globalThis.IDBObjectStore.prototype.add = put
+      }
+
+      const retried = await open('retry')
+
+      retryPreserved &&= retried.getLayers().ids.includes(id)
+      await retried.destroy()
+      const next = await open('previous')
+      const loaded = next.getLayers().ids.includes(id)
+
+      await next.destroy()
+      let rejected = false
+
+      try {
+        await open('invalid')
+      } catch {
+        rejected = true
+      }
+
+      return [
+        retryPreserved,
+        loaded,
+        globalThis.localStorage.getItem('previous'),
+        rejected,
+        globalThis.localStorage.getItem('invalid')
+      ]
+    })
+
+    assert.deepEqual(result, [true, true, null, true, '{'])
   })
 })

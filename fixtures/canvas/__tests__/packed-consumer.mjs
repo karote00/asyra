@@ -16,6 +16,10 @@ export async function withConsumer(
   assertions,
   { development = false } = {}
 ) {
+  if (entry === 'common.js' || entry === 'tool-layout.js') {
+    packages = [...packages, 'fixtures/canvas/extensions/alignment-tools']
+  }
+
   const scratch = path.join(root, 'tmp/native-canvas')
 
   await mkdir(scratch, { recursive: true })
@@ -30,7 +34,12 @@ export async function withConsumer(
 
   const pack = (dir) => {
     const [{ filename, files }] = JSON.parse(
-      npm(['pack', dir, '--ignore-scripts', '--json'])
+      npm([
+        'pack',
+        dir,
+        ...(dir.endsWith('/alignment-tools') ? [] : ['--ignore-scripts']),
+        '--json'
+      ])
     )
 
     if (dir === path.join(root, 'sdk/design')) {
@@ -70,11 +79,15 @@ export async function withConsumer(
   assert.deepEqual(
     Object.keys(installed).filter(Boolean).sort(),
     packages
-      .map((dir) =>
-        dir.startsWith('sdk/')
+      .map((dir) => {
+        if (dir === 'fixtures/canvas/extensions/alignment-tools') {
+          return 'node_modules/@example/alignment-tools'
+        }
+
+        return dir.startsWith('sdk/')
           ? 'node_modules/@asyra/' + path.basename(dir)
           : dir
-      )
+      })
       .sort()
   )
   const headless = entry === 'headless.js'
@@ -91,7 +104,12 @@ export async function withConsumer(
     await cp(path.join(fixture, 'headless.css'), path.join(cwd, 'headless.css'))
   }
 
-  if (entry === 'react.js' || entry === 'common.js' || layoutDemo) {
+  if (
+    entry === 'react.js' ||
+    entry === 'common.js' ||
+    entry === 'workspace.js' ||
+    layoutDemo
+  ) {
     await cp(path.join(fixture, 'examples'), path.join(cwd, 'examples'), {
       recursive: true
     })
@@ -120,6 +138,14 @@ export async function withConsumer(
 
   if (designTypeTests.length) {
     await cp(path.join(fixture, 'types/design.ts'), path.join(cwd, 'design.ts'))
+  }
+
+  if (packages.includes('fixtures/canvas/extensions/alignment-tools')) {
+    await cp(
+      path.join(fixture, 'types/extensions.ts'),
+      path.join(cwd, 'extensions.ts')
+    )
+    designTypeTests.push('extensions.ts')
   }
 
   execFileSync(

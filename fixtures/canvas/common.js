@@ -1,8 +1,5 @@
 import { createDesign } from '@asyra/design'
-import {
-  alignmentTools,
-  bindAlignmentButton
-} from './examples/align-selection.js'
+import { alignmentTools, bindAlignmentButton } from '@example/alignment-tools'
 
 function host() {
   const container = globalThis.document.createElement('div')

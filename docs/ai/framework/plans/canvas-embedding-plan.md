@@ -112,3 +112,19 @@ document reference or collaboration identity on a declarative host retires
 the old editor before opening its successor. Keep built-in feature IDs
 reserved for their owning commands. If extension UI fails to mount during
 activation, restore the previous policy before allowing a retry.
+
+### Ready editor, packaged tools and persistent nodes
+
+React reports each ready editor through `onMount`. A host can install the
+alignment extension as a separate package with the public SDK as its peer.
+The app registers an extension's stable component type, scalar property schema
+and preset render strategy before validating a local or supplied document.
+Reads and rendering remain available while the owning extension is disabled.
+The packed consumer checks editing, undo, redo, real rendered geometry, pointer
+selection, reload and feature policy through public APIs.
+
+Keyed local boards persist structured snapshots in IndexedDB. The board owns
+one connection, coalesces committed edits within one turn and closes the
+connection on disposal. A missing IndexedDB record admits one validated legacy
+snapshot from the same key. Atomic import precedes removal of that legacy
+value. A failed import leaves the original available for retry.

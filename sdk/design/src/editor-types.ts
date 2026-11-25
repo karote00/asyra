@@ -5,7 +5,7 @@ import type {
   WorkspaceFeature,
   WorkspaceTool
 } from './features.js'
-import type { common } from './common.js'
+import type { common, WorkspaceNode } from './common.js'
 import type { WorkspaceEditingTools } from './workspace-tools.js'
 
 export interface Rectangle {
@@ -101,8 +101,12 @@ export interface ToolGroups {
   mount(id: string, container: HTMLElement): () => void
 }
 
-export interface WorkspaceExtension<Id extends string = string> {
-  readonly id?: Id
+export type { WorkspaceNode }
+
+export type WorkspaceExtension<Id extends string = string> = (
+  | { readonly id: Id; readonly node: WorkspaceNode }
+  | { readonly id?: Id; readonly node?: never }
+) & {
   actions?: Partial<Record<Id, DesignAction>>
   ui?: readonly ToolGroup<Id>[]
 }

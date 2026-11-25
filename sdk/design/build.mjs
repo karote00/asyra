@@ -39,9 +39,30 @@ try {
   )
   compile(project)
   await cp(path.join(compiled, 'src'), output, { recursive: true })
-  for (const name of ['runtime.d.ts', 'canvas-engine.d.ts']) {
+  for (const name of [
+    'runtime.d.ts',
+    'canvas-engine.d.ts',
+    'document-store.d.ts'
+  ]) {
     await cp(path.join(compiled, 'build-inputs', name), path.join(output, name))
   }
+
+  await build({
+    root,
+    configFile: false,
+    publicDir: false,
+    build: {
+      outDir: output,
+      emptyOutDir: false,
+      target: 'es2022',
+      lib: {
+        entry: path.join(inputs, 'document-store.ts'),
+        formats: ['es'],
+
+        fileName: () => 'document-store.js'
+      }
+    }
+  })
 
   // Each borrowed canvas needs its own framework module state. Evaluate the bundled
   // engine and factory inside createRuntime for each new canvas.

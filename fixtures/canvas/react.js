@@ -16,3 +16,12 @@ globalThis.renderBoard = (options, key) =>
   )
 
 globalThis.renderSavedBoard = () => root.render(createElement(SavedBoard))
+
+globalThis.renderMountedBoard = (storageKey, onMount) =>
+  root.render(
+    createElement(
+      StrictMode,
+      null,
+      createElement(Board, { options: { storageKey }, onMount })
+    )
+  )

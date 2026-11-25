@@ -166,3 +166,5 @@ export const common = {
   gradient,
   properties: { getChangedDefinedPatchEntries, mutationReceipt }
 }
+
+export type { WorkspaceNode } from './nodes'

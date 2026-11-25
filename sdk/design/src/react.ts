@@ -1,8 +1,12 @@
-import type { DetailedHTMLProps, HTMLAttributes } from 'react'
+import {
+  createElement,
+  type DetailedHTMLProps,
+  type HTMLAttributes
+} from 'react'
 import type { WorkspaceOptions } from './index.js'
 import type { DesignElement } from './element.js'
 
-export { designTag as AsyraDesign } from './element.js'
+import { designTag } from './element.js'
 
 type DesignElementProps = DetailedHTMLProps<
   HTMLAttributes<DesignElement>,
@@ -25,4 +29,20 @@ declare module 'react' {
       'asyra-design': DesignElementProps
     }
   }
+}
+
+type MountedEditor = NonNullable<DesignElement['editor']>
+
+/** Called once for each ready editor, including the successor after changing boards. */
+export function AsyraDesign({
+  onMount,
+  ...props
+}: DesignElementProps & {
+  onMount?: (editor: MountedEditor) => void
+}) {
+  return createElement(designTag, {
+    ...props,
+    'ondesign-ready':
+      onMount && ((event: CustomEvent<MountedEditor>) => onMount(event.detail))
+  })
 }

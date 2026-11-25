@@ -91,6 +91,38 @@ describe('IndexedDbPersistence', () => {
     }
   })
 
+  it('opens once per session and admits only the first concurrent legacy import', async () => {
+    const provider = new IndexedDbPersistence('board', {
+      databaseName: 'persistence-session-import',
+      factory: indexedDB
+    })
+    let opens = 0
+    const stop = subscribeToBrowserDragPhases((name) => {
+      if (name === 'persistence:indexeddb-open') {
+        opens++
+      }
+    })
+    const first = await provider.connect()
+    const second = await provider.connect()
+
+    try {
+      expect(
+        await Promise.all([
+          first.importIfAbsent(DOCUMENT_A),
+          second.importIfAbsent(DOCUMENT_B)
+        ])
+      ).toEqual([true, false])
+      await expect(second.load()).resolves.toEqual(DOCUMENT_A)
+      await second.save(DOCUMENT_B)
+      await expect(first.load()).resolves.toEqual(DOCUMENT_B)
+      expect(opens).toBe(2)
+    } finally {
+      first.close()
+      second.close()
+      stop()
+    }
+  })
+
   it('persists a document larger than localStorage quota without using localStorage', async () => {
     const localStorageSetItem = vi.fn(() => {
       throw new DOMException('Storage quota exceeded', 'QuotaExceededError')

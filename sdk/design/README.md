@@ -17,10 +17,27 @@ export default function App() {
 }
 ```
 
+Use `onMount` when another control needs the editor. It receives the ready
+instance once per board. Changing the board key delivers the next editor.
+
+```tsx
+import { useState } from 'react'
+import { AsyraDesign } from '@asyra/design/react'
+import type { DesignEditor, WorkspaceTool } from '@asyra/design'
+
+export function Board() {
+  const [editor, setEditor] = useState<DesignEditor<string, WorkspaceTool>>()
+  return <>
+    <button disabled={!editor} onClick={() => editor?.zoomFit()}>Fit drawing</button>
+    <AsyraDesign onMount={setEditor} />
+  </>
+}
+```
+
 ### Automatically save your first board
 
 Give each local board a stable key. Draw a rectangle and reload the page.
-The editor restores the drawing from local storage in this browser and origin.
+The editor restores the drawing from IndexedDB in this browser and origin.
 
 ```tsx
 import { AsyraDesign } from '@asyra/design/react'
@@ -32,7 +49,7 @@ export default function SavedBoard() {
 
 The same option works with `createDesign(container, { storageKey: 'my-board' })`.
 Committed edits, Undo and Redo are saved automatically. Reset clears the saved
-board. Use separate keys for independent boards. For a shared board, use the
+board. Existing localStorage snapshots under the same key migrate on first open. The SDK validates the snapshot and waits for a successful IndexedDB import before removing the old value. New edits write only to IndexedDB. Use separate keys for independent boards. For a shared board, use the
 collaboration service, which owns persistence for all participants.
 
 ### Choose an integration
@@ -43,7 +60,8 @@ collaboration service, which owns persistence for all participants.
 | Build branded controls for the full workspace | Pass a container to `createDesign(container, { hideUI: true })` | Call `editor.common` and subscribe to the keys in `editor.observeKeys` |
 | Ship a separately installed tool and its controls | Supply an extension with actions and UI groups | Choose placement and apply each customer's feature availability |
 | Add drawing to an existing HTML canvas | Pass that canvas to `createDesign(canvas)` | Use the lightweight rectangle, selection and history API |
-| Build a product with a new persistent shape schema or pointer tool | Validate one complete tool against the underlying framework | Own the domain schema, input behavior and serialization |
+| Add a persistent domain node with rectangle or oval geometry | Register a node extension | Give the type and fields stable IDs across document versions |
+| Implement custom pointer gestures or a new renderer | Compose the underlying framework directly | Own input handling and rendering |
 | Collaborate on a shared document | Configure `collaboration` with a file ID and endpoint | Operate the collaboration and persistence services, authorize access and measure the intended load |
 
 ### JavaScript
@@ -171,6 +189,79 @@ Each extension receives the same workspace tools. Built-in feature IDs are
 reserved. Use a unique action ID such as `insertBadge` and include that ID in
 the toolbar. Reusing a built-in ID (including `group` or `fills`), or another
 action's ID, fails at startup.
+
+### Install a tool package
+
+A tool package declares `@asyra/design` as a peer. The alignment example
+exports six actions and a UI group that defaults to the top of the properties
+panel. Install the example tarball alongside the SDK, then import its factory:
+
+```tsx
+import { alignmentTools } from '@example/alignment-tools'
+import { AsyraDesign } from '@asyra/design/react'
+
+const options = { extensions: [alignmentTools()] }
+
+export function Board() {
+  return <AsyraDesign options={options} />
+}
+```
+
+The same options work with `createDesign(container, options)`. To mount the
+controls in a host toolbar, use `alignmentTools({ placement: 'manual' })` and
+call `editor.toolGroups.mount('alignment', toolbarElement)`. Call its returned
+cleanup when the host removes the toolbar. The example package is distributed
+as a local tarball in the repository's packed-consumer fixture.
+
+### Store a domain node
+
+Supply a node definition alongside its actions. Here each approval has its
+own persisted type and status. Drawing, selection, geometry and history use
+the workspace's existing commands.
+
+```js
+const approval = {
+  id: 'approval',
+  node: {
+    name: 'Approval',
+    shape: 'oval',
+    fillColor: '#e24989',
+    fields: { status: 'pending', reviewed: false }
+  },
+  actions: {
+    insertApproval: {
+      label: 'Add approval',
+      run(editor) {
+        editor.common.element.createElement({
+          type: 'approval',
+          workspacePosition: { x: 140, y: 100 },
+          width: 100,
+          height: 60,
+          fields: { reviewed: true }
+        })
+      }
+    }
+  }
+}
+
+const editor = await createDesign(container, {
+  storageKey: 'reviews',
+  extensions: [approval]
+})
+await editor.runAction('insertApproval')
+```
+
+Choose a unique alphanumeric node ID starting with a letter. Field names may
+also use underscores after the first letter. Supply string, finite number or
+boolean defaults. The current built-in geometries are `rectangle` (default)
+and `oval`. Use `editor.common.element.updateElementProperties([id], {
+status: 'approved' })` to edit a node. Read its fields with
+`editor.getElementProperties(id, ['status'])`.
+
+Install the same definition whenever opening the document. Disable its tools
+with `await editor.setDisabledFeatures(['approval'])`. Existing approvals
+retain their geometry, selection and readable fields. Creation, extension
+actions and writes to approval-specific fields are blocked until re-enabled.
 
 ### Place and move extension UI
 

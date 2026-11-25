@@ -1,3 +1,4 @@
+import { nodeCreation, requireNodeFields } from '../../workspace/nodes'
 /**
  * Element Utility APIs - common element operations
  * Used in: create-element, and future features
@@ -638,6 +639,8 @@ export const elementApis = {
     createOptions: CreateElementOptions,
     options?: EVENT_OPTIONS
   ): string | null => {
+    const fillColor = nodeCreation(createOptions.type, createOptions.fields)
+
     if (createOptions.type === 'vector') {
       return vectorApis.createVectorElement(createOptions, options)
     }
@@ -664,7 +667,12 @@ export const elementApis = {
     const parentId = createOptions.parentId ?? core.getCurrentWorkspaceId()
 
     const initialData: Record<string, DataTypes> = {
-      fills: createOptions.fills ?? getDefaultFillsForType(createOptions.type)
+      ...createOptions.fields,
+      fills:
+        createOptions.fills ??
+        (fillColor
+          ? createDefaultFills({ color: fillColor })
+          : getDefaultFillsForType(createOptions.type))
     }
 
     if (createOptions.width !== undefined) {
@@ -827,7 +835,18 @@ export const elementApis = {
   patchElementProperties: (
     patches: readonly ElementPropertyPatchUpdate[],
     options?: EVENT_OPTIONS
-  ) => runTransaction(() => core.patchElementProperties(patches, options)),
+  ) =>
+    runTransaction(() => {
+      for (const patch of patches) {
+        requireNodeFields(
+          [patch.elementId],
+          patch.values,
+          patch.records.map((record) => record.key)
+        )
+      }
+
+      return core.patchElementProperties(patches, options)
+    }),
 
   ...vectorApis
 }

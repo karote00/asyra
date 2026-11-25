@@ -97,87 +97,99 @@ export class IndexedDbPersistence implements IPersistenceProvider {
     this.factory = options.factory
   }
 
-  async save(data: CoreRawData): Promise<void> {
-    try {
-      const database = await measureBrowserDragAsyncPhase(
-        'persistence:indexeddb-open',
-        () => this.openDatabase()
-      )
+  /** Keep one connection for an interactive board. Writes start in the calling turn. */
+  async connect() {
+    const database = await measureBrowserDragAsyncPhase(
+      'persistence:indexeddb-open',
+      () => this.openDatabase()
+    )
+    const key = this.storageKey
 
-      try {
-        const transaction = database.transaction(
-          INDEXED_DB_OBJECT_STORE_NAME,
-          'readwrite'
-        )
+    database.onversionchange = () => database.close()
+
+    const transaction = (mode: IDBTransactionMode) =>
+      database.transaction(INDEXED_DB_OBJECT_STORE_NAME, mode)
+
+    return {
+      async load(): Promise<unknown | null> {
+        const tx = transaction('readonly')
+        const request = tx.objectStore(INDEXED_DB_OBJECT_STORE_NAME).get(key)
+
+        await waitForTransaction(tx, 'load')
+
+        return request.result ?? null
+      },
+
+      async save(data: CoreRawData): Promise<void> {
+        const tx = transaction('readwrite')
 
         measureBrowserDragPhase('persistence:indexeddb-put', () =>
-          transaction
-            .objectStore(INDEXED_DB_OBJECT_STORE_NAME)
-            .put(data, this.storageKey)
+          tx.objectStore(INDEXED_DB_OBJECT_STORE_NAME).put(data, key)
         )
+        // Explicit commit lets the browser finish this write across page navigation.
+        tx.commit?.()
         await measureBrowserDragAsyncPhase(
           'persistence:indexeddb-transaction',
-          () => waitForTransaction(transaction, 'save')
+          () => waitForTransaction(tx, 'save')
         )
-      } finally {
-        database.close()
-      }
-    } catch (error) {
-      console.error('[IndexedDbPersistence] Save failed:', error)
-      throw error
+      },
+
+      async importIfAbsent(data: CoreRawData): Promise<boolean> {
+        const tx = transaction('readwrite')
+        const records = tx.objectStore(INDEXED_DB_OBJECT_STORE_NAME)
+        const request = records.getKey(key)
+        let inserted = false
+
+        request.onsuccess = () => {
+          if (request.result === undefined) {
+            records.add(data, key)
+            inserted = true
+          }
+        }
+
+        await waitForTransaction(tx, 'import')
+
+        return inserted
+      },
+
+      async clear() {
+        const tx = transaction('readwrite')
+
+        tx.objectStore(INDEXED_DB_OBJECT_STORE_NAME).delete(key)
+        await waitForTransaction(tx, 'clear')
+      },
+
+      close: () => database.close()
+    }
+  }
+
+  async save(data: CoreRawData): Promise<void> {
+    const session = await this.connect()
+
+    try {
+      await session.save(data)
+    } finally {
+      session.close()
     }
   }
 
   async load(): Promise<unknown | null> {
+    const session = await this.connect()
+
     try {
-      const database = await this.openDatabase()
-
-      try {
-        const transaction = database.transaction(
-          INDEXED_DB_OBJECT_STORE_NAME,
-          'readonly'
-        )
-        const request = transaction
-          .objectStore(INDEXED_DB_OBJECT_STORE_NAME)
-          .get(this.storageKey)
-        let result: unknown | null = null
-
-        request.onsuccess = () => {
-          result = request.result ?? null
-        }
-
-        await waitForTransaction(transaction, 'load')
-
-        return result
-      } finally {
-        database.close()
-      }
-    } catch (error) {
-      console.error('[IndexedDbPersistence] Load failed:', error)
-      throw error
+      return await session.load()
+    } finally {
+      session.close()
     }
   }
 
   async clear(): Promise<void> {
+    const session = await this.connect()
+
     try {
-      const database = await this.openDatabase()
-
-      try {
-        const transaction = database.transaction(
-          INDEXED_DB_OBJECT_STORE_NAME,
-          'readwrite'
-        )
-
-        transaction
-          .objectStore(INDEXED_DB_OBJECT_STORE_NAME)
-          .delete(this.storageKey)
-        await waitForTransaction(transaction, 'clear')
-      } finally {
-        database.close()
-      }
-    } catch (error) {
-      console.error('[IndexedDbPersistence] Clear failed:', error)
-      throw error
+      await session.clear()
+    } finally {
+      session.close()
     }
   }
 
