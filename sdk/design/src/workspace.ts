@@ -1,49 +1,121 @@
 import { createToolGroups } from './tool-groups.js'
 import { createActions } from './actions.js'
 import { assets } from './workspace-assets.js'
+import type {
+  DesignEditor,
+  WorkspaceOptions,
+  WorkspaceTool,
+  WorkspaceTools,
+  WorkspaceEditingTools
+} from './index.js'
+type Editor = DesignEditor<string, WorkspaceTool>
+type Commands = Omit<WorkspaceEditingTools, 'observe'>
+type Common = WorkspaceTools['common']
+type Session = Omit<WorkspaceTools, keyof Commands> & {
+  commands: Commands
+  ready: Promise<void>
+  updateFeatures(ids: readonly string[]): Promise<void>
+  destroy(): Promise<void>
+}
+type Observer = (value: unknown) => void
+type RuntimeWindow = Window & {
+  workspaceAssets: typeof assets
+  DesignWorkspaceRuntime: { mount(options: object): Session }
+}
 
-const occupied = new WeakSet()
+// Late binding keeps retained methods attached to the current editor session.
+function bindMethods<T extends object>(catalog: T, current: () => T): T {
+  return Object.fromEntries(
+    Object.keys(catalog).map((key) => [
+      key,
+      (...args: unknown[]) => {
+        const owner = current()
+
+        return Reflect.apply(
+          owner[key as keyof T] as (...args: unknown[]) => unknown,
+          owner,
+          args
+        )
+      }
+    ])
+  ) as T
+}
+
+function bindCommonGroup<K extends keyof Common>(
+  key: K,
+  current: () => Common
+) {
+  return [
+    key,
+    Object.freeze(bindMethods(current()[key], () => current()[key]))
+  ] as const
+}
+
+const occupied = new WeakSet<HTMLElement>()
 const workspaceTools = Object.fromEntries(
-  ['oval', 'pen', 'text'].map((id) => [
+  (['oval', 'pen', 'text'] as const).map((id) => [
     id,
     {
       label: id[0].toUpperCase() + id.slice(1),
 
-      run: (tools) => tools.setTool(id)
+      run: (tools: WorkspaceTools) => tools.setTool(id)
     }
   ])
 )
-const workspaceActions = Object.fromEntries(
-  Object.entries({
-    group: 'Group',
-    ungroup: 'Ungroup',
-    deleteSelectedElement: 'Delete selection',
-    zoomFit: 'Zoom to fit',
-    reset: 'Reset document'
-  }).map(([id, label]) => [
-    id,
-    {
-      label,
+const workspaceActions = {
+  group: {
+    label: 'Group',
 
-      run: (tools) => tools[id]()
+    run(tools: WorkspaceTools) {
+      tools.group()
     }
-  ])
-)
+  },
+  ungroup: {
+    label: 'Ungroup',
 
-function loadResource(element, parent, signal) {
-  return new Promise((resolve, reject) => {
+    run(tools: WorkspaceTools) {
+      tools.ungroup()
+    }
+  },
+  deleteSelectedElement: {
+    label: 'Delete selection',
+
+    run: (tools: WorkspaceTools) => tools.deleteSelectedElement()
+  },
+  zoomFit: {
+    label: 'Zoom to fit',
+
+    run: (tools: WorkspaceTools) => tools.zoomFit()
+  },
+  reset: {
+    label: 'Reset document',
+
+    run: (tools: WorkspaceTools) => tools.reset()
+  }
+}
+
+function loadResource(
+  element: HTMLElement,
+  parent: HTMLElement,
+  signal: AbortSignal
+) {
+  return new Promise<void>((resolve, reject) => {
     signal.throwIfAborted()
     signal.addEventListener('abort', () => reject(signal.reason), {
       once: true
     })
-    element.onload = resolve
+    element.onload = () => resolve()
     element.onerror = () =>
       reject(new Error('Unable to load Design workspace asset'))
     parent.append(element)
   })
 }
 
-export async function mountWorkspace(host, options, signal) {
+export async function mountWorkspace(
+  host: HTMLElement,
+  options: WorkspaceOptions<string>,
+  signal?: AbortSignal
+): Promise<Editor> {
   if (occupied.has(host)) {
     throw new Error('Container already has an active Design editor')
   }
@@ -91,7 +163,7 @@ export async function mountWorkspace(host, options, signal) {
         ),
         ...Object.keys(options.actions ?? {})
       ]
-    : options.toolbar
+    : (options.toolbar ?? [])
   const controls =
     options.hideUI || ids === false
       ? false
@@ -132,13 +204,17 @@ export async function mountWorkspace(host, options, signal) {
   const stop = () => lifetime.abort()
 
   signal?.throwIfAborted()
-  let frame
-  let session
-  let closing
+  let frame: HTMLIFrameElement
+  let session: Session | undefined
+  let closing: Promise<void> | undefined
   let active = true
-  let pending
-  const observations = new Set()
-  const availabilityListeners = new Set()
+  let pending: Promise<void> | undefined
+  const observations = new Set<{
+    key: string
+    listener: Observer
+    detach?: () => void
+  }>()
+  const availabilityListeners = new Set<Observer>()
   let changes = Promise.resolve()
 
   function detachObservers() {
@@ -156,7 +232,8 @@ export async function mountWorkspace(host, options, signal) {
     return session
   }
 
-  const editor = {
+  let editor: Editor
+  const base = {
     getTool: () => current().getTool(),
 
     setTool: (tool) => current().setTool(tool),
@@ -187,7 +264,7 @@ export async function mountWorkspace(host, options, signal) {
 
     save: () => current().save(),
 
-    observe(key, listener) {
+    observe(key: string, listener: Observer) {
       if (typeof listener !== 'function') {
         throw new TypeError('Expected an observation callback')
       }
@@ -275,33 +352,42 @@ export async function mountWorkspace(host, options, signal) {
 
       return closing
     }
-  }
+  } satisfies Omit<Editor, keyof Commands | 'toolGroups' | 'common'>
 
   const groups = createToolGroups(
     options.extensions ?? [],
     options,
-    editor,
+    () => editor,
     () => frame
   )
 
-  editor.toolGroups = groups.api
   occupied.add(host)
   signal?.addEventListener('abort', stop, { once: true })
 
-  async function start(documentData) {
+  async function start(documentData: unknown) {
     frame = host.ownerDocument.createElement('iframe')
     frame.title = 'Design editor'
     frame.style.cssText = 'display:block;border:0;width:100%;height:100%;'
     host.append(frame)
     const doc = frame.contentDocument
 
-    frame.contentWindow.workspaceAssets = assets
+    if (!doc) {
+      throw new Error('Design workspace is unavailable')
+    }
+
+    const realm = frame.contentWindow as RuntimeWindow
+
+    realm.workspaceAssets = assets
     const stylesheet = doc.createElement('link')
 
     stylesheet.rel = 'stylesheet'
-    stylesheet.href = Object.entries(assets).find(([name]) =>
-      name.endsWith('.css')
-    )[1]
+    const style = Object.entries(assets).find(([name]) => name.endsWith('.css'))
+
+    if (!style) {
+      throw new Error('Design workspace stylesheet is unavailable')
+    }
+
+    stylesheet.href = style[1]
     const script = doc.createElement('script')
 
     script.src = assets['workspace.js']
@@ -310,7 +396,7 @@ export async function mountWorkspace(host, options, signal) {
       loadResource(script, doc.head, lifetime.signal)
     ])
     lifetime.signal.throwIfAborted()
-    session = frame.contentWindow.DesignWorkspaceRuntime.mount({
+    session = realm.DesignWorkspaceRuntime.mount({
       document: documentData,
       collaboration,
       slots: groups.refs,
@@ -323,7 +409,7 @@ export async function mountWorkspace(host, options, signal) {
                 id,
                 label,
 
-                run: () => editor.runAction(id)
+                run: () => base.runAction(id)
               }))
             },
       disabledFeatures: runtimePolicy(disabled),
@@ -346,10 +432,10 @@ export async function mountWorkspace(host, options, signal) {
       lifetime.signal.removeEventListener('abort', abortMount)
     }
 
-    let departingDocument
+    let departingDocument: unknown
 
     if (!collaboration) {
-      frame.contentWindow.addEventListener(
+      realm.addEventListener(
         'pagehide',
         () => {
           if (active && session) {
@@ -375,15 +461,15 @@ export async function mountWorkspace(host, options, signal) {
     )
   }
 
-  function reopen(documentToRestore) {
+  function reopen(documentToRestore?: unknown) {
     if (pending || !active) {
-      return pending
+      return pending ?? Promise.resolve()
     }
 
     pending = (async () => {
       groups.pause()
       detachObservers()
-      const previous = session
+      const previous = current()
 
       session = undefined
       const data = await documentToRestore
@@ -404,37 +490,27 @@ export async function mountWorkspace(host, options, signal) {
       pending = undefined
     })
 
-    return pending
+    return pending ?? Promise.resolve()
   }
 
   try {
     await start(options.document)
-    // Bind to the current session on each call, including after reset or DOM reparenting.
-    for (const name of Object.keys(session.commands)) {
-      editor[name] = (...args) => current().commands[name](...args)
-    }
-
-    editor.common = Object.freeze(
-      Object.fromEntries(
-        Object.entries(session.common).map(([group, methods]) => [
-          group,
-          Object.freeze(
-            Object.fromEntries(
-              Object.keys(methods).map((name) => [
-                name,
-                (...args) => current().common[group][name](...args)
-              ])
-            )
-          )
-        ])
+    const common = Object.fromEntries(
+      (Object.keys(current().common) as (keyof Common)[]).map((key) =>
+        bindCommonGroup(key, () => current().common)
       )
-    )
+    ) as Common
 
+    editor = Object.assign(
+      base,
+      bindMethods(current().commands, () => current().commands),
+      { toolGroups: groups.api, common: Object.freeze(common) }
+    )
     groups.activate()
 
     return editor
   } catch (error) {
-    await editor.destroy()
+    await base.destroy()
     throw error
   }
 }

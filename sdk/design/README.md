@@ -3,6 +3,16 @@
 Place the editor directly in your page. Install `@asyra/design` and its
 `@asyra/canvas` peer.
 
+### React
+
+```tsx
+import { AsyraDesign } from '@asyra/design/react'
+
+export default function App() {
+  return <AsyraDesign />
+}
+```
+
 ### JavaScript
 
 ```js
@@ -13,7 +23,7 @@ import '@asyra/design/element'
 <asyra-design></asyra-design>
 ```
 
-The element and framework components mount the workspace from
+The web component and React entry mount the workspace from
 `apps/asyra-design`. It includes Select, Rectangle, Oval, Pen and Text,
 path and text editing, the layer tree, grouping and hierarchy changes,
 the property inspector, fills and strokes, gradient handles, pan, zoom,
@@ -39,30 +49,6 @@ const editor = await createDesign(container, {
 })
 await editor.runAction('zoomFit')
 ```
-
-### React
-
-```tsx
-import { AsyraDesign } from '@asyra/design/react'
-
-export default function App() {
-  return <AsyraDesign />
-}
-```
-
-### Vue
-
-```vue
-<script setup>
-import AsyraDesign from '@asyra/design/vue'
-</script>
-
-<template>
-  <AsyraDesign />
-</template>
-```
-
-The Vue entry is a single-file component for projects with Vue SFC support.
 
 ### Angular
 
@@ -94,8 +80,7 @@ and drawing surface share the available space.
 Choose a drawing tool in the toolbar, then draw on the canvas.
 
 Pass the initial `options` property to customize the actions and toolbar.
-React 19 and Vue can pass an object as `options={options}` and
-`:options="options"`, respectively. In Angular use `[options]="options"`.
+In React 19 pass the object as `options={options}`. A JavaScript host can assign the same object to the element’s `options` property.
 The native element emits `design-ready` with the editor in `event.detail`
 and exposes the mounted instance through its `editor` property.
 

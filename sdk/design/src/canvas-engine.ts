@@ -1,3 +1,4 @@
+import type { DesignTools, Rectangle, Point } from './index.js'
 import core, {
   defineFeature,
   runTransaction,
@@ -30,7 +31,7 @@ const emptyDocument = () => ({
 
 // Pixi releases GPU resources by losing the WebGL context. A borrowed
 // element needs a restored context before its owner can mount another editor.
-async function releaseRuntime(target) {
+async function releaseRuntime(target: HTMLCanvasElement) {
   const gl =
     core.getCanvas() === target &&
     (target.getContext('webgl2') ?? target.getContext('webgl'))
@@ -44,9 +45,9 @@ async function releaseRuntime(target) {
 
   const listeners = new globalThis.AbortController()
   const { signal } = listeners
-  let timer
-  const restored = new Promise((resolve, reject) => {
-    target.addEventListener('webglcontextrestored', resolve, {
+  let timer: ReturnType<typeof globalThis.setTimeout> | undefined
+  const restored = new Promise<void>((resolve, reject) => {
+    target.addEventListener('webglcontextrestored', () => resolve(), {
       once: true,
       signal
     })
@@ -75,22 +76,31 @@ async function releaseRuntime(target) {
   }
 }
 
-export async function start(target, options) {
+export async function start(
+  target: HTMLCanvasElement,
+  options: { document?: unknown; disabledFeatures: Set<string> }
+): Promise<
+  DesignTools & {
+    destroy(): Promise<void>
+    updateAvailability(next: Set<string>): void
+  }
+> {
   const listeners = new globalThis.AbortController()
   const { signal } = listeners
   let active = true
   const disabled = options.disabledFeatures
 
-  const requireFeature = (id) => {
+  const requireFeature = (id: string) => {
     if (disabled.has(id)) {
       throw new Error('Disabled Design feature: ' + id)
     }
   }
 
-  let tool = ['rectangle', 'select'].find((id) => !disabled.has(id)) ?? null
-  let gesture
-  let pending
-  let observer
+  let tool =
+    (['rectangle', 'select'] as const).find((id) => !disabled.has(id)) ?? null
+  let gesture: { id: number; at: Point } | undefined
+  let pending: Promise<unknown> | undefined
+  let observer: ResizeObserver | undefined
 
   const assertActive = () => {
     if (!active) {
@@ -98,7 +108,7 @@ export async function start(target, options) {
     }
   }
 
-  function drawRectangle({ x, y, width, height }) {
+  function drawRectangle({ x, y, width, height }: Rectangle) {
     requireFeature('rectangle')
     if (!active || pending) {
       throw new Error('Canvas is unavailable')
@@ -160,13 +170,14 @@ export async function start(target, options) {
     core.setLoadSource({
       name: 'canvas-document',
 
-      load() {
+      async load() {
         if (options.document === undefined) {
           return emptyDocument()
         }
 
         if (
-          options.document?.sceneTree?.workspace !== workspace ||
+          (options.document as { sceneTree?: { workspace?: unknown } } | null)
+            ?.sceneTree?.workspace !== workspace ||
           core.preflightLoad(options.document).length
         ) {
           throw new Error('Invalid canvas document')
@@ -179,7 +190,7 @@ export async function start(target, options) {
       api: {
         drawRectangle,
 
-        selectAt(point) {
+        selectAt(point: Point) {
           const id = core.getElementIdAtClientPos(point)
 
           runTransaction(() =>
@@ -218,7 +229,7 @@ export async function start(target, options) {
     })
     observer.observe(target)
 
-    const point = (event) => {
+    const point = (event: PointerEvent) => {
       const bounds = target.getBoundingClientRect()
 
       return {
@@ -227,7 +238,7 @@ export async function start(target, options) {
       }
     }
 
-    const project = (p) =>
+    const project = (p: Point) =>
       core.getMousePosInWorkspace({ clientX: p.x, clientY: p.y })
 
     target.addEventListener(
@@ -278,7 +289,7 @@ export async function start(target, options) {
       },
       { signal }
     )
-    for (const type of ['pointercancel', 'lostpointercapture']) {
+    for (const type of ['pointercancel', 'lostpointercapture'] as const) {
       target.addEventListener(
         type,
         (event) => {
@@ -290,7 +301,10 @@ export async function start(target, options) {
       )
     }
 
-    const replay = async (direction, event) => {
+    const replay = async (
+      direction: 'undo' | 'redo',
+      event?: KeyboardEvent
+    ) => {
       if (disabled.has(direction)) {
         if (event) {
           return
@@ -343,7 +357,10 @@ export async function start(target, options) {
 
         if (!tool || disabled.has(tool)) {
           cancel()
-          tool = ['rectangle', 'select'].find((id) => !disabled.has(id)) ?? null
+          tool =
+            (['rectangle', 'select'] as const).find(
+              (id) => !disabled.has(id)
+            ) ?? null
         }
       },
 

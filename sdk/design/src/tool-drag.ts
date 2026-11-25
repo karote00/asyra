@@ -1,5 +1,7 @@
+import type { Point } from './workspace-tools.js'
+
 // The editor frame and the host page have different pointer coordinate systems.
-function frameGeometry(frame) {
+function frameGeometry(frame: HTMLIFrameElement) {
   const bounds = frame.getBoundingClientRect()
 
   return {
@@ -10,14 +12,20 @@ function frameGeometry(frame) {
   }
 }
 
-function toolDropTarget(frame, x, y, source) {
+function toolDropTarget(
+  frame: HTMLIFrameElement,
+  x: number,
+  y: number,
+  source: HTMLElement
+) {
   const host = frame.ownerDocument
   let top = host.elementFromPoint(x, y)
 
   if (source.contains(top)) {
-    top = host
-      .elementsFromPoint(x, y)
-      .find((element) => !source.contains(element))
+    top =
+      host
+        .elementsFromPoint(x, y)
+        .find((element) => !source.contains(element)) ?? null
   }
 
   if (top !== frame) {
@@ -26,17 +34,36 @@ function toolDropTarget(frame, x, y, source) {
 
   const origin = frameGeometry(frame)
 
-  return frame.contentDocument.elementFromPoint(
-    (x - origin.x) / origin.scaleX,
-    (y - origin.y) / origin.scaleY
+  return (
+    frame.contentDocument?.elementFromPoint(
+      (x - origin.x) / origin.scaleX,
+      (y - origin.y) / origin.scaleY
+    ) ?? null
   )
 }
 
-export function trackToolDrag(event, node, label, frame, drop, finish) {
+export function trackToolDrag(
+  event: PointerEvent,
+  node: HTMLElement,
+  label: string,
+  frame: HTMLIFrameElement,
+  drop: (
+    dock: HTMLElement | null | undefined,
+    target: Element | null,
+    position: Point
+  ) => void,
+  finish: () => void
+) {
   event.preventDefault()
   const host = frame.ownerDocument
   const inner = frame.contentDocument
-  const grip = event.currentTarget
+
+  if (!inner) {
+    throw new Error('Design workspace is unavailable')
+  }
+
+  const dragRoot = inner.documentElement
+  const grip = event.currentTarget as HTMLElement
   const origin =
     node.ownerDocument === inner
       ? frameGeometry(frame)
@@ -61,7 +88,7 @@ export function trackToolDrag(event, node, label, frame, drop, finish) {
   const listeners = new globalThis.AbortController()
   const settings = { capture: true, signal: listeners.signal }
 
-  let activeDock
+  let activeDock: HTMLElement | null | undefined
 
   const cleanup = () => {
     if (listeners.signal.aborted) {
@@ -69,7 +96,7 @@ export function trackToolDrag(event, node, label, frame, drop, finish) {
     }
 
     listeners.abort()
-    inner.documentElement.removeAttribute('data-tool-dragging')
+    dragRoot.removeAttribute('data-tool-dragging')
     activeDock?.removeAttribute('data-tool-dock-active')
     finish()
     preview.remove()
@@ -78,7 +105,7 @@ export function trackToolDrag(event, node, label, frame, drop, finish) {
     }
   }
 
-  function track(e) {
+  function track(e: PointerEvent) {
     if (e.pointerId !== event.pointerId) {
       return
     }
@@ -106,12 +133,12 @@ export function trackToolDrag(event, node, label, frame, drop, finish) {
         return
       }
 
-      inner.documentElement.setAttribute('data-tool-dragging', '')
+      dragRoot.setAttribute('data-tool-dragging', '')
       host.body.append(preview)
     }
 
     const target = toolDropTarget(frame, x, y, node)
-    const dock = target?.closest('[data-tool-dock]')
+    const dock = target?.closest<HTMLElement>('[data-tool-dock]')
 
     if (e.type === 'pointerup') {
       cleanup()
@@ -134,7 +161,7 @@ export function trackToolDrag(event, node, label, frame, drop, finish) {
   grip.setPointerCapture(event.pointerId)
   grip.addEventListener('lostpointercapture', cleanup, settings)
   for (const doc of [host, inner]) {
-    for (const type of ['pointermove', 'pointerup', 'pointercancel']) {
+    for (const type of ['pointermove', 'pointerup', 'pointercancel'] as const) {
       doc.addEventListener(type, track, settings)
     }
 
@@ -149,7 +176,7 @@ export function trackToolDrag(event, node, label, frame, drop, finish) {
     )
   }
 
-  host.defaultView.addEventListener('blur', cleanup, settings)
+  host.defaultView?.addEventListener('blur', cleanup, settings)
 
   return cleanup
 }

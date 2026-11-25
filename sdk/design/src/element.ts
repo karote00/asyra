@@ -1,6 +1,18 @@
 import { mountWorkspace } from './workspace.js'
+import type { createDesign, WorkspaceOptions } from './index.js'
 
 export const designTag = 'asyra-design'
+
+export interface DesignElement extends HTMLElement {
+  options?: WorkspaceOptions<string>
+  readonly editor: Awaited<ReturnType<typeof createDesign<string>>> | undefined
+}
+
+declare global {
+  interface HTMLElementTagNameMap {
+    'asyra-design': DesignElement
+  }
+}
 
 if (globalThis.customElements && !globalThis.customElements.get(designTag)) {
   // A standalone editor may be nested in framework mount elements. Leave
@@ -13,14 +25,14 @@ if (globalThis.customElements && !globalThis.customElements.get(designTag)) {
   }`
   globalThis.document.head.prepend(pageDefaults)
 
-  class DesignElement extends globalThis.HTMLElement {
-    #host
+  class DesignHost extends globalThis.HTMLElement implements DesignElement {
+    #host: HTMLDivElement
 
-    #options
+    #options?: WorkspaceOptions<string>
 
-    #editor
+    #editor?: DesignElement['editor']
 
-    #startup
+    #startup?: AbortController
 
     #work = Promise.resolve()
 
@@ -52,12 +64,12 @@ if (globalThis.customElements && !globalThis.customElements.get(designTag)) {
       root.append(css, this.#host)
     }
 
-    // React and Vue assign object-valued properties before connection.
+    // Hosts can assign object-valued properties before connection.
     get options() {
       return this.#options
     }
 
-    set options(value) {
+    set options(value: WorkspaceOptions<string> | undefined) {
       const previous = this.#options
 
       this.#options = value
@@ -138,5 +150,5 @@ if (globalThis.customElements && !globalThis.customElements.get(designTag)) {
         .catch((error) => globalThis.reportError(error))
     }
   }
-  globalThis.customElements.define(designTag, DesignElement)
+  globalThis.customElements.define(designTag, DesignHost)
 }

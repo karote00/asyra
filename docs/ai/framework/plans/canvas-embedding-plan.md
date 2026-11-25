@@ -41,7 +41,7 @@ The Design SDK owns the public AsyraDesign component and asyra-design HTML
 tag. These are public distribution names. A browser element owns one Design
 session, mounts at its template position, preserves state across a synchronous
 DOM move and releases its session after removal, including during startup.
-React and Vue expose the named component. Angular uses the registered element.
+React exposes the named component. Other hosts can use the registered element or createDesign. TypeScript compiles the SDK implementations and their public declarations for distribution.
 Mount options reach the same Design action registry. The Canvas SDK has no UI
 or framework dependency. Verify the package exports, JSX types, startup,
 editing, independent instances and disconnect/reconnect in packed consumers.

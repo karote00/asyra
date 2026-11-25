@@ -1,9 +1,11 @@
 import { mount as mountApp } from '@asyra/asyra-design/workspace'
 import { createCanvas } from '@asyra/canvas'
 
-export function mount(options) {
-  let binding
-  const surface = {
+type Options = Parameters<typeof mountApp>[0]
+
+export function mount(options: Omit<Options, 'surface'>) {
+  let binding: ReturnType<typeof createCanvas> | undefined
+  const surface: Options['surface'] = {
     async start(container, start, resize, dispose) {
       const canvas = container.ownerDocument.createElement('canvas')
 

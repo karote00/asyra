@@ -29,9 +29,22 @@ async function withConsumer(packages, entry, assertions) {
     })
 
   const pack = (dir) => {
-    const [{ filename }] = JSON.parse(
+    const [{ filename, files }] = JSON.parse(
       npm(['pack', dir, '--ignore-scripts', '--json'])
     )
+
+    if (dir === path.join(root, 'sdk/design')) {
+      const paths = new Set(files.map((file) => file.path))
+
+      for (const entry of ['index', 'element', 'react']) {
+        assert.ok(paths.has('dist/' + entry + '.js'))
+        assert.ok(paths.has('dist/' + entry + '.d.ts'))
+      }
+
+      assert.ok(
+        !paths.has('dist/vue.d.ts') && !paths.has('dist/design-board.vue')
+      )
+    }
 
     return './' + filename
   }

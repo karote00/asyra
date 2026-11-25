@@ -1,3 +1,8 @@
+import { createCanvas } from '@asyra/canvas'
+import { createActions } from './actions.js'
+import { createToolbar } from './toolbar.js'
+import { mountWorkspace } from './workspace.js'
+import { createRuntime } from './runtime.js'
 import type { common } from './common.js'
 import type { CanvasBinding } from '@asyra/canvas'
 
@@ -23,21 +28,10 @@ export interface DesignTools<Tool extends string = DesignTool> {
   redo(): Promise<void>
   save(): Promise<unknown>
 }
-export function attachDesignTools(
-  canvas: CanvasBinding,
-  options?: {
-    document?: unknown
-    disabledFeatures?: readonly (DesignTool | 'undo' | 'redo')[]
-  }
-): Promise<
-  DesignTools & {
-    setDisabledFeatures(
-      ids: readonly (DesignTool | 'undo' | 'redo')[]
-    ): Promise<void>
-    isFeatureEnabled(id: DesignTool | 'undo' | 'redo'): boolean
-  }
->
-
+interface CanvasOptions {
+  document?: unknown
+  disabledFeatures?: readonly (DesignTool | 'undo' | 'redo')[]
+}
 export interface WorkspaceTools
   extends DesignTools<WorkspaceTool>, WorkspaceEditingTools {
   readonly common: typeof common
@@ -165,6 +159,56 @@ export type DesignEditor<
     destroy(): Promise<void>
   }
 
+export async function attachDesignTools(
+  canvas: CanvasBinding,
+  options: CanvasOptions = {}
+): Promise<
+  DesignTools & {
+    setDisabledFeatures(
+      ids: NonNullable<CanvasOptions['disabledFeatures']>
+    ): Promise<void>
+    isFeatureEnabled(
+      id: NonNullable<CanvasOptions['disabledFeatures']>[number]
+    ): boolean
+  }
+> {
+  const policy = createActions({
+    disabledFeatures: options.disabledFeatures
+  })
+
+  return mountTools(canvas, options, policy)
+}
+
+function mountTools(
+  canvas: CanvasBinding,
+  options: { document?: unknown },
+  {
+    disabled,
+    validateDisabled
+  }: Pick<ReturnType<typeof createActions>, 'disabled' | 'validateDisabled'>
+) {
+  return canvas.mount(async (target) => {
+    const { destroy, updateAvailability, ...tools } =
+      await createRuntime().start(target, {
+        ...options,
+        disabledFeatures: disabled
+      })
+
+    return {
+      tools: {
+        ...tools,
+
+        async setDisabledFeatures(ids: readonly string[]) {
+          updateAvailability(validateDisabled(ids))
+        },
+
+        isFeatureEnabled: (id: string) => !disabled.has(id)
+      },
+      destroy
+    }
+  })
+}
+
 export function createDesign<Id extends string = never>(
   target: HTMLCanvasElement,
   options?: DesignOptions<Id, DesignTool>
@@ -173,3 +217,89 @@ export function createDesign<Id extends string = never>(
   target: HTMLElement,
   options?: WorkspaceOptions<Id>
 ): Promise<DesignEditor<Id, WorkspaceTool>>
+export async function createDesign(
+  host: HTMLElement,
+  options: WorkspaceOptions<string> | DesignOptions<string, DesignTool> = {}
+) {
+  if (!globalThis.HTMLElement || !(host instanceof globalThis.HTMLElement)) {
+    throw new TypeError('Expected an HTML container or canvas from this window')
+  }
+
+  if (!(host instanceof globalThis.HTMLCanvasElement)) {
+    return mountWorkspace(host, options as WorkspaceOptions<string>)
+  }
+
+  const surface = createCanvas(host)
+  const target = surface.target
+  const listeners = new globalThis.AbortController()
+  let toolbar: ReturnType<typeof createToolbar> | undefined
+  let addedTabIndex = false
+
+  function destroy() {
+    listeners.abort()
+    toolbar?.remove()
+    if (addedTabIndex && target.getAttribute('tabindex') === '0') {
+      target.removeAttribute('tabindex')
+    }
+
+    addedTabIndex = false
+
+    return surface.destroy()
+  }
+
+  try {
+    const policy = createActions({
+      ...(options as DesignOptions<string, DesignTool>),
+      extensions: []
+    })
+    const { actions, runAction } = policy
+    const session = await mountTools(surface, options, policy)
+    const tools = {
+      ...session,
+
+      async setDisabledFeatures(ids: readonly string[]) {
+        await session.setDisabledFeatures(ids)
+        toolbar?.update()
+      },
+
+      setTool(tool: DesignTool) {
+        session.setTool(tool)
+        toolbar?.update()
+      }
+    }
+
+    const editor = {
+      ...tools,
+
+      async runAction(id: string) {
+        if (listeners.signal.aborted) {
+          throw new Error('Design editor is disposed')
+        }
+
+        await runAction(id, tools)
+      },
+
+      destroy
+    }
+
+    if (!options.hideUI && options.toolbar !== false) {
+      toolbar = createToolbar(
+        target,
+        [...(options.toolbar ?? actions.keys())],
+        actions,
+        editor,
+        listeners.signal
+      )
+    }
+
+    if (!target.hasAttribute('tabindex')) {
+      target.tabIndex = 0
+      addedTabIndex = true
+    }
+
+    return editor
+  } catch (error) {
+    await destroy()
+    throw error
+  }
+}

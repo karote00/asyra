@@ -1,17 +1,49 @@
+import type {
+  DesignEditor,
+  WorkspaceTool,
+  WorkspaceOptions,
+  WorkspaceExtension,
+  ToolGroup,
+  ToolPlacement,
+  ToolLayout,
+  ToolGroups,
+  Point
+} from './index.js'
+type Layout = Record<ToolPlacement, string[]> & {
+  floating?: Record<string, Point>
+}
+
+function dockedLayout(): Record<ToolPlacement, string[]> {
+  return {
+    'toolbar.top': [],
+    'properties.top': [],
+    selectionMenu: [],
+    manual: []
+  }
+}
+
 import { trackToolDrag } from './tool-drag.js'
 
-const slots = ['toolbar.top', 'properties.top', 'selectionMenu']
-const placements = [...slots, 'manual']
+const slots = ['toolbar.top', 'properties.top', 'selectionMenu'] as const
+const placements: readonly ToolPlacement[] = [...slots, 'manual']
 
-export function createToolGroups(extensions, options, editor, getFrame) {
-  const groups = new Map()
-  const owners = new Map()
-  const outlets = new Map()
-  const manual = new Map()
-  const mounted = new Map()
+export function createToolGroups(
+  extensions: readonly WorkspaceExtension<string>[],
+  options: WorkspaceOptions<string>,
+  getEditor: () => DesignEditor<string, WorkspaceTool>,
+  getFrame: () => HTMLIFrameElement
+) {
+  const groups = new Map<string, ToolGroup<string>>()
+  const owners = new Map<string, string>()
+  const outlets = new Map<ToolPlacement, { node: HTMLElement }>()
+  const manual = new Map<string, { container: HTMLElement }>()
+  const mounted = new Map<
+    string,
+    { node: HTMLElement; unmount?: () => void; movable: boolean }
+  >()
   let ready = false
   let closed = false
-  let drag
+  let drag: { id: string; cancel: () => void } | undefined
 
   for (const extension of extensions) {
     for (const group of extension.ui ?? []) {
@@ -33,11 +65,11 @@ export function createToolGroups(extensions, options, editor, getFrame) {
     }
   }
 
-  function resolveLayout(input = {}) {
-    const result = Object.fromEntries(placements.map((slot) => [slot, []]))
-    const seen = new Set()
+  function resolveLayout(input: ToolLayout = {}): Layout {
+    const result: Layout = dockedLayout()
+    const seen = new Set<string>()
 
-    const floating = new Map()
+    const floating = new Map<string, Point>()
 
     for (const [slot, value] of Object.entries(input)) {
       const free = slot === 'floating'
@@ -45,12 +77,14 @@ export function createToolGroups(extensions, options, editor, getFrame) {
       if (
         free
           ? !value || typeof value !== 'object' || Array.isArray(value)
-          : !placements.includes(slot) || !Array.isArray(value)
+          : !placements.includes(slot as ToolPlacement) || !Array.isArray(value)
       ) {
         throw new TypeError('Invalid tool layout')
       }
 
-      for (const id of free ? Object.keys(value) : value) {
+      for (const id of free
+        ? Object.keys(value)
+        : (value as readonly string[])) {
         if (!groups.has(id)) {
           continue
         }
@@ -61,15 +95,19 @@ export function createToolGroups(extensions, options, editor, getFrame) {
 
         seen.add(id)
         if (free) {
-          const point = value[id]
+          const point = input.floating?.[id]
 
-          if (!Number.isFinite(point?.x) || !Number.isFinite(point?.y)) {
+          if (
+            !point ||
+            !Number.isFinite(point.x) ||
+            !Number.isFinite(point?.y)
+          ) {
             throw new TypeError('Expected a floating tool position')
           }
 
           floating.set(id, { x: point.x, y: point.y })
         } else {
-          result[slot].push(id)
+          result[slot as ToolPlacement].push(id)
         }
       }
     }
@@ -89,7 +127,7 @@ export function createToolGroups(extensions, options, editor, getFrame) {
 
   let layout = resolveLayout(options.toolLayout)
 
-  function detach(id) {
+  function detach(id: string) {
     const entry = mounted.get(id)
 
     if (!entry) {
@@ -111,9 +149,14 @@ export function createToolGroups(extensions, options, editor, getFrame) {
     }
   }
 
-  function makeNode(id, host, movable) {
+  function makeNode(id: string, host: HTMLElement, movable: boolean) {
     const doc = host.ownerDocument
     const group = groups.get(id)
+
+    if (!group) {
+      throw new TypeError('Unknown tool group')
+    }
+
     const node = doc.createElement('div')
 
     node.dataset.toolGroup = id
@@ -137,13 +180,15 @@ export function createToolGroups(extensions, options, editor, getFrame) {
     node.append(container)
     host.append(node)
     try {
-      const unmount = group.mount({ container, editor })
+      const unmount = group.mount({ container, editor: getEditor() })
 
       if (unmount !== undefined && typeof unmount !== 'function') {
         throw new TypeError('Expected tool group cleanup')
       }
 
       mounted.set(id, { node, unmount, movable })
+
+      return node
     } catch (error) {
       node.remove()
       throw error
@@ -157,11 +202,11 @@ export function createToolGroups(extensions, options, editor, getFrame) {
 
     for (const [slot, value] of Object.entries(layout)) {
       const free = slot === 'floating'
-      const ids = free ? Object.keys(value) : value
+      const ids = free ? Object.keys(value) : (value as readonly string[])
       const movable = slot !== 'manual'
       const outletHost = free
         ? getFrame().ownerDocument.body
-        : outlets.get(slot)?.node
+        : outlets.get(slot as ToolPlacement)?.node
 
       let index = 0
 
@@ -169,9 +214,11 @@ export function createToolGroups(extensions, options, editor, getFrame) {
         const host = movable ? outletHost : manual.get(id)?.container
         const entry = mounted.get(id)
 
+        const owner = owners.get(id)
+
         if (
           !host ||
-          (owners.has(id) && !editor.isFeatureEnabled(owners.get(id)))
+          (owner !== undefined && !getEditor().isFeatureEnabled(owner))
         ) {
           detach(id)
           continue
@@ -185,14 +232,12 @@ export function createToolGroups(extensions, options, editor, getFrame) {
           detach(id)
         }
 
-        if (!mounted.has(id)) {
-          makeNode(id, host, movable)
-        }
+        const node = mounted.get(id)?.node ?? makeNode(id, host, movable)
 
-        const node = mounted.get(id).node
+        const position = layout.floating?.[id]
 
-        if (free) {
-          const { x, y } = value[id]
+        if (position) {
+          const { x, y } = position
 
           Object.assign(node.style, {
             position: 'fixed',
@@ -225,7 +270,7 @@ export function createToolGroups(extensions, options, editor, getFrame) {
     }
   }
 
-  function setLayout(preference) {
+  function setLayout(preference: ToolLayout) {
     if (closed) {
       throw new Error('Design workspace is unavailable')
     }
@@ -250,17 +295,17 @@ export function createToolGroups(extensions, options, editor, getFrame) {
     options.onToolLayoutChange?.(globalThis.structuredClone(layout))
   }
 
-  function withoutGroup(id) {
+  function withoutGroup(id: string) {
     if (!groups.has(id)) {
       throw new TypeError('Unknown tool group')
     }
 
-    const next = Object.fromEntries(
-      placements.map((name) => [
-        name,
-        layout[name].filter((item) => item !== id)
-      ])
-    )
+    const next: Layout = dockedLayout()
+
+    for (const name of placements) {
+      next[name] = layout[name].filter((item) => item !== id)
+    }
+
     const remaining = Object.entries(layout.floating ?? {}).filter(
       ([key]) => key !== id
     )
@@ -272,15 +317,15 @@ export function createToolGroups(extensions, options, editor, getFrame) {
     return next
   }
 
-  function float(id, point) {
+  function float(id: string, point: Point) {
     const next = withoutGroup(id)
 
     next.floating = { ...next.floating, [id]: point }
     setLayout(next)
   }
 
-  function move(id, slot, index) {
-    if (!placements.includes(slot)) {
+  function move(id: string, slot: ToolPlacement, index?: number) {
+    if (!placements.includes(slot as ToolPlacement)) {
       throw new TypeError('Unknown tool placement')
     }
 
@@ -297,7 +342,7 @@ export function createToolGroups(extensions, options, editor, getFrame) {
     setLayout(next)
   }
 
-  function outlet(slot, node) {
+  function outlet(slot: ToolPlacement, node: HTMLElement | null) {
     if (node) {
       outlets.set(slot, { node })
     } else {
@@ -307,7 +352,7 @@ export function createToolGroups(extensions, options, editor, getFrame) {
     render()
   }
 
-  function startDrag(event, id, node) {
+  function startDrag(event: PointerEvent, id: string, node: HTMLElement) {
     if (!event.isPrimary || event.button !== 0) {
       return
     }
@@ -317,7 +362,7 @@ export function createToolGroups(extensions, options, editor, getFrame) {
     const cancel = trackToolDrag(
       event,
       node,
-      groups.get(id).label ?? id,
+      groups.get(id)?.label ?? id,
       frame,
       (dock, target, position) => {
         for (const [slot, { node: outletNode }] of outlets) {
@@ -326,7 +371,8 @@ export function createToolGroups(extensions, options, editor, getFrame) {
           }
 
           const targetId = outletNode.contains(target)
-            ? target.closest('[data-tool-group]')?.dataset.toolGroup
+            ? target?.closest<HTMLElement>('[data-tool-group]')?.dataset
+                .toolGroup
             : undefined
 
           if (targetId === id) {
@@ -335,7 +381,7 @@ export function createToolGroups(extensions, options, editor, getFrame) {
 
           const index = layout[slot]
             .filter((item) => item !== id)
-            .indexOf(targetId)
+            .indexOf(targetId ?? '')
 
           move(id, slot, index < 0 ? undefined : index)
 
@@ -355,7 +401,10 @@ export function createToolGroups(extensions, options, editor, getFrame) {
   return {
     refs: groups.size
       ? Object.fromEntries(
-          slots.map((slot) => [slot, (node) => outlet(slot, node)])
+          slots.map((slot) => [
+            slot,
+            (node: HTMLElement | null) => outlet(slot, node)
+          ])
         )
       : undefined,
     api: {
@@ -407,7 +456,7 @@ export function createToolGroups(extensions, options, editor, getFrame) {
           }
         }
       }
-    },
+    } satisfies ToolGroups,
 
     refresh: render,
 

@@ -22,10 +22,6 @@
     "./react": {
       "types": "./dist/react.d.ts",
       "default": "./dist/react.js"
-    },
-    "./vue": {
-      "types": "./dist/vue.d.ts",
-      "default": "./dist/design-board.vue"
     }
   },
   "scripts": {
@@ -37,6 +33,8 @@
     "@asyra/canvas": "workspace:*",
     "@asyra/core": "workspace:*",
     "@asyra/preset": "workspace:*",
+    "@types/react": "^19.2.18",
+    "typescript": "^5.7.2",
     "vite": "^6.4.4"
   },
   "peerDependencies": {

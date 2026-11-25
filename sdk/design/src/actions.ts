@@ -1,4 +1,12 @@
-const commands = {
+import type { DesignTools, WorkspaceTools } from './index.js'
+
+interface Action<T> {
+  label: string
+  run(tools: T): void | Promise<void>
+}
+type Actions<T> = Record<string, Action<T> | undefined>
+
+const commands: Record<string, Action<DesignTools<string>>> = {
   rectangle: {
     label: 'Rectangle',
 
@@ -21,14 +29,20 @@ const commands = {
   }
 }
 
-export function createActions(
-  options = {},
-  extra = {},
-  features = [],
-  defaults = {}
+export function createActions<T extends DesignTools<string> = WorkspaceTools>(
+  options: {
+    actions?: Actions<T>
+    extensions?: readonly { id?: string; actions?: Actions<T> }[]
+    disabledFeatures?: readonly string[]
+  } = {},
+  extra: Record<string, Action<T>> = {},
+  features: readonly string[] = [],
+  defaults: Record<string, Action<T>> = {}
 ) {
   const { actions: custom = {}, extensions = [] } = options
-  const actions = new Map(Object.entries({ ...commands, ...extra }))
+  const actions = new Map<string, Action<T>>(
+    Object.entries({ ...commands, ...extra })
+  )
 
   const entries = [
     ...extensions.flatMap((extension) =>
@@ -44,7 +58,7 @@ export function createActions(
     ...Object.keys(defaults)
   ]
 
-  const owners = new Map()
+  const owners = new Map<string, string>()
 
   for (const extension of extensions) {
     if (extension.id === undefined) {
@@ -65,14 +79,18 @@ export function createActions(
     }
   }
 
-  const validateDisabled = (ids) => disabledActions(ids, supported)
+  const validateDisabled = (ids?: readonly string[]) =>
+    disabledActions(ids, supported)
 
   const disabled = validateDisabled(options.disabledFeatures)
 
-  const isEnabled = (id, mask = disabled) =>
-    !mask.has(id) && !mask.has(owners.get(id))
+  const isEnabled = (id: string, mask = disabled) => {
+    const owner = owners.get(id)
 
-  function runtimePolicy(mask) {
+    return !mask.has(id) && (owner === undefined || !mask.has(owner))
+  }
+
+  function runtimePolicy(mask: Set<string>) {
     return [
       ...new Set([
         ...mask,
@@ -104,7 +122,7 @@ export function createActions(
     }
   }
 
-  async function runAction(id, tools) {
+  async function runAction(id: string, tools: T) {
     const action = actions.get(id)
 
     if (!action) {
@@ -128,7 +146,10 @@ export function createActions(
   }
 }
 
-function disabledActions(ids = [], supported) {
+function disabledActions(
+  ids: readonly string[] = [],
+  supported: readonly string[]
+) {
   if (!Array.isArray(ids)) {
     throw new TypeError('Expected a disabledFeatures list')
   }
@@ -141,5 +162,5 @@ function disabledActions(ids = [], supported) {
     }
   }
 
-  return new Set(ids)
+  return new Set<string>(ids)
 }

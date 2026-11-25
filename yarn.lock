@@ -333,6 +333,8 @@ __metadata:
     "@asyra/canvas": "workspace:*"
     "@asyra/core": "workspace:*"
     "@asyra/preset": "workspace:*"
+    "@types/react": "npm:^19.2.18"
+    typescript: "npm:^5.7.2"
     vite: "npm:^6.4.4"
   peerDependencies:
     "@asyra/canvas": ^0.1.0

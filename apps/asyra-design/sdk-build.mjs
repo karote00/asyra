@@ -75,4 +75,8 @@ export async function buildWorkspace(outDir, entry) {
     path.join(outDir, 'workspace-assets.js'),
     'export const assets = {\n' + urls.join(',\n') + '\n}\n'
   )
+  await writeFile(
+    path.join(outDir, 'workspace-assets.d.ts'),
+    'export declare const assets: Readonly<Record<string, string>>\n'
+  )
 }

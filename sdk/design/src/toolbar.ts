@@ -1,4 +1,14 @@
-export function createToolbar(target, items, actions, editor, signal) {
+export function createToolbar(
+  target: HTMLCanvasElement,
+  items: readonly string[],
+  actions: ReadonlyMap<string, { label: string }>,
+  editor: {
+    isFeatureEnabled(id: string): boolean
+    getTool(): string | null
+    runAction(id: string): Promise<void>
+  },
+  signal: AbortSignal
+) {
   if (!target.parentNode) {
     throw new Error('Attach the canvas to a parent before creating its toolbar')
   }
@@ -8,7 +18,7 @@ export function createToolbar(target, items, actions, editor, signal) {
   group.setAttribute('aria-label', 'Design tools')
   group.style.cssText =
     'display:flex;flex-wrap:wrap;gap:0.4em;border:0;margin:0;padding:0.4em 0;'
-  const buttons = new Map()
+  const buttons = new Map<HTMLButtonElement, string>()
 
   const update = () => {
     for (const [button, tool] of buttons) {

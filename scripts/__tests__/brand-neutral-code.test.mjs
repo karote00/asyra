@@ -182,9 +182,7 @@ const pluginIdentityOwners = new Set([
 
 // The public Design component is exported to applications under this name.
 const designComponentOwners = new Set([
-  'sdk/design/src/react.js',
-  'sdk/design/src/react.d.ts',
-  'sdk/design/src/vue.d.ts',
+  'sdk/design/src/react.ts',
   'fixtures/canvas/examples/DesignBoard.tsx'
 ])
 
@@ -359,8 +357,8 @@ test('the public Design component identity stays with its exports and consumer',
   const accepted = (file) =>
     isAllowedPublicIdentity(identity, identity, path.join(repositoryRoot, file))
 
-  assert.equal(accepted('sdk/design/src/react.js'), true)
-  assert.equal(accepted('sdk/design/src/element.js'), false)
+  assert.equal(accepted('sdk/design/src/react.ts'), true)
+  assert.equal(accepted('sdk/design/src/element.ts'), false)
   assert.equal(accepted('packages/core/src/core.ts'), false)
 })
 
