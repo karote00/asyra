@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Design tool layout</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font: 14px system-ui;
+        color: #233244;
+      }
+      main {
+        height: 70dvh;
+        min-height: 280px;
+      }
+      header,
+      footer {
+        padding: 10px 14px;
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+      button,
+      select {
+        font: inherit;
+      }
+      #external {
+        min-height: 30px;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <label
+        >Layout profile
+        <select id="profile">
+          <option>Alex</option>
+          <option>Sam</option>
+        </select></label
+      >
+      <label
+        >Alignment position
+        <select id="placement">
+          <option value="properties.top">Properties</option>
+          <option value="toolbar.top">Toolbar</option>
+          <option value="selectionMenu">Selection menu</option>
+          <option value="manual">My toolbar</option>
+        </select></label
+      >
+      <label><input type="checkbox" id="limited" /> Disable movement</label>
+      <label
+        ><input type="checkbox" id="entitled" checked /> Enable alignment
+        tools</label
+      >
+      <button id="sample" type="button">Select two rectangles</button>
+    </header>
+    <main></main>
+    <footer>
+      <span>My toolbar</span>
+      <div id="external"></div>
+    </footer>
+    <script type="module" src="./main.js"></script>
+  </body>
+</html>

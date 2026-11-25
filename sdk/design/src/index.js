@@ -5,21 +5,33 @@ import { mountWorkspace } from './workspace.js'
 import { createRuntime } from './runtime.js'
 
 export async function attachDesignTools(canvas, options = {}) {
-  const { disabled } = createActions({
+  const policy = createActions({
     disabledFeatures: options.disabledFeatures
   })
 
-  return mountTools(canvas, options, disabled)
+  return mountTools(canvas, options, policy)
 }
 
-function mountTools(canvas, options, disabled) {
+function mountTools(canvas, options, { disabled, validateDisabled }) {
   return canvas.mount(async (target) => {
-    const { destroy, ...tools } = await createRuntime().start(target, {
-      ...options,
-      disabledFeatures: disabled
-    })
+    const { destroy, updateAvailability, ...tools } =
+      await createRuntime().start(target, {
+        ...options,
+        disabledFeatures: disabled
+      })
 
-    return { tools, destroy }
+    return {
+      tools: {
+        ...tools,
+
+        async setDisabledFeatures(ids) {
+          updateAvailability(validateDisabled(ids))
+        },
+
+        isFeatureEnabled: (id) => !disabled.has(id)
+      },
+      destroy
+    }
   })
 }
 
@@ -51,13 +63,19 @@ export async function createDesign(host, options = {}) {
   }
 
   try {
-    const { actions, disabled, runAction } = createActions({
+    const policy = createActions({
       ...options,
       extensions: []
     })
-    const session = await mountTools(surface, options, disabled)
+    const { actions, runAction } = policy
+    const session = await mountTools(surface, options, policy)
     const tools = {
       ...session,
+
+      async setDisabledFeatures(ids) {
+        await session.setDisabledFeatures(ids)
+        toolbar?.update()
+      },
 
       setTool(tool) {
         session.setTool(tool)
@@ -82,9 +100,7 @@ export async function createDesign(host, options = {}) {
     if (!options.hideUI && options.toolbar !== false) {
       toolbar = createToolbar(
         target,
-        [...(options.toolbar ?? actions.keys())].filter(
-          (id) => !disabled.has(id)
-        ),
+        [...(options.toolbar ?? actions.keys())],
         actions,
         editor,
         listeners.signal

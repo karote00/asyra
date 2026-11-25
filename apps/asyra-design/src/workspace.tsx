@@ -5,6 +5,7 @@ import { PresetSystemPropertyKeys } from '@asyra/preset'
 import { DesignWorkspace, type WorkspaceProps } from './app/design-workspace'
 import core from './contexts'
 import { featureEnabled } from './workspace-features'
+import { updateWorkspaceFeatures } from './init/workspace-features'
 import { initDesign } from './init/init-design'
 import { switchPrimaryToolFeature } from './features/switch-primary-tool'
 import { createDesignShape } from './features/create-element'
@@ -65,6 +66,7 @@ interface WorkspaceOptions {
   collaboration?: RenderSession['collaboration']
   panels?: WorkspaceProps['panels']
   toolbar?: WorkspaceProps['toolbar']
+  slots?: WorkspaceProps['slots']
   disabledFeatures: readonly string[]
   hideUI: boolean
   reopen(): Promise<void>
@@ -93,6 +95,7 @@ export function mount(options: WorkspaceOptions) {
   }
 
   let cancel!: (error: Error) => void
+  let render!: (disabled: readonly string[]) => void
   const ready = new Promise<void>((resolve, reject) => {
     cancel = reject
     const session: RenderSession = {
@@ -105,21 +108,39 @@ export function mount(options: WorkspaceOptions) {
       reopen: options.reopen
     }
 
-    root.render(
-      <DesignWorkspace
-        session={session}
-        panels={options.panels}
-        toolbar={options.toolbar}
-        onReset={reset}
-      />
-    )
+    render = (disabled) =>
+      root.render(
+        <DesignWorkspace
+          session={session}
+          panels={options.panels}
+          slots={options.slots}
+          disabledFeatures={disabled}
+          toolbar={
+            options.toolbar && {
+              ...options.toolbar,
+              actions: options.toolbar.actions.filter(
+                ({ id }) => !disabled.includes(id)
+              )
+            }
+          }
+          onReset={reset}
+        />
+      )
+    render(options.disabledFeatures)
   })
   const lifetime = new AbortController()
   let closing: Promise<void> | undefined
 
   return {
     ready,
-    common: createCommonSession(options.disabledFeatures, lifetime.signal),
+
+    async updateFeatures(ids: readonly string[]) {
+      await updateWorkspaceFeatures(ids)
+      lifetime.signal.throwIfAborted()
+      render(ids)
+    },
+
+    common: createCommonSession(lifetime.signal),
     commands: workspaceCommands(options.reopen),
     observe: observeWorkspace,
 

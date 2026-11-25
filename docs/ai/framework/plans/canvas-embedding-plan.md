@@ -92,3 +92,14 @@ commands, detached document reads, transaction handles and scoped observers.
 Reset retains the editor entry and retires session-local resources. Destroy
 releases the owner. Verify the catalog, mixed feature policy, callback lifetime
 and independent documents with two editors in a packed plain JavaScript consumer.
+
+### Extension UI and live availability
+
+The container editor owns stable tool group IDs, manual host mounts and ordered
+placements in the toolbar, properties panel and selection menu. Extensions own
+their DOM and listeners. Moving a group in one document preserves its mount.
+The host owns preference storage and user identity. Layout changes do not
+publish document mutations. Availability changes update command admission,
+input registrations and visible controls on the live session. The packed
+consumer proves disposal, independent editors, layout restoration and feature
+switching through actual UI and SDK entry points.

@@ -8,10 +8,15 @@ export function createToolbar(target, items, actions, editor, signal) {
   group.setAttribute('aria-label', 'Design tools')
   group.style.cssText =
     'display:flex;flex-wrap:wrap;gap:0.4em;border:0;margin:0;padding:0.4em 0;'
-  const modes = new Map()
+  const buttons = new Map()
 
   const update = () => {
-    for (const [button, tool] of modes) {
+    for (const [button, tool] of buttons) {
+      button.hidden = !editor.isFeatureEnabled(tool)
+      if (tool !== 'select' && tool !== 'rectangle') {
+        continue
+      }
+
       button.setAttribute('aria-pressed', String(tool === editor.getTool()))
     }
   }
@@ -27,9 +32,7 @@ export function createToolbar(target, items, actions, editor, signal) {
 
     button.type = 'button'
     button.textContent = action.label
-    if (item === 'select' || item === 'rectangle') {
-      modes.set(button, item)
-    }
+    buttons.set(button, item)
 
     button.addEventListener(
       'click',

@@ -39,6 +39,7 @@ for (const name of [
   'toolbar.js',
   'actions.js',
   'workspace.js',
+  'tool-groups.js',
   'element.js',
   'element.d.ts',
   'react.js',

@@ -1,0 +1,79 @@
+import { createDesign } from '@asyra/design'
+import {
+  alignmentTools,
+  mountAlignmentTools
+} from './examples/align-selection.js'
+
+const { document, localStorage } = globalThis
+
+const field = (id) => document.getElementById(id)
+
+const profile = field('profile')
+const placement = field('placement')
+const external = field('external')
+
+const preferenceKey = () => 'tool-layout:' + profile.value
+
+const read = () => JSON.parse(localStorage.getItem(preferenceKey()) ?? '{}')
+
+globalThis.ready = (async () => {
+  const editor = await createDesign(document.querySelector('main'), {
+    extensions: [alignmentTools()],
+    toolLayout: read(),
+
+    onToolLayoutChange(layout) {
+      localStorage.setItem(preferenceKey(), JSON.stringify(layout))
+      reflect(layout)
+    }
+  })
+
+  globalThis.editor = editor
+
+  function reflect(layout) {
+    placement.value = Object.keys(layout).find((slot) =>
+      layout[slot].includes('alignment')
+    )
+  }
+
+  function restore() {
+    editor.toolGroups.setLayout(read())
+    reflect(editor.toolGroups.getLayout())
+    if (placement.value === 'manual') {
+      mountAlignmentTools(external, editor)
+    }
+  }
+
+  restore()
+  profile.onchange = restore
+  placement.onchange = () => {
+    if (placement.value === 'manual') {
+      mountAlignmentTools(external, editor)
+    } else {
+      editor.toolGroups.move('alignment', placement.value)
+    }
+  }
+
+  function applyAvailability() {
+    const disabled = []
+
+    if (field('limited').checked) {
+      disabled.push('moveElements')
+    }
+
+    if (!field('entitled').checked) {
+      disabled.push('alignment')
+    }
+
+    return editor.setDisabledFeatures(disabled)
+  }
+
+  field('limited').onchange = applyAvailability
+  field('entitled').onchange = applyAvailability
+
+  field('sample').onclick = () => {
+    const a = editor.drawRectangle({ x: 24, y: 30, width: 70, height: 40 })
+    const b = editor.drawRectangle({ x: 150, y: 105, width: 50, height: 30 })
+
+    editor.select([a, b])
+  }
+})()

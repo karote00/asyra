@@ -133,7 +133,7 @@ const options = {
 ```
 
 Call `await editor.runAction('card')` to run that action from your application.
-The default toolbar includes registered actions in declaration order.
+The default toolbar includes actions from action-only extensions in declaration order. Extensions with UI groups render their own controls.
 An extension can export an object with its own `actions` and be shared across
 products. Install one or more in a single call:
 
@@ -145,6 +145,59 @@ const editor = await createDesign(container, {
 
 Each extension receives the same workspace tools. Duplicate action IDs fail
 at startup.
+
+### Place and move extension UI
+
+An extension can supply actions and one or more UI groups. Give each group a
+stable ID, a placement and a synchronous mount function that releases its
+listeners and DOM on cleanup. Create DOM in the supplied container's document.
+Use the editor passed to that mount for commands and narrow subscriptions.
+
+```js
+const extension = {
+  id: 'navigationTools',
+  actions: { fit: { label: 'Fit drawing', run: editor => editor.zoomFit() } },
+  ui: [{
+    id: 'navigation',
+    label: 'Navigation',
+    placement: 'properties.top',
+    mount({ container, editor }) {
+      const button = container.ownerDocument.createElement('button')
+      button.textContent = 'Fit drawing'
+      button.onclick = () => editor.runAction('fit')
+      container.append(button)
+      const stop = editor.observe('disabledFeatures', () => {
+        button.disabled = !editor.isFeatureEnabled('fit') || !editor.isFeatureEnabled('zoomFit')
+      })
+      return () => { stop(); button.remove() }
+    }
+  }]
+}
+const editor = await createDesign(host, {
+  extensions: [extension],
+  toolLayout: JSON.parse(localStorage.getItem(userLayoutKey) ?? '{}'),
+  onToolLayoutChange: layout => localStorage.setItem(userLayoutKey, JSON.stringify(layout))
+})
+```
+
+An extension can declare a unique feature ID. Pass that ID in `disabledFeatures` to disable all of its actions and unmount its tool groups. Enabling it mounts each group at its saved position. The same option works at creation and during a session. For example, a host can apply a subscription change with `await editor.setDisabledFeatures(paid ? [] : ['navigationTools'])`. This replaces the entire disabled list. Include any other features the host wants to keep disabled. In React, update the option on the existing component:
+
+```jsx
+<AsyraDesign options={{ extensions: [extension], disabledFeatures: paid ? [] : ['navigationTools'] }} />
+```
+
+Built-in outlets are `properties.top`, `toolbar.top` and `selectionMenu`
+(visible with a selection). Drag the grip to another outlet or drop it before
+another group to reorder. For keyboard controls or product-owned menus call
+`editor.toolGroups.move('navigation', 'toolbar.top', 0)`. To place a group in a
+host element, use `const unmount = editor.toolGroups.mount('navigation', element)`
+and release the mount with `unmount()`. Configure `placement: 'manual'` to wait
+for a host element. Manual mounts also work with `hideUI: true`.
+
+The layout maps outlet names to ordered group IDs. The host chooses the
+preference storage and user key. Restore a profile with `setLayout(layout)` or
+restore extension defaults with `setLayout({})`. Moving groups preserves the
+document and editing session. A hidden outlet has no visible controls.
 
 ### Build the controls in your own UI
 
@@ -229,7 +282,7 @@ const editor = await createDesign(container, {
 
 Omit both options for the complete default workspace. The custom element accepts
 the same object through its `options` property before connection. Each editor
-resolves its own runtime policy at mount. All instances use the same package
+owns its live runtime policy. Call `await editor.setDisabledFeatures(ids)` to replace it. The same document, collaboration connection and editor stay mounted. Subscribe with `editor.observe('disabledFeatures', listener)` to update custom controls. All instances use the same package
 and bundle. Disabled tools disappear from the controls, ignore their gestures
 and shortcuts, and reject explicit SDK requests. Existing document content
 still loads, renders and saves. A custom action receives the same guarded tools.

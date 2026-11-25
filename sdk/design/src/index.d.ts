@@ -29,7 +29,14 @@ export function attachDesignTools(
     document?: unknown
     disabledFeatures?: readonly (DesignTool | 'undo' | 'redo')[]
   }
-): Promise<DesignTools>
+): Promise<
+  DesignTools & {
+    setDisabledFeatures(
+      ids: readonly (DesignTool | 'undo' | 'redo')[]
+    ): Promise<void>
+    isFeatureEnabled(id: DesignTool | 'undo' | 'redo'): boolean
+  }
+>
 
 export interface WorkspaceTools
   extends DesignTools<WorkspaceTool>, WorkspaceEditingTools {
@@ -99,14 +106,39 @@ export type WorkspaceFeature =
   | 'visibility'
   | 'rename'
 
+export type ToolPlacement =
+  'properties.top' | 'toolbar.top' | 'selectionMenu' | 'manual'
+export type ToolLayout = Partial<Record<ToolPlacement, readonly string[]>>
+
+export interface ToolGroup<Id extends string = string> {
+  readonly id: string
+  readonly label?: string
+  readonly placement: ToolPlacement
+  mount(context: {
+    container: HTMLElement
+    editor: DesignEditor<Id, WorkspaceTool>
+  }): undefined | (() => void)
+}
+
+export interface ToolGroups {
+  getLayout(): ToolLayout
+  setLayout(layout: ToolLayout): void
+  move(id: string, placement: ToolPlacement, index?: number): void
+  mount(id: string, container: HTMLElement): () => void
+}
+
 export interface WorkspaceExtension<Id extends string = string> {
-  actions: Partial<Record<Id, DesignAction>>
+  readonly id?: Id
+  actions?: Partial<Record<Id, DesignAction>>
+  ui?: readonly ToolGroup<Id>[]
 }
 
 export interface WorkspaceOptions<
   Id extends string = never
 > extends DesignOptions<Id> {
   extensions?: readonly WorkspaceExtension<Id>[]
+  toolLayout?: ToolLayout
+  onToolLayoutChange?(layout: ToolLayout): void
   panels?: { layers?: boolean; properties?: boolean }
   collaboration?: { fileId: string; endpoint: string; actorId?: string }
 }
@@ -114,10 +146,21 @@ export interface WorkspaceOptions<
 export type DesignEditor<
   Id extends string,
   Tool extends string
-> = ToolsFor<Tool> & {
-  runAction(id: Command<Tool> | Id): Promise<void>
-  destroy(): Promise<void>
-}
+> = ToolsFor<Tool> &
+  (WorkspaceTool extends Tool
+    ? {
+        readonly toolGroups: ToolGroups
+      }
+    : unknown) & {
+    setDisabledFeatures(
+      ids: NonNullable<DesignOptions<Id, Tool>['disabledFeatures']>
+    ): Promise<void>
+    isFeatureEnabled(
+      id: NonNullable<DesignOptions<Id, Tool>['disabledFeatures']>[number]
+    ): boolean
+    runAction(id: Command<Tool> | Id): Promise<void>
+    destroy(): Promise<void>
+  }
 
 export function createDesign<Id extends string = never>(
   target: HTMLCanvasElement,

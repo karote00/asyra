@@ -148,25 +148,29 @@ export const createDesignElementEditPreparer =
 
     const fields = Object.keys(properties ?? {})
 
-    if (name !== undefined) {
-      featureEnabled('rename', 'reject')
+    function requireEditFeatures() {
+      if (name !== undefined) {
+        featureEnabled('rename', 'reject')
+      }
+
+      if (fillColor !== undefined) {
+        featureEnabled('fills', 'reject')
+      }
+
+      if (strokeColor !== undefined) {
+        featureEnabled('strokes', 'reject')
+      }
+
+      if (fields.some((key) => geometryFields.includes(key))) {
+        featureEnabled('geometry', 'reject')
+      }
+
+      if (fields.some((key) => textFields.includes(key))) {
+        featureEnabled('text', 'reject')
+      }
     }
 
-    if (fillColor !== undefined) {
-      featureEnabled('fills', 'reject')
-    }
-
-    if (strokeColor !== undefined) {
-      featureEnabled('strokes', 'reject')
-    }
-
-    if (fields.some((key) => geometryFields.includes(key))) {
-      featureEnabled('geometry', 'reject')
-    }
-
-    if (fields.some((key) => textFields.includes(key))) {
-      featureEnabled('text', 'reject')
-    }
+    requireEditFeatures()
 
     const target = requireEditableElement(elementId, apis.getData)
 
@@ -227,6 +231,7 @@ export const createDesignElementEditPreparer =
     }
 
     return () => {
+      requireEditFeatures()
       let changed = false
 
       if (name !== undefined && name !== target.name) {

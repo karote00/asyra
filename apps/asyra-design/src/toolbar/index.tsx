@@ -5,6 +5,7 @@ import Zoom from './zoom'
 import ToolButton from './tool-button'
 
 export interface ToolBarProps {
+  readonly slotRef?: (node: HTMLDivElement | null) => void
   readonly aiOpen: boolean
   readonly aiShortcutLabel?: string
   readonly controls?: {
@@ -30,6 +31,7 @@ const ToolBar = ({
   aiOpen,
   aiShortcutLabel,
   onAiToggle,
+  slotRef,
   controls,
   onReset
 }: ToolBarProps) => {
@@ -58,6 +60,13 @@ const ToolBar = ({
     >
       <div className="flex items-center gap-1">
         {(controls?.includeTools ?? true) && <ToolButton onReset={onReset} />}
+        {slotRef && (
+          <div
+            ref={slotRef}
+            data-tool-slot="toolbar.top"
+            className="flex items-center min-h-6 min-w-8"
+          />
+        )}
         {controls?.actions.map(({ id, label, run: execute }) => (
           <button
             key={id}

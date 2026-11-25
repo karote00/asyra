@@ -23,6 +23,8 @@ export function featureEnabled(
 export const toolId = (tool: string) =>
   tool === PrimaryToolType.RECTANGLE ? 'rectangle' : tool
 
+export const hasDisabledFeatures = () => disabled.size > 0
+
 export function setDisabledFeatures(ids: readonly string[]) {
   disabled = new Set(ids)
   defaultPrimaryTool = disabled.has(PrimaryToolType.SELECT)

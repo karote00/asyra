@@ -30,7 +30,14 @@ import type { AiConfirmationBroker } from '../ai/confirmation'
 import type { AiConversationController } from '../ai/conversation'
 import type { AiHistoryProjection } from '../common-apis/history'
 
+export type WorkspaceSlots = Record<
+  'toolbar.top' | 'properties.top' | 'selectionMenu',
+  (element: HTMLDivElement | null) => void
+>
+
 export interface WorkspaceProps {
+  slots?: WorkspaceSlots
+  disabledFeatures?: readonly string[]
   session?: RenderSession
   toolbar?: false | ToolBarProps['controls']
   onReset?: () => Promise<void>
@@ -47,6 +54,8 @@ export interface WorkspaceProps {
 
 export const DesignWorkspace: React.FC<WorkspaceProps> = ({
   session,
+  slots,
+  disabledFeatures,
   toolbar,
   panels,
   onReset,
@@ -149,8 +158,10 @@ export const DesignWorkspace: React.FC<WorkspaceProps> = ({
     () =>
       ai
         ? [aiPanelCommandDescriptor, ...groupCommandDescriptors]
-        : groupCommandDescriptors.filter(({ id }) => featureEnabled(id)),
-    [ai, aiPanelCommandDescriptor, groupCommandDescriptors]
+        : groupCommandDescriptors.filter(
+            ({ id }) => !disabledFeatures?.includes(id) && featureEnabled(id)
+          ),
+    [ai, aiPanelCommandDescriptor, disabledFeatures, groupCommandDescriptors]
   )
 
   useEffect(() => {
@@ -235,13 +246,31 @@ export const DesignWorkspace: React.FC<WorkspaceProps> = ({
           aiOpen={aiOpen}
           aiShortcutLabel={aiPanelCommandDescriptor.shortcutLabel}
           onAiToggle={ai ? toggleAiPanel : undefined}
+          slotRef={slots?.['toolbar.top']}
           controls={toolbar}
           onReset={onReset}
         />
       )}
       {aiOpen && conversationPanel?.(() => closeAiPanel({}))}
       {panels?.layers !== false && <Contents />}
-      {panels?.properties !== false && <Properties />}
+      {panels?.properties !== false && (
+        <Properties slotRef={slots?.['properties.top']} />
+      )}
+      {slots && !session?.hideUI && (
+        <div
+          ref={slots.selectionMenu}
+          hidden={elementSelection.size === 0}
+          data-tool-slot="selectionMenu"
+          style={{
+            gridArea: 'canvas',
+            alignSelf: 'start',
+            justifySelf: 'center',
+            zIndex: 10,
+            minWidth: 32,
+            minHeight: 18
+          }}
+        />
+      )}
       <div
         id="viewport-anchor"
         className="absolute inset-0 pointer-events-none"

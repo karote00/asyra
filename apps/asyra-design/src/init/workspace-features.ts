@@ -3,8 +3,15 @@ import {
   VectorPathFeatureNames,
   GradientFeatureNames
 } from '../constants'
+import { getFeatureRegistry, getSessionManager } from '@asyra/core'
+import { systemContextApis } from '../common-apis/system-context'
+import { textCanvasApis } from '../common-apis/text-canvas'
 import core from '../contexts'
-import { setDisabledFeatures, defaultPrimaryTool } from '../workspace-features'
+import {
+  setDisabledFeatures,
+  defaultPrimaryTool,
+  toolId
+} from '../workspace-features'
 import { PresetSystemPropertyKeys as Keys } from '@asyra/preset'
 const registrations: Record<string, readonly string[]> = {
   select: [
@@ -32,16 +39,46 @@ const registrations: Record<string, readonly string[]> = {
   zoomFit: [FeatureNames.ZOOM_FIT]
 }
 
+function registrationNames(ids: readonly string[]) {
+  return new Set(ids.flatMap((id) => registrations[id] ?? []))
+}
+
 export function configureWorkspaceFeatures(ids: readonly string[]) {
-  setDisabledFeatures(ids)
-  for (const id of ids) {
-    if (Object.hasOwn(registrations, id)) {
-      for (const name of registrations[id]) {
-        core.unregisterFeature(name)
-      }
+  const names = registrationNames(ids)
+  const registry = getFeatureRegistry()
+
+  for (const group of Object.values(registrations)) {
+    for (const name of group) {
+      registry.setInteractionEnabled(name, !names.has(name))
     }
   }
 
-  // Primary tool and path editing state are runtime-only managed properties.
-  core.setSystemProperty(Keys.PRIMARY_TOOL, defaultPrimaryTool)
+  setDisabledFeatures(ids)
+  if (ids.includes('text')) {
+    textCanvasApis.cancel()
+  }
+
+  const primary = core.getSystemProperty<string>(Keys.PRIMARY_TOOL)
+
+  if (ids.includes('pen') && systemContextApis.getPathEditingMode()) {
+    systemContextApis.exitPathEditingMode()
+  }
+
+  if (!primary || ids.includes(toolId(primary)) || primary === 'none') {
+    systemContextApis.switchPrimaryTool(defaultPrimaryTool)
+  }
+}
+
+export async function updateWorkspaceFeatures(ids: readonly string[]) {
+  const sessions = getSessionManager()
+  const primary = core.getSystemProperty<string>(Keys.PRIMARY_TOOL)
+
+  if (
+    (primary && ids.includes(toolId(primary))) ||
+    [...registrationNames(ids)].some((name) => sessions.isFeatureActive(name))
+  ) {
+    await sessions.cancelActiveSessions(core.getSystemContextSnapshot())
+  }
+
+  configureWorkspaceFeatures(ids)
 }

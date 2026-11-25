@@ -1,14 +1,10 @@
 import { common } from './common'
 import { commonPolicy } from './common-policy'
-import { featureEnabled } from '../workspace-features'
+import { featureEnabled, hasDisabledFeatures } from '../workspace-features'
 
-export function createCommonSession(
-  disabled: readonly string[],
-  signal: AbortSignal
-) {
+export function createCommonSession(signal: AbortSignal) {
   // The raw event publisher accepts arbitrary application payloads. Restricted
   // editors use semantic commands whose feature owner is known before mutation.
-  const permissions = new Set(disabled)
   const cleanup = new Set<() => void>()
 
   signal.addEventListener(
@@ -142,7 +138,7 @@ export function createCommonSession(
             name,
             (...args: never[]) => {
               signal.throwIfAborted()
-              if (permissions.size) {
+              if (hasDisabledFeatures()) {
                 check(policy, args)
                 if (group === 'transaction' && name === 'updateTransaction') {
                   throw new Error(

@@ -334,6 +334,19 @@ export async function start(target, options) {
     )
 
     return {
+      updateAvailability(next) {
+        assertActive()
+        disabled.clear()
+        for (const id of next) {
+          disabled.add(id)
+        }
+
+        if (!tool || disabled.has(tool)) {
+          cancel()
+          tool = ['rectangle', 'select'].find((id) => !disabled.has(id)) ?? null
+        }
+      },
+
       getTool() {
         assertActive()
 

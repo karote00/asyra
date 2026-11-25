@@ -31,16 +31,55 @@ export function createActions(
   const actions = new Map(Object.entries({ ...commands, ...extra }))
 
   const entries = [
-    ...extensions.flatMap((extension) => Object.entries(extension.actions)),
+    ...extensions.flatMap((extension) =>
+      Object.entries(extension.actions ?? {})
+    ),
     ...Object.entries(custom)
   ]
 
-  const disabled = disabledActions(options.disabledFeatures, [
+  const supported = [
     ...actions.keys(),
     ...entries.map(([id]) => id),
     ...features,
     ...Object.keys(defaults)
-  ])
+  ]
+
+  const owners = new Map()
+
+  for (const extension of extensions) {
+    if (extension.id === undefined) {
+      continue
+    }
+
+    if (
+      typeof extension.id !== 'string' ||
+      !extension.id.trim() ||
+      supported.includes(extension.id)
+    ) {
+      throw new TypeError('Expected a unique extension ID')
+    }
+
+    supported.push(extension.id)
+    for (const id of Object.keys(extension.actions ?? {})) {
+      owners.set(id, extension.id)
+    }
+  }
+
+  const validateDisabled = (ids) => disabledActions(ids, supported)
+
+  const disabled = validateDisabled(options.disabledFeatures)
+
+  const isEnabled = (id, mask = disabled) =>
+    !mask.has(id) && !mask.has(owners.get(id))
+
+  function runtimePolicy(mask) {
+    return [
+      ...new Set([
+        ...mask,
+        ...[...owners.keys()].filter((id) => !isEnabled(id, mask))
+      ])
+    ]
+  }
 
   for (const [id, action] of entries) {
     if (
@@ -56,17 +95,7 @@ export function createActions(
       )
     }
 
-    if (disabled.has(id)) {
-      actions.set(id, {
-        label: action.label,
-
-        run() {
-          throw new Error('Disabled Design feature: ' + id)
-        }
-      })
-    } else {
-      actions.set(id, action)
-    }
+    actions.set(id, action)
   }
 
   for (const [id, action] of Object.entries(defaults)) {
@@ -82,10 +111,21 @@ export function createActions(
       throw new TypeError('Unknown Design action: ' + id)
     }
 
+    if (!isEnabled(id)) {
+      throw new Error('Disabled Design feature: ' + id)
+    }
+
     await action.run(tools)
   }
 
-  return { actions, disabled, runAction }
+  return {
+    actions,
+    disabled,
+    runAction,
+    validateDisabled,
+    isEnabled,
+    runtimePolicy
+  }
 }
 
 function disabledActions(ids = [], supported) {

@@ -88,6 +88,7 @@ export interface ElementProperties extends Partial<Rectangle> {
 }
 
 export interface WorkspaceObservations {
+  disabledFeatures: readonly string[]
   elementSelection: ReadonlySet<string>
   elementDataMap: Readonly<Record<string, Layer>>
   flattenedElementIds: readonly string[]

@@ -1,3 +1,4 @@
+import { createToolGroups } from './tool-groups.js'
 import { createActions } from './actions.js'
 import { assets } from './workspace-assets.js'
 
@@ -55,7 +56,14 @@ export async function mountWorkspace(host, options, signal) {
     throw new TypeError('Expected an ordered toolbar list or false')
   }
 
-  const { actions, disabled, runAction } = createActions(
+  const {
+    actions,
+    disabled,
+    runAction,
+    validateDisabled,
+    isEnabled,
+    runtimePolicy
+  } = createActions(
     options,
     workspaceTools,
     [
@@ -79,7 +87,7 @@ export async function mountWorkspace(host, options, signal) {
         'undo',
         'redo',
         ...(options.extensions ?? []).flatMap((extension) =>
-          Object.keys(extension.actions)
+          extension.ui?.length ? [] : Object.keys(extension.actions ?? {})
         ),
         ...Object.keys(options.actions ?? {})
       ]
@@ -87,17 +95,16 @@ export async function mountWorkspace(host, options, signal) {
   const controls =
     options.hideUI || ids === false
       ? false
-      : ids
-          .map((id) => {
-            const action = actions.get(id)
+      : ids.map((id) => {
+          const action = actions.get(id)
 
-            if (!action) {
-              throw new TypeError('Unknown Design action: ' + id)
-            }
+          if (!action) {
+            throw new TypeError('Unknown Design action: ' + id)
+          }
 
-            return { id, label: action.label }
-          })
-          .filter(({ id }) => !disabled.has(id))
+          return { id, label: action.label }
+        })
+
   const collaboration = options.collaboration && {
     ...options.collaboration,
     actorId: options.collaboration.actorId ?? globalThis.crypto.randomUUID()
@@ -125,14 +132,14 @@ export async function mountWorkspace(host, options, signal) {
   const stop = () => lifetime.abort()
 
   signal?.throwIfAborted()
-  signal?.addEventListener('abort', stop, { once: true })
-  occupied.add(host)
   let frame
   let session
   let closing
   let active = true
   let pending
   const observations = new Set()
+  const availabilityListeners = new Set()
+  let changes = Promise.resolve()
 
   function detachObservers() {
     for (const entry of observations) {
@@ -185,6 +192,14 @@ export async function mountWorkspace(host, options, signal) {
         throw new TypeError('Expected an observation callback')
       }
 
+      if (key === 'disabledFeatures') {
+        current()
+        listener([...disabled])
+        availabilityListeners.add(listener)
+
+        return () => availabilityListeners.delete(listener)
+      }
+
       const entry = { key, listener, detach: current().observe(key, listener) }
 
       observations.add(entry)
@@ -195,12 +210,53 @@ export async function mountWorkspace(host, options, signal) {
       }
     },
 
+    isFeatureEnabled(id) {
+      current()
+
+      return isEnabled(id)
+    },
+
+    async setDisabledFeatures(ids) {
+      const next = validateDisabled(ids)
+
+      const apply = async () => {
+        const live = current()
+
+        if (
+          next.size === disabled.size &&
+          [...next].every((id) => disabled.has(id))
+        ) {
+          return
+        }
+
+        await live.updateFeatures(runtimePolicy(next))
+        current()
+        disabled.clear()
+        for (const id of next) {
+          disabled.add(id)
+        }
+
+        groups.refresh()
+        for (const notify of availabilityListeners) {
+          notify([...disabled])
+        }
+      }
+
+      const result = changes.then(apply)
+
+      changes = result.catch(() => undefined)
+
+      return result
+    },
+
     async runAction(id) {
       current()
       await runAction(id, editor)
     },
 
     destroy() {
+      groups.destroy()
+      availabilityListeners.clear()
       active = false
       detachObservers()
       observations.clear()
@@ -220,6 +276,12 @@ export async function mountWorkspace(host, options, signal) {
       return closing
     }
   }
+
+  const groups = createToolGroups(options.extensions ?? [], options, editor)
+
+  editor.toolGroups = groups.api
+  occupied.add(host)
+  signal?.addEventListener('abort', stop, { once: true })
 
   async function start(documentData) {
     frame = host.ownerDocument.createElement('iframe')
@@ -246,6 +308,7 @@ export async function mountWorkspace(host, options, signal) {
     session = frame.contentWindow.DesignWorkspaceRuntime.mount({
       document: documentData,
       collaboration,
+      slots: groups.refs,
       toolbar:
         controls === false
           ? false
@@ -258,7 +321,7 @@ export async function mountWorkspace(host, options, signal) {
                 run: () => editor.runAction(id)
               }))
             },
-      disabledFeatures: [...disabled],
+      disabledFeatures: runtimePolicy(disabled),
       hideUI: options.hideUI === true,
       panels: options.hideUI
         ? { layers: false, properties: false }
@@ -313,6 +376,7 @@ export async function mountWorkspace(host, options, signal) {
     }
 
     pending = (async () => {
+      groups.pause()
       detachObservers()
       const previous = session
 
@@ -328,6 +392,8 @@ export async function mountWorkspace(host, options, signal) {
         for (const entry of observations) {
           entry.detach = current().observe(entry.key, entry.listener)
         }
+
+        groups.activate()
       }
     })().finally(() => {
       pending = undefined
@@ -358,6 +424,8 @@ export async function mountWorkspace(host, options, signal) {
         ])
       )
     )
+
+    groups.activate()
 
     return editor
   } catch (error) {

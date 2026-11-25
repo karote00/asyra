@@ -65,16 +65,20 @@ async function withConsumer(packages, entry, assertions) {
       .sort()
   )
   const headless = entry === 'headless.js'
+  const layoutDemo = entry === 'tool-layout.js'
 
   await cp(
-    path.join(fixture, headless ? 'headless.html' : 'index.html'),
+    path.join(
+      fixture,
+      headless || layoutDemo ? entry.replace('.js', '.html') : 'index.html'
+    ),
     path.join(cwd, 'index.html')
   )
   if (headless) {
     await cp(path.join(fixture, 'headless.css'), path.join(cwd, 'headless.css'))
   }
 
-  if (entry === 'react.js' || entry === 'common.js') {
+  if (entry === 'react.js' || entry === 'common.js' || layoutDemo) {
     await cp(path.join(fixture, 'examples'), path.join(cwd, 'examples'), {
       recursive: true
     })
@@ -98,6 +102,9 @@ async function withConsumer(packages, entry, assertions) {
             'await editor.destroy()',
             "const extended = await createDesign(document.body, { extensions: [{ actions: { badge: { label: 'Badge', run(tools) { tools.drawOval({ x: 0, y: 0, width: 10, height: 10 }) } } } }], toolbar: ['badge'], disabledFeatures: ['text', 'pen', 'badge'], hideUI: true })",
             "await extended.runAction('badge')",
+            "import type { WorkspaceExtension } from '@asyra/design'",
+            "const group: WorkspaceExtension<'arrange'> = { actions: { arrange: { label: 'Arrange', run: () => {} } }, ui: [{ id: 'layout', placement: 'properties.top', mount({container,editor}) { const b = container.ownerDocument.createElement('button'); b.onclick = () => editor.runAction('arrange'); container.append(b); return () => b.remove() } }] }",
+            "const grouped = await createDesign(document.body, { extensions: [group] }); await grouped.setDisabledFeatures(['arrange']); grouped.toolGroups.move('layout','toolbar.top',0)",
             "const workspace = await createDesign(document.body, { toolbar: ['group', 'ungroup', 'deleteSelectedElement', 'zoomFit', 'reset'] })",
             "await workspace.runAction('zoomFit')",
             'workspace.deleteSelectedElement()',
@@ -716,6 +723,19 @@ test('opt-in design element preserves a moved editor and serializes reconnects',
 
       await workspace.getByRole('button', { name: 'Add card' }).click()
       await expect.poll(count).toBe(1)
+      await board.evaluate((el) => {
+        el.options = { ...el.options, disabledFeatures: ['card'] }
+      })
+      await expect(
+        workspace.getByRole('button', { name: 'Add card' })
+      ).toHaveCount(0)
+      await board.evaluate((el) => {
+        el.options = { ...el.options, disabledFeatures: [] }
+      })
+      await expect(
+        workspace.getByRole('button', { name: 'Add card' })
+      ).toBeVisible()
+      await expect.poll(count).toBe(1)
       const moved = await board.evaluate((el) => {
         const original = el.editor
         const parent = globalThis.document.body.appendChild(
@@ -997,6 +1017,18 @@ test('packed Design workspaces use the app collaboration transport and durable d
                 globalThis.host,
                 {
                   hideUI: true,
+                  extensions: [
+                    {
+                      ui: [
+                        {
+                          id: 'shared-tools',
+                          placement: 'manual',
+
+                          mount: () => undefined
+                        }
+                      ]
+                    }
+                  ],
                   collaboration: { fileId: 'shared-board', endpoint }
                 }
               )
@@ -1008,6 +1040,10 @@ test('packed Design workspaces use the app collaboration transport and durable d
           try {
             await open(page)
             await open(peer)
+            await peer.evaluate(async () => {
+              await globalThis.editor.setDisabledFeatures(['oval'])
+              globalThis.editor.toolGroups.move('shared-tools', 'toolbar.top')
+            })
             const id = await page.evaluate(() =>
               globalThis.editor.drawOval({
                 x: 20,
@@ -1027,6 +1063,30 @@ test('packed Design workspaces use the app collaboration transport and durable d
             await expect
               .poll(() => hasShapeForId(peer, id), { timeout: 12000 })
               .toBe('oval')
+            assert.deepEqual(
+              await page.evaluate(
+                () => globalThis.editor.toolGroups.getLayout().manual
+              ),
+              ['shared-tools']
+            )
+            assert.deepEqual(
+              await peer.evaluate(
+                () => globalThis.editor.toolGroups.getLayout()['toolbar.top']
+              ),
+              ['shared-tools']
+            )
+            await assert.rejects(
+              peer.evaluate(() =>
+                globalThis.editor.drawOval({
+                  x: 1,
+                  y: 1,
+                  width: 20,
+                  height: 20
+                })
+              ),
+              /Disabled Design feature: oval/
+            )
+            await peer.evaluate(() => globalThis.editor.setDisabledFeatures([]))
             await expect
               .poll(
                 async () => {
@@ -1626,6 +1686,23 @@ test('packed Design borrowed canvas guards its own pointer, history and action p
           globalThis.editor.drawRectangle({ x: 1, y: 1, width: 10, height: 10 })
         ),
         /Disabled Design feature/
+      )
+      await page.evaluate(async () => {
+        const editor = globalThis.editor
+
+        await editor.setDisabledFeatures([])
+        editor.drawRectangle({ x: 10, y: 10, width: 24, height: 24 })
+        await editor.setDisabledFeatures(['rectangle'])
+      })
+      assert.equal(
+        await page.evaluate(() => globalThis.editor.getTool()),
+        'select'
+      )
+      await assert.rejects(
+        page.evaluate(() =>
+          globalThis.editor.drawRectangle({ x: 8, y: 8, width: 10, height: 10 })
+        ),
+        /Disabled Design feature: rectangle/
       )
     }
   )
@@ -2533,7 +2610,7 @@ test('packed Design selection extension updates only its own control and aligns 
         }
       })
 
-      assert.deepEqual(proof.keys, ['elementSelection'])
+      assert.deepEqual(proof.keys, ['disabledFeatures', 'elementSelection'])
       assert.ok(proof.enabled && proof.disabled && proof.blocked)
       assert.deepEqual(proof.after, proof.before)
       assert.deepEqual(proof.final, proof.stopped)
@@ -2541,6 +2618,330 @@ test('packed Design selection extension updates only its own control and aligns 
         [proof.original, proof.aligned, proof.undone, proof.peerX],
         [140, 10, 140, 220]
       )
+    }
+  )
+})
+
+test('packed Design moves extension UI between slots and restores each profile without reopening the editor', async () => {
+  await withConsumer(
+    ['sdk/canvas', 'sdk/design'],
+    'tool-layout.js',
+    async (page) => {
+      await page.evaluate(() => globalThis.ready)
+      const frame = page.frameLocator('main iframe')
+      const group = '[data-tool-group="alignment"]'
+
+      const slot = (name) => frame.locator('[data-tool-slot="' + name + '"]')
+
+      const action = (name) => page.getByRole('button', { name, exact: true })
+
+      await expect(slot('properties.top').locator(group)).toHaveCount(1)
+      await expect(
+        frame.getByRole('button', { name: 'Align left', exact: true })
+      ).toBeDisabled()
+      await action('Select two rectangles').click()
+      await page.evaluate(() => {
+        globalThis.original = globalThis.editor
+        globalThis.originalNode = globalThis.document
+          .querySelector('main iframe')
+          .contentDocument.querySelector('[data-tool-group]')
+      })
+      await slot('properties.top')
+        .getByRole('button', { name: 'Move Alignment' })
+        .dragTo(slot('toolbar.top'))
+      await expect(slot('toolbar.top').locator(group)).toHaveCount(1)
+      assert.ok(
+        await page.evaluate(
+          () =>
+            globalThis.originalNode.parentElement.dataset.toolSlot ===
+            'toolbar.top'
+        )
+      )
+      await page.getByLabel('Enable alignment tools').uncheck()
+      await expect(slot('toolbar.top').locator(group)).toHaveCount(0)
+      await assert.rejects(
+        page.evaluate(() => globalThis.editor.runAction('alignLeft')),
+        /Disabled Design feature: alignLeft/
+      )
+      assert.equal(
+        await page.evaluate(() =>
+          globalThis.editor.isFeatureEnabled('moveElements')
+        ),
+        true
+      )
+      await page.getByLabel('Enable alignment tools').check()
+      await expect(slot('toolbar.top').locator(group)).toHaveCount(1)
+      await page.getByLabel('Disable movement').check()
+      await expect(
+        slot('toolbar.top').getByRole('button', {
+          name: 'Align left',
+          exact: true
+        })
+      ).toBeDisabled()
+      await assert.rejects(
+        page.evaluate(() => globalThis.editor.runAction('alignLeft')),
+        /Disabled Design feature: moveElements/
+      )
+      await page.getByLabel('Disable movement').uncheck()
+      await slot('toolbar.top')
+        .getByRole('button', { name: 'Align left', exact: true })
+        .click()
+
+      const positions = () =>
+        page.evaluate(() =>
+          globalThis.editor
+            .getSelection()
+            .map((id) => globalThis.editor.getElementProperties(id, ['x']).x)
+            .sort((a, b) => a - b)
+        )
+
+      assert.deepEqual(await positions(), [24, 24])
+      await page.evaluate(() => globalThis.editor.undo())
+      assert.deepEqual(await positions(), [24, 150])
+      await page.getByLabel('Layout profile').selectOption('Sam')
+      await expect(slot('properties.top').locator(group)).toHaveCount(1)
+      await page.getByLabel('Alignment position').selectOption('manual')
+      await expect(
+        page
+          .locator('#external')
+          .getByRole('button', { name: 'Align left', exact: true })
+      ).toBeEnabled()
+      await page.getByLabel('Alignment position').selectOption('selectionMenu')
+      await expect(slot('selectionMenu').locator(group)).toBeVisible()
+      assert.ok(
+        await page.evaluate(() => globalThis.original === globalThis.editor)
+      )
+      await page.reload()
+      await page.evaluate(() => globalThis.ready)
+      await expect(slot('toolbar.top').locator(group)).toHaveCount(1)
+      await page.getByLabel('Layout profile').selectOption('Sam')
+      await action('Select two rectangles').click()
+      await expect(slot('selectionMenu').locator(group)).toBeVisible()
+    }
+  )
+})
+
+test('packed Design changes feature admission in place and releases manual extension mounts per editor', async () => {
+  await withConsumer(
+    ['sdk/canvas', 'sdk/design'],
+    'workspace.js',
+    async (page) => {
+      await page.evaluate(() => globalThis.ready)
+      const proof = await page.evaluate(async () => {
+        const { document, createDesign, editor } = globalThis
+        const host = document.createElement('div')
+        const panel = document.createElement('div')
+
+        document.body.append(host, panel)
+        const counts = { mounts: 0, cleanups: 0, notifications: 0 }
+        const extension = {
+          actions: {
+            chip: {
+              label: 'Add chip',
+
+              run(tools) {
+                tools.drawRectangle({ x: 4, y: 4, width: 20, height: 20 })
+              }
+            }
+          },
+          ui: [
+            {
+              id: 'chips',
+              placement: 'manual',
+
+              mount({ container, editor: peer }) {
+                counts.mounts++
+                const node = document.createElement('button')
+
+                container.append(node)
+                const off = peer.observe(
+                  'elementSelection',
+                  () => counts.notifications++
+                )
+
+                return () => {
+                  counts.cleanups++
+                  off()
+                  node.remove()
+                }
+              }
+            }
+          ]
+        }
+        const peer = await createDesign(host, {
+          hideUI: true,
+          extensions: [extension],
+          disabledFeatures: ['rectangle', 'chip']
+        })
+        const release = peer.toolGroups.mount('chips', panel)
+        const first = counts.notifications
+        const rect = editor.drawRectangle({
+          x: 20,
+          y: 20,
+          width: 40,
+          height: 40
+        })
+
+        editor.select([rect])
+        const isolated = first === counts.notifications
+
+        await peer.setDisabledFeatures([])
+        await peer.runAction('chip')
+        const beforeFrame = host.firstElementChild
+        const id = peer.common.hierarchy.getFlattenedElementIds()[0]
+
+        peer.select([id])
+        const fill = peer.common.fills.addFill
+        const renameLater = peer.common.design.prepareDesignElementEdit({
+          elementId: id,
+          name: 'Deferred edit'
+        })
+
+        await peer.setDisabledFeatures([
+          'rename',
+          'fills',
+          'rectangle',
+          'chip',
+          'pen',
+          'select'
+        ])
+        let blocked = 0
+
+        for (const operation of [
+          () => peer.runAction('chip'),
+          () => fill(id),
+          () => renameLater(),
+          () => peer.setTool('pen'),
+          () => peer.select([id]),
+          () => peer.drawRectangle({ x: 2, y: 2, width: 2, height: 2 })
+        ]) {
+          try {
+            await operation()
+          } catch (error) {
+            if (error.message.startsWith('Disabled Design feature:')) {
+              blocked++
+            } else {
+              throw error
+            }
+          }
+        }
+
+        const none = peer.getTool()
+
+        await peer.setDisabledFeatures([])
+        peer.setTool('pen')
+        const restored = peer.getTool()
+        const unchanged =
+          beforeFrame === host.firstElementChild &&
+          peer.common.hierarchy.getFlattenedElementIds()[0] === id
+
+        await peer.reset()
+        const afterReset = [
+          counts.mounts,
+          counts.cleanups,
+          panel.children.length
+        ]
+
+        release()
+        const afterRelease = counts.notifications
+
+        await peer.destroy()
+
+        return {
+          isolated,
+          blocked,
+          none,
+          restored,
+          unchanged,
+          afterReset,
+          final: [counts.mounts, counts.cleanups, panel.children.length],
+          stopped: afterRelease === counts.notifications
+        }
+      })
+
+      assert.deepEqual(proof, {
+        isolated: true,
+        blocked: 6,
+        none: null,
+        restored: 'pen',
+        unchanged: true,
+        afterReset: [2, 1, 1],
+        final: [2, 2, 0],
+        stopped: true
+      })
+    }
+  )
+})
+
+test('packed Design orders multiple tool groups without remounting and toggles actual keyboard tools', async () => {
+  await withConsumer(
+    ['sdk/canvas', 'sdk/design'],
+    'workspace.js',
+    async (page) => {
+      await page.evaluate(() => globalThis.ready)
+      await page.evaluate(async () => {
+        const { host, createDesign } = globalThis
+
+        await globalThis.editor.destroy()
+        const counts = {}
+        const ui = ['one', 'two', 'three'].map((id) => ({
+          id,
+          placement: 'toolbar.top',
+
+          mount({ container }) {
+            counts[id] = (counts[id] ?? 0) + 1
+            container.textContent = id
+          }
+        }))
+
+        globalThis.editor = await createDesign(host, {
+          extensions: [{ ui }],
+          toolLayout: { 'toolbar.top': ['retired', 'three', 'one'] }
+        })
+        globalThis.mountCounts = counts
+      })
+      const groups = page
+        .frameLocator('iframe')
+        .locator('[data-tool-slot="toolbar.top"] >[data-tool-group]')
+
+      const order = () =>
+        groups.evaluateAll((nodes) => nodes.map((n) => n.dataset.toolGroup))
+
+      assert.deepEqual(await order(), ['three', 'one', 'two'])
+      await groups.nth(2).getByRole('button').dragTo(groups.first())
+      assert.deepEqual(await order(), ['two', 'three', 'one'])
+      await page.evaluate(() => globalThis.editor.toolGroups.setLayout({}))
+      assert.deepEqual(await order(), ['one', 'two', 'three'])
+      assert.deepEqual(await page.evaluate(() => globalThis.mountCounts), {
+        one: 1,
+        two: 1,
+        three: 1
+      })
+      const frame = page.frameLocator('iframe')
+      const canvas = frame.locator('canvas').first()
+
+      await canvas.click({ position: { x: 410, y: 260 } })
+      await page.keyboard.press('r')
+      await expect
+        .poll(() => page.evaluate(() => globalThis.editor.getTool()))
+        .toBe('rectangle')
+      await page.evaluate(() =>
+        globalThis.editor.setDisabledFeatures(['rectangle'])
+      )
+      await expect(frame.getByTestId('tool-rectangle')).toHaveCount(0)
+      await canvas.click({ position: { x: 410, y: 260 } })
+      await page.keyboard.press('r')
+      assert.equal(
+        await page.evaluate(() => globalThis.editor.getTool()),
+        'select'
+      )
+      await page.evaluate(() => globalThis.editor.setDisabledFeatures([]))
+      await expect(frame.getByTestId('tool-rectangle')).toBeVisible()
+      await canvas.click({ position: { x: 410, y: 260 } })
+      await page.keyboard.press('r')
+      await expect
+        .poll(() => page.evaluate(() => globalThis.editor.getTool()))
+        .toBe('rectangle')
     }
   )
 })

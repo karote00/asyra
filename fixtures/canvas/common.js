@@ -14,7 +14,7 @@ function host() {
 }
 
 globalThis.ready = (async () => {
-  const options = { hideUI: true, extensions: [alignmentTools] }
+  const options = { hideUI: true, extensions: [alignmentTools()] }
   const full = await createDesign(host(), options)
   const rect = full.drawRectangle({ x: 10, y: 10, width: 80, height: 40 })
   const restricted = await createDesign(host(), {

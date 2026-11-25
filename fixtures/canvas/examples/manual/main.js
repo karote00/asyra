@@ -35,6 +35,18 @@ async function openEditor() {
   }
 }
 
-features.addEventListener('change', openEditor)
+features.addEventListener('change', async () => {
+  const disabledFeatures = JSON.parse(features.value)
+
+  try {
+    await editor.setDisabledFeatures(disabledFeatures)
+    status.textContent = JSON.stringify({
+      disabledFeatures,
+      hideUI: hideUI.checked
+    })
+  } catch (error) {
+    status.textContent = error.message
+  }
+})
 hideUI.addEventListener('change', openEditor)
 void openEditor()

@@ -57,7 +57,11 @@ const getElementSelectionLabel = (
   return 'Element'
 }
 
-const Properties: React.FC = () => {
+const Properties = ({
+  slotRef
+}: {
+  slotRef?: (node: HTMLDivElement | null) => void
+}) => {
   const elementSelection = useElementSelection()
   const elementDataMap = useElementDataMap()
   const pathEditingVectorId = usePathEditingVectorId()
@@ -102,6 +106,13 @@ const Properties: React.FC = () => {
       }}
       data-testid="properties-panel"
     >
+      {slotRef && (
+        <div
+          ref={slotRef}
+          data-tool-slot="properties.top"
+          className="flex flex-wrap min-h-6"
+        />
+      )}
       {panelContent}
     </div>
   )

@@ -58,7 +58,17 @@ if (globalThis.customElements && !globalThis.customElements.get(designTag)) {
     }
 
     set options(value) {
+      const previous = this.#options
+
       this.#options = value
+      if (
+        this.#editor &&
+        previous?.disabledFeatures !== value?.disabledFeatures
+      ) {
+        this.#editor
+          .setDisabledFeatures(value?.disabledFeatures ?? [])
+          .catch((error) => globalThis.reportError(error))
+      }
     }
 
     get editor() {
@@ -94,11 +104,18 @@ if (globalThis.customElements && !globalThis.customElements.get(designTag)) {
 
             this.#startup = startup
             try {
+              const initial = this.options ?? {}
+
               this.#editor = await mountWorkspace(
                 this.#host,
-                this.options ?? {},
+                initial,
                 startup.signal
               )
+              if (initial.disabledFeatures !== this.options?.disabledFeatures) {
+                await this.#editor.setDisabledFeatures(
+                  this.options?.disabledFeatures ?? []
+                )
+              }
             } catch (error) {
               if (!startup.signal.aborted) {
                 throw error

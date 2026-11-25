@@ -289,17 +289,27 @@ function registerFeatureHandlers(
       priority,
       exclusive,
       cancelPolicy,
-      definition.session
+      {
+        ...definition.session,
+
+        onStart: (snapshot) =>
+          featureRegistry.isInteractionEnabled(name)
+            ? (definition.session?.onStart?.(snapshot) ?? null)
+            : null
+      }
     )
   }
 
   if (hasExecution && definition.execution) {
+    const execute = definition.execution
+
     for (const eventName of eventsToRegister) {
       executionRegistry.register(
         eventName,
         name,
         { priority, exclusive, executionMode: definition.executionMode },
-        definition.execution
+        (snapshot) =>
+          featureRegistry.isInteractionEnabled(name) ? execute(snapshot) : null
       )
     }
   }

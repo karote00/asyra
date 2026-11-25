@@ -47,7 +47,6 @@ let editor
 let disabled = new Set()
 let target = ''
 let anchorId = ''
-let subscriptions = []
 let properties = {}
 let layer
 let path
@@ -177,29 +176,29 @@ function refreshFromCanvas() {
   }
 }
 
-async function mount(snapshot, featuresToDisable) {
-  editor = await createDesign(host, {
-    hideUI: true,
-    disabledFeatures: [...featuresToDisable],
-    document: snapshot
-  })
-  disabled = new Set(featuresToDisable)
+async function mount() {
+  editor = await createDesign(host, { hideUI: true })
   globalThis.editor = editor
-  subscriptions = [
-    editor.observe('elementDataMap', refreshFromCanvas),
-    editor.observe('flattenedElementIds', refreshFromCanvas),
-    editor.observe('elementSelection', (ids) => {
-      const selected = Array.from(ids)
+  editor.observe('elementDataMap', refreshFromCanvas)
+  editor.observe('flattenedElementIds', refreshFromCanvas)
+  editor.observe('elementSelection', (ids) => {
+    const selected = Array.from(ids)
 
-      if (selected.length) {
-        inspect(selected[0])
-      }
+    if (selected.length) {
+      inspect(selected[0])
+    }
 
-      refreshFromCanvas()
-    })
-  ]
-  field('config').textContent =
-    'disabledFeatures: ' + JSON.stringify([...disabled])
+    refreshFromCanvas()
+  })
+  editor.observe('disabledFeatures', (ids) => {
+    disabled = new Set(ids)
+    for (const input of flags.querySelectorAll('input')) {
+      input.checked = disabled.has(input.value)
+    }
+
+    field('config').textContent = 'disabledFeatures: ' + JSON.stringify(ids)
+    refreshFromCanvas()
+  })
 }
 
 async function applyFeatures() {
@@ -212,30 +211,15 @@ async function applyFeatures() {
     return
   }
 
-  const snapshot = await editor.save()
-  const inspected = target
-  const selected = editor.getSelection()
-  const previous = disabled
-
-  subscriptions.forEach((off) => off())
-  await editor.destroy()
   try {
-    await mount(snapshot, next)
+    await editor.setDisabledFeatures(next)
   } catch (error) {
-    await mount(snapshot, previous)
     for (const input of flags.querySelectorAll('input')) {
-      input.checked = previous.has(input.value)
+      input.checked = disabled.has(input.value)
     }
 
     throw error
   }
-
-  if (!disabled.has('select') && selected.length) {
-    editor.select(selected)
-  }
-
-  inspect(inspected)
-  inputState.clear()
 }
 
 function pointFromInputs() {
@@ -483,7 +467,7 @@ controls.onclick = async (event) => {
 
 Object.assign(globalThis, { host, createDesign })
 controls.inert = true
-globalThis.ready = mount(undefined, [])
+globalThis.ready = mount()
   .then(() => {
     refresh()
     controls.inert = false

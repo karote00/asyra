@@ -52,6 +52,16 @@ This inventory follows the maintained app in `apps/asyra-design/src` and the pub
 - Removing built-in chrome and disabling editing capabilities are independent decisions. Selection outlines, the drawing surface and the text tool's inline input belong to tool interaction. Existing text, shapes, strokes, gradients, vectors, visibility and hierarchy must survive document loading.
 - Source entry points for review: `features/index.ts`, `constants/feature-names.ts`, `config/key-combinations.ts`, `config/group-command-descriptors.ts`, `controllers/`, `contents/`, `properties/`, `init/init-design.ts`, `render-app/`, `app/design-workspace.tsx`, `workspace.tsx`, `sdk/design/src/actions.js` and `sdk/design/build-inputs/editor.js`.
 
+## Tool groups and live feature admission
+
+An optional extension ID controls its registered actions and tool groups together. The host can update the disabled feature list on the mounted editor. Re-enabling a group restores its configured placement.
+
+Extension UI mounts on a named workspace outlet or a host element. Each editor
+owns its layout, mounts and observers. Host preference callbacks receive only
+ordered group IDs. Applying a feature list updates the live editor. The input
+registry skips disabled features, shared commands check the current policy,
+and the UI projects the same availability.
+
 ## Instance-scoped common APIs
 
 Container editors expose the following groups under `editor.common`. Each method resolves against the live workspace for that editor. The packed declaration includes the signatures without runtime Framework dependencies. For example, `editor.common.viewport.getCanvasPositionFromWorkspace(point)` uses that editor’s viewport.
