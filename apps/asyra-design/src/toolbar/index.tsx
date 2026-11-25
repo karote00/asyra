@@ -57,6 +57,7 @@ const ToolBar = ({
         borderBottom: '1px solid #1a1a1a'
       }}
       data-testid="toolbar"
+      data-tool-dock={slotRef ? 'Toolbar' : undefined}
     >
       <div className="flex items-center gap-1">
         {(controls?.includeTools ?? true) && <ToolButton onReset={onReset} />}

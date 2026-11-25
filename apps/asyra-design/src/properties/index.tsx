@@ -105,6 +105,7 @@ const Properties = ({
         borderLeft: '1px solid #1a1a1a'
       }}
       data-testid="properties-panel"
+      data-tool-dock={slotRef ? 'Properties' : undefined}
     >
       {slotRef && (
         <div

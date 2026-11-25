@@ -49,3 +49,13 @@ textarea {
     transform: rotate(16deg);
   }
 }
+
+html[data-tool-dragging] [data-tool-dock] {
+  outline: 2px dashed #7dd3fc;
+  outline-offset: -3px;
+}
+
+html[data-tool-dragging] [data-tool-dock-active] {
+  outline: 3px solid #38bdf8;
+  outline-offset: -3px;
+}

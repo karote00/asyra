@@ -10,8 +10,17 @@ function frameGeometry(frame) {
   }
 }
 
-export function toolDropTarget(frame, { x, y }) {
-  if (frame.ownerDocument.elementFromPoint(x, y) !== frame) {
+function toolDropTarget(frame, x, y, source) {
+  const host = frame.ownerDocument
+  let top = host.elementFromPoint(x, y)
+
+  if (source.contains(top)) {
+    top = host
+      .elementsFromPoint(x, y)
+      .find((element) => !source.contains(element))
+  }
+
+  if (top !== frame) {
     return null
   }
 
@@ -52,12 +61,16 @@ export function trackToolDrag(event, node, label, frame, drop, finish) {
   const listeners = new globalThis.AbortController()
   const settings = { capture: true, signal: listeners.signal }
 
+  let activeDock
+
   const cleanup = () => {
     if (listeners.signal.aborted) {
       return
     }
 
     listeners.abort()
+    inner.documentElement.removeAttribute('data-tool-dragging')
+    activeDock?.removeAttribute('data-tool-dock-active')
     finish()
     preview.remove()
     if (grip.hasPointerCapture(event.pointerId)) {
@@ -82,23 +95,36 @@ export function trackToolDrag(event, node, label, frame, drop, finish) {
     const y = rect ? rect.y + e.clientY * rect.scaleY : e.clientY
     const position = { x: x - offset.x, y: y - offset.y }
 
-    if (e.type === 'pointerup') {
-      const moved = preview.isConnected
+    if (!preview.isConnected) {
+      if (e.type === 'pointerup') {
+        cleanup()
 
-      cleanup()
-      if (moved) {
-        drop({ x, y }, position)
+        return
       }
 
-      return
-    }
-
-    if (!preview.isConnected) {
       if (Math.hypot(x - start.x, y - start.y) < 3) {
         return
       }
 
+      inner.documentElement.setAttribute('data-tool-dragging', '')
       host.body.append(preview)
+    }
+
+    const target = toolDropTarget(frame, x, y, node)
+    const dock = target?.closest('[data-tool-dock]')
+
+    if (e.type === 'pointerup') {
+      cleanup()
+      drop(dock, target, position)
+
+      return
+    }
+
+    if (dock !== activeDock) {
+      activeDock?.removeAttribute('data-tool-dock-active')
+      activeDock = dock
+      activeDock?.setAttribute('data-tool-dock-active', '')
+      preview.textContent = dock ? 'Dock in ' + dock.dataset.toolDock : label
     }
 
     preview.style.left = position.x + 'px'

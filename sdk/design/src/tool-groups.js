@@ -1,4 +1,4 @@
-import { trackToolDrag, toolDropTarget } from './tool-drag.js'
+import { trackToolDrag } from './tool-drag.js'
 
 const slots = ['toolbar.top', 'properties.top', 'selectionMenu']
 const placements = [...slots, 'manual']
@@ -319,16 +319,15 @@ export function createToolGroups(extensions, options, editor, getFrame) {
       node,
       groups.get(id).label ?? id,
       frame,
-      (point, position) => {
-        const target = toolDropTarget(frame, point)
-
+      (dock, target, position) => {
         for (const [slot, { node: outletNode }] of outlets) {
-          if (!target || !outletNode.contains(target)) {
+          if (!dock || !dock.contains(outletNode)) {
             continue
           }
 
-          const targetId =
-            target.closest('[data-tool-group]')?.dataset.toolGroup
+          const targetId = outletNode.contains(target)
+            ? target.closest('[data-tool-group]')?.dataset.toolGroup
+            : undefined
 
           if (targetId === id) {
             return

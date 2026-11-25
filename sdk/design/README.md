@@ -187,7 +187,7 @@ An extension can declare a unique feature ID. Pass that ID in `disabledFeatures`
 ```
 
 Built-in outlets are `properties.top`, `toolbar.top` and `selectionMenu`
-(visible with a selection). Drag the grip to a free position on the canvas or host page, to another outlet, or drop it before
+(visible with a selection). During a drag, dashed outlines mark the available docking areas. The whole Properties panel and editor toolbar accept a drop. A solid outline marks the current target. Drag the grip to a free position on the canvas or host page, to another outlet, or drop it before
 another group to reorder. For keyboard controls or product-owned menus call
 `editor.toolGroups.move('navigation', 'toolbar.top', 0)`. To place a group in a
 host element, use `const unmount = editor.toolGroups.mount('navigation', element)`

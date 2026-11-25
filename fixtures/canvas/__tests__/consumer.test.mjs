@@ -2735,13 +2735,14 @@ test('a tool group follows the pointer onto the canvas and host page, restores i
       const floating = page.locator('[data-tool-group="alignment"]')
       const dock = frame.locator('[data-tool-slot="properties.top"]')
 
-      async function drag(handle, x, y) {
+      async function drag(handle, x, y, beforeDrop) {
         const rect = await handle.boundingBox()
         const start = { x: rect.x + 4, y: rect.y + 4 }
 
         await page.mouse.move(start.x, start.y)
         await page.mouse.down()
         await page.mouse.move(x, y, { steps: 12 })
+        await beforeDrop?.()
         await page.mouse.up()
       }
 
@@ -2776,10 +2777,26 @@ test('a tool group follows the pointer onto the canvas and host page, restores i
       const narrow = await floating.boundingBox()
 
       assert.ok(narrow.x >= 0 && narrow.x + narrow.width <= 391)
-      await page.setViewportSize({ width: 1280, height: 720 })
-      const panel = await dock.boundingBox()
+      const properties = frame.getByTestId('properties-panel')
+      const panel = await properties.boundingBox()
 
-      await drag(grip(floating), panel.x + 10, panel.y + 10)
+      await drag(grip(floating), panel.x + 45, panel.y + 150)
+      await expect(grip(dock)).toBeVisible({ timeout: 2000 })
+      await page.setViewportSize({ width: 1280, height: 720 })
+      const toolbar = frame.getByTestId('toolbar')
+      const bar = await toolbar.boundingBox()
+
+      await drag(grip(dock), bar.x + bar.width / 2, bar.y + 12, async () => {
+        await expect(toolbar).toHaveCSS('outline-style', 'solid')
+        await expect(properties).toHaveCSS('outline-style', 'dashed')
+      })
+      const tools = frame.locator('[data-tool-slot="toolbar.top"]')
+
+      await expect(grip(tools)).toBeVisible()
+      await expect(toolbar).not.toHaveCSS('outline-style', 'solid')
+      const wide = await properties.boundingBox()
+
+      await drag(grip(tools), wide.x + 80, wide.y + 160)
       await expect(grip(dock)).toBeVisible()
       await expect(floating).toHaveCount(0)
       await page.reload()
