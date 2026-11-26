@@ -64,6 +64,7 @@ const FillModeButton = ({
         ? 'bg-accent text-white'
         : 'bg-transparent text-white/60 hover:bg-panel-surface-hover hover:text-white'
     }`}
+    data-fill-mode={kind}
     data-testid={testId}
     aria-label={label}
     title={label}
@@ -200,6 +201,7 @@ const FillColorControls = ({
                 background: 'transparent',
                 borderRadius: 0
               }}
+              data-gradient-readout="type"
               data-testid={`prop-fill-gradient-summary-${index}`}
             >
               {gradientData.gradientType}
@@ -217,6 +219,7 @@ const FillColorControls = ({
               noOutline
               inputClassName="!pl-0"
               onChange={onColorValueChange}
+              data-fill-field="color"
               data-testid={`prop-fill-color-${index}`}
             />
           )}

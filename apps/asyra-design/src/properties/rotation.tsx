@@ -31,6 +31,7 @@ const Rotation = () => {
           suffix="°"
           onChange={handleChangeRotation}
           noOutline
+          data-inspector-field="rotation"
           data-testid="prop-rotation"
         />
       </PropertyControl>

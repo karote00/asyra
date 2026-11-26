@@ -22,7 +22,11 @@ export async function typographyInspector(page) {
     ['Line height', 'lineHeight', 42],
     ['Letter spacing', 'letterSpacing', 3]
   ]) {
-    const input = host.getByLabel(label, { exact: true })
+    const input = host
+      .locator('[data-inspector-section="typography"]')
+      .locator('[data-inspector-field="' + key + '"]')
+
+    await expect(input).toHaveAccessibleName(label)
 
     await input.fill(String(value))
     await input.press('Tab')
@@ -37,7 +41,7 @@ export async function typographyInspector(page) {
   }
 
   await host.getByRole('combobox', { name: 'Font style' }).selectOption('bold')
-  await host.getByRole('button', { name: 'Align right' }).click()
+  await host.locator('[data-text-alignment="right"]').click()
   const text = await page.evaluate(
     (id) =>
       globalThis.editor.getElementProperties(id, ['fontWeight', 'textAlign']),

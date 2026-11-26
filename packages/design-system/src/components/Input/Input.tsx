@@ -180,6 +180,7 @@ const Input: React.FC<InputProps> = ({
           {([1, -1] as const).map((direction) => (
             <IconButton
               key={direction}
+              data-number-step={direction === 1 ? 'increase' : 'decrease'}
               icon="ChevronDown"
               aria-label={`${direction === 1 ? 'Increase' : 'Decrease'} ${rest['aria-label'] ?? 'value'}`}
               className="flex h-1/2 items-center justify-center text-white/60 hover:bg-panel-surface-hover hover:text-white disabled:opacity-20"

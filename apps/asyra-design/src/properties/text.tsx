@@ -61,8 +61,9 @@ const TextProperties = () => {
 
   return (
     <div onPointerDown={(event) => event.stopPropagation()}>
-      <section aria-label="Typography">
+      <section data-inspector-section="typography" aria-label="Typography">
         <button
+          data-text-action="edit"
           className="px-3 py-1 text-xs text-text-secondary hover:text-text-primary"
           onClick={() => {
             const edit = getFeature(FeatureNames.EDIT_TEXT)?.editSelected as
@@ -87,6 +88,7 @@ const TextProperties = () => {
           </div>
           <div className="grid grid-cols-2 items-center gap-2 pl-4 pr-2 h-8 min-h-8">
             <TextSelect
+              field="fontStyle"
               label="Font style"
               value={
                 fontStyles.find(
@@ -134,6 +136,7 @@ const TextProperties = () => {
                   <button
                     key={alignment}
                     type="button"
+                    data-text-alignment={alignment}
                     aria-label={`Align ${alignment}`}
                     aria-pressed={typography.textAlign === alignment}
                     title={`Align ${alignment}`}

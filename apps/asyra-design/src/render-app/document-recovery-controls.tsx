@@ -49,6 +49,7 @@ export const DocumentRecoveryControls = ({
     <div
       {...AiDocumentInteractionTargetProps.AGENT_CONTROL}
       role="region"
+      data-canvas-overlay="recovery"
       aria-label="Document recovery"
       className="absolute bottom-4 left-4 z-50 max-w-lg rounded bg-neutral-800 p-4 text-white shadow"
       onPointerDown={(event) => event.stopPropagation()}
@@ -61,6 +62,7 @@ export const DocumentRecoveryControls = ({
       <div className="mt-2 flex gap-3">
         <button
           type="button"
+          data-recovery-action="retrySaving"
           disabled={busy}
           onClick={() => {
             void retry()
@@ -70,6 +72,7 @@ export const DocumentRecoveryControls = ({
         </button>
         <button
           type="button"
+          data-recovery-action="download"
           disabled={busy}
           onClick={() => {
             void download()

@@ -1,3 +1,4 @@
+import type { InspectorRowId, InspectorFields } from './inspector-registry.js'
 import type {
   DesignTool,
   HistoryCommand,
@@ -5,13 +6,7 @@ import type {
   WorkspaceFeature,
   WorkspaceTool
 } from './features.js'
-import type {
-  common,
-  InspectorRowId,
-  InspectorFields,
-  InspectorItem,
-  WorkspaceNode
-} from './common.js'
+import type { common, InspectorItem, WorkspaceNode } from './common.js'
 import type { WorkspaceEditingTools } from './workspace-tools.js'
 
 export interface Rectangle {
@@ -95,7 +90,8 @@ export interface ToolGroup<Id extends string = string> {
   }): undefined | (() => void)
 }
 
-export type { InspectorRowId, InspectorNumberItem } from './common.js'
+export type { InspectorRowId } from './inspector-registry.js'
+export type { InspectorNumberItem } from './common.js'
 
 export interface InspectorTemplate<Key extends string> {
   readonly items: { readonly [K in Key]: K }

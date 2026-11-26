@@ -1,3 +1,4 @@
+import { inspectorRows, inspectorRowAttribute } from './inspector-registry'
 import { NodeNumberInput } from './node-number-input'
 import { createContext, useContext, useSyncExternalStore } from 'react'
 import { updateSelectedElementProperties } from '../controllers/scene-tree'
@@ -12,11 +13,6 @@ import type {
 
 type Field = InspectorFields[InspectorRowId]
 const labels = { x: 'X', y: 'Y', width: 'W', height: 'H' }
-
-const nativeItems = {
-  positionRow: ['x', 'y'],
-  dimensionRow: ['width', 'height']
-} as const
 
 export const InspectorTemplates = createContext<
   Readonly<Record<InspectorRowId, InspectorItemSource>> | undefined
@@ -51,15 +47,26 @@ function CustomInput({ item }: { item: InspectorNumberItem }) {
 
 const subscribeStatic = () => () => undefined
 
-export function InspectorTemplateRow({ id }: { id: InspectorRowId }) {
+export function InspectorTemplateRow({
+  id,
+  markedByHost = false
+}: {
+  id: InspectorRowId
+  markedByHost?: boolean
+}) {
   const source = useContext(InspectorTemplates)?.[id]
   const items = useSyncExternalStore(
     source?.subscribe ?? subscribeStatic,
-    source?.getSnapshot ?? (() => nativeItems[id])
+    source?.getSnapshot ?? (() => inspectorRows[id].fields)
   )
 
   return (
-    <div className="grid grid-flow-col auto-cols-fr items-center gap-2 pl-4 pr-2 h-8 min-h-8">
+    <div
+      {...{
+        [inspectorRowAttribute]: markedByHost ? undefined : inspectorRows[id].id
+      }}
+      className="grid grid-flow-col auto-cols-fr items-center gap-2 pl-4 pr-2 h-8 min-h-8"
+    >
       {items.map((item) => {
         if (typeof item === 'string') {
           return <NativeInput key={item} field={item} />

@@ -79,7 +79,10 @@ const Properties = ({
   )
   const title = pathEditingVectorId ? 'Vector' : elementTitle
   let panelContent = (
-    <div className="flex items-center justify-center h-full">
+    <div
+      data-inspector-status="noSelection"
+      className="flex items-center justify-center h-full"
+    >
       <span className="text-[11px] text-[#555]">No selection</span>
     </div>
   )
@@ -108,12 +111,13 @@ const Properties = ({
         background: '#252525',
         borderLeft: '1px solid #1a1a1a'
       }}
+      data-editor-panel="properties"
       data-testid="properties-panel"
     >
       {slotRef && (
         <div
           ref={slotRef}
-          data-tool-slot="properties.top"
+          data-ui-slot="properties.top"
           className="flex flex-wrap"
         />
       )}

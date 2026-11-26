@@ -20,6 +20,7 @@ const StrokeList = ({
   return (
     <div
       className="grid grid-cols-1 w-full pb-2"
+      data-inspector-section="strokes"
       data-testid="prop-strokes-section"
     >
       <div className="group flex items-center justify-between h-10 pl-4 pr-2 text-white">
@@ -30,6 +31,7 @@ const StrokeList = ({
           type="button"
           onClick={onAdd}
           className="flex items-center justify-center w-5 h-5 rounded hover:bg-panel-surface-hover text-white/60 hover:text-white transition-colors"
+          data-stroke-action="add"
           data-testid="prop-stroke-add"
           title="Add stroke"
         >
@@ -40,6 +42,7 @@ const StrokeList = ({
       {mixed && (
         <div
           className="pl-4 pr-2 py-2 text-[11px] text-white/50"
+          data-stroke-status="mixed"
           data-testid="prop-strokes-mixed"
         >
           Mixed strokes across current selection.
@@ -49,6 +52,7 @@ const StrokeList = ({
       {!strokes.length && (
         <div
           className="pl-4 pr-2 py-3 text-[11px] text-white/40"
+          data-stroke-status="empty"
           data-testid="prop-strokes-empty"
         >
           No strokes yet.

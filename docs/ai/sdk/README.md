@@ -21,6 +21,17 @@ property controls that Design exposes, follow the [Design app contracts](../apps
 
 For inspector customization, see [how to insert a control between X and Y](../../../sdk/design/README.md#insert-a-control-between-x-and-y) and the [row composition contract](plans/canvas-embedding-plan.md#compose-inspector-row-items).
 
+## UI ownership and debugging
+
+The [app row registry](../../../apps/asyra-design/src/properties/inspector-registry.ts)
+defines each composable row's ID, placement, label and ordered native fields.
+The SDK build ships its JavaScript and literal declarations. The app reads the same
+registry for native controls. The SDK creates per-editor templates from the rows
+and marks each mounted group at its actual host. UI outside these templates is
+marked at its rendering component. See the [DOM inspection guide](../../../sdk/design/UI.md)
+for names and examples. Update the packed React and JS relocation cases when
+changing this contract.
+
 ## Verification
 
 The [Canvas SDK flow](plans/canvas/canvas.flow.json) connects the embedding

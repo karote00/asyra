@@ -8,7 +8,7 @@ import type {
   ToolPlacement,
   ToolGroups
 } from './index.js'
-import { positionRow, dimensionRow } from './inspector-rows.js'
+import { inspectorRows, inspectorRowAttribute } from './inspector-registry.js'
 
 const slots = ['toolbar.top', 'properties.top', 'selectionMenu'] as const
 const placements: readonly ToolPlacement[] = [...slots, 'manual']
@@ -35,7 +35,7 @@ export function createToolGroups(
   const installed = new Set(
     extensions.flatMap((entry) => entry.ui?.map((group) => group.id) ?? [])
   )
-  const implicitRows = [positionRow, dimensionRow].filter(
+  const implicitRows = Object.values(inspectorRows).filter(
     (row) => !installed.has(row.id)
   )
 
@@ -50,7 +50,7 @@ export function createToolGroups(
         !placements.includes(group.placement) ||
         ('kind' in group
           ? group.kind !== 'inspector' ||
-            !['positionRow', 'dimensionRow'].includes(group.id)
+            !Object.hasOwn(inspectorRows, group.id)
           : typeof group.mount !== 'function')
       ) {
         throw new TypeError(
@@ -166,7 +166,12 @@ export function createToolGroups(
 
     const node = doc.createElement('div')
 
-    node.dataset.toolGroup = id
+    if ('kind' in group) {
+      node.setAttribute(inspectorRowAttribute, group.id)
+    } else {
+      node.dataset.extensionGroup = group.id
+    }
+
     if (group.label) {
       node.setAttribute('role', 'group')
       node.setAttribute('aria-label', group.label)

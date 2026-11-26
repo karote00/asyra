@@ -20,6 +20,7 @@ const FillList = ({
 }: FillListProps) => {
   return (
     <AppearanceSection
+      section="fills"
       label="Fill"
       testId="prop-fills-section"
       actions={
@@ -27,6 +28,7 @@ const FillList = ({
           type="button"
           onClick={onAdd}
           className="flex items-center justify-center w-5 h-5 rounded hover:bg-panel-surface-hover text-white/60 hover:text-white transition-colors"
+          data-fill-action="add"
           data-testid="prop-fill-add"
           title="Add fill"
         >
@@ -37,6 +39,7 @@ const FillList = ({
       {mixed && (
         <div
           className="pl-4 pr-2 py-2 text-[11px] text-white/50"
+          data-fill-status="mixed"
           data-testid="prop-fills-mixed"
         >
           Mixed fills across current selection.
@@ -46,6 +49,7 @@ const FillList = ({
       {!fills.length && (
         <div
           className="pl-4 pr-2 py-3 text-[11px] text-white/40"
+          data-fill-status="empty"
           data-testid="prop-fills-empty"
         >
           No fills yet.

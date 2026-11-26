@@ -29,6 +29,7 @@ export interface ContextMenuViewport {
 export type ContextMenuDismissReason = 'escape' | 'outside-pointer' | 'tab'
 
 export interface ContextMenuProps {
+  'data-context-menu'?: string
   'aria-label': string
   items: readonly ContextMenuItem[]
   position: ContextMenuPosition
@@ -43,6 +44,7 @@ const clamp = (value: number, minimum: number, maximum: number) =>
 
 export const ContextMenu = ({
   'aria-label': ariaLabel,
+  'data-context-menu': menuId,
   items,
   position,
   viewport,
@@ -211,6 +213,7 @@ export const ContextMenu = ({
   const menu = (
     <div
       ref={menuRef}
+      data-context-menu={menuId}
       role="menu"
       aria-label={ariaLabel}
       tabIndex={enabledIndices.length === 0 ? 0 : -1}
@@ -225,6 +228,7 @@ export const ContextMenu = ({
             itemRefs.current[index] = element
           }}
           type="button"
+          data-menu-command={item.id}
           role="menuitem"
           aria-disabled={!item.enabled}
           disabled={!item.enabled}

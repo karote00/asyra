@@ -231,6 +231,7 @@ const RenderApp: React.FC<RenderAppProps> = ({
     <div
       {...AiDocumentInteractionTargetProps.VIEWPORT_NAVIGATION}
       className="absolute inset-0"
+      data-editor-panel="canvas"
       data-testid="canvas-host"
       tabIndex={-1}
       onContextMenu={handleContextMenu}

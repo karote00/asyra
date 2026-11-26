@@ -15,6 +15,7 @@ export function createToolbar(
 
   const group = target.ownerDocument.createElement('fieldset')
 
+  group.dataset.editorPanel = 'toolbar'
   group.setAttribute('aria-label', 'Design tools')
   group.style.cssText =
     'display:flex;flex-wrap:wrap;gap:0.4em;border:0;margin:0;padding:0.4em 0;'
@@ -40,6 +41,7 @@ export function createToolbar(
 
     const button = target.ownerDocument.createElement('button')
 
+    button.dataset.toolbarAction = item
     button.type = 'button'
     button.textContent = action.label
     buttons.set(button, item)

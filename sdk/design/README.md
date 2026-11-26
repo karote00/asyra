@@ -191,6 +191,8 @@ action's ID, fails at startup.
 
 ### Add UI to a workspace
 
+See [Find a Design control in DevTools](UI.md) for row IDs, panel selectors, and examples for React, plain JS and relocated controls.
+
 Move a built-in row by naming its host element. Position moves into the
 toolbar below. Dimension stays in its usual place.
 

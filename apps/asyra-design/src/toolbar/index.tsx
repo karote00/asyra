@@ -56,19 +56,21 @@ const ToolBar = ({
         background: '#2c2c2c',
         borderBottom: '1px solid #1a1a1a'
       }}
+      data-editor-panel="toolbar"
       data-testid="toolbar"
     >
-      <div className="flex items-center gap-1">
+      <div data-toolbar-section="commands" className="flex items-center gap-1">
         {(controls?.includeTools ?? true) && <ToolButton onReset={onReset} />}
         {slotRef && (
           <div
             ref={slotRef}
-            data-tool-slot="toolbar.top"
+            data-ui-slot="toolbar.top"
             className="flex items-center empty:hidden"
           />
         )}
         {controls?.actions.map(({ id, label, run: execute }) => (
           <button
+            data-toolbar-action={id}
             key={id}
             type="button"
             className="h-7 rounded px-2 text-[11px] text-white hover:bg-[#47484e] disabled:opacity-50"
@@ -79,7 +81,7 @@ const ToolBar = ({
           </button>
         ))}
       </div>
-      <div className="flex items-center gap-2">
+      <div data-toolbar-section="view" className="flex items-center gap-2">
         {onAiToggle && (
           <button
             {...AiDocumentInteractionTargetProps.AGENT_CONTROL}
@@ -98,6 +100,7 @@ const ToolBar = ({
                 ? 'border-[#8d7bff] bg-[#745cff] text-white'
                 : 'border-[#47484e] bg-[#33343a] text-[#dedee3] hover:border-[#686971] hover:bg-[#3d3e44]'
             }`}
+            data-toolbar-action="toggleAgent"
             data-testid="ai-agent-toolbar-button"
             onClick={(event) => {
               event.stopPropagation()

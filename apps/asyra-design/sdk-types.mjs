@@ -1,7 +1,14 @@
 // The consumer needs the app's exact signatures without installing its runtime
 // or resolving type imports into the monorepo. Emit, then roll up local types.
 import { execFileSync } from 'node:child_process'
-import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import {
+  copyFile,
+  mkdir,
+  mkdtemp,
+  readFile,
+  rm,
+  writeFile
+} from 'node:fs/promises'
 import path from 'node:path'
 import process from 'node:process'
 import { URL, fileURLToPath } from 'node:url'
@@ -14,6 +21,7 @@ const root = path.resolve(app, '../..')
 export async function buildCommonTypes(outDir) {
   const scratch = path.join(root, 'tmp/canvas')
 
+  await mkdir(outDir, { recursive: true })
   await mkdir(scratch, { recursive: true })
   const temp = await mkdtemp(path.join(scratch, 'declarations-'))
 
@@ -42,6 +50,26 @@ export async function buildCommonTypes(outDir) {
       [require.resolve('typescript/bin/tsc'), '-p', config],
       { stdio: 'inherit' }
     )
+    // Ship the same standalone catalog in the host SDK and embedded app.
+    const registry = 'inspector-registry'
+    const source = await readFile(
+      path.join(app, 'src/properties', registry + '.ts'),
+      'utf8'
+    )
+    const ts = require('typescript')
+    const { outputText } = ts.transpileModule(source, {
+      compilerOptions: {
+        target: ts.ScriptTarget.ES2022,
+        module: ts.ModuleKind.ESNext
+      }
+    })
+
+    await writeFile(path.join(outDir, registry + '.js'), outputText)
+    await copyFile(
+      path.join(temp, 'properties', registry + '.d.ts'),
+      path.join(outDir, registry + '.d.ts')
+    )
+
     const tsconfigFilePath = path.join(temp, 'rollup.json')
 
     await writeFile(

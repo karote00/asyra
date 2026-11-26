@@ -126,6 +126,7 @@ const ActiveTextEditor = ({ session }: { session: TextCanvasSession }) => {
     <>
       <textarea
         ref={input}
+        data-canvas-editor="text"
         aria-label="Canvas text editor"
         aria-description={error || session.error || undefined}
         aria-invalid={Boolean(error || session.error)}

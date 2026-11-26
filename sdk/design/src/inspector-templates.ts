@@ -1,3 +1,4 @@
+import { inspectorRows } from './inspector-registry.js'
 import type {
   InspectorFields,
   InspectorItem,
@@ -10,13 +11,15 @@ function itemId<Key extends string>(item: InspectorItem<Key>) {
 }
 
 function createRow<Key extends string>(
-  items: { readonly [K in Key]: K },
+  fields: readonly Key[],
   requireEditor: () => void,
   nodes: ReadonlyMap<string, WorkspaceNode>
 ) {
   type Item = InspectorItem<Key>
-  Object.freeze(items)
-  let order: readonly Item[] = Object.freeze(Object.values(items) as Key[])
+  const items = Object.freeze(
+    Object.fromEntries(fields.map((key) => [key, key]))
+  ) as { readonly [K in Key]: K }
+  let order: readonly Item[] = fields
   const listeners = new Set<() => void>()
   const insertions = new Map<string, symbol>()
 
@@ -179,14 +182,12 @@ export function createInspectorTemplates(
   requireEditor: () => void,
   nodes: ReadonlyMap<string, WorkspaceNode>
 ) {
-  const sources = {
-    positionRow: createRow({ x: 'x', y: 'y' }, requireEditor, nodes),
-    dimensionRow: createRow(
-      { width: 'width', height: 'height' },
-      requireEditor,
-      nodes
-    )
-  }
+  const sources = Object.fromEntries(
+    Object.values(inspectorRows).map(({ id, fields }) => [
+      id,
+      createRow<InspectorFields[InspectorRowId]>(fields, requireEditor, nodes)
+    ])
+  )
 
   function getUI<Row extends InspectorRowId>(
     id: Row

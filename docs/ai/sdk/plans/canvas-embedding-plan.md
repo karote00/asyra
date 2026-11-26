@@ -161,3 +161,14 @@ command and document schema. Disabled nodes remain readable. The packed JS and
 React consumers exercise the shortcuts, explicit composition, history and type
 errors. The app owns rendering and transactions, the SDK owns row composition,
 and each subscription lives only as long as its mounted field.
+
+### Inspect workspace UI by purpose
+
+The app owns the static inspector row registry. Its row IDs, default field
+order and placement feed native rendering, the packed SDK, getUI declarations
+and inspection markers. A relocated row has one marker in its current host.
+Each SDK-owned workspace surface and control exposes a domain-specific DOM
+attribute at its rendering owner. Host extensions own the contents of their
+marked mounts. Rendering a marker does not register a composable template.
+Packed React and JavaScript hosts verify the catalog, field markers, panel
+ownership and relocation. Debug examples cover iframe and shadow boundaries.

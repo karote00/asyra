@@ -6,7 +6,8 @@
   "type": "module",
   "files": [
     "dist",
-    "FEATURES.md"
+    "FEATURES.md",
+    "UI.md"
   ],
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

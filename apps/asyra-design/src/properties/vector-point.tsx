@@ -50,11 +50,15 @@ const TargetHeader = ({
 
 const IconToggleButton = ({
   active,
+  value,
+  label,
   testId,
   onClick,
   children
 }: {
   active: boolean
+  value: string
+  label: string
   testId: string
   onClick: () => void
   children: ReactNode
@@ -64,6 +68,8 @@ const IconToggleButton = ({
     className={`flex flex-1 items-center justify-center h-6 rounded-[6px] border transition-colors
     ${active ? 'bg-panel border-border-hover text-text-primary' : 'border-transparent text-text-secondary'}`}
     onClick={onClick}
+    data-vector-setting={value}
+    aria-label={label}
     data-testid={testId}
     aria-pressed={active}
   >
@@ -89,6 +95,8 @@ const ToggleGroup = ({
     <div className="flex w-full h-6 items-center gap-1 rounded-[6px] bg-panel-surface border border-border-subtle">
       {options.map((option) => (
         <IconToggleButton
+          value={option.value}
+          label={option.label}
           key={option.value}
           active={option.active}
           testId={option.testId}
@@ -268,6 +276,7 @@ const CoordinateInputs = ({
         prefix="X"
         onChange={onChangeX}
         noOutline
+        data-vector-field="x"
         data-testid="prop-vector-point-x"
       />
     </PropertyControl>
@@ -277,6 +286,7 @@ const CoordinateInputs = ({
         prefix="Y"
         onChange={onChangeY}
         noOutline
+        data-vector-field="y"
         data-testid="prop-vector-point-y"
       />
     </PropertyControl>

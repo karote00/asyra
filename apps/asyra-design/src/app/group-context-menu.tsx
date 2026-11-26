@@ -32,6 +32,7 @@ export const GroupContextMenu = ({
 
   return (
     <ContextMenu
+      data-context-menu="canvas"
       aria-label="Canvas commands"
       items={descriptors.map((descriptor) => ({
         id: descriptor.id,

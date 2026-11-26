@@ -45,6 +45,7 @@ const FillItem = ({ index, fillId, elementIds, onRemove }: FillItemProps) => {
   return (
     <div
       className="grid grid-cols-[1fr_24px_24px] items-center gap-2 pl-4 pr-2 h-8 min-h-8"
+      data-fill-id={fillId}
       data-testid={`prop-fill-${index}`}
     >
       {/* Group: Swatch/Hex + Opacity */}
@@ -77,6 +78,7 @@ const FillItem = ({ index, fillId, elementIds, onRemove }: FillItemProps) => {
         type="button"
         onClick={() => handleVisibleChange(!fill.visible)}
         className="flex items-center justify-center h-6 w-6 rounded hover:bg-panel-surface-hover text-white/60 hover:text-white transition-colors"
+        data-fill-action="toggleVisibility"
         data-testid={`prop-fill-visible-${index}`}
         title={fill.visible ? 'Hide fill' : 'Show fill'}
         style={{ width: '24px', height: '24px' }}
@@ -88,6 +90,7 @@ const FillItem = ({ index, fillId, elementIds, onRemove }: FillItemProps) => {
         type="button"
         onClick={onRemove}
         className="flex items-center justify-center h-6 w-6 rounded hover:bg-panel-surface-hover text-white disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
+        data-fill-action="remove"
         data-testid={`prop-fill-remove-${index}`}
         title="Remove fill"
         aria-label="Remove fill"

@@ -762,13 +762,21 @@ test('packed Design workspace edits with the Design app tools, panels and docume
       await width.fill('115')
       await width.press('Enter')
       assert.equal(Number(await width.inputValue()), 115)
-      await workspace.getByTestId('prop-stroke-add').click()
-      await workspace.getByTestId('prop-fill-color-picker-0-trigger').click()
-      await workspace.getByTestId('prop-fill-mode-gradient-0').click()
+      await workspace.locator('[data-stroke-action="add"]').click()
       await workspace
-        .getByTestId('prop-fill-gradient-type-0')
+        .locator('[data-fill-id] [data-color-control="toggle"]')
+        .first()
+        .click()
+      await workspace
+        .locator('[data-color-picker="popover"] [data-fill-mode="gradient"]')
+        .click()
+      await workspace
+        .locator('[data-gradient-editor] [data-gradient-field="type"]')
         .selectOption('radial')
-      await workspace.getByTestId('prop-fill-color-picker-0-trigger').click()
+      await workspace
+        .locator('[data-fill-id] [data-color-control="toggle"]')
+        .first()
+        .click()
       assert.match(
         await page.evaluate(async () =>
           JSON.stringify(await globalThis.editor.save())
@@ -777,9 +785,7 @@ test('packed Design workspace edits with the Design app tools, panels and docume
       )
       await workspace.getByTestId('tool-text').click()
       await click(400, 280)
-      const text = workspace.getByRole('textbox', {
-        name: 'Canvas text editor'
-      })
+      const text = workspace.locator('[data-canvas-editor="text"]')
 
       await text.fill('Embedded workspace')
       await text.press('Control+Enter')
@@ -887,10 +893,12 @@ async function verifyCollaboration(development) {
               .poll(() => hasShapeForId(peer, id), { timeout: 12000 })
               .toBe('oval')
             await expect(
-              peer.locator('#peer-toolbar [data-tool-group="shared-tools"]')
+              peer.locator(
+                '#peer-toolbar [data-extension-group="shared-tools"]'
+              )
             ).toHaveCount(1)
             await expect(
-              page.locator('[data-tool-group="shared-tools"]')
+              page.locator('[data-extension-group="shared-tools"]')
             ).toHaveCount(0)
             await assert.rejects(
               peer.evaluate(() =>
@@ -2785,10 +2793,12 @@ test('packed Design mounts tool groups in declaration order and toggles actual k
       })
       const groups = page
         .frameLocator('iframe')
-        .locator('[data-tool-slot="toolbar.top"] >[data-tool-group]')
+        .locator('[data-ui-slot="toolbar.top"] >[data-extension-group]')
 
       const order = () =>
-        groups.evaluateAll((nodes) => nodes.map((n) => n.dataset.toolGroup))
+        groups.evaluateAll((nodes) =>
+          nodes.map((n) => n.dataset.extensionGroup)
+        )
 
       await expect(groups).toHaveCount(3)
       await expect(groups.getByRole('button')).toHaveCount(0)

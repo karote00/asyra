@@ -55,7 +55,10 @@ const ElementPropertiesPanel = ({
       {/* Design section: Position, Dimension, Rotation */}
       <Header label={title} />
       {featureEnabled('geometry') && (
-        <div className="grid grid-cols-1 w-full pb-2">
+        <div
+          data-inspector-section="geometry"
+          className="grid grid-cols-1 w-full pb-2"
+        >
           {inspectorRefs?.positionRow ? (
             <div ref={inspectorRefs.positionRow} />
           ) : (

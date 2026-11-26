@@ -176,7 +176,7 @@ test('packed Design lifecycle mounts a React tool in its host target and returns
       .toBe(true)
     const outlet = host
       .frameLocator('iframe')
-      .locator('[data-tool-slot="toolbar.top"]')
+      .locator('[data-ui-slot="toolbar.top"]')
 
     await expect(outlet.getByText('Sample')).toHaveCount(1)
     await host.evaluate((el) => {
@@ -1100,18 +1100,18 @@ test('packed Design resolves only configured UI targets and releases failed moun
       const editor = await open({ positionRow: bar.id })
 
       const numberMounted = () =>
-        bar.querySelectorAll('[data-tool-group="positionRow"]').length
+        bar.querySelectorAll('[data-inspector-row="positionRow"]').length
 
       const external = numberMounted()
       const internal = host
         .querySelector('iframe')
         .contentDocument.querySelector(
-          '[data-tool-slot="toolbar.top"] [data-tool-group="anotherRow"]'
+          '[data-ui-slot="toolbar.top"] [data-extension-group="anotherRow"]'
         )?.textContent
       const temporary = document.createElement('div')
       const release = editor.toolGroups.mount(positionRow.id, temporary)
       const moved =
-        temporary.querySelector('[data-tool-group]') !== null &&
+        temporary.querySelector('[data-inspector-row]') !== null &&
         numberMounted() === 0
 
       release()
@@ -1217,13 +1217,96 @@ for (const useReact of [true, false]) {
 
             e.select([e.drawRectangle({ x: 10, y: 12, width: 80, height: 40 })])
           })
-          const panel = host
-            .frameLocator('iframe')
-            .getByTestId('properties-panel')
-          const x = page.locator('#my-toolbar').getByTestId('prop-x')
-          const w = page.locator('#size-toolbar').getByTestId('prop-width')
-          const nativeX = panel.getByTestId('prop-x')
-          const nativeW = panel.getByTestId('prop-width')
+          const frame = host.frameLocator('iframe')
+          const panel = frame.locator('[data-editor-panel="properties"]')
+          const position = page.locator(
+            '#my-toolbar [data-inspector-row="positionRow"]'
+          )
+          const dimension = page.locator(
+            '#size-toolbar [data-inspector-row="dimensionRow"]'
+          )
+          const nativePosition = panel.locator(
+            '[data-inspector-row="positionRow"]'
+          )
+          const nativeDimension = panel.locator(
+            '[data-inspector-row="dimensionRow"]'
+          )
+          const x = position.locator('[data-inspector-field="x"]')
+          const w = dimension.locator('[data-inspector-field="width"]')
+          const nativeX = nativePosition.locator('[data-inspector-field="x"]')
+          const nativeW = nativeDimension.locator(
+            '[data-inspector-field="width"]'
+          )
+
+          for (const group of [position, nativeDimension]) {
+            const id = await group.getAttribute('data-inspector-row')
+            const fields = await host.evaluate(
+              (el, id) => Object.keys(el.editor.getUI(id).items),
+              id
+            )
+
+            await expect(group.locator('[data-inspector-field]')).toHaveCount(
+              fields.length
+            )
+            assert.deepEqual(
+              await group
+                .locator('[data-inspector-field]')
+                .evaluateAll((inputs) =>
+                  inputs.map((input) => input.dataset.inspectorField)
+                ),
+              fields
+            )
+          }
+
+          await expect(
+            frame.locator(
+              '[data-editor-panel="toolbar"] [data-toolbar-action="pen"]'
+            )
+          ).toBeVisible()
+          await expect(
+            frame
+              .locator('[data-editor-panel="layers"] [data-layer-element-id]')
+              .first()
+          ).toBeVisible()
+          await expect(
+            frame.locator('[data-editor-panel="canvas"]')
+          ).toBeVisible()
+          await expect(
+            panel.locator(
+              '[data-inspector-section="fills"] [data-fill-action="add"]'
+            )
+          ).toBeVisible()
+          await expect(
+            panel.locator(
+              '[data-inspector-section="strokes"] [data-stroke-action="add"]'
+            )
+          ).toBeVisible()
+
+          // Inspect the rendered host, including controls from shared UI components.
+          const unmarked = await frame
+            .locator(
+              'button:visible, input:visible, select:visible, textarea:visible'
+            )
+            .evaluateAll((controls) =>
+              controls
+                .filter(
+                  (control) =>
+                    !control
+                      .getAttributeNames()
+                      .some((name) =>
+                        /^data-(toolbar-action|layer-action|inspector-field|fill-(field|action)|stroke-(field|action)|color-control|number-step)$/.test(
+                          name
+                        )
+                      )
+                )
+                .map(
+                  (control) =>
+                    control.getAttribute('data-testid') ??
+                    control.outerHTML.slice(0, 100)
+                )
+            )
+
+          assert.deepEqual(unmarked, [])
 
           const setTargets = (targets) =>
             page.evaluate((targets) => globalThis.showTargets(targets), targets)
@@ -1254,7 +1337,7 @@ for (const useReact of [true, false]) {
               }
             })
           })
-          const offset = page.locator('#my-toolbar').getByLabel('Offset')
+          const offset = position.locator('[data-inspector-field="offset"]')
 
           await offset.fill('9')
           await offset.press('Enter')
@@ -1343,6 +1426,10 @@ for (const useReact of [true, false]) {
           assert.deepEqual(await values(), { x: 10, width: 80 })
           await setTargets({})
           await expect(w).toHaveCount(0)
+          await expect(position).toHaveCount(0)
+          await expect(dimension).toHaveCount(0)
+          await expect(nativePosition).toHaveCount(1)
+          await expect(nativeDimension).toHaveCount(1)
           await expect(nativeX).toHaveCount(1)
           await expect(nativeW).toHaveCount(1)
           assert.ok(

@@ -61,6 +61,7 @@ export const AiToolLibraryPanel = () => {
       <button
         type="button"
         aria-expanded={open}
+        data-conversation-action="toggleLibrary"
         aria-label={open ? 'Close saved tools' : 'Saved tools'}
         className="rounded border border-[#45464b] bg-transparent px-2 py-1 text-[12px] text-[#c7c8ce] hover:bg-[#303136]"
         onClick={() => setOpen(!open)}
@@ -69,6 +70,7 @@ export const AiToolLibraryPanel = () => {
       </button>
       {open ? (
         <section
+          data-conversation-section="library"
           aria-label="Saved tools"
           className="absolute right-0 top-9 z-20 max-h-[65vh] w-72 max-w-[85vw] overflow-y-auto rounded-lg border border-[#45464b] bg-[#222328] p-3 text-[12px] shadow-lg"
         >
@@ -77,6 +79,7 @@ export const AiToolLibraryPanel = () => {
             <button
               type="button"
               disabled={busy}
+              data-library-action="refresh"
               onClick={() => void refresh()}
               className="text-[#b4a5ff] disabled:opacity-50"
             >
@@ -109,6 +112,7 @@ export const AiToolLibraryPanel = () => {
               <li
                 className="border-t border-[#45464b] pt-2"
                 key={`${tool.name}:${tool.revision}`}
+                data-library-tool={tool.name}
               >
                 <div className="break-words font-medium">{tool.name}</div>
                 <div className="text-[#aaabb3]">
@@ -118,6 +122,7 @@ export const AiToolLibraryPanel = () => {
                 <div className="flex gap-3">
                   <button
                     type="button"
+                    data-library-action="suspend"
                     aria-label={`Suspend ${tool.name}`}
                     disabled={
                       busy ||
@@ -138,6 +143,7 @@ export const AiToolLibraryPanel = () => {
                   </button>
                   <button
                     type="button"
+                    data-library-action="remove"
                     aria-label={`Remove ${tool.name}`}
                     disabled={busy || tool.availability === 'retired'}
                     className="text-[#ffb8b8] disabled:opacity-40"

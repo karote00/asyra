@@ -13,7 +13,9 @@ export async function openBoard(container: HTMLDivElement) {
     storageKey: 'approvals'
   })
 
-  const position = editor.getUI('positionRow')
+  const position = editor.getUI(positionRow.id)
+
+  position.setItems(positionRow.fields)
 
   position.setItems([position.items.y, position.items.x])
   const dimension = editor.getUI('dimensionRow')

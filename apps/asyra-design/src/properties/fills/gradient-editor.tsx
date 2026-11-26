@@ -78,6 +78,7 @@ const GradientEditor = ({
           ? 'w-full'
           : 'w-full rounded-md border border-border-dark bg-[#1f2022] p-2'
       }
+      data-gradient-editor={fillId}
       data-testid={`prop-fill-gradient-editor-${index}`}
     >
       <GradientTypeControls

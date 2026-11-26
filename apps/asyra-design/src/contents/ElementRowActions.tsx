@@ -40,6 +40,7 @@ export const ElementRowActions = ({
           title={lock ? 'Unlock element' : 'Lock element'}
           aria-pressed={lock}
           aria-label={lock ? 'Unlock element' : 'Lock element'}
+          data-layer-action="toggleLock"
           data-testid={`content-element-lock-${elementId}`}
         >
           <Icon name={lock ? 'Lock' : 'Unlock'} />
@@ -55,6 +56,7 @@ export const ElementRowActions = ({
           title={visible ? 'Hide element' : 'Show element'}
           aria-pressed={visible}
           aria-label={visible ? 'Hide element' : 'Show element'}
+          data-layer-action="toggleVisibility"
           data-testid={`content-element-visible-${elementId}`}
         >
           <Icon name={visible ? 'Visible' : 'Invisible'} />

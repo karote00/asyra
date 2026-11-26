@@ -1,12 +1,8 @@
-export type InspectorRowId = 'positionRow' | 'dimensionRow'
+import type { InspectorRowId, InspectorFields } from './inspector-registry'
+export type { InspectorRowId, InspectorFields } from './inspector-registry'
 export type InspectorRefs = Partial<
   Record<InspectorRowId, (element: HTMLDivElement | null) => void>
 >
-
-export interface InspectorFields {
-  positionRow: 'x' | 'y'
-  dimensionRow: 'width' | 'height'
-}
 
 /** A host-owned number displayed by the row's standard input. */
 export interface InspectorNumberItem {

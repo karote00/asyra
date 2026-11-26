@@ -78,6 +78,7 @@ const GradientStopsList = ({
         type="button"
         onClick={onAddStop}
         className="flex items-center justify-center w-5 h-5 rounded hover:bg-panel-surface-hover text-white transition-colors"
+        data-gradient-action="addStop"
         data-testid={`prop-fill-gradient-add-stop-${index}`}
         aria-label="Add gradient stop"
         title="Add gradient stop"
@@ -93,6 +94,7 @@ const GradientStopsList = ({
           className={`grid grid-cols-[54px_1fr_28px] items-center gap-2 h-8 min-h-8 px-3 transition-colors ${
             stopIndex === selectedStopIndex ? 'bg-[rgba(13,153,255,0.08)]' : ''
           }`}
+          data-gradient-stop={stopIndex}
           data-testid={`prop-fill-gradient-stop-row-${index}-${stopIndex}`}
           onPointerDown={(event) => onRowPointerDown(stopIndex, event)}
           onClick={() => onSelectStop(stopIndex)}
@@ -106,6 +108,7 @@ const GradientStopsList = ({
                 onStopPositionChange(stopIndex, value)
               }
               noOutline
+              data-gradient-field="position"
               data-testid={`prop-fill-gradient-stop-position-${index}-${stopIndex}`}
             />
           </PropertyControl>
@@ -173,6 +176,7 @@ const GradientStopsList = ({
             }}
             disabled={totalStopCount <= 2}
             className="flex items-center justify-center w-6 h-6 rounded hover:bg-panel-surface-hover text-white disabled:opacity-20 disabled:cursor-not-allowed transition-colors text-[14px]"
+            data-gradient-action="removeStop"
             data-testid={`prop-fill-gradient-stop-remove-${index}-${stopIndex}`}
             aria-label={`Remove gradient stop ${orderIndex + 1}`}
             title="Remove gradient stop"

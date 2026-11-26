@@ -22,6 +22,7 @@ export function InspectorNumberInput({
       <Input
         value={typeof value === 'string' ? '' : formatInputNumber(value)}
         placeholder={typeof value === 'string' ? value : undefined}
+        data-inspector-field={field}
         aria-label={label}
         prefix={label}
         data-testid={'prop-' + field}

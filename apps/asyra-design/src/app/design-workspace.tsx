@@ -221,6 +221,7 @@ export const DesignWorkspace: React.FC<WorkspaceProps> = ({
     <div
       ref={appRootRef}
       className="absolute grid h-screen w-full z-20"
+      data-editor-workspace="design"
       data-ai-root="true"
       style={{
         gridTemplateAreas: `
@@ -269,7 +270,7 @@ export const DesignWorkspace: React.FC<WorkspaceProps> = ({
         <div
           ref={slots.selectionMenu}
           hidden={elementSelection.size === 0}
-          data-tool-slot="selectionMenu"
+          data-ui-slot="selectionMenu"
           style={{
             gridArea: 'canvas',
             alignSelf: 'start',

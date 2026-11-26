@@ -62,6 +62,7 @@ const StrokeColorRow = ({
           noOutline
           inputClassName="!pl-[0.5em]"
           onChange={onOpacityChange}
+          data-stroke-field="opacity"
           data-testid={opacityTestId}
         />
       </div>

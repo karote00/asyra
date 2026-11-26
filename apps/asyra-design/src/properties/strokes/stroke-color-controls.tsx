@@ -72,6 +72,7 @@ const StrokeColorControls = ({
             noOutline
             inputClassName="!pl-[0.5em]"
             onChange={onColorValueChange}
+            data-stroke-field="color"
             data-testid={`prop-stroke-color-${index}`}
           />
         </div>

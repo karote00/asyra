@@ -570,11 +570,13 @@ const ColorPicker: React.FC<ColorPickerProps> = ({
 
   return (
     <div
+      data-color-picker="root"
       ref={rootRef}
       className="relative inline-flex"
       data-testid={dataTestId}
     >
       <button
+        data-color-control="toggle"
         ref={triggerRef}
         type="button"
         disabled={disabled}
@@ -607,6 +609,7 @@ const ColorPicker: React.FC<ColorPickerProps> = ({
       {isOpen && portalRoot
         ? createPortal(
             <div
+              data-color-picker="popover"
               ref={panelRef}
               className="fixed z-50 w-[256px] overflow-y-auto rounded-xl border border-[#3E3E3E] bg-[#252627] text-white shadow-[0_20px_50px_rgba(0,0,0,0.45)]"
               style={{

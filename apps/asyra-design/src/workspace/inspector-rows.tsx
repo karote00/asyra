@@ -4,8 +4,8 @@ import type {
   InspectorRefs,
   InspectorRowId
 } from '../properties/inspector-contract'
-import Position from '../properties/position'
-import Dimension from '../properties/dimension'
+import { dimensionRow, inspectorRows } from '../properties/inspector-registry'
+import { InspectorTemplateRow } from '../properties/inspector-template'
 import { useElementSelection } from '../providers'
 import { supportsSizeEdits } from '../common-apis/element/geometry-policy'
 import core from '../contexts'
@@ -18,7 +18,7 @@ function InspectorControls({
   enabled: boolean
 }) {
   const selected = useElementSelection()
-  const dimension = id === 'dimensionRow'
+  const dimension = id === dimensionRow.id
   const sizeUnavailable =
     dimension &&
     [...selected].some(
@@ -29,11 +29,11 @@ function InspectorControls({
 
   return (
     <fieldset
-      aria-label={dimension ? 'Dimension' : 'Position'}
+      aria-label={inspectorRows[id].label}
       disabled={!editable}
       style={{ border: 0, margin: 0, padding: 0, minWidth: 0 }}
     >
-      {dimension ? <Dimension /> : <Position />}
+      <InspectorTemplateRow id={id} markedByHost />
       {sizeUnavailable && (
         <p>Size editing is unavailable for this selection.</p>
       )}

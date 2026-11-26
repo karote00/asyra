@@ -97,7 +97,7 @@ const StrokeItem = ({
   const dashLengths = getStrokeDashLengths(stroke)
 
   return (
-    <div className="grid grid-cols-1 gap-1 py-1">
+    <div data-stroke-id={strokeId} className="grid grid-cols-1 gap-1 py-1">
       <div
         className="grid grid-cols-[1fr_24px_24px] items-center gap-2 pl-4 pr-2 h-8 min-h-8"
         data-testid={`prop-stroke-${index}`}
@@ -121,6 +121,7 @@ const StrokeItem = ({
           type="button"
           onClick={() => handleVisibleChange(!stroke.fill.visible)}
           className="flex items-center justify-center h-6 w-6 rounded hover:bg-panel-surface-hover text-white/60 hover:text-white transition-colors"
+          data-stroke-action="toggleVisibility"
           data-testid={`prop-stroke-visible-${index}`}
           title={stroke.fill.visible ? 'Hide stroke' : 'Show stroke'}
           style={{ width: '24px', height: '24px' }}
@@ -132,6 +133,7 @@ const StrokeItem = ({
           type="button"
           onClick={onRemove}
           className="flex items-center justify-center h-6 w-6 rounded hover:bg-panel-surface-hover text-white disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
+          data-stroke-action="remove"
           data-testid={`prop-stroke-remove-${index}`}
           title="Remove stroke"
           aria-label="Remove stroke"
@@ -154,6 +156,7 @@ const StrokeItem = ({
             }
             className={strokeSelectClassName}
             style={strokeSelectStyle}
+            data-stroke-field="position"
             data-testid={`prop-stroke-position-${index}`}
           >
             {POSITION_OPTIONS.map((option) => (
@@ -178,6 +181,7 @@ const StrokeItem = ({
             }
             className={strokeSelectClassName}
             style={strokeSelectStyle}
+            data-stroke-field="join"
             data-testid={`prop-stroke-join-${index}`}
           >
             {JOIN_OPTIONS.map((option) => (
@@ -200,6 +204,7 @@ const StrokeItem = ({
             }
             className={strokeSelectClassName}
             style={strokeSelectStyle}
+            data-stroke-field="cap"
             data-testid={`prop-stroke-cap-${index}`}
           >
             {CAP_OPTIONS.map((option) => (
@@ -227,6 +232,7 @@ const StrokeItem = ({
               noOutline
               inputClassName="!pl-[0.5em]"
               onChange={handleMiterAngleChange}
+              data-stroke-field="miter"
               data-testid={`prop-stroke-miter-${index}`}
             />
           </div>
@@ -253,6 +259,7 @@ const StrokeItem = ({
               noOutline
               inputClassName="!pl-[0.5em]"
               onChange={handleWidthChange}
+              data-stroke-field="width"
               data-testid={`prop-stroke-width-${index}`}
             />
           </div>
@@ -266,6 +273,7 @@ const StrokeItem = ({
             }
             className={strokeSelectClassName}
             style={strokeSelectStyle}
+            data-stroke-field="style"
             data-testid={`prop-stroke-style-${index}`}
           >
             {STYLE_OPTIONS.map((option) => (
@@ -294,6 +302,7 @@ const StrokeItem = ({
                 noOutline
                 inputClassName="!pl-0"
                 onChange={handleDashLengthChange}
+                data-stroke-field="dash"
                 data-testid={`prop-stroke-dash-${index}`}
                 aria-label="Dash length"
                 title="Dash"
@@ -316,6 +325,7 @@ const StrokeItem = ({
                 noOutline
                 inputClassName="!pl-0"
                 onChange={handleGapLengthChange}
+                data-stroke-field="gap"
                 data-testid={`prop-stroke-gap-${index}`}
                 aria-label="Gap length"
                 title="Gap"

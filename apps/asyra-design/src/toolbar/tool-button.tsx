@@ -44,6 +44,7 @@ const ToolButton = ({
           <button
             aria-label="Reset document"
             className="tool-btn"
+            data-toolbar-action="reset"
             data-testid="reset-button"
             onClick={handleReset}
             title="Reset document"
@@ -88,6 +89,7 @@ const ToolButton = ({
             aria-pressed={primaryTool === tool}
             className={`tool-btn ${primaryTool === tool ? 'active' : ''}`}
             onClick={() => switchPrimaryTool(tool)}
+            data-toolbar-action={toolId(tool)}
             data-testid={'tool-' + toolId(tool)}
             data-active={primaryTool === tool}
             title={`${label} (${key})`}

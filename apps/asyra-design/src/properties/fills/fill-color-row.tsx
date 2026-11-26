@@ -102,6 +102,7 @@ const FillColorRow = ({
           noOutline
           inputClassName="!pl-0"
           onChange={onOpacityChange}
+          data-fill-field="opacity"
           data-testid={opacityTestId}
         />
       </div>

@@ -465,6 +465,7 @@ const Contents: React.FC = () => {
       onPointerUp={handleLayerPointerUp}
       onPointerCancel={() => cancelActiveLayerMove('pointer-cancel')}
       onLostPointerCapture={() => cancelActiveLayerMove('lost-capture')}
+      data-editor-panel="layers"
       data-testid="contents-panel"
       data-layer-move-state={layerMoveState}
     >
@@ -484,6 +485,7 @@ const Contents: React.FC = () => {
       <div
         ref={scrollRef}
         className="flex-1 overflow-y-auto"
+        data-layer-list="tree"
         data-testid="contents-scroll-container"
         data-layer-drop-workspace="true"
         data-layer-drop-state={
@@ -501,6 +503,7 @@ const Contents: React.FC = () => {
           <div
             role="alert"
             className="px-3 py-2 text-[10px] text-[#f28b82]"
+            data-layer-status="projectionError"
             data-testid="layers-projection-error"
           >
             Layers hierarchy is unavailable.

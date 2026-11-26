@@ -19,6 +19,7 @@ export const ColorPickerSaturation: React.FC<ColorPickerSaturationProps> = ({
   return (
     <div className="px-3 mb-3">
       <div
+        data-color-control="saturation"
         ref={saturationRef}
         className="relative h-40 w-full cursor-crosshair rounded-lg border border-[#4B4B4B]"
         style={{

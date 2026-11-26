@@ -38,6 +38,7 @@ const GradientTypeControls = ({
         value={value}
         onChange={(event) => onChange(event.target.value as FillGradientType)}
         className="min-w-24 flex-1 rounded-md border border-[#3a3a3a] bg-transparent px-2 py-1.5 text-[10px] uppercase tracking-[0.08em] text-white outline-none transition-colors hover:border-[#555] focus:border-[#0d99ff]"
+        data-gradient-field="type"
         data-testid={`prop-fill-gradient-type-${index}`}
       >
         {options.map((gradientType) => (
@@ -50,6 +51,7 @@ const GradientTypeControls = ({
         type="button"
         onClick={onFlip}
         className="icon-btn text-white"
+        data-gradient-action="flip"
         data-testid={`prop-fill-gradient-flip-${index}`}
         aria-label="Flip gradient"
         title="Flip gradient"
