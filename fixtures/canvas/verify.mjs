@@ -7,9 +7,7 @@ import { fileURLToPath } from 'node:url'
 import flowApi from '../../tools/flow-inspector/flow-files/api.cjs'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
-const flow = flowApi.openProject(
-  path.join(root, 'docs/ai/framework/plans/canvas')
-)
+const flow = flowApi.openProject(path.join(root, 'docs/ai/sdk/plans/canvas'))
 const { context } = flow.snapshot().evaluation.flows[0].nodes[0]
 const temp = path.join(root, 'tmp/canvas')
 

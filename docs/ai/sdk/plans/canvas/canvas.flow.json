@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "projectId": "asyra",
   "flowId": "canvas",
-  "revision": 65,
+  "revision": 66,
   "definition": {
     "title": "Canvas SDK",
     "purpose": "Bind a blank host surface and opt into independent product SDKs.",
@@ -27,7 +27,7 @@
           }
         ],
         "specRefs": [
-          "docs/ai/framework/plans/canvas-embedding-plan.md",
+          "docs/ai/sdk/plans/canvas-embedding-plan.md",
           "sdk/design/FEATURES.md"
         ],
         "implementationRefs": [
@@ -71,12 +71,12 @@
         "criterionId": "consumer",
         "kind": "automated",
         "status": "passed",
-        "binding": "54182f1d963e4840a88bb6564282078b8b5059a7d5f7c1e7ea85d46d3bf1e1c9",
+        "binding": "3cd98049db37817439a8082e57baac2dc7a442215e351faa54a3021fdc706906",
         "actor": "packed-consumer",
-        "executionId": "b9a62455-125d-41c4-a4b5-a72ac3f9897d",
+        "executionId": "11091068-025f-4244-bb11-07da519035da",
         "caseId": "canvas/consumer",
         "summary": "Separate packed base, design and simulation installations passed type, build and Chromium checks.",
-        "at": "2026-11-26T04:15:08.347Z"
+        "at": "2026-11-26T07:44:22.539Z"
       }
     ],
     "notes": [],
