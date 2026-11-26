@@ -99,6 +99,10 @@ export type { InspectorRowId, InspectorNumberItem } from './common.js'
 
 export interface InspectorTemplate<Key extends string> {
   readonly items: { readonly [K in Key]: K }
+  /** Insert before the zero-based index. The row length appends an item. */
+  insertAt(index: number, item: InspectorItem<Key>): () => void
+  /** Remove the item currently at this zero-based index. */
+  removeAt(index: number): void
   setItems(items: readonly InspectorItem<Key>[]): void
   insertAfter(anchor: InspectorItem<Key>, item: InspectorItem<Key>): () => void
 }
@@ -111,13 +115,31 @@ export interface InspectorRow {
 export type WorkspaceUIGroup<Id extends string = string> =
   ToolGroup<Id> | InspectorRow
 
-export interface ToolGroups {
+type UITargets<Id extends string> = [Id] extends [never]
+  ? Readonly<Partial<Record<InspectorRowId, string>>>
+  : Readonly<Record<string, string>>
+
+export interface ToolGroups<Id extends string = string> {
   /** Replace external targets. Removed entries return to their default placements. */
-  setTargets(targets: Readonly<Record<string, string>>): void
-  mount(id: string, container: HTMLElement): () => void
+  setTargets(targets: UITargets<Id>): void
+  mount(
+    id: [Id] extends [never] ? InspectorRowId : string,
+    container: HTMLElement
+  ): () => void
 }
 
 export type { WorkspaceNode }
+
+interface NodeDefinition<Id extends string> {
+  readonly id: Id
+  readonly node: WorkspaceNode
+}
+type Widen<T> = T extends string ? string : T extends number ? number : boolean
+type NodeValues<Node extends WorkspaceNode> = {
+  [K in keyof NonNullable<Node['fields']>]?: Widen<
+    NonNullable<Node['fields']>[K]
+  >
+}
 
 export type WorkspaceExtension<Id extends string = string> = (
   | { readonly id: Id; readonly node: WorkspaceNode }
@@ -136,22 +158,39 @@ export interface WorkspaceOptions<
   /** Standalone UI groups in their default placements, in display order. */
   ui?: readonly (WorkspaceUIGroup<NoInfer<Id>> & { readonly id: Id })[]
   /** Optional host-document element IDs, keyed by installed UI group ID. */
-  uiTargets?: Readonly<Record<string, string>>
+  uiTargets?: UITargets<NoInfer<Id>>
   panels?: { layers?: boolean; properties?: boolean }
   /** Changing the service, file or actor on a declarative host opens a new editor session. */
   collaboration?: { fileId: string; endpoint: string; actorId?: string }
 }
 
+export type WorkspacePresentation<Id extends string = never> = Pick<
+  WorkspaceOptions<Id>,
+  'hideUI' | 'panels' | 'toolbar'
+>
+
 export type DesignEditor<
-  Id extends string,
-  Tool extends string
+  Id extends string = never,
+  Tool extends string = WorkspaceTool
 > = ToolsFor<Tool> &
   (WorkspaceTool extends Tool
     ? {
+        createNode<Node extends NodeDefinition<Id>>(
+          type: Node,
+          bounds: Rectangle,
+          fields?: NodeValues<NoInfer<Node['node']>>
+        ): string | null
+        /** Edit only when every selected element has the supplied node type. */
+        updateSelectedNodes<Node extends NodeDefinition<Id>>(
+          type: Node,
+          fields: NodeValues<NoInfer<Node['node']>>
+        ): boolean
+        /** Replace toolbar and panel settings on the mounted workspace. */
+        setPresentation(options: WorkspacePresentation<Id>): void
         getUI<Row extends InspectorRowId>(
           id: Row
         ): InspectorTemplate<InspectorFields[Row]>
-        readonly toolGroups: ToolGroups
+        readonly toolGroups: ToolGroups<Id>
       }
     : unknown) & {
     /** All feature IDs registered with this editor, including currently disabled IDs. */

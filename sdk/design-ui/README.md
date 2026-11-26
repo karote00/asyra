@@ -12,6 +12,8 @@ const editor = await createDesign(container, {
 })
 ```
 
+For simple relocation, pass `uiTargets: { positionRow: "my-toolbar" }` directly to Design. Import these descriptors for explicit UI composition.
+
 Mount the toolbar element in the document before creating the editor. Rows without an explicit target stay in their usual inspector positions.
 Call `editor.toolGroups.setTargets({})` to return both rows to the inspector.
 React hosts can update the `uiTargets` option on the mounted editor.

@@ -56,7 +56,7 @@ export async function mountWorkspace(
     throw new Error('Container already has an active Design editor')
   }
 
-  const { policy, controls, defaultControls, collaboration, extensions } =
+  const { policy, presentation, collaboration, extensions } =
     resolveWorkspaceOptions(options)
   const {
     disabled,
@@ -117,10 +117,39 @@ export async function mountWorkspace(
     return session
   }
 
-  const templates = createInspectorTemplates(current)
+  const nodes = new Map<string, import('./index.js').WorkspaceNode>()
+
+  for (const extension of options.extensions ?? []) {
+    if (extension.node) {
+      if (!extension.id) {
+        throw new TypeError('A node extension requires a stable ID')
+      }
+
+      nodes.set(extension.id, structuredClone(extension.node))
+    }
+  }
+
+  const templates = createInspectorTemplates(current, nodes)
   let editor: Editor
   const base = {
+    createNode: (extension, bounds, fields) =>
+      current().createNode(extension.id, bounds, fields),
+
+    updateSelectedNodes: (extension, fields) =>
+      current().updateSelectedNodes(extension.id, fields),
+
     getUI: templates.getUI,
+
+    setPresentation(options) {
+      if (!active) {
+        throw new Error('Design workspace is unavailable')
+      }
+
+      const next = presentation(options, base.runAction)
+
+      session?.updatePresentation(next)
+      appearance = next
+    },
 
     getTool: () => current().getTool(),
 
@@ -286,6 +315,7 @@ export async function mountWorkspace(
     }
   } satisfies Omit<Editor, keyof Commands | 'toolGroups' | 'common'>
 
+  let appearance = presentation(options, base.runAction)
   const groups = createToolGroups(
     extensions,
     options,
@@ -302,48 +332,29 @@ export async function mountWorkspace(
     frame.title = 'Design editor'
     frame.style.cssText = 'display:block;border:0;width:100%;height:100%;'
     host.append(frame)
+    const initialPresentation = appearance
+
     session = await startWorkspaceFrame(
       frame,
       lifetime,
       {
         document: documentData,
-        nodes: options.extensions?.flatMap((extension) => {
-          if (!extension.node) {
-            return []
-          }
-
-          if (!extension.id) {
-            throw new TypeError('A node extension requires a stable ID')
-          }
-
-          return [{ id: extension.id, node: structuredClone(extension.node) }]
-        }),
+        nodes: Array.from(nodes, ([id, node]) => ({ id, node })),
         collaboration,
         slots: groups.refs,
         inspectorRefs: groups.inspectorRefs,
         inspectorTemplates: templates.sources,
-        toolbar:
-          controls === false
-            ? false
-            : {
-                includeTools: defaultControls,
-                actions: controls.map(({ id, label }) => ({
-                  id,
-                  label,
-
-                  run: () => base.runAction(id)
-                }))
-              },
+        ...appearance,
         disabledFeatures: runtimePolicy(disabled),
-        hideUI: options.hideUI === true,
-        panels: options.hideUI
-          ? { layers: false, properties: false }
-          : options.panels,
 
         reopen: () => reopen()
       },
       reopen
     )
+    if (initialPresentation !== appearance) {
+      session.updatePresentation(appearance)
+    }
+
     localDocument?.bind(session, lifetime.signal)
     observeKeys = Object.freeze([
       ...new Set([...session.observeKeys, 'disabledFeatures'])

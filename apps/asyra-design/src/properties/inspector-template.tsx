@@ -1,3 +1,4 @@
+import { NodeNumberInput } from './node-number-input'
 import { createContext, useContext, useSyncExternalStore } from 'react'
 import { updateSelectedElementProperties } from '../controllers/scene-tree'
 import { useProperty } from '../hooks'
@@ -59,13 +60,17 @@ export function InspectorTemplateRow({ id }: { id: InspectorRowId }) {
 
   return (
     <div className="grid grid-flow-col auto-cols-fr items-center gap-2 pl-4 pr-2 h-8 min-h-8">
-      {items.map((item) =>
-        typeof item === 'string' ? (
-          <NativeInput key={item} field={item} />
+      {items.map((item) => {
+        if (typeof item === 'string') {
+          return <NativeInput key={item} field={item} />
+        }
+
+        return item.kind === 'node-number' ? (
+          <NodeNumberInput key={item.id} item={item} />
         ) : (
           <CustomInput key={item.id} item={item} />
         )
-      )}
+      })}
     </div>
   )
 }

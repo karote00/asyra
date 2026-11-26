@@ -1355,3 +1355,60 @@ for (const useReact of [true, false]) {
     }
   )
 }
+
+test('packed Design React moves built-in rows and updates presentation through direct props', async () => {
+  await withConsumer(react, 'react.js', async (page) => {
+    await page.evaluate(() => {
+      const aside = globalThis.document.createElement('aside')
+
+      aside.id = 'position'
+      globalThis.document.body.append(aside)
+      globalThis.showBoard({
+        uiTargets: { positionRow: 'position' },
+
+        onMount(editor) {
+          globalThis.firstEditor = editor
+          editor.select([
+            editor.drawRectangle({ x: 12, y: 2, width: 30, height: 40 })
+          ])
+        }
+      })
+    })
+    const x = page.locator('#position').getByTestId('prop-x')
+
+    await expect(x).toHaveValue('12')
+    const frame = page.frameLocator('asyra-design iframe')
+
+    await expect(frame.getByTestId('prop-x')).toHaveCount(0)
+    await page.evaluate(() =>
+      globalThis.showBoard({
+        hideUI: true,
+        uiTargets: { dimensionRow: 'position' },
+        disabledFeatures: ['pen']
+      })
+    )
+    await expect(frame.getByTestId('properties-panel')).toHaveCount(0)
+    await expect(
+      page.locator('#position').getByTestId('prop-width')
+    ).toHaveValue('30')
+    await expect
+      .poll(() =>
+        page.evaluate(() => globalThis.firstEditor.isFeatureEnabled('pen'))
+      )
+      .toBe(false)
+    await page.evaluate(() =>
+      globalThis.showBoard({ toolbar: false, panels: { layers: false } })
+    )
+    await expect(frame.getByTestId('toolbar')).toHaveCount(0)
+    await expect(frame.getByTestId('prop-x')).toHaveValue('12')
+    await expect(frame.getByTestId('prop-width')).toHaveValue('30')
+    assert.equal(
+      await page.evaluate(
+        () =>
+          globalThis.document.querySelector('asyra-design').editor ===
+          globalThis.firstEditor
+      ),
+      true
+    )
+  })
+})

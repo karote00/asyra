@@ -2,7 +2,7 @@ import { InspectorTemplates } from './properties/inspector-template'
 import type { ContextType } from 'react'
 import { createInspectorRows } from './workspace/inspector-rows'
 import { registerWorkspaceNodes } from './workspace/register-nodes'
-import type { WorkspaceNode } from './workspace/nodes'
+import { requireWorkspaceNode, type WorkspaceNode } from './workspace/nodes'
 import { createCommonSession } from './workspace/common-session'
 import React from 'react'
 import { createRoot } from 'react-dom/client'
@@ -107,11 +107,13 @@ export function mount(options: WorkspaceOptions) {
   const inspector = createInspectorRows(options.inspectorRefs ?? {})
 
   let cancel!: (error: Error) => void
-  let render!: (disabled: readonly string[]) => void
+  let presentation: Pick<WorkspaceOptions, 'hideUI' | 'panels' | 'toolbar'> =
+    options
+  let disabled = options.disabledFeatures
+  let render!: () => void
   const ready = new Promise<void>((resolve, reject) => {
     cancel = reject
     const session: RenderSession = {
-      hideUI: options.hideUI,
       surface: options.surface,
       collaboration: options.collaboration,
       document: options.document,
@@ -120,19 +122,20 @@ export function mount(options: WorkspaceOptions) {
       reopen: options.reopen
     }
 
-    render = (disabled) =>
+    render = () =>
       root.render(
         <InspectorTemplates.Provider value={options.inspectorTemplates}>
           <DesignWorkspace
             inspectorRefs={options.inspectorRefs}
             session={session}
-            panels={options.panels}
+            hideUI={presentation.hideUI}
+            panels={presentation.panels}
             slots={options.slots}
             disabledFeatures={disabled}
             toolbar={
-              options.toolbar && {
-                ...options.toolbar,
-                actions: options.toolbar.actions.filter(
+              presentation.toolbar && {
+                ...presentation.toolbar,
+                actions: presentation.toolbar.actions.filter(
                   ({ id }) => !disabled.includes(id)
                 )
               }
@@ -142,22 +145,63 @@ export function mount(options: WorkspaceOptions) {
           {inspector.render(disabled)}
         </InspectorTemplates.Provider>
       )
-    render(options.disabledFeatures)
+    render()
   })
   const lifetime = new AbortController()
   let closing: Promise<void> | undefined
 
+  const common = createCommonSession(lifetime.signal)
+
   return {
+    createNode(
+      type: string,
+      { x, y, width, height }: Bounds,
+      fields?: WorkspaceNode['fields']
+    ) {
+      requireWorkspaceNode(type)
+
+      return common.element.createElement({
+        type,
+        workspacePosition: { x, y },
+        width,
+        height,
+        fields
+      })
+    },
+
+    updateSelectedNodes(
+      type: string,
+      fields: NonNullable<WorkspaceNode['fields']>
+    ) {
+      requireWorkspaceNode(type, fields)
+      const ids = selectionApis.getSelectedIds()
+
+      if (
+        !ids.length ||
+        !ids.every((id) => common.element.getElementType(id) === type)
+      ) {
+        return false
+      }
+
+      return common.element.updateElementProperties(ids, fields).changed
+    },
+
     mountInspectorRow: inspector.mount,
     ready: ready.then(createWorkspaceObservations),
+
+    updatePresentation(next: typeof presentation) {
+      presentation = next
+      render()
+    },
 
     async updateFeatures(ids: readonly string[]) {
       await updateWorkspaceFeatures(ids)
       lifetime.signal.throwIfAborted()
-      render(ids)
+      disabled = ids
+      render()
     },
 
-    common: createCommonSession(lifetime.signal),
+    common,
     commands: workspaceCommands(options.reopen),
 
     getTool() {

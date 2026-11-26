@@ -159,5 +159,5 @@ export function createCommonSession(signal: AbortSignal) {
         })
       )
     ])
-  )
+  ) as typeof common
 }

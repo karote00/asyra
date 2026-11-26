@@ -149,3 +149,15 @@ Native fields retain their app projections and edit commands. A row update
 notifies only that row. Moving it preserves its controls and subscriptions.
 The packed consumer checks order, native and custom edits, undo, independent
 removal, invalid changes, row relocation, cleanup and editor isolation.
+
+### Configure the workspace directly
+
+React accepts common presentation and feature settings directly. Presentation
+changes update the mounted workspace. Built-in rows accept target IDs without
+a separate UI package. Explicit group definitions retain their owner and order.
+Rows support zero-based insertion and removal alongside named anchors.
+A registered numeric field binds one selected node to the existing property
+command and document schema. Disabled nodes remain readable. The packed JS and
+React consumers exercise the shortcuts, explicit composition, history and type
+errors. The app owns rendering and transactions, the SDK owns row composition,
+and each subscription lives only as long as its mounted field.

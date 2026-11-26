@@ -18,6 +18,8 @@ import type {
 } from './editor-types.js'
 
 export type { DesignTool, WorkspaceTool, WorkspaceFeature } from './features.js'
+export { numberField } from './node-field.js'
+
 export type * from './editor-types.js'
 export type * from './workspace-tools.js'
 

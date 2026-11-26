@@ -14,6 +14,17 @@ declare global {
   }
 }
 
+function presentationChanged(
+  a?: WorkspaceOptions<string>,
+  b?: WorkspaceOptions<string>
+) {
+  return (
+    a?.hideUI !== b?.hideUI ||
+    a?.panels !== b?.panels ||
+    a?.toolbar !== b?.toolbar
+  )
+}
+
 if (globalThis.customElements && !globalThis.customElements.get(designTag)) {
   // A standalone editor may be nested in framework mount elements. Leave
   // document margins alone when any branch has sibling content.
@@ -100,6 +111,10 @@ if (globalThis.customElements && !globalThis.customElements.get(designTag)) {
         return
       }
 
+      if (this.#editor && presentationChanged(previous, value)) {
+        this.#editor.setPresentation(value ?? {})
+      }
+
       if (this.#editor && previous?.uiTargets !== value?.uiTargets) {
         this.#editor.toolGroups.setTargets(value?.uiTargets ?? {})
       }
@@ -162,10 +177,16 @@ if (globalThis.customElements && !globalThis.customElements.get(designTag)) {
         const editor = await mountWorkspace(this.#host, initial, startup.signal)
 
         try {
-          if (initial.disabledFeatures !== this.options?.disabledFeatures) {
-            await editor.setDisabledFeatures(
-              this.options?.disabledFeatures ?? []
-            )
+          let applied = initial.disabledFeatures
+
+          while (applied !== this.options?.disabledFeatures) {
+            applied = this.options?.disabledFeatures
+            await editor.setDisabledFeatures(applied ?? [])
+            startup.signal.throwIfAborted()
+          }
+
+          if (presentationChanged(initial, this.options)) {
+            editor.setPresentation(this.options ?? {})
           }
 
           if (initial.uiTargets !== this.options?.uiTargets) {

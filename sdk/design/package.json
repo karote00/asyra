@@ -19,6 +19,10 @@
       "types": "./dist/element.d.ts",
       "default": "./dist/element.js"
     },
+    "./inspector-rows": {
+      "types": "./dist/inspector-rows.d.ts",
+      "default": "./dist/inspector-rows.js"
+    },
     "./react": {
       "types": "./dist/react.d.ts",
       "default": "./dist/react.js"

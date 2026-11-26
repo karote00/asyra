@@ -18,16 +18,10 @@ export function rememberNode(id: string, node: WorkspaceNode) {
   nodes.set(id, node)
 }
 
-export function nodeCreation(
-  type: string,
+function validateFields(
+  node?: WorkspaceNode,
   values?: Readonly<Record<string, Field>>
 ) {
-  const node = nodes.get(type)
-
-  if (node) {
-    featureEnabled(type, 'reject')
-  }
-
   if (values) {
     for (const [key, value] of Object.entries(values)) {
       if (
@@ -40,6 +34,32 @@ export function nodeCreation(
       }
     }
   }
+}
+
+export function requireWorkspaceNode(
+  type: string,
+  values?: Readonly<Record<string, Field>>
+) {
+  const node = nodes.get(type)
+
+  if (!node) {
+    throw new TypeError('Unknown Design node: ' + type)
+  }
+
+  validateFields(node, values)
+}
+
+export function nodeCreation(
+  type: string,
+  values?: Readonly<Record<string, Field>>
+) {
+  const node = nodes.get(type)
+
+  if (node) {
+    featureEnabled(type, 'reject')
+  }
+
+  validateFields(node, values)
 
   return node?.fillColor
 }

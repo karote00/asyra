@@ -172,6 +172,7 @@ export type { WorkspaceNode } from './nodes'
 export type {
   InspectorRowId,
   InspectorNumberItem,
+  InspectorNodeNumber,
   InspectorFields,
   InspectorItem,
   InspectorItemSource

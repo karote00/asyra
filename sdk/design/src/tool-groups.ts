@@ -8,6 +8,8 @@ import type {
   ToolPlacement,
   ToolGroups
 } from './index.js'
+import { positionRow, dimensionRow } from './inspector-rows.js'
+
 const slots = ['toolbar.top', 'properties.top', 'selectionMenu'] as const
 const placements: readonly ToolPlacement[] = [...slots, 'manual']
 
@@ -30,7 +32,17 @@ export function createToolGroups(
   let ready = false
   let closed = false
 
-  for (const extension of extensions) {
+  const installed = new Set(
+    extensions.flatMap((entry) => entry.ui?.map((group) => group.id) ?? [])
+  )
+  const implicitRows = [positionRow, dimensionRow].filter(
+    (row) => !installed.has(row.id)
+  )
+
+  for (const extension of [
+    ...extensions,
+    { ui: implicitRows, id: undefined }
+  ]) {
     for (const group of extension.ui ?? []) {
       if (
         !group.id?.trim() ||
@@ -195,7 +207,9 @@ export function createToolGroups(
     for (const [id, group] of groups) {
       const target = manual.get(id)?.container ?? targets.get(id)
       const host =
-        target ?? inspectorHomes.get(id) ?? outlets.get(group.placement)
+        target ??
+        inspectorHomes.get(id) ??
+        (installed.has(id) ? outlets.get(group.placement) : undefined)
       const owner = owners.get(id)
 
       if (
@@ -248,7 +262,7 @@ export function createToolGroups(
 
   return {
     inspectorRefs,
-    refs: groups.size
+    refs: installed.size
       ? Object.fromEntries(
           slots.map((slot) => [
             slot,

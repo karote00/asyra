@@ -2,12 +2,29 @@ import { getAssets } from './workspace-assets.js'
 import type {
   InspectorRowId,
   WorkspaceTools,
+  Rectangle,
   WorkspaceEditingTools
 } from './index.js'
 
 type Observations = Pick<WorkspaceEditingTools, 'observe' | 'observeKeys'>
 export type Commands = Omit<WorkspaceEditingTools, keyof Observations>
 export type Session = Omit<WorkspaceTools, keyof Commands> & {
+  createNode(
+    id: string,
+    bounds: Rectangle,
+    fields?: Readonly<Record<string, unknown>>
+  ): string | null
+  updateSelectedNodes(
+    id: string,
+    fields: Readonly<Record<string, unknown>>
+  ): boolean
+  updatePresentation(
+    options: ReturnType<
+      ReturnType<
+        typeof import('./workspace-options.js').resolveWorkspaceOptions
+      >['presentation']
+    >
+  ): void
   mountInspectorRow(id: InspectorRowId, container: HTMLElement): () => void
   commands: Commands
   updateFeatures(ids: readonly string[]): Promise<void>

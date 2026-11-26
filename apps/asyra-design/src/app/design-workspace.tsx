@@ -40,6 +40,7 @@ export interface WorkspaceProps {
   inspectorRefs?: InspectorRefs
   slots?: WorkspaceSlots
   disabledFeatures?: readonly string[]
+  hideUI?: boolean
   session?: RenderSession
   toolbar?: false | ToolBarProps['controls']
   onReset?: () => Promise<void>
@@ -56,6 +57,7 @@ export interface WorkspaceProps {
 
 export const DesignWorkspace: React.FC<WorkspaceProps> = ({
   session,
+  hideUI,
   inspectorRefs,
   slots,
   disabledFeatures,
@@ -232,15 +234,16 @@ export const DesignWorkspace: React.FC<WorkspaceProps> = ({
       <DataContexts />
       <RenderApp
         session={session}
+        hideUI={hideUI}
         onContextMenuRequest={
-          session?.hideUI || !contextMenuDescriptors.length
+          hideUI || !contextMenuDescriptors.length
             ? undefined
             : contextMenu.open
         }
         onCanvasHostTeardown={handleCanvasHostTeardown}
       />
       <GroupContextMenu
-        session={contextMenu.session}
+        session={hideUI ? null : contextMenu.session}
         descriptors={contextMenuDescriptors}
         onDismiss={contextMenu.dismiss}
       />
@@ -262,7 +265,7 @@ export const DesignWorkspace: React.FC<WorkspaceProps> = ({
           slotRef={slots?.['properties.top']}
         />
       )}
-      {slots && !session?.hideUI && (
+      {slots && !hideUI && (
         <div
           ref={slots.selectionMenu}
           hidden={elementSelection.size === 0}

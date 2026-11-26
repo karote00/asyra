@@ -32,3 +32,10 @@ export async function openBoard(container: HTMLDivElement) {
 
   return editor
 }
+
+import { numberField } from '@asyra/design'
+const node = { id: 'marker', node: { fields: { depth: 0, title: '' } } }
+
+numberField(node, 'depth', { label: 'Depth' })
+// @ts-expect-error Numeric inspector inputs bind only declared numeric fields.
+numberField(node, 'title', { label: 'Title' })

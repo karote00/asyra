@@ -3,52 +3,60 @@ import {
   type DetailedHTMLProps,
   type HTMLAttributes
 } from 'react'
-import type { WorkspaceOptions } from './index.js'
-import type { DesignElement } from './element.js'
+import type { DesignEditor, WorkspaceOptions } from './index.js'
+import { designTag, type DesignElement } from './element.js'
 
-import { designTag } from './element.js'
+type HostProps = DetailedHTMLProps<HTMLAttributes<DesignElement>, DesignElement>
 
-type DesignElementProps = DetailedHTMLProps<
-  HTMLAttributes<DesignElement>,
-  DesignElement
-> & {
-  options?:
-    | WorkspaceOptions
-    | (WorkspaceOptions<string> &
-        (
-          | { extensions: NonNullable<WorkspaceOptions<string>['extensions']> }
-          | { ui: NonNullable<WorkspaceOptions<string>['ui']> }
-          | { actions: NonNullable<WorkspaceOptions<string>['actions']> }
-        ))
-}
+type BoardProps<Id extends string> = HostProps &
+  Pick<
+    WorkspaceOptions<NoInfer<Id>>,
+    | 'storageKey'
+    | 'hideUI'
+    | 'disabledFeatures'
+    | 'uiTargets'
+    | 'panels'
+    | 'toolbar'
+  > & {
+    options?: WorkspaceOptions<Id>
+    onMount?: (editor: DesignEditor<NoInfer<Id>>) => void
+  }
 
 declare module 'react' {
   // React exposes intrinsic tag types through its JSX namespace.
   // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace JSX {
     interface IntrinsicElements {
-      'asyra-design': DesignElementProps
+      'asyra-design': HostProps & { options?: WorkspaceOptions<string> }
     }
   }
 }
 
-type MountedEditor = NonNullable<DesignElement['editor']>
-
-/** Called once for each ready editor, including the successor after changing boards. */
-export function AsyraDesign({
+/** Direct board settings override the corresponding options. */
+export function AsyraDesign<const Id extends string = never>({
   onMount,
-  storageKey,
   options,
+  storageKey = options?.storageKey,
+  hideUI = options?.hideUI,
+  disabledFeatures = options?.disabledFeatures,
+  uiTargets = options?.uiTargets,
+  panels = options?.panels,
+  toolbar = options?.toolbar,
   ...props
-}: DesignElementProps & {
-  /** Automatically save and restore this board in the browser. */
-  storageKey?: string
-  onMount?: (editor: MountedEditor) => void
-}) {
+}: BoardProps<Id>) {
   return createElement(designTag, {
     ...props,
-    options: storageKey === undefined ? options : { ...options, storageKey },
+    options: {
+      ...options,
+      storageKey,
+      hideUI,
+      disabledFeatures,
+      uiTargets,
+      panels,
+      toolbar
+    },
     'ondesign-ready':
-      onMount && ((event: CustomEvent<MountedEditor>) => onMount(event.detail))
+      onMount &&
+      ((event: CustomEvent<DesignEditor<Id>>) => onMount(event.detail))
   })
 }

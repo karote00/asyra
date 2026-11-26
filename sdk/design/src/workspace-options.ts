@@ -1,7 +1,11 @@
 import { workspaceOnlyTools, workspaceFeatures } from './features.js'
 import type { WorkspaceAction } from './features.js'
 import { createActions } from './actions.js'
-import type { WorkspaceOptions, WorkspaceTools } from './index.js'
+import type {
+  WorkspaceOptions,
+  WorkspacePresentation,
+  WorkspaceTools
+} from './index.js'
 
 const workspaceTools = Object.fromEntries(
   workspaceOnlyTools.map((id) => [
@@ -50,14 +54,6 @@ const workspaceActions = {
 
 export function resolveWorkspaceOptions(options: WorkspaceOptions<string>) {
   if (
-    options.toolbar !== undefined &&
-    options.toolbar !== false &&
-    !Array.isArray(options.toolbar)
-  ) {
-    throw new TypeError('Expected an ordered toolbar list or false')
-  }
-
-  if (
     options.storageKey !== undefined &&
     (typeof options.storageKey !== 'string' ||
       !options.storageKey.trim() ||
@@ -79,29 +75,61 @@ export function resolveWorkspaceOptions(options: WorkspaceOptions<string>) {
     workspaceFeatures,
     workspaceActions
   )
-  const defaultControls = options.toolbar === undefined
-  const ids = defaultControls
-    ? [
-        'undo',
-        'redo',
-        ...(options.extensions ?? []).flatMap((extension) =>
-          extension.ui?.length ? [] : Object.keys(extension.actions ?? {})
-        ),
-        ...Object.keys(options.actions ?? {})
-      ]
-    : (options.toolbar ?? [])
-  const controls =
-    options.hideUI || ids === false
-      ? false
-      : ids.map((id) => {
-          const action = actions.get(id)
+  const defaultActions = [
+    ...(options.extensions ?? []).flatMap((extension) =>
+      extension.ui?.length ? [] : Object.keys(extension.actions ?? {})
+    ),
+    ...Object.keys(options.actions ?? {})
+  ]
 
-          if (!action) {
-            throw new TypeError('Unknown Design action: ' + id)
-          }
+  function presentation(
+    options: WorkspacePresentation<string>,
+    run: (id: string) => Promise<void>
+  ) {
+    if (
+      options.toolbar !== undefined &&
+      options.toolbar !== false &&
+      !Array.isArray(options.toolbar)
+    ) {
+      throw new TypeError('Expected an ordered toolbar list or false')
+    }
 
-          return { id, label: action.label }
-        })
+    const defaultControls = options.toolbar === undefined
+    const ids = defaultControls
+      ? ['undo', 'redo', ...defaultActions]
+      : (options.toolbar ?? [])
+    const controls =
+      options.hideUI || ids === false
+        ? false
+        : ids.map((id) => {
+            const action = actions.get(id)
+
+            if (!action) {
+              throw new TypeError('Unknown Design action: ' + id)
+            }
+
+            return {
+              id,
+              label: action.label,
+
+              run: () => run(id)
+            }
+          })
+
+    return {
+      hideUI: options.hideUI === true,
+      panels: options.hideUI
+        ? { layers: false, properties: false }
+        : options.panels,
+      toolbar:
+        controls === false
+          ? (false as const)
+          : {
+              includeTools: defaultControls,
+              actions: controls
+            }
+    }
+  }
 
   const collaboration = options.collaboration && {
     ...options.collaboration,
@@ -123,8 +151,7 @@ export function resolveWorkspaceOptions(options: WorkspaceOptions<string>) {
 
   return {
     policy,
-    controls,
-    defaultControls,
+    presentation,
     collaboration,
     extensions
   } as const

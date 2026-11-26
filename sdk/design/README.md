@@ -31,10 +31,10 @@ instance once per board. Changing the board key delivers the next editor.
 ```tsx
 import { useState } from 'react'
 import { AsyraDesign } from '@asyra/design/react'
-import type { DesignEditor, WorkspaceTool } from '@asyra/design'
+import type { DesignEditor } from '@asyra/design'
 
 export function Board() {
-  const [editor, setEditor] = useState<DesignEditor<string, WorkspaceTool>>()
+  const [editor, setEditor] = useState<DesignEditor>()
   return <>
     <button disabled={!editor} onClick={() => editor?.zoomFit()}>Fit drawing</button>
     <AsyraDesign onMount={setEditor} />
@@ -64,14 +64,16 @@ collaboration service, which owns persistence for all participants.
 ### JavaScript
 
 ```js
-import '@asyra/design/element'
+import { createDesign } from '@asyra/design'
+
+const editor = await createDesign(document.getElementById('board'), {
+  storageKey: 'my-board'
+})
 ```
 
-```html
-<asyra-design></asyra-design>
-```
-
-The web component and React entry mount the workspace from
+Use a container such as `<main id="board"></main>` for the full workspace.
+A host using custom elements can import `@asyra/design/element` and place
+`<asyra-design></asyra-design>` in its HTML. Both entries mount the workspace from
 `apps/asyra-design`. It includes Select, Rectangle, Oval, Pen and Text,
 path and text editing, the layer tree, grouping and hierarchy changes,
 the property inspector, fills and strokes, gradient handles, pan, zoom,
@@ -189,25 +191,38 @@ action's ID, fails at startup.
 
 ### Add UI to a workspace
 
-The standard editor already includes Position and Dimension. To move those
-controls into your own page, install `@asyra/design-ui` and list the rows you
-want to place. Here Position moves into the host toolbar. Dimension stays
-beside Rotation in the inspector.
+Move a built-in row by naming its host element. Position moves into the
+toolbar below. Dimension stays in its usual place.
 
 ```tsx
 import { AsyraDesign } from '@asyra/design/react'
-import { positionRow, dimensionRow } from '@asyra/design-ui'
 
 export function Board() {
   return <>
     <aside id="my-toolbar" />
-    <AsyraDesign options={{
-      ui: [positionRow, dimensionRow],
-      uiTargets: { [positionRow.id]: 'my-toolbar' }
-    }} />
+    <AsyraDesign uiTargets={{ positionRow: 'my-toolbar' }} />
   </>
 }
 ```
+
+For explicit group ordering or installation alongside your own UI, install
+`@asyra/design-ui` and pass the group descriptors:
+
+```tsx
+import { positionRow, dimensionRow } from '@asyra/design-ui'
+
+<AsyraDesign
+  options={{ ui: [positionRow, dimensionRow] }}
+  uiTargets={{ [positionRow.id]: 'my-toolbar' }}
+/>
+```
+
+React accepts `hideUI`, `disabledFeatures`, `uiTargets`, `toolbar`,
+`panels` and `storageKey` directly. A direct prop overrides the same key in
+`options`. Change presentation or feature props to update the current board.
+Changing `storageKey` opens the corresponding board instead. In plain JS,
+`editor.setPresentation({ panels: { layers: false } })` replaces the current
+presentation settings; omitted keys return to their defaults.
 
 Each row has one set of controls and follows the current selection.
 Changing `uiTargets` moves the rows on the mounted React board. Remove an
@@ -217,9 +232,10 @@ changes. Each target must already exist in the host document. An unknown
 group or missing element reports its ID. With `hideUI: true`, external
 controls stay available and default inspector slots are hidden.
 
-Use `disabledFeatures: ['geometry']` to block geometry edits; disabling an
-individual row hides that control. The editor owns Undo and Redo for edits
-from either location.
+Use `disabledFeatures: ['geometry']` to block geometry edits. When you install
+a row through `ui`, its ID also appears in `editor.features`, so you can hide
+that row independently with `disabledFeatures`. The editor owns Undo and Redo
+for edits from either location.
 
 ### Insert a control between X and Y
 
@@ -227,6 +243,29 @@ Call `editor.getUI('positionRow')` on a container editor, including the editor
 received by React's `onMount`. Its `items` exposes X and Y; Dimension exposes
 width and height. Both rows work in their default position without installing
 the optional UI package.
+
+Bind a numeric field to a registered node and insert it between X and Y.
+The SDK reads the selected node, applies edits and follows Undo and Redo.
+
+```js
+import { createDesign, numberField } from '@asyra/design'
+
+const marker = { id: 'marker', node: { name: 'Marker', fields: { abc: 0 } } }
+const editor = await createDesign(container, { extensions: [marker] })
+const position = editor.getUI('positionRow')
+const z = numberField(marker, 'abc', { label: 'Z' })
+const removeZ = position.insertAt(1, z)
+
+const id = editor.createNode(marker, { x: 10, y: 20, width: 50, height: 40 })
+if (id) editor.select([id])
+```
+
+Indices start at zero. Use the row length to append, `removeAt(index)` to
+remove the current item at a position, or `removeZ()` to remove only your
+own insertion. The field displays one selected marker's value and becomes
+read-only when its feature is disabled. `editor.updateSelectedNodes(marker,
+{ abc: 12 })` edits the selection in a single command when every selected
+element is a marker. Document snapshots include the field value.
 
 For example, a host that already has a numeric control descriptor can choose
 the complete order or insert just its contribution:

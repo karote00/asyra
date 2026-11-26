@@ -219,3 +219,129 @@ test('packed Design inspector keeps independent row subscriptions and restores t
     }
   )
 })
+
+test('packed Design JS composes a registered number at a row index and edits its document', async () => {
+  await withConsumer(
+    ['sdk/canvas', 'sdk/design'],
+    'workspace.js',
+    async (page) => {
+      await page.evaluate(async () => {
+        await globalThis.ready
+        await globalThis.editor.destroy()
+        const target = globalThis.document.body.appendChild(
+          globalThis.document.createElement('aside')
+        )
+
+        target.id = 'geometry'
+        const marker = {
+          id: 'marker',
+          node: { name: 'Marker', fields: { abc: 0, title: 'Marker' } }
+        }
+        const editor = await globalThis.createDesign(globalThis.host, {
+          extensions: [marker],
+          hideUI: true,
+          uiTargets: { positionRow: 'geometry' }
+        })
+        const row = editor.getUI('positionRow')
+        const field = globalThis.numberField(marker, 'abc', { label: 'Z' })
+        const remove = row.insertAt(1, field)
+        const id = editor.createNode(
+          marker,
+          { x: 1, y: 2, width: 20, height: 30 },
+          { abc: 3 }
+        )
+
+        editor.select([id])
+        Object.assign(globalThis, { editor, marker, row, field, remove, id })
+      })
+      const target = page.locator('#geometry')
+      const z = target.getByLabel('Z', { exact: true })
+
+      const order = () =>
+        target
+          .locator('input')
+          .evaluateAll((inputs) =>
+            inputs.map((input) => input.getAttribute('aria-label'))
+          )
+
+      await expect(z).toHaveValue('3')
+      assert.deepEqual(await order(), ['X', 'Z', 'Y'])
+      await z.fill('7')
+      await z.press('Enter')
+      await expect(z).toHaveValue('7')
+      await page.evaluate(() => globalThis.editor.undo())
+      await expect(z).toHaveValue('3')
+      await page.evaluate(() => globalThis.editor.redo())
+      await expect(z).toHaveValue('7')
+      await page.evaluate(() =>
+        globalThis.editor.setDisabledFeatures(['marker'])
+      )
+      await expect(z).toBeDisabled()
+      await expect(z).toHaveValue('7')
+      await assert.rejects(
+        page.evaluate(() =>
+          globalThis.editor.updateSelectedNodes(globalThis.marker, { abc: 11 })
+        ),
+        /Disabled Design feature/
+      )
+      await page.evaluate(() => globalThis.editor.setDisabledFeatures([]))
+      await expect(z).toBeEnabled()
+      await page.evaluate(() =>
+        globalThis.editor.updateSelectedNodes(globalThis.marker, { abc: 9 })
+      )
+      await expect(z).toHaveValue('9')
+      for (const index of [-1, 1.5, 4]) {
+        await assert.rejects(
+          page.evaluate((i) => globalThis.row.removeAt(i), index),
+          /index/
+        )
+        await assert.rejects(
+          page.evaluate(
+            (i) => globalThis.row.insertAt(i, globalThis.field),
+            index
+          ),
+          /index/
+        )
+      }
+
+      assert.deepEqual(await order(), ['X', 'Z', 'Y'])
+      await page.evaluate(() => {
+        const { row, field, remove } = globalThis
+
+        row.removeAt(1)
+        row.insertAt(2, field)
+        remove()
+      })
+      assert.deepEqual(await order(), ['X', 'Y', 'Z'])
+      await page.evaluate(async () => {
+        const { editor, marker, id } = globalThis
+        const rectangle = editor.drawRectangle({
+          x: 0,
+          y: 0,
+          width: 20,
+          height: 30
+        })
+
+        editor.select([rectangle, id])
+        if (editor.updateSelectedNodes(marker, { abc: 0 })) {
+          throw new Error('Changed mixed selection')
+        }
+
+        const snapshot = await editor.save()
+
+        await editor.destroy()
+        const restored = await globalThis.createDesign(globalThis.host, {
+          document: snapshot,
+          extensions: [marker]
+        })
+
+        restored.select([id])
+        restored.getUI('dimensionRow').insertAt(0, globalThis.field)
+        globalThis.editor = restored
+      })
+      await expect(
+        page.frameLocator('main iframe').getByLabel('Z', { exact: true })
+      ).toHaveValue('9')
+    }
+  )
+})

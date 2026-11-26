@@ -25,3 +25,37 @@ editor.drawOval({ x: 0, y: 0, width: 10, height: 10 })
 const invalid = <Board options={{ disabledFeatures: ['rectangel'] }} />
 
 export { invalid }
+
+const marker = {
+  id: 'marker',
+  node: { name: 'Marker', fields: { abc: 0, title: 'Marker' } }
+} as const
+const configured = (
+  <Board
+    options={{ extensions: [marker] }}
+    onMount={(editor) => {
+      editor.setDisabledFeatures(['marker'])
+      editor.createNode(
+        marker,
+        { x: 0, y: 0, width: 10, height: 10 },
+        { abc: 5 }
+      )
+      // @ts-expect-error A string field cannot receive a number.
+      editor.updateSelectedNodes(marker, { title: 17 })
+      // @ts-expect-error Only installed feature IDs are accepted.
+      editor.setDisabledFeatures(['markre'])
+    }}
+  />
+)
+// @ts-expect-error The built-in group ID is positionRow.
+const invalidTarget = <Board uiTargets={{ positonRow: 'tools' }} />
+const plain = (
+  <Board
+    onMount={(editor) => {
+      // @ts-expect-error The ready callback retains the built-in command catalog.
+      editor.runAction('undoo')
+    }}
+  />
+)
+
+export { configured, invalidTarget, plain }

@@ -25,3 +25,5 @@ globalThis.renderMountedBoard = (storageKey, onMount) =>
       createElement(Board, { options: { storageKey }, onMount })
     )
   )
+
+globalThis.showBoard = (props) => root.render(createElement(Board, props))

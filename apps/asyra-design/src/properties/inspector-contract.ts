@@ -18,7 +18,16 @@ export interface InspectorNumberItem {
   readonly setValue: (value: number) => void
 }
 
-export type InspectorItem<Key extends string> = Key | InspectorNumberItem
+export interface InspectorNodeNumber {
+  readonly kind: 'node-number'
+  readonly id: string
+  readonly label: string
+  readonly nodeId: string
+  readonly field: string
+}
+
+export type InspectorItem<Key extends string> =
+  Key | InspectorNumberItem | InspectorNodeNumber
 
 export interface InspectorItemSource {
   getSnapshot(): readonly InspectorItem<InspectorFields[InspectorRowId]>[]

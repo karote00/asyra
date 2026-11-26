@@ -3,7 +3,7 @@ import type {
   InspectorItem,
   InspectorRowId
 } from './common.js'
-import type { InspectorTemplate } from './editor-types.js'
+import type { InspectorTemplate, WorkspaceNode } from './editor-types.js'
 
 function itemId<Key extends string>(item: InspectorItem<Key>) {
   return typeof item === 'string' ? item : item.id
@@ -11,7 +11,8 @@ function itemId<Key extends string>(item: InspectorItem<Key>) {
 
 function createRow<Key extends string>(
   items: { readonly [K in Key]: K },
-  requireEditor: () => void
+  requireEditor: () => void,
+  nodes: ReadonlyMap<string, WorkspaceNode>
 ) {
   type Item = InspectorItem<Key>
   Object.freeze(items)
@@ -29,6 +30,25 @@ function createRow<Key extends string>(
   function admit(item: Item): Item {
     if (typeof item === 'string' && Object.hasOwn(items, item)) {
       return item
+    }
+
+    if (typeof item === 'object' && item?.kind === 'node-number') {
+      const fields = nodes.get(item.nodeId)?.fields
+
+      if (
+        !fields ||
+        !Object.hasOwn(fields, item.field) ||
+        typeof fields[item.field] !== 'number' ||
+        item.id !== item.nodeId + '.' + item.field ||
+        typeof item.label !== 'string' ||
+        !item.label.trim()
+      ) {
+        throw new TypeError(
+          'Expected a registered numeric inspector field: ' + item.id
+        )
+      }
+
+      return Object.freeze({ ...item })
     }
 
     if (
@@ -57,8 +77,46 @@ function createRow<Key extends string>(
     })
   }
 
+  function checkIndex(index: number, limit: number) {
+    if (!Number.isInteger(index) || index < 0 || index >= limit) {
+      throw new RangeError('Inspector index out of range: ' + index)
+    }
+  }
+
+  function insertAt(index: number, item: Item) {
+    requireEditor()
+    checkIndex(index, order.length + 1)
+    const admitted = admit(item)
+
+    const id = itemId(item)
+
+    if (order.some((entry) => itemId(entry) === id)) {
+      throw new TypeError('Duplicate inspector item: ' + id)
+    }
+
+    const token = Symbol(id)
+
+    insertions.set(id, token)
+    update([...order.slice(0, index), admitted, ...order.slice(index)])
+
+    return () => {
+      if (insertions.get(id) === token) {
+        insertions.delete(id)
+        update(order.filter((entry) => itemId(entry) !== id))
+      }
+    }
+  }
+
   const api: InspectorTemplate<Key> = {
     items,
+    insertAt,
+
+    removeAt(index) {
+      requireEditor()
+      checkIndex(index, order.length)
+      insertions.delete(itemId(order[index]))
+      update([...order.slice(0, index), ...order.slice(index + 1)])
+    },
 
     setItems(next) {
       requireEditor()
@@ -86,34 +144,13 @@ function createRow<Key extends string>(
     insertAfter(anchor, item) {
       requireEditor()
       const anchorId = itemId(admit(anchor))
-      const admitted = admit(item)
       const index = order.findIndex((entry) => itemId(entry) === anchorId)
 
       if (index < 0) {
         throw new TypeError('Missing inspector anchor: ' + itemId(anchor))
       }
 
-      const id = itemId(item)
-
-      if (order.some((entry) => itemId(entry) === id)) {
-        throw new TypeError('Duplicate inspector item: ' + id)
-      }
-
-      const token = Symbol(id)
-
-      insertions.set(id, token)
-      update([
-        ...order.slice(0, index + 1),
-        admitted,
-        ...order.slice(index + 1)
-      ])
-
-      return () => {
-        if (insertions.get(id) === token) {
-          insertions.delete(id)
-          update(order.filter((entry) => itemId(entry) !== id))
-        }
-      }
+      return insertAt(index + 1, item)
     }
   }
 
@@ -138,10 +175,17 @@ function createRow<Key extends string>(
   }
 }
 
-export function createInspectorTemplates(requireEditor: () => void) {
+export function createInspectorTemplates(
+  requireEditor: () => void,
+  nodes: ReadonlyMap<string, WorkspaceNode>
+) {
   const sources = {
-    positionRow: createRow({ x: 'x', y: 'y' }, requireEditor),
-    dimensionRow: createRow({ width: 'width', height: 'height' }, requireEditor)
+    positionRow: createRow({ x: 'x', y: 'y' }, requireEditor, nodes),
+    dimensionRow: createRow(
+      { width: 'width', height: 'height' },
+      requireEditor,
+      nodes
+    )
   }
 
   function getUI<Row extends InspectorRowId>(
