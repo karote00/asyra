@@ -6,24 +6,61 @@ handle stays bound to that editor for its lifetime.
 
 ## Put a control in your own layout
 
-In React, pass the handle to `DesignUI`. This component owns mounting and
-cleanup when its position or editor changes.
+In React, place one board and its controls inside a `DesignEditorProvider`.
+Any descendant can import `useDesignEditor` in its own file.
 
 ```tsx
-import { useState } from 'react'
-import { AsyraDesign, DesignUI } from '@asyra/design/react'
-import type { DesignEditor } from '@asyra/design'
+// BoardScreen.tsx
+import { AsyraDesign, DesignEditorProvider } from '@asyra/design/react'
+import { PenToolbar } from './PenToolbar'
 
-export function Board() {
-  const [editor, setEditor] = useState<DesignEditor | null>(null)
+export function BoardScreen() {
   return (
-    <>
-      <aside>{editor && <DesignUI component={editor.getUI('penToolIcon')} />}</aside>
-      <AsyraDesign hideUI onMount={setEditor} />
-    </>
+    <DesignEditorProvider>
+      <PenToolbar />
+      <AsyraDesign hideUI />
+    </DesignEditorProvider>
   )
 }
 ```
+
+```tsx
+// PenToolbar.tsx
+import { DesignUI, useDesignEditor } from '@asyra/design/react'
+
+export function PenToolbar() {
+  const editor = useDesignEditor()
+  return <aside>{editor && <DesignUI component={editor.getUI('penToolIcon')} />}</aside>
+}
+```
+
+The nearest provider supplies the editor. Its snapshot starts at `null`,
+becomes the ready editor, and returns to `null` during document replacement
+or after the board unmounts. Closing a toolbar releases its own UI. The board
+owns editor disposal. For your own subscriptions, use an effect with
+`[editor]` and return the unsubscribe function.
+
+Render two `BoardScreen` instances for independent boards. A nested provider
+owns its own board. Put each hook consumer inside its provider. Calling the
+hook outside a provider, or mounting two boards directly in one scope, raises
+a configuration error. A standalone `<AsyraDesign />` still works on its own.
+
+For commands spanning boards, the product chooses the targets. For example,
+two boards can pass separate `onMount` callbacks to register their ready
+editors with a comparison screen. Providers and `onMount` can be used together. For a long-lived shared
+toolbar, pass a product-owned `register` function to a child in each scope.
+The child can cleanly unregister on replacement or removal:
+
+```tsx
+const editor = useDesignEditor()
+useEffect(() => {
+  if (editor) return register(boardId, editor)
+}, [boardId, editor, register])
+```
+
+Here `register` stores the live instance by board ID and returns a function
+that removes that registration. The shared toolbar can operate on one ID or
+iterate over the currently registered boards.
 
 In plain JavaScript, supply the host element directly. The Pen control keeps
 its native icon, active state, feature policy and command handler.

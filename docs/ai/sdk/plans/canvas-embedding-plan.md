@@ -183,3 +183,13 @@ Releasing it restores that home. Hidden panels can service explicit placements.
 Canvas rendering and document record identities stay under their current owners.
 Verify discovery, order, command dispatch, feature changes, teardown and editor
 isolation using separately installed React and JavaScript tarball consumers.
+
+### Share a ready editor across React components
+
+The embed step gives each React provider one board host. Sibling controls read
+the nearest provider across files. The browser host owns startup, replacement
+and disposal. Its current editor is the provider snapshot, including null while
+loading or after release. Document edits do not publish editor identities.
+Keep standalone mounting and onMount for product-owned cross-board controls.
+Verify independent and nested providers, replacement, consumer cleanup and
+unmount in a Strict Mode React application installed from the SDK tarball.

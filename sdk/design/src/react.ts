@@ -1,12 +1,17 @@
 import {
   createElement,
   useLayoutEffect,
+  useCallback,
+  useContext,
   useRef,
   type DetailedHTMLProps,
   type HTMLAttributes
 } from 'react'
 import type { DesignEditor, WorkspaceOptions } from './index.js'
 import { designTag, type DesignElement } from './element.js'
+
+import { EditorScope } from './react-editor-scope.js'
+export { DesignEditorProvider, useDesignEditor } from './react-editor-scope.js'
 
 type HostProps = DetailedHTMLProps<HTMLAttributes<DesignElement>, DesignElement>
 
@@ -37,6 +42,7 @@ declare module 'react' {
 /** Direct board settings override the corresponding options. */
 export function AsyraDesign<const Id extends string = never>({
   onMount,
+  ref,
   options,
   storageKey = options?.storageKey,
   hideUI = options?.hideUI,
@@ -46,8 +52,45 @@ export function AsyraDesign<const Id extends string = never>({
   toolbar = options?.toolbar,
   ...props
 }: BoardProps<Id>) {
+  const scope = useContext(EditorScope)
+  const bind = useCallback(
+    (board: DesignElement | null) => {
+      if (!board || !scope) {
+        return
+      }
+
+      const release = scope.bind(board)
+
+      if (typeof ref === 'function') {
+        const cleanup = ref(board)
+
+        return () => {
+          release()
+          if (cleanup) {
+            cleanup()
+          } else {
+            ref(null)
+          }
+        }
+      }
+
+      if (ref) {
+        ref.current = board
+      }
+
+      return () => {
+        release()
+        if (ref) {
+          ref.current = null
+        }
+      }
+    },
+    [scope, ref]
+  )
+
   return createElement(designTag, {
     ...props,
+    ref: scope ? bind : ref,
     options: {
       ...options,
       storageKey,

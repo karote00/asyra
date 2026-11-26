@@ -281,3 +281,83 @@ test('packed Design keeps a moved inspector connected to selection, paint and do
     ).toHaveCount(0)
   })
 })
+
+test('packed Design React scopes follow nested boards through replacement, release and remount', async () => {
+  await withConsumer(
+    [
+      ...design,
+      'node_modules/react',
+      'node_modules/react-dom',
+      'node_modules/scheduler',
+      'node_modules/@types/react',
+      'node_modules/csstype'
+    ],
+    'provider-react.js',
+    async (page) => {
+      const left = page.getByRole('button', { name: 'left pen' })
+      const right = page.getByRole('button', { name: 'right pen' })
+
+      await expect(left).toBeEnabled()
+      await expect(right).toBeEnabled()
+
+      const state = () =>
+        page.evaluate(() => {
+          const { current, identities, observations } = globalThis.boardScopes
+
+          return Object.fromEntries(
+            ['left', 'right'].map((name) => [
+              name,
+              {
+                mounts: identities[name].length,
+                matches: current[name] === identities[name].at(-1),
+                tool: current[name]?.getTool() ?? null,
+                transitions: observations[name]
+                  .filter((value, i, list) => i === 0 || value !== list[i - 1])
+                  .map((value) =>
+                    value === null ? null : identities[name].indexOf(value)
+                  )
+              }
+            ])
+          )
+        })
+
+      await left.click()
+      const before = await state()
+
+      assert.equal(before.left.tool, 'pen')
+      assert.equal(before.right.tool, 'select')
+      assert.equal(before.left.matches, true)
+      assert.equal(before.right.matches, true)
+      await page.getByRole('button', { name: 'Replace left' }).click()
+      await expect.poll(async () => (await state()).left.mounts).toBe(2)
+      await expect
+        .poll(async () => (await state()).left.transitions)
+        .toEqual([null, 0, null, 1])
+      assert.equal((await state()).left.tool, 'select')
+      assert.deepEqual((await state()).right, before.right)
+      await left.click()
+      await right.click()
+      await page
+        .getByRole('button', { name: 'Select tool on all boards' })
+        .click()
+      assert.equal((await state()).left.tool, 'select')
+      assert.equal((await state()).right.tool, 'select')
+      await page.getByRole('button', { name: 'Toggle left' }).click()
+      await expect(left).toBeDisabled()
+      assert.equal((await state()).left.tool, null)
+      await right.click()
+      assert.equal((await state()).right.tool, 'pen')
+      await page
+        .getByRole('button', { name: 'Select tool on all boards' })
+        .click()
+      assert.equal((await state()).right.tool, 'select')
+      await page.getByRole('button', { name: 'Toggle left' }).click()
+      await expect(left).toBeEnabled()
+      const after = await state()
+
+      assert.deepEqual(after.left.transitions, [null, 0, null, 1, null, 2])
+      assert.equal(after.right.mounts, 1)
+      assert.equal(after.right.matches, true)
+    }
+  )
+})

@@ -468,7 +468,7 @@
         },
         {
           "path": "apps/asyra-design/src/properties/text.tsx",
-          "sha256": "bfcc718c8dbbb010a3516bbdef69b6346c55b9ea52c575d019e4083ab47865a8"
+          "sha256": "f9a9dd2c88eb5877e8858a1f1a9a8b9df6201ab6451d57343d1ed96ff44ead84"
         }
       ]
     },
@@ -514,7 +514,7 @@
         },
         {
           "path": "apps/asyra-design/src/properties/text.tsx",
-          "sha256": "bfcc718c8dbbb010a3516bbdef69b6346c55b9ea52c575d019e4083ab47865a8"
+          "sha256": "f9a9dd2c88eb5877e8858a1f1a9a8b9df6201ab6451d57343d1ed96ff44ead84"
         }
       ]
     },

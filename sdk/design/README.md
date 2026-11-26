@@ -25,21 +25,18 @@ own styles. Canvas is installed as a dependency of Design.
 
 ### Access the editor
 
-Use `onMount` when another control needs the editor. It receives the ready
-instance once per board. Changing the board key delivers the next editor.
+For a toolbar or panel in another React file, share the board with a
+`DesignEditorProvider`. Read the nearest board with `useDesignEditor()`.
+Each provider owns one board binding and its consumers see `null` while
+waiting for that board. See [Place and compose Design components](UI.md) for
+a two-file example and the replacement and cleanup lifecycle.
+
+Use `onMount` for initialization or when your product coordinates several
+independent boards. The callback receives each ready editor once, including
+a replacement when the board key changes.
 
 ```tsx
-import { useState } from 'react'
-import { AsyraDesign } from '@asyra/design/react'
-import type { DesignEditor } from '@asyra/design'
-
-export function Board() {
-  const [editor, setEditor] = useState<DesignEditor>()
-  return <>
-    <button disabled={!editor} onClick={() => editor?.zoomFit()}>Fit drawing</button>
-    <AsyraDesign onMount={setEditor} />
-  </>
-}
+<AsyraDesign onMount={editor => editor.zoomFit()} />
 ```
 
 ### Local autosave

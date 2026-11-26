@@ -95,12 +95,9 @@ if (globalThis.customElements && !globalThis.customElements.get(designTag)) {
         room?.actorId !== nextRoom?.actorId
       ) {
         this.#startup?.abort()
-        const previousEditor = this.#editor
+        const closing = this.#release()
 
-        this.#editor = undefined
-        if (previousEditor) {
-          const closing = previousEditor.destroy()
-
+        if (closing) {
           this.#work = this.#work.then(() => closing)
         }
       }
@@ -149,6 +146,17 @@ if (globalThis.customElements && !globalThis.customElements.get(designTag)) {
       this.#schedule()
     }
 
+    #release() {
+      const editor = this.#editor
+
+      if (editor) {
+        this.#editor = undefined
+        this.dispatchEvent(new globalThis.Event('design-release'))
+
+        return editor.destroy()
+      }
+    }
+
     #schedule() {
       this.#work = this.#work
         .then(() => this.#syncConnection())
@@ -157,10 +165,7 @@ if (globalThis.customElements && !globalThis.customElements.get(designTag)) {
 
     async #syncConnection() {
       if (!this.isConnected) {
-        const editor = this.#editor
-
-        this.#editor = undefined
-        await editor?.destroy()
+        await this.#release()
 
         return
       }
