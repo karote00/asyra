@@ -126,6 +126,7 @@ export async function withConsumer(
   if (
     firstBoard ||
     entry === 'react.js' ||
+    entry === 'component-react.js' ||
     entry === 'ui-react.js' ||
     entry === 'common.js' ||
     entry === 'workspace.js' ||
@@ -184,6 +185,9 @@ export async function withConsumer(
       '--moduleResolution',
       'bundler',
       ...(firstInstall ? [] : ['consumer.ts', ...designTypeTests]),
+      ...(entry === 'component-react.js'
+        ? ['--jsx', 'react-jsx', 'examples/CustomToolbar.tsx']
+        : []),
       ...(entry === 'ui-react.js'
         ? ['--jsx', 'react-jsx', 'examples/PositionBoard.tsx']
         : []),

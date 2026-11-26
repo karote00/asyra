@@ -1,4 +1,123 @@
-# Find a Design control in DevTools
+# Place and compose Design components
+
+A container editor owns a catalog of live UI components. Inspect
+`editor.uiKeys` or use completion inside `editor.getUI('…')`. A component
+handle stays bound to that editor for its lifetime.
+
+## Put a control in your own layout
+
+In React, pass the handle to `DesignUI`. This component owns mounting and
+cleanup when its position or editor changes.
+
+```tsx
+import { useState } from 'react'
+import { AsyraDesign, DesignUI } from '@asyra/design/react'
+import type { DesignEditor } from '@asyra/design'
+
+export function Board() {
+  const [editor, setEditor] = useState<DesignEditor | null>(null)
+  return (
+    <>
+      <aside>{editor && <DesignUI component={editor.getUI('penToolIcon')} />}</aside>
+      <AsyraDesign hideUI onMount={setEditor} />
+    </>
+  )
+}
+```
+
+In plain JavaScript, supply the host element directly. The Pen control keeps
+its native icon, active state, feature policy and command handler.
+
+```js
+import { createDesign } from '@asyra/design'
+
+const editor = await createDesign(document.querySelector('main'))
+const pen = editor.getUI('penToolIcon')
+const release = pen.mount(document.querySelector('aside'))
+// When the host removes its toolbar:
+release()
+```
+
+Each component has one explicit destination per editor. A new mount takes over.
+An older release callback cannot undo that newer placement. Releasing the active
+mount returns the control to its configured home when visible. Destroying the
+editor removes its mounted controls. With `hideUI: true`, an explicit mount
+still works. A selection-specific inspector, an open gradient picker, a
+recovery prompt or a virtualized layer depends on its live app state. A handle
+for a repeated control places the currently rendered instances together.
+Document element, fill and stroke IDs identify individual records.
+
+## Discover and edit a section
+
+```js
+const tools = editor.getUI('drawingTools')
+Object.keys(tools.items) // All native items in this group
+tools.getOrder()        // Current template order, including custom items
+
+const { selectToolIcon, penToolIcon } = tools.items
+tools.setItems([selectToolIcon, penToolIcon])
+tools.removeAt(1)
+tools.insertAfter(selectToolIcon, penToolIcon)
+
+const view = editor.getUI('view')
+const restore = view.insertAt(0, editor.getUI('penToolIcon'))
+restore()
+```
+
+A group has native item names and ordered composition methods. A leaf such
+as `penToolIcon` has a mounting handle. Position and Dimension also support
+their numeric field descriptors. A host-defined item supplies an ID and a
+mount function. Its cleanup runs when it leaves the template.
+
+```js
+const heading = editor.getUI('fillHeading')
+const remove = heading.insertAt(1, {
+  id: 'brandLabel',
+  mount(container) {
+    const label = container.ownerDocument.createElement('small')
+    label.textContent = 'Brand colors'
+    container.append(label)
+    return () => label.remove()
+  }
+})
+```
+
+| Start with | Examples of available items |
+| --- | --- |
+| `workspace` | `toolbar`, `layers`, `properties`, `canvasMenu`, `selectionMenu` |
+| `commands` | `drawingTools`, `toolbarExtensions`, `toolbarActions` |
+| `toolbarActions` | `action.undo`, `action.redo`, and actions installed on this editor |
+| `layerRows` | `layerIdentity`, `layerActions` |
+| `geometry` | `positionRow`, `dimensionRow`, `rotationRow` |
+| `appearance` | `fills`, `strokes` |
+| `textFields` | Font family, style, spacing and alignment rows |
+| `vectorPoint` | `pointHeading`, `anchorSettings`, `pointCoordinates` |
+| `gradient` | `gradientType`, `gradientStrip`, `gradientStops` |
+| `colorControls` | `colorSaturation`, `colorSliders`, `colorChannels` |
+| `canvasMenu` | `groupCommand`, `ungroupCommand` |
+| `feedback` | `notifications`, `recovery` |
+
+To inspect every group installed on a particular editor:
+
+```js
+console.table(editor.uiKeys.map(id => {
+  const component = editor.getUI(id)
+  return { id, items: 'items' in component ? Object.keys(component.items).join(', ') : '' }
+}))
+```
+
+## Look up the control selected in DevTools
+
+Select a native element in Elements and use the editor that owns it:
+```js
+const marker = $0.closest('[data-component], [data-inspector-row]')
+const component = editor.getUI(marker.dataset.component ?? marker.dataset.inspectorRow)
+```
+
+For an externally mounted inspector row, select its marked host across the
+open shadow boundary. Host-defined items use `data-template-item` and their
+host-supplied ID. Canvas text input, selection handles and the drawing surface
+follow canvas coordinates and the document editing session.
 
 In the Elements panel, select the wrapper marked
 `data-inspector-row="positionRow"`. The value is the exact ID to pass to the
@@ -69,9 +188,8 @@ Clear the target entry to return the row to its panel with the same ID.
 
 ## Workspace marker reference
 
-Only `data-inspector-row` values identify templates accepted by `getUI()`.
-The following attributes describe other visible controls, their placement or
-the document records they represent. Repeated controls can be scoped to the
+Use the nearest `data-component` wrapper for the SDK lookup. The following
+attributes identify individual controls, placement and document records. Repeated controls can be scoped to the
 owning panel, fill, stroke or layer.
 
 | UI | What to look for |

@@ -1,3 +1,4 @@
+import { UIItems, UIPart, useLayoutPart } from '../workspace/ui-parts'
 import type { InspectorRefs } from '../properties/inspector-contract'
 import { featureEnabled } from '../workspace-features'
 import type { ConversationDrafts } from '../ai/conversation-drafts'
@@ -42,6 +43,7 @@ export interface WorkspaceProps {
   disabledFeatures?: readonly string[]
   hideUI?: boolean
   session?: RenderSession
+  toolbarHidden?: boolean
   toolbar?: false | ToolBarProps['controls']
   onReset?: () => Promise<void>
   panels?: { layers?: boolean; properties?: boolean }
@@ -62,12 +64,29 @@ export const DesignWorkspace: React.FC<WorkspaceProps> = ({
   slots,
   disabledFeatures,
   toolbar,
+  toolbarHidden,
   panels,
   onReset,
   conversationPanel,
   ai,
   groupCommandPlatform = detectGroupCommandPlatform()
 }) => {
+  const layout = useLayoutPart('workspace')
+  const placedWorkspace = Boolean(layout?.target('workspace'))
+  const chromeVisible = !hideUI || placedWorkspace
+  const showMenu = chromeVisible || layout?.requested('canvasMenu')
+
+  const panelWidth = (id: 'layers' | 'properties') => {
+    const atHome =
+      !placedWorkspace &&
+      !layout?.target(id) &&
+      (!layout || layout.order('workspace').includes(id))
+
+    return chromeVisible && atHome && panels?.[id] !== false
+      ? toTailwindPixelSize(COLUMN_WIDTH)
+      : 0
+  }
+
   const appRootRef = useRef<HTMLDivElement>(null)
   const aiFocusReturnRef = useRef<HTMLElement | null>(null)
   const [aiOpen, setAiOpen] = useState(false)
@@ -228,7 +247,7 @@ export const DesignWorkspace: React.FC<WorkspaceProps> = ({
         "header header header"
         "left-sidebar canvas right-sidebar"
       `,
-        gridTemplateColumns: `${panels?.layers === false ? 0 : toTailwindPixelSize(COLUMN_WIDTH)}px minmax(0, 1fr) ${aiOpen ? CONVERSATION_PANEL_WIDTH : `${panels?.properties === false ? 0 : toTailwindPixelSize(COLUMN_WIDTH)}px`}`,
+        gridTemplateColumns: `${panelWidth('layers')}px minmax(0, 1fr) ${aiOpen ? CONVERSATION_PANEL_WIDTH : `${panelWidth('properties')}px`}`,
         gridTemplateRows: 'auto 1fr'
       }}
     >
@@ -237,48 +256,69 @@ export const DesignWorkspace: React.FC<WorkspaceProps> = ({
         session={session}
         hideUI={hideUI}
         onContextMenuRequest={
-          hideUI || !contextMenuDescriptors.length
+          !showMenu || !contextMenuDescriptors.length
             ? undefined
             : contextMenu.open
         }
         onCanvasHostTeardown={handleCanvasHostTeardown}
       />
-      <GroupContextMenu
-        session={hideUI ? null : contextMenu.session}
-        descriptors={contextMenuDescriptors}
-        onDismiss={contextMenu.dismiss}
-      />
-      {toolbar === false ? null : (
-        <ToolBar
-          aiOpen={aiOpen}
-          aiShortcutLabel={aiPanelCommandDescriptor.shortcutLabel}
-          onAiToggle={ai ? toggleAiPanel : undefined}
-          slotRef={slots?.['toolbar.top']}
-          controls={toolbar}
-          onReset={onReset}
-        />
-      )}
       {aiOpen && conversationPanel?.(() => closeAiPanel({}))}
-      {panels?.layers !== false && <Contents />}
-      {panels?.properties !== false && (
-        <Properties
-          inspectorRefs={inspectorRefs}
-          slotRef={slots?.['properties.top']}
-        />
-      )}
-      {slots && !hideUI && (
-        <div
-          ref={slots.selectionMenu}
-          hidden={elementSelection.size === 0}
-          data-ui-slot="selectionMenu"
-          style={{
-            gridArea: 'canvas',
-            alignSelf: 'start',
-            justifySelf: 'center',
-            zIndex: 10
+      <UIPart id="workspace">
+        <UIItems
+          id="workspace"
+          hidden={[
+            ...(!chromeVisible || toolbarHidden || toolbar === false
+              ? ['toolbar' as const]
+              : []),
+            ...(!chromeVisible || panels?.layers === false
+              ? ['layers' as const]
+              : []),
+            ...(!chromeVisible || panels?.properties === false
+              ? ['properties' as const]
+              : []),
+            ...(!chromeVisible ? ['selectionMenu' as const] : [])
+          ]}
+          parts={{
+            toolbar: (
+              <ToolBar
+                aiOpen={aiOpen}
+                aiShortcutLabel={aiPanelCommandDescriptor.shortcutLabel}
+                onAiToggle={ai ? toggleAiPanel : undefined}
+                slotRef={slots?.['toolbar.top']}
+                controls={toolbar || undefined}
+                onReset={onReset}
+              />
+            ),
+            layers: <Contents />,
+            properties: (
+              <Properties
+                inspectorRefs={inspectorRefs}
+                slotRef={slots?.['properties.top']}
+              />
+            ),
+            canvasMenu: (
+              <GroupContextMenu
+                session={showMenu ? contextMenu.session : null}
+                descriptors={contextMenuDescriptors}
+                onDismiss={contextMenu.dismiss}
+              />
+            ),
+            selectionMenu: slots && (
+              <div
+                ref={slots.selectionMenu}
+                hidden={elementSelection.size === 0}
+                data-ui-slot="selectionMenu"
+                style={{
+                  gridArea: 'canvas',
+                  alignSelf: 'start',
+                  justifySelf: 'center',
+                  zIndex: 10
+                }}
+              />
+            )
           }}
         />
-      )}
+      </UIPart>
       <div
         id="viewport-anchor"
         className="absolute inset-0 pointer-events-none"

@@ -1,3 +1,4 @@
+import { UIItems } from '../workspace/ui-parts'
 import { Input, PropertyControl } from '@asyra/design-system'
 import { type ReactNode, useCallback } from 'react'
 import {
@@ -588,20 +589,27 @@ const VectorPoint = () => {
 
   return (
     <>
-      <TargetHeader index={index} target={target} />
-      {target === VECTOR_TOKENS.POINT.TARGET.ANCHOR && (
-        <AnchorControls
-          pointType={pointType}
-          handleMode={handleMode}
-          onChangePointType={handleChangePointType}
-          onChangeHandleMode={handleChangeHandleMode}
-        />
-      )}
-      <CoordinateInputs
-        x={x}
-        y={y}
-        onChangeX={handleChangeX}
-        onChangeY={handleChangeY}
+      <UIItems
+        id="vectorPoint"
+        parts={{
+          pointHeading: <TargetHeader index={index} target={target} />,
+          anchorSettings: target === VECTOR_TOKENS.POINT.TARGET.ANCHOR && (
+            <AnchorControls
+              pointType={pointType}
+              handleMode={handleMode}
+              onChangePointType={handleChangePointType}
+              onChangeHandleMode={handleChangeHandleMode}
+            />
+          ),
+          pointCoordinates: (
+            <CoordinateInputs
+              x={x}
+              y={y}
+              onChangeX={handleChangeX}
+              onChangeY={handleChangeY}
+            />
+          )
+        }}
       />
     </>
   )

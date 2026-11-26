@@ -1,3 +1,4 @@
+import { UIItems } from '../../workspace/ui-parts'
 import type { FillRowAttrs } from '@asyra/utils'
 import FillItem from './fill'
 import AppearanceSection from '../appearance-section'
@@ -36,43 +37,46 @@ const FillList = ({
         </button>
       }
     >
-      {mixed && (
-        <div
-          className="pl-4 pr-2 py-2 text-[11px] text-white/50"
-          data-fill-status="mixed"
-          data-testid="prop-fills-mixed"
-        >
-          Mixed fills across current selection.
-        </div>
-      )}
+      <UIItems
+        id="fillRecords"
+        parts={{
+          mixedFills: mixed && (
+            <div
+              className="pl-4 pr-2 py-2 text-[11px] text-white/50"
+              data-fill-status="mixed"
+              data-testid="prop-fills-mixed"
+            >
+              Mixed fills across current selection.
+            </div>
+          ),
+          emptyFills: !fills.length && (
+            <div
+              className="pl-4 pr-2 py-3 text-[11px] text-white/40"
+              data-fill-status="empty"
+              data-testid="prop-fills-empty"
+            >
+              No fills yet.
+            </div>
+          ),
+          fillRows: fills.map((fill, index) => {
+            const primaryFillId = fill.ids[0]
 
-      {!fills.length && (
-        <div
-          className="pl-4 pr-2 py-3 text-[11px] text-white/40"
-          data-fill-status="empty"
-          data-testid="prop-fills-empty"
-        >
-          No fills yet.
-        </div>
-      )}
+            if (!primaryFillId) {
+              return null
+            }
 
-      {fills.map((fill, index) => {
-        const primaryFillId = fill.ids[0]
-
-        if (!primaryFillId) {
-          return null
-        }
-
-        return (
-          <FillItem
-            key={primaryFillId}
-            index={index}
-            fillId={primaryFillId}
-            elementIds={elementIds}
-            onRemove={() => onRemoveFill(index)}
-          />
-        )
-      })}
+            return (
+              <FillItem
+                key={primaryFillId}
+                index={index}
+                fillId={primaryFillId}
+                elementIds={elementIds}
+                onRemove={() => onRemoveFill(index)}
+              />
+            )
+          })
+        }}
+      />
     </AppearanceSection>
   )
 }

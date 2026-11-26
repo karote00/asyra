@@ -99,7 +99,7 @@ export function resolveWorkspaceOptions(options: WorkspaceOptions<string>) {
       ? ['undo', 'redo', ...defaultActions]
       : (options.toolbar ?? [])
     const controls =
-      options.hideUI || ids === false
+      ids === false
         ? false
         : ids.map((id) => {
             const action = actions.get(id)
@@ -118,9 +118,7 @@ export function resolveWorkspaceOptions(options: WorkspaceOptions<string>) {
 
     return {
       hideUI: options.hideUI === true,
-      panels: options.hideUI
-        ? { layers: false, properties: false }
-        : options.panels,
+      panels: options.panels,
       toolbar:
         controls === false
           ? (false as const)
@@ -151,6 +149,7 @@ export function resolveWorkspaceOptions(options: WorkspaceOptions<string>) {
 
   return {
     policy,
+    actions: Array.from(actions, ([id, { label }]) => ({ id, label })),
     presentation,
     collaboration,
     extensions

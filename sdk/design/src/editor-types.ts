@@ -93,8 +93,49 @@ export interface ToolGroup<Id extends string = string> {
 export type { InspectorRowId } from './inspector-registry.js'
 export type { InspectorNumberItem } from './common.js'
 
+export type { WorkspacePartId, HostUIItem } from './component-registry.js'
+import type {
+  WorkspacePartId,
+  WorkspacePartGroup,
+  WorkspaceChild,
+  HostUIItem
+} from './component-registry.js'
+
+export interface ComponentHandle {
+  readonly id: WorkspacePartId
+  /** Move the live component into the target. Release the placement to restore its configured home. */
+  mount(target: HTMLElement): () => void
+}
+export interface ComponentGroup<K extends string> {
+  /** Native item names for completion and restoring a removed item. */
+  readonly items: { readonly [P in K]: P }
+  /** Current template order. Conditional items appear when their app context is available. */
+  getOrder(): readonly (K | HostUIItem)[]
+  setItems(items: readonly (K | HostUIItem)[]): void
+  insertAt(index: number, item: K | HostUIItem): () => void
+  insertAfter(anchor: K | HostUIItem, item: K | HostUIItem): () => void
+  removeAt(index: number): void
+}
+type ActionComponent<Extension extends string> =
+  `action.${WorkspaceAction | WorkspaceTool | HistoryCommand | Extension}`
+type ComponentId<Extension extends string> =
+  Exclude<WorkspacePartId, `action.${string}`> | ActionComponent<Extension>
+export type GetWorkspaceUI<Extension extends string = string> = <
+  Id extends ComponentId<Extension>
+>(
+  id: Id
+) => ComponentHandle &
+  (Id extends InspectorRowId
+    ? InspectorTemplate<InspectorFields[Id]>
+    : Id extends 'toolbarActions'
+      ? ComponentGroup<ActionComponent<Extension>>
+      : Id extends WorkspacePartGroup
+        ? ComponentGroup<WorkspaceChild<Id>>
+        : unknown)
+
 export interface InspectorTemplate<Key extends string> {
   readonly items: { readonly [K in Key]: K }
+  getOrder(): readonly InspectorItem<Key>[]
   /** Insert before the zero-based index. The row length appends an item. */
   insertAt(index: number, item: InspectorItem<Key>): () => void
   /** Remove the item currently at this zero-based index. */
@@ -183,9 +224,9 @@ export type DesignEditor<
         ): boolean
         /** Replace toolbar and panel settings on the mounted workspace. */
         setPresentation(options: WorkspacePresentation<Id>): void
-        getUI<Row extends InspectorRowId>(
-          id: Row
-        ): InspectorTemplate<InspectorFields[Row]>
+        /** All named components and registered action buttons owned by this container editor. */
+        readonly uiKeys: readonly ComponentId<Id>[]
+        readonly getUI: GetWorkspaceUI<Id>
         readonly toolGroups: ToolGroups<Id>
       }
     : unknown) & {

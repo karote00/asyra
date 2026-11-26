@@ -1,3 +1,4 @@
+import { UIItems } from '../workspace/ui-parts'
 import React, { useState } from 'react'
 import {
   retrySaving,
@@ -55,37 +56,55 @@ export const DocumentRecoveryControls = ({
       onPointerDown={(event) => event.stopPropagation()}
       onKeyDown={(event) => event.stopPropagation()}
     >
-      <p>
-        Saving is paused. Your local work is kept for recovery; shared changes
-        will resume after recovery.
-      </p>
-      <div className="mt-2 flex gap-3">
-        <button
-          type="button"
-          data-recovery-action="retrySaving"
-          disabled={busy}
-          onClick={() => {
-            void retry()
-          }}
-        >
-          {busy ? 'Preparing recovery…' : 'Retry saving'}
-        </button>
-        <button
-          type="button"
-          data-recovery-action="download"
-          disabled={busy}
-          onClick={() => {
-            void download()
-          }}
-        >
-          Download recovery file
-        </button>
-      </div>
-      {error && (
-        <p role="alert" className="mt-2 break-words">
-          {error}
-        </p>
-      )}
+      <UIItems
+        id="recovery"
+        parts={{
+          recoveryMessage: (
+            <p>
+              Saving is paused. Your local work is kept for recovery; shared
+              changes will resume after recovery.
+            </p>
+          ),
+          recoveryActions: (
+            <div className="mt-2 flex gap-3">
+              <UIItems
+                id="recoveryActions"
+                parts={{
+                  retrySaving: (
+                    <button
+                      type="button"
+                      data-recovery-action="retrySaving"
+                      disabled={busy}
+                      onClick={() => {
+                        void retry()
+                      }}
+                    >
+                      {busy ? 'Preparing recovery…' : 'Retry saving'}
+                    </button>
+                  ),
+                  downloadDocument: (
+                    <button
+                      type="button"
+                      data-recovery-action="download"
+                      disabled={busy}
+                      onClick={() => {
+                        void download()
+                      }}
+                    >
+                      Download recovery file
+                    </button>
+                  )
+                }}
+              />
+            </div>
+          ),
+          recoveryError: error && (
+            <p role="alert" className="mt-2 break-words">
+              {error}
+            </p>
+          )
+        }}
+      />
     </div>
   )
 }

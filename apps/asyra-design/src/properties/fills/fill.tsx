@@ -1,3 +1,4 @@
+import { UIItems } from '../../workspace/ui-parts'
 import { type FillAttrs } from '@asyra/utils'
 import { useFill } from '../../providers'
 import { EyeClosedIcon, EyeOpenIcon, MinusIcon } from '../icons'
@@ -48,55 +49,62 @@ const FillItem = ({ index, fillId, elementIds, onRemove }: FillItemProps) => {
       data-fill-id={fillId}
       data-testid={`prop-fill-${index}`}
     >
-      {/* Group: Swatch/Hex + Opacity */}
-      <FillColorRow
-        index={index}
-        fill={fill as unknown as FillAttrs}
-        fillId={fillId}
-        ownerElementId={ownerElementId}
-        displayColor={displayColor}
-        gradientData={gradientData}
-        previewSwatchStyle={previewSwatchStyle}
-        colorFormat={fill.colorFormat}
-        onKindChange={handleKindChange}
-        onColorValueChange={handleColorValueChange}
-        onColorPickerChange={handleColorPickerChange}
-        onColorPickerChangeStart={handleColorPickerChangeStart}
-        onColorPickerChangeEnd={handleColorPickerChangeEnd}
-        onGradientEditorOpenChange={handleGradientEditorOpenChange}
-        onGradientFillChange={handleGradientFillChange}
-        onStartInteraction={startFillInteractionTransaction}
-        onEndInteraction={endFillInteractionTransaction}
-        onFormatChange={handleFormatChange}
-        opacity={fill.opacity}
-        onOpacityChange={handleOpacityChange}
-        opacityTestId={`prop-fill-opacity-${index}`}
+      <UIItems
+        id="fillRows"
+        parts={{
+          fillColor: (
+            <FillColorRow
+              index={index}
+              fill={fill as unknown as FillAttrs}
+              fillId={fillId}
+              ownerElementId={ownerElementId}
+              displayColor={displayColor}
+              gradientData={gradientData}
+              previewSwatchStyle={previewSwatchStyle}
+              colorFormat={fill.colorFormat}
+              onKindChange={handleKindChange}
+              onColorValueChange={handleColorValueChange}
+              onColorPickerChange={handleColorPickerChange}
+              onColorPickerChangeStart={handleColorPickerChangeStart}
+              onColorPickerChangeEnd={handleColorPickerChangeEnd}
+              onGradientEditorOpenChange={handleGradientEditorOpenChange}
+              onGradientFillChange={handleGradientFillChange}
+              onStartInteraction={startFillInteractionTransaction}
+              onEndInteraction={endFillInteractionTransaction}
+              onFormatChange={handleFormatChange}
+              opacity={fill.opacity}
+              onOpacityChange={handleOpacityChange}
+              opacityTestId={`prop-fill-opacity-${index}`}
+            />
+          ),
+          fillVisibility: (
+            <button
+              type="button"
+              onClick={() => handleVisibleChange(!fill.visible)}
+              className="flex items-center justify-center h-6 w-6 rounded hover:bg-panel-surface-hover text-white/60 hover:text-white transition-colors"
+              data-fill-action="toggleVisibility"
+              data-testid={`prop-fill-visible-${index}`}
+              title={fill.visible ? 'Hide fill' : 'Show fill'}
+              style={{ width: '24px', height: '24px' }}
+            >
+              {fill.visible ? <EyeOpenIcon /> : <EyeClosedIcon />}
+            </button>
+          ),
+          removeFill: (
+            <button
+              type="button"
+              onClick={onRemove}
+              className="flex items-center justify-center h-6 w-6 rounded hover:bg-panel-surface-hover text-white disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
+              data-fill-action="remove"
+              data-testid={`prop-fill-remove-${index}`}
+              title="Remove fill"
+              aria-label="Remove fill"
+            >
+              <MinusIcon />
+            </button>
+          )
+        }}
       />
-
-      {/* Visibility eye icon */}
-      <button
-        type="button"
-        onClick={() => handleVisibleChange(!fill.visible)}
-        className="flex items-center justify-center h-6 w-6 rounded hover:bg-panel-surface-hover text-white/60 hover:text-white transition-colors"
-        data-fill-action="toggleVisibility"
-        data-testid={`prop-fill-visible-${index}`}
-        title={fill.visible ? 'Hide fill' : 'Show fill'}
-        style={{ width: '24px', height: '24px' }}
-      >
-        {fill.visible ? <EyeOpenIcon /> : <EyeClosedIcon />}
-      </button>
-
-      <button
-        type="button"
-        onClick={onRemove}
-        className="flex items-center justify-center h-6 w-6 rounded hover:bg-panel-surface-hover text-white disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
-        data-fill-action="remove"
-        data-testid={`prop-fill-remove-${index}`}
-        title="Remove fill"
-        aria-label="Remove fill"
-      >
-        <MinusIcon />
-      </button>
     </div>
   )
 }

@@ -1,3 +1,4 @@
+import { UIItems } from '../../workspace/ui-parts'
 import type { InspectorRefs } from '../inspector-contract'
 import { featureEnabled } from '../../workspace-features'
 import { TEXT_COMPONENT_TYPE } from '@asyra/preset'
@@ -16,16 +17,24 @@ const ElementAppearance = ({ elementId }: { elementId: string }) => {
   const element = useElementData(elementId)
 
   return (
-    <>
-      <SectionDivider />
-      {featureEnabled('fills') && <Fills />}
-      {featureEnabled('strokes') && element.type !== TEXT_COMPONENT_TYPE && (
-        <>
-          <SectionDivider />
-          <Strokes />
-        </>
-      )}
-    </>
+    <UIItems
+      id="appearance"
+      parts={{
+        fills: featureEnabled('fills') && (
+          <>
+            <SectionDivider />
+            <Fills />
+          </>
+        ),
+        strokes: featureEnabled('strokes') &&
+          element.type !== TEXT_COMPONENT_TYPE && (
+            <>
+              <SectionDivider />
+              <Strokes />
+            </>
+          )
+      }}
+    />
   )
 }
 
@@ -52,30 +61,42 @@ const ElementPropertiesPanel = ({
 
   return (
     <div className="flex flex-col">
-      {/* Design section: Position, Dimension, Rotation */}
-      <Header label={title} />
-      {featureEnabled('geometry') && (
-        <div
-          data-inspector-section="geometry"
-          className="grid grid-cols-1 w-full pb-2"
-        >
-          {inspectorRefs?.positionRow ? (
-            <div ref={inspectorRefs.positionRow} />
-          ) : (
-            <Position />
-          )}
-          {inspectorRefs?.dimensionRow ? (
-            <div ref={inspectorRefs.dimensionRow} />
-          ) : (
-            dimension
-          )}
-          <Rotation />
-        </div>
-      )}
-
-      {featureEnabled('text') && <TextProperties />}
-      <ElementAppearance
-        elementId={elementSelection.size === 1 ? [...elementSelection][0] : ''}
+      <UIItems
+        id="selectionProperties"
+        parts={{
+          selectionHeading: <Header label={title} />,
+          geometry: featureEnabled('geometry') && (
+            <div
+              data-inspector-section="geometry"
+              className="grid grid-cols-1 w-full pb-2"
+            >
+              <UIItems
+                id="geometry"
+                parts={{
+                  positionRow: inspectorRefs?.positionRow ? (
+                    <div ref={inspectorRefs.positionRow} />
+                  ) : (
+                    <Position />
+                  ),
+                  dimensionRow: inspectorRefs?.dimensionRow ? (
+                    <div ref={inspectorRefs.dimensionRow} />
+                  ) : (
+                    dimension
+                  ),
+                  rotationRow: <Rotation />
+                }}
+              />
+            </div>
+          ),
+          typography: featureEnabled('text') && <TextProperties />,
+          appearance: (
+            <ElementAppearance
+              elementId={
+                elementSelection.size === 1 ? [...elementSelection][0] : ''
+              }
+            />
+          )
+        }}
       />
     </div>
   )

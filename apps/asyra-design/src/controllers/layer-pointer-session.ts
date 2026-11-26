@@ -133,7 +133,11 @@ export const cancelLayerPointerSession = (
 export const isLayerPointerBypassTarget = (
   target: EventTarget | null
 ): boolean => {
-  if (typeof Element === 'undefined' || !(target instanceof Element)) {
+  if (
+    !target ||
+    !('closest' in target) ||
+    typeof target.closest !== 'function'
+  ) {
     return false
   }
 

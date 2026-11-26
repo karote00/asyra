@@ -1,3 +1,4 @@
+import { UIItems } from '../../workspace/ui-parts'
 import { Input, PropertyControl } from '@asyra/design-system'
 import {
   type EVENT_OPTIONS,
@@ -63,49 +64,58 @@ const FillColorRow = ({
 }: FillColorRowProps) => {
   return (
     <PropertyControl className="flex-1 gap-[1px]">
-      <div className="flex-1 min-w-0">
-        <FillColorControls
-          index={index}
-          fill={fill}
-          fillId={fillId}
-          ownerElementId={ownerElementId}
-          colorPickerTestId={colorPickerTestId}
-          colorPickerOpen={colorPickerOpen}
-          displayColor={displayColor}
-          gradientData={gradientData}
-          previewSwatchStyle={previewSwatchStyle}
-          colorFormat={colorFormat}
-          onKindChange={onKindChange}
-          onColorValueChange={onColorValueChange}
-          onColorPickerChange={onColorPickerChange}
-          onColorPickerChangeStart={onColorPickerChangeStart}
-          onColorPickerChangeEnd={onColorPickerChangeEnd}
-          onGradientEditorOpenChange={onGradientEditorOpenChange}
-          onGradientFillChange={onGradientFillChange}
-          onStartInteraction={onStartInteraction}
-          onEndInteraction={onEndInteraction}
-          onFormatChange={onFormatChange}
-        />
-      </div>
-
-      <div className="w-[1px] h-3 bg-divider mx-[2px] opacity-50" />
-
-      <div style={{ width: '48px' }}>
-        <Input
-          value={formatInputNumber(Math.round(opacity * 100))}
-          suffix="%"
-          size="small"
-          containerClassName="!bg-transparent !px-0"
-          containerStyle={{
-            border: 'none'
-          }}
-          noOutline
-          inputClassName="!pl-0"
-          onChange={onOpacityChange}
-          data-fill-field="opacity"
-          data-testid={opacityTestId}
-        />
-      </div>
+      <UIItems
+        id="fillColor"
+        parts={{
+          fillPaint: (
+            <div className="flex-1 min-w-0">
+              <FillColorControls
+                index={index}
+                fill={fill}
+                fillId={fillId}
+                ownerElementId={ownerElementId}
+                colorPickerTestId={colorPickerTestId}
+                colorPickerOpen={colorPickerOpen}
+                displayColor={displayColor}
+                gradientData={gradientData}
+                previewSwatchStyle={previewSwatchStyle}
+                colorFormat={colorFormat}
+                onKindChange={onKindChange}
+                onColorValueChange={onColorValueChange}
+                onColorPickerChange={onColorPickerChange}
+                onColorPickerChangeStart={onColorPickerChangeStart}
+                onColorPickerChangeEnd={onColorPickerChangeEnd}
+                onGradientEditorOpenChange={onGradientEditorOpenChange}
+                onGradientFillChange={onGradientFillChange}
+                onStartInteraction={onStartInteraction}
+                onEndInteraction={onEndInteraction}
+                onFormatChange={onFormatChange}
+              />
+            </div>
+          ),
+          fillDivider: (
+            <div className="w-[1px] h-3 bg-divider mx-[2px] opacity-50" />
+          ),
+          fillOpacity: (
+            <div style={{ width: '48px' }}>
+              <Input
+                value={formatInputNumber(Math.round(opacity * 100))}
+                suffix="%"
+                size="small"
+                containerClassName="!bg-transparent !px-0"
+                containerStyle={{
+                  border: 'none'
+                }}
+                noOutline
+                inputClassName="!pl-0"
+                onChange={onOpacityChange}
+                data-fill-field="opacity"
+                data-testid={opacityTestId}
+              />
+            </div>
+          )
+        }}
+      />
     </PropertyControl>
   )
 }

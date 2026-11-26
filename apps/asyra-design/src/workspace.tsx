@@ -1,3 +1,4 @@
+import { WorkspaceLayoutContext } from './workspace/ui-parts'
 import { InspectorTemplates } from './properties/inspector-template'
 import type { ContextType } from 'react'
 import { createInspectorRows } from './workspace/inspector-rows'
@@ -73,6 +74,10 @@ interface WorkspaceOptions {
   collaboration?: RenderSession['collaboration']
   panels?: WorkspaceProps['panels']
   toolbar?: WorkspaceProps['toolbar']
+  availableActions: NonNullable<
+    Exclude<WorkspaceProps['toolbar'], false>
+  >['actions']
+  layout?: ContextType<typeof WorkspaceLayoutContext>
   inspectorTemplates?: ContextType<typeof InspectorTemplates>
   inspectorRefs?: WorkspaceProps['inspectorRefs']
   slots?: WorkspaceProps['slots']
@@ -124,26 +129,29 @@ export function mount(options: WorkspaceOptions) {
 
     render = () =>
       root.render(
-        <InspectorTemplates.Provider value={options.inspectorTemplates}>
-          <DesignWorkspace
-            inspectorRefs={options.inspectorRefs}
-            session={session}
-            hideUI={presentation.hideUI}
-            panels={presentation.panels}
-            slots={options.slots}
-            disabledFeatures={disabled}
-            toolbar={
-              presentation.toolbar && {
-                ...presentation.toolbar,
-                actions: presentation.toolbar.actions.filter(
+        <WorkspaceLayoutContext.Provider value={options.layout}>
+          <InspectorTemplates.Provider value={options.inspectorTemplates}>
+            <DesignWorkspace
+              inspectorRefs={options.inspectorRefs}
+              session={session}
+              hideUI={presentation.hideUI}
+              panels={presentation.panels}
+              slots={options.slots}
+              disabledFeatures={disabled}
+              toolbarHidden={presentation.toolbar === false}
+              toolbar={{
+                includeTools: presentation.toolbar
+                  ? presentation.toolbar.includeTools
+                  : true,
+                actions: options.availableActions.filter(
                   ({ id }) => !disabled.includes(id)
                 )
-              }
-            }
-            onReset={reset}
-          />
-          {inspector.render(disabled)}
-        </InspectorTemplates.Provider>
+              }}
+              onReset={reset}
+            />
+            {inspector.render(disabled)}
+          </InspectorTemplates.Provider>
+        </WorkspaceLayoutContext.Provider>
       )
     render()
   })

@@ -1,3 +1,4 @@
+import { UIItems } from '../workspace/ui-parts'
 import { getFeature } from '@asyra/core'
 import { FeatureNames } from '../constants'
 import { TEXT_PROPERTY_TYPE, type TextData } from '@asyra/preset'
@@ -62,113 +63,147 @@ const TextProperties = () => {
   return (
     <div onPointerDown={(event) => event.stopPropagation()}>
       <section data-inspector-section="typography" aria-label="Typography">
-        <button
-          data-text-action="edit"
-          className="px-3 py-1 text-xs text-text-secondary hover:text-text-primary"
-          onClick={() => {
-            const edit = getFeature(FeatureNames.EDIT_TEXT)?.editSelected as
-              (() => void) | undefined
+        <UIItems
+          id="typography"
+          parts={{
+            editTextButton: (
+              <button
+                data-text-action="edit"
+                className="px-3 py-1 text-xs text-text-secondary hover:text-text-primary"
+                onClick={() => {
+                  const edit = getFeature(FeatureNames.EDIT_TEXT)
+                    ?.editSelected as (() => void) | undefined
 
-            edit?.()
+                  edit?.()
+                }}
+              >
+                Edit text on Canvas
+              </button>
+            ),
+            typographyHeading: <Header label="Typography" />,
+            textFields: (
+              <div className="flex flex-col pb-4">
+                <UIItems
+                  id="textFields"
+                  parts={{
+                    fontFamilyRow: (
+                      <div className="grid grid-cols-1 items-center pl-4 pr-2 h-8 min-h-8">
+                        <FontFamilySelect
+                          value={typography.fontFamily}
+                          onChange={(value) => {
+                            if (value !== typography.fontFamily) {
+                              updateSelectedElementProperties(
+                                'fontFamily',
+                                value
+                              )
+                            }
+                          }}
+                        />
+                      </div>
+                    ),
+                    fontStyleRow: (
+                      <div className="grid grid-cols-2 items-center gap-2 pl-4 pr-2 h-8 min-h-8">
+                        <TextSelect
+                          field="fontStyle"
+                          label="Font style"
+                          value={
+                            fontStyles.find(
+                              (style) =>
+                                style.fontWeight === typography.fontWeight &&
+                                style.fontStyle === typography.fontStyle
+                            )?.id ?? ''
+                          }
+                          options={fontStyles.map((style) => ({
+                            value: style.id,
+                            label: style.label
+                          }))}
+                          onChange={(value) => {
+                            const style = fontStyles.find(
+                              (entry) => entry.id === value
+                            )
+
+                            if (
+                              style &&
+                              (style.fontWeight !== typography.fontWeight ||
+                                style.fontStyle !== typography.fontStyle)
+                            ) {
+                              updateSelectedTextStyle({
+                                fontWeight: style.fontWeight,
+                                fontStyle: style.fontStyle
+                              })
+                            }
+                          }}
+                        />
+                        {field('fontSize', 'Font size')}
+                      </div>
+                    ),
+                    textSpacingRow: (
+                      <div className="grid grid-cols-2 items-start gap-2 pl-4 pr-2 pt-2 pb-1">
+                        {field('lineHeight', 'Line height', true)}
+                        {field('letterSpacing', 'Letter spacing', true)}
+                      </div>
+                    ),
+                    alignmentHeading: (
+                      <div className="pl-4 pr-2 pt-2 text-[11px] text-text-secondary">
+                        Alignment
+                      </div>
+                    ),
+                    textAlignmentRow: (
+                      <div className="grid grid-cols-2 items-center gap-2 pl-4 pr-2 h-8 min-h-8">
+                        <div
+                          role="group"
+                          aria-label="Text alignment"
+                          className="grid h-6 w-full grid-cols-3 rounded-[3px] bg-panel-surface-hover"
+                        >
+                          {(
+                            Object.keys(
+                              alignmentPaths
+                            ) as TextData['textAlign'][]
+                          ).map((alignment) => (
+                            <button
+                              key={alignment}
+                              type="button"
+                              data-text-alignment={alignment}
+                              aria-label={`Align ${alignment}`}
+                              aria-pressed={typography.textAlign === alignment}
+                              title={`Align ${alignment}`}
+                              onKeyDown={(event) => event.stopPropagation()}
+                              onKeyUp={(event) => event.stopPropagation()}
+                              className="flex h-6 items-center justify-center rounded-sm text-white/60 hover:bg-white/10 focus-visible:outline focus-visible:outline-border-focus aria-pressed:bg-white/15 aria-pressed:text-white"
+                              onClick={() => {
+                                if (typography.textAlign !== alignment) {
+                                  updateSelectedElementProperties(
+                                    'textAlign',
+                                    alignment
+                                  )
+                                }
+                              }}
+                            >
+                              <svg
+                                aria-hidden="true"
+                                width="18"
+                                height="18"
+                                viewBox="0 0 18 20"
+                                fill="none"
+                              >
+                                <path
+                                  d={alignmentPaths[alignment]}
+                                  stroke="currentColor"
+                                  strokeWidth="1.2"
+                                  strokeLinecap="round"
+                                />
+                              </svg>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )
+                  }}
+                />
+              </div>
+            )
           }}
-        >
-          Edit text on Canvas
-        </button>
-        <Header label="Typography" />
-        <div className="flex flex-col pb-4">
-          <div className="grid grid-cols-1 items-center pl-4 pr-2 h-8 min-h-8">
-            <FontFamilySelect
-              value={typography.fontFamily}
-              onChange={(value) => {
-                if (value !== typography.fontFamily) {
-                  updateSelectedElementProperties('fontFamily', value)
-                }
-              }}
-            />
-          </div>
-          <div className="grid grid-cols-2 items-center gap-2 pl-4 pr-2 h-8 min-h-8">
-            <TextSelect
-              field="fontStyle"
-              label="Font style"
-              value={
-                fontStyles.find(
-                  (style) =>
-                    style.fontWeight === typography.fontWeight &&
-                    style.fontStyle === typography.fontStyle
-                )?.id ?? ''
-              }
-              options={fontStyles.map((style) => ({
-                value: style.id,
-                label: style.label
-              }))}
-              onChange={(value) => {
-                const style = fontStyles.find((entry) => entry.id === value)
-
-                if (
-                  style &&
-                  (style.fontWeight !== typography.fontWeight ||
-                    style.fontStyle !== typography.fontStyle)
-                ) {
-                  updateSelectedTextStyle({
-                    fontWeight: style.fontWeight,
-                    fontStyle: style.fontStyle
-                  })
-                }
-              }}
-            />
-            {field('fontSize', 'Font size')}
-          </div>
-          <div className="grid grid-cols-2 items-start gap-2 pl-4 pr-2 pt-2 pb-1">
-            {field('lineHeight', 'Line height', true)}
-            {field('letterSpacing', 'Letter spacing', true)}
-          </div>
-          <div className="pl-4 pr-2 pt-2 text-[11px] text-text-secondary">
-            Alignment
-          </div>
-          <div className="grid grid-cols-2 items-center gap-2 pl-4 pr-2 h-8 min-h-8">
-            <div
-              role="group"
-              aria-label="Text alignment"
-              className="grid h-6 w-full grid-cols-3 rounded-[3px] bg-panel-surface-hover"
-            >
-              {(Object.keys(alignmentPaths) as TextData['textAlign'][]).map(
-                (alignment) => (
-                  <button
-                    key={alignment}
-                    type="button"
-                    data-text-alignment={alignment}
-                    aria-label={`Align ${alignment}`}
-                    aria-pressed={typography.textAlign === alignment}
-                    title={`Align ${alignment}`}
-                    onKeyDown={(event) => event.stopPropagation()}
-                    onKeyUp={(event) => event.stopPropagation()}
-                    className="flex h-6 items-center justify-center rounded-sm text-white/60 hover:bg-white/10 focus-visible:outline focus-visible:outline-border-focus aria-pressed:bg-white/15 aria-pressed:text-white"
-                    onClick={() => {
-                      if (typography.textAlign !== alignment) {
-                        updateSelectedElementProperties('textAlign', alignment)
-                      }
-                    }}
-                  >
-                    <svg
-                      aria-hidden="true"
-                      width="18"
-                      height="18"
-                      viewBox="0 0 18 20"
-                      fill="none"
-                    >
-                      <path
-                        d={alignmentPaths[alignment]}
-                        stroke="currentColor"
-                        strokeWidth="1.2"
-                        strokeLinecap="round"
-                      />
-                    </svg>
-                  </button>
-                )
-              )}
-            </div>
-          </div>
-        </div>
+        />
       </section>
     </div>
   )

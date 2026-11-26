@@ -191,7 +191,12 @@ action's ID, fails at startup.
 
 ### Add UI to a workspace
 
-See [Find a Design control in DevTools](UI.md) for row IDs, panel selectors, and examples for React, plain JS and relocated controls.
+Use `editor.uiKeys` to discover component names. Place the native Pen button
+in React with `<DesignUI component={editor.getUI('penToolIcon')} />` from
+`@asyra/design/react`, or call `editor.getUI('penToolIcon').mount(container)`
+in JavaScript. Each named group exposes its native items and current order.
+See [Place and compose Design components](UI.md) for complete examples and
+DevTools lookups.
 
 Move a built-in row by naming its host element. Position moves into the
 toolbar below. Dimension stays in its usual place.

@@ -1,3 +1,4 @@
+import { UIItems, UIPart } from '../workspace/ui-parts'
 import { getActiveCollaborationHandle } from '../collaboration/session-observation'
 import React, { useEffect, useRef, useState } from 'react'
 import core from '../contexts'
@@ -241,26 +242,33 @@ const RenderApp: React.FC<RenderAppProps> = ({
         className="absolute inset-0"
         data-testid="canvas-render-container"
       />
-      {!hideUI && (
-        <StatusToastStack
-          toasts={[
-            ...(collaborationNotification
-              ? [
-                  {
-                    id: collaborationNotification.id,
-                    message: collaborationNotification.message
-                  }
-                ]
-              : [])
-          ]}
+      <UIPart id="feedback" hidden={hideUI}>
+        <UIItems
+          id="feedback"
+          parts={{
+            notifications: (
+              <StatusToastStack
+                toasts={[
+                  ...(collaborationNotification
+                    ? [
+                        {
+                          id: collaborationNotification.id,
+                          message: collaborationNotification.message
+                        }
+                      ]
+                    : [])
+                ]}
+              />
+            ),
+            recovery: recoverySession && (
+              <DocumentRecoveryControls
+                session={recoverySession}
+                reopen={session?.reopen ?? (() => window.location.reload())}
+              />
+            )
+          }}
         />
-      )}
-      {!hideUI && recoverySession && (
-        <DocumentRecoveryControls
-          session={recoverySession}
-          reopen={session?.reopen ?? (() => window.location.reload())}
-        />
-      )}
+      </UIPart>
       {!session && <AiDrawingProgressIndicator />}
       <TextCanvasEditor />
     </div>

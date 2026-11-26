@@ -1,3 +1,4 @@
+import { UIItems } from '../workspace/ui-parts'
 import {
   type CSSProperties,
   type MouseEvent,
@@ -141,35 +142,56 @@ const Element = ({
       data-selected={isSelected}
       data-layer-depth={depth}
     >
-      <div className="flex items-center min-w-0">
-        {canExpand ? (
-          <GroupDisclosure
-            groupId={id}
-            isExpanded={isExpanded}
-            onToggle={onToggleGroup}
-          />
-        ) : (
-          <span className="h-4 w-4 flex-shrink-0" aria-hidden="true" />
-        )}
-        <div
-          className={`flex items-center flex-shrink-0 ${isSelected ? 'text-[#4db3ff]' : 'text-[#999]'}`}
-        >
-          <ElementIcon elementId={id} type={type} />
-        </div>
-        <span
-          className={`px-1 text-[11px] truncate ${isSelected ? 'text-[#e5e5e5] font-medium' : 'text-[#ccc]'}`}
-        >
-          {name}
-        </span>
-      </div>
-      <ElementRowActions
-        elementId={id}
-        isHovered={isHovered}
-        isSelected={isSelected}
-        lock={lock}
-        visible={visible}
-        onToggleLock={handleToggleLock}
-        onToggleVisible={handleToggleVisible}
+      <UIItems
+        id="layerRows"
+        parts={{
+          layerIdentity: (
+            <div className="flex items-center min-w-0">
+              <UIItems
+                id="layerIdentity"
+                parts={{
+                  layerDisclosure: canExpand ? (
+                    <GroupDisclosure
+                      groupId={id}
+                      isExpanded={isExpanded}
+                      onToggle={onToggleGroup}
+                    />
+                  ) : (
+                    <span
+                      className="h-4 w-4 flex-shrink-0"
+                      aria-hidden="true"
+                    />
+                  ),
+                  layerIcon: (
+                    <div
+                      className={`flex items-center flex-shrink-0 ${isSelected ? 'text-[#4db3ff]' : 'text-[#999]'}`}
+                    >
+                      <ElementIcon elementId={id} type={type} />
+                    </div>
+                  ),
+                  layerName: (
+                    <span
+                      className={`px-1 text-[11px] truncate ${isSelected ? 'text-[#e5e5e5] font-medium' : 'text-[#ccc]'}`}
+                    >
+                      {name}
+                    </span>
+                  )
+                }}
+              />
+            </div>
+          ),
+          layerActions: (
+            <ElementRowActions
+              elementId={id}
+              isHovered={isHovered}
+              isSelected={isSelected}
+              lock={lock}
+              visible={visible}
+              onToggleLock={handleToggleLock}
+              onToggleVisible={handleToggleVisible}
+            />
+          )
+        }}
       />
     </div>
   )

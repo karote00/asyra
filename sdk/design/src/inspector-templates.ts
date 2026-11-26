@@ -112,6 +112,9 @@ function createRow<Key extends string>(
 
   const api: InspectorTemplate<Key> = {
     items,
+
+    getOrder: () => order,
+
     insertAt,
 
     removeAt(index) {
@@ -189,20 +192,8 @@ export function createInspectorTemplates(
     ])
   )
 
-  function getUI<Row extends InspectorRowId>(
-    id: Row
-  ): InspectorTemplate<InspectorFields[Row]> {
-    requireEditor()
-    if (!Object.hasOwn(sources, id)) {
-      throw new TypeError('Unknown inspector row: ' + id)
-    }
-
-    return sources[id].api as InspectorTemplate<InspectorFields[Row]>
-  }
-
   return {
     sources,
-    getUI,
 
     dispose() {
       for (const row of Object.values(sources)) {

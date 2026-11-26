@@ -172,3 +172,14 @@ attribute at its rendering owner. Host extensions own the contents of their
 marked mounts. Rendering a marker does not register a composable template.
 Packed React and JavaScript hosts verify the catalog, field markers, panel
 ownership and relocation. Debug examples cover iframe and shadow boundaries.
+
+### Compose and place workspace controls
+
+The embed step exposes per-editor handles for named workspace chrome. The app
+owns each control, contextual visibility and command handlers. The SDK owns
+ordering, custom item lifetimes and exclusive host placements. Group items
+render in template order. An external placement wins over the default home.
+Releasing it restores that home. Hidden panels can service explicit placements.
+Canvas rendering and document record identities stay under their current owners.
+Verify discovery, order, command dispatch, feature changes, teardown and editor
+isolation using separately installed React and JavaScript tarball consumers.

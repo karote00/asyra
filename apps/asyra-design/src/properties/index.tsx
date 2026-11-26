@@ -1,3 +1,4 @@
+import { UIItems } from '../workspace/ui-parts'
 import type { InspectorRefs } from './inspector-contract'
 import { supportsSizeEdits } from '../common-apis/element/geometry-policy'
 import { featureEnabled } from '../workspace-features'
@@ -99,9 +100,7 @@ const Properties = ({
     )
   }
 
-  if (featureEnabled('pen') && showVectorPoint) {
-    panelContent = <VectorPointPropertiesPanel title={title} />
-  }
+  const vector = featureEnabled('pen') && showVectorPoint
 
   return (
     <div
@@ -114,14 +113,20 @@ const Properties = ({
       data-editor-panel="properties"
       data-testid="properties-panel"
     >
-      {slotRef && (
-        <div
-          ref={slotRef}
-          data-ui-slot="properties.top"
-          className="flex flex-wrap"
-        />
-      )}
-      {panelContent}
+      <UIItems
+        id="properties"
+        parts={{
+          inspectorExtensions: slotRef && (
+            <div
+              ref={slotRef}
+              data-ui-slot="properties.top"
+              className="flex flex-wrap"
+            />
+          ),
+          selectionProperties: !vector && panelContent,
+          vectorPoint: vector && <VectorPointPropertiesPanel title={title} />
+        }}
+      />
     </div>
   )
 }

@@ -500,6 +500,8 @@ export const useGradientInteractions = ({
     stopIndex: number,
     event: React.PointerEvent<HTMLButtonElement>
   ) => {
+    const view = event.currentTarget.ownerDocument.defaultView ?? window
+
     event.preventDefault()
     event.stopPropagation()
     setSelectedStopIndex(stopIndex)
@@ -519,9 +521,9 @@ export const useGradientInteractions = ({
     }
 
     const handlePointerUp = () => {
-      window.removeEventListener('pointermove', handlePointerMove)
-      window.removeEventListener('pointerup', handlePointerUp)
-      window.removeEventListener('pointercancel', handlePointerUp)
+      view.removeEventListener('pointermove', handlePointerMove)
+      view.removeEventListener('pointerup', handlePointerUp)
+      view.removeEventListener('pointercancel', handlePointerUp)
       draggingStopIndexRef.current = null
       dragRectRef.current = null
       flushStopPositionUpdate()
@@ -529,9 +531,9 @@ export const useGradientInteractions = ({
       endInteractionSession()
     }
 
-    window.addEventListener('pointermove', handlePointerMove)
-    window.addEventListener('pointerup', handlePointerUp)
-    window.addEventListener('pointercancel', handlePointerUp)
+    view.addEventListener('pointermove', handlePointerMove)
+    view.addEventListener('pointerup', handlePointerUp)
+    view.addEventListener('pointercancel', handlePointerUp)
   }
 
   const handleSelectStop = (stopIndex: number) => {

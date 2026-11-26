@@ -1,3 +1,4 @@
+import { createWorkspaceLayout } from './workspace-layout.js'
 import { createInspectorTemplates } from './inspector-templates.js'
 import { openLocalDocument } from './local-document.js'
 import { resolveWorkspaceOptions } from './workspace-options.js'
@@ -56,7 +57,7 @@ export async function mountWorkspace(
     throw new Error('Container already has an active Design editor')
   }
 
-  const { policy, presentation, collaboration, extensions } =
+  const { policy, actions, presentation, collaboration, extensions } =
     resolveWorkspaceOptions(options)
   const {
     disabled,
@@ -130,6 +131,14 @@ export async function mountWorkspace(
   }
 
   const templates = createInspectorTemplates(current, nodes)
+  const components = createWorkspaceLayout(
+    current,
+    host.ownerDocument,
+    templates,
+    actions.map((action) => action.id),
+    () => frame.contentDocument,
+    (id, target) => groups.api.mount(id, target)
+  )
   let editor: Editor
   const base = {
     createNode: (extension, bounds, fields) =>
@@ -138,7 +147,8 @@ export async function mountWorkspace(
     updateSelectedNodes: (extension, fields) =>
       current().updateSelectedNodes(extension.id, fields),
 
-    getUI: templates.getUI,
+    getUI: components.getUI,
+    uiKeys: components.ids,
 
     setPresentation(options) {
       if (!active) {
@@ -147,6 +157,7 @@ export async function mountWorkspace(
 
       const next = presentation(options, base.runAction)
 
+      components.setToolbar(next.toolbar ? next.toolbar.actions : [])
       session?.updatePresentation(next)
       appearance = next
     },
@@ -288,6 +299,7 @@ export async function mountWorkspace(
     },
 
     destroy() {
+      components.dispose()
       groups.destroy()
       templates.dispose()
       availabilityListeners.clear()
@@ -316,6 +328,8 @@ export async function mountWorkspace(
   } satisfies Omit<Editor, keyof Commands | 'toolGroups' | 'common'>
 
   let appearance = presentation(options, base.runAction)
+
+  components.setToolbar(appearance.toolbar ? appearance.toolbar.actions : [])
   const groups = createToolGroups(
     extensions,
     options,
@@ -343,6 +357,13 @@ export async function mountWorkspace(
         collaboration,
         slots: groups.refs,
         inspectorRefs: groups.inspectorRefs,
+        layout: components.layout,
+        availableActions: actions.map(({ id, label }) => ({
+          id,
+          label,
+
+          run: () => base.runAction(id)
+        })),
         inspectorTemplates: templates.sources,
         ...appearance,
         disabledFeatures: runtimePolicy(disabled),

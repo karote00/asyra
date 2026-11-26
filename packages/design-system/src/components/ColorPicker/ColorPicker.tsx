@@ -35,6 +35,11 @@ export interface ColorPickerChange {
 }
 
 export interface ColorPickerProps {
+  renderControls?: (parts: {
+    saturation: React.ReactNode
+    sliders: React.ReactNode
+    channels: React.ReactNode
+  }) => React.ReactNode
   color: string
   opacity?: number
   disabled?: boolean
@@ -81,7 +86,13 @@ const toPointerPosition = (event: PointerEvent | React.PointerEvent) => ({
   y: event.clientY
 })
 
-const ensurePopupRoot = () => {
+const ensurePopupRoot = (trigger: HTMLElement | null) => {
+  const scope = trigger?.getRootNode()
+
+  if (scope && scope.nodeType === 11) {
+    return scope as ShadowRoot
+  }
+
   if (typeof document === 'undefined') {
     return null
   }
@@ -105,6 +116,13 @@ const ensurePopupRoot = () => {
 const ColorPicker: React.FC<ColorPickerProps> = ({
   color,
   opacity = 1,
+  renderControls = ({ saturation, sliders, channels }) => (
+    <>
+      {saturation}
+      {sliders}
+      {channels}
+    </>
+  ),
   disabled = false,
   open,
   onOpenChange,
@@ -130,10 +148,13 @@ const ColorPicker: React.FC<ColorPickerProps> = ({
   const [draftValues, setDraftValues] = useState<string[]>([])
   const [hsva, setHsva] = useState(() => createHsvaColor(color, opacity))
   const [panelPosition, setPanelPosition] = useState<PanelPosition | null>(null)
-  const [portalRoot, setPortalRoot] = useState<HTMLElement | null>(null)
+  const [portalRoot, setPortalRoot] = useState<HTMLElement | ShadowRoot | null>(
+    null
+  )
   const hsvaRef = useRef(hsva)
   const rootRef = useRef<HTMLDivElement | null>(null)
   const triggerRef = useRef<HTMLButtonElement | null>(null)
+  const insidePointer = useRef<Event | null>(null)
   const panelRef = useRef<HTMLDivElement | null>(null)
   const saturationRef = useRef<HTMLDivElement | null>(null)
   const hueRef = useRef<HTMLDivElement | null>(null)
@@ -205,7 +226,7 @@ const ColorPicker: React.FC<ColorPickerProps> = ({
   ])
 
   useEffect(() => {
-    setPortalRoot(ensurePopupRoot())
+    setPortalRoot(ensurePopupRoot(triggerRef.current))
   }, [])
 
   const setPickerOpen = (nextOpen: boolean) => {
@@ -221,10 +242,15 @@ const ColorPicker: React.FC<ColorPickerProps> = ({
       return
     }
 
-    const handlePointerDownOutside = (event: PointerEvent) => {
-      const target = event.target as Node
+    const view = triggerRef.current?.ownerDocument.defaultView ?? window
 
-      if (shouldIgnoreOutsidePointerDownRef.current?.(target)) {
+    const handlePointerDownOutside = (event: PointerEvent) => {
+      const target = event.composedPath()[0] as Node
+
+      if (
+        insidePointer.current === event ||
+        shouldIgnoreOutsidePointerDownRef.current?.(target)
+      ) {
         return
       }
 
@@ -236,10 +262,10 @@ const ColorPicker: React.FC<ColorPickerProps> = ({
       }
     }
 
-    window.addEventListener('pointerdown', handlePointerDownOutside)
+    view.addEventListener('pointerdown', handlePointerDownOutside)
 
     return () => {
-      window.removeEventListener('pointerdown', handlePointerDownOutside)
+      view.removeEventListener('pointerdown', handlePointerDownOutside)
     }
   }, [isOpen])
 
@@ -250,6 +276,8 @@ const ColorPicker: React.FC<ColorPickerProps> = ({
       return
     }
 
+    const view = triggerRef.current?.ownerDocument.defaultView ?? window
+
     const updatePanelPosition = () => {
       const triggerRect = triggerRef.current?.getBoundingClientRect()
       const panelRect = panelRef.current?.getBoundingClientRect()
@@ -258,7 +286,7 @@ const ColorPicker: React.FC<ColorPickerProps> = ({
         return
       }
 
-      const viewportHeight = window.innerHeight
+      const viewportHeight = view.innerHeight
       const panelWidth = panelRect.width || PANEL_WIDTH
       const panelHeight = panelRect.height
       const rootPanelRect = rootRef.current
@@ -283,12 +311,12 @@ const ColorPicker: React.FC<ColorPickerProps> = ({
     }
 
     updatePanelPosition()
-    window.addEventListener('resize', updatePanelPosition)
-    window.addEventListener('scroll', updatePanelPosition, true)
+    view.addEventListener('resize', updatePanelPosition)
+    view.addEventListener('scroll', updatePanelPosition, true)
 
     return () => {
-      window.removeEventListener('resize', updatePanelPosition)
-      window.removeEventListener('scroll', updatePanelPosition, true)
+      view.removeEventListener('resize', updatePanelPosition)
+      view.removeEventListener('scroll', updatePanelPosition, true)
     }
   }, [isOpen])
 
@@ -426,6 +454,8 @@ const ColorPicker: React.FC<ColorPickerProps> = ({
     onChangeStartRef.current?.()
     updateDragTarget(target, toPointerPosition(event))
 
+    const view = triggerRef.current?.ownerDocument.defaultView ?? window
+
     const handlePointerMove = (pointerEvent: PointerEvent) => {
       const currentTarget = dragTargetRef.current
 
@@ -437,20 +467,20 @@ const ColorPicker: React.FC<ColorPickerProps> = ({
     }
 
     const handlePointerUp = () => {
-      window.removeEventListener('pointermove', handlePointerMove)
-      window.removeEventListener('pointerup', handlePointerUp)
-      window.removeEventListener('pointercancel', handlePointerUp)
+      view.removeEventListener('pointermove', handlePointerMove)
+      view.removeEventListener('pointerup', handlePointerUp)
+      view.removeEventListener('pointercancel', handlePointerUp)
       endDrag()
     }
 
-    window.addEventListener('pointermove', handlePointerMove)
-    window.addEventListener('pointerup', handlePointerUp)
-    window.addEventListener('pointercancel', handlePointerUp)
+    view.addEventListener('pointermove', handlePointerMove)
+    view.addEventListener('pointerup', handlePointerUp)
+    view.addEventListener('pointercancel', handlePointerUp)
 
     pointerCleanupRef.current = () => {
-      window.removeEventListener('pointermove', handlePointerMove)
-      window.removeEventListener('pointerup', handlePointerUp)
-      window.removeEventListener('pointercancel', handlePointerUp)
+      view.removeEventListener('pointermove', handlePointerMove)
+      view.removeEventListener('pointerup', handlePointerUp)
+      view.removeEventListener('pointercancel', handlePointerUp)
     }
   }
 
@@ -610,6 +640,9 @@ const ColorPicker: React.FC<ColorPickerProps> = ({
         ? createPortal(
             <div
               data-color-picker="popover"
+              onPointerDownCapture={(event) => {
+                insidePointer.current = event.nativeEvent
+              }}
               ref={panelRef}
               className="fixed z-50 w-[256px] overflow-y-auto rounded-xl border border-[#3E3E3E] bg-[#252627] text-white shadow-[0_20px_50px_rgba(0,0,0,0.45)]"
               style={{
@@ -625,39 +658,49 @@ const ColorPicker: React.FC<ColorPickerProps> = ({
               {!hideDefaultPanel ? (
                 <>
                   <div className={`${header ? '' : 'pt-3'} pb-3`}>
-                    <ColorPickerSaturation
-                      hsva={hsva}
-                      hueColor={hueColor}
-                      onPointerDown={(event) => beginDrag('saturation', event)}
-                      saturationRef={saturationRef}
-                      data-testid={
-                        dataTestId ? `${dataTestId}-saturation` : undefined
-                      }
-                    />
+                    {renderControls({
+                      saturation: (
+                        <ColorPickerSaturation
+                          hsva={hsva}
+                          hueColor={hueColor}
+                          onPointerDown={(event) =>
+                            beginDrag('saturation', event)
+                          }
+                          saturationRef={saturationRef}
+                          data-testid={
+                            dataTestId ? `${dataTestId}-saturation` : undefined
+                          }
+                        />
+                      ),
 
-                    <ColorPickerSliders
-                      showAlpha={showAlpha}
-                      hsva={hsva}
-                      currentRgba={currentRgba}
-                      hueRef={hueRef}
-                      alphaRef={alphaRef}
-                      onEyeDropper={handleEyeDropper}
-                      onSliderPointerDown={(type, event) =>
-                        beginDrag(type, event)
-                      }
-                      data-testid={dataTestId}
-                    />
+                      sliders: (
+                        <ColorPickerSliders
+                          showAlpha={showAlpha}
+                          hsva={hsva}
+                          currentRgba={currentRgba}
+                          hueRef={hueRef}
+                          alphaRef={alphaRef}
+                          onEyeDropper={handleEyeDropper}
+                          onSliderPointerDown={(type, event) =>
+                            beginDrag(type, event)
+                          }
+                          data-testid={dataTestId}
+                        />
+                      ),
 
-                    <ColorPickerInputGroup
-                      colorFormat={colorFormat}
-                      formatOptions={formatOptions as string[]}
-                      onFormatChange={onFormatChange}
-                      values={draftValues}
-                      onChange={handleInputChange}
-                      onBlur={handleInputBlur}
-                      showAlpha={showAlpha && colorFormat !== 'css'}
-                      data-testid={dataTestId}
-                    />
+                      channels: (
+                        <ColorPickerInputGroup
+                          colorFormat={colorFormat}
+                          formatOptions={formatOptions as string[]}
+                          onFormatChange={onFormatChange}
+                          values={draftValues}
+                          onChange={handleInputChange}
+                          onBlur={handleInputBlur}
+                          showAlpha={showAlpha && colorFormat !== 'css'}
+                          data-testid={dataTestId}
+                        />
+                      )
+                    })}
                   </div>
                 </>
               ) : null}

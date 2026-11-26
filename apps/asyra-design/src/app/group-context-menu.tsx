@@ -1,3 +1,4 @@
+import { UIItems, useLayoutPart } from '../workspace/ui-parts'
 import { flushSync } from 'react-dom'
 import { ContextMenu } from '@asyra/design-system'
 import type {
@@ -26,6 +27,8 @@ export const GroupContextMenu = ({
   descriptors,
   onDismiss
 }: GroupContextMenuProps) => {
+  const layout = useLayoutPart('canvasMenu')
+
   if (!session) {
     return null
   }
@@ -34,6 +37,21 @@ export const GroupContextMenu = ({
     <ContextMenu
       data-context-menu="canvas"
       aria-label="Canvas commands"
+      inline={Boolean(
+        layout?.target('canvasMenu') || layout?.target('workspace')
+      )}
+      composeItems={
+        layout &&
+        ((buttons) => (
+          <UIItems
+            id="canvasMenu"
+            parts={{
+              groupCommand: buttons.get('group'),
+              ungroupCommand: buttons.get('ungroup')
+            }}
+          />
+        ))
+      }
       items={descriptors.map((descriptor) => ({
         id: descriptor.id,
         label: descriptor.label,

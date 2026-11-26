@@ -41,7 +41,10 @@ export async function buildCommonTypes(outDir) {
           rootDir: path.join(app, 'src'),
           outDir: temp
         },
-        files: [path.join(app, 'src/workspace/common.ts')],
+        files: [
+          path.join(app, 'src/workspace/common.ts'),
+          path.join(app, 'src/workspace/component-registry.ts')
+        ],
         include: []
       })
     )
@@ -51,24 +54,28 @@ export async function buildCommonTypes(outDir) {
       { stdio: 'inherit' }
     )
     // Ship the same standalone catalog in the host SDK and embedded app.
-    const registry = 'inspector-registry'
-    const source = await readFile(
-      path.join(app, 'src/properties', registry + '.ts'),
-      'utf8'
-    )
-    const ts = require('typescript')
-    const { outputText } = ts.transpileModule(source, {
-      compilerOptions: {
-        target: ts.ScriptTarget.ES2022,
-        module: ts.ModuleKind.ESNext
-      }
-    })
+    for (const [folder, registry] of [
+      ['properties', 'inspector-registry'],
+      ['workspace', 'component-registry']
+    ]) {
+      const source = await readFile(
+        path.join(app, 'src', folder, registry + '.ts'),
+        'utf8'
+      )
+      const ts = require('typescript')
+      const { outputText } = ts.transpileModule(source, {
+        compilerOptions: {
+          target: ts.ScriptTarget.ES2022,
+          module: ts.ModuleKind.ESNext
+        }
+      })
 
-    await writeFile(path.join(outDir, registry + '.js'), outputText)
-    await copyFile(
-      path.join(temp, 'properties', registry + '.d.ts'),
-      path.join(outDir, registry + '.d.ts')
-    )
+      await writeFile(path.join(outDir, registry + '.js'), outputText)
+      await copyFile(
+        path.join(temp, folder, registry + '.d.ts'),
+        path.join(outDir, registry + '.d.ts')
+      )
+    }
 
     const tsconfigFilePath = path.join(temp, 'rollup.json')
 

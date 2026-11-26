@@ -1,3 +1,4 @@
+import { UIItems } from '../../workspace/ui-parts'
 import { type FillGradientType } from '@asyra/utils'
 
 interface GradientTypeControlsProps {
@@ -34,30 +35,41 @@ const GradientTypeControls = ({
 }: GradientTypeControlsProps) => (
   <div className="flex items-center gap-2 px-3">
     <div className="flex flex-1 items-center gap-2">
-      <select
-        value={value}
-        onChange={(event) => onChange(event.target.value as FillGradientType)}
-        className="min-w-24 flex-1 rounded-md border border-[#3a3a3a] bg-transparent px-2 py-1.5 text-[10px] uppercase tracking-[0.08em] text-white outline-none transition-colors hover:border-[#555] focus:border-[#0d99ff]"
-        data-gradient-field="type"
-        data-testid={`prop-fill-gradient-type-${index}`}
-      >
-        {options.map((gradientType) => (
-          <option key={gradientType} value={gradientType}>
-            {gradientType}
-          </option>
-        ))}
-      </select>
-      <button
-        type="button"
-        onClick={onFlip}
-        className="icon-btn text-white"
-        data-gradient-action="flip"
-        data-testid={`prop-fill-gradient-flip-${index}`}
-        aria-label="Flip gradient"
-        title="Flip gradient"
-      >
-        <FlipIcon />
-      </button>
+      <UIItems
+        id="gradientType"
+        parts={{
+          gradientTypeSelect: (
+            <select
+              value={value}
+              onChange={(event) =>
+                onChange(event.target.value as FillGradientType)
+              }
+              className="min-w-24 flex-1 rounded-md border border-[#3a3a3a] bg-transparent px-2 py-1.5 text-[10px] uppercase tracking-[0.08em] text-white outline-none transition-colors hover:border-[#555] focus:border-[#0d99ff]"
+              data-gradient-field="type"
+              data-testid={`prop-fill-gradient-type-${index}`}
+            >
+              {options.map((gradientType) => (
+                <option key={gradientType} value={gradientType}>
+                  {gradientType}
+                </option>
+              ))}
+            </select>
+          ),
+          flipGradient: (
+            <button
+              type="button"
+              onClick={onFlip}
+              className="icon-btn text-white"
+              data-gradient-action="flip"
+              data-testid={`prop-fill-gradient-flip-${index}`}
+              aria-label="Flip gradient"
+              title="Flip gradient"
+            >
+              <FlipIcon />
+            </button>
+          )
+        }}
+      />
     </div>
   </div>
 )

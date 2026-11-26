@@ -1,3 +1,4 @@
+import { UIItems } from '../workspace/ui-parts'
 import type { ReactNode } from 'react'
 
 const AppearanceSection = ({
@@ -18,13 +19,27 @@ const AppearanceSection = ({
     className="grid grid-cols-1 w-full pb-2"
     data-testid={testId}
   >
-    <div className="group flex items-center justify-between h-10 pl-4 pr-2 text-white">
-      <span className="text-[11px] font-medium opacity-60 tracking-wider">
-        {label}
-      </span>
-      {actions}
-    </div>
-    {children}
+    <UIItems
+      id="fills"
+      parts={{
+        fillHeading: (
+          <div className="group flex items-center justify-between h-10 pl-4 pr-2 text-white">
+            <UIItems
+              id="fillHeading"
+              parts={{
+                fillLabel: (
+                  <span className="text-[11px] font-medium opacity-60 tracking-wider">
+                    {label}
+                  </span>
+                ),
+                addFill: actions
+              }}
+            />
+          </div>
+        ),
+        fillRecords: children
+      }}
+    />
   </div>
 )
 

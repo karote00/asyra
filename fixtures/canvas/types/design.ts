@@ -114,3 +114,15 @@ const tools = await attachDesignTools(surface)
 
 tools.setTool('select')
 await tools.undo()
+
+const drawingTools = editor.getUI('drawingTools')
+
+drawingTools.setItems([
+  drawingTools.items.selectToolIcon,
+  drawingTools.items.penToolIcon
+])
+editor.getUI('action.revert').mount(document.createElement('section'))
+// @ts-expect-error Only actions registered with this editor have buttons.
+editor.getUI('action.unknown')
+// @ts-expect-error A section only accepts its own native items.
+drawingTools.insertAt(0, 'addFill')
