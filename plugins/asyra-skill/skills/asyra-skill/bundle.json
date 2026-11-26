@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pluginVersion": "0.1.15",
+  "pluginVersion": "0.1.16",
   "inputs": {
     "apps/starter-app/docs/ARCHITECTURE.md": "ab6b259b417ebf36d7c37012aeaa5b522025746a818996088bd6dda43433cbb8",
     "apps/starter-app/docs/ONBOARDING.md": "4b26fcecca29027c2cba3a5756914b495019368459704f8756a8a43cb5618242",
@@ -31,7 +31,7 @@
     "docs/public/reference/packages/preset.md": "cedb22127fec0edb3b9d11ee683796d81c13c19f42d8c10e6f0d0dc66850affd",
     "docs/public/reference/packages/props-manager.md": "28f044123e1b6f60c18a4f39910a2560f4301026e8850f1c4e91557fa5d5ac8e",
     "docs/public/reference/packages/reactive-events.md": "534d53e7eae5e7f38ddbf2977688a63af2857553e1246ef4f77d5b9eb40df275",
-    "docs/public/reference/packages/render-engine-pixi.md": "6b1da10bd572467992694c5e0ae923f7d803b97db81d494b35b37b4c2a69c34f",
+    "docs/public/reference/packages/render-engine-pixi.md": "bda603adab842985f9e6e646ac357c9b582ab61bb480eb773b3980e77ed74c4d",
     "docs/public/reference/packages/render-engine.md": "246eafa4d7dbd2750ec25680fbe42424a78fb392b71f0d4c7334b1980a16a713",
     "docs/public/reference/packages/render.md": "4365de7999d88314d240e8240083c3636217fdad4443b515ad7bab85b57c8baf",
     "docs/public/reference/packages/scene-tree.md": "4f8bc35fd5435934068a2ed81aa578f788edb6d866b2495cf83ba852deb74231",
@@ -67,11 +67,11 @@
     "@asyra/utils": "0.5.2"
   },
   "files": {
-    ".codex-plugin/plugin.json": "78aec0ef150303b9ef0e741b1b6e937f76a52bfd1822c28b9cc9771a542a13e7",
-    ".claude-plugin/plugin.json": "811a514ac74fea008479df74c7340746fca24a06a0c01284c01611bf7d5a538d",
-    "bundle.config.json": "590ec4734050bd6ee60fe836401b2c74d6f334690d91ec93d3a7b3daa301f9f0",
-    "README.md": "45a08937fca3c7417bc4bf2c265091682d739be493e4d05546346b30ea950ed7",
-    "CHANGELOG.md": "704722463b4d7e5dc8d22777c2ebb1b652934adce8eb89007c6d0105d26fb7a5",
+    ".codex-plugin/plugin.json": "3a9762e1e95c56fff6927d937cd97263d1fb2b02ded07e8ee96905c8acf8db18",
+    ".claude-plugin/plugin.json": "8d000b7f7ef461c65bb5d7a1c11735dc12059077d46d8177e2e2846f7b0e4f26",
+    "bundle.config.json": "98f8492bcd72088315b24485c76a8a20ae463ec436f45e8f23b1890e4a06c423",
+    "README.md": "d8dff137dc847b124bf9e7e987b70efdd8ecd41d3e689338baf510b2b53c9862",
+    "CHANGELOG.md": "12287711668d56b76e3665c2d1b6a6b7555554adc4c0bc7bc559d4451e725f17",
     "assets/icon.svg": "a7fd594de4944f6cc1daf3ef674efeb10a66e839084bebcbca0414591d96fb82",
     "skills/asyra-skill/SKILL.md": "d4b5948e79a8e409433fca9199bd060268ed014f94693d5c7c01073cbff3ed10",
     "skills/asyra-skill/references/apps/starter-app/docs/ARCHITECTURE.md": "02e64d33b75092dade4e7682c4ee08927371af45b402c100db95ccade5962244",
@@ -103,7 +103,7 @@
     "skills/asyra-skill/references/docs/public/reference/packages/preset.md": "4844056a915f588543493b2a6d9b94c01be415b3b5be2a630277857394f52e1c",
     "skills/asyra-skill/references/docs/public/reference/packages/props-manager.md": "e8f3d08d2731339518a0a6ae2ac221f9afcfef3fc605a04029c571c7189d105e",
     "skills/asyra-skill/references/docs/public/reference/packages/reactive-events.md": "5cbacb6835f61b99d2a6af251ec8fbe781e3f42df23a9d6b8a004c5f528e7735",
-    "skills/asyra-skill/references/docs/public/reference/packages/render-engine-pixi.md": "5ed7c5430528dceb06e0f4257352af5c6bef08979140e3d2275ab49f46aa0d14",
+    "skills/asyra-skill/references/docs/public/reference/packages/render-engine-pixi.md": "97fb00b0a5d33997f6df173b2f4e91de6cbfa6b0d9087e1c0fe64413b91e3e18",
     "skills/asyra-skill/references/docs/public/reference/packages/render-engine.md": "6e1018dbe4abc512cd28b7c36281d54e00b57a232dcbf9f0c5d3ce3369b931f2",
     "skills/asyra-skill/references/docs/public/reference/packages/render.md": "f9fbd88cc0e1189259bdba0061be0d61f1142c915a5b48552c2cec97dfac1f60",
     "skills/asyra-skill/references/docs/public/reference/packages/scene-tree.md": "959aab4971bebddd262f45018b3ca58fc4c8a73c1030999ff2d08ef4c46a4e5e",
@@ -117,5 +117,5 @@
     "skills/asyra-skill/references/docs/public/start/extend-with-ai.md": "56d416c75032be85afbc4e1cbaf0638b03d9ab1505e24f9f154706f3297dbce5",
     "skills/asyra-skill/references/docs/public/start/preset-2d.md": "2fa2701ad59b387de89ffa6d26451cce25f51ab86741101040e8b8f831b9496d"
   },
-  "contentDigest": "502ab9868f484053967cbf5dba9ca35c31df8c678eddf443d794e4f09dbee01c"
+  "contentDigest": "2b8bbf8ca518b8edfbc40fe16aa3d5102617041375e39f0e71ad7985fbf56dcb"
 }
