@@ -168,3 +168,5 @@ export const common = {
 }
 
 export type { WorkspaceNode } from './nodes'
+
+export type { InspectorRowId } from '../properties/inspector-contract'

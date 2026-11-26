@@ -1,3 +1,4 @@
+import type { InspectorRefs } from '../inspector-contract'
 import { featureEnabled } from '../../workspace-features'
 import { TEXT_COMPONENT_TYPE } from '@asyra/preset'
 import Header from '../header'
@@ -30,8 +31,10 @@ const ElementAppearance = ({ elementId }: { elementId: string }) => {
 
 const ElementPropertiesPanel = ({
   title,
-  dimensionsUnavailable
+  dimensionsUnavailable,
+  inspectorRefs
 }: {
+  inspectorRefs?: InspectorRefs
   title: string
   dimensionsUnavailable?: boolean
 }) => {
@@ -41,17 +44,27 @@ const ElementPropertiesPanel = ({
     return null
   }
 
+  const dimension = dimensionsUnavailable ? (
+    <p>Size editing is unavailable for this selection.</p>
+  ) : (
+    <Dimension />
+  )
+
   return (
     <div className="flex flex-col">
       {/* Design section: Position, Dimension, Rotation */}
       <Header label={title} />
       {featureEnabled('geometry') && (
         <div className="grid grid-cols-1 w-full pb-2">
-          <Position />
-          {dimensionsUnavailable ? (
-            <p>Size editing is unavailable for this selection.</p>
+          {inspectorRefs?.positionRow ? (
+            <div ref={inspectorRefs.positionRow} />
           ) : (
-            <Dimension />
+            <Position />
+          )}
+          {inspectorRefs?.dimensionRow ? (
+            <div ref={inspectorRefs.dimensionRow} />
+          ) : (
+            dimension
           )}
           <Rotation />
         </div>

@@ -37,12 +37,17 @@ type MountedEditor = NonNullable<DesignElement['editor']>
 /** Called once for each ready editor, including the successor after changing boards. */
 export function AsyraDesign({
   onMount,
+  storageKey,
+  options,
   ...props
 }: DesignElementProps & {
+  /** Automatically save and restore this board in the browser. */
+  storageKey?: string
   onMount?: (editor: MountedEditor) => void
 }) {
   return createElement(designTag, {
     ...props,
+    options: storageKey === undefined ? options : { ...options, storageKey },
     'ondesign-ready':
       onMount && ((event: CustomEvent<MountedEditor>) => onMount(event.detail))
   })

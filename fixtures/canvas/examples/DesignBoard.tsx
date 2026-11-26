@@ -7,5 +7,5 @@ export default function DesignBoard() {
 export { AsyraDesign as Board }
 
 export function SavedBoard() {
-  return <AsyraDesign options={{ storageKey: 'my-board' }} />
+  return <AsyraDesign storageKey="my-board" />
 }

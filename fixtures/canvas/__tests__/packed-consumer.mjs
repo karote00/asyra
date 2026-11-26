@@ -1,3 +1,4 @@
+import { installDesign } from './first-install.mjs'
 import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
 import { cp, mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises'
@@ -14,7 +15,7 @@ export async function withConsumer(
   packages,
   entry,
   assertions,
-  { development = false } = {}
+  { development = false, firstInstall = false } = {}
 ) {
   if (entry === 'common.js' || entry === 'tool-layout.js') {
     packages = [...packages, 'sdk/design-ui']
@@ -65,8 +66,18 @@ export async function withConsumer(
     '--ignore-scripts',
     '--no-audit',
     '--no-fund',
-    ...archives
+    ...archives.filter(
+      (_file, index) => !firstInstall || !packages[index].startsWith('sdk/')
+    )
   ])
+  if (firstInstall) {
+    await installDesign(
+      cwd,
+      archives.filter((_file, index) => packages[index].startsWith('sdk/')),
+      path.join(scratch, 'npm-cache')
+    )
+  }
+
   const { packages: installed } = JSON.parse(
     await readFile(path.join(cwd, 'package-lock.json'), 'utf8')
   )
@@ -83,11 +94,14 @@ export async function withConsumer(
   )
   const headless = entry === 'headless.js'
   const layoutDemo = entry === 'tool-layout.js'
+  const firstBoard = entry === 'first-board.js'
 
   await cp(
     path.join(
       fixture,
-      headless || layoutDemo ? entry.replace('.js', '.html') : 'index.html'
+      headless || layoutDemo || firstBoard
+        ? entry.replace('.js', '.html')
+        : 'index.html'
     ),
     path.join(cwd, 'index.html')
   )
@@ -96,6 +110,7 @@ export async function withConsumer(
   }
 
   if (
+    firstBoard ||
     entry === 'react.js' ||
     entry === 'ui-react.js' ||
     entry === 'common.js' ||
@@ -154,12 +169,11 @@ export async function withConsumer(
       'ESNext',
       '--moduleResolution',
       'bundler',
-      'consumer.ts',
-      ...designTypeTests,
+      ...(firstInstall ? [] : ['consumer.ts', ...designTypeTests]),
       ...(entry === 'ui-react.js'
         ? ['--jsx', 'react-jsx', 'examples/PositionBoard.tsx']
         : []),
-      ...(entry === 'react.js'
+      ...(entry === 'react.js' || firstBoard
         ? ['--jsx', 'react-jsx', 'examples/DesignBoard.tsx']
         : [])
     ],

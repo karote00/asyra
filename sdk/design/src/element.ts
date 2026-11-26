@@ -100,6 +100,10 @@ if (globalThis.customElements && !globalThis.customElements.get(designTag)) {
         return
       }
 
+      if (this.#editor && previous?.uiTargets !== value?.uiTargets) {
+        this.#editor.toolGroups.setTargets(value?.uiTargets ?? {})
+      }
+
       if (
         this.#editor &&
         previous?.disabledFeatures !== value?.disabledFeatures
@@ -162,6 +166,10 @@ if (globalThis.customElements && !globalThis.customElements.get(designTag)) {
             await editor.setDisabledFeatures(
               this.options?.disabledFeatures ?? []
             )
+          }
+
+          if (initial.uiTargets !== this.options?.uiTargets) {
+            editor.toolGroups.setTargets(this.options?.uiTargets ?? {})
           }
 
           startup.signal.throwIfAborted()

@@ -1,3 +1,4 @@
+import { createInspectorRows } from './workspace/inspector-rows'
 import { registerWorkspaceNodes } from './workspace/register-nodes'
 import type { WorkspaceNode } from './workspace/nodes'
 import { createCommonSession } from './workspace/common-session'
@@ -70,6 +71,7 @@ interface WorkspaceOptions {
   collaboration?: RenderSession['collaboration']
   panels?: WorkspaceProps['panels']
   toolbar?: WorkspaceProps['toolbar']
+  inspectorRefs?: WorkspaceProps['inspectorRefs']
   slots?: WorkspaceProps['slots']
   disabledFeatures: readonly string[]
   hideUI: boolean
@@ -99,6 +101,8 @@ export function mount(options: WorkspaceOptions) {
     await options.reopen()
   }
 
+  const inspector = createInspectorRows(options.inspectorRefs ?? {})
+
   let cancel!: (error: Error) => void
   let render!: (disabled: readonly string[]) => void
   const ready = new Promise<void>((resolve, reject) => {
@@ -115,21 +119,25 @@ export function mount(options: WorkspaceOptions) {
 
     render = (disabled) =>
       root.render(
-        <DesignWorkspace
-          session={session}
-          panels={options.panels}
-          slots={options.slots}
-          disabledFeatures={disabled}
-          toolbar={
-            options.toolbar && {
-              ...options.toolbar,
-              actions: options.toolbar.actions.filter(
-                ({ id }) => !disabled.includes(id)
-              )
+        <>
+          <DesignWorkspace
+            inspectorRefs={options.inspectorRefs}
+            session={session}
+            panels={options.panels}
+            slots={options.slots}
+            disabledFeatures={disabled}
+            toolbar={
+              options.toolbar && {
+                ...options.toolbar,
+                actions: options.toolbar.actions.filter(
+                  ({ id }) => !disabled.includes(id)
+                )
+              }
             }
-          }
-          onReset={reset}
-        />
+            onReset={reset}
+          />
+          {inspector.render(disabled)}
+        </>
       )
     render(options.disabledFeatures)
   })
@@ -137,6 +145,7 @@ export function mount(options: WorkspaceOptions) {
   let closing: Promise<void> | undefined
 
   return {
+    mountInspectorRow: inspector.mount,
     ready: ready.then(createWorkspaceObservations),
 
     async updateFeatures(ids: readonly string[]) {

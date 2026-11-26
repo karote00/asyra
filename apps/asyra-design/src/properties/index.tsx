@@ -1,3 +1,4 @@
+import type { InspectorRefs } from './inspector-contract'
 import { supportsSizeEdits } from '../common-apis/element/geometry-policy'
 import { featureEnabled } from '../workspace-features'
 import React from 'react'
@@ -58,8 +59,10 @@ const getElementSelectionLabel = (
 }
 
 const Properties = ({
-  slotRef
+  slotRef,
+  inspectorRefs
 }: {
+  inspectorRefs?: InspectorRefs
   slotRef?: (node: HTMLDivElement | null) => void
 }) => {
   const elementSelection = useElementSelection()
@@ -85,6 +88,7 @@ const Properties = ({
     panelContent = (
       <ElementPropertiesPanel
         title={title}
+        inspectorRefs={inspectorRefs}
         dimensionsUnavailable={[...elementSelection].some(
           (id) => !supportsSizeEdits(elementDataMap[id]?.type)
         )}

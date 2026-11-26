@@ -1,65 +1,14 @@
-import { Input, PropertyControl } from '@asyra/design-system'
 import { useX, useY } from '../providers'
-import { useCallback } from 'react'
-import { updateSelectedElementProperties } from '../controllers/scene-tree'
-import { formatInputNumber, parseFiniteInputNumber } from './number-input'
+import { GeometryInput } from './geometry-input'
 
-const Position = () => {
+export default function Position() {
   const x = useX()
   const y = useY()
 
-  const handleChangeX = useCallback(
-    (newValue: string) => {
-      const nextValue = parseFiniteInputNumber(newValue)
-
-      if (nextValue === null) {
-        return false
-      }
-
-      updateSelectedElementProperties('x', nextValue)
-
-      return true
-    },
-    [updateSelectedElementProperties]
-  )
-
-  const handleChangeY = useCallback(
-    (newValue: string) => {
-      const nextValue = parseFiniteInputNumber(newValue)
-
-      if (nextValue === null) {
-        return false
-      }
-
-      updateSelectedElementProperties('y', nextValue)
-
-      return true
-    },
-    [updateSelectedElementProperties]
-  )
-
   return (
     <div className="grid grid-cols-2 items-center gap-2 pl-4 pr-2 h-8 min-h-8">
-      <PropertyControl>
-        <Input
-          value={formatInputNumber(x)}
-          prefix="X"
-          onChange={handleChangeX}
-          noOutline
-          data-testid="prop-x"
-        />
-      </PropertyControl>
-      <PropertyControl>
-        <Input
-          value={formatInputNumber(y)}
-          prefix="Y"
-          onChange={handleChangeY}
-          noOutline
-          data-testid="prop-y"
-        />
-      </PropertyControl>
+      <GeometryInput field="x" label="X" value={x} />
+      <GeometryInput field="y" label="Y" value={y} />
     </div>
   )
 }
-
-export default Position

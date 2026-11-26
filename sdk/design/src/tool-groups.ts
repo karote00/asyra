@@ -3,7 +3,8 @@ import type {
   WorkspaceTool,
   WorkspaceOptions,
   WorkspaceExtension,
-  ToolGroup,
+  WorkspaceUIGroup,
+  InspectorRowId,
   ToolPlacement,
   ToolLayout,
   ToolGroups,
@@ -23,12 +24,16 @@ export function createToolGroups(
   options: WorkspaceOptions<string>,
   hostDocument: Document,
   getEditor: () => DesignEditor<string, WorkspaceTool>,
+  mountInspectorRow: (id: InspectorRowId, container: HTMLElement) => () => void,
   getFrame: () => HTMLIFrameElement
 ) {
-  const groups = new Map<string, ToolGroup<string>>()
+  const groups = new Map<string, WorkspaceUIGroup<string>>()
+  const inspectorHomes = new Map<string, HTMLElement>()
+  const inspectorRefs: Partial<
+    Record<InspectorRowId, (element: HTMLElement | null) => void>
+  > = {}
   const owners = new Map<string, string>()
   const outlets = new Map<ToolPlacement, { node: HTMLElement }>()
-  const targets = new Map<string, HTMLElement>()
   const manual = new Map<string, { container: HTMLElement }>()
   const mounted = new Map<
     string,
@@ -44,7 +49,10 @@ export function createToolGroups(
         !group.id?.trim() ||
         groups.has(group.id) ||
         !placements.includes(group.placement) ||
-        typeof group.mount !== 'function'
+        ('kind' in group
+          ? group.kind !== 'inspector' ||
+            !['positionRow', 'dimensionRow'].includes(group.id)
+          : typeof group.mount !== 'function')
       ) {
         throw new TypeError(
           'Expected a unique tool group ID, placement and mount function'
@@ -52,6 +60,18 @@ export function createToolGroups(
       }
 
       groups.set(group.id, group)
+      if ('kind' in group) {
+        inspectorRefs[group.id] = (element) => {
+          if (element) {
+            inspectorHomes.set(group.id, element)
+          } else {
+            inspectorHomes.delete(group.id)
+          }
+
+          render()
+        }
+      }
+
       if (extension.id) {
         owners.set(group.id, extension.id)
       }
@@ -60,23 +80,91 @@ export function createToolGroups(
 
   const hostElement = hostDocument.defaultView?.HTMLElement
 
-  // Resolve explicit hosts before claiming the editor or mounting any controls.
-  for (const [id, targetId] of Object.entries(options.uiTargets ?? {})) {
-    if (!groups.has(id)) {
-      throw new TypeError('Unknown UI group in uiTargets: ' + id)
+  function resolveTargets(input: Readonly<Record<string, string>> = {}) {
+    const targets = new Map<string, HTMLElement>()
+
+    for (const [id, targetId] of Object.entries(input)) {
+      if (!groups.has(id)) {
+        throw new TypeError('Unknown UI group in uiTargets: ' + id)
+      }
+
+      const target =
+        typeof targetId === 'string' && hostDocument.getElementById(targetId)
+
+      if (!hostElement || !(target instanceof hostElement)) {
+        throw new TypeError('Missing HTML target for ' + id + ': ' + targetId)
+      }
+
+      targets.set(id, target)
     }
 
-    const target =
-      typeof targetId === 'string' && hostDocument.getElementById(targetId)
-
-    if (!hostElement || !(target instanceof hostElement)) {
-      throw new TypeError('Missing HTML target for ' + id + ': ' + targetId)
-    }
-
-    targets.set(id, target)
+    return targets
   }
 
+  function resetPlacements(
+    layout: Layout,
+    ids: ReadonlySet<string>,
+    targets: ReadonlyMap<string, HTMLElement>
+  ) {
+    const preference = dockedLayout()
+
+    for (const slot of placements) {
+      preference[slot] = layout[slot].filter((id) => !ids.has(id))
+    }
+
+    const floating = Object.fromEntries(
+      Object.entries(layout.floating ?? {}).filter(([id]) => !ids.has(id))
+    )
+
+    return resolveLayout(groups, { ...preference, floating }, targets)
+  }
+
+  let targets = resolveTargets(options.uiTargets)
   let layout = resolveLayout(groups, options.toolLayout, targets)
+
+  if (targets.size) {
+    layout = resetPlacements(layout, new Set(targets.keys()), targets)
+  }
+
+  function setTargets(input: Readonly<Record<string, string>>) {
+    if (closed) {
+      throw new Error('Design workspace is unavailable')
+    }
+
+    const next = resolveTargets(input)
+    const changed = new Set(
+      [...targets.keys(), ...next.keys()].filter(
+        (id) => targets.get(id) !== next.get(id)
+      )
+    )
+
+    if (!changed.size) {
+      return
+    }
+
+    const previous = { targets, layout, manual: new Map(manual) }
+
+    targets = next
+    layout = resetPlacements(layout, changed, targets)
+    for (const id of changed) {
+      manual.delete(id)
+    }
+
+    try {
+      render()
+    } catch (error) {
+      targets = previous.targets
+      layout = previous.layout
+      for (const [id, binding] of previous.manual) {
+        manual.set(id, binding)
+      }
+
+      render()
+      throw error
+    }
+
+    options.onToolLayoutChange?.(globalThis.structuredClone(layout))
+  }
 
   function detach(id: string) {
     const entry = mounted.get(id)
@@ -131,7 +219,10 @@ export function createToolGroups(
     node.append(container)
     host.append(node)
     try {
-      const unmount = group.mount({ container, editor: getEditor() })
+      const unmount =
+        'kind' in group
+          ? mountInspectorRow(group.id, container)
+          : group.mount({ container, editor: getEditor() })
 
       if (unmount !== undefined && typeof unmount !== 'function') {
         throw new TypeError('Expected tool group cleanup')
@@ -164,8 +255,12 @@ export function createToolGroups(
       let index = 0
 
       for (const id of ids) {
+        const dock =
+          slot === 'properties.top'
+            ? (inspectorHomes.get(id) ?? outletHost)
+            : outletHost
         const host = movable
-          ? outletHost
+          ? dock
           : (manual.get(id)?.container ?? targets.get(id))
         const entry = mounted.get(id)
 
@@ -211,9 +306,8 @@ export function createToolGroups(
             host.append(node)
           }
         } else if (movable) {
-          const before = host.children[index] ?? null
-
-          index++
+          const before =
+            host.children[host === outletHost ? index++ : 0] ?? null
 
           if (before !== node) {
             host.insertBefore(node, before)
@@ -359,6 +453,7 @@ export function createToolGroups(
   }
 
   return {
+    inspectorRefs,
     refs: groups.size
       ? Object.fromEntries(
           slots.map((slot) => [
@@ -371,6 +466,7 @@ export function createToolGroups(
       getLayout: () => globalThis.structuredClone(layout),
 
       setLayout,
+      setTargets,
       move,
       float,
 
@@ -412,6 +508,12 @@ export function createToolGroups(
 
           manual.delete(id)
           if (layout.manual.includes(id)) {
+            if (!targets.has(id) && Object.hasOwn(inspectorRefs, id)) {
+              move(id, 'properties.top')
+
+              return
+            }
+
             render()
           }
         }

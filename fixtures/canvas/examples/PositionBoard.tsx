@@ -1,16 +1,17 @@
-import { positionRow } from '@asyra/design-ui'
+import { dimensionRow, positionRow } from '@asyra/design-ui'
 import { Board } from './DesignBoard'
 
-export function PositionBoard() {
+export function PositionBoard({
+  targets = { [positionRow.id]: 'my-toolbar' }
+}: {
+  targets?: Record<string, string>
+}) {
   return (
     <>
       <aside id="my-toolbar" />
+      <aside id="size-toolbar" />
       <Board
-        options={{
-          hideUI: true,
-          ui: [positionRow],
-          uiTargets: { [positionRow.id]: 'my-toolbar' }
-        }}
+        options={{ ui: [positionRow, dimensionRow], uiTargets: targets }}
       />
     </>
   )

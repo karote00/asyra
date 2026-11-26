@@ -5,7 +5,7 @@ import type {
   WorkspaceFeature,
   WorkspaceTool
 } from './features.js'
-import type { common, WorkspaceNode } from './common.js'
+import type { common, InspectorRowId, WorkspaceNode } from './common.js'
 import type { WorkspaceEditingTools } from './workspace-tools.js'
 
 export interface Rectangle {
@@ -93,7 +93,19 @@ export interface ToolGroup<Id extends string = string> {
   }): undefined | (() => void)
 }
 
+export type { InspectorRowId }
+export interface InspectorRow {
+  readonly kind: 'inspector'
+  readonly id: InspectorRowId
+  readonly label: string
+  readonly placement: 'properties.top'
+}
+export type WorkspaceUIGroup<Id extends string = string> =
+  ToolGroup<Id> | InspectorRow
+
 export interface ToolGroups {
+  /** Replace external targets. Removed entries return to their default placements. */
+  setTargets(targets: Readonly<Record<string, string>>): void
   getLayout(): ToolLayout
   setLayout(layout: ToolLayout): void
   move(id: string, placement: ToolPlacement, index?: number): void
@@ -108,7 +120,7 @@ export type WorkspaceExtension<Id extends string = string> = (
   | { readonly id?: Id; readonly node?: never }
 ) & {
   actions?: Partial<Record<Id, DesignAction>>
-  ui?: readonly ToolGroup<Id>[]
+  ui?: readonly WorkspaceUIGroup<Id>[]
 }
 
 export interface WorkspaceOptions<
@@ -118,7 +130,7 @@ export interface WorkspaceOptions<
   storageKey?: string
   extensions?: readonly WorkspaceExtension<Id>[]
   /** Standalone UI groups in their default placements, in display order. */
-  ui?: readonly (ToolGroup<NoInfer<Id>> & { readonly id: Id })[]
+  ui?: readonly (WorkspaceUIGroup<NoInfer<Id>> & { readonly id: Id })[]
   /** Optional host-document element IDs, keyed by installed UI group ID. */
   uiTargets?: Readonly<Record<string, string>>
   toolLayout?: ToolLayout

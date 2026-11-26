@@ -244,7 +244,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@asyra/canvas@workspace:*, @asyra/canvas@workspace:sdk/canvas":
+"@asyra/canvas@npm:^0.1.0, @asyra/canvas@workspace:*, @asyra/canvas@workspace:sdk/canvas":
   version: 0.0.0-use.local
   resolution: "@asyra/canvas@workspace:sdk/canvas"
   dependencies:
@@ -341,7 +341,7 @@ __metadata:
   resolution: "@asyra/design@workspace:sdk/design"
   dependencies:
     "@asyra/asyra-design": "workspace:*"
-    "@asyra/canvas": "workspace:*"
+    "@asyra/canvas": "npm:^0.1.0"
     "@asyra/core": "workspace:*"
     "@asyra/persistence": "workspace:*"
     "@asyra/preset": "workspace:*"
@@ -349,7 +349,6 @@ __metadata:
     typescript: "npm:^5.7.2"
     vite: "npm:^6.4.4"
   peerDependencies:
-    "@asyra/canvas": ^0.1.0
     react: ^19.0.0
   peerDependenciesMeta:
     react:

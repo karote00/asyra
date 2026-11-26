@@ -2412,20 +2412,7 @@ test('packed Position row updates selected coordinates with one Undo and release
         const host = globalThis.document.createElement('section')
 
         globalThis.document.body.append(host)
-        const original = full.observe
-        const calls = (globalThis.calls = [])
-
-        full.observe = (key, listener) =>
-          original(key, (value) => {
-            calls.push(key)
-            listener(value)
-          })
-        try {
-          globalThis.release = full.toolGroups.mount('positionRow', host)
-        } finally {
-          full.observe = original
-        }
-
+        globalThis.release = full.toolGroups.mount('positionRow', host)
         globalThis.second = full.drawRectangle({
           x: 140,
           y: 10,
@@ -2441,8 +2428,34 @@ test('packed Position row updates selected coordinates with one Undo and release
 
       await expect(y).toHaveValue('10')
       await expect(x).toHaveAttribute('placeholder', 'MIX')
+      await x.evaluate((input) => {
+        const descriptor =
+          Object.getOwnPropertyDescriptor(input, 'value') ??
+          Object.getOwnPropertyDescriptor(Object.getPrototypeOf(input), 'value')
+
+        globalThis.positionWrites = 0
+        Object.defineProperty(input, 'value', {
+          configurable: true,
+          get: descriptor.get,
+
+          set(value) {
+            globalThis.positionWrites++
+            descriptor.set.call(input, value)
+          }
+        })
+      })
+
+      const settled = () =>
+        page.evaluate(
+          () =>
+            new Promise((resolve) =>
+              globalThis.requestAnimationFrame(() =>
+                globalThis.requestAnimationFrame(resolve)
+              )
+            )
+        )
+
       await page.evaluate(() => {
-        globalThis.calls.length = 0
         globalThis.full.common.viewport.panTo(15, 10)
         globalThis.full.common.element.updateElementProperties(
           [globalThis.second],
@@ -2453,9 +2466,13 @@ test('packed Position row updates selected coordinates with one Undo and release
           { x: 220 }
         )
       })
-      assert.deepEqual(await page.evaluate(() => globalThis.calls), [])
+      await settled()
+      assert.equal(await page.evaluate(() => globalThis.positionWrites), 0)
       await x.fill('invalid')
       await x.press('Enter')
+      await expect(x).toHaveValue('')
+      await x.fill('37')
+      await x.press('Escape')
       await expect(x).toHaveValue('')
       await x.fill('-12.5')
       await x.press('Enter')
@@ -2489,14 +2506,17 @@ test('packed Position row updates selected coordinates with one Undo and release
         ),
         220
       )
+      assert.ok(await page.evaluate(() => globalThis.positionWrites > 0))
       await page.evaluate(() => globalThis.full.select([]))
       await expect(x).toBeDisabled()
+      await page.evaluate(() => globalThis.release())
+      await settled()
       await page.evaluate(() => {
-        globalThis.release()
-        globalThis.calls.length = 0
+        globalThis.positionWrites = 0
         globalThis.full.select([globalThis.rect])
       })
-      assert.deepEqual(await page.evaluate(() => globalThis.calls), [])
+      await settled()
+      assert.equal(await page.evaluate(() => globalThis.positionWrites), 0)
       await expect(row).toHaveCount(0)
     }
   )
@@ -2515,9 +2535,14 @@ test('packed Design moves extension UI between slots and restores each profile w
 
       const action = (name) => page.getByRole('button', { name, exact: true })
 
-      await expect(slot('properties.top').locator(group)).toHaveCount(1)
       await expect(
-        slot('properties.top').locator(group).getByLabel('X', { exact: true })
+        frame.getByTestId('properties-panel').locator(group)
+      ).toHaveCount(1)
+      await expect(
+        frame
+          .getByTestId('properties-panel')
+          .locator(group)
+          .getByLabel('X', { exact: true })
       ).toBeDisabled()
       await action('Select two rectangles').click()
       await page.evaluate(() => {
@@ -2526,7 +2551,8 @@ test('packed Design moves extension UI between slots and restores each profile w
           .querySelector('main iframe')
           .contentDocument.querySelector('[data-tool-group]')
       })
-      await slot('properties.top')
+      await frame
+        .getByTestId('properties-panel')
         .getByRole('button', { name: 'Move Position' })
         .dragTo(slot('toolbar.top'))
       await expect(slot('toolbar.top').locator(group)).toHaveCount(1)
@@ -2578,7 +2604,9 @@ test('packed Design moves extension UI between slots and restores each profile w
       await page.evaluate(() => globalThis.editor.undo())
       assert.deepEqual(await positions(), [24, 150])
       await page.getByLabel('Layout profile').selectOption('Sam')
-      await expect(slot('properties.top').locator(group)).toHaveCount(1)
+      await expect(
+        frame.getByTestId('properties-panel').locator(group)
+      ).toHaveCount(1)
       await page.getByLabel('Position row placement').selectOption('manual')
       await expect(
         page.locator('#external').getByLabel('X', { exact: true })
@@ -2612,7 +2640,7 @@ test('a tool group follows the pointer onto the canvas and host page, restores i
         root.getByRole('button', { name: 'Move Position', exact: true })
 
       const floating = page.locator('[data-tool-group="positionRow"]')
-      const dock = frame.locator('[data-tool-slot="properties.top"]')
+      const dock = frame.getByTestId('properties-panel')
 
       async function drag(handle, x, y, beforeDrop) {
         const rect = await handle.boundingBox()

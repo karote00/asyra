@@ -16,7 +16,7 @@ export const slots = ['toolbar.top', 'properties.top', 'selectionMenu'] as const
 export const placements: readonly ToolPlacement[] = [...slots, 'manual']
 
 export function resolveLayout(
-  groups: ReadonlyMap<string, ToolGroup>,
+  groups: ReadonlyMap<string, Pick<ToolGroup, 'placement' | 'id'>>,
   input: ToolLayout = {},
   targets: ReadonlyMap<string, HTMLElement>
 ): Layout {

@@ -286,6 +286,7 @@ export async function mountWorkspace(
     options,
     host.ownerDocument,
     () => editor,
+    (id, container) => current().mountInspectorRow(id, container),
     () => frame
   )
 
@@ -315,6 +316,7 @@ export async function mountWorkspace(
         }),
         collaboration,
         slots: groups.refs,
+        inspectorRefs: groups.inspectorRefs,
         toolbar:
           controls === false
             ? false

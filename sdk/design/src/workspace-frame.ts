@@ -1,9 +1,14 @@
 import { getAssets } from './workspace-assets.js'
-import type { WorkspaceTools, WorkspaceEditingTools } from './index.js'
+import type {
+  InspectorRowId,
+  WorkspaceTools,
+  WorkspaceEditingTools
+} from './index.js'
 
 type Observations = Pick<WorkspaceEditingTools, 'observe' | 'observeKeys'>
 export type Commands = Omit<WorkspaceEditingTools, keyof Observations>
 export type Session = Omit<WorkspaceTools, keyof Commands> & {
+  mountInspectorRow(id: InspectorRowId, container: HTMLElement): () => void
   commands: Commands
   updateFeatures(ids: readonly string[]): Promise<void>
   destroy(): Promise<void>

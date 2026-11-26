@@ -1,3 +1,4 @@
+import type { InspectorRefs } from '../properties/inspector-contract'
 import { featureEnabled } from '../workspace-features'
 import type { ConversationDrafts } from '../ai/conversation-drafts'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -36,6 +37,7 @@ export type WorkspaceSlots = Record<
 >
 
 export interface WorkspaceProps {
+  inspectorRefs?: InspectorRefs
   slots?: WorkspaceSlots
   disabledFeatures?: readonly string[]
   session?: RenderSession
@@ -54,6 +56,7 @@ export interface WorkspaceProps {
 
 export const DesignWorkspace: React.FC<WorkspaceProps> = ({
   session,
+  inspectorRefs,
   slots,
   disabledFeatures,
   toolbar,
@@ -254,7 +257,10 @@ export const DesignWorkspace: React.FC<WorkspaceProps> = ({
       {aiOpen && conversationPanel?.(() => closeAiPanel({}))}
       {panels?.layers !== false && <Contents />}
       {panels?.properties !== false && (
-        <Properties slotRef={slots?.['properties.top']} />
+        <Properties
+          inspectorRefs={inspectorRefs}
+          slotRef={slots?.['properties.top']}
+        />
       )}
       {slots && !session?.hideUI && (
         <div

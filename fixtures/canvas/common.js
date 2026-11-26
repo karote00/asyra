@@ -1,5 +1,5 @@
 import { createDesign } from '@asyra/design'
-import { positionRow } from '@asyra/design-ui'
+import { dimensionRow, positionRow } from '@asyra/design-ui'
 
 function host() {
   const container = globalThis.document.createElement('div')
@@ -32,6 +32,7 @@ globalThis.ready = (async () => {
     restricted,
     rect,
     createDesign,
-    positionRow
+    positionRow,
+    dimensionRow
   })
 })()

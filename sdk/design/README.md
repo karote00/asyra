@@ -1,21 +1,29 @@
 # @asyra/design
 
-Place the editor directly in your page. Install `@asyra/design` and its
-`@asyra/canvas` peer.
+## Draw your first board in React
+
+In an existing React 19 project, install the Design SDK:
 
 ```sh
-npm install @asyra/design @asyra/canvas
+npm install @asyra/design
 ```
 
-### React
+Paste this component into your app:
 
 ```tsx
 import { AsyraDesign } from '@asyra/design/react'
 
 export default function App() {
-  return <AsyraDesign />
+  return <AsyraDesign storageKey="my-board" />
 }
 ```
+
+Choose Rectangle, drag on the board, then refresh. Your drawing reopens.
+Use a distinct key for each board. For a temporary board, use
+`<AsyraDesign />`. The editor fills its parent or the viewport and loads its
+own styles. Canvas is installed as a dependency of Design.
+
+### Access the editor
 
 Use `onMount` when another control needs the editor. It receives the ready
 instance once per board. Changing the board key delivers the next editor.
@@ -34,18 +42,7 @@ export function Board() {
 }
 ```
 
-### Automatically save your first board
-
-Give each local board a stable key. Draw a rectangle and reload the page.
-The editor restores the drawing from IndexedDB in this browser and origin.
-
-```tsx
-import { AsyraDesign } from '@asyra/design/react'
-
-export default function SavedBoard() {
-  return <AsyraDesign options={{ storageKey: 'my-board' }} />
-}
-```
+### Local autosave
 
 The same option works with `createDesign(container, { storageKey: 'my-board' })`.
 Committed edits, Undo and Redo are saved automatically. Reset clears the saved
@@ -192,39 +189,38 @@ action's ID, fails at startup.
 
 ### Add UI to a workspace
 
-Import the Position row from the first-party `@asyra/design-ui` package.
-List groups in `ui`. By default, Position appears at the top of the properties
-panel. To place it in your own toolbar, give that element an HTML ID and map
-the row's ID to it in `uiTargets`.
+The standard editor already includes Position and Dimension. To move those
+controls into your own page, install `@asyra/design-ui` and list the rows you
+want to place. Here Position moves into the host toolbar. Dimension stays
+beside Rotation in the inspector.
 
 ```tsx
 import { AsyraDesign } from '@asyra/design/react'
-import { positionRow } from '@asyra/design-ui'
+import { positionRow, dimensionRow } from '@asyra/design-ui'
 
 export function Board() {
   return <>
     <aside id="my-toolbar" />
     <AsyraDesign options={{
-      ui: [positionRow],
+      ui: [positionRow, dimensionRow],
       uiTargets: { [positionRow.id]: 'my-toolbar' }
     }} />
   </>
 }
 ```
 
-The same options work with `createDesign(container, options)`. Only list
-overrides in `uiTargets`. Target IDs are looked up in the host document when
-the workspace opens. An unknown group or missing element rejects startup.
-Previously saved tool layout placements take precedence over these defaults.
-Explicit external targets also work with `hideUI: true`. If a target becomes
-available later, use `editor.toolGroups.mount(positionRow.id, element)` and
-call the returned cleanup when the host removes the control.
+Each row has one set of controls and follows the current selection.
+Changing `uiTargets` moves the rows on the mounted React board. Remove an
+entry to return that row to the inspector. In JavaScript use the same
+initial options and call `editor.toolGroups.setTargets(targets)` for later
+changes. Explicit targets take precedence over saved placements when opening
+a board. Each target must already exist in the host document. An unknown
+group or missing element reports its ID. With `hideUI: true`, external
+controls stay available and default inspector slots are hidden.
 
-Position subscribes to X and Y on this editor and updates selected elements
-using the same geometry commands as the Design inspector. Disabling
-`geometry` blocks coordinate edits. Disabling `positionRow` hides this UI
-group. Use `extensions` to install combined actions, node types and tool
-groups owned by one extension.
+Use `disabledFeatures: ['geometry']` to block geometry edits; disabling an
+individual row hides that control. The editor owns Undo and Redo for edits
+from either location.
 
 ### Store a domain node
 

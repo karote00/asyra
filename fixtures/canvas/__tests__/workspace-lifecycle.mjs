@@ -332,14 +332,10 @@ for (const development of [true, false]) {
     async () => {
       await withConsumer(
         react,
-        'react.js',
+        'first-board.js',
         async (page) => {
           const board = page.locator('asyra-design')
 
-          await expect
-            .poll(() => board.evaluate((el) => Boolean(el.editor)))
-            .toBe(true)
-          await page.evaluate(() => globalThis.renderSavedBoard())
           await expect
             .poll(() =>
               board.evaluate((el) =>
@@ -370,7 +366,6 @@ for (const development of [true, false]) {
 
           assert.ok(id, 'The toolbar and pointer created a rectangle')
           await page.reload()
-          await page.evaluate(() => globalThis.renderSavedBoard())
           await expect
             .poll(() =>
               board.evaluate(
@@ -380,7 +375,7 @@ for (const development of [true, false]) {
             )
             .toBe(true)
         },
-        { development }
+        { development, firstInstall: true }
       )
     }
   )
@@ -1115,7 +1110,8 @@ test('packed Design resolves only configured UI targets and releases failed moun
       const temporary = document.createElement('div')
       const release = editor.toolGroups.mount(positionRow.id, temporary)
       const moved =
-        temporary.querySelector('fieldset') !== null && numberMounted() === 0
+        temporary.querySelector('[data-tool-group]') !== null &&
+        numberMounted() === 0
 
       release()
       const restored = numberMounted()
@@ -1157,3 +1153,162 @@ test('packed Design resolves only configured UI targets and releases failed moun
     )
   })
 })
+
+test('packed Design moving Position removes the inspector copy and retains Dimension', async () => {
+  await withConsumer(design, 'tool-layout.js', async (page) => {
+    await page.evaluate(() => globalThis.ready)
+    await page.getByRole('button', { name: 'Select two rectangles' }).click()
+    await page.getByLabel('Position row placement').selectOption('manual')
+    const inspector = page
+      .frameLocator('main iframe')
+      .getByTestId('properties-panel')
+
+    await expect(
+      page.locator('#external').getByLabel('X', { exact: true })
+    ).toBeVisible()
+    await expect(inspector.getByTestId('prop-x')).toHaveCount(0)
+    await expect(inspector.getByTestId('prop-width')).toBeVisible()
+  })
+})
+
+for (const useReact of [true, false]) {
+  test(
+    'packed Design relocates and edits both native rows with Undo in ' +
+      (useReact ? 'React' : 'plain JavaScript'),
+    async () => {
+      await withConsumer(
+        useReact ? [...react, 'sdk/design-ui'] : design,
+        useReact ? 'ui-react.js' : 'common.js',
+        async (page) => {
+          if (!useReact) {
+            await page.evaluate(async () => {
+              const { document } = globalThis
+
+              await globalThis.ready
+              for (const id of ['my-toolbar', 'size-toolbar', 'row-board']) {
+                const element = document.createElement('section')
+
+                element.id = id
+                document.body.append(element)
+              }
+
+              const e = await globalThis.createDesign(
+                document.getElementById('row-board'),
+                {
+                  ui: [globalThis.positionRow, globalThis.dimensionRow],
+                  uiTargets: { positionRow: 'my-toolbar' }
+                }
+              )
+
+              document.getElementById('row-board').editor = e
+              globalThis.showTargets = (targets) =>
+                e.toolGroups.setTargets(targets)
+            })
+          }
+
+          const host = page.locator(useReact ? 'asyra-design' : '#row-board')
+
+          await expect
+            .poll(() => host.evaluate((el) => Boolean(el.editor)))
+            .toBe(true)
+          await host.evaluate((el) => {
+            const e = el.editor
+
+            e.select([e.drawRectangle({ x: 10, y: 12, width: 80, height: 40 })])
+          })
+          const panel = host
+            .frameLocator('iframe')
+            .getByTestId('properties-panel')
+          const x = page.locator('#my-toolbar').getByTestId('prop-x')
+          const w = page.locator('#size-toolbar').getByTestId('prop-width')
+          const nativeX = panel.getByTestId('prop-x')
+          const nativeW = panel.getByTestId('prop-width')
+
+          const setTargets = (targets) =>
+            page.evaluate((targets) => globalThis.showTargets(targets), targets)
+
+          await expect(x).toHaveValue('10')
+          await expect(nativeX).toHaveCount(0)
+          await expect(nativeW).toHaveValue('80')
+          await x.evaluate((el) => {
+            el.ownerDocument.defaultView.top.originalX = el
+          })
+          await nativeW.evaluate((el) => {
+            el.ownerDocument.defaultView.top.originalW = el
+          })
+          await setTargets({
+            positionRow: 'my-toolbar',
+            dimensionRow: 'size-toolbar'
+          })
+          await expect(nativeW).toHaveCount(0)
+          await expect(w).toHaveValue('80')
+          assert.ok(
+            await w.evaluate(
+              (el) => el === el.ownerDocument.defaultView.top.originalW
+            )
+          )
+          await x.fill('24')
+          await x.press('Enter')
+          await w.fill('120')
+          await w.press('Enter')
+
+          const y = page.locator('#my-toolbar').getByTestId('prop-y')
+          const height = page
+            .locator('#size-toolbar')
+            .getByTestId('prop-height')
+
+          await y.fill('-7')
+          await y.press('Enter')
+          await height.fill('52')
+          await height.press('Enter')
+
+          const vertical = () =>
+            host.evaluate((el) =>
+              el.editor.getElementProperties(el.editor.getSelection()[0], [
+                'y',
+                'height'
+              ])
+            )
+
+          assert.deepEqual(await vertical(), { y: -7, height: 52 })
+          await host.evaluate((el) => el.editor.undo())
+          assert.deepEqual(await vertical(), { y: -7, height: 40 })
+          await host.evaluate((el) => el.editor.undo())
+          assert.deepEqual(await vertical(), { y: 12, height: 40 })
+
+          const values = () =>
+            host.evaluate((el) =>
+              el.editor.getElementProperties(el.editor.getSelection()[0], [
+                'x',
+                'width'
+              ])
+            )
+
+          assert.deepEqual(await values(), { x: 24, width: 120 })
+          await setTargets({ dimensionRow: 'size-toolbar' })
+          await expect(x).toHaveCount(0)
+          await expect(nativeX).toHaveValue('24')
+          assert.ok(
+            await nativeX.evaluate(
+              (el) => el === el.ownerDocument.defaultView.top.originalX
+            )
+          )
+          await host.evaluate((el) => el.editor.undo())
+          assert.deepEqual(await values(), { x: 24, width: 80 })
+          await expect(w).toHaveValue('80')
+          await host.evaluate((el) => el.editor.undo())
+          assert.deepEqual(await values(), { x: 10, width: 80 })
+          await setTargets({})
+          await expect(w).toHaveCount(0)
+          await expect(nativeX).toHaveCount(1)
+          await expect(nativeW).toHaveCount(1)
+          assert.ok(
+            await nativeW.evaluate(
+              (el) => el === el.ownerDocument.defaultView.top.originalW
+            )
+          )
+        }
+      )
+    }
+  )
+}
