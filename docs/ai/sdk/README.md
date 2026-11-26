@@ -19,6 +19,8 @@ For the transaction, rendering, and persistence primitives used by an SDK, follo
 the [framework contracts](../framework/README.md). For the editing commands and
 property controls that Design exposes, follow the [Design app contracts](../apps/asyra-design/README.md).
 
+For inspector customization, see [how to insert a control between X and Y](../../../sdk/design/README.md#insert-a-control-between-x-and-y) and the [row composition contract](plans/canvas-embedding-plan.md#compose-inspector-row-items).
+
 ## Verification
 
 The [Canvas SDK flow](plans/canvas/canvas.flow.json) connects the embedding

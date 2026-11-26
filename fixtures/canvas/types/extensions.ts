@@ -13,6 +13,17 @@ export async function openBoard(container: HTMLDivElement) {
     storageKey: 'approvals'
   })
 
+  const position = editor.getUI('positionRow')
+
+  position.setItems([position.items.y, position.items.x])
+  const dimension = editor.getUI('dimensionRow')
+
+  dimension.setItems([dimension.items.height, dimension.items.width])
+  // @ts-expect-error Width belongs to Dimension.
+  position.setItems([dimension.items.width])
+  // @ts-expect-error Unknown rows are not part of the template catalog.
+  editor.getUI('missingRow')
+
   editor.isFeatureEnabled('positionRow')
   await editor.setDisabledFeatures(['positionRow', 'approval'])
 

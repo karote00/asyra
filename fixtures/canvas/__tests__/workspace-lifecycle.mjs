@@ -1227,6 +1227,39 @@ for (const useReact of [true, false]) {
           const setTargets = (targets) =>
             page.evaluate((targets) => globalThis.showTargets(targets), targets)
 
+          await host.evaluate((el) => {
+            const row = el.editor.getUI('positionRow')
+            let value = 0
+            const listeners = new Set()
+
+            row.insertAfter(row.items.x, {
+              kind: 'number',
+              id: 'offset',
+              label: 'Offset',
+
+              getValue: () => value,
+
+              subscribe: (notify) => {
+                listeners.add(notify)
+
+                return () => listeners.delete(notify)
+              },
+
+              setValue: (next) => {
+                value = next
+                for (const notify of listeners) {
+                  notify()
+                }
+              }
+            })
+          })
+          const offset = page.locator('#my-toolbar').getByLabel('Offset')
+
+          await offset.fill('9')
+          await offset.press('Enter')
+          await offset.evaluate((input) => {
+            input.ownerDocument.defaultView.top.originalOffset = input
+          })
           await expect(x).toHaveValue('10')
           await expect(nativeX).toHaveCount(0)
           await expect(nativeW).toHaveValue('80')
@@ -1288,6 +1321,15 @@ for (const useReact of [true, false]) {
           await setTargets({ dimensionRow: 'size-toolbar' })
           await expect(x).toHaveCount(0)
           await expect(nativeX).toHaveValue('24')
+          const movedOffset = panel.getByLabel('Offset')
+
+          await expect(movedOffset).toHaveValue('9')
+          assert.ok(
+            await movedOffset.evaluate(
+              (input) =>
+                input === input.ownerDocument.defaultView.top.originalOffset
+            )
+          )
           assert.ok(
             await nativeX.evaluate(
               (el) => el === el.ownerDocument.defaultView.top.originalX

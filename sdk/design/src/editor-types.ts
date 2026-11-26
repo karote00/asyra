@@ -5,7 +5,13 @@ import type {
   WorkspaceFeature,
   WorkspaceTool
 } from './features.js'
-import type { common, InspectorRowId, WorkspaceNode } from './common.js'
+import type {
+  common,
+  InspectorRowId,
+  InspectorFields,
+  InspectorItem,
+  WorkspaceNode
+} from './common.js'
 import type { WorkspaceEditingTools } from './workspace-tools.js'
 
 export interface Rectangle {
@@ -93,7 +99,13 @@ export interface ToolGroup<Id extends string = string> {
   }): undefined | (() => void)
 }
 
-export type { InspectorRowId }
+export type { InspectorRowId, InspectorNumberItem } from './common.js'
+
+export interface InspectorTemplate<Key extends string> {
+  readonly items: { readonly [K in Key]: K }
+  setItems(items: readonly InspectorItem<Key>[]): void
+  insertAfter(anchor: InspectorItem<Key>, item: InspectorItem<Key>): () => void
+}
 export interface InspectorRow {
   readonly kind: 'inspector'
   readonly id: InspectorRowId
@@ -146,6 +158,9 @@ export type DesignEditor<
 > = ToolsFor<Tool> &
   (WorkspaceTool extends Tool
     ? {
+        getUI<Row extends InspectorRowId>(
+          id: Row
+        ): InspectorTemplate<InspectorFields[Row]>
         readonly toolGroups: ToolGroups
       }
     : unknown) & {

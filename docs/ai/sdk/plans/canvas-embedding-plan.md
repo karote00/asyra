@@ -130,3 +130,20 @@ one connection, coalesces committed edits within one turn and closes the
 connection on disposal. A missing IndexedDB record admits one validated legacy
 snapshot from the same key. Atomic import precedes removal of that legacy
 value. A failed import leaves the original available for retry.
+
+### Compose inspector row items
+
+The container editor exposes Position and Dimension through `getUI(rowId)`.
+The row owns its layout and offers named native items, complete ordering through
+`setItems`, and relative insertion through `insertAfter`. Independent insertions
+return their own removal functions. Item IDs are scoped to a row, transient,
+and independent of document property identities.
+
+The SDK holds one ordered snapshot per editor and row across frame replacement.
+The app renders the same keyed controls in the native panel and external row
+surface. It owns numeric input styling, parsing and commit interaction. A host
+supplies a numeric item's current value, subscription and write callback.
+Native fields retain their app projections and edit commands. A row update
+notifies only that row. Moving it preserves its controls and subscriptions.
+The packed consumer checks order, native and custom edits, undo, independent
+removal, invalid changes, row relocation, cleanup and editor isolation.

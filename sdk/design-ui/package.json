@@ -15,7 +15,8 @@
     "@asyra/design": "^0.1.0"
   },
   "scripts": {
-    "build:design-ui": "tsc -p tsconfig.json"
+    "build:design-ui": "tsc -p tsconfig.json",
+    "test:ci": "node --test --test-name-pattern=\"relocates and edits both native rows\" ../../fixtures/canvas/__tests__/consumer.test.mjs"
   },
   "devDependencies": {
     "@asyra/design": "workspace:*",

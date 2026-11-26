@@ -222,6 +222,76 @@ Use `disabledFeatures: ['geometry']` to block geometry edits; disabling an
 individual row hides that control. The editor owns Undo and Redo for edits
 from either location.
 
+### Insert a control between X and Y
+
+Call `editor.getUI('positionRow')` on a container editor, including the editor
+received by React's `onMount`. Its `items` exposes X and Y; Dimension exposes
+width and height. Both rows work in their default position without installing
+the optional UI package.
+
+For example, a host that already has a numeric control descriptor can choose
+the complete order or insert just its contribution:
+
+```js
+const position = editor.getUI('positionRow')
+position.setItems([position.items.x, myCustomZ, position.items.y])
+```
+
+Independent extensions can use the smaller operation:
+
+```js
+const removeZ = position.insertAfter(position.items.x, myCustomZ)
+// On extension teardown:
+removeZ()
+```
+
+The template owns the grid, spacing, label and number input. Moving Position
+with `uiTargets` moves all its current controls together. For a different
+layout or a custom DOM component, use a [host-mounted UI group](#place-and-move-extension-ui).
+
+A numeric descriptor connects the control to your model. For a board with
+a registered `marker` node and numeric `abc` field, this example edits one
+selected marker. It refreshes on selection and committed changes, including Undo:
+
+```js
+function selectedValue() {
+  const ids = editor.getSelection()
+  if (ids.length !== 1) return null
+  const value = editor.getElementProperties(ids[0], ['abc'])?.abc
+  return typeof value === 'number' ? value : null
+}
+
+const myCustomZ = {
+  kind: 'number',
+  id: 'markerDepth',
+  label: 'Z',
+  getValue: selectedValue,
+  subscribe(notify) {
+    const offSelection = editor.observe('elementSelection', notify)
+    const offEdit = editor.common.transaction.subscribeToTransactionStatus(event => {
+      if (event.status === 'committed' && event.changeCount) notify()
+    })
+    return () => { offSelection(); offEdit() }
+  },
+  setValue(abc) {
+    if (selectedValue() !== null) {
+      editor.common.element.updateElementProperties(editor.getSelection(), { abc })
+    }
+  }
+}
+```
+
+Returning `null` displays an unavailable input. The descriptor's subscription
+is active while its control is mounted. Its write callback owns the edit.
+Row composition is local to each editor and survives `reset()`. Saving a board
+stores the resulting document values. The host supplies the UI composition
+when it opens another editor.
+
+Each item ID must be unique within its row. Relative insertion places the item
+immediately after its anchor. The returned removal function is idempotent.
+`setItems` replaces the whole order and retires earlier removal functions.
+An invalid item, missing anchor, or duplicate ID leaves the row intact.
+
 ### Store a domain node
 
 Supply a node definition alongside its actions. Here each approval has its

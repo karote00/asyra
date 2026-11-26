@@ -1,16 +1,19 @@
 import { useRef } from 'react'
 import { Input, PropertyControl } from '@asyra/design-system'
-import { updateSelectedElementProperties } from '../controllers/scene-tree'
 import { formatInputNumber, parseFiniteInputNumber } from './number-input'
 
-export function GeometryInput({
+export function InspectorNumberInput({
   field,
   label,
-  value
+  value,
+  onCommit,
+  disabled
 }: {
-  field: 'x' | 'y' | 'width' | 'height'
+  field: string
   label: string
   value: number | string
+  disabled?: boolean
+  onCommit(value: number): void
 }) {
   const cancelled = useRef(false)
 
@@ -22,6 +25,7 @@ export function GeometryInput({
         aria-label={label}
         prefix={label}
         data-testid={'prop-' + field}
+        disabled={disabled}
         noOutline
         onKeyDownCapture={(event) => {
           if (event.key === 'Escape') {
@@ -43,7 +47,7 @@ export function GeometryInput({
             return false
           }
 
-          updateSelectedElementProperties(field, next)
+          onCommit(next)
 
           return true
         }}

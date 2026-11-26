@@ -1,3 +1,5 @@
+import { InspectorTemplates } from './properties/inspector-template'
+import type { ContextType } from 'react'
 import { createInspectorRows } from './workspace/inspector-rows'
 import { registerWorkspaceNodes } from './workspace/register-nodes'
 import type { WorkspaceNode } from './workspace/nodes'
@@ -71,6 +73,7 @@ interface WorkspaceOptions {
   collaboration?: RenderSession['collaboration']
   panels?: WorkspaceProps['panels']
   toolbar?: WorkspaceProps['toolbar']
+  inspectorTemplates?: ContextType<typeof InspectorTemplates>
   inspectorRefs?: WorkspaceProps['inspectorRefs']
   slots?: WorkspaceProps['slots']
   disabledFeatures: readonly string[]
@@ -119,7 +122,7 @@ export function mount(options: WorkspaceOptions) {
 
     render = (disabled) =>
       root.render(
-        <>
+        <InspectorTemplates.Provider value={options.inspectorTemplates}>
           <DesignWorkspace
             inspectorRefs={options.inspectorRefs}
             session={session}
@@ -137,7 +140,7 @@ export function mount(options: WorkspaceOptions) {
             onReset={reset}
           />
           {inspector.render(disabled)}
-        </>
+        </InspectorTemplates.Provider>
       )
     render(options.disabledFeatures)
   })

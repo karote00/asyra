@@ -1,3 +1,4 @@
+import { createInspectorTemplates } from './inspector-templates.js'
 import { openLocalDocument } from './local-document.js'
 import { resolveWorkspaceOptions } from './workspace-options.js'
 import {
@@ -116,8 +117,11 @@ export async function mountWorkspace(
     return session
   }
 
+  const templates = createInspectorTemplates(current)
   let editor: Editor
   const base = {
+    getUI: templates.getUI,
+
     getTool: () => current().getTool(),
 
     setTool: (tool) => current().setTool(tool),
@@ -256,6 +260,7 @@ export async function mountWorkspace(
 
     destroy() {
       groups.destroy()
+      templates.dispose()
       availabilityListeners.clear()
       active = false
       detachObservers()
@@ -317,6 +322,7 @@ export async function mountWorkspace(
         collaboration,
         slots: groups.refs,
         inspectorRefs: groups.inspectorRefs,
+        inspectorTemplates: templates.sources,
         toolbar:
           controls === false
             ? false

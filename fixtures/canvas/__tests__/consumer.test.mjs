@@ -9,6 +9,7 @@ import { commonInventory } from './common-inventory.mjs'
 import { withDocumentServices } from '../services.mjs'
 import { root, withConsumer } from './packed-consumer.mjs'
 import './workspace-lifecycle.mjs'
+import './inspector-items.mjs'
 import './feature-parity.mjs'
 
 test('a standalone canvas binding preserves host pixels and owns only mount and disposal', async () => {
