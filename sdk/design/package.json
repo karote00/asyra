@@ -34,7 +34,7 @@
   },
   "scripts": {
     "build:design": "node build.mjs",
-    "test:ci": "node --test --test-name-pattern=\"opt-in design|packed Design\" ../../fixtures/canvas/__tests__/consumer.test.mjs"
+    "test:ci": "yarn workspace @asyra/design-ui build:design-ui && node --test --test-name-pattern=\"opt-in design|packed Design\" ../../fixtures/canvas/__tests__/consumer.test.mjs"
   },
   "devDependencies": {
     "@asyra/asyra-design": "workspace:*",

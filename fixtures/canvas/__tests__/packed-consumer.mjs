@@ -38,6 +38,15 @@ export async function withConsumer(
       npm(['pack', dir, '--ignore-scripts', '--json'])
     )
 
+    if (dir === path.join(root, 'sdk/design-ui')) {
+      for (const entry of ['dist/index.js', 'dist/index.d.ts']) {
+        assert.ok(
+          files.some((file) => file.path === entry),
+          'Missing Design UI package entry: ' + entry
+        )
+      }
+    }
+
     if (dir === path.join(root, 'sdk/design')) {
       const paths = new Set(files.map((file) => file.path))
 
