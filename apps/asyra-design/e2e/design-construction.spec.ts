@@ -5,7 +5,8 @@ import { createBatchExchange } from '@asyra/ai-agent-runtime/node'
 import { createLocalOperationTools } from '../server/local-operation-tools'
 import { createLocalDesignWorkflow } from '../server/local-design-workflow'
 import { invokeLocalTool } from '../server/local-tool-invocation'
-import { readFileSync, writeFileSync } from 'node:fs'
+import { readFileSync } from 'node:fs'
+import { attachJsonEvidence as attachConstructionEvidence } from './json-evidence'
 const recoveryFixture = JSON.parse(
   readFileSync(
     new URL(
@@ -77,14 +78,6 @@ import {
   undo,
   redo
 } from './test-utils'
-
-const attachConstructionEvidence = async (name: string, value: unknown) => {
-  const info = test.info()
-  const path = info.outputPath(name + '.json')
-
-  writeFileSync(path, JSON.stringify(value))
-  await info.attach(name, { contentType: 'application/json', path })
-}
 
 // Keep complete diagnostics outside the bounded machine-readable report.
 test.afterEach(() => {

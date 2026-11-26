@@ -1,4 +1,5 @@
 import sharp from 'sharp'
+import { attachOrderedPrefixReplay } from './ordered-prefix-replay'
 import { isRecord } from '@asyra/utils'
 import { requireBatchSuccess } from '@asyra/ai-agent-runtime/node'
 import { observeActionBatch } from '../server/local-action-observation'
@@ -630,20 +631,7 @@ test('ordered multi-face preparation preserves an acknowledged prefix and retrie
   await expect.poll(() => getCoreDocumentDigest(page)).toEqual(prefix)
   await redo(page)
   await expect.poll(() => getCoreDocumentDigest(page)).toEqual(complete)
-  await testInfo.attach('ordered-prefix-publication-replay', {
-    contentType: 'application/json',
-    body: JSON.stringify(
-      await page.evaluate(async () => {
-        const runtime = await import('../src/testing/runtime-access')
-
-        return {
-          initial: runtime.testRuntimeState.get('ordered-prefix-initial'),
-          publications: runtime.readTestCapture('ordered-prefix-publications'),
-          final: await runtime.core.save()
-        }
-      })
-    )
-  })
+  await attachOrderedPrefixReplay(page, testInfo)
   await expect
     .poll(() => getPersistedDocumentDigest(document.fileId))
     .toEqual(complete)
