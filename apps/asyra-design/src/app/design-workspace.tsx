@@ -267,14 +267,11 @@ export const DesignWorkspace: React.FC<WorkspaceProps> = ({
           ref={slots.selectionMenu}
           hidden={elementSelection.size === 0}
           data-tool-slot="selectionMenu"
-          data-tool-dock="Selection menu"
           style={{
             gridArea: 'canvas',
             alignSelf: 'start',
             justifySelf: 'center',
-            zIndex: 10,
-            minWidth: 32,
-            minHeight: 18
+            zIndex: 10
           }}
         />
       )}

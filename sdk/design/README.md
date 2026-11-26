@@ -213,8 +213,7 @@ Each row has one set of controls and follows the current selection.
 Changing `uiTargets` moves the rows on the mounted React board. Remove an
 entry to return that row to the inspector. In JavaScript use the same
 initial options and call `editor.toolGroups.setTargets(targets)` for later
-changes. Explicit targets take precedence over saved placements when opening
-a board. Each target must already exist in the host document. An unknown
+changes. Each target must already exist in the host document. An unknown
 group or missing element reports its ID. With `hideUI: true`, external
 controls stay available and default inspector slots are hidden.
 
@@ -247,7 +246,7 @@ removeZ()
 
 The template owns the grid, spacing, label and number input. Moving Position
 with `uiTargets` moves all its current controls together. For a different
-layout or a custom DOM component, use a [host-mounted UI group](#place-and-move-extension-ui).
+layout or a custom DOM component, use a [host-mounted UI group](#mount-extension-ui).
 
 A numeric descriptor connects the control to your model. For a board with
 a registered `marker` node and numeric `abc` field, this example edits one
@@ -342,7 +341,7 @@ with `await editor.setDisabledFeatures(['approval'])`. Existing approvals
 retain their geometry, selection and readable fields. Creation, extension
 actions and writes to approval-specific fields are blocked until re-enabled.
 
-### Place and move extension UI
+### Mount extension UI
 
 An extension can supply actions and one or more UI groups. Give each group a
 stable ID, a placement and a synchronous mount function that releases its
@@ -371,29 +370,28 @@ const extension = {
 }
 const editor = await createDesign(host, {
   extensions: [extension],
-  toolLayout: JSON.parse(localStorage.getItem(userLayoutKey) ?? '{}'),
-  onToolLayoutChange: layout => localStorage.setItem(userLayoutKey, JSON.stringify(layout))
+  uiTargets: { navigation: 'my-toolbar' }
 })
 ```
 
-An extension can declare a unique feature ID. Pass that ID in `disabledFeatures` to disable all of its actions and unmount its tool groups. Enabling it mounts each group at its saved position. The same option works at creation and during a session. For example, a host can apply a subscription change with `await editor.setDisabledFeatures(paid ? [] : ['navigationTools'])`. If a tool group fails to mount during activation, the promise rejects and the previous feature policy remains active. Fix the mount and retry the same list. This replaces the entire disabled list. Include any other features the host wants to keep disabled. In React, update the option on the existing component:
+An extension can declare a unique feature ID. Pass that ID in `disabledFeatures` to disable all of its actions and unmount its tool groups. Enabling it mounts each group in its configured target. The same option works at creation and during a session. For example, a host can apply a subscription change with `await editor.setDisabledFeatures(paid ? [] : ['navigationTools'])`. If a tool group fails to mount during activation, the promise rejects and the previous feature policy remains active. Fix the mount and retry the same list. This replaces the entire disabled list. Include any other features the host wants to keep disabled. In React, update the option on the existing component:
 
 ```jsx
 <AsyraDesign options={{ extensions: [extension], disabledFeatures: paid ? [] : ['navigationTools'] }} />
 ```
 
 Built-in outlets are `properties.top`, `toolbar.top` and `selectionMenu`
-(visible with a selection). During a drag, dashed outlines mark the available docking areas. The whole Properties panel and editor toolbar accept a drop. A solid outline marks the current target. Drag the grip to a free position on the canvas or host page, to another outlet, or drop it before
-another group to reorder. For keyboard controls or product-owned menus call
-`editor.toolGroups.move('navigation', 'toolbar.top', 0)`. To place a group in a
-host element, use `const unmount = editor.toolGroups.mount('navigation', element)`
-and release the mount with `unmount()`. Configure `placement: 'manual'` to wait
-for a host element. Manual mounts also work with `hideUI: true`.
+(visible with a selection). Create the target element in the host document
+before opening the board. To change it later, call
+`editor.toolGroups.setTargets({ navigation: 'other-toolbar' })`. Passing
+`{}` restores each group's declared placement. To bind a DOM element directly,
+use `const release = editor.toolGroups.mount('navigation', element)` and call
+`release()` when finished. A group with `placement: 'manual'` waits for a
+host target. External mounts also work with `hideUI: true`.
 
-Call `editor.toolGroups.float(id, { x, y })` to place a group in host viewport coordinates (CSS pixels from the top left). Floating groups stay within the visible viewport. The layout maps outlet names to ordered group IDs and stores free positions in `layout.floating`, keyed by group ID. The host chooses the
-preference storage and user key. Restore a profile with `setLayout(layout)` or
-restore extension defaults with `setLayout({})`. Moving groups preserves the
-document and editing session. A hidden outlet has no visible controls.
+For a draggable toolbar, move the host container using the application's own
+pointer handlers and CSS. Its mounted controls follow it automatically. The
+host can store the container position as a user preference.
 
 ### Build the controls in your own UI
 

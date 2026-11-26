@@ -858,7 +858,14 @@ async function verifyCollaboration(development) {
             await open(peer)
             await peer.evaluate(async () => {
               await globalThis.editor.setDisabledFeatures(['oval'])
-              globalThis.editor.toolGroups.move('shared-tools', 'toolbar.top')
+              const target = globalThis.document.body.appendChild(
+                globalThis.document.createElement('aside')
+              )
+
+              target.id = 'peer-toolbar'
+              globalThis.editor.toolGroups.setTargets({
+                'shared-tools': target.id
+              })
             })
             const id = await page.evaluate(() =>
               globalThis.editor.drawOval({
@@ -879,18 +886,12 @@ async function verifyCollaboration(development) {
             await expect
               .poll(() => hasShapeForId(peer, id), { timeout: 12000 })
               .toBe('oval')
-            assert.deepEqual(
-              await page.evaluate(
-                () => globalThis.editor.toolGroups.getLayout().manual
-              ),
-              ['shared-tools']
-            )
-            assert.deepEqual(
-              await peer.evaluate(
-                () => globalThis.editor.toolGroups.getLayout()['toolbar.top']
-              ),
-              ['shared-tools']
-            )
+            await expect(
+              peer.locator('#peer-toolbar [data-tool-group="shared-tools"]')
+            ).toHaveCount(1)
+            await expect(
+              page.locator('[data-tool-group="shared-tools"]')
+            ).toHaveCount(0)
             await assert.rejects(
               peer.evaluate(() =>
                 globalThis.editor.drawOval({
@@ -2523,77 +2524,40 @@ test('packed Position row updates selected coordinates with one Undo and release
   )
 })
 
-test('packed Design moves extension UI between slots and restores each profile without reopening the editor', async () => {
+test('packed Design keeps editing and Undo when the host drags its toolbar over the canvas', async () => {
   await withConsumer(
     ['sdk/canvas', 'sdk/design'],
     'tool-layout.js',
     async (page) => {
       await page.evaluate(() => globalThis.ready)
-      const frame = page.frameLocator('main iframe')
-      const group = '[data-tool-group="positionRow"]'
-
-      const slot = (name) => frame.locator('[data-tool-slot="' + name + '"]')
-
-      const action = (name) => page.getByRole('button', { name, exact: true })
-
-      await expect(
-        frame.getByTestId('properties-panel').locator(group)
-      ).toHaveCount(1)
-      await expect(
-        frame
-          .getByTestId('properties-panel')
-          .locator(group)
-          .getByLabel('X', { exact: true })
-      ).toBeDisabled()
-      await action('Select two rectangles').click()
-      await page.evaluate(() => {
-        globalThis.original = globalThis.editor
-        globalThis.originalNode = globalThis.document
-          .querySelector('main iframe')
-          .contentDocument.querySelector('[data-tool-group]')
-      })
-      await frame
-        .getByTestId('properties-panel')
-        .getByRole('button', { name: 'Move Position' })
-        .dragTo(slot('toolbar.top'))
-      await expect(slot('toolbar.top').locator(group)).toHaveCount(1)
-      assert.ok(
-        await page.evaluate(
-          () =>
-            globalThis.originalNode.parentElement.dataset.toolSlot ===
-            'toolbar.top'
-        )
-      )
-      await page.getByLabel('Enable Position row').uncheck()
-      await expect(slot('toolbar.top').locator(group)).toHaveCount(0)
-      assert.equal(
-        await page.evaluate(() =>
-          globalThis.editor.isFeatureEnabled('geometry')
-        ),
-        true
-      )
-      await page.getByLabel('Enable Position row').check()
-      await expect(slot('toolbar.top').locator(group)).toHaveCount(1)
-      await page.getByLabel('Disable geometry editing').check()
-      const coordinate = slot('toolbar.top')
-        .locator(group)
+      await page.getByRole('button', { name: 'Select two rectangles' }).click()
+      const coordinate = page
+        .locator('#external')
         .getByLabel('X', { exact: true })
 
-      await expect(coordinate).toBeDisabled()
-      await assert.rejects(
-        page.evaluate(() =>
-          globalThis.editor.common.element.updateElementProperties(
-            globalThis.editor.getSelection(),
-            { x: 24 }
-          )
-        ),
-        /Disabled Design feature: geometry/
+      await expect(coordinate).toBeEnabled()
+      await coordinate.evaluate((input) => {
+        globalThis.originalInput = input
+      })
+      const grip = page.getByRole('button', { name: 'Drag Position' })
+      const bounds = await grip.boundingBox()
+      const start = await page.locator('#toolbar').boundingBox()
+
+      await page.mouse.move(bounds.x + 5, bounds.y + 5)
+      await page.mouse.down()
+      await page.mouse.move(bounds.x + 205, bounds.y + 105, { steps: 8 })
+      await page.mouse.up()
+      const end = await page.locator('#toolbar').boundingBox()
+
+      assert.ok(Math.abs(end.x - start.x - 200) < 2)
+      assert.ok(Math.abs(end.y - start.y - 100) < 2)
+      assert.ok(
+        await coordinate.evaluate((input) => input === globalThis.originalInput)
       )
-      await page.getByLabel('Disable geometry editing').uncheck()
       await coordinate.fill('36')
       await coordinate.press('Enter')
 
-      const positions = () =>
+      const values = () =>
         page.evaluate(() =>
           globalThis.editor
             .getSelection()
@@ -2601,115 +2565,42 @@ test('packed Design moves extension UI between slots and restores each profile w
             .sort((a, b) => a - b)
         )
 
-      assert.deepEqual(await positions(), [36, 36])
+      assert.deepEqual(await values(), [36, 36])
       await page.evaluate(() => globalThis.editor.undo())
-      assert.deepEqual(await positions(), [24, 150])
+      assert.deepEqual(await values(), [24, 150])
+      await page.getByLabel('Disable geometry editing').check()
+      await expect(coordinate).toBeDisabled()
+      await page.getByLabel('Enable Position row').uncheck()
+      await expect(coordinate).toHaveCount(0)
+      await page.getByLabel('Enable Position row').check()
+      await expect(coordinate).toBeDisabled()
+      await page.getByLabel('Disable geometry editing').uncheck()
+      await expect(coordinate).toBeEnabled()
+
       await page.getByLabel('Layout profile').selectOption('Sam')
-      await expect(
-        frame.getByTestId('properties-panel').locator(group)
-      ).toHaveCount(1)
-      await page.getByLabel('Position row placement').selectOption('manual')
-      await expect(
-        page.locator('#external').getByLabel('X', { exact: true })
-      ).toBeEnabled()
+      assert.equal((await page.locator('#toolbar').boundingBox()).x, start.x)
       await page
         .getByLabel('Position row placement')
-        .selectOption('selectionMenu')
-      await expect(slot('selectionMenu').locator(group)).toBeVisible()
-      assert.ok(
-        await page.evaluate(() => globalThis.original === globalThis.editor)
+        .selectOption('properties.top')
+      const panel = page
+        .frameLocator('main iframe')
+        .getByTestId('properties-panel')
+
+      await expect(panel.getByTestId('prop-x')).toBeEnabled()
+      await expect(
+        panel.getByRole('button', { name: 'Move Position' })
+      ).toHaveCount(0)
+      await page.reload()
+      await page.evaluate(() => globalThis.ready)
+      assert.equal((await page.locator('#toolbar').boundingBox()).x, end.x)
+      await page.getByLabel('Layout profile').selectOption('Sam')
+      await expect(page.locator('#toolbar')).toBeHidden()
+      await expect(coordinate).toHaveCount(0)
+      const api = await page.evaluate(() =>
+        Object.keys(globalThis.editor.toolGroups).sort()
       )
-      await page.reload()
-      await page.evaluate(() => globalThis.ready)
-      await expect(slot('toolbar.top').locator(group)).toHaveCount(1)
-      await page.getByLabel('Layout profile').selectOption('Sam')
-      await action('Select two rectangles').click()
-      await expect(slot('selectionMenu').locator(group)).toBeVisible()
-    }
-  )
-})
 
-test('a tool group follows the pointer onto the canvas and host page, restores its position and docks again', async () => {
-  await withConsumer(
-    ['sdk/canvas', 'sdk/design'],
-    'tool-layout.js',
-    async (page) => {
-      await page.evaluate(() => globalThis.ready)
-      const frame = page.frameLocator('main iframe')
-
-      const grip = (root) =>
-        root.getByRole('button', { name: 'Move Position', exact: true })
-
-      const floating = page.locator('[data-tool-group="positionRow"]')
-      const dock = frame.getByTestId('properties-panel')
-
-      async function drag(handle, x, y, beforeDrop) {
-        const rect = await handle.boundingBox()
-        const start = { x: rect.x + 4, y: rect.y + 4 }
-
-        await page.mouse.move(start.x, start.y)
-        await page.mouse.down()
-        await page.mouse.move(x, y, { steps: 12 })
-        await beforeDrop?.()
-        await page.mouse.up()
-      }
-
-      const surface = await frame.locator('canvas').first().boundingBox()
-      const x = Math.round(surface.x + surface.width / 2)
-      const y = Math.round(surface.y + surface.height / 2)
-
-      await drag(grip(dock), x, y)
-      await expect(floating).toBeVisible({ timeout: 2000 })
-
-      const position = () => grip(floating).boundingBox()
-
-      const at = await position()
-
-      assert.ok(Math.abs(at.x + 4 - x) <= 2 && Math.abs(at.y + 4 - y) <= 2)
-      await drag(grip(floating), 220, 16)
-      const outside = await position()
-
-      assert.ok(Math.abs(outside.x - 216) <= 2 && Math.abs(outside.y - 12) <= 2)
-      await page.reload()
-      await page.evaluate(() => globalThis.ready)
-      assert.deepEqual(await position(), outside)
-      await page.getByLabel('Layout profile').selectOption('Sam')
-      await expect(grip(dock)).toBeVisible()
-      await page.getByLabel('Layout profile').selectOption('Alex')
-      assert.deepEqual(await position(), outside)
-      await page.getByLabel('Enable Position row').uncheck()
-      await expect(floating).toHaveCount(0)
-      await page.getByLabel('Enable Position row').check()
-      assert.deepEqual(await position(), outside)
-      await page.setViewportSize({ width: 390, height: 700 })
-      const narrow = await floating.boundingBox()
-
-      assert.ok(narrow.x >= 0 && narrow.x + narrow.width <= 391)
-      const properties = frame.getByTestId('properties-panel')
-      const panel = await properties.boundingBox()
-
-      await drag(grip(floating), panel.x + 45, panel.y + 150)
-      await expect(grip(dock)).toBeVisible({ timeout: 2000 })
-      await page.setViewportSize({ width: 1280, height: 720 })
-      const toolbar = frame.getByTestId('toolbar')
-      const bar = await toolbar.boundingBox()
-
-      await drag(grip(dock), bar.x + bar.width / 2, bar.y + 12, async () => {
-        await expect(toolbar).toHaveCSS('outline-style', 'solid')
-        await expect(properties).toHaveCSS('outline-style', 'dashed')
-      })
-      const tools = frame.locator('[data-tool-slot="toolbar.top"]')
-
-      await expect(grip(tools)).toBeVisible()
-      await expect(toolbar).not.toHaveCSS('outline-style', 'solid')
-      const wide = await properties.boundingBox()
-
-      await drag(grip(tools), wide.x + 80, wide.y + 160)
-      await expect(grip(dock)).toBeVisible()
-      await expect(floating).toHaveCount(0)
-      await page.reload()
-      await page.evaluate(() => globalThis.ready)
-      await expect(grip(dock)).toBeVisible()
+      assert.deepEqual(api, ['mount', 'setTargets'])
     }
   )
 })
@@ -2866,7 +2757,7 @@ test('packed Design changes feature admission in place and releases manual exten
   )
 })
 
-test('packed Design orders multiple tool groups without remounting and toggles actual keyboard tools', async () => {
+test('packed Design mounts tool groups in declaration order and toggles actual keyboard tools', async () => {
   await withConsumer(
     ['sdk/canvas', 'sdk/design'],
     'workspace.js',
@@ -2888,8 +2779,7 @@ test('packed Design orders multiple tool groups without remounting and toggles a
         }))
 
         globalThis.editor = await createDesign(host, {
-          extensions: [{ ui }],
-          toolLayout: { 'toolbar.top': ['retired', 'three', 'one'] }
+          extensions: [{ ui }]
         })
         globalThis.mountCounts = counts
       })
@@ -2900,10 +2790,8 @@ test('packed Design orders multiple tool groups without remounting and toggles a
       const order = () =>
         groups.evaluateAll((nodes) => nodes.map((n) => n.dataset.toolGroup))
 
-      assert.deepEqual(await order(), ['three', 'one', 'two'])
-      await groups.nth(2).getByRole('button').dragTo(groups.first())
-      assert.deepEqual(await order(), ['two', 'three', 'one'])
-      await page.evaluate(() => globalThis.editor.toolGroups.setLayout({}))
+      await expect(groups).toHaveCount(3)
+      await expect(groups.getByRole('button')).toHaveCount(0)
       assert.deepEqual(await order(), ['one', 'two', 'three'])
       assert.deepEqual(await page.evaluate(() => globalThis.mountCounts), {
         one: 1,

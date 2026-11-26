@@ -76,7 +76,9 @@ const grouped = await createDesign(document.createElement('div'), {
 })
 
 await grouped.setDisabledFeatures(['arrange'])
-grouped.toolGroups.move('layout', 'toolbar.top', 0)
+grouped.toolGroups.setTargets({ layout: 'my-toolbar' })
+// @ts-expect-error The host owns floating positions.
+grouped.toolGroups.float('layout', { x: 0, y: 0 })
 const workspace = await createDesign(document.createElement('div'), {
   toolbar: ['group', 'ungroup', 'deleteSelectedElement', 'zoomFit', 'reset']
 })

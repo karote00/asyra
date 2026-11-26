@@ -46,6 +46,11 @@ export async function withConsumer(
         assert.ok(paths.has('dist/' + entry + '.d.ts'))
       }
 
+      for (const module of ['tool-drag', 'tool-layout']) {
+        assert.ok(!paths.has('dist/' + module + '.js'))
+        assert.ok(!paths.has('dist/' + module + '.d.ts'))
+      }
+
       assert.ok(
         !paths.has('dist/vue.d.ts') && !paths.has('dist/design-board.vue')
       )
@@ -124,7 +129,7 @@ export async function withConsumer(
 
   await cp(
     path.join(fixture, entry),
-    path.join(cwd, headless ? entry : 'main.js')
+    path.join(cwd, headless || layoutDemo ? entry : 'main.js')
   )
 
   await writeFile(

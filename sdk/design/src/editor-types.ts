@@ -85,10 +85,6 @@ export interface DesignOptions<
 
 export type ToolPlacement =
   'properties.top' | 'toolbar.top' | 'selectionMenu' | 'manual'
-export type ToolLayout = Partial<Record<ToolPlacement, readonly string[]>> & {
-  floating?: Record<string, { x: number; y: number }>
-}
-
 export interface ToolGroup<Id extends string = string> {
   readonly id: string
   readonly label?: string
@@ -118,10 +114,6 @@ export type WorkspaceUIGroup<Id extends string = string> =
 export interface ToolGroups {
   /** Replace external targets. Removed entries return to their default placements. */
   setTargets(targets: Readonly<Record<string, string>>): void
-  getLayout(): ToolLayout
-  setLayout(layout: ToolLayout): void
-  move(id: string, placement: ToolPlacement, index?: number): void
-  float(id: string, point: { x: number; y: number }): void
   mount(id: string, container: HTMLElement): () => void
 }
 
@@ -145,8 +137,6 @@ export interface WorkspaceOptions<
   ui?: readonly (WorkspaceUIGroup<NoInfer<Id>> & { readonly id: Id })[]
   /** Optional host-document element IDs, keyed by installed UI group ID. */
   uiTargets?: Readonly<Record<string, string>>
-  toolLayout?: ToolLayout
-  onToolLayoutChange?(layout: ToolLayout): void
   panels?: { layers?: boolean; properties?: boolean }
   /** Changing the service, file or actor on a declarative host opens a new editor session. */
   collaboration?: { fileId: string; endpoint: string; actorId?: string }

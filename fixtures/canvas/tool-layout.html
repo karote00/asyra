@@ -17,8 +17,7 @@
         height: 70dvh;
         min-height: 280px;
       }
-      header,
-      footer {
+      header {
         padding: 10px 14px;
         display: flex;
         gap: 12px;
@@ -29,8 +28,21 @@
       select {
         font: inherit;
       }
-      #external {
-        min-height: 30px;
+      #toolbar {
+        position: fixed;
+        inset: 0 auto auto 0;
+        z-index: 1;
+        padding: 6px;
+        max-width: 100vw;
+        border: 1px solid #94a3b8;
+        border-radius: 4px;
+        background: white;
+        transform: translate(clamp(0px, var(--x), max(0px, 100vw - 100%)), clamp(0px, var(--y), max(0px, 100dvh - 100%)));
+      }
+      #grip {
+        cursor: grab;
+        touch-action: none;
+        user-select: none;
       }
     </style>
   </head>
@@ -47,9 +59,6 @@
         >Position row placement
         <select id="placement">
           <option value="properties.top">Properties</option>
-          <option value="toolbar.top">Toolbar</option>
-          <option value="selectionMenu">Selection menu</option>
-          <option value="floating">Floating</option>
           <option value="manual">My toolbar</option>
         </select></label
       >
@@ -60,10 +69,10 @@
       <button id="sample" type="button">Select two rectangles</button>
     </header>
     <main></main>
-    <footer>
-      <span>My toolbar</span>
+    <aside id="toolbar" aria-label="My toolbar" hidden>
+      <button id="grip" type="button">Drag Position</button>
       <div id="external"></div>
-    </footer>
-    <script type="module" src="./main.js"></script>
+    </aside>
+    <script type="module" src="./tool-layout.js"></script>
   </body>
 </html>

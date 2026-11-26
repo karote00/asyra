@@ -6,26 +6,17 @@ import type {
   WorkspaceUIGroup,
   InspectorRowId,
   ToolPlacement,
-  ToolLayout,
-  ToolGroups,
-  Point
+  ToolGroups
 } from './index.js'
-import { trackToolDrag } from './tool-drag.js'
-import {
-  dockedLayout,
-  slots,
-  placements,
-  resolveLayout,
-  type Layout
-} from './tool-layout.js'
+const slots = ['toolbar.top', 'properties.top', 'selectionMenu'] as const
+const placements: readonly ToolPlacement[] = [...slots, 'manual']
 
 export function createToolGroups(
   extensions: readonly WorkspaceExtension<string>[],
   options: WorkspaceOptions<string>,
   hostDocument: Document,
   getEditor: () => DesignEditor<string, WorkspaceTool>,
-  mountInspectorRow: (id: InspectorRowId, container: HTMLElement) => () => void,
-  getFrame: () => HTMLIFrameElement
+  mountInspectorRow: (id: InspectorRowId, container: HTMLElement) => () => void
 ) {
   const groups = new Map<string, WorkspaceUIGroup<string>>()
   const inspectorHomes = new Map<string, HTMLElement>()
@@ -33,15 +24,11 @@ export function createToolGroups(
     Record<InspectorRowId, (element: HTMLElement | null) => void>
   > = {}
   const owners = new Map<string, string>()
-  const outlets = new Map<ToolPlacement, { node: HTMLElement }>()
+  const outlets = new Map<ToolPlacement, HTMLElement>()
   const manual = new Map<string, { container: HTMLElement }>()
-  const mounted = new Map<
-    string,
-    { node: HTMLElement; unmount?: () => void; movable: boolean }
-  >()
+  const mounted = new Map<string, { node: HTMLElement; unmount?: () => void }>()
   let ready = false
   let closed = false
-  let drag: { id: string; cancel: () => void } | undefined
 
   for (const extension of extensions) {
     for (const group of extension.ui ?? []) {
@@ -101,30 +88,7 @@ export function createToolGroups(
     return targets
   }
 
-  function resetPlacements(
-    layout: Layout,
-    ids: ReadonlySet<string>,
-    targets: ReadonlyMap<string, HTMLElement>
-  ) {
-    const preference = dockedLayout()
-
-    for (const slot of placements) {
-      preference[slot] = layout[slot].filter((id) => !ids.has(id))
-    }
-
-    const floating = Object.fromEntries(
-      Object.entries(layout.floating ?? {}).filter(([id]) => !ids.has(id))
-    )
-
-    return resolveLayout(groups, { ...preference, floating }, targets)
-  }
-
   let targets = resolveTargets(options.uiTargets)
-  let layout = resolveLayout(groups, options.toolLayout, targets)
-
-  if (targets.size) {
-    layout = resetPlacements(layout, new Set(targets.keys()), targets)
-  }
 
   function setTargets(input: Readonly<Record<string, string>>) {
     if (closed) {
@@ -142,10 +106,9 @@ export function createToolGroups(
       return
     }
 
-    const previous = { targets, layout, manual: new Map(manual) }
+    const previous = { targets, manual: new Map(manual) }
 
     targets = next
-    layout = resetPlacements(layout, changed, targets)
     for (const id of changed) {
       manual.delete(id)
     }
@@ -154,7 +117,6 @@ export function createToolGroups(
       render()
     } catch (error) {
       targets = previous.targets
-      layout = previous.layout
       for (const [id, binding] of previous.manual) {
         manual.set(id, binding)
       }
@@ -162,8 +124,6 @@ export function createToolGroups(
       render()
       throw error
     }
-
-    options.onToolLayoutChange?.(globalThis.structuredClone(layout))
   }
 
   function detach(id: string) {
@@ -171,10 +131,6 @@ export function createToolGroups(
 
     if (!entry) {
       return
-    }
-
-    if (drag?.id === id) {
-      drag.cancel()
     }
 
     mounted.delete(id)
@@ -188,7 +144,7 @@ export function createToolGroups(
     }
   }
 
-  function makeNode(id: string, host: HTMLElement, movable: boolean) {
+  function makeNode(id: string, host: HTMLElement) {
     const doc = host.ownerDocument
     const group = groups.get(id)
 
@@ -199,19 +155,9 @@ export function createToolGroups(
     const node = doc.createElement('div')
 
     node.dataset.toolGroup = id
-    node.style.cssText = 'display:inline-flex;align-items:flex-start;gap:4px'
-    if (movable) {
-      const grip = doc.createElement('button')
-
-      grip.type = 'button'
-      grip.textContent = '⠿'
-      grip.setAttribute('aria-label', 'Move ' + (group.label ?? id))
-      grip.title = 'Drag to float or dock ' + (group.label ?? id)
-      grip.style.cssText = 'cursor:grab;touch-action:none;user-select:none'
-      grip.addEventListener('pointerdown', (event) =>
-        startDrag(event, id, node)
-      )
-      node.append(grip)
+    if (group.label) {
+      node.setAttribute('role', 'group')
+      node.setAttribute('aria-label', group.label)
     }
 
     const container = doc.createElement('div')
@@ -228,7 +174,7 @@ export function createToolGroups(
         throw new TypeError('Expected tool group cleanup')
       }
 
-      mounted.set(id, { node, unmount, movable })
+      mounted.set(id, { node, unmount })
 
       return node
     } catch (error) {
@@ -244,77 +190,43 @@ export function createToolGroups(
 
     const hidden = []
 
-    for (const [slot, value] of Object.entries(layout)) {
-      const free = slot === 'floating'
-      const ids = free ? Object.keys(value) : (value as readonly string[])
-      const movable = slot !== 'manual'
-      const outletHost = free
-        ? getFrame().ownerDocument.body
-        : outlets.get(slot as ToolPlacement)?.node
+    const indices = new Map<HTMLElement, number>()
 
-      let index = 0
+    for (const [id, group] of groups) {
+      const target = manual.get(id)?.container ?? targets.get(id)
+      const host =
+        target ?? inspectorHomes.get(id) ?? outlets.get(group.placement)
+      const owner = owners.get(id)
 
-      for (const id of ids) {
-        const dock =
-          slot === 'properties.top'
-            ? (inspectorHomes.get(id) ?? outletHost)
-            : outletHost
-        const host = movable
-          ? dock
-          : (manual.get(id)?.container ?? targets.get(id))
-        const entry = mounted.get(id)
+      if (
+        !host ||
+        (owner !== undefined && !getEditor().isFeatureEnabled(owner))
+      ) {
+        hidden.push(id)
+        continue
+      }
 
-        const owner = owners.get(id)
+      const entry = mounted.get(id)
 
-        if (
-          !host ||
-          (owner !== undefined && !getEditor().isFeatureEnabled(owner))
-        ) {
-          hidden.push(id)
-          continue
-        }
+      if (entry && entry.node.ownerDocument !== host.ownerDocument) {
+        detach(id)
+      }
 
-        if (
-          entry &&
-          (host.ownerDocument !== entry.node.ownerDocument ||
-            movable !== entry.movable)
-        ) {
-          detach(id)
-        }
+      const node = mounted.get(id)?.node ?? makeNode(id, host)
 
-        const node = mounted.get(id)?.node ?? makeNode(id, host, movable)
-
-        const position = layout.floating?.[id]
-
-        if (position) {
-          const { x, y } = position
-
-          Object.assign(node.style, {
-            position: 'fixed',
-            left: '0',
-            top: '0',
-            zIndex: '2147483646',
-            maxWidth: '100vw',
-            maxHeight: '100dvh',
-            overflow: 'auto',
-            background: 'Canvas',
-            color: 'CanvasText',
-            outline: '1px solid currentColor',
-            transform: `translate(clamp(0px, ${x}px, 100vw - 100%), clamp(0px, ${y}px, 100dvh - 100%))`
-          })
-          if (node.parentElement !== host) {
-            host.append(node)
-          }
-        } else if (movable) {
-          const before =
-            host.children[host === outletHost ? index++ : 0] ?? null
-
-          if (before !== node) {
-            host.insertBefore(node, before)
-          }
-        } else if (node.parentElement !== host) {
+      if (target) {
+        if (node.parentElement !== host) {
           host.append(node)
         }
+      } else {
+        const index = indices.get(host) ?? 0
+        const before = host.children[index] ?? null
+
+        if (before !== node) {
+          host.insertBefore(node, before)
+        }
+
+        indices.set(host, index + 1)
       }
     }
 
@@ -324,132 +236,14 @@ export function createToolGroups(
     }
   }
 
-  function setLayout(preference: ToolLayout) {
-    if (closed) {
-      throw new Error('Design workspace is unavailable')
-    }
-
-    const next = resolveLayout(groups, preference, targets)
-
-    if (JSON.stringify(next) === JSON.stringify(layout)) {
-      return
-    }
-
-    const previous = layout
-
-    layout = next
-    try {
-      render()
-    } catch (error) {
-      layout = previous
-      render()
-      throw error
-    }
-
-    options.onToolLayoutChange?.(globalThis.structuredClone(layout))
-  }
-
-  function withoutGroup(id: string) {
-    if (!groups.has(id)) {
-      throw new TypeError('Unknown tool group')
-    }
-
-    const next: Layout = dockedLayout()
-
-    for (const name of placements) {
-      next[name] = layout[name].filter((item) => item !== id)
-    }
-
-    const remaining = Object.entries(layout.floating ?? {}).filter(
-      ([key]) => key !== id
-    )
-
-    if (remaining.length) {
-      next.floating = Object.fromEntries(remaining)
-    }
-
-    return next
-  }
-
-  function float(id: string, point: Point) {
-    const next = withoutGroup(id)
-
-    next.floating = { ...next.floating, [id]: point }
-    setLayout(next)
-  }
-
-  function move(id: string, slot: ToolPlacement, index?: number) {
-    if (!placements.includes(slot as ToolPlacement)) {
-      throw new TypeError('Unknown tool placement')
-    }
-
-    const next = withoutGroup(id)
-
-    if (
-      index !== undefined &&
-      (!Number.isInteger(index) || index < 0 || index > next[slot].length)
-    ) {
-      throw new RangeError('Invalid tool group index')
-    }
-
-    next[slot].splice(index ?? next[slot].length, 0, id)
-    setLayout(next)
-  }
-
   function outlet(slot: ToolPlacement, node: HTMLElement | null) {
     if (node) {
-      outlets.set(slot, { node })
+      outlets.set(slot, node)
     } else {
       outlets.delete(slot)
     }
 
     render()
-  }
-
-  function startDrag(event: PointerEvent, id: string, node: HTMLElement) {
-    if (!event.isPrimary || event.button !== 0) {
-      return
-    }
-
-    drag?.cancel()
-    const frame = getFrame()
-    const cancel = trackToolDrag(
-      event,
-      node,
-      groups.get(id)?.label ?? id,
-      frame,
-      (dock, target, position) => {
-        for (const [slot, { node: outletNode }] of outlets) {
-          if (!dock || !dock.contains(outletNode)) {
-            continue
-          }
-
-          const targetId = outletNode.contains(target)
-            ? target?.closest<HTMLElement>('[data-tool-group]')?.dataset
-                .toolGroup
-            : undefined
-
-          if (targetId === id) {
-            return
-          }
-
-          const index = layout[slot]
-            .filter((item) => item !== id)
-            .indexOf(targetId ?? '')
-
-          move(id, slot, index < 0 ? undefined : index)
-
-          return
-        }
-
-        float(id, position)
-      },
-      () => {
-        drag = undefined
-      }
-    )
-
-    drag = { id, cancel }
   }
 
   return {
@@ -463,12 +257,7 @@ export function createToolGroups(
         )
       : undefined,
     api: {
-      getLayout: () => globalThis.structuredClone(layout),
-
-      setLayout,
       setTargets,
-      move,
-      float,
 
       mount(id, container) {
         if (
@@ -485,11 +274,7 @@ export function createToolGroups(
 
         manual.set(id, binding)
         try {
-          if (layout.manual.includes(id)) {
-            render()
-          } else {
-            move(id, 'manual')
-          }
+          render()
         } catch (error) {
           if (old) {
             manual.set(id, old)
@@ -507,15 +292,7 @@ export function createToolGroups(
           }
 
           manual.delete(id)
-          if (layout.manual.includes(id)) {
-            if (!targets.has(id) && Object.hasOwn(inspectorRefs, id)) {
-              move(id, 'properties.top')
-
-              return
-            }
-
-            render()
-          }
+          render()
         }
       }
     } satisfies ToolGroups,
@@ -529,7 +306,6 @@ export function createToolGroups(
 
     pause() {
       ready = false
-      drag?.cancel()
       for (const id of [...mounted.keys()]) {
         detach(id)
       }

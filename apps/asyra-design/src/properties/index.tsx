@@ -109,13 +109,12 @@ const Properties = ({
         borderLeft: '1px solid #1a1a1a'
       }}
       data-testid="properties-panel"
-      data-tool-dock={slotRef ? 'Properties' : undefined}
     >
       {slotRef && (
         <div
           ref={slotRef}
           data-tool-slot="properties.top"
-          className="flex flex-wrap min-h-6"
+          className="flex flex-wrap"
         />
       )}
       {panelContent}

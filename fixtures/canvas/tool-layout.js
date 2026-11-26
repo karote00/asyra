@@ -7,59 +7,116 @@ const field = (id) => document.getElementById(id)
 
 const profile = field('profile')
 const placement = field('placement')
-const external = field('external')
+const toolbar = field('toolbar')
+const grip = field('grip')
 
-const preferenceKey = () => 'tool-layout:' + profile.value
+const preferenceKey = () => 'host-toolbar:' + profile.value
 
-const read = () => JSON.parse(localStorage.getItem(preferenceKey()) ?? '{}')
+function readPreference() {
+  const saved = JSON.parse(localStorage.getItem(preferenceKey()) ?? 'null')
+
+  return (
+    saved ?? {
+      hosted: true,
+      x: 12,
+      y: document.querySelector('main').offsetTop + 12
+    }
+  )
+}
+
+let preference = readPreference()
+
+function position({ x, y }) {
+  toolbar.style.setProperty('--x', x + 'px')
+  toolbar.style.setProperty('--y', y + 'px')
+}
+
+function save() {
+  localStorage.setItem(preferenceKey(), JSON.stringify(preference))
+}
+
+// The host moves its container. The same SDK target stays mounted throughout.
+grip.onpointerdown = (event) => {
+  if (!event.isPrimary || event.button !== 0) {
+    return
+  }
+
+  const bounds = toolbar.getBoundingClientRect()
+  const offsetX = event.clientX - bounds.left
+  const offsetY = event.clientY - bounds.top
+  const pointerId = event.pointerId
+
+  grip.setPointerCapture(pointerId)
+  const lifetime = new globalThis.AbortController()
+  const options = { signal: lifetime.signal }
+
+  const point = (e) => ({ x: e.clientX - offsetX, y: e.clientY - offsetY })
+
+  grip.addEventListener(
+    'pointermove',
+    (e) => {
+      if (e.pointerId === pointerId) {
+        position(point(e))
+      }
+    },
+    options
+  )
+  grip.addEventListener(
+    'pointerup',
+    (e) => {
+      if (e.pointerId !== pointerId) {
+        return
+      }
+
+      Object.assign(preference, point(e))
+      position(preference)
+      save()
+    },
+    options
+  )
+  grip.addEventListener(
+    'lostpointercapture',
+    (e) => {
+      if (e.pointerId !== pointerId) {
+        return
+      }
+
+      lifetime.abort()
+      position(preference)
+    },
+    options
+  )
+}
 
 globalThis.ready = (async () => {
+  const targets = () =>
+    preference.hosted ? { [positionRow.id]: 'external' } : {}
+
   const editor = await createDesign(document.querySelector('main'), {
     ui: [positionRow],
-    toolLayout: read(),
-
-    onToolLayoutChange(layout) {
-      localStorage.setItem(preferenceKey(), JSON.stringify(layout))
-      reflect(layout)
-    }
+    uiTargets: targets()
   })
 
   globalThis.editor = editor
 
-  function reflect(layout) {
-    placement.value = layout.floating?.positionRow
-      ? 'floating'
-      : Object.keys(layout).find(
-          (slot) =>
-            Array.isArray(layout[slot]) && layout[slot].includes('positionRow')
-        )
+  function reflect() {
+    toolbar.hidden = !preference.hosted
+    placement.value = preference.hosted ? 'manual' : 'properties.top'
+    position(preference)
   }
 
-  function restore() {
-    editor.toolGroups.setLayout(read())
-    reflect(editor.toolGroups.getLayout())
-    if (placement.value === 'manual') {
-      editor.toolGroups.mount('positionRow', external)
-    }
+  reflect()
+  profile.onchange = () => {
+    preference = readPreference()
+    editor.toolGroups.setTargets(targets())
+    reflect()
   }
 
-  restore()
-  profile.onchange = restore
   placement.onchange = () => {
-    if (placement.value === 'floating') {
-      editor.toolGroups.float('positionRow', {
-        x: globalThis.innerWidth / 3,
-        y: globalThis.innerHeight / 3
-      })
-
-      return
-    }
-
-    if (placement.value === 'manual') {
-      editor.toolGroups.mount('positionRow', external)
-    } else {
-      editor.toolGroups.move('positionRow', placement.value)
-    }
+    preference.hosted = placement.value === 'manual'
+    editor.toolGroups.setTargets(targets())
+    reflect()
+    save()
   }
 
   function applyAvailability() {

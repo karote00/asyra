@@ -145,7 +145,7 @@ test('packed Design lifecycle delivers availability past a failing observer', as
   })
 })
 
-test('packed Design lifecycle docks a floating React tool in Properties', async () => {
+test('packed Design lifecycle mounts a React tool in its host target and returns it to its outlet', async () => {
   await withConsumer(react, 'react.js', async (page) => {
     await page.evaluate(() =>
       globalThis.renderBoard(
@@ -174,22 +174,23 @@ test('packed Design lifecycle docks a floating React tool in Properties', async 
     await expect
       .poll(() => host.evaluate((el) => el.editor?.features.includes('sample')))
       .toBe(true)
-    await host.evaluate((el) =>
-      el.editor.toolGroups.float('sample', { x: 70, y: 90 })
-    )
-    const grip = await page
-      .getByRole('button', { name: 'Move sample' })
-      .boundingBox()
-    const dock = host
+    const outlet = host
       .frameLocator('iframe')
-      .locator('[data-tool-dock="Properties"]')
-    const box = await dock.boundingBox()
+      .locator('[data-tool-slot="toolbar.top"]')
 
-    await page.mouse.move(grip.x + grip.width / 2, grip.y + grip.height / 2)
-    await page.mouse.down()
-    await page.mouse.move(box.x + box.width / 2, box.y + 15, { steps: 6 })
-    await page.mouse.up()
-    await expect(dock.locator('[data-tool-group="sample"]')).toHaveCount(1)
+    await expect(outlet.getByText('Sample')).toHaveCount(1)
+    await host.evaluate((el) => {
+      const target = el.ownerDocument.createElement('aside')
+
+      target.id = 'host-tools'
+      el.ownerDocument.body.append(target)
+      el.editor.toolGroups.setTargets({ sample: target.id })
+    })
+    await expect(page.locator('#host-tools').getByText('Sample')).toHaveCount(1)
+    await expect(outlet.getByText('Sample')).toHaveCount(0)
+    await host.evaluate((el) => el.editor.toolGroups.setTargets({}))
+    await expect(outlet.getByText('Sample')).toHaveCount(1)
+    await expect(page.locator('#host-tools').getByText('Sample')).toHaveCount(0)
   })
 })
 

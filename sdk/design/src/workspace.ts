@@ -291,8 +291,7 @@ export async function mountWorkspace(
     options,
     host.ownerDocument,
     () => editor,
-    (id, container) => current().mountInspectorRow(id, container),
-    () => frame
+    (id, container) => current().mountInspectorRow(id, container)
   )
 
   occupied.add(host)

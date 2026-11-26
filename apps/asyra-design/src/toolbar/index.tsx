@@ -57,7 +57,6 @@ const ToolBar = ({
         borderBottom: '1px solid #1a1a1a'
       }}
       data-testid="toolbar"
-      data-tool-dock={slotRef ? 'Toolbar' : undefined}
     >
       <div className="flex items-center gap-1">
         {(controls?.includeTools ?? true) && <ToolButton onReset={onReset} />}
@@ -65,7 +64,7 @@ const ToolBar = ({
           <div
             ref={slotRef}
             data-tool-slot="toolbar.top"
-            className="flex items-center min-h-6 min-w-8"
+            className="flex items-center empty:hidden"
           />
         )}
         {controls?.actions.map(({ id, label, run: execute }) => (

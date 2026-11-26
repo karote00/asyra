@@ -97,14 +97,16 @@ and independent documents with two editors in a packed plain JavaScript consumer
 
 Each editor exposes its own accepted IDs through the read-only `features` property, including disabled features, host actions and registered extensions, from the same registry used for validation.
 
-The container editor owns stable tool group IDs, manual host mounts and ordered
-placements in the toolbar, properties panel and selection menu. During a drag, each visible panel marks its docking area. The entire Properties panel and toolbar route a drop to their own outlet. A grip released outside a docking area floats its group at the pointer in host viewport coordinates. The same grip can move it again or dock it. The host restores floating coordinates through its existing layout preference. Extensions own
-their DOM and listeners. Moving a group in one document preserves its mount.
-The host owns preference storage and user identity. Layout changes do not
-publish document mutations. Availability changes update command admission,
-input registrations and visible controls on the live session. The packed
-consumer proves disposal, independent editors, layout restoration and feature
-switching through actual UI and SDK entry points.
+The SDK mounts each registered group in declaration order at its default outlet,
+a host element named by `uiTargets`, or a temporary manual target. Clearing an
+explicit target restores the default. Each editor owns its mounts and cleans
+them up on disposal. Live feature admission updates commands and visible groups.
+
+The host owns the container's position, pointer interactions and any per-user
+layout preferences. Moving the host container keeps the same controls and
+editor. The packed browser fixture demonstrates dragging its own toolbar,
+restoring its position, editing a selected object, and undoing that edit.
+Verify that SDK-mounted groups expose only their controls.
 
 The packed React quickstart must automatically save committed edits with a stable local storage key and reopen the board in
 both a default Vite development server and production preview. Replacing the
