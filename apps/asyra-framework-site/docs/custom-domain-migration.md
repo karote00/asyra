@@ -70,3 +70,19 @@ case page to `design.asyra.dev`, `fieldscope.asyra.dev`, and `sim.asyra.dev`.
 The Design demo retains `fileId=demo` and its existing `open_demo` analytics
 identity. All three destinations returned HTTPS 200 during verification.
 Historical/documentation links are outside this homepage correction.
+
+
+## Production verification follow-up
+
+The next upload succeeded, but its public verification still expected 46 pages
+while the accepted content inventory now produces 62. The smoke gate now compares
+the complete sitemap URL list with the unique current routes, preserving failure
+on missing, duplicate, unexpected and wrong-origin entries. Its completion count
+is derived from that same inventory. Permanent CLI tests exercise the current
+manifest and malformed sitemaps.
+
+The bounded recovery sequence is: validate this correction, merge after CI,
+restore the prior verified deployment if the failed publication blocks baseline
+admission, run the current manual workflow, and verify both its success receipt
+and the exact public source revision. Do not bypass release admission or mark a
+failed attempt as verified.
