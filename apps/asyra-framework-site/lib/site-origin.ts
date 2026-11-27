@@ -37,7 +37,7 @@ export const resolveSiteOrigin = (
     return normalizeOrigin(environment.NEXT_PUBLIC_SITE_URL)
   }
 
-  return normalizeOrigin('https://asyra-framework.pages.dev')
+  return normalizeOrigin('https://asyra.dev')
 }
 
 export const isIndexingAuthorized = (

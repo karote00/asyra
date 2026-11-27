@@ -12,7 +12,7 @@ concurrency:
 
 env:
   SITE_ENV: production
-  NEXT_PUBLIC_SITE_URL: 'https://asyra-framework.pages.dev'
+  NEXT_PUBLIC_SITE_URL: 'https://asyra.dev'
   NEXT_PUBLIC_SITE_INDEXING: 'true'
   NEXT_PUBLIC_GA_MEASUREMENT_ID: G-LGCR34S33S
   GOOGLE_SITE_VERIFICATION: ${{ vars.GOOGLE_SITE_VERIFICATION }}
@@ -79,7 +79,7 @@ jobs:
     timeout-minutes: 15
     environment:
       name: website-production
-      url: 'https://asyra-framework.pages.dev'
+      url: 'https://asyra.dev'
     permissions:
       contents: read
       actions: read
@@ -157,7 +157,7 @@ jobs:
         id: verify
         if: steps.current.outputs.publish == 'true'
         env:
-          SITE_URL: 'https://asyra-framework.pages.dev'
+          SITE_URL: 'https://asyra.dev'
         run: |
           node scripts/wait-for-http.mjs "$SITE_URL" HEAD 60000
           node apps/asyra-framework-site/scripts/production-smoke.mjs
@@ -167,7 +167,7 @@ jobs:
         env:
           DEPLOYMENT_ID: ${{ steps.deploy.outputs.pages-deployment-id }}
         run: |
-          printf 'Source: `%s`\n\nCloudflare deployment: `%s`\n\nProduction: https://asyra-framework.pages.dev\n' "$SOURCE_SHA" "$DEPLOYMENT_ID" >> "$GITHUB_STEP_SUMMARY"
+          printf 'Source: `%s`\n\nCloudflare deployment: `%s`\n\nProduction: https://asyra.dev\n' "$SOURCE_SHA" "$DEPLOYMENT_ID" >> "$GITHUB_STEP_SUMMARY"
       - name: Retain per-owner release guidance result
         if: always() && steps.deploy.outcome != 'skipped' && steps.deploy.outcome != ''
         env:
