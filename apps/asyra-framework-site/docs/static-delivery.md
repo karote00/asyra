@@ -2,7 +2,7 @@
 
 Cloudflare Pages is the website's only production deployment target. Each build
 uses an explicit `NEXT_PUBLIC_SITE_URL` for canonical metadata, social images,
-robots and sitemap. The production origin is `https://asyra-framework.pages.dev`.
+robots and sitemap. The production origin is `https://asyra.dev`.
 
 The static target preserves all 46 public pages, native document navigation,
 Runtime Atlas, the six-chapter homepage, product sliders, reduced-motion and
@@ -78,7 +78,8 @@ Git-integrated Pages project.
 After deployment, run the production smoke and social preview test against the
 anonymous HTTPS URL. Inspect home, documents and Atlas, check real 404 status,
 verify the emitted security/cache headers, and verify GA requests use the new
-page location. Dashboard deployment success alone is not acceptance. Custom-domain adoption is a separate decision.
+page location. Dashboard deployment success alone is not acceptance. The old `asyra-framework.pages.dev` hostname redirects to the custom domain;
+verify path and query preservation after publication.
 
 References:
 

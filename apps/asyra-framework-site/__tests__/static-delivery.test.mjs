@@ -11,7 +11,7 @@ import { isIndexingAuthorized, resolveSiteOrigin } from '../lib/site-origin.ts'
 test('production identity and indexing require an explicit environment for Cloudflare delivery', () => {
   const environment = {
     SITE_ENV: 'production',
-    NEXT_PUBLIC_SITE_URL: 'https://asyra-framework.pages.dev',
+    NEXT_PUBLIC_SITE_URL: 'https://asyra.dev',
     NEXT_PUBLIC_SITE_INDEXING: 'true'
   }
 
@@ -32,7 +32,7 @@ test('production identity and indexing require an explicit environment for Cloud
   assert.throws(() =>
     resolveSiteOrigin({ NEXT_PUBLIC_SITE_URL: 'https://example.com/path' })
   )
-  assert.equal(resolveSiteOrigin({}), 'https://asyra-framework.pages.dev')
+  assert.equal(resolveSiteOrigin({}), 'https://asyra.dev')
 })
 
 test(
@@ -88,9 +88,12 @@ test(
       const route = url.slice(origin.length)
       const file = route === '/' ? 'index.html' : `${route.slice(1)}.html`
 
-      assert.ok(
-        (await readFile(path.join(root, file), 'utf8')).includes('<html')
-      )
+      const page = await readFile(path.join(root, file), 'utf8')
+
+      assert.ok(page.includes('<html'))
+      const canonical = page.match(/<link rel="canonical" href="([^"]+)"/u)?.[1]
+
+      assert.equal(new URL(canonical).href, url, `Canonical URL for ${route}`)
     }
 
     const robots = await readFile(path.join(root, 'robots.txt'), 'utf8')

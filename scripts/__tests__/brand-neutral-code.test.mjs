@@ -185,6 +185,26 @@ const isAllowedPublicIdentity = (token, line, filePath) => {
   const relativePath = path.relative(repositoryRoot, filePath)
 
   if (
+    token === repositoryBrand &&
+    [
+      '.github/workflows/site-cloudflare.yml',
+      '.github/__tests__/site-cloudflare.test.mjs'
+    ].includes(relativePath)
+  ) {
+    const withoutOrigin = line.replace(
+      new RegExp(
+        String.raw`https://${escapedRepositoryBrand}\.dev(?=['"\s\\])`,
+        'gu'
+      ),
+      ''
+    )
+
+    if (withoutOrigin !== line && !withoutOrigin.match(brandedTokenPattern)) {
+      return true
+    }
+  }
+
+  if (
     pluginIdentityOwners.has(relativePath) &&
     (token === 'asyra-skill' ||
       (token === 'asyra-agent' &&
@@ -280,6 +300,43 @@ const isAllowedPublicIdentity = (token, line, filePath) => {
 
   return false
 }
+
+test('the official domain is URL data only in its deployment owners', () => {
+  const origin = `https://${repositoryBrand}.dev`
+  const owners = [
+    '.github/workflows/site-cloudflare.yml',
+    '.github/__tests__/site-cloudflare.test.mjs'
+  ]
+
+  for (const owner of owners) {
+    const filePath = path.join(repositoryRoot, owner)
+
+    assert.equal(
+      isAllowedPublicIdentity(repositoryBrand, `url: '${origin}'`, filePath),
+      true
+    )
+    for (const line of [
+      `const ${repositoryBrand} = '${origin}'`,
+      `url: '${origin}.example.com'`,
+      `url: 'https://${repositoryBrand}.example'`,
+      `const key = '${repositoryBrand}'`
+    ]) {
+      assert.equal(
+        isAllowedPublicIdentity(repositoryBrand, line, filePath),
+        false
+      )
+    }
+  }
+
+  assert.equal(
+    isAllowedPublicIdentity(
+      repositoryBrand,
+      `url: '${origin}'`,
+      path.join(repositoryRoot, 'scripts/example.mjs')
+    ),
+    false
+  )
+})
 
 test('plugin distribution identities remain scoped to quoted owner data', () => {
   const token = `${repositoryBrand}-skill`

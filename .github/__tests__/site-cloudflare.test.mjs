@@ -281,3 +281,17 @@ test('Cloudflare retries restore a frozen candidate and retain it before mutatio
     )
   )
 })
+
+test('production discovery and verification use the custom domain with the existing GA stream', () => {
+  assert.equal(workflow.env.NEXT_PUBLIC_SITE_URL, 'https://asyra.dev')
+  assert.equal(workflow.env.NEXT_PUBLIC_SITE_INDEXING, 'true')
+  assert.equal(workflow.env.NEXT_PUBLIC_GA_MEASUREMENT_ID, 'G-LGCR34S33S')
+  assert.equal(workflow.jobs.publish.environment.url, 'https://asyra.dev')
+  const verify = workflow.jobs.publish.steps.find(
+    (step) => step.id === 'verify'
+  )
+
+  assert.equal(verify.env.SITE_URL, 'https://asyra.dev')
+  assert.ok(source.includes('Production: https://asyra.dev'))
+  assert.ok(!source.includes('https://asyra-framework.pages.dev'))
+})
