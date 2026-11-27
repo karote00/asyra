@@ -36,7 +36,7 @@ const ctaDestinations = new Map([
   ['/docs/start/create-design-app', 'create_app'],
   ['/atlas', 'explore_atlas'],
   ['/asyra-design', 'product_case'],
-  ['https://asyra-design.pages.dev/', 'open_demo'],
+  ['https://design.asyra.dev/', 'open_demo'],
   ['https://github.com/karote00/asyra', 'view_source']
 ])
 const dialogControls = new Map([

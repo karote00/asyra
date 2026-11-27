@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import path from 'node:path'
-import { pathToFileURL } from 'node:url'
+import { pathToFileURL, URL } from 'node:url'
 import { DEPLOYMENT_APPS } from './app-cloudflare.mjs'
 import {
   prepareGuidance,
@@ -86,8 +86,13 @@ export async function cloudflareBaseline(
     /^[a-f0-9]{40}$/,
     'Release coverage gap: deployed source SHA is missing'
   )
+  assert.match(
+    deployed.url ?? '',
+    new RegExp(`^https://[a-z0-9-]+\\.${app.project}\\.pages\\.dev/?$`, 'u'),
+    'Release coverage gap: invalid provider deployment URL'
+  )
   const marker = await request(
-    `https://${app.project}.pages.dev/deployment-version.json`,
+    new URL('/deployment-version.json', deployed.url).href,
     { cache: 'no-store', redirect: 'error', signal: AbortSignal.timeout(10000) }
   )
 

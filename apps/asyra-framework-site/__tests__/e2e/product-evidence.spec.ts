@@ -517,7 +517,7 @@ for (const width of [320, 390, 1024, 1440]) {
     }
 
     for (const [name, href] of [
-      ['Open Asyra FieldScope ↗', 'https://asyra-fieldscope.pages.dev'],
+      ['Open Asyra FieldScope ↗', 'https://fieldscope.asyra.dev'],
       [
         'Crop model source ↗',
         'https://github.com/karote00/asyra/blob/main/apps/asyra-fieldscope/src/domain/crop-layout.ts'
@@ -526,7 +526,7 @@ for (const width of [320, 390, 1024, 1440]) {
         'Crop layout tests ↗',
         'https://github.com/karote00/asyra/blob/main/apps/asyra-fieldscope/src/domain/__tests__/crop-layout.test.ts'
       ],
-      ['Open the workbench ↗', 'https://asyra-sim.pages.dev'],
+      ['Open the workbench ↗', 'https://sim.asyra.dev'],
       [
         'Analysis tests ↗',
         'https://github.com/karote00/asyra/blob/main/apps/asyra-sim/src/features/__tests__/analysis.test.ts'

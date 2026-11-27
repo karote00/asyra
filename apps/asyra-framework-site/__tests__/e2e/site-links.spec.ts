@@ -28,6 +28,9 @@ const publicRoutes = [
   ...manifest.pages.map(({ id }) => publicPageHref(id))
 ]
 const allowedExternalOrigins = new Set([
+  'https://design.asyra.dev',
+  'https://fieldscope.asyra.dev',
+  'https://sim.asyra.dev',
   'https://asyra-design.pages.dev',
   'https://asyra-sim.pages.dev',
   'https://asyra-fieldscope.pages.dev',
@@ -145,20 +148,24 @@ for (const source of publicRoutes) {
       ).toMatch(new RegExp(`\\bid="${escapePattern(id)}"`))
     }
 
+    if (source === '/' || source === '/asyra-design') {
+      for (const origin of externalOrigins) {
+        expect(origin).not.toMatch(/pages\.dev|vercel\.app/u)
+      }
+    }
+
     if (source === '/') {
       for (const origin of [
-        'https://asyra-design.pages.dev',
-        'https://asyra-sim.pages.dev',
-        'https://asyra-fieldscope.pages.dev',
+        'https://design.asyra.dev',
+        'https://sim.asyra.dev',
+        'https://fieldscope.asyra.dev',
         'https://github.com'
       ]) {
         expect(externalOrigins).toContain(origin)
       }
 
-      expect(externalUrls).toContain(
-        'https://asyra-design.pages.dev/?fileId=demo'
-      )
-      expect(externalUrls).toContain('https://asyra-sim.pages.dev/')
+      expect(externalUrls).toContain('https://design.asyra.dev/?fileId=demo')
+      expect(externalUrls).toContain('https://sim.asyra.dev/')
     }
 
     if (source === '/docs') {
