@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Design tool layout</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font: 14px system-ui;
+        color: #233244;
+      }
+      main {
+        height: 70dvh;
+        min-height: 280px;
+      }
+      header {
+        padding: 10px 14px;
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+      button,
+      select {
+        font: inherit;
+      }
+      #toolbar {
+        position: fixed;
+        inset: 0 auto auto 0;
+        z-index: 1;
+        padding: 6px;
+        max-width: 100vw;
+        border: 1px solid #94a3b8;
+        border-radius: 4px;
+        background: white;
+        transform: translate(clamp(0px, var(--x), max(0px, 100vw - 100%)), clamp(0px, var(--y), max(0px, 100dvh - 100%)));
+      }
+      #grip {
+        cursor: grab;
+        touch-action: none;
+        user-select: none;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <label
+        >Layout profile
+        <select id="profile">
+          <option>Alex</option>
+          <option>Sam</option>
+        </select></label
+      >
+      <label
+        >Position row placement
+        <select id="placement">
+          <option value="properties.top">Properties</option>
+          <option value="manual">My toolbar</option>
+        </select></label
+      >
+      <label><input type="checkbox" id="limited" /> Disable geometry editing</label>
+      <label
+        ><input type="checkbox" id="entitled" checked /> Enable Position row</label
+      >
+      <button id="sample" type="button">Select two rectangles</button>
+    </header>
+    <main></main>
+    <aside id="toolbar" aria-label="My toolbar" hidden>
+      <button id="grip" type="button">Drag Position</button>
+      <div id="external"></div>
+    </aside>
+    <script type="module" src="./tool-layout.js"></script>
+  </body>
+</html>

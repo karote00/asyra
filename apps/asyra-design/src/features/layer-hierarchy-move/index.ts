@@ -2,6 +2,7 @@ import { defineFeature } from '@asyra/core'
 import { SessionCancelPolicies } from '@asyra/utils'
 import type { SystemContextSnapshotWithDetail } from '@asyra/utils'
 import { hierarchyApis, selectionApis } from '../../common-apis'
+import { selectElements } from '../../controllers/element-selection'
 import { FeatureNames, InputSystemEvents } from '../../constants'
 import type {
   LayerDropIntent,
@@ -50,7 +51,7 @@ export const layerHierarchyMoveSession = {
     const requestedSelection = detail.source.requestedSourceSelection
 
     if (!idsEqual(selectionApis.getSelectedIds(), requestedSelection)) {
-      selectionApis.selectElements([...requestedSelection])
+      selectElements([...requestedSelection])
     }
 
     return { source: detail.source }

@@ -24,6 +24,10 @@ Provide typed cross-package event communication.
 ## Rules
 
 - Cross-package communication should use typed events or core request APIs.
+- Progressive replay gives each slice a rendering opportunity. The default
+  paint adapter waits for an animation frame, then resumes in a host task after
+  rendering. It waits for another refresh only when animation frames are the
+  only available host scheduler. Atomic replay bypasses this boundary.
 - Event names and payloads are framework contracts.
 - Avoid ad-hoc untyped payloads for core event channels.
 - Event registration storage should use shared `@asyra/utils` registry primitives (`MapRegistry`) instead of duplicating registry infrastructure.

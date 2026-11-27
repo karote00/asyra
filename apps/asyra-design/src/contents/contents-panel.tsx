@@ -1,3 +1,4 @@
+import { UIItems } from '../workspace/ui-parts'
 import React, {
   type PointerEvent as ReactPointerEvent,
   useCallback,
@@ -191,17 +192,18 @@ const Contents: React.FC = () => {
     }
   }, [])
 
-  const getPointerTarget = useCallback(
-    (clientX: number, clientY: number) =>
-      typeof document.elementFromPoint === 'function'
-        ? resolveLayerPointerTarget(
-            clientX,
-            clientY,
-            document.elementFromPoint.bind(document)
-          )
-        : null,
-    []
-  )
+  const getPointerTarget = useCallback((clientX: number, clientY: number) => {
+    const root = scrollRef.current?.getRootNode() as
+      Document | ShadowRoot | undefined
+
+    return root && typeof root.elementFromPoint === 'function'
+      ? resolveLayerPointerTarget(
+          clientX,
+          clientY,
+          root.elementFromPoint.bind(root)
+        )
+      : null
+  }, [])
 
   const handleLayerPointerDown = useCallback(
     (event: ReactPointerEvent<HTMLDivElement>, elementId: string) => {
@@ -417,10 +419,12 @@ const Contents: React.FC = () => {
       }
     }
 
-    window.addEventListener('keydown', handleKeyDown)
+    const view = panelRef.current?.ownerDocument.defaultView ?? window
+
+    view.addEventListener('keydown', handleKeyDown)
 
     return () => {
-      window.removeEventListener('keydown', handleKeyDown)
+      view.removeEventListener('keydown', handleKeyDown)
       cancelActiveLayerMove('unmount')
     }
   }, [cancelActiveLayerMove])
@@ -465,98 +469,116 @@ const Contents: React.FC = () => {
       onPointerUp={handleLayerPointerUp}
       onPointerCancel={() => cancelActiveLayerMove('pointer-cancel')}
       onLostPointerCapture={() => cancelActiveLayerMove('lost-capture')}
+      data-editor-panel="layers"
       data-testid="contents-panel"
       data-layer-move-state={layerMoveState}
     >
-      {/* Panel header */}
-      <div
-        className="flex items-center px-3 flex-shrink-0"
-        style={{
-          height: '40px',
-          minHeight: '40px',
-          borderBottom: '1px solid #2c2c2c'
-        }}
-      >
-        <span className="text-[11px] font-medium text-[#999]">Layers</span>
-      </div>
+      <UIItems
+        id="layers"
+        parts={{
+          layersHeading: (
+            <div
+              className="flex items-center px-3 flex-shrink-0"
+              style={{
+                height: '40px',
+                minHeight: '40px',
+                borderBottom: '1px solid #2c2c2c'
+              }}
+            >
+              <span className="text-[11px] font-medium text-[#999]">
+                Layers
+              </span>
+            </div>
+          ),
+          layerTree: (
+            <div
+              ref={scrollRef}
+              className="flex-1 overflow-y-auto"
+              data-layer-list="tree"
+              data-testid="contents-scroll-container"
+              data-layer-drop-workspace="true"
+              data-layer-drop-state={
+                dropIntent?.kind === 'valid' && dropIntent.zone === 'workspace'
+                  ? 'workspace'
+                  : undefined
+              }
+              style={
+                dropIntent?.kind === 'valid' && dropIntent.zone === 'workspace'
+                  ? { boxShadow: 'inset 0 -2px 0 #4db3ff' }
+                  : undefined
+              }
+            >
+              <UIItems
+                id="layerTree"
+                parts={{
+                  layerStatus: layerProjection?.error ? (
+                    <div
+                      role="alert"
+                      className="px-3 py-2 text-[10px] text-[#f28b82]"
+                      data-layer-status="projectionError"
+                      data-testid="layers-projection-error"
+                    >
+                      Layers hierarchy is unavailable.
+                    </div>
+                  ) : null,
+                  layerRows: (
+                    <div
+                      style={{
+                        height: rowVirtualizer.getTotalSize(),
+                        position: 'relative'
+                      }}
+                    >
+                      {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+                        const elementId = visibleIds[virtualRow.index]
 
-      {/* Layers list */}
-      <div
-        ref={scrollRef}
-        className="flex-1 overflow-y-auto"
-        data-testid="contents-scroll-container"
-        data-layer-drop-workspace="true"
-        data-layer-drop-state={
-          dropIntent?.kind === 'valid' && dropIntent.zone === 'workspace'
-            ? 'workspace'
-            : undefined
-        }
-        style={
-          dropIntent?.kind === 'valid' && dropIntent.zone === 'workspace'
-            ? { boxShadow: 'inset 0 -2px 0 #4db3ff' }
-            : undefined
-        }
-      >
-        {layerProjection?.error ? (
-          <div
-            role="alert"
-            className="px-3 py-2 text-[10px] text-[#f28b82]"
-            data-testid="layers-projection-error"
-          >
-            Layers hierarchy is unavailable.
-          </div>
-        ) : null}
-        <div
-          style={{
-            height: rowVirtualizer.getTotalSize(),
-            position: 'relative'
-          }}
-        >
-          {rowVirtualizer.getVirtualItems().map((virtualRow) => {
-            const elementId = visibleIds[virtualRow.index]
+                        if (!elementId) {
+                          return null
+                        }
 
-            if (!elementId) {
-              return null
-            }
+                        const row =
+                          visibleRows?.[virtualRow.index] ??
+                          projectExpandedLayerRow(elementId, elementDataMap)
 
-            const row =
-              visibleRows?.[virtualRow.index] ??
-              projectExpandedLayerRow(elementId, elementDataMap)
+                        if (!row) {
+                          return null
+                        }
 
-            if (!row) {
-              return null
-            }
-
-            return (
-              <div
-                key={virtualRow.key}
-                data-index={virtualRow.index}
-                ref={rowVirtualizer.measureElement}
-                style={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  width: '100%',
-                  transform: `translateY(${virtualRow.start}px)`
+                        return (
+                          <div
+                            key={virtualRow.key}
+                            data-index={virtualRow.index}
+                            ref={rowVirtualizer.measureElement}
+                            style={{
+                              position: 'absolute',
+                              top: 0,
+                              left: 0,
+                              width: '100%',
+                              transform: `translateY(${virtualRow.start}px)`
+                            }}
+                          >
+                            <Element
+                              elementId={elementId}
+                              isSelected={elementSelection.has(elementId)}
+                              isHovered={hoveredElementId === elementId}
+                              depth={row.depth}
+                              canExpand={row.canExpand}
+                              isExpanded={row.isExpanded}
+                              dropState={getRowDropState(elementId)}
+                              onToggleGroup={handleToggleGroup}
+                              onSelect={handleElementSelect}
+                              onPointerDown={handleLayerPointerDown}
+                            />
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )
                 }}
-              >
-                <Element
-                  elementId={elementId}
-                  isSelected={elementSelection.has(elementId)}
-                  isHovered={hoveredElementId === elementId}
-                  depth={row.depth}
-                  canExpand={row.canExpand}
-                  isExpanded={row.isExpanded}
-                  dropState={getRowDropState(elementId)}
-                  onToggleGroup={handleToggleGroup}
-                  onSelect={handleElementSelect}
-                  onPointerDown={handleLayerPointerDown}
-                />
-              </div>
-            )
-          })}
-        </div>
-      </div>
+              />
+            </div>
+          )
+        }}
+      />
     </div>
   )
 }

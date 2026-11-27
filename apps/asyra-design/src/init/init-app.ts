@@ -1,19 +1,11 @@
+import { initDesign } from './init-design'
 import {
   createConversationDrafts,
   type ConversationDrafts
 } from '../ai/conversation-drafts'
-import { applyPreset } from '@asyra/preset'
-import { initText } from './capabilities/init-text'
 import core from '../contexts'
-import { initAreaSelection } from './capabilities/init-area-selection'
 import { initAiDrawingProgress } from './capabilities/init-ai-drawing-progress'
-import { initGradientFillEditing } from './capabilities/init-gradient-fill-editing'
-import { initVectorIconData } from './capabilities/init-vector-icon-data'
-import { initLoadDiagnostics } from './diagnostics/init-load-diagnostics'
-import { initCanvasPipelineDebugger } from './diagnostics/init-canvas-pipeline-debugger'
-import { initPathEditingContinuation } from './derived-state/init-path-editing-continuation'
 import { initFeatures } from './foundation/init-features'
-import { initInputSystem } from './foundation/init-input-system'
 import { elementApis } from '../common-apis/element'
 import { viewportApis } from '../common-apis/viewport'
 import {
@@ -60,27 +52,7 @@ export interface AppInitialization {
  * ```
  */
 export const initApp = (): AppInitialization => {
-  applyPreset(core)
-  initText(core)
-
-  // DEV runtime diagnostics are loaded from an optional package subpath.
-  void initCanvasPipelineDebugger()
-
-  // Diagnostics: subscribe once to core load diagnostics and route reports to app-level handlers.
-  initLoadDiagnostics()
-
-  // Derived-state syncs.
-  // Derive Pen continuation from canonical selection and topology.
-  initPathEditingContinuation()
-
-  // Capability init.
-  initAreaSelection()
-  initAiDrawingProgress()
-  initGradientFillEditing()
-  initVectorIconData()
-
-  // Foundation init.
-  initInputSystem()
+  initDesign({ initProgress: initAiDrawingProgress })
   const aiStartup: AiStartup = createAiStartup()
   let initializedFeatures: ReturnType<typeof initFeatures>
 

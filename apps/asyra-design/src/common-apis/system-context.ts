@@ -1,3 +1,4 @@
+import { defaultPrimaryTool } from '../workspace-features'
 /**
  * System Context APIs
  * For managing system-level state observables
@@ -13,7 +14,7 @@ import {
 } from '@asyra/core'
 import type { PositionData } from '@asyra/utils'
 import { PresetSystemPropertyKeys } from '@asyra/preset'
-import { SystemPropertyKeys, PrimaryToolType } from '../constants'
+import { SystemPropertyKeys } from '../constants'
 import { selectionApis } from './selection'
 
 export type SelectedVectorPointState = CoreSelectedVectorPointState
@@ -120,7 +121,7 @@ export type PathEditingContinuationState = CoreVectorEditingContinuation & {
   elementId: string
 }
 
-interface EnterPathEditingOptions {
+export interface EnterPathEditingOptions {
   startNewSubpath?: boolean
 }
 
@@ -135,7 +136,7 @@ export const systemContextApis = {
   /**
    * Get the current system context snapshot
    */
-  getSystemContextSnapshot: () => {
+  getSnapshot: () => {
     return core.getSystemContextSnapshot()
   },
 
@@ -410,7 +411,7 @@ export const systemContextApis = {
     systemContextApis.setPathEditingVectorId(null)
     systemContextApis.setPathEditingStartNewSubpath(false)
     systemContextApis.clearVectorPointState()
-    systemContextApis.switchPrimaryTool(PrimaryToolType.SELECT)
+    systemContextApis.switchPrimaryTool(defaultPrimaryTool)
   },
 
   getPathEditingContinuation: (): PathEditingContinuationState | null => {

@@ -1,3 +1,4 @@
+import { UIItems } from '../workspace/ui-parts'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 
 export const STATUS_TOAST_AUTO_DISMISS_MS = 10_000
@@ -102,6 +103,7 @@ export const StatusToastStack: React.FC<StatusToastStackProps> = ({
 
   return (
     <div
+      data-canvas-overlay="notifications"
       aria-label="Status notifications"
       className="pointer-events-none absolute left-1/2 top-4 z-50 w-[min(90vw,82rem)] -translate-x-1/2"
     >
@@ -127,15 +129,25 @@ export const StatusToastStack: React.FC<StatusToastStackProps> = ({
           >
             <div className="min-h-0 overflow-hidden">
               <div className="pointer-events-auto relative rounded bg-red-700 px-4 py-3 pr-12 text-base text-white shadow">
-                <span role="alert">{entry.message}</span>
-                <button
-                  aria-label={`Close ${entry.message}`}
-                  className="absolute right-2 top-2 flex size-7 items-center justify-center rounded text-xl leading-none text-white/90 transition-colors hover:bg-white/15 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-white"
-                  onClick={() => dismiss(entry.id)}
-                  type="button"
-                >
-                  <span aria-hidden="true">×</span>
-                </button>
+                <UIItems
+                  id="notifications"
+                  parts={{
+                    notificationMessage: (
+                      <span role="alert">{entry.message}</span>
+                    ),
+                    dismissNotification: (
+                      <button
+                        data-notification-action="dismiss"
+                        aria-label={`Close ${entry.message}`}
+                        className="absolute right-2 top-2 flex size-7 items-center justify-center rounded text-xl leading-none text-white/90 transition-colors hover:bg-white/15 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-white"
+                        onClick={() => dismiss(entry.id)}
+                        type="button"
+                      >
+                        <span aria-hidden="true">×</span>
+                      </button>
+                    )
+                  }}
+                />
               </div>
             </div>
           </div>

@@ -47,6 +47,7 @@ export const ColorPickerInputGroup: React.FC<ColorPickerInputGroupProps> = (
     <div className="px-3 flex items-center gap-2">
       <div className="w-[66px] h-6 flex items-center rounded-[3px] bg-panel-surface-hover border border-transparent hover:border-[#5c5c5c] transition-all overflow-hidden text-white">
         <select
+          data-color-control="format"
           value={colorFormat}
           onChange={(e) => onFormatChange?.(e.target.value)}
           className="!pr-4 !pl-1 w-full bg-transparent text-[11px] text-white outline-none appearance-none cursor-pointer uppercase shrink-0 h-full"
@@ -71,6 +72,7 @@ export const ColorPickerInputGroup: React.FC<ColorPickerInputGroupProps> = (
               <div className="flex-1 min-w-0 flex items-center h-full">
                 <input
                   type="text"
+                  data-color-channel={i}
                   value={val}
                   onChange={(e) => onChange(e.target.value, i)}
                   onBlur={() => onBlur(i)}

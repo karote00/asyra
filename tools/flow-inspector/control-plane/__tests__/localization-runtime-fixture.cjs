@@ -451,10 +451,11 @@ function localizationFixture() {
 
     mutate(kind) {
       const file = kind === 'app' ? appFile : factoryFile
-      const from = kind === 'app' ? "if (direction === 'redo')" : 'return value'
+      const from =
+        kind === 'app' ? 'return runHistoryCommand(direction)' : 'return value'
       const to =
         kind === 'app'
-          ? "if (direction === 'undo')"
+          ? "return runHistoryCommand(direction === 'undo' ? 'redo' : 'undo')"
           : "return typeof value === 'number' ? value + 1 : value"
       const text = originals.get(file)
 

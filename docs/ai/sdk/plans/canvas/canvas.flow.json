@@ -1,0 +1,91 @@
+{
+  "schemaVersion": 1,
+  "projectId": "asyra",
+  "flowId": "canvas",
+  "revision": 78,
+  "definition": {
+    "title": "Canvas SDK",
+    "purpose": "Bind a blank host surface and opt into independent product SDKs.",
+    "nodes": [
+      {
+        "id": "embed",
+        "title": "Bind an editor to a canvas",
+        "objective": "Canvas validates and reserves the target. Only an explicit mount initializes product tools. Design owns 2D Core, rendering and edits; Simulation owns clock and sampled playback. Base disposal waits for pending setup and teardown before releasing the target. Invalid or duplicate mounts cannot edit the surface. Design claims a supplied container and creates its own canvas inside it, or borrows the supplied canvas directly. It mounts the Design session on that exact surface. Failure and disposal remove only owned elements and release container exclusivity after teardown. Default or caller-selected controls dispatch through the public Design tools. Headless mode bypasses control creation. Cleanup releases SDK-owned DOM and the binding, including on failure. A declarative Design element mounts through the same editor entry in its own shadow tree. Connection owns startup and disconnection owns teardown. Moving the connected element preserves its session. The React and Vue exports and Angular template use that browser lifecycle. The declarative element fills the parent layout with a viewport-height intrinsic fallback. On a standalone page the element fills the viewport. The existing Design resize observer updates the drawing buffer to the space left by the controls. The default container session mounts the maintained Design workspace in an isolated browser document. The app owns interactive features, panels, menus and optional collaboration. SDK options supply document, actions and services. Conversation has no startup or UI entry. Raw canvas sessions retain their borrowed target. Packed consumers exercise the full workspace and isolated disposal. At mount, Design resolves disabledFeatures for this instance. User commands from controls, gestures, shortcuts, inspectors, extensions and public methods respect that policy. Document load, remote replay and projection retain the original component registrations. hideUI suppresses workspace chrome independently of tool dispatch. Packed consumers verify defaults, disabled routes, document rendering and independent instances. With hidden chrome, public Design commands route text, vector, hierarchy, appearance, selection and viewport edits through the app owners. Read-only UI observations detach on disposal and rebind on reset. Recovery commands reuse the active collaboration session. A plain JavaScript consumer verifies these operations, disabled commands and recovery from failed local storage. The app supplies common API groups and feature admission. The container editor resolves every group against its own live session, detaches document reads and retires subscriptions and retained owners on disposal or reset. The packed plain JavaScript case exercises catalog parity, guarded mixed writes and independent documents. The container SDK mounts tool groups at declared outlets or host targets and owns their mount lifetime. Host applications own positioning, drag gestures and layout preferences. The packed fixture drags its host container and verifies control identity, editing and Undo. Live feature admission updates gestures, actions and UI in the existing session. Manual mounting works without built-in chrome. The packed consumer verifies relocation, isolation, updates and cleanup. The consumer automatically saves and restores a keyed local board in development and production. Each committed editing turn writes one snapshot for its board, including undo and redo. Reset clears the saved board. A replacement document or collaboration identity retires its previous editor. Built-in feature IDs are reserved, and failed UI activation restores the previous policy for retry. React notifies the host once per ready editor. The workspace registers installed node definitions before document admission and uses the registered renderer and field schema on replay, including when creation is disabled. The Position row is installed from its own package, observes the selected X and Y properties and edits them through the same element command as the inspector. A local board uses one IndexedDB connection and one record per board key; legacy data is removed only after a validated, committed import. Packed React and JavaScript cases exercise these paths. Standalone UI groups are installed from the first-party Design UI package. Each defaults to its declared slot. An explicit target ID resolves in the host document before any controls mount. Missing groups or targets reject setup. The app renders one Position and Dimension surface per installed row, returning it to its native slot when the external target is cleared. A clean React consumer installs only Design over React and restores a drawn shape through the storageKey prop. The container editor owns ordered Position and Dimension template items across frame replacement. Public row handles compose native items and host numeric descriptors with complete replacement or relative insertion. The app renders keyed controls with template styling, subscribes only while mounted and delegates custom writes to the supplied callback. Invalid composition leaves the previous row intact. Moving a row preserves its control instances. Template edits never mutate the document. React presentation props update the existing workspace. Built-in inspector targets work directly and explicit group installation retains ordering and ownership. Indexed row edits and selected-node numeric field bindings use the same inspector sources and guarded document commands. Packed React and JavaScript consumers verify both paths. The app inspector row registry supplies public lookup IDs, field types, runtime templates and DOM inspection markers. The packed workspace renders domain markers on its UI and preserves row identity across host targets. Packed JavaScript and React consumers inspect both locations. Workspace composition maps named groups and controls to their actual React owners. Each editor owns its layout and exclusive placements. React and JavaScript consumers can mount and release controls independently of built-in chrome. Contextual availability and command policy remain app-owned. The optional React provider binds one board host per scope. Consumers observe its current editor identity through readiness, replacement and release. Nested scopes and independently mounted boards remain isolated. Standalone boards and product-level onMount callbacks retain their lifecycle.",
+        "owner": "Canvas lifecycle and independent product SDKs",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [],
+        "criteria": [
+          {
+            "id": "consumer",
+            "title": "Packed base, one-call and customized design editors, and simulation playback work independently",
+            "kind": "automated",
+            "selector": {
+              "producer": "custom",
+              "identity": "canvas/consumer"
+            }
+          }
+        ],
+        "specRefs": [
+          "docs/ai/sdk/plans/canvas-embedding-plan.md",
+          "sdk/design/FEATURES.md"
+        ],
+        "implementationRefs": [
+          "sdk/canvas/**",
+          "fixtures/canvas/**",
+          "packages/core/src/core.ts",
+          "packages/render/src/renderer.ts",
+          "packages/render-engine-pixi/src/pixi-render-engine.ts",
+          "sdk/design/**",
+          "sdk/simulation/**",
+          "apps/asyra-design/src/**",
+          "apps/asyra-design/sdk-build.mjs",
+          "packages/feature-system/src/core/feature-registry.ts",
+          "packages/feature-system/src/core/feature.ts",
+          "packages/persistence/src/providers/**",
+          "sdk/design-ui/**",
+          "apps/asyra-design/sdk-types.mjs",
+          "packages/design-system/src/components/ColorPicker/**",
+          "packages/design-system/src/components/ContextMenu/ContextMenu.tsx",
+          "packages/design-system/src/components/Input/Input.tsx"
+        ],
+        "actions": [
+          {
+            "id": "check",
+            "label": "Verify packed editor",
+            "kind": "command",
+            "argv": [
+              "node",
+              "fixtures/canvas/verify.mjs"
+            ],
+            "cwd": ".",
+            "criterionIds": [
+              "consumer"
+            ]
+          }
+        ]
+      }
+    ],
+    "criteria": []
+  },
+  "current": {
+    "observations": [
+      {
+        "nodeId": "embed",
+        "criterionId": "consumer",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "b9a98f53ffdb816772caf5dd2cb0bf302ce88ac96ae9c9c78a629dd14be12a95",
+        "actor": "packed-consumer",
+        "executionId": "6e3996e9-9bc4-4b12-a442-6e117a57834e",
+        "caseId": "canvas/consumer",
+        "summary": "Separate packed base, design and simulation installations passed type, build and Chromium checks.",
+        "at": "2026-11-26T15:59:46.699Z"
+      }
+    ],
+    "notes": [],
+    "progress": [],
+    "sources": [],
+    "warnings": []
+  }
+}

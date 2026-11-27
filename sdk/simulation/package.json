@@ -1,0 +1,29 @@
+{
+  "name": "@asyra/simulation",
+  "version": "0.1.0",
+  "description": "Optional simulation playback tools for canvas bindings",
+  "license": "MIT",
+  "type": "module",
+  "files": [
+    "dist"
+  ],
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build:simulation": "tsc -p tsconfig.json",
+    "test:ci": "node --test --test-name-pattern=\"simulation plays\" ../../fixtures/canvas/__tests__/consumer.test.mjs"
+  },
+  "devDependencies": {
+    "@asyra/canvas": "workspace:*",
+    "typescript": "^5.7.2"
+  },
+  "peerDependencies": {
+    "@asyra/canvas": "^0.1.0"
+  }
+}

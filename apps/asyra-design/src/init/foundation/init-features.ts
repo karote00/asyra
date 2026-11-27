@@ -4,9 +4,6 @@ import {
   type AiAgentFeatureRuntime
 } from '../../features/ai-agent'
 
-// Import all features - they auto-register via defineFeature()
-import '../../features'
-
 export interface InitFeaturesOptions {
   readonly aiRuntime: AiAgentFeatureRuntime
 }

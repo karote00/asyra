@@ -1,0 +1,195 @@
+# Caller-owned canvas SDK
+
+Canvas owns the lifetime and exclusive claim on the supplied HTMLCanvasElement.
+Creating a binding preserves all pixels, children and attributes. The base does
+not acquire a drawing context, install tools, process input or start a clock.
+A product attaches one tool session through the public mount contract.
+Closing a binding settles pending startup, retires the product once and then
+releases the claim. A failed mount can be retried on the same open binding.
+
+Design owns its isolated Core composition, 2D Preset, drawing, selection,
+document history and storage format. Simulation independently owns transient
+playback with the existing simulation playback clock. Its host supplies frame
+presentation. Neither product depends on the other. This slice does not migrate
+the complete Design or Sim applications or change workcell analysis.
+
+Verify independently packed consumer installations and dependency boundaries,
+canvas identity and untouched pixels, pending mount teardown, simultaneous
+targets, design edits and replay, simulation time and cancellation, reattachment
+and existing Framework container and canvas lifecycle behavior.
+
+## Design editor entry
+
+The Design SDK owns the one-call editor on a supplied HTML container or canvas.
+For a container, Design adds its own resizable editor area, canvas and optional
+controls, retaining existing host children. A container admits one editor until
+disposal completes. Failure or disposal releases the claim and owned nodes.
+For an existing canvas, Design borrows the exact target and preserves it. Its
+default controls select Rectangle, Select, Undo and Redo. Callers can replace
+the ordered controls with built-in commands and named actions receiving the
+same public Design tools, or supply their entire UI. Registered actions can also
+run by ID with the toolbar hidden. All document writes and
+history go through the existing Design session. The canvas binding owns the
+session lifetime. Failed initialization and disposal release the binding and
+SDK-owned controls. The packed browser cases exercise each mode, history and
+reuse of the target. This step changes only the Design entry and its consumer
+proof, documentation and flow.
+
+## Place the editor as a component
+
+The Design SDK owns the public AsyraDesign component and asyra-design HTML
+tag. These are public distribution names. A browser element owns one Design
+session, mounts at its template position, preserves state across a synchronous
+DOM move and releases its session after removal, including during startup.
+React exposes the named component. Other hosts can use the registered element or createDesign. TypeScript compiles the SDK implementations and their public declarations for distribution.
+Mount options reach the same Design action registry. The Canvas SDK has no UI
+or framework dependency. Verify the package exports, JSX types, startup,
+editing, independent instances and disconnect/reconnect in packed consumers.
+
+### Element sizing
+
+The declarative element fills the layout space assigned by its parent. With
+an indefinite parent height its intrinsic height is the dynamic viewport
+height. On a page containing only the editor, browser-default body margins
+yield to an edge-to-edge layout. Authored margins and panel padding remain
+part of the application's layout. Toolbar and canvas share this area. The
+existing canvas ResizeObserver owns drawing buffer updates. Packed browser
+checks resize the window and panel independently, including a framework root.
+
+## Full Design workspace
+
+The default container and declarative entries mount the maintained Design app's
+non-conversation workspace. Its registered editing features, layers, properties,
+menus, renderer, text overlay and optional collaboration session have the same
+owners in apps/asyra-design. A host supplies initial document or collaboration
+settings and named actions without Framework imports. Browser input, portals and
+styles belong to each workspace. The borrowed-canvas API retains its lightweight
+tools. Verify real editing, isolation, configured actions, lifecycle and packaged
+assets from an independent JavaScript installation.
+
+### Feature availability
+
+The embed step owns a per-instance runtime policy over the local commands
+cataloged in sdk/design/FEATURES.md. Resolve it at mount, gate the distinct
+input and facade paths, and preserve schema registration, remote replay and
+rendering. Host chrome visibility is independent. Acceptance runs on packed
+consumers with the full workspace and borrowed canvas.
+
+### Host-owned Design controls
+
+With workspace chrome hidden, host controls read projected properties and
+call the same app operations for text, paths, selection, layers, appearance,
+viewport and recovery. The host receives detached reads and subscriptions
+scoped to its editor. Reset rebinds observers and destroy releases them.
+Validate using a packed JavaScript consumer, including disabled operations,
+document reload, Undo and collaboration recovery.
+
+### Workspace common APIs
+
+The embed step binds Design common operations to the creating container editor.
+The app owns signatures, work and feature admission. The host receives grouped
+commands, detached document reads, transaction handles and scoped observers.
+Reset retains the editor entry and retires session-local resources. Destroy
+releases the owner. Verify the catalog, mixed feature policy, callback lifetime
+and independent documents with two editors in a packed plain JavaScript consumer.
+
+### Extension UI and live availability
+
+Each editor exposes its own accepted IDs through the read-only `features` property, including disabled features, host actions and registered extensions, from the same registry used for validation.
+
+The SDK mounts each registered group in declaration order at its default outlet,
+a host element named by `uiTargets`, or a temporary manual target. Clearing an
+explicit target restores the default. Each editor owns its mounts and cleans
+them up on disposal. Live feature admission updates commands and visible groups.
+
+The host owns the container's position, pointer interactions and any per-user
+layout preferences. Moving the host container keeps the same controls and
+editor. The packed browser fixture demonstrates dragging its own toolbar,
+restoring its position, editing a selected object, and undoing that edit.
+Verify that SDK-mounted groups expose only their controls.
+
+The packed React quickstart must automatically save committed edits with a stable local storage key and reopen the board in
+both a default Vite development server and production preview. Replacing the
+document reference or collaboration identity on a declarative host retires
+the old editor before opening its successor. Keep built-in feature IDs
+reserved for their owning commands. If extension UI fails to mount during
+activation, restore the previous policy before allowing a retry.
+
+### Ready editor, packaged tools and persistent nodes
+
+React reports each ready editor through `onMount`. A host can install the
+first-party Design UI package with the public SDK as its peer. The host lists
+standalone groups in `ui` and supplies optional HTML element IDs in `uiTargets`.
+Position and Dimension each own one app-rendered control surface per editor. Installed rows move between the original panel and external targets without duplication. Target changes preserve the editor and document history. React consumers install Design as one direct dependency and can enable browser persistence with a storageKey prop.
+The app registers an extension's stable component type, scalar property schema
+and preset render strategy before validating a local or supplied document.
+Reads and rendering remain available while the owning extension is disabled.
+The packed consumer checks editing, undo, redo, real rendered geometry, pointer
+selection, reload and feature policy through public APIs.
+
+Keyed local boards persist structured snapshots in IndexedDB. The board owns
+one connection, coalesces committed edits within one turn and closes the
+connection on disposal. A missing IndexedDB record admits one validated legacy
+snapshot from the same key. Atomic import precedes removal of that legacy
+value. A failed import leaves the original available for retry.
+
+### Compose inspector row items
+
+The container editor exposes Position and Dimension through `getUI(rowId)`.
+The row owns its layout and offers named native items, complete ordering through
+`setItems`, and relative insertion through `insertAfter`. Independent insertions
+return their own removal functions. Item IDs are scoped to a row, transient,
+and independent of document property identities.
+
+The SDK holds one ordered snapshot per editor and row across frame replacement.
+The app renders the same keyed controls in the native panel and external row
+surface. It owns numeric input styling, parsing and commit interaction. A host
+supplies a numeric item's current value, subscription and write callback.
+Native fields retain their app projections and edit commands. A row update
+notifies only that row. Moving it preserves its controls and subscriptions.
+The packed consumer checks order, native and custom edits, undo, independent
+removal, invalid changes, row relocation, cleanup and editor isolation.
+
+### Configure the workspace directly
+
+React accepts common presentation and feature settings directly. Presentation
+changes update the mounted workspace. Built-in rows accept target IDs without
+a separate UI package. Explicit group definitions retain their owner and order.
+Rows support zero-based insertion and removal alongside named anchors.
+A registered numeric field binds one selected node to the existing property
+command and document schema. Disabled nodes remain readable. The packed JS and
+React consumers exercise the shortcuts, explicit composition, history and type
+errors. The app owns rendering and transactions, the SDK owns row composition,
+and each subscription lives only as long as its mounted field.
+
+### Inspect workspace UI by purpose
+
+The app owns the static inspector row registry. Its row IDs, default field
+order and placement feed native rendering, the packed SDK, getUI declarations
+and inspection markers. A relocated row has one marker in its current host.
+Each SDK-owned workspace surface and control exposes a domain-specific DOM
+attribute at its rendering owner. Host extensions own the contents of their
+marked mounts. Rendering a marker does not register a composable template.
+Packed React and JavaScript hosts verify the catalog, field markers, panel
+ownership and relocation. Debug examples cover iframe and shadow boundaries.
+
+### Compose and place workspace controls
+
+The embed step exposes per-editor handles for named workspace chrome. The app
+owns each control, contextual visibility and command handlers. The SDK owns
+ordering, custom item lifetimes and exclusive host placements. Group items
+render in template order. An external placement wins over the default home.
+Releasing it restores that home. Hidden panels can service explicit placements.
+Canvas rendering and document record identities stay under their current owners.
+Verify discovery, order, command dispatch, feature changes, teardown and editor
+isolation using separately installed React and JavaScript tarball consumers.
+
+### Share a ready editor across React components
+
+The embed step gives each React provider one board host. Sibling controls read
+the nearest provider across files. The browser host owns startup, replacement
+and disposal. Its current editor is the provider snapshot, including null while
+loading or after release. Document edits do not publish editor identities.
+Keep standalone mounting and onMount for product-owned cross-board controls.
+Verify independent and nested providers, replacement, consumer cleanup and
+unmount in a Strict Mode React application installed from the SDK tarball.

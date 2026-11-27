@@ -83,6 +83,16 @@ test('requires production imports in dependencies', () => {
   )
 })
 
+test('validates SDK peer types and private build inputs from their packed owners', async () => {
+  const { missingDependencies } = await validateDependencies({
+    rootDir: repositoryRoot
+  })
+
+  for (const owner of ['@asyra/design', '@asyra/simulation']) {
+    assert.deepEqual([...(missingDependencies.get(owner) ?? [])], [])
+  }
+})
+
 test('allows test imports declared in devDependencies', () => {
   assert.deepEqual(
     validateSourceImports({

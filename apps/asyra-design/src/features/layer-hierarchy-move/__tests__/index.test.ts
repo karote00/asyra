@@ -23,6 +23,10 @@ vi.mock('@asyra/core', async (importOriginal) => ({
   defineFeature: mocks.defineFeature
 }))
 
+vi.mock('../../../controllers/element-selection', () => ({
+  selectElements: mocks.selectElements
+}))
+
 vi.mock('../../../common-apis', () => ({
   selectionApis: {
     getSelectedIds: mocks.getSelectedIds,

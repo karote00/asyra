@@ -1,4 +1,5 @@
 import { hasSizeEdit, requireSizeEditTarget } from './element/geometry-policy'
+import { featureEnabled } from '../workspace-features'
 import { DEFAULT_TEXT_DATA, TEXT_PROPERTY_SCHEMA } from '@asyra/preset'
 import core from '../contexts'
 import { elementApis } from './element'
@@ -12,7 +13,7 @@ export interface DesignElementEdit {
   fillColor?: string
   strokeColor?: string
 }
-interface DesignEditApis {
+export interface DesignEditApis {
   getData(
     id: string
   ):
@@ -56,6 +57,46 @@ const defaultApis: DesignEditApis = {
 
 const colorValid = (value: unknown) =>
   typeof value === 'string' && /^#[0-9a-f]{6}([0-9a-f]{2})?$/i.test(value)
+
+export function requireEditableElement<
+  T extends { type?: string; lock?: boolean; parentId?: string }
+>(elementId: string, getData: (id: string) => T | undefined) {
+  const target = getData(elementId)
+
+  if (!target || target.type === 'workspace') {
+    throw new Error('The edit target is unavailable.')
+  }
+
+  const visited = new Set<string>()
+  let id: string | undefined = elementId
+  let data = target
+
+  while (id) {
+    if (visited.has(id) || visited.size >= 512) {
+      throw new Error('The target hierarchy is invalid.')
+    }
+
+    visited.add(id)
+    if (data.lock) {
+      throw new Error('The target or its parent is locked.')
+    }
+
+    if (data.type === 'workspace') {
+      break
+    }
+
+    id = data.parentId
+    const parent = id ? getData(id) : undefined
+
+    if (!parent) {
+      throw new Error('The target parent is unavailable.')
+    }
+
+    data = parent
+  }
+
+  return target
+}
 
 export const createDesignElementEditPreparer =
   (apis: DesignEditApis = defaultApis) =>
@@ -105,42 +146,36 @@ export const createDesignElementEditPreparer =
       throw new Error('The design edit has no changes.')
     }
 
-    const target = apis.getData(elementId)
+    const fields = Object.keys(properties ?? {})
 
-    if (!target || target.type === 'workspace') {
-      throw new Error('The edit target is unavailable.')
+    function requireEditFeatures() {
+      if (name !== undefined) {
+        featureEnabled('rename', 'reject')
+      }
+
+      if (fillColor !== undefined) {
+        featureEnabled('fills', 'reject')
+      }
+
+      if (strokeColor !== undefined) {
+        featureEnabled('strokes', 'reject')
+      }
+
+      if (fields.some((key) => geometryFields.includes(key))) {
+        featureEnabled('geometry', 'reject')
+      }
+
+      if (fields.some((key) => textFields.includes(key))) {
+        featureEnabled('text', 'reject')
+      }
     }
+
+    requireEditFeatures()
+
+    const target = requireEditableElement(elementId, apis.getData)
 
     if (properties && hasSizeEdit(properties)) {
       requireSizeEditTarget(elementId, target.type)
-    }
-
-    const visited = new Set<string>()
-    let id: string | undefined = elementId
-    let data = target
-
-    while (id) {
-      if (visited.has(id) || visited.size >= 512) {
-        throw new Error('The target hierarchy is invalid.')
-      }
-
-      visited.add(id)
-      if (data.lock) {
-        throw new Error('The target or its parent is locked.')
-      }
-
-      if (data.type === 'workspace') {
-        break
-      }
-
-      id = data.parentId
-      const parent = id ? apis.getData(id) : undefined
-
-      if (!parent) {
-        throw new Error('The target parent is unavailable.')
-      }
-
-      data = parent
     }
 
     const computed = apis.getComputed(elementId, observationFields)
@@ -196,6 +231,7 @@ export const createDesignElementEditPreparer =
     }
 
     return () => {
+      requireEditFeatures()
       let changed = false
 
       if (name !== undefined && name !== target.name) {

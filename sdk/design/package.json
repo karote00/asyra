@@ -1,0 +1,64 @@
+{
+  "name": "@asyra/design",
+  "version": "0.1.0",
+  "description": "Embeddable Design workspace and 2D tools for canvas bindings",
+  "license": "MIT",
+  "type": "module",
+  "files": [
+    "dist",
+    "FEATURES.md",
+    "UI.md"
+  ],
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./element": {
+      "types": "./dist/element.d.ts",
+      "default": "./dist/element.js"
+    },
+    "./inspector-rows": {
+      "types": "./dist/inspector-rows.d.ts",
+      "default": "./dist/inspector-rows.js"
+    },
+    "./react": {
+      "types": "./dist/react.d.ts",
+      "default": "./dist/react.js"
+    },
+    "./internal/workspace-assets": {
+      "browser": {
+        "webpack": "./dist/workspace-production.js",
+        "development": "./dist/workspace-development.js",
+        "default": "./dist/workspace-production.js"
+      },
+      "default": "./dist/workspace-production.js"
+    }
+  },
+  "scripts": {
+    "build:design": "node build.mjs",
+    "test:ci": "yarn workspace @asyra/design-ui build:design-ui && node --test --test-name-pattern=\"opt-in design|packed Design\" ../../fixtures/canvas/__tests__/consumer.test.mjs"
+  },
+  "devDependencies": {
+    "@asyra/asyra-design": "workspace:*",
+    "@asyra/core": "workspace:*",
+    "@asyra/persistence": "workspace:*",
+    "@asyra/preset": "workspace:*",
+    "@types/react": "^19.2.18",
+    "typescript": "^5.7.2",
+    "vite": "^6.4.4"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
+  },
+  "dependencies": {
+    "@asyra/canvas": "^0.1.0"
+  }
+}

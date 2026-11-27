@@ -24,7 +24,7 @@ export type LayerHierarchyMoveDetail =
 const createSnapshot = (
   detail: Record<string, unknown>
 ): SystemContextSnapshotWithDetail => ({
-  ...systemContextApis.getSystemContextSnapshot(),
+  ...systemContextApis.getSnapshot(),
   detail
 })
 

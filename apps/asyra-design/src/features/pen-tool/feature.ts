@@ -304,7 +304,7 @@ const setSelectedAnchorPoint = (
 }
 
 const getCurrentMouseWorkspacePos = () => {
-  const snapshot = systemContextApis.getSystemContextSnapshot()
+  const snapshot = systemContextApis.getSnapshot()
 
   return elementApis.getMousePosInWorkspace({
     x: snapshot.mousePosition.x,
@@ -1231,61 +1231,50 @@ export const cancelPenEditingFeature = defineFeature(
       const pathEditingMode = systemContextApis.getPathEditingMode()
       const editingVectorId = systemContextApis.getPathEditingVectorId()
 
-      if (pathEditingMode) {
-        if (snapshot.primaryTool === PrimaryToolType.PEN) {
-          const startNewSubpath =
-            systemContextApis.getPathEditingStartNewSubpath()
+      if (!pathEditingMode) {
+        return null
+      }
 
-          if (!startNewSubpath) {
-            if (removeSelectedSinglePointSubpathOnCancel(editingVectorId)) {
-              return {
-                cancelled: true,
-                elementId: editingVectorId,
-                mode: 'remove-single-point-subpath'
-              }
-            }
+      if (snapshot.primaryTool === PrimaryToolType.PEN) {
+        const startNewSubpath =
+          systemContextApis.getPathEditingStartNewSubpath()
 
-            systemContextApis.setPathEditingStartNewSubpath(true)
-            systemContextApis.setPathEditingContinuation(null)
-            systemContextApis.setHoveredVectorSegment(null)
-            systemContextApis.setHoveredVectorSegmentInsertPoint(null)
-            cursorApis.resetCanvasCursor()
-
+        if (!startNewSubpath) {
+          if (removeSelectedSinglePointSubpathOnCancel(editingVectorId)) {
             return {
               cancelled: true,
               elementId: editingVectorId,
-              mode: 'disconnect-pen-continuation'
+              mode: 'remove-single-point-subpath'
             }
           }
 
-          systemContextApis.exitPathEditingMode()
+          systemContextApis.setPathEditingStartNewSubpath(true)
+          systemContextApis.setPathEditingContinuation(null)
+          systemContextApis.setHoveredVectorSegment(null)
+          systemContextApis.setHoveredVectorSegmentInsertPoint(null)
           cursorApis.resetCanvasCursor()
 
           return {
             cancelled: true,
             elementId: editingVectorId,
-            mode: 'exit-path-editing'
+            mode: 'disconnect-pen-continuation'
           }
         }
 
         systemContextApis.exitPathEditingMode()
         cursorApis.resetCanvasCursor()
 
-        return { cancelled: true, elementId: editingVectorId }
+        return {
+          cancelled: true,
+          elementId: editingVectorId,
+          mode: 'exit-path-editing'
+        }
       }
 
-      const selectedIds = selectionApis.getSelectedIds()
-
-      if (selectedIds.length > 0) {
-        selectionApis.clearSelection({ undoable: false })
-        cursorApis.resetCanvasCursor()
-
-        return { cancelled: true, selection: 'element' }
-      }
-
+      systemContextApis.exitPathEditingMode()
       cursorApis.resetCanvasCursor()
 
-      return null
+      return { cancelled: true, elementId: editingVectorId }
     }
   }
 )

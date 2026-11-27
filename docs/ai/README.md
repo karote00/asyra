@@ -1,6 +1,6 @@
 # AI Documentation Structure
 
-This directory is the AI documentation root for framework and app work.
+This directory is the AI documentation root for framework, SDK, and app work.
 
 ## Directory Structure
 
@@ -12,6 +12,11 @@ Framework source-of-truth contracts:
 - Planning and completed-plan archives.
 - Framework-scoped decision history.
 - **Entry point**: `framework/README.md`
+
+### [SDK](sdk/README.md)
+
+Embedding contracts, SDK plans, and verification for external consumers of the
+Canvas, Design, Design UI, and Simulation packages.
 
 ### **[apps/](./apps/)**
 
@@ -41,11 +46,13 @@ Includes the shared global retrieval/search policy used by all workflows.
 ### **[project/](./project/)**
 
 Legacy reference docs.
-Use as historical context only; prefer `framework/*` and `apps/*` contracts.
+Use as historical context only. Current contracts live under `framework/`,
+`sdk/`, and `apps/`.
 **Entry point**: `project/README.md`
 
 ## Getting Started
 
 1. Framework work: start with `framework/README.md`
-2. App work: start with `apps/<app>/README.md`
-3. Cross-cutting governance/history: use `decisions/README.md`
+2. SDK work: start with [the SDK guide](sdk/README.md)
+3. App work: start with `apps/<app>/README.md`
+4. Cross-cutting governance/history: use `decisions/README.md`

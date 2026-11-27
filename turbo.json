@@ -109,12 +109,21 @@
         "dist/**"
       ],
       "dependsOn": [
+        "@asyra/canvas#build:canvas",
         "@asyra/core#build:core",
         "@asyra/preset#build:preset",
         "@asyra/render#build:render",
         "@asyra/render-engine#build:render-engine",
+        "@asyra/simulation#build:simulation",
         "@asyra/utils#build:utils"
       ]
+    },
+    "@asyra/canvas#build:canvas": {
+      "cache": false,
+      "outputs": [
+        "dist/**"
+      ],
+      "dependsOn": []
     },
     "@asyra/collaboration#build:collaboration": {
       "cache": false,
@@ -147,6 +156,19 @@
         "@asyra/utils#build:utils"
       ]
     },
+    "@asyra/design#build:design": {
+      "cache": false,
+      "outputs": [
+        "dist/**"
+      ],
+      "dependsOn": [
+        "@asyra/canvas#build:canvas",
+        "@asyra/asyra-design#react:build",
+        "@asyra/core#build:core",
+        "@asyra/persistence#build:persistence",
+        "@asyra/preset#build:preset"
+      ]
+    },
     "@asyra/design-system#build:design-system": {
       "cache": false,
       "outputs": [
@@ -154,6 +176,15 @@
       ],
       "dependsOn": [
         "@asyra/utils#build:utils"
+      ]
+    },
+    "@asyra/design-ui#build:design-ui": {
+      "cache": false,
+      "outputs": [
+        "dist/**"
+      ],
+      "dependsOn": [
+        "@asyra/design#build:design"
       ]
     },
     "@asyra/factory#build:factory": {
@@ -285,6 +316,15 @@
       ],
       "dependsOn": [
         "@asyra/utils#build:utils"
+      ]
+    },
+    "@asyra/simulation#build:simulation": {
+      "cache": false,
+      "outputs": [
+        "dist/**"
+      ],
+      "dependsOn": [
+        "@asyra/canvas#build:canvas"
       ]
     },
     "@asyra/starter-app#react:build": {

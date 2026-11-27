@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
       _name: string,
       _event: string,
       definition: {
+        api?: Record<string, unknown>
         execution: (snapshot: SystemContextSnapshot) => unknown
       }
     ) => definition
@@ -28,6 +29,11 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('@asyra/core', async (original) => ({
   ...(await original<typeof import('@asyra/core')>()),
+
+  getFeatureRegistry: () => ({
+    getAPI: (id: string) => (id === FeatureNames.HOVER_ELEMENT ? hoverApi : {})
+  }),
+
   defineFeature: mocks.define
 }))
 vi.mock('../../../common-apis', () => ({
@@ -52,8 +58,12 @@ vi.mock('../../../controllers/canvas-hierarchy-target', () => ({
   resolveCurrentCanvasHierarchyTarget: mocks.target
 }))
 
+import '../../hover-element'
 import '..'
 
+const hoverApi = mocks.define.mock.calls.find(
+  ([name]) => name === FeatureNames.HOVER_ELEMENT
+)?.[2].api
 const definition = mocks.define.mock.calls.find(
   ([name]) => name === FeatureNames.DELETE_SELECTED_ELEMENT
 )?.[2]

@@ -29,14 +29,14 @@ proof in your product; the Skill does not supply an automatic optimizer.
 
 ## Release status and support
 
-**0.1.15 is a release candidate.** The
+**0.1.16 is a release candidate.** The
 <a href="https://github.com/karote00/asyra/releases/tag/asyra-skill-v0.1.12" target="_blank" rel="noopener noreferrer">0.1.12 release archives</a>
 pin that published version. GitHub installations that follow `main` load its
 merged source. Verify the installed `pluginVersion` in a fresh session.
 
 | Surface                                 | Delivery                              | What is established                                                                                    |
 | --------------------------------------- | ------------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| Codex desktop and CLI                   | Plugin or standalone Skill            | Existing installation routes; fresh 0.1.15 loading and product trials pending                          |
+| Codex desktop and CLI                   | Plugin or standalone Skill            | Existing installation routes; fresh 0.1.16 loading and product trials pending                          |
 | Claude Code                             | Plugin or standalone Skill            | Shared packaging; fresh native trials pending                                                          |
 | Claude Desktop                          | Skill ZIP upload                      | 0.1.7 loading observed; user reported GitHub-to-ZIP upload/loading of 0.1.8; no complete product trial |
 | Grok Build CLI                          | Standalone Skill or compatible plugin | Local 0.1.7 plugin and reference loading observed; product trials pending, free quota exhausted        |
@@ -253,7 +253,7 @@ references/apps/starter-app/docs/ARCHITECTURE.md exists. Use only the installed
 Skill files, not the Asyra development checkout. Do not modify files.
 ```
 
-Expect **0.1.15** for this candidate. `pluginVersion` remains the compatibility
+Expect **0.1.16** for this candidate. `pluginVersion` remains the compatibility
 field for the shared Skill version even in standalone installations. The record
 also contains the full plugin distribution inventory; entries outside the Skill
 subtree do not need to exist beside a standalone Skill. Its hashes detect drift,

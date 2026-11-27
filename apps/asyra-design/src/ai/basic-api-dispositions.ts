@@ -420,7 +420,7 @@ export const basicApiDispositions = [
       'Transient gesture/session/progress state is owned by input features and Runtime. Snapshot reads use api_core_getSystemContextSnapshot; persistent selection uses selection APIs.',
     methods: [
       'switchPrimaryTool',
-      'getSystemContextSnapshot',
+      'getSnapshot',
       'updateHoveredElementId',
       'getAreaSelection',
       'setAreaSelection',

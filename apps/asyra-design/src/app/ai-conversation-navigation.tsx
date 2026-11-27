@@ -37,6 +37,7 @@ export const AiConversationNavigation = ({
       <button
         ref={toggleRef}
         type="button"
+        data-conversation-action="toggleHistory"
         aria-label="Toggle conversation history"
         title="Conversation history"
         aria-expanded={historyOpen}
@@ -62,6 +63,7 @@ export const AiConversationNavigation = ({
       </button>
       <button
         type="button"
+        data-conversation-action="new"
         aria-label="New conversation"
         title="New conversation"
         disabled={navigation.busy}
@@ -84,6 +86,7 @@ export const AiConversationNavigation = ({
       {historyOpen && (
         <section
           id={historyId}
+          data-conversation-section="history"
           aria-label="Conversation history"
           className="absolute inset-x-0 top-full z-10 max-h-64 overflow-y-auto border-b border-[#45464b] bg-[#202124] p-2 shadow-lg"
         >
@@ -93,6 +96,8 @@ export const AiConversationNavigation = ({
                 <button
                   type="button"
                   title={item.title}
+                  data-conversation-action="open"
+                  data-conversation-id={item.id}
                   aria-current={item.id === navigation.conversationId}
                   disabled={navigation.busy}
                   onClick={() => navigate(item.id)}

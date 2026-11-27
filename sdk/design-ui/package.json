@@ -1,0 +1,29 @@
+{
+  "name": "@asyra/design-ui",
+  "version": "0.1.0",
+  "type": "module",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "peerDependencies": {
+    "@asyra/design": "^0.1.0"
+  },
+  "scripts": {
+    "build:design-ui": "tsc -p tsconfig.json",
+    "test:ci": "node --test --test-name-pattern=\"relocates and edits both native rows\" ../../fixtures/canvas/__tests__/consumer.test.mjs"
+  },
+  "devDependencies": {
+    "@asyra/design": "workspace:*",
+    "typescript": "^5.7.2"
+  },
+  "description": "Installable property controls for the Design workspace",
+  "license": "MIT",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts"
+}

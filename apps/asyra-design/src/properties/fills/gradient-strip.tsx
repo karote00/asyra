@@ -28,6 +28,7 @@ const GradientStrip = ({
 }: GradientStripProps) => (
   <div className="mt-2 px-3">
     <div
+      data-gradient-control="strip"
       ref={stripRef}
       onClick={(event) => onAddStopFromStrip(event.clientX)}
       className="relative h-6 w-full rounded-md border border-border-dark"
@@ -36,6 +37,7 @@ const GradientStrip = ({
     >
       {gradient.gradientStops.map((stop, stopIndex) => (
         <button
+          data-gradient-handle={stopIndex}
           key={stopIndex}
           type="button"
           onClick={(event) => {

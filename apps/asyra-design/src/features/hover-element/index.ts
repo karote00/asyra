@@ -18,6 +18,12 @@ export const hoverElementFeature = defineFeature(
   FeatureNames.HOVER_ELEMENT,
   InputSystemEvents.INPUT_MOUSE_MOVE,
   {
+    api: {
+      setHoveredElementId: (id: string | null) =>
+        systemContextApis.updateHoveredElementId(id),
+
+      refreshHoverAtPointer
+    },
     priority: 0,
     exclusive: false,
 

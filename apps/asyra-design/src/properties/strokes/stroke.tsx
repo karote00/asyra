@@ -1,3 +1,4 @@
+import { UIItems } from '../../workspace/ui-parts'
 import { Input, PropertyControl } from '@asyra/design-system'
 import {
   StrokeCapTypes,
@@ -97,233 +98,287 @@ const StrokeItem = ({
   const dashLengths = getStrokeDashLengths(stroke)
 
   return (
-    <div className="grid grid-cols-1 gap-1 py-1">
-      <div
-        className="grid grid-cols-[1fr_24px_24px] items-center gap-2 pl-4 pr-2 h-8 min-h-8"
-        data-testid={`prop-stroke-${index}`}
-      >
-        <StrokeColorRow
-          index={index}
-          stroke={strokeAttrs}
-          displayColor={displayColor}
-          colorFormat={stroke.fill.colorFormat}
-          onColorValueChange={handleColorValueChange}
-          onColorPickerChange={handleColorPickerChange}
-          onColorPickerChangeStart={handleColorPickerChangeStart}
-          onColorPickerChangeEnd={handleColorPickerChangeEnd}
-          onFormatChange={handleFormatChange}
-          opacity={stroke.fill.opacity}
-          onOpacityChange={handleOpacityChange}
-          opacityTestId={`prop-stroke-opacity-${index}`}
-        />
-
-        <button
-          type="button"
-          onClick={() => handleVisibleChange(!stroke.fill.visible)}
-          className="flex items-center justify-center h-6 w-6 rounded hover:bg-panel-surface-hover text-white/60 hover:text-white transition-colors"
-          data-testid={`prop-stroke-visible-${index}`}
-          title={stroke.fill.visible ? 'Hide stroke' : 'Show stroke'}
-          style={{ width: '24px', height: '24px' }}
-        >
-          {stroke.fill.visible ? <EyeOpenIcon /> : <EyeClosedIcon />}
-        </button>
-
-        <button
-          type="button"
-          onClick={onRemove}
-          className="flex items-center justify-center h-6 w-6 rounded hover:bg-panel-surface-hover text-white disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
-          data-testid={`prop-stroke-remove-${index}`}
-          title="Remove stroke"
-          aria-label="Remove stroke"
-        >
-          <MinusIcon />
-        </button>
-      </div>
-
-      <div
-        hidden
-        className="grid grid-cols-[72px_minmax(0,1fr)_minmax(0,1fr)_60px] items-center gap-2 pl-4 pr-2 h-8 min-h-8"
-      >
-        <div className={`${strokeSelectWrapperClassName} w-[72px]`}>
-          <select
-            value={stroke.position}
-            onChange={(event) =>
-              handlePositionChange(
-                event.target.value as StrokeAttrs['position']
-              )
-            }
-            className={strokeSelectClassName}
-            style={strokeSelectStyle}
-            data-testid={`prop-stroke-position-${index}`}
-          >
-            {POSITION_OPTIONS.map((option) => (
-              <option
-                key={option.value}
-                value={option.value}
-                className="bg-[#1f2022] text-white"
-              >
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className={strokeSelectWrapperClassName}>
-          <select
-            value={stroke.joinType}
-            onChange={(event) =>
-              handleJoinTypeChange(
-                event.target.value as StrokeAttrs['joinType']
-              )
-            }
-            className={strokeSelectClassName}
-            style={strokeSelectStyle}
-            data-testid={`prop-stroke-join-${index}`}
-          >
-            {JOIN_OPTIONS.map((option) => (
-              <option
-                key={option.value}
-                value={option.value}
-                className="bg-[#1f2022] text-white"
-              >
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className={strokeSelectWrapperClassName}>
-          <select
-            value={stroke.capType}
-            onChange={(event) =>
-              handleCapTypeChange(event.target.value as StrokeAttrs['capType'])
-            }
-            className={strokeSelectClassName}
-            style={strokeSelectStyle}
-            data-testid={`prop-stroke-cap-${index}`}
-          >
-            {CAP_OPTIONS.map((option) => (
-              <option
-                key={option.value}
-                value={option.value}
-                className="bg-[#1f2022] text-white"
-              >
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <PropertyControl>
-          <div style={{ width: '60px' }}>
-            <Input
-              value={formatInputNumber(stroke.miterAngle)}
-              size="small"
-              suffix="°"
-              containerClassName="!bg-transparent !px-0"
-              containerStyle={{
-                border: 'none'
-              }}
-              noOutline
-              inputClassName="!pl-[0.5em]"
-              onChange={handleMiterAngleChange}
-              data-testid={`prop-stroke-miter-${index}`}
-            />
-          </div>
-        </PropertyControl>
-      </div>
-
-      <div
-        hidden
-        className={`grid items-center gap-1 pl-4 pr-2 h-8 min-h-8 ${
-          stroke.style === StrokeStyles.DASHED
-            ? 'grid-cols-[40px_minmax(72px,1fr)_48px_48px]'
-            : 'grid-cols-[40px_minmax(0,1fr)]'
-        }`}
-      >
-        <PropertyControl>
-          <div style={{ width: '40px' }}>
-            <Input
-              value={formatInputNumber(stroke.width)}
-              size="small"
-              containerClassName="!bg-transparent !px-0"
-              containerStyle={{
-                border: 'none'
-              }}
-              noOutline
-              inputClassName="!pl-[0.5em]"
-              onChange={handleWidthChange}
-              data-testid={`prop-stroke-width-${index}`}
-            />
-          </div>
-        </PropertyControl>
-
-        <div className={strokeSelectWrapperClassName}>
-          <select
-            value={stroke.style}
-            onChange={(event) =>
-              handleStyleChange(event.target.value as StrokeAttrs['style'])
-            }
-            className={strokeSelectClassName}
-            style={strokeSelectStyle}
-            data-testid={`prop-stroke-style-${index}`}
-          >
-            {STYLE_OPTIONS.map((option) => (
-              <option
-                key={option.value}
-                value={option.value}
-                className="bg-[#1f2022] text-white"
-              >
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {stroke.style === StrokeStyles.DASHED && (
-          <PropertyControl>
-            <div style={{ width: '48px' }}>
-              <Input
-                value={formatInputNumber(dashLengths.dash)}
-                size="small"
-                prefix="D"
-                containerClassName="!bg-transparent !px-0"
-                containerStyle={{
-                  border: 'none'
+    <div data-stroke-id={strokeId} className="grid grid-cols-1 gap-1 py-1">
+      <UIItems
+        id="strokeRows"
+        parts={{
+          strokeColorRow: (
+            <div
+              className="grid grid-cols-[1fr_24px_24px] items-center gap-2 pl-4 pr-2 h-8 min-h-8"
+              data-testid={`prop-stroke-${index}`}
+            >
+              <UIItems
+                id="strokeColorRow"
+                parts={{
+                  strokeColor: (
+                    <StrokeColorRow
+                      index={index}
+                      stroke={strokeAttrs}
+                      displayColor={displayColor}
+                      colorFormat={stroke.fill.colorFormat}
+                      onColorValueChange={handleColorValueChange}
+                      onColorPickerChange={handleColorPickerChange}
+                      onColorPickerChangeStart={handleColorPickerChangeStart}
+                      onColorPickerChangeEnd={handleColorPickerChangeEnd}
+                      onFormatChange={handleFormatChange}
+                      opacity={stroke.fill.opacity}
+                      onOpacityChange={handleOpacityChange}
+                      opacityTestId={`prop-stroke-opacity-${index}`}
+                    />
+                  ),
+                  strokeVisibility: (
+                    <button
+                      type="button"
+                      onClick={() => handleVisibleChange(!stroke.fill.visible)}
+                      className="flex items-center justify-center h-6 w-6 rounded hover:bg-panel-surface-hover text-white/60 hover:text-white transition-colors"
+                      data-stroke-action="toggleVisibility"
+                      data-testid={`prop-stroke-visible-${index}`}
+                      title={
+                        stroke.fill.visible ? 'Hide stroke' : 'Show stroke'
+                      }
+                      style={{ width: '24px', height: '24px' }}
+                    >
+                      {stroke.fill.visible ? (
+                        <EyeOpenIcon />
+                      ) : (
+                        <EyeClosedIcon />
+                      )}
+                    </button>
+                  ),
+                  removeStroke: (
+                    <button
+                      type="button"
+                      onClick={onRemove}
+                      className="flex items-center justify-center h-6 w-6 rounded hover:bg-panel-surface-hover text-white disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
+                      data-stroke-action="remove"
+                      data-testid={`prop-stroke-remove-${index}`}
+                      title="Remove stroke"
+                      aria-label="Remove stroke"
+                    >
+                      <MinusIcon />
+                    </button>
+                  )
                 }}
-                noOutline
-                inputClassName="!pl-0"
-                onChange={handleDashLengthChange}
-                data-testid={`prop-stroke-dash-${index}`}
-                aria-label="Dash length"
-                title="Dash"
               />
             </div>
-          </PropertyControl>
-        )}
-
-        {stroke.style === StrokeStyles.DASHED && (
-          <PropertyControl>
-            <div style={{ width: '48px' }}>
-              <Input
-                value={formatInputNumber(dashLengths.gap)}
-                size="small"
-                prefix="G"
-                containerClassName="!bg-transparent !px-0"
-                containerStyle={{
-                  border: 'none'
+          ),
+          strokeStyleRow: (
+            <div
+              hidden
+              className="grid grid-cols-[72px_minmax(0,1fr)_minmax(0,1fr)_60px] items-center gap-2 pl-4 pr-2 h-8 min-h-8"
+            >
+              <UIItems
+                id="strokeStyleRow"
+                parts={{
+                  strokePosition: (
+                    <div className={`${strokeSelectWrapperClassName} w-[72px]`}>
+                      <select
+                        value={stroke.position}
+                        onChange={(event) =>
+                          handlePositionChange(
+                            event.target.value as StrokeAttrs['position']
+                          )
+                        }
+                        className={strokeSelectClassName}
+                        style={strokeSelectStyle}
+                        data-stroke-field="position"
+                        data-testid={`prop-stroke-position-${index}`}
+                      >
+                        {POSITION_OPTIONS.map((option) => (
+                          <option
+                            key={option.value}
+                            value={option.value}
+                            className="bg-[#1f2022] text-white"
+                          >
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  ),
+                  strokeCap: (
+                    <div className={strokeSelectWrapperClassName}>
+                      <select
+                        value={stroke.joinType}
+                        onChange={(event) =>
+                          handleJoinTypeChange(
+                            event.target.value as StrokeAttrs['joinType']
+                          )
+                        }
+                        className={strokeSelectClassName}
+                        style={strokeSelectStyle}
+                        data-stroke-field="join"
+                        data-testid={`prop-stroke-join-${index}`}
+                      >
+                        {JOIN_OPTIONS.map((option) => (
+                          <option
+                            key={option.value}
+                            value={option.value}
+                            className="bg-[#1f2022] text-white"
+                          >
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  ),
+                  strokeJoin: (
+                    <div className={strokeSelectWrapperClassName}>
+                      <select
+                        value={stroke.capType}
+                        onChange={(event) =>
+                          handleCapTypeChange(
+                            event.target.value as StrokeAttrs['capType']
+                          )
+                        }
+                        className={strokeSelectClassName}
+                        style={strokeSelectStyle}
+                        data-stroke-field="cap"
+                        data-testid={`prop-stroke-cap-${index}`}
+                      >
+                        {CAP_OPTIONS.map((option) => (
+                          <option
+                            key={option.value}
+                            value={option.value}
+                            className="bg-[#1f2022] text-white"
+                          >
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  ),
+                  strokeMiter: (
+                    <PropertyControl>
+                      <div style={{ width: '60px' }}>
+                        <Input
+                          value={formatInputNumber(stroke.miterAngle)}
+                          size="small"
+                          suffix="°"
+                          containerClassName="!bg-transparent !px-0"
+                          containerStyle={{
+                            border: 'none'
+                          }}
+                          noOutline
+                          inputClassName="!pl-[0.5em]"
+                          onChange={handleMiterAngleChange}
+                          data-stroke-field="miter"
+                          data-testid={`prop-stroke-miter-${index}`}
+                        />
+                      </div>
+                    </PropertyControl>
+                  )
                 }}
-                noOutline
-                inputClassName="!pl-0"
-                onChange={handleGapLengthChange}
-                data-testid={`prop-stroke-gap-${index}`}
-                aria-label="Gap length"
-                title="Gap"
               />
             </div>
-          </PropertyControl>
-        )}
-      </div>
+          ),
+          strokeOptionsRow: (
+            <div
+              hidden
+              className={`grid items-center gap-1 pl-4 pr-2 h-8 min-h-8 ${
+                stroke.style === StrokeStyles.DASHED
+                  ? 'grid-cols-[40px_minmax(72px,1fr)_48px_48px]'
+                  : 'grid-cols-[40px_minmax(0,1fr)]'
+              }`}
+            >
+              <UIItems
+                id="strokeOptionsRow"
+                parts={{
+                  strokeWidth: (
+                    <PropertyControl>
+                      <div style={{ width: '40px' }}>
+                        <Input
+                          value={formatInputNumber(stroke.width)}
+                          size="small"
+                          containerClassName="!bg-transparent !px-0"
+                          containerStyle={{
+                            border: 'none'
+                          }}
+                          noOutline
+                          inputClassName="!pl-[0.5em]"
+                          onChange={handleWidthChange}
+                          data-stroke-field="width"
+                          data-testid={`prop-stroke-width-${index}`}
+                        />
+                      </div>
+                    </PropertyControl>
+                  ),
+                  strokeStyle: (
+                    <div className={strokeSelectWrapperClassName}>
+                      <select
+                        value={stroke.style}
+                        onChange={(event) =>
+                          handleStyleChange(
+                            event.target.value as StrokeAttrs['style']
+                          )
+                        }
+                        className={strokeSelectClassName}
+                        style={strokeSelectStyle}
+                        data-stroke-field="style"
+                        data-testid={`prop-stroke-style-${index}`}
+                      >
+                        {STYLE_OPTIONS.map((option) => (
+                          <option
+                            key={option.value}
+                            value={option.value}
+                            className="bg-[#1f2022] text-white"
+                          >
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  ),
+                  strokeDash: stroke.style === StrokeStyles.DASHED && (
+                    <PropertyControl>
+                      <div style={{ width: '48px' }}>
+                        <Input
+                          value={formatInputNumber(dashLengths.dash)}
+                          size="small"
+                          prefix="D"
+                          containerClassName="!bg-transparent !px-0"
+                          containerStyle={{
+                            border: 'none'
+                          }}
+                          noOutline
+                          inputClassName="!pl-0"
+                          onChange={handleDashLengthChange}
+                          data-stroke-field="dash"
+                          data-testid={`prop-stroke-dash-${index}`}
+                          aria-label="Dash length"
+                          title="Dash"
+                        />
+                      </div>
+                    </PropertyControl>
+                  ),
+                  strokeGap: stroke.style === StrokeStyles.DASHED && (
+                    <PropertyControl>
+                      <div style={{ width: '48px' }}>
+                        <Input
+                          value={formatInputNumber(dashLengths.gap)}
+                          size="small"
+                          prefix="G"
+                          containerClassName="!bg-transparent !px-0"
+                          containerStyle={{
+                            border: 'none'
+                          }}
+                          noOutline
+                          inputClassName="!pl-0"
+                          onChange={handleGapLengthChange}
+                          data-stroke-field="gap"
+                          data-testid={`prop-stroke-gap-${index}`}
+                          aria-label="Gap length"
+                          title="Gap"
+                        />
+                      </div>
+                    </PropertyControl>
+                  )
+                }}
+              />
+            </div>
+          )
+        }}
+      />
     </div>
   )
 }

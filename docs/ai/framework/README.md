@@ -19,6 +19,9 @@ Framework learning, API lookup, package ownership, implementation workflow, and
 verification to the smallest authoritative document. Humans and AI agents can
 use the same entry point.
 
+For consumer-facing embedding contracts and SDK plans, start with the
+[SDK guide](../sdk/README.md).
+
 ## Read Order
 
 1. `GETTING_STARTED.md` (orientation; not an additional contract layer)

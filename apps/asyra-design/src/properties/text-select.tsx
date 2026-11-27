@@ -3,11 +3,13 @@ import { PropertyControl } from '@asyra/design-system'
 import { getAvailableFontFamilies } from './font-options'
 
 export const TextSelect = ({
+  field,
   label,
   value,
   options,
   onChange
 }: {
+  field: string
   label: string
   value: string
   options: readonly { value: string; label: string }[]
@@ -15,6 +17,7 @@ export const TextSelect = ({
 }) => (
   <PropertyControl className="relative">
     <select
+      data-inspector-field={field}
       aria-label={label}
       title={label}
       value={value}
@@ -55,6 +58,7 @@ export const FontFamilySelect = ({
 
   return (
     <TextSelect
+      field="fontFamily"
       label="Font family"
       value={value}
       options={values.map((family) => ({ value: family, label: family }))}

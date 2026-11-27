@@ -236,6 +236,7 @@ HIGHEST PRINCIPLE before starting and before advancing each work segment.
 ## Context Routing
 
 - **Framework tasks**: follow `docs/ai/framework/*` as source-of-truth.
+- **SDK tasks**: start with [the SDK documentation](docs/ai/sdk/README.md) for embedding contracts, plans, and packed-consumer verification.
 - **App tasks**: follow `docs/ai/apps/<app>/*` as source-of-truth.
 - **Tool tasks**: follow `docs/ai/tools/<tool>/*` as source-of-truth.
 - **Legacy reference only**: `docs/ai/project/*` (use for historical context, not primary contracts).

@@ -76,6 +76,7 @@ const AiDrawingProgressIndicator: React.FC = () => {
         preparing ? 'bg-slate-900/30' : 'bg-transparent'
       }`}
       data-phase={progress.phase}
+      data-canvas-overlay="drawingProgress"
       data-testid="ai-drawing-progress-indicator"
       role="status"
       style={{ height, left, top, width }}

@@ -1,0 +1,31 @@
+import type { InspectorRowId, InspectorFields } from './inspector-registry'
+export type { InspectorRowId, InspectorFields } from './inspector-registry'
+export type InspectorRefs = Partial<
+  Record<InspectorRowId, (element: HTMLDivElement | null) => void>
+>
+
+/** A host-owned number displayed by the row's standard input. */
+export interface InspectorNumberItem {
+  readonly kind: 'number'
+  readonly id: string
+  readonly label: string
+  readonly getValue: () => number | null
+  readonly subscribe: (notify: () => void) => () => void
+  readonly setValue: (value: number) => void
+}
+
+export interface InspectorNodeNumber {
+  readonly kind: 'node-number'
+  readonly id: string
+  readonly label: string
+  readonly nodeId: string
+  readonly field: string
+}
+
+export type InspectorItem<Key extends string> =
+  Key | InspectorNumberItem | InspectorNodeNumber
+
+export interface InspectorItemSource {
+  getSnapshot(): readonly InspectorItem<InspectorFields[InspectorRowId]>[]
+  subscribe(notify: () => void): () => void
+}

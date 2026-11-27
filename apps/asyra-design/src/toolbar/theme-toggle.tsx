@@ -27,7 +27,7 @@ const ThemeToggle: React.FC = () => {
   }
 
   return (
-    <div style={{ display: 'none' }}>
+    <div data-toolbar-action="toggleTheme" style={{ display: 'none' }}>
       <Button
         onClick={toggleTheme}
         label={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}

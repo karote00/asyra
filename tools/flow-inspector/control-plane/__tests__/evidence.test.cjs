@@ -1494,8 +1494,8 @@ test(
     try {
       replace(
         appFile,
-        "if (direction === 'redo') {",
-        "if (direction === 'undo') {"
+        'return runHistoryCommand(direction)',
+        "return runHistoryCommand(direction === 'undo' ? 'redo' : 'undo')"
       )
       await appProof('app-reversed-shortcut', 2)
       const appChanged = await prove('app-reversed-shortcut', [])

@@ -12,7 +12,7 @@ Create or update documentation contracts.
 ## Required Inputs
 
 1. documentation task
-2. scope (framework/app/both)
+2. scope (framework, SDK, app, or a combination)
 3. target audience
 
 ## Reference Docs
@@ -20,6 +20,7 @@ Create or update documentation contracts.
 Load by scope:
 
 - framework source-of-truth: `docs/ai/framework/*`
+- SDK embedding and extension contracts: [SDK guide](../sdk/README.md)
 - app source-of-truth: `docs/ai/apps/asyra-design/*`
 - docs process anchors:
   - `docs/ai/framework/WORKFLOW.md`

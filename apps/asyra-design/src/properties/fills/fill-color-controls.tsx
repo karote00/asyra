@@ -1,3 +1,4 @@
+import { UIItems, UIPart, renderColorControls } from '../../workspace/ui-parts'
 import { ColorPicker, Input } from '@asyra/design-system'
 import {
   FillKinds,
@@ -64,6 +65,7 @@ const FillModeButton = ({
         ? 'bg-accent text-white'
         : 'bg-transparent text-white/60 hover:bg-panel-surface-hover hover:text-white'
     }`}
+    data-fill-mode={kind}
     data-testid={testId}
     aria-label={label}
     title={label}
@@ -122,19 +124,28 @@ const FillColorControls = ({
 
   const pickerHeader: ReactNode = (
     <div className="flex items-center gap-2">
-      <FillModeButton
-        active={fill.kind === FillKinds.SOLID}
-        kind={FillKinds.SOLID}
-        label="Solid fill"
-        testId={`prop-fill-mode-solid-${index}`}
-        onClick={() => onKindChange(FillKinds.SOLID)}
-      />
-      <FillModeButton
-        active={fill.kind === FillKinds.GRADIENT}
-        kind={FillKinds.GRADIENT}
-        label="Gradient fill"
-        testId={`prop-fill-mode-gradient-${index}`}
-        onClick={() => onKindChange(FillKinds.GRADIENT)}
+      <UIItems
+        id="fillModes"
+        parts={{
+          solidMode: (
+            <FillModeButton
+              active={fill.kind === FillKinds.SOLID}
+              kind={FillKinds.SOLID}
+              label="Solid fill"
+              testId={`prop-fill-mode-solid-${index}`}
+              onClick={() => onKindChange(FillKinds.SOLID)}
+            />
+          ),
+          gradientMode: (
+            <FillModeButton
+              active={fill.kind === FillKinds.GRADIENT}
+              kind={FillKinds.GRADIENT}
+              label="Gradient fill"
+              testId={`prop-fill-mode-gradient-${index}`}
+              onClick={() => onKindChange(FillKinds.GRADIENT)}
+            />
+          )
+        }}
       />
     </div>
   )
@@ -145,82 +156,98 @@ const FillColorControls = ({
     <div className="flex items-center flex-1 min-w-0 h-full">
       {/* Group: swatch + hex input (left-rounded) */}
       <div className="flex items-center flex-1 min-w-0 h-full">
-        <ColorPicker
-          color={fill.color}
-          opacity={fill.opacity}
-          open={colorPickerOpen}
-          onChange={onColorPickerChange}
-          onChangeStart={onColorPickerChangeStart}
-          onChangeEnd={onColorPickerChangeEnd}
-          onOpenChange={onGradientEditorOpenChange}
-          shouldIgnoreOutsidePointerDown={shouldIgnoreOutsidePointerDown}
-          header={pickerHeader}
-          footer={pickerFooter}
-          colorFormat={colorFormat}
-          onFormatChange={(format: string) =>
-            onFormatChange(format as FillColorFormat)
-          }
-          formatOptions={ALLOWED_COLOR_FORMATS}
-          formatDefinitions={COLOR_PICKER_FORMAT_DEFINITIONS}
-          showAlpha={true}
-          hideDefaultPanel={fill.kind === FillKinds.GRADIENT}
-          swatchStyle={{
-            position: 'static',
-            width: '14px',
-            height: '14px',
-            borderRadius: '2px',
-            ...previewSwatchStyle
+        <UIItems
+          id="fillPaint"
+          parts={{
+            fillPicker: (
+              <ColorPicker
+                renderControls={renderColorControls}
+                color={fill.color}
+                opacity={fill.opacity}
+                open={colorPickerOpen}
+                onChange={onColorPickerChange}
+                onChangeStart={onColorPickerChangeStart}
+                onChangeEnd={onColorPickerChangeEnd}
+                onOpenChange={onGradientEditorOpenChange}
+                shouldIgnoreOutsidePointerDown={shouldIgnoreOutsidePointerDown}
+                header={<UIPart id="fillModes">{pickerHeader}</UIPart>}
+                footer={pickerFooter}
+                colorFormat={colorFormat}
+                onFormatChange={(format: string) =>
+                  onFormatChange(format as FillColorFormat)
+                }
+                formatOptions={ALLOWED_COLOR_FORMATS}
+                formatDefinitions={COLOR_PICKER_FORMAT_DEFINITIONS}
+                showAlpha={true}
+                hideDefaultPanel={fill.kind === FillKinds.GRADIENT}
+                swatchStyle={{
+                  position: 'static',
+                  width: '14px',
+                  height: '14px',
+                  borderRadius: '2px',
+                  ...previewSwatchStyle
+                }}
+                triggerClassName="group flex h-6 w-6 items-center justify-center flex-shrink-0 rounded-l-[3px] transition-all text-text-secondary hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-50"
+                triggerStyle={{
+                  borderRadius: '3px 0 0 3px',
+                  borderRight: 'none'
+                }}
+                data-testid={
+                  colorPickerTestId ?? `prop-fill-color-picker-${index}`
+                }
+              >
+                {gradientData ? (
+                  <UIPart id="gradient">
+                    <GradientEditor
+                      index={index}
+                      fill={fill}
+                      fillId={fillId}
+                      ownerElementId={ownerElementId}
+                      gradient={gradientData}
+                      onChangeFill={onGradientFillChange}
+                      onStartInteraction={onStartInteraction}
+                      onEndInteraction={onEndInteraction}
+                      embedded
+                    />
+                  </UIPart>
+                ) : null}
+              </ColorPicker>
+            ),
+            fillColorValue: (
+              <div className="flex-1 min-w-0 h-full flex items-center">
+                {gradientData ? (
+                  <div
+                    className="flex h-full items-center pl-0 text-[11px] text-white uppercase truncate font-medium"
+                    style={{
+                      background: 'transparent',
+                      borderRadius: 0
+                    }}
+                    data-gradient-readout="type"
+                    data-testid={`prop-fill-gradient-summary-${index}`}
+                  >
+                    {gradientData.gradientType}
+                  </div>
+                ) : (
+                  <Input
+                    value={displayColor}
+                    size="small"
+                    containerClassName=""
+                    containerStyle={{
+                      borderRadius: 0,
+                      background: 'transparent',
+                      border: 'none'
+                    }}
+                    noOutline
+                    inputClassName="!pl-0"
+                    onChange={onColorValueChange}
+                    data-fill-field="color"
+                    data-testid={`prop-fill-color-${index}`}
+                  />
+                )}
+              </div>
+            )
           }}
-          triggerClassName="group flex h-6 w-6 items-center justify-center flex-shrink-0 rounded-l-[3px] transition-all text-text-secondary hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-50"
-          triggerStyle={{
-            borderRadius: '3px 0 0 3px',
-            borderRight: 'none'
-          }}
-          data-testid={colorPickerTestId ?? `prop-fill-color-picker-${index}`}
-        >
-          {gradientData ? (
-            <GradientEditor
-              index={index}
-              fill={fill}
-              fillId={fillId}
-              ownerElementId={ownerElementId}
-              gradient={gradientData}
-              onChangeFill={onGradientFillChange}
-              onStartInteraction={onStartInteraction}
-              onEndInteraction={onEndInteraction}
-              embedded
-            />
-          ) : null}
-        </ColorPicker>
-        <div className="flex-1 min-w-0 h-full flex items-center">
-          {gradientData ? (
-            <div
-              className="flex h-full items-center pl-0 text-[11px] text-white uppercase truncate font-medium"
-              style={{
-                background: 'transparent',
-                borderRadius: 0
-              }}
-              data-testid={`prop-fill-gradient-summary-${index}`}
-            >
-              {gradientData.gradientType}
-            </div>
-          ) : (
-            <Input
-              value={displayColor}
-              size="small"
-              containerClassName=""
-              containerStyle={{
-                borderRadius: 0,
-                background: 'transparent',
-                border: 'none'
-              }}
-              noOutline
-              inputClassName="!pl-0"
-              onChange={onColorValueChange}
-              data-testid={`prop-fill-color-${index}`}
-            />
-          )}
-        </div>
+        />
       </div>
     </div>
   )

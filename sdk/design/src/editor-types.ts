@@ -1,0 +1,245 @@
+import type { InspectorRowId, InspectorFields } from './inspector-registry.js'
+import type {
+  DesignTool,
+  HistoryCommand,
+  WorkspaceAction,
+  WorkspaceFeature,
+  WorkspaceTool
+} from './features.js'
+import type { common, InspectorItem, WorkspaceNode } from './common.js'
+import type { WorkspaceEditingTools } from './workspace-tools.js'
+
+export interface Rectangle {
+  x: number
+  y: number
+  width: number
+  height: number
+}
+export interface DesignTools<Tool extends string = DesignTool> {
+  /** The active primary tool, or null when no tool is active. */
+  getTool(): Tool | null
+  setTool(tool: Tool): void
+  drawRectangle(rectangle: Rectangle): string
+  getSelection(): readonly string[]
+  undo(): Promise<void>
+  redo(): Promise<void>
+  save(): Promise<unknown>
+}
+export interface WorkspaceTools
+  extends DesignTools<WorkspaceTool>, WorkspaceEditingTools {
+  readonly common: typeof common
+  drawOval(bounds: Rectangle): string
+  select(ids: readonly string[]): void
+  deleteSelectedElement(): void
+  zoomFit(): void
+  reset(): Promise<void>
+  group(): string | null
+  ungroup(): readonly string[]
+  updateElement(edit: {
+    elementId: string
+    name?: string
+    properties?: Record<string, string | number>
+    fillColor?: string
+    strokeColor?: string
+  }): boolean
+}
+
+type ToolsFor<Tool extends string> = WorkspaceTool extends Tool
+  ? WorkspaceTools
+  : DesignTools<Tool>
+
+export interface DesignAction<Tool extends string = WorkspaceTool> {
+  label: string
+  run(tools: ToolsFor<Tool>): void | Promise<void>
+}
+
+type Command<Tool extends string> =
+  Tool | HistoryCommand | (WorkspaceTool extends Tool ? WorkspaceAction : never)
+
+export interface DesignOptions<
+  Id extends string = never,
+  Tool extends string = WorkspaceTool
+> {
+  /** Hide the built-in controls. Enabled tools still accept canvas input and SDK calls. */
+  hideUI?: boolean
+  /**
+   * Feature IDs to disable when this editor opens. Defaults to an empty list.
+   * The code stays in the bundle and existing content remains readable and visible.
+   * Use editor.setDisabledFeatures() to change availability while mounted.
+   */
+  disabledFeatures?: readonly (
+    | Command<Tool>
+    | NoInfer<Id>
+    | (WorkspaceTool extends Tool ? WorkspaceFeature : never)
+  )[]
+  actions?: Partial<Record<Id, DesignAction<Tool>>>
+  /** Snapshot to open. On a declarative host, keep this reference stable until switching boards. */
+  document?: unknown
+  toolbar?: false | readonly (Command<Tool> | NoInfer<Id>)[]
+}
+
+export type ToolPlacement =
+  'properties.top' | 'toolbar.top' | 'selectionMenu' | 'manual'
+export interface ToolGroup<Id extends string = string> {
+  readonly id: string
+  readonly label?: string
+  readonly placement: ToolPlacement
+  mount(context: {
+    container: HTMLElement
+    editor: DesignEditor<Id, WorkspaceTool>
+  }): undefined | (() => void)
+}
+
+export type { InspectorRowId } from './inspector-registry.js'
+export type { InspectorNumberItem } from './common.js'
+
+export type { WorkspacePartId, HostUIItem } from './component-registry.js'
+import type {
+  WorkspacePartId,
+  WorkspacePartGroup,
+  WorkspaceChild,
+  HostUIItem
+} from './component-registry.js'
+
+export interface ComponentHandle {
+  readonly id: WorkspacePartId
+  /** Move the live component into the target. Release the placement to restore its configured home. */
+  mount(target: HTMLElement): () => void
+}
+export interface ComponentGroup<K extends string> {
+  /** Native item names for completion and restoring a removed item. */
+  readonly items: { readonly [P in K]: P }
+  /** Current template order. Conditional items appear when their app context is available. */
+  getOrder(): readonly (K | HostUIItem)[]
+  setItems(items: readonly (K | HostUIItem)[]): void
+  insertAt(index: number, item: K | HostUIItem): () => void
+  insertAfter(anchor: K | HostUIItem, item: K | HostUIItem): () => void
+  removeAt(index: number): void
+}
+type ActionComponent<Extension extends string> =
+  `action.${WorkspaceAction | WorkspaceTool | HistoryCommand | Extension}`
+type ComponentId<Extension extends string> =
+  Exclude<WorkspacePartId, `action.${string}`> | ActionComponent<Extension>
+export type GetWorkspaceUI<Extension extends string = string> = <
+  Id extends ComponentId<Extension>
+>(
+  id: Id
+) => ComponentHandle &
+  (Id extends InspectorRowId
+    ? InspectorTemplate<InspectorFields[Id]>
+    : Id extends 'toolbarActions'
+      ? ComponentGroup<ActionComponent<Extension>>
+      : Id extends WorkspacePartGroup
+        ? ComponentGroup<WorkspaceChild<Id>>
+        : unknown)
+
+export interface InspectorTemplate<Key extends string> {
+  readonly items: { readonly [K in Key]: K }
+  getOrder(): readonly InspectorItem<Key>[]
+  /** Insert before the zero-based index. The row length appends an item. */
+  insertAt(index: number, item: InspectorItem<Key>): () => void
+  /** Remove the item currently at this zero-based index. */
+  removeAt(index: number): void
+  setItems(items: readonly InspectorItem<Key>[]): void
+  insertAfter(anchor: InspectorItem<Key>, item: InspectorItem<Key>): () => void
+}
+export interface InspectorRow {
+  readonly kind: 'inspector'
+  readonly id: InspectorRowId
+  readonly label: string
+  readonly placement: 'properties.top'
+}
+export type WorkspaceUIGroup<Id extends string = string> =
+  ToolGroup<Id> | InspectorRow
+
+type UITargets<Id extends string> = [Id] extends [never]
+  ? Readonly<Partial<Record<InspectorRowId, string>>>
+  : Readonly<Record<string, string>>
+
+export interface ToolGroups<Id extends string = string> {
+  /** Replace external targets. Removed entries return to their default placements. */
+  setTargets(targets: UITargets<Id>): void
+  mount(
+    id: [Id] extends [never] ? InspectorRowId : string,
+    container: HTMLElement
+  ): () => void
+}
+
+export type { WorkspaceNode }
+
+interface NodeDefinition<Id extends string> {
+  readonly id: Id
+  readonly node: WorkspaceNode
+}
+type Widen<T> = T extends string ? string : T extends number ? number : boolean
+type NodeValues<Node extends WorkspaceNode> = {
+  [K in keyof NonNullable<Node['fields']>]?: Widen<
+    NonNullable<Node['fields']>[K]
+  >
+}
+
+export type WorkspaceExtension<Id extends string = string> = (
+  | { readonly id: Id; readonly node: WorkspaceNode }
+  | { readonly id?: Id; readonly node?: never }
+) & {
+  actions?: Partial<Record<Id, DesignAction>>
+  ui?: readonly WorkspaceUIGroup<Id>[]
+}
+
+export interface WorkspaceOptions<
+  Id extends string = never
+> extends DesignOptions<Id> {
+  /** Automatically restore and save committed edits in this browser under a stable board key. */
+  storageKey?: string
+  extensions?: readonly WorkspaceExtension<Id>[]
+  /** Standalone UI groups in their default placements, in display order. */
+  ui?: readonly (WorkspaceUIGroup<NoInfer<Id>> & { readonly id: Id })[]
+  /** Optional host-document element IDs, keyed by installed UI group ID. */
+  uiTargets?: UITargets<NoInfer<Id>>
+  panels?: { layers?: boolean; properties?: boolean }
+  /** Changing the service, file or actor on a declarative host opens a new editor session. */
+  collaboration?: { fileId: string; endpoint: string; actorId?: string }
+}
+
+export type WorkspacePresentation<Id extends string = never> = Pick<
+  WorkspaceOptions<Id>,
+  'hideUI' | 'panels' | 'toolbar'
+>
+
+export type DesignEditor<
+  Id extends string = never,
+  Tool extends string = WorkspaceTool
+> = ToolsFor<Tool> &
+  (WorkspaceTool extends Tool
+    ? {
+        createNode<Node extends NodeDefinition<Id>>(
+          type: Node,
+          bounds: Rectangle,
+          fields?: NodeValues<NoInfer<Node['node']>>
+        ): string | null
+        /** Edit only when every selected element has the supplied node type. */
+        updateSelectedNodes<Node extends NodeDefinition<Id>>(
+          type: Node,
+          fields: NodeValues<NoInfer<Node['node']>>
+        ): boolean
+        /** Replace toolbar and panel settings on the mounted workspace. */
+        setPresentation(options: WorkspacePresentation<Id>): void
+        /** All named components and registered action buttons owned by this container editor. */
+        readonly uiKeys: readonly ComponentId<Id>[]
+        readonly getUI: GetWorkspaceUI<Id>
+        readonly toolGroups: ToolGroups<Id>
+      }
+    : unknown) & {
+    /** All feature IDs registered with this editor, including currently disabled IDs. */
+    readonly features: NonNullable<DesignOptions<Id, Tool>['disabledFeatures']>
+    /** Replace the entire disabled list on this editor. Pass [] to enable all registered features. */
+    setDisabledFeatures(
+      ids: NonNullable<DesignOptions<Id, Tool>['disabledFeatures']>
+    ): Promise<void>
+    /** Whether this editor currently allows the feature. Use getTool() for the active tool. */
+    isFeatureEnabled(
+      id: NonNullable<DesignOptions<Id, Tool>['disabledFeatures']>[number]
+    ): boolean
+    runAction(id: Command<Tool> | Id): Promise<void>
+    destroy(): Promise<void>
+  }

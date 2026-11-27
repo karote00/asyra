@@ -63,6 +63,7 @@ export const AiConnectionStatus = ({
         <button
           aria-label="Check AI connection"
           className="shrink-0 rounded px-1 text-[12px] leading-4 text-[#c7bfff] hover:text-white focus-visible:outline focus-visible:outline-1 focus-visible:outline-[#9b87ff]"
+          data-conversation-action="retryConnection"
           onClick={() => setRevision((current) => current + 1)}
           type="button"
         >

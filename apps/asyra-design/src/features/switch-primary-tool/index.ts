@@ -1,3 +1,8 @@
+import {
+  featureEnabled,
+  toolId,
+  type DisabledCommandBehavior
+} from '../../workspace-features'
 import type { SystemContextSnapshotWithDetail } from '@asyra/utils'
 import { defineFeature } from '@asyra/core'
 import { systemContextApis } from '../../common-apis'
@@ -8,37 +13,26 @@ import {
 } from '../../constants'
 
 interface SwitchPrimaryToolAPI {
-  switch: (tool: string) => void
+  switch: (tool: string, behavior?: DisabledCommandBehavior) => boolean
   [key: string]: unknown
 }
 
 const api: SwitchPrimaryToolAPI = {
-  switch: (tool: string) => {
-    const pathEditingMode = systemContextApis.getPathEditingMode()
+  switch: (tool, behavior = 'ignore') => {
+    if (!featureEnabled(toolId(tool), behavior)) {
+      return false
+    }
 
     systemContextApis.switchPrimaryTool(tool)
-
-    if (!pathEditingMode) {
-      return
+    if (systemContextApis.getPathEditingMode()) {
+      if (tool === PrimaryToolType.SELECT || tool === PrimaryToolType.PEN) {
+        systemContextApis.setPathEditingStartNewSubpath(true)
+      } else {
+        systemContextApis.exitPathEditingMode()
+      }
     }
 
-    // Keep path editing active for Select, but disconnect preview segment.
-    if (tool === PrimaryToolType.SELECT) {
-      systemContextApis.setPathEditingStartNewSubpath(true)
-
-      return
-    }
-
-    // Switching to Pen keeps path editing active, but starts from source-select
-    // mode so the next anchor click chooses the continuation source.
-    if (tool === PrimaryToolType.PEN) {
-      systemContextApis.setPathEditingStartNewSubpath(true)
-
-      return
-    }
-
-    // Other tools leave path-editing mode.
-    systemContextApis.exitPathEditingMode()
+    return true
   }
 }
 
@@ -53,9 +47,7 @@ export const switchPrimaryToolFeature = defineFeature(
     execution: (snapshot: SystemContextSnapshotWithDetail) => {
       const tool = snapshot.detail?.primaryTool as string
 
-      if (tool) {
-        api.switch(tool)
-
+      if (tool && api.switch(tool)) {
         return { tool }
       }
 

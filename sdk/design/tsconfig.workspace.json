@@ -1,0 +1,7 @@
+{
+  "extends": "../../apps/asyra-design/tsconfig.json",
+  "include": [
+    "build-inputs/workspace.ts",
+    "../../apps/asyra-design/src/types.d.ts"
+  ]
+}

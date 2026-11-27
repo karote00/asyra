@@ -4,7 +4,12 @@ const Zoom = () => {
   const zoom = useZoom()
 
   return (
-    <div className="zoom-display" data-testid="zoom-level" data-value={zoom}>
+    <div
+      data-toolbar-readout="zoom"
+      className="zoom-display"
+      data-testid="zoom-level"
+      data-value={zoom}
+    >
       {(zoom * 100).toFixed(0)}%
     </div>
   )

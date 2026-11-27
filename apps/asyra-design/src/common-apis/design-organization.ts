@@ -13,7 +13,7 @@ interface OrganizationElement {
   children?: readonly string[]
   lock?: boolean
 }
-interface OrganizationApis {
+export interface OrganizationApis {
   read(id: string): OrganizationElement | undefined
   group(ids: readonly string[]): {
     groupId: string

@@ -7,7 +7,7 @@ import { ESLint } from 'eslint'
 
 const workspaceNamePattern = /^(?:@[a-z0-9][a-z0-9-]*\/)?[a-z0-9][a-z0-9-]*$/
 const workspaceDirectoryPattern =
-  /^(?:apps|packages|tools)\/[a-z0-9][a-z0-9-]*$/
+  /^(?:apps|packages|tools|sdk)\/[a-z0-9][a-z0-9-]*$/
 
 function validateWorkspaceEntry(workspace) {
   const hasInvalidIdentity =

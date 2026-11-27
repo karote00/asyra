@@ -1307,13 +1307,13 @@ function classifyChanges(
     .filter(
       (changedPath) =>
         sourceExtensions.has(path.extname(changedPath)) ||
-        /^(?:apps|packages|tools|create-app)\/[^/]+\/package\.json$/.test(
+        /^(?:apps|packages|tools|sdk|create-app)\/[^/]+\/package\.json$/.test(
           changedPath
         )
     )
     .sort()
   const manifestInputs = changedPaths.filter((file) =>
-    /^(?:apps|packages|tools|create-app)\/[^/]+\/package\.json$/.test(file)
+    /^(?:apps|packages|tools|sdk|create-app)\/[^/]+\/package\.json$/.test(file)
   )
   const dependencyManifestInputs = manifestInputs.filter((file) => {
     const before =
@@ -1343,7 +1343,7 @@ function classifyChanges(
 
   const dependencyInputs = changedPaths.filter(
     (file) =>
-      (/^(?:apps|packages|tools|create-app)\//.test(file) &&
+      (/^(?:apps|packages|tools|sdk|create-app)\//.test(file) &&
         (sourceExtensions.has(path.extname(file)) ||
           file.endsWith('/package.json'))) ||
       file === 'scripts/deps-validate.js'

@@ -1,4 +1,7 @@
+import { UIItems } from '../workspace/ui-parts'
+import type { InspectorRefs } from './inspector-contract'
 import { supportsSizeEdits } from '../common-apis/element/geometry-policy'
+import { featureEnabled } from '../workspace-features'
 import React from 'react'
 import { COLUMN_WIDTH } from '../constants'
 import {
@@ -56,7 +59,13 @@ const getElementSelectionLabel = (
   return 'Element'
 }
 
-const Properties: React.FC = () => {
+const Properties = ({
+  slotRef,
+  inspectorRefs
+}: {
+  inspectorRefs?: InspectorRefs
+  slotRef?: (node: HTMLDivElement | null) => void
+}) => {
   const elementSelection = useElementSelection()
   const elementDataMap = useElementDataMap()
   const pathEditingVectorId = usePathEditingVectorId()
@@ -71,7 +80,10 @@ const Properties: React.FC = () => {
   )
   const title = pathEditingVectorId ? 'Vector' : elementTitle
   let panelContent = (
-    <div className="flex items-center justify-center h-full">
+    <div
+      data-inspector-status="noSelection"
+      className="flex items-center justify-center h-full"
+    >
       <span className="text-[11px] text-[#555]">No selection</span>
     </div>
   )
@@ -80,6 +92,7 @@ const Properties: React.FC = () => {
     panelContent = (
       <ElementPropertiesPanel
         title={title}
+        inspectorRefs={inspectorRefs}
         dimensionsUnavailable={[...elementSelection].some(
           (id) => !supportsSizeEdits(elementDataMap[id]?.type)
         )}
@@ -87,9 +100,7 @@ const Properties: React.FC = () => {
     )
   }
 
-  if (showVectorPoint) {
-    panelContent = <VectorPointPropertiesPanel title={title} />
-  }
+  const vector = featureEnabled('pen') && showVectorPoint
 
   return (
     <div
@@ -99,9 +110,23 @@ const Properties: React.FC = () => {
         background: '#252525',
         borderLeft: '1px solid #1a1a1a'
       }}
+      data-editor-panel="properties"
       data-testid="properties-panel"
     >
-      {panelContent}
+      <UIItems
+        id="properties"
+        parts={{
+          inspectorExtensions: slotRef && (
+            <div
+              ref={slotRef}
+              data-ui-slot="properties.top"
+              className="flex flex-wrap"
+            />
+          ),
+          selectionProperties: !vector && panelContent,
+          vectorPoint: vector && <VectorPointPropertiesPanel title={title} />
+        }}
+      />
     </div>
   )
 }

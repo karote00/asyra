@@ -79,7 +79,7 @@ const defaultQueries: AiContextQueries = {
 
   getElementCount: () => hierarchyApis.getFlattenedElementIds().length,
 
-  getSystemSnapshot: () => systemContextApis.getSystemContextSnapshot(),
+  getSystemSnapshot: () => systemContextApis.getSnapshot(),
 
   getElementSummary: (elementId) => ({
     id: elementId,

@@ -37,6 +37,7 @@ export const ColorPickerSliders: React.FC<ColorPickerSlidersProps> = ({
       <div className="mx-3 flex items-center justify-center shrink-0">
         <button
           type="button"
+          data-color-control="eyedropper"
           onClick={onEyeDropper}
           className="w-6 h-6 flex items-center justify-center rounded-md hover:bg-white/[0.08] text-white transition-colors"
           title="Eye Dropper"
@@ -68,6 +69,7 @@ export const ColorPickerSliders: React.FC<ColorPickerSlidersProps> = ({
 
       <div className="flex-1 pr-3 space-y-2">
         <div
+          data-color-control="hue"
           ref={hueRef}
           className="relative h-4 w-full cursor-ew-resize rounded-full border border-[#4B4B4B]"
           style={{
@@ -87,6 +89,7 @@ export const ColorPickerSliders: React.FC<ColorPickerSlidersProps> = ({
 
         {showAlpha && (
           <div
+            data-color-control="alpha"
             ref={alphaRef}
             className="relative h-4 w-full cursor-ew-resize rounded-full border border-[#4B4B4B]"
             style={CHECKERBOARD_BACKGROUND}

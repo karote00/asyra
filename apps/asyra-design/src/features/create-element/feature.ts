@@ -1,4 +1,10 @@
 import {
+  defaultPrimaryTool,
+  featureEnabled,
+  toolId,
+  type DisabledCommandBehavior
+} from '../../workspace-features'
+import {
   type EVENT_OPTIONS,
   type PositionData,
   type Rect,
@@ -56,18 +62,45 @@ const CREATE_GEOMETRY_OPTIONS = {
   }
 } as const satisfies EVENT_OPTIONS
 
+export function createDesignShape(
+  shape: { type: string } & (
+    | { clientPosition: PositionData; parentId: string }
+    | { workspacePosition: PositionData; width: number; height: number }
+  ),
+  behavior?: DisabledCommandBehavior
+) {
+  if (!featureEnabled(toolId(shape.type), behavior)) {
+    return null
+  }
+
+  if ('clientPosition' in shape) {
+    transactionApis.configureSharedDeliverySequence({
+      mode: 'atomic',
+      batchPublications: false,
+      slices: []
+    })
+
+    return elementApis.createElement(shape, { sharedDelivery: 'immediate' })
+  }
+
+  const { workspacePosition, width, height } = shape
+
+  if (
+    ![workspacePosition.x, workspacePosition.y, width, height].every(
+      Number.isFinite
+    ) ||
+    width <= 0 ||
+    height <= 0
+  ) {
+    throw new TypeError('Expected finite coordinates and positive dimensions')
+  }
+
+  return elementApis.createElement(shape)
+}
+
 const api: CreateElementAPI = {
   createElement: (position: PositionData, type: string, parentId: string) => {
-    return elementApis.createElement(
-      {
-        type,
-        clientPosition: position,
-        parentId
-      },
-      {
-        sharedDelivery: 'immediate'
-      }
-    )
+    return createDesignShape({ type, clientPosition: position, parentId })
   },
 
   updateElementSizeAndPosition: (
@@ -138,22 +171,19 @@ export const createElementSession = {
       return null
     }
 
-    transactionApis.configureSharedDeliverySequence({
-      mode: 'atomic',
-      batchPublications: false,
-      slices: []
-    })
     const elementId = api.createElement(
       snapshot.mousePosition,
       primaryTool,
       parentId
     )
 
-    if (elementId) {
-      selectionApis.selectElements([elementId], {
-        sharedDelivery: 'immediate'
-      })
+    if (!elementId) {
+      return null
     }
+
+    selectionApis.selectElements([elementId], {
+      sharedDelivery: 'immediate'
+    })
 
     return {
       elementId,
@@ -258,7 +288,7 @@ export const createElementSession = {
       snapshot.primaryTool === PrimaryToolType.RECTANGLE ||
       snapshot.primaryTool === PrimaryToolType.OVAL
     ) {
-      systemContextApis.switchPrimaryTool(PrimaryToolType.SELECT)
+      systemContextApis.switchPrimaryTool(defaultPrimaryTool)
     }
   },
 

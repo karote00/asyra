@@ -132,6 +132,7 @@ const ImageAttachmentStrip = ({
         />
         {onRemove ? (
           <button
+            data-conversation-action="removeAttachment"
             aria-label={`Remove ${attachment.name}`}
             className="absolute right-1 top-1 grid h-5 w-5 place-items-center rounded-full border border-white/20 bg-black/75 text-[12px] leading-none text-white hover:bg-black"
             onClick={() => onRemove(index)}
@@ -179,6 +180,7 @@ const DrawingDetailChoiceCard = ({
     <li>
       {onChoose ? (
         <button
+          data-conversation-action="chooseAnswer"
           aria-label={`Choose ${choice.label}`}
           className="w-full rounded-md border border-[#56506d] bg-[#222127] p-2.5 text-left transition-colors hover:border-[#8073b5] hover:bg-[#292633] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#9b87ff]"
           onClick={onChoose}
@@ -398,6 +400,7 @@ const AiConversationPanelLayout = ({
       aria-modal="false"
       className="fixed bottom-0 right-0 top-10 z-50 flex flex-col overflow-hidden select-text border-l border-[#45464b] bg-[#202124] text-[12px] text-[#f5f5f5] shadow-[-18px_0_48px_rgba(0,0,0,0.32)]"
       style={{ width: CONVERSATION_PANEL_WIDTH }}
+      data-editor-panel="conversation"
       data-testid="ai-agent-panel"
       role="complementary"
     >
@@ -408,6 +411,7 @@ const AiConversationPanelLayout = ({
         />
         <AiToolLibraryPanel />
         <button
+          data-conversation-action="close"
           aria-label="Close Agent panel"
           className="grid h-6 w-6 shrink-0 place-items-center rounded border-0 bg-transparent text-[#b8b9c0] hover:bg-[#303136] hover:text-white"
           onClick={close}
@@ -444,6 +448,7 @@ const AiConversationPanelLayout = ({
 
       {children}
       <form
+        data-conversation-section="composer"
         aria-label="Agent message form"
         className={`shrink-0 border-t p-3 transition-colors ${
           draggingImages ? 'border-[#8d7bff] bg-[#282536]' : 'border-[#38393e]'
@@ -469,6 +474,7 @@ const AiConversationPanelLayout = ({
         <AiConnectionStatus onAvailabilityChange={setAiAvailable} />
         <input
           accept="image/png,image/jpeg,image/webp"
+          data-conversation-field="images"
           aria-label="Choose images"
           className="sr-only"
           disabled={active}
@@ -511,6 +517,7 @@ const AiConversationPanelLayout = ({
             Message Agent
           </label>
           <textarea
+            data-conversation-field="message"
             aria-label="Message Agent"
             className="block min-h-[72px] w-full resize-none rounded-t-lg border-0 bg-transparent px-3 py-2 text-[12px] leading-5 text-white outline-none placeholder:text-[#777982]"
             data-ai-agent-prompt="true"
@@ -529,6 +536,7 @@ const AiConversationPanelLayout = ({
           <div className="flex items-center justify-between gap-2 px-2 pb-2">
             <div className="flex items-center gap-2">
               <button
+                data-conversation-action="attachImage"
                 aria-label="Add image"
                 className="h-7 rounded-md border border-transparent bg-transparent px-2 text-[12px] text-[#c7c8ce] enabled:hover:border-[#696b74] enabled:hover:bg-[#303136] disabled:cursor-not-allowed disabled:text-[#6f7077]"
                 disabled={active}
@@ -542,6 +550,7 @@ const AiConversationPanelLayout = ({
               {active ? (
                 <button
                   {...AiDocumentInteractionTargetProps.AGENT_CANCEL}
+                  data-conversation-action="cancel"
                   aria-label="Cancel request"
                   disabled={conversationSnapshot.activeTurn?.stopping}
                   className="rounded-md border border-[#6c4d4d] bg-[#382727] px-3 py-1.5 text-[12px] text-[#ffb8b8] hover:bg-[#472e2e]"
@@ -565,6 +574,7 @@ const AiConversationPanelLayout = ({
               <button
                 className="h-7 rounded-md border border-[#8d7bff] bg-[#745cff] px-3 text-[12px] font-medium text-white enabled:hover:bg-[#856fff] disabled:cursor-not-allowed disabled:border-[#44454b] disabled:bg-[#303136] disabled:text-[#777982]"
                 disabled={!canSend}
+                data-conversation-action="send"
                 type="submit"
               >
                 Send
@@ -649,6 +659,7 @@ const AiConversationMessage = ({
   return (
     <article
       className="flex min-w-0 flex-col gap-3"
+      data-conversation-section="message"
       data-testid="ai-agent-message"
       data-outcome={settled?.outcome ?? 'active'}
       data-turn-id={turn.turnId}
@@ -693,6 +704,7 @@ const AiConversationMessage = ({
           className="mt-2 text-[12px] text-[#96939f]"
         >
           <summary
+            data-conversation-action="toggleWorkHistory"
             aria-label="Work history"
             className="cursor-pointer border-b border-[#393a40] pb-2"
           >
@@ -773,6 +785,7 @@ const AiConversationMessage = ({
           ))}
         {question ? (
           <section
+            data-conversation-section="question"
             aria-label="Question"
             className="mt-4 border-l-2 border-[#8d7bff] pl-3"
           >
@@ -807,6 +820,7 @@ const AiConversationMessage = ({
         ) : null}
         {settled && !question ? (
           <p
+            data-conversation-section="result"
             data-testid="ai-agent-result"
             className="mb-0 mt-2 whitespace-pre-wrap break-words"
           >
@@ -825,6 +839,7 @@ const AiConversationMessage = ({
         {settled && latest && !active && canRetryAiTurn(settled) ? (
           <div className="mt-3 flex flex-wrap gap-2">
             <button
+              data-conversation-action="retry"
               className="rounded-md border border-[#625586] px-3 py-1.5 text-[12px] hover:bg-[#302b3e]"
               type="button"
               onClick={() =>
@@ -963,6 +978,7 @@ const AiConversationFeed = ({
   return (
     <>
       <section
+        data-conversation-section="messages"
         aria-label="Conversation messages"
         onScroll={syncScrollPosition}
         className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 py-4"
@@ -1018,6 +1034,7 @@ const AiConversationFeed = ({
             <div className="flex justify-end gap-2">
               <button
                 className="rounded-md border border-[#5a5b62] bg-transparent px-3 py-1.5 text-[12px] text-[#dadbe0] hover:bg-[#37383d]"
+                data-conversation-action="reject"
                 onClick={() => confirmation.resolve(false)}
                 type="button"
               >
@@ -1025,6 +1042,7 @@ const AiConversationFeed = ({
               </button>
               <button
                 className="rounded-md border border-[#8d7bff] bg-[#745cff] px-3 py-1.5 text-[12px] font-medium text-white hover:bg-[#856fff]"
+                data-conversation-action="confirm"
                 onClick={() => confirmation.resolve(true)}
                 type="button"
               >
@@ -1037,6 +1055,7 @@ const AiConversationFeed = ({
 
       {showJump ? (
         <button
+          data-conversation-action="latest"
           className="mx-auto mb-2 rounded-full border border-[#514a68] bg-[#292630] px-3 py-1 text-[12px]"
           type="button"
           onClick={() => {

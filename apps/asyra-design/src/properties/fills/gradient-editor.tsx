@@ -1,3 +1,4 @@
+import { UIItems } from '../../workspace/ui-parts'
 import {
   FillGradientTypes,
   type EVENT_OPTIONS,
@@ -78,45 +79,55 @@ const GradientEditor = ({
           ? 'w-full'
           : 'w-full rounded-md border border-border-dark bg-[#1f2022] p-2'
       }
+      data-gradient-editor={fillId}
       data-testid={`prop-fill-gradient-editor-${index}`}
     >
-      <GradientTypeControls
-        index={index}
-        value={gradient.gradientType as FillGradientType}
-        options={GRADIENT_TYPE_OPTIONS}
-        onChange={handleGradientTypeChange}
-        onFlip={handleFlipGradient}
-      />
-
-      <GradientStrip
-        index={index}
-        gradient={gradient}
-        selectedStopIndex={selectedStopIndex}
-        openStopIndex={openStopIndex}
-        stripRef={stripRef}
-        onAddStopFromStrip={handleAddStop}
-        onSelectStop={handleSelectStop}
-        onStopPointerDown={beginStopDrag}
-      />
-
-      <GradientStopsList
-        index={index}
-        orderedStops={orderedStops}
-        selectedStopIndex={selectedStopIndex}
-        openStopIndex={openStopIndex}
-        fillColorFormat={fill.colorFormat}
-        totalStopCount={gradient.gradientStops.length}
-        onAddStop={handleAddStopFromButton}
-        onSelectStop={handleSelectStop}
-        onRowPointerDown={handleStopRowPointerDown}
-        onStopPositionChange={handleStopPositionChange}
-        onStopColorChange={handleStopColorChange}
-        onStopColorTextChange={handleStopColorTextChange}
-        onStopOpacityChange={handleStopOpacityChange}
-        onRemoveStop={handleRemoveStop}
-        onOpenStopChange={handleOpenStopChange}
-        onColorPickerStart={startInteractionSession}
-        onColorPickerEnd={endInteractionSession}
+      <UIItems
+        id="gradient"
+        parts={{
+          gradientType: (
+            <GradientTypeControls
+              index={index}
+              value={gradient.gradientType as FillGradientType}
+              options={GRADIENT_TYPE_OPTIONS}
+              onChange={handleGradientTypeChange}
+              onFlip={handleFlipGradient}
+            />
+          ),
+          gradientStrip: (
+            <GradientStrip
+              index={index}
+              gradient={gradient}
+              selectedStopIndex={selectedStopIndex}
+              openStopIndex={openStopIndex}
+              stripRef={stripRef}
+              onAddStopFromStrip={handleAddStop}
+              onSelectStop={handleSelectStop}
+              onStopPointerDown={beginStopDrag}
+            />
+          ),
+          gradientStops: (
+            <GradientStopsList
+              index={index}
+              orderedStops={orderedStops}
+              selectedStopIndex={selectedStopIndex}
+              openStopIndex={openStopIndex}
+              fillColorFormat={fill.colorFormat}
+              totalStopCount={gradient.gradientStops.length}
+              onAddStop={handleAddStopFromButton}
+              onSelectStop={handleSelectStop}
+              onRowPointerDown={handleStopRowPointerDown}
+              onStopPositionChange={handleStopPositionChange}
+              onStopColorChange={handleStopColorChange}
+              onStopColorTextChange={handleStopColorTextChange}
+              onStopOpacityChange={handleStopOpacityChange}
+              onRemoveStop={handleRemoveStop}
+              onOpenStopChange={handleOpenStopChange}
+              onColorPickerStart={startInteractionSession}
+              onColorPickerEnd={endInteractionSession}
+            />
+          )
+        }}
       />
     </div>
   )

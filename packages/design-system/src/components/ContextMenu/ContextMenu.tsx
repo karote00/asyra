@@ -3,6 +3,7 @@ import {
   useLayoutEffect,
   useRef,
   useState,
+  type ReactNode,
   type KeyboardEvent
 } from 'react'
 import { createPortal } from 'react-dom'
@@ -29,12 +30,15 @@ export interface ContextMenuViewport {
 export type ContextMenuDismissReason = 'escape' | 'outside-pointer' | 'tab'
 
 export interface ContextMenuProps {
+  'data-context-menu'?: string
   'aria-label': string
   items: readonly ContextMenuItem[]
   position: ContextMenuPosition
   viewport: ContextMenuViewport
   onActivate: (itemId: string) => void
   onDismiss: (reason: ContextMenuDismissReason) => void
+  inline?: boolean
+  composeItems?: (items: ReadonlyMap<string, ReactNode>) => ReactNode
   portalContainer?: HTMLElement
 }
 
@@ -43,11 +47,14 @@ const clamp = (value: number, minimum: number, maximum: number) =>
 
 export const ContextMenu = ({
   'aria-label': ariaLabel,
+  'data-context-menu': menuId,
   items,
   position,
   viewport,
   onActivate,
   onDismiss,
+  inline,
+  composeItems,
   portalContainer
 }: ContextMenuProps) => {
   const menuRef = useRef<HTMLDivElement>(null)
@@ -103,23 +110,31 @@ export const ContextMenu = ({
   ])
 
   useLayoutEffect(() => {
-    const firstEnabledIndex = enabledIndices[0]
+    const first =
+      menuRef.current?.querySelector<HTMLButtonElement>(
+        'button[role="menuitem"]:enabled'
+      ) ?? itemRefs.current.find((button) => button && !button.disabled)
 
-    if (firstEnabledIndex === undefined) {
+    if (!first) {
       menuRef.current?.focus()
 
       return
     }
 
-    itemRefs.current[firstEnabledIndex]?.focus()
+    first.focus()
   }, [enabledItemKey])
 
   useEffect(() => {
+    const owner = menuRef.current?.ownerDocument ?? document
+
     const handlePointerDown = (event: PointerEvent) => {
       if (
         event.button === 0 &&
-        event.target instanceof Node &&
-        !menuRef.current?.contains(event.target)
+        menuRef.current &&
+        !event.composedPath().includes(menuRef.current) &&
+        !itemRefs.current.some(
+          (button) => button && event.composedPath().includes(button)
+        )
       ) {
         event.preventDefault()
         event.stopPropagation()
@@ -127,10 +142,10 @@ export const ContextMenu = ({
       }
     }
 
-    document.addEventListener('pointerdown', handlePointerDown, true)
+    owner.addEventListener('pointerdown', handlePointerDown, true)
 
     return () =>
-      document.removeEventListener('pointerdown', handlePointerDown, true)
+      owner.removeEventListener('pointerdown', handlePointerDown, true)
   }, [onDismiss])
 
   const focusItem = (index: number) => {
@@ -153,12 +168,19 @@ export const ContextMenu = ({
       return
     }
 
+    const enabledIndices = Array.from(
+      menuRef.current?.querySelectorAll<HTMLButtonElement>(
+        'button[role="menuitem"]:enabled'
+      ) ?? [],
+      (button) => itemRefs.current.indexOf(button)
+    ).filter((index) => index >= 0)
+
     if (enabledIndices.length === 0) {
       return
     }
 
-    const activeIndex = itemRefs.current.findIndex(
-      (item) => item === document.activeElement
+    const activeIndex = itemRefs.current.findIndex((item) =>
+      item?.matches(':focus')
     )
     const enabledPosition = enabledIndices.indexOf(activeIndex)
 
@@ -208,49 +230,59 @@ export const ContextMenu = ({
     }
   }
 
+  const buttons = items.map((item, index) => (
+    <button
+      key={item.id}
+      ref={(element) => {
+        itemRefs.current[index] = element
+      }}
+      type="button"
+      data-menu-command={item.id}
+      role="menuitem"
+      aria-disabled={!item.enabled}
+      disabled={!item.enabled}
+      className={`flex w-full items-center justify-between gap-8 rounded-md px-2.5 py-1.5 text-left text-[12px] leading-5 outline-none transition-colors ${
+        item.enabled
+          ? 'cursor-default text-text-primary hover:bg-panel-surface-hover focus:bg-panel-surface-hover active:bg-panel-deep'
+          : 'cursor-default text-text-disabled'
+      }`}
+      onClick={() => {
+        if (item.enabled) {
+          onActivate(item.id)
+        }
+      }}
+    >
+      <span data-context-menu-label>{item.label}</span>
+      <span
+        data-context-menu-shortcut
+        aria-hidden="true"
+        className="min-w-0 text-right text-[11px] text-text-tertiary"
+      >
+        {item.shortcut ?? ''}
+      </span>
+    </button>
+  ))
+
   const menu = (
     <div
       ref={menuRef}
+      data-context-menu={menuId}
       role="menu"
       aria-label={ariaLabel}
       tabIndex={enabledIndices.length === 0 ? 0 : -1}
       className="fixed z-50 min-w-[220px] rounded-lg border border-border-hover bg-panel-surface p-1 font-sans text-text-primary shadow-popup outline-none"
-      style={{ left: placement.x, top: placement.y }}
+      style={
+        inline
+          ? { position: 'static' }
+          : { left: placement.x, top: placement.y }
+      }
       onKeyDown={handleKeyDown}
     >
-      {items.map((item, index) => (
-        <button
-          key={item.id}
-          ref={(element) => {
-            itemRefs.current[index] = element
-          }}
-          type="button"
-          role="menuitem"
-          aria-disabled={!item.enabled}
-          disabled={!item.enabled}
-          className={`flex w-full items-center justify-between gap-8 rounded-md px-2.5 py-1.5 text-left text-[12px] leading-5 outline-none transition-colors ${
-            item.enabled
-              ? 'cursor-default text-text-primary hover:bg-panel-surface-hover focus:bg-panel-surface-hover active:bg-panel-deep'
-              : 'cursor-default text-text-disabled'
-          }`}
-          onClick={() => {
-            if (item.enabled) {
-              onActivate(item.id)
-            }
-          }}
-        >
-          <span data-context-menu-label>{item.label}</span>
-          <span
-            data-context-menu-shortcut
-            aria-hidden="true"
-            className="min-w-0 text-right text-[11px] text-text-tertiary"
-          >
-            {item.shortcut ?? ''}
-          </span>
-        </button>
-      ))}
+      {composeItems
+        ? composeItems(new Map(items.map((item, i) => [item.id, buttons[i]])))
+        : buttons}
     </div>
   )
 
-  return createPortal(menu, portalContainer ?? document.body)
+  return inline ? menu : createPortal(menu, portalContainer ?? document.body)
 }

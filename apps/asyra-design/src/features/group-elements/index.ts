@@ -1,3 +1,7 @@
+import {
+  featureEnabled,
+  type DisabledCommandBehavior
+} from '../../workspace-features'
 import { defineFeature } from '@asyra/core'
 import type { SystemContextSnapshotWithDetail } from '@asyra/utils'
 import {
@@ -26,7 +30,10 @@ export interface GroupCommandExecutionResult {
 export type { GroupCommand }
 
 interface GroupCommandFeatureAPI {
-  execute: (command: GroupCommand) => GroupCommandExecutionResult | null
+  execute: (
+    command: GroupCommand,
+    behavior?: DisabledCommandBehavior
+  ) => GroupCommandExecutionResult | null
   [key: string]: unknown
 }
 
@@ -60,7 +67,11 @@ export const executeGroupCommandRequest = (
   })
 
 const api: GroupCommandFeatureAPI = {
-  execute: (command) => {
+  execute: (command, behavior) => {
+    if (!featureEnabled(command, behavior)) {
+      return null
+    }
+
     const request = createCurrentGroupCommandRequest(command)
 
     return request ? executeGroupCommandRequest(request) : null

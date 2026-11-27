@@ -31,6 +31,7 @@ export const GroupDisclosure = ({
       aria-expanded={isExpanded}
       aria-label={isExpanded ? 'Collapse Group' : 'Expand Group'}
       data-testid={`layers-group-toggle-${groupId}`}
+      data-layer-action="toggleGroup"
       data-layer-pointer-bypass="true"
       onClick={handleClick}
     />

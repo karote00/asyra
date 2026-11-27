@@ -7,6 +7,8 @@ import type { FeatureEntry } from '../types/registry.js'
  * Manages feature registration and API lookup
  */
 export class FeatureRegistry {
+  private disabledFeatures = new Set<string>()
+
   private registry = new MapRegistry<string, FeatureEntry>()
 
   /**
@@ -36,6 +38,10 @@ export class FeatureRegistry {
    * @returns Public API or undefined if not found
    */
   getAPI(name: string): FeatureAPI {
+    if (!this.isInteractionEnabled(name)) {
+      return {}
+    }
+
     const entry = this.registry.get(name)
 
     return entry?.api || ({} as FeatureAPI)
@@ -67,7 +73,23 @@ export class FeatureRegistry {
    * @returns True if feature was removed
    */
   unregister(name: string): boolean {
+    this.disabledFeatures.delete(name)
+
     return this.registry.delete(name)
+  }
+
+  // Gate input participation and interactive API lookup without changing the
+  // registration, task ownership or a document's persisted schema.
+  setInteractionEnabled(name: string, enabled: boolean) {
+    if (enabled) {
+      this.disabledFeatures.delete(name)
+    } else if (this.has(name)) {
+      this.disabledFeatures.add(name)
+    }
+  }
+
+  isInteractionEnabled(name: string) {
+    return !this.disabledFeatures.has(name)
   }
 
   /**
@@ -90,6 +112,7 @@ export class FeatureRegistry {
    * Clear all registered features
    */
   clear(): void {
+    this.disabledFeatures.clear()
     this.registry.clear()
   }
 

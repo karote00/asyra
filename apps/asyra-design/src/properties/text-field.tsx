@@ -98,6 +98,7 @@ export const TextField = ({
       }
       noOutline
       containerClassName="w-full min-w-0"
+      data-inspector-field={field}
       aria-label={label}
       aria-invalid={invalid}
       type={numeric ? 'number' : 'text'}

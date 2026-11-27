@@ -1,5 +1,10 @@
 # Asyra Skill releases
 
+## 0.1.16 - Canvas host ownership
+
+- Sync the offline Pixi renderer guide with the public contract for a borrowed
+  canvas and its host-managed layout.
+
 ## 0.1.15 - Offline Framework ownership guides
 
 - Route Framework tasks to the public guides for every Framework package,

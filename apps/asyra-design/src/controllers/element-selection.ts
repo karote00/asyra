@@ -1,13 +1,29 @@
-import { selectionApis } from '../common-apis'
+import { getFeatureRegistry } from '@asyra/core'
+import type { EVENT_OPTIONS } from '@asyra/utils'
+import { FeatureNames } from '../constants'
+import type { selectionFeature } from '../features/selection'
 
-export const selectElements = (elementIds: string[]) => {
-  selectionApis.selectElements(elementIds)
+function selectionCommands() {
+  return getFeatureRegistry().getAPI(FeatureNames.SELECTION) as Partial<
+    typeof selectionFeature.api
+  >
 }
 
-export const toggleElementSelection = (elementId: string) => {
-  selectionApis.toggleSelection(elementId)
+export function selectElements(
+  elementIds: string[],
+  options?: EVENT_OPTIONS,
+  required = false
+) {
+  const select = selectionCommands().selectElements
+
+  if (required && !select) {
+    throw new Error('Disabled Design feature: select')
+  }
+
+  select?.(elementIds, options)
 }
 
-export const clearSelection = () => {
-  selectionApis.clearSelection()
-}
+export const toggleElementSelection = (id: string) =>
+  selectionCommands().toggleSelection?.(id)
+
+export const clearSelection = () => selectionCommands().clearSelection?.()

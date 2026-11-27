@@ -1,3 +1,6 @@
+import { UIItems } from '../../workspace/ui-parts'
+import type { InspectorRefs } from '../inspector-contract'
+import { featureEnabled } from '../../workspace-features'
 import { TEXT_COMPONENT_TYPE } from '@asyra/preset'
 import Header from '../header'
 import TextProperties from '../text'
@@ -14,23 +17,33 @@ const ElementAppearance = ({ elementId }: { elementId: string }) => {
   const element = useElementData(elementId)
 
   return (
-    <>
-      <SectionDivider />
-      <Fills />
-      {element.type !== TEXT_COMPONENT_TYPE && (
-        <>
-          <SectionDivider />
-          <Strokes />
-        </>
-      )}
-    </>
+    <UIItems
+      id="appearance"
+      parts={{
+        fills: featureEnabled('fills') && (
+          <>
+            <SectionDivider />
+            <Fills />
+          </>
+        ),
+        strokes: featureEnabled('strokes') &&
+          element.type !== TEXT_COMPONENT_TYPE && (
+            <>
+              <SectionDivider />
+              <Strokes />
+            </>
+          )
+      }}
+    />
   )
 }
 
 const ElementPropertiesPanel = ({
   title,
-  dimensionsUnavailable
+  dimensionsUnavailable,
+  inspectorRefs
 }: {
+  inspectorRefs?: InspectorRefs
   title: string
   dimensionsUnavailable?: boolean
 }) => {
@@ -40,23 +53,50 @@ const ElementPropertiesPanel = ({
     return null
   }
 
+  const dimension = dimensionsUnavailable ? (
+    <p>Size editing is unavailable for this selection.</p>
+  ) : (
+    <Dimension />
+  )
+
   return (
     <div className="flex flex-col">
-      {/* Design section: Position, Dimension, Rotation */}
-      <Header label={title} />
-      <div className="grid grid-cols-1 w-full pb-2">
-        <Position />
-        {dimensionsUnavailable ? (
-          <p>Size editing is unavailable for this selection.</p>
-        ) : (
-          <Dimension />
-        )}
-        <Rotation />
-      </div>
-
-      <TextProperties />
-      <ElementAppearance
-        elementId={elementSelection.size === 1 ? [...elementSelection][0] : ''}
+      <UIItems
+        id="selectionProperties"
+        parts={{
+          selectionHeading: <Header label={title} />,
+          geometry: featureEnabled('geometry') && (
+            <div
+              data-inspector-section="geometry"
+              className="grid grid-cols-1 w-full pb-2"
+            >
+              <UIItems
+                id="geometry"
+                parts={{
+                  positionRow: inspectorRefs?.positionRow ? (
+                    <div ref={inspectorRefs.positionRow} />
+                  ) : (
+                    <Position />
+                  ),
+                  dimensionRow: inspectorRefs?.dimensionRow ? (
+                    <div ref={inspectorRefs.dimensionRow} />
+                  ) : (
+                    dimension
+                  ),
+                  rotationRow: <Rotation />
+                }}
+              />
+            </div>
+          ),
+          typography: featureEnabled('text') && <TextProperties />,
+          appearance: (
+            <ElementAppearance
+              elementId={
+                elementSelection.size === 1 ? [...elementSelection][0] : ''
+              }
+            />
+          )
+        }}
       />
     </div>
   )
