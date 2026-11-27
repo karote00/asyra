@@ -1,9 +1,7 @@
 import {
   createElement,
-  useLayoutEffect,
   useCallback,
   useContext,
-  useRef,
   type DetailedHTMLProps,
   type HTMLAttributes
 } from 'react'
@@ -106,19 +104,4 @@ export function AsyraDesign<const Id extends string = never>({
   })
 }
 
-/** Place a live editor component here for the lifetime of this React host. */
-export function DesignUI({
-  component
-}: {
-  component: import('./editor-types.js').ComponentHandle
-}) {
-  const host = useRef<HTMLDivElement>(null)
-
-  useLayoutEffect(() => {
-    if (host.current) {
-      return component.mount(host.current)
-    }
-  }, [component])
-
-  return createElement('div', { ref: host, style: { display: 'contents' } })
-}
+export { DesignUI, UI } from './react-components.js'

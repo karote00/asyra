@@ -188,10 +188,13 @@ action's ID, fails at startup.
 
 ### Add UI to a workspace
 
-Use `editor.uiKeys` to discover component names. Place the native Pen button
-in React with `<DesignUI component={editor.getUI('penToolIcon')} />` from
-`@asyra/design/react`, or call `editor.getUI('penToolIcon').mount(container)`
-in JavaScript. Each named group exposes its native items and current order.
+Place a built-in control directly in your layout. In React, render
+`<UI.PenToolIcon />` from `@asyra/design/react` inside the board's
+`DesignEditorProvider`. In plain JavaScript, import `components` from
+`@asyra/design/ui` and call `components.penToolIcon.mount(editor, container)`.
+Type `UI.` or `components.` to browse the built-in controls. Use
+`editor.uiKeys` and `editor.getUI(id)` for the current editor's actions,
+group items and ordering.
 See [Place and compose Design components](UI.md) for complete examples and
 DevTools lookups.
 
@@ -209,16 +212,18 @@ export function Board() {
 }
 ```
 
-For explicit group ordering or installation alongside your own UI, install
-`@asyra/design-ui` and pass the group descriptors:
+For explicit group ordering, import the row definitions from Design.
+They describe the controls and their fields. Use the same definitions in a
+plain JavaScript editor or in the React component's `options.ui`.
 
-```tsx
-import { positionRow, dimensionRow } from '@asyra/design-ui'
+```js
+import { createDesign } from '@asyra/design'
+import { positionRow, dimensionRow } from '@asyra/design/inspector-rows'
 
-<AsyraDesign
-  options={{ ui: [positionRow, dimensionRow] }}
-  uiTargets={{ [positionRow.id]: 'my-toolbar' }}
-/>
+const editor = await createDesign(container, {
+  ui: [positionRow, dimensionRow],
+  uiTargets: { [positionRow.id]: 'my-toolbar' }
+})
 ```
 
 React accepts `hideUI`, `disabledFeatures`, `uiTargets`, `toolbar`,

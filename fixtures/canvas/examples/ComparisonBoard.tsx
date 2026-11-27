@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { DesignEditor } from '@asyra/design'
-import { DesignEditorProvider, useDesignEditor } from '@asyra/design/react'
+import { DesignEditorProvider, UI, useDesignEditor } from '@asyra/design/react'
 import { Board } from './DesignBoard'
 
 function Controls({
@@ -15,9 +15,12 @@ function Controls({
   useEffect(() => register(name, editor), [editor, name, register])
 
   return (
-    <button disabled={!editor} onClick={() => editor?.setTool('pen')}>
-      {name} pen
-    </button>
+    <aside aria-label={name + ' controls'}>
+      <button disabled={!editor} onClick={() => editor?.setTool('pen')}>
+        {name} pen
+      </button>
+      <UI.RectangleToolIcon />
+    </aside>
   )
 }
 

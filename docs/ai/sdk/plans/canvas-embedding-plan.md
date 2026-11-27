@@ -117,8 +117,8 @@ activation, restore the previous policy before allowing a retry.
 
 ### Ready editor, packaged tools and persistent nodes
 
-React reports each ready editor through `onMount`. A host can install the
-first-party Design UI package with the public SDK as its peer. The host lists
+React reports each ready editor through `onMount`. Design exports framework-independent
+Position and Dimension definitions from `@asyra/design/inspector-rows`. The host lists
 standalone groups in `ui` and supplies optional HTML element IDs in `uiTargets`.
 Position and Dimension each own one app-rendered control surface per editor. Installed rows move between the original panel and external targets without duplication. Target changes preserve the editor and document history. React consumers install Design as one direct dependency and can enable browser persistence with a storageKey prop.
 The app registers an extension's stable component type, scalar property schema
@@ -181,6 +181,9 @@ ordering, custom item lifetimes and exclusive host placements. Group items
 render in template order. An external placement wins over the default home.
 Releasing it restores that home. Hidden panels can service explicit placements.
 Canvas rendering and document record identities stay under their current owners.
+Expose native groups and leaves as framework-independent SDK component definitions
+from the workspace registry. React provides named JSX adapters for the same IDs
+using the nearest ready editor. Per-editor actions resolve through live handles.
 Verify discovery, order, command dispatch, feature changes, teardown and editor
 isolation using separately installed React and JavaScript tarball consumers.
 

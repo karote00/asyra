@@ -1027,34 +1027,29 @@ test('packed board migrates a valid legacy snapshot and preserves an invalid ori
 })
 
 test('packed Design React mounts first-party Position in the configured host toolbar', async () => {
-  await withConsumer(
-    [...react, 'sdk/design-ui'],
-    'ui-react.js',
-    async (page) => {
-      const input = page.locator('#my-toolbar').getByLabel('X', { exact: true })
+  await withConsumer(react, 'ui-react.js', async (page) => {
+    const input = page.locator('#my-toolbar').getByLabel('X', { exact: true })
 
-      await expect(input).toBeVisible()
-      await expect(input).toBeDisabled()
-      await page.locator('asyra-design').evaluate((el) => {
-        const e = el.editor
+    await expect(input).toBeVisible()
+    await expect(input).toBeDisabled()
+    await page.locator('asyra-design').evaluate((el) => {
+      const e = el.editor
 
-        e.select([e.drawRectangle({ x: 18, y: 7, width: 30, height: 20 })])
-      })
-      await expect(input).toHaveValue('18')
-      await input.fill('42')
-      await input.press('Enter')
-      assert.equal(
-        await page
-          .locator('asyra-design')
-          .evaluate(
-            (el) =>
-              el.editor.getElementProperties(el.editor.getSelection()[0], ['x'])
-                .x
-          ),
-        42
-      )
-    }
-  )
+      e.select([e.drawRectangle({ x: 18, y: 7, width: 30, height: 20 })])
+    })
+    await expect(input).toHaveValue('18')
+    await input.fill('42')
+    await input.press('Enter')
+    assert.equal(
+      await page
+        .locator('asyra-design')
+        .evaluate(
+          (el) =>
+            el.editor.getElementProperties(el.editor.getSelection()[0], ['x']).x
+        ),
+      42
+    )
+  })
 })
 
 test('packed Design resolves only configured UI targets and releases failed mounts', async () => {
@@ -1178,7 +1173,7 @@ for (const useReact of [true, false]) {
       (useReact ? 'React' : 'plain JavaScript'),
     async () => {
       await withConsumer(
-        useReact ? [...react, 'sdk/design-ui'] : design,
+        useReact ? react : design,
         useReact ? 'ui-react.js' : 'common.js',
         async (page) => {
           if (!useReact) {

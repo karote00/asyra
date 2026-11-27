@@ -7,7 +7,7 @@ handle stays bound to that editor for its lifetime.
 ## Put a control in your own layout
 
 In React, place one board and its controls inside a `DesignEditorProvider`.
-Any descendant can import `useDesignEditor` in its own file.
+Any descendant can render the named controls exported as `UI` in its own file.
 
 ```tsx
 // BoardScreen.tsx
@@ -26,13 +26,17 @@ export function BoardScreen() {
 
 ```tsx
 // PenToolbar.tsx
-import { DesignUI, useDesignEditor } from '@asyra/design/react'
+import { UI } from '@asyra/design/react'
 
 export function PenToolbar() {
-  const editor = useDesignEditor()
-  return <aside>{editor && <DesignUI component={editor.getUI('penToolIcon')} />}</aside>
+  return <aside><UI.PenToolIcon /></aside>
 }
 ```
+
+The JSX name is the registered ID with its first letter capitalized. For example,
+`penToolIcon`, `positionRow` and `layers` correspond to `UI.PenToolIcon`,
+`UI.PositionRow` and `UI.Layers`. Type `UI.` for completion. Each component
+mounts when its provider has a ready editor.
 
 The nearest provider supplies the editor. Its snapshot starts at `null`,
 becomes the ready editor, and returns to `null` during document replacement
@@ -67,13 +71,23 @@ its native icon, active state, feature policy and command handler.
 
 ```js
 import { createDesign } from '@asyra/design'
+import { components } from '@asyra/design/ui'
 
 const editor = await createDesign(document.querySelector('main'))
-const pen = editor.getUI('penToolIcon')
-const release = pen.mount(document.querySelector('aside'))
+const release = components.penToolIcon.mount(editor, document.querySelector('aside'))
 // When the host removes its toolbar:
 release()
 ```
+
+The framework-independent `components` catalog includes all built-in group and
+leaf IDs. A definition can be shared by several editors. For an action registered
+on an individual editor, use its live handle, for example
+`editor.getUI('action.undo').mount(target)`. React also accepts that handle in
+`<DesignUI component={handle} />`. Use `editor.getUI(id)` for item composition.
+
+To move the Position row on a live editor, use `components.positionRow.mount(editor, target)`.
+To configure row order at startup, use the row definitions from
+`@asyra/design/inspector-rows` in the board's `ui` option.
 
 Each component has one explicit destination per editor. A new mount takes over.
 An older release callback cannot undo that newer placement. Releasing the active

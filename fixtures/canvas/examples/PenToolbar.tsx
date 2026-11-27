@@ -1,11 +1,9 @@
-import { DesignUI, useDesignEditor } from '@asyra/design/react'
+import { UI } from '@asyra/design/react'
 
 export function PenToolbar() {
-  const editor = useDesignEditor()
-
   return (
     <aside>
-      {editor && <DesignUI component={editor.getUI('penToolIcon')} />}
+      <UI.PenToolIcon />
     </aside>
   )
 }

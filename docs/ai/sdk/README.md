@@ -8,7 +8,6 @@ owns those contracts across the four SDK packages.
 | ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [Canvas](../../../sdk/canvas/README.md)         | Bind a caller-owned canvas and manage the session lifetime.                                                                                                                                 |
 | [Design](../../../sdk/design/README.md)         | Mount a ready editor with React or JavaScript, edit a document, and supply custom UI. See the [feature catalog](../../../sdk/design/FEATURES.md) for operation and availability boundaries. |
-| [Design UI](../../../sdk/design-ui/README.md)   | Place the editor's Position and Dimension controls in a host layout.                                                                                                                        |
 | [Simulation](../../../sdk/simulation/README.md) | Attach a playback session and present its sampled frames.                                                                                                                                   |
 
 ## Where a change belongs

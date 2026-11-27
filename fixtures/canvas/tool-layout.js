@@ -1,5 +1,5 @@
 import { createDesign } from '@asyra/design'
-import { positionRow } from '@asyra/design-ui'
+import { positionRow } from '@asyra/design/inspector-rows'
 
 const { document, localStorage } = globalThis
 
