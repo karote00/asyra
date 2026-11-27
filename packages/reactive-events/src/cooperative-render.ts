@@ -71,16 +71,17 @@ export const yieldToCooperativeHost = (): Promise<void> => {
   )
 }
 
-export const waitForCooperativePaint = (): Promise<void> => {
+export const waitForCooperativePaint = async (): Promise<void> => {
   if (typeof globalThis.requestAnimationFrame !== 'function') {
     return yieldToCooperativeHost()
   }
 
-  return new Promise((resolve) => {
-    globalThis.requestAnimationFrame(() => {
-      globalThis.requestAnimationFrame(() => resolve())
-    })
+  await new Promise<void>((resolve) => {
+    globalThis.requestAnimationFrame(() => resolve())
   })
+  // Resume in a host task after rendering. Waiting for the next refresh here
+  // would add a display interval to every progressive replay slice.
+  await yieldToCooperativeHost()
 }
 
 export const settleCooperativeRenderSlice = async (
