@@ -37,7 +37,13 @@ export async function withConsumer(
     if (dir === path.join(root, 'sdk/design')) {
       const paths = new Set(files.map((file) => file.path))
 
-      for (const entry of ['index', 'element', 'react', 'inspector-rows']) {
+      for (const entry of [
+        'index',
+        'element',
+        'react',
+        'inspector-rows',
+        'ui'
+      ]) {
         assert.ok(paths.has('dist/' + entry + '.js'))
         assert.ok(paths.has('dist/' + entry + '.d.ts'))
       }

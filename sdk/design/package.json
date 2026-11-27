@@ -24,6 +24,10 @@
       "types": "./dist/inspector-rows.d.ts",
       "default": "./dist/inspector-rows.js"
     },
+    "./ui": {
+      "types": "./dist/ui.d.ts",
+      "default": "./dist/ui.js"
+    },
     "./react": {
       "types": "./dist/react.d.ts",
       "default": "./dist/react.js"

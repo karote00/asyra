@@ -19,11 +19,18 @@ test('packed Design JavaScript places and composes live controls by name', async
       const group = editor.getUI('drawingTools')
 
       group.setItems([group.items.penToolIcon, group.items.selectToolIcon])
-      globalThis.release = editor.getUI('penToolIcon').mount(target)
+      globalThis.release = globalThis.components.penToolIcon.mount(
+        editor,
+        target
+      )
 
       return editor.uiKeys.map((id) => editor.getUI(id).id)
     })
 
+    assert.deepEqual(
+      await page.evaluate(() => Object.keys(globalThis.components).sort()),
+      ids.filter((id) => !id.startsWith('action.')).sort()
+    )
     assert.ok(
       ids.includes('gradient') &&
         ids.includes('addFill') &&
@@ -74,7 +81,10 @@ test('packed Design JavaScript places and composes live controls by name', async
       }
 
       globalThis.removeItem = props.insertAt(1, custom)
-      e.getUI('appearance').mount(globalThis.document.querySelector('#tools'))
+      globalThis.components.appearance.mount(
+        e,
+        globalThis.document.querySelector('#tools')
+      )
     })
     const external = page.locator('#tools')
 
@@ -142,6 +152,15 @@ test('packed Design React places an editor component in JSX with hidden chrome',
       const pen = page.locator('aside [data-toolbar-action="pen"]')
 
       await expect(pen).toHaveCount(1)
+      const catalog = await page.evaluate(() => ({
+        actual: globalThis.nativeControlNames.sort(),
+        expected: globalThis.editor.uiKeys
+          .filter((id) => !id.startsWith('action.'))
+          .map((id) => id[0].toUpperCase() + id.slice(1))
+          .sort()
+      }))
+
+      assert.deepEqual(catalog.actual, catalog.expected)
       await pen.click()
       assert.equal(
         await page.evaluate(() => globalThis.editor.getTool()),
@@ -321,6 +340,13 @@ test('packed Design React scopes follow nested boards through replacement, relea
           )
         })
 
+      const leftRectangle = page
+        .getByLabel('left controls')
+        .locator('[data-toolbar-action="rectangle"]')
+
+      await leftRectangle.click()
+      assert.equal((await state()).left.tool, 'rectangle')
+      assert.equal((await state()).right.tool, 'select')
       await left.click()
       const before = await state()
 
@@ -358,6 +384,9 @@ test('packed Design React scopes follow nested boards through replacement, relea
       assert.deepEqual(after.left.transitions, [null, 0, null, 1, null, 2])
       assert.equal(after.right.mounts, 1)
       assert.equal(after.right.matches, true)
+      await leftRectangle.click()
+      assert.equal((await state()).left.tool, 'rectangle')
+      assert.equal((await state()).right.tool, 'select')
     }
   )
 })

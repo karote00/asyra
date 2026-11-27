@@ -181,6 +181,9 @@ ordering, custom item lifetimes and exclusive host placements. Group items
 render in template order. An external placement wins over the default home.
 Releasing it restores that home. Hidden panels can service explicit placements.
 Canvas rendering and document record identities stay under their current owners.
+Expose native groups and leaves as framework-independent SDK component definitions
+from the workspace registry. React provides named JSX adapters for the same IDs
+using the nearest ready editor. Per-editor actions resolve through live handles.
 Verify discovery, order, command dispatch, feature changes, teardown and editor
 isolation using separately installed React and JavaScript tarball consumers.
 

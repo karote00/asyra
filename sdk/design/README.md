@@ -188,10 +188,13 @@ action's ID, fails at startup.
 
 ### Add UI to a workspace
 
-Use `editor.uiKeys` to discover component names. Place the native Pen button
-in React with `<DesignUI component={editor.getUI('penToolIcon')} />` from
-`@asyra/design/react`, or call `editor.getUI('penToolIcon').mount(container)`
-in JavaScript. Each named group exposes its native items and current order.
+Place a built-in control directly in your layout. In React, render
+`<UI.PenToolIcon />` from `@asyra/design/react` inside the board's
+`DesignEditorProvider`. In plain JavaScript, import `components` from
+`@asyra/design/ui` and call `components.penToolIcon.mount(editor, container)`.
+Type `UI.` or `components.` to browse the built-in controls. Use
+`editor.uiKeys` and `editor.getUI(id)` for the current editor's actions,
+group items and ordering.
 See [Place and compose Design components](UI.md) for complete examples and
 DevTools lookups.
 

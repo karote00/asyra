@@ -1,3 +1,4 @@
+import { components } from '@asyra/design/ui'
 import { positionRow } from '@asyra/design/inspector-rows'
 import { createDesign, type WorkspaceExtension } from '@asyra/design'
 
@@ -13,6 +14,9 @@ export async function openBoard(container: HTMLDivElement) {
     storageKey: 'approvals'
   })
 
+  const release = components.penToolIcon.mount(editor, container)
+
+  release()
   const position = editor.getUI(positionRow.id)
 
   position.setItems(positionRow.fields)
