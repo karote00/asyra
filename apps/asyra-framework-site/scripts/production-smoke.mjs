@@ -52,7 +52,28 @@ const sitemap = await sitemapResponse.text()
 const escapedOrigin = origin.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
 assert.match(sitemap, new RegExp(`<loc>${escapedOrigin}/?</loc>`))
-assert.equal((sitemap.match(/<url>/g) ?? []).length, 46)
+const expectedUrls = [
+  ...new Set(
+    [
+      '/',
+      '/atlas',
+      '/docs',
+      '/asyra-design',
+      '/releases',
+      '/roadmap',
+      ...pages.map(({ href }) => href)
+    ].map((route) => new URL(route, origin).href)
+  )
+]
+const sitemapUrls = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/gu)].map(
+  (match) => match[1]
+)
+
+assert.deepEqual(
+  sitemapUrls.sort(),
+  expectedUrls.sort(),
+  'Sitemap differs from the current public route inventory'
+)
 
 for (const [route, copy] of [
   ['/atlas', 'Don’t take the architecture on faith. Run it.'],
@@ -90,4 +111,6 @@ const missingResponse = await fetch(new URL('/launch-missing-route', origin))
 assert.equal(missingResponse.status, 404)
 assert.match(await missingResponse.text(), /Nothing is built here\./)
 
-process.stdout.write(`Production smoke passed: 46 public pages at ${origin}\n`)
+process.stdout.write(
+  `Production smoke passed: ${expectedUrls.length} public pages at ${origin}\n`
+)
