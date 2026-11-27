@@ -48,3 +48,25 @@ redirects preserve paths and queries. Then submit `https://asyra.dev/sitemap.xml
 in the new Search Console property and inspect representative URLs. Check GA
 Realtime for visits using the new hostname. These live acceptance steps remain
 pending until deployment and cannot be claimed from a local build.
+
+## Deployment baseline follow-up
+
+The first manual run after merging the migration passed build and browser
+verification but stopped before upload: release guidance requested the old
+project alias with redirects forbidden. The baseline reader now uses the
+successful production deployment URL returned by Cloudflare, validates that it
+belongs to the expected Pages project, and compares its marker against the
+provider source SHA. Public custom-domain verification remains a separate
+post-upload gate. Redirect rejection and credential isolation remain enforced.
+
+The repair is limited to the release-guidance baseline reader, its permanent
+regression tests and this operational handoff. Tests cover all four deployment
+owners, invalid provider origins and mismatched source markers. After reviewing
+and merging the repair, start a new manual workflow from current main; rerunning
+the failed old revision does not include this correction.
+
+The follow-up also updates homepage product links and the directly linked Design
+case page to `design.asyra.dev`, `fieldscope.asyra.dev`, and `sim.asyra.dev`.
+The Design demo retains `fileId=demo` and its existing `open_demo` analytics
+identity. All three destinations returned HTTPS 200 during verification.
+Historical/documentation links are outside this homepage correction.

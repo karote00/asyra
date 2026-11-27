@@ -63,7 +63,9 @@ test('homepage product evidence covers Design, Asyra FieldScope and Sim with ver
 
   for (const destination of [
     'https://github.com/karote00/asyra/blob/main/apps/asyra-fieldscope/src/domain/__tests__/crop-layout.test.ts',
-    'https://asyra-sim.pages.dev',
+    'https://design.asyra.dev/?fileId=demo',
+    'https://fieldscope.asyra.dev',
+    'https://sim.asyra.dev',
     'https://github.com/karote00/asyra/blob/main/apps/asyra-sim/src/features/__tests__/analysis.test.ts'
   ]) {
     assert.ok(
@@ -176,4 +178,16 @@ test('primary navigation and page semantics survive without JavaScript', async (
 
   assert.match(story, /\{children\}/)
   assert.match(story, /\{footer\}/)
+})
+
+test('homepage and Design product entry points do not use retired hosting aliases', async () => {
+  for (const file of [
+    'components/home-resources.tsx',
+    'app/asyra-design/page.tsx'
+  ]) {
+    const source = await read(file)
+
+    assert.doesNotMatch(source, /https:\/\/[^"\s]*(?:pages\.dev|vercel\.app)/u)
+    assert.ok(source.includes('https://design.asyra.dev/?fileId=demo'))
+  }
 })

@@ -308,3 +308,20 @@ test('IME composition is not a search and native dialog close cancels pending in
   ])
   s.tracker.dispose()
 })
+
+test('the custom-domain Design demo keeps one CTA event without its query parameters', () => {
+  const s = setup(
+    '<a id="demo" data-site-cta href="https://design.asyra.dev/?fileId=demo">Try the live product</a>',
+    '/'
+  )
+
+  s.click('#demo')
+  assert.deepEqual(s.events, [
+    [
+      'event',
+      SITE_EVENTS.cta,
+      { page_path: '/', cta_id: 'open_demo', link_area: 'content' }
+    ]
+  ])
+  s.tracker.dispose()
+})

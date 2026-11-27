@@ -245,6 +245,7 @@ function cloudflareFixture(t) {
   )
   const provider = {
     deploymentId: 'previous-deployment',
+    url: 'https://abc12345.asyra-design.pages.dev',
     sourceSha: f.baselineSha
   }
   const methods = []
@@ -267,6 +268,7 @@ function cloudflareFixture(t) {
                 name: 'asyra-design',
                 canonical_deployment: {
                   id: provider.deploymentId,
+                  url: provider.url,
                   environment: 'production',
                   latest_stage: { name: 'deploy', status: 'success' },
                   deployment_trigger: {
@@ -1116,5 +1118,116 @@ test('a new Cloudflare publication cannot inherit an earlier deployment verifica
   await assert.rejects(
     cloudflareGuidance('prepare', id, { ...f.options, sourceSha }),
     /verify its original candidate/
+  )
+})
+
+test('Cloudflare baseline reads the provider deployment URL even when public aliases redirect', async () => {
+  const { cloudflareBaseline } =
+    await import('../cloudflare-release-guidance.mjs')
+
+  for (const id of [
+    'asyra-framework',
+    'asyra-design',
+    'asyra-fieldscope',
+    'asyra-sim'
+  ]) {
+    const sourceSha = 'a'.repeat(40)
+    const deploymentUrl = `https://abc12345.${id}.pages.dev`
+    const requests = []
+    const result = await cloudflareBaseline(id, {
+      accountId: 'b'.repeat(32),
+      token: 'test-token',
+
+      request: async (url, init) => {
+        requests.push(String(url))
+        assert.equal(init.redirect, 'error')
+        if (String(url).startsWith('https://api.cloudflare.com/')) {
+          return {
+            ok: true,
+
+            json: async () => ({
+              success: true,
+              result: {
+                name: id,
+                canonical_deployment: {
+                  id: 'production-deployment',
+                  url: deploymentUrl,
+                  environment: 'production',
+                  latest_stage: { name: 'deploy', status: 'success' },
+                  deployment_trigger: { metadata: { commit_hash: sourceSha } }
+                }
+              }
+            })
+          }
+        }
+
+        // The public project alias now redirects. It must never be requested.
+        assert.equal(String(url), `${deploymentUrl}/deployment-version.json`)
+        assert.equal(init.headers, undefined)
+
+        return {
+          status: 200,
+
+          json: async () => ({ sourceSha, app: id })
+        }
+      }
+    })
+
+    assert.equal(requests.length, 2)
+    assert.deepEqual(result, {
+      id,
+      sourceSha,
+      deploymentId: 'production-deployment'
+    })
+  }
+})
+
+test('Cloudflare baseline rejects invalid deployment origins and mismatched source markers', async (t) => {
+  const { cloudflareBaseline } =
+    await import('../cloudflare-release-guidance.mjs')
+  const { provider, methods, options } = cloudflareFixture(t)
+  const validUrl = provider.url
+
+  for (const url of [
+    undefined,
+    'http://abc12345.asyra-design.pages.dev',
+    'https://abc12345.asyra-design.pages.dev.example.com',
+    'https://abc12345.asyra-sim.pages.dev',
+    `${validUrl}/unexpected`,
+    `${validUrl}?query=value`,
+    `${validUrl}#fragment`
+  ]) {
+    provider.url = url
+    methods.length = 0
+    await assert.rejects(
+      cloudflareBaseline('asyra-design', options),
+      /invalid provider deployment URL/
+    )
+    assert.equal(methods.length, 1)
+  }
+
+  provider.url = validUrl
+  await assert.rejects(
+    cloudflareBaseline('asyra-design', {
+      ...options,
+
+      request: async (url, init) => {
+        const response = await options.request(url, init)
+
+        if (String(url).endsWith('/deployment-version.json')) {
+          return {
+            status: 200,
+
+            json: async () => ({
+              app: 'asyra-design',
+              sourceSha: 'f'.repeat(40)
+            })
+          }
+        }
+
+        return response
+      }
+    }),
+    /Production marker differs from provider baseline/
   )
 })
