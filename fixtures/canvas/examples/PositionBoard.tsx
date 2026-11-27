@@ -1,4 +1,4 @@
-import { dimensionRow, positionRow } from '@asyra/design-ui'
+import { dimensionRow, positionRow } from '@asyra/design/inspector-rows'
 import { Board } from './DesignBoard'
 
 export function PositionBoard({

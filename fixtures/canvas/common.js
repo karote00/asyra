@@ -1,5 +1,5 @@
 import { createDesign } from '@asyra/design'
-import { dimensionRow, positionRow } from '@asyra/design-ui'
+import { dimensionRow, positionRow } from '@asyra/design/inspector-rows'
 
 function host() {
   const container = globalThis.document.createElement('div')

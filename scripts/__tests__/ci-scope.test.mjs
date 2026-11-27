@@ -276,11 +276,7 @@ test('App update consumers select retained-artifact validation without unrelated
 test('an app change selects its package scripts and dependent workspace consumers', () => {
   const result = classifyChanges(['apps/asyra-design/src/main.tsx'], manifests)
 
-  assert.deepEqual(names(result), [
-    '@asyra/asyra-design',
-    '@asyra/design',
-    '@asyra/design-ui'
-  ])
+  assert.deepEqual(names(result), ['@asyra/asyra-design', '@asyra/design'])
   assert.equal(result.designE2ERequired, true)
   assert.deepEqual(result.unknownPaths, [])
 })

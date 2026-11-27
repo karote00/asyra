@@ -17,10 +17,6 @@ export async function withConsumer(
   assertions,
   { development = false, firstInstall = false } = {}
 ) {
-  if (entry === 'common.js' || entry === 'tool-layout.js') {
-    packages = [...packages, 'sdk/design-ui']
-  }
-
   const scratch = path.join(root, 'tmp/native-canvas')
 
   await mkdir(scratch, { recursive: true })
@@ -38,19 +34,10 @@ export async function withConsumer(
       npm(['pack', dir, '--ignore-scripts', '--json'])
     )
 
-    if (dir === path.join(root, 'sdk/design-ui')) {
-      for (const entry of ['dist/index.js', 'dist/index.d.ts']) {
-        assert.ok(
-          files.some((file) => file.path === entry),
-          'Missing Design UI package entry: ' + entry
-        )
-      }
-    }
-
     if (dir === path.join(root, 'sdk/design')) {
       const paths = new Set(files.map((file) => file.path))
 
-      for (const entry of ['index', 'element', 'react']) {
+      for (const entry of ['index', 'element', 'react', 'inspector-rows']) {
         assert.ok(paths.has('dist/' + entry + '.js'))
         assert.ok(paths.has('dist/' + entry + '.d.ts'))
       }
@@ -157,18 +144,12 @@ export async function withConsumer(
         : [])
     ].join('\n')
   )
-  const designTypeTests = packages.includes('sdk/design') ? ['design.ts'] : []
+  const designTypeTests = packages.includes('sdk/design')
+    ? ['design.ts', 'extensions.ts']
+    : []
 
-  if (designTypeTests.length) {
-    await cp(path.join(fixture, 'types/design.ts'), path.join(cwd, 'design.ts'))
-  }
-
-  if (packages.includes('sdk/design-ui')) {
-    await cp(
-      path.join(fixture, 'types/extensions.ts'),
-      path.join(cwd, 'extensions.ts')
-    )
-    designTypeTests.push('extensions.ts')
+  for (const file of designTypeTests) {
+    await cp(path.join(fixture, 'types', file), path.join(cwd, file))
   }
 
   execFileSync(

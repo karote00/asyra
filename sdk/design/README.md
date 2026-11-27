@@ -209,16 +209,18 @@ export function Board() {
 }
 ```
 
-For explicit group ordering or installation alongside your own UI, install
-`@asyra/design-ui` and pass the group descriptors:
+For explicit group ordering, import the row definitions from Design.
+They describe the controls and their fields. Use the same definitions in a
+plain JavaScript editor or in the React component's `options.ui`.
 
-```tsx
-import { positionRow, dimensionRow } from '@asyra/design-ui'
+```js
+import { createDesign } from '@asyra/design'
+import { positionRow, dimensionRow } from '@asyra/design/inspector-rows'
 
-<AsyraDesign
-  options={{ ui: [positionRow, dimensionRow] }}
-  uiTargets={{ [positionRow.id]: 'my-toolbar' }}
-/>
+const editor = await createDesign(container, {
+  ui: [positionRow, dimensionRow],
+  uiTargets: { [positionRow.id]: 'my-toolbar' }
+})
 ```
 
 React accepts `hideUI`, `disabledFeatures`, `uiTargets`, `toolbar`,

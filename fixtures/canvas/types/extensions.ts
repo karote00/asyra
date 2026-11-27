@@ -1,4 +1,4 @@
-import { positionRow } from '@asyra/design-ui'
+import { positionRow } from '@asyra/design/inspector-rows'
 import { createDesign, type WorkspaceExtension } from '@asyra/design'
 
 const approval = {
